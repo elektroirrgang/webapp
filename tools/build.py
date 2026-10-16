@@ -42,7 +42,7 @@ baue("src/baustelle.html", "baustelle/index.html", "baustelle/icon-180.png")
 baue("src/echeck.html", "echeck/index.html", "echeck/icon-180.png")
 
 
-for app in ("evse", "uebersicht"):
+for app in ("evse", "uebersicht", "baustelle"):
     (root / app / "pdfjs").mkdir(exist_ok=True)
     for f in ("pdf.min.js", "pdf.worker.min.js"):
         shutil.copyfile(root / "vendor/pdfjs" / f, root / app / "pdfjs" / f)

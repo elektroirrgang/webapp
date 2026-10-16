@@ -1569,7 +1569,7 @@ FDEF.bib={std:{sort:"neu",erg:"alle",art:"alle"},sort:[["neu","Neueste zuerst"],
   gruppen:[{k:"erg",t:"Ergebnis",opts:[["alle","Alle"],["ok","Bestanden"],["bad","Mit Mängeln"]]},{k:"art",t:"Prüfart",opts:[["alle","Alle"],...PRUEFARTEN.map(x=>[x,x==="Wiederholungsprüfung"?"Wiederholung":x])]}],liste:()=>bibListe()};
 function bibListe(){
   const n="bib", erg=fW(n,"erg"), art=fW(n,"art"), so=fW(n,"sort"), q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
-  const L=PROT.filter(x=>(erg==="alle"||x.ergebnis===erg)&&(art==="alle"||x.art===art)&&(!q||H(x.titel)||H(x.name)||H(x.auftragsnr)||H(x.pruefer)||H(x.art)));
+  const L=PROT.filter(x=>x.app!=="baustelle"&&(erg==="alle"||x.ergebnis===erg)&&(art==="alle"||x.art===art)&&(!q||H(x.titel)||H(x.name)||H(x.auftragsnr)||H(x.pruefer)||H(x.art)));
   if(!L.length) return PROT.length?fInfo(n,0,"Protokoll","Protokolle")+`<p class="meta">Keine Protokolle in dieser Auswahl.</p>`:`<div class="empty">${icon("folder")}<h2>Noch keine Protokolle</h2><p>Sobald du in einer Prüfung unter Abschluss „PDF erstellen“ tippst, wird das fertige Protokoll hier abgelegt – genau so, wie es erstellt wurde.</p></div>`;
   L.sort(so==="alt"?(a,b)=>a.created-b.created:so==="kunde"?(a,b)=>String(a.titel||"").localeCompare(String(b.titel||""),"de")||b.created-a.created:(a,b)=>b.created-a.created);
   const item=x=>`<div class="li" role="button" tabindex="0" data-act="bibOpen" data-id="${esc(x.id)}"><span class="av">${icon("doc")}</span><span class="lt"><span class="h">${esc(x.titel)}</span>

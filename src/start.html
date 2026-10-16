@@ -1549,8 +1549,8 @@ function bibListe(){
   const L=PROT.filter(x=>(erg==="alle"||x.ergebnis===erg)&&(!q||H(x.titel)||H(x.name)||H(x.auftragsnr)||H(x.pruefer))); L.sort(so==="alt"?(a,b)=>a.created-b.created:so==="kunde"?(a,b)=>String(a.titel||"").localeCompare(String(b.titel||""),"de")||b.created-a.created:(a,b)=>b.created-a.created);
   if(!L.length) return PROT.length?fInfo(n,0,"Protokoll","Protokolle")+`<p class="meta">Keine Protokolle in dieser Auswahl.</p>`:`<div class="empty">${icon("folder")}<h2>Noch keine Protokolle</h2><p>Fertige Protokolle aus EVSE und später aus Baustelle und E-Check erscheinen hier, sobald dort ein PDF erstellt wurde.</p></div>`;
   const item=x=>`<div class="li" role="button" tabindex="0" data-act="bibOpen" data-id="${esc(x.id)}"><span class="av">${icon("doc")}</span><span class="lt"><span class="h">${esc(x.titel)}</span>
-    <span class="s">${esc(["EVSE",deDate(x.datum),x.art,x.auftragsnr&&`Auftrag ${x.auftragsnr}`].filter(Boolean).join(" · "))}</span><span class="s">${esc(`PDF vom ${protZeit(x.created)}${x.von&&x.von.name?` · ${x.von.name}`:""}`)}</span>
-    <span class="st">${pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden")}${x.fassung>1?pill("open",`Fassung ${x.fassung}`):""}${x.unterschrift?"":pill("open","ohne Unterschrift")}${x.demo?pill("open","Beispiel"):""}</span></span>${icon("chev")}</div>`;
+    <span class="s">${esc([x.app==="baustelle"?"Baustelle":"EVSE",deDate(x.datum),x.art,x.auftragsnr&&`Auftrag ${x.auftragsnr}`].filter(Boolean).join(" · "))}</span><span class="s">${esc(`PDF vom ${protZeit(x.created)}${x.von&&x.von.name?` · ${x.von.name}`:""}`)}</span>
+    <span class="st">${x.ergebnis?pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden"):""}${x.fassung>1?pill("open",`Fassung ${x.fassung}`):""}${x.unterschrift?"":pill("open","ohne Unterschrift")}${x.demo?pill("open","Beispiel"):""}</span></span>${icon("chev")}</div>`;
   return fInfo(n,L.length,"Protokoll","Protokolle")+(so==="kunde"?abcListe(L,x=>x.titel,item):nachMonat(L,x=>new Date(x.created).toISOString().slice(0,10),item));
 }
 function bibliothekView(){

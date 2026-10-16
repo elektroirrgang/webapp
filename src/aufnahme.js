@@ -119,7 +119,7 @@ function aufnahmeView(b){
   const a=afDaten(b), v=a.v, ro=!canEdit(b), [n,m]=afGesamt(b), k=kundeOf(b.kundeId), s=standortOf(b.standortId);
   if(!v.datum&&!ro){ v.datum=today(); v.von=v.von||who().name; if(s&&s.ansprech&&!v.ansprech) v.ansprech=s.ansprech; }
   let h=`<div class="af-kopf"><div class="af-bar"><i style="width:${m?Math.round(n/m*100):0}%"></i></div><span>${n} von ${m} Angaben</span>
-    ${a.pdf&&a.pdf.length?`<span class="af-pdfinfo">${icon("pdf")}PDF zuletzt ${esc(new Date(a.pdf[a.pdf.length-1].at).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"}))}</span>`:""}</div>`;
+    ${a.pdf&&a.pdf.length?`<span class="af-pdfinfo">${icon("folder")}Zuletzt gespeichert ${esc(new Date(a.pdf[a.pdf.length-1].at).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"}))}</span>`:""}</div>`;
   h+=`<div class="af-grid">`;
   for(const sec of AUFN){ const [x,y]=afStand(sec,a);
     const kl=x===0?"open":x>=y?"ok":"wip", pl=`<span class="pill ${kl}" data-afp="${sec.id}">${x} / ${y}</span>`;
@@ -131,7 +131,8 @@ function aufnahmeView(b){
         ${ro?"":`<button class="btn-tonal" data-act="afSig">${icon("edit")}${a.sig?"Neu unterschreiben":"Unterschreiben (Monteur)"}</button>`}</div>`;
     else h+=`<div class="fg">${sec.f.filter(f=>afSichtbar(f,v)).map(f=>afFeld(f,v,ro)).join("")}</div>`;
     h+=`</section>`; }
-  h+=`</div><div class="weiter"><button class="btn-filled" data-act="afPdf">${icon("pdf")}PDF erstellen</button></div>`;
+  const P=(typeof PROT_B==="function"?PROT_B():[]).filter(x=>x.baustelleId===b.id);
+  h+=`</div><div class="af-fuss"><span class="meta">${P.length?`${P.length} Fassung${P.length>1?"en":""} in der Bibliothek`:"Eingaben werden automatisch gesichert."}</span>${ro?"":`<button class="btn-filled" data-act="afPdf">${icon("done")}Speichern</button>`}</div>`;
   return h;
 }
 let afT=null;
@@ -224,7 +225,9 @@ async function afPdf(b){
     d.text(afPt(`Aufnahme vom ${deDate(v.datum||"")}${b.auftragsnr?` | Auftrag ${b.auftragsnr}`:""}`),M,292); d.text(`Seite ${i} von ${N}`,W-M,292,{align:"right"}); }
   const blob=d.output("blob"), name=afPt(`Aufnahme ${deDate(v.datum||today())} ${k?k.name:""} ${b.name}`).replace(/[\\/:*?"<>|]+/g," ").replace(/\s+/g," ").trim();
   a.pdf=[...(a.pdf||[]),{at:Date.now(),von:who().name}]; afSpeichern(b,true);
-  const datei=new File([blob],name+".pdf",{type:"application/pdf"});
-  if(navigator.canShare&&navigator.canShare({files:[datei]})){ try{ await navigator.share({files:[datei],title:name}); }catch(e){} } else saveFile(blob,name+".pdf");
-  const y0=scrollY; render(); scrollTo(0,y0); toast("Aufnahmeprotokoll erstellt");
+  const fz=PROT_B().filter(x=>x.baustelleId===b.id).length+1;
+  let x=null; try{ x=await protAblegenB({art:"Aufnahmeprotokoll",titel:[k&&k.name,b.name].filter(Boolean).join(" · "),name,datum:v.datum||today(),auftragsnr:b.auftragsnr||"",
+    baustelleId:b.id,kundeId:b.kundeId||"",standortId:b.standortId||"",fassung:fz,unterschrift:!!a.sig,demo:!!b.demo},blob); }catch(e){}
+  const y0=scrollY; render(); scrollTo(0,y0);
+  if(x) toast(fz>1?`Gespeichert – Fassung ${fz} liegt in der Bibliothek`:"Gespeichert – das Protokoll liegt in der Bibliothek","Ansehen",()=>pvOeffnen(x.id)); else toast("Gespeichert. Ablage in der Bibliothek fehlgeschlagen");
 }

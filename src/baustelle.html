@@ -959,6 +959,75 @@ html::after{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-
 .weiter{display:flex;justify-content:flex-end;margin:20px 0 8px}
 .af-fr{display:flex;align-items:center;gap:10px;justify-content:flex-end}.af-fr .seg{flex:1;max-width:220px}.af-fr .af-fotos{flex:none}.af-fr .af-fotos .foto{width:56px;height:56px}
 @media (max-width:743.98px){.af-fr{justify-content:flex-start}}
+.pv{position:fixed;inset:0;z-index:80;background:var(--sc-low);display:flex;flex-direction:column}
+.pv-kopf{display:flex;align-items:center;gap:8px;min-height:56px;padding:env(safe-area-inset-top,0px) max(8px,env(safe-area-inset-right,0px)) 0 max(8px,env(safe-area-inset-left,0px));background:var(--surface);flex:none}
+.pv-t{flex:1;min-width:0;text-align:center;display:flex;flex-direction:column}
+.pv-t b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pv-t span{font-size:12px;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pv-kopf .btn-text{min-width:96px;justify-content:flex-start}
+.pv-kopf .icon-btn{margin-left:48px}
+.pv-seiten{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;overscroll-behavior:contain;display:flex;flex-direction:column;align-items:flex-start;gap:16px;padding:16px 16px calc(32px + env(safe-area-inset-bottom,0px))}
+.pv-seite{display:block;margin:0 auto;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);border-radius:2px;flex:none}
+.pv-lade{margin:48px auto;max-width:420px;text-align:center;color:var(--on-sv);font-size:14px;line-height:1.5}
+.pv-zahl{position:absolute;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--sc-highest);color:var(--on-surface);font-size:12px;font-weight:700;padding:4px 10px;border-radius:12px;pointer-events:none;opacity:0;transition:opacity .3s}
+.pv-zahl.an{opacity:.92}
+@media (max-width:599px){.pv-kopf .icon-btn{margin-left:0}.pv-kopf .btn-text{min-width:0}}
+body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dlg{z-index:93}body.pv-offen .snackbar{z-index:94}
+.pv-blatt{display:flex;flex:none;width:max-content;min-width:100%}
+.pv-seite{margin:auto!important;border-radius:4px}
+.pv.m-seiten .pv-seiten{flex-direction:row;gap:0;padding:0;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none}
+.pv.m-seiten .pv-seiten::-webkit-scrollbar{display:none}
+.pv.m-seiten .pv-blatt{width:100%;min-width:100%;height:100%;overflow:auto;scroll-snap-align:start;scroll-snap-stop:always;padding:16px 16px calc(48px + env(safe-area-inset-bottom,0px));overscroll-behavior:contain}
+.pv.m-seiten .pv-zahl{opacity:.92}
+.pv-pfeil{position:absolute;top:50%;width:44px;height:44px;margin-top:-22px;border:0;border-radius:50%;background:var(--sc-highest);color:var(--on-surface);display:none;place-items:center;box-shadow:0 2px 8px rgba(0,0,0,.2);opacity:.85}
+.pv-pfeil:hover{opacity:1}.pv-pfeil[disabled]{opacity:.25}
+.pv-pfeil.l{left:16px}.pv-pfeil.l .ic{transform:rotate(180deg)}.pv-pfeil.r{right:16px}
+@media (hover:hover) and (pointer:fine){.pv.m-seiten .pv-pfeil{display:grid}}
+.pv{isolation:isolate}.pv-seiten{position:relative}
+.pv-seiten{padding:12px 12px calc(24px + env(safe-area-inset-bottom,0px));gap:12px}
+.pv-zahl{left:max(16px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 68px);bottom:auto;transform:none;background:rgba(40,40,42,.88);color:#fff;font-size:14px;font-weight:700;padding:6px 14px;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.25);transition:opacity .35s}
+.pv.m-seiten .pv-zahl{opacity:0}.pv.m-seiten .pv-zahl.an{opacity:.95}
+.pv.m-seiten .pv-blatt{padding:12px 12px calc(24px + env(safe-area-inset-bottom,0px))}
+.pv.m-seiten .pv-seite{margin:0 auto!important}
+.pv-kopf{position:absolute;top:0;left:0;right:0;z-index:3;min-height:0;height:calc(64px + env(safe-area-inset-top,0px));gap:8px;padding:env(safe-area-inset-top,0px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));transition:height .28s cubic-bezier(.3,.7,.2,1)}
+.pv-l,.pv-r{flex:none;width:88px;display:flex;align-items:center;gap:8px;transition:opacity .2s,transform .28s cubic-bezier(.3,.7,.2,1)}
+.pv-r{justify-content:flex-end}
+.pv-rund{width:40px;height:40px;border-radius:50%;border:0;background:var(--sc-high);color:var(--on-surface);display:grid;place-items:center;flex:none;-webkit-tap-highlight-color:transparent;transition:background .15s,transform .15s}
+.pv-rund:active{transform:scale(.92);background:var(--sc-highest)}
+.pv-rund .ic{width:22px;height:22px}
+.pv-t{cursor:default;transition:transform .28s cubic-bezier(.3,.7,.2,1)}
+.pv-t b{transition:font-size .28s cubic-bezier(.3,.7,.2,1)}
+.pv-t span{max-height:18px;overflow:hidden;transition:max-height .25s,opacity .2s}
+.pv.kompakt .pv-kopf{height:calc(36px + env(safe-area-inset-top,0px))}
+.pv.kompakt .pv-l,.pv.kompakt .pv-r{opacity:0;pointer-events:none;transform:scale(.8)}
+.pv.kompakt .pv-t{cursor:pointer}
+.pv.kompakt .pv-t b{font-size:13px}
+.pv.kompakt .pv-t span{max-height:0;opacity:0}
+.pv-seiten{padding-top:calc(76px + env(safe-area-inset-top,0px))!important}
+.pv.m-seiten .pv-seiten{padding-top:0!important}
+.pv.m-seiten .pv-blatt{padding-top:calc(76px + env(safe-area-inset-top,0px))!important}
+.pv-zahl{top:calc(env(safe-area-inset-top,0px) + 76px)!important;transition:opacity .35s,top .28s cubic-bezier(.3,.7,.2,1)!important}
+.pv.kompakt .pv-zahl{top:calc(env(safe-area-inset-top,0px) + 48px)!important}
+
+.bs-dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none;background:#9AA0A6}
+.bs-dot.besichtigung{background:#2F7DE1}.bs-dot.aktiv{background:#2E9D4E}.bs-dot.pausiert{background:#E3A008}.bs-dot.fertig{background:#8A8F98}
+.chips.filt .chip{gap:8px}.chips.filt .chip .bs-dot{margin-left:2px}
+.bs-pick{flex:none;height:44px;min-width:180px;display:flex;align-items:center;gap:10px;padding:0 12px 0 16px;border:0;border-radius:22px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+.bs-pick:hover,.bs-pick:active{background:var(--sc-highest)}
+.bs-pick .spick-t{flex:1;text-align:left;white-space:nowrap}.bs-pick .spick-p{display:grid;transform:rotate(90deg);color:var(--on-sv)}.bs-pick .spick-p .ic{width:20px;height:20px}
+.sk .bs-pick{margin-top:4px}
+.spick-mi{display:flex;align-items:center;gap:10px}.spick-mi .bs-dot{margin:0 6px}.spick-mi.an{background:color-mix(in srgb,var(--primary) 12%,transparent)}
+.b-kopf{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.b-kopf .b-meta{flex:1;min-width:0}
+.b-kopf .bs-pick{min-width:0}
+.k-kacheln{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:4px}
+.k-kachel{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;border:0;border-radius:20px;background:var(--sc-low);color:var(--on-surface);padding:16px;font:inherit;cursor:pointer;min-height:132px}
+.k-kachel:hover,.k-kachel:active{background:var(--sc)}
+.kk-av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--pc);color:var(--on-pc);margin-bottom:6px}.kk-av .ic{width:22px;height:22px}
+.kk-n{font-weight:700;font-size:16px;line-height:1.25}.kk-o{font-size:13px;color:var(--on-sv)}
+.kk-z{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:auto;padding-top:8px}.kk-s{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--on-sv);font-weight:600}
+.btn-tonal{display:inline-flex;align-items:center;justify-content:center;gap:8px}.btn-tonal .ic{width:20px;height:20px;flex:none}
+.af-fuss{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:20px 2px 8px}
+@media (max-width:743.98px){.b-kopf{flex-direction:column;align-items:stretch}.b-kopf .bs-pick{align-self:flex-end}}
 </style>
 </head>
 <body class="is-list">
@@ -1176,7 +1245,7 @@ function applyTheme(t){
   const dark = t==="dark" || (t==="auto" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
   document.querySelector('meta[name="theme-color"]').setAttribute("content", dark?"#131314":"#FCFCFD"); if(window.sbFarbe) sbFarbe();
 }
-const IC={
+const IC={moreH:"M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",swapV:"M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z",swapH:"M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z",
   notiz:"M19 3H4.99C3.89 3 3 3.9 3 5l.01 14c0 1.1.89 2 1.99 2h10l6-6V5c0-1.1-.9-2-2-2zM7 8h10v2H7V8zm5 6H7v-2h5v2zm2 5.5V14h5.5L14 19.5z",
   stift:"M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 0 0 0-1.41z",
   checkliste:"M22 7h-9v2h9V7zm0 8h-9v2h9v-2zM5.54 11L2 7.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 11zm0 8L2 15.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 19z",
@@ -1413,6 +1482,8 @@ const KIND_NAME={kunden:"Kunde",standorte:"Standort"};
 
 function go(n){ nav=n; closeOverlays(); render(); window.scrollTo(0,0); }
 const KOPF_START="Baustellen";
+const bStatusKnopf=b=>`<button class="spick bs-pick" data-act="bStatusPick" aria-label="Status ändern"><i class="bs-dot ${b.status||"aktiv"}"></i><span class="spick-t">${STATUS_TXT[b.status||"aktiv"]}</span><span class="spick-p">${icon("chev")}</span></button>`;
+const skRechts=()=>{ if(nav.v!=="baustelle") return ""; const b=DB.baustellen.get(nav.id); return b&&canEdit(b)?bStatusKnopf(b):""; };
 function seitenKopf(t,s,f){ t=t||(f?KOPF_START:""); if(!t&&!f) return "";
   const T=pfadTeile(); if(!t&&!f&&typeof skRechts==="function"&&skRechts()) t=KOPF_START; if(s&&s.includes("›")) s=s.split(/\s*›\s*/).pop(); 
   const pf="";
@@ -1471,9 +1542,98 @@ function nachMonat(L,datum,item){ let h="", m=null, g=[]; const fl=()=>{ if(g.le
 let BIB_F="alle";
 const bibChips=F=>`<div class="chips" style="margin:4px 0 12px">${F.map(([v,t])=>`<button class="chip" data-act="bfilter" data-v="${v}" aria-pressed="${BIB_F===v}">${icon("check")}${t}</button>`).join("")}</div>`;
 function bibListe(){ return ""; }
-function bibliothekView(){
-  return `<div class="empty">${icon("folder")}<h2>Noch keine Berichte</h2><p>Hier landen später die fertigen Baustellenberichte als Dokument. Die laufenden Übergaben bleiben bei der jeweiligen Baustelle.</p></div>`;
+
+/* Bibliothek der Baustellen-App: fertige Protokolle (gemeinsamer Gerätespeicher evse_protokolle, app:"baustelle") */
+const PROT_DB="evse_protokolle"; let protDB=null, PROT=[];
+function protOpen(){ if(protDB) return Promise.resolve(protDB); return new Promise((res,rej)=>{ const r=indexedDB.open(PROT_DB,1);
+  r.onupgradeneeded=()=>{ const d=r.result; if(!d.objectStoreNames.contains("meta")) d.createObjectStore("meta",{keyPath:"id"}); if(!d.objectStoreNames.contains("blob")) d.createObjectStore("blob"); };
+  r.onsuccess=()=>{ protDB=r.result; res(protDB); }; r.onerror=()=>rej(r.error); }); }
+async function protLaden(){ try{ const d=await protOpen(); PROT=(await idbReq(d.transaction("meta").objectStore("meta").getAll()))||[]; }catch(e){ PROT=[]; } }
+async function protBlob(id){ const d=await protOpen(); return idbReq(d.transaction("blob").objectStore("blob").get(id)); }
+const protZeit=t=>{ const d=new Date(t); return `${d.toLocaleDateString("de-DE")}, ${d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}`; };
+const PV_EXTRA=x=>[];
+let pdfjsP=null, PV=null;
+function pdfjsLaden(){ if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if(!pdfjsP) pdfjsP=new Promise((res,rej)=>{ const s=document.createElement("script"); s.src="pdfjs/pdf.min.js";
+    s.onload=()=>{ try{ pdfjsLib.GlobalWorkerOptions.workerSrc="pdfjs/pdf.worker.min.js"; res(pdfjsLib); }catch(e){ rej(e); } }; s.onerror=()=>{ pdfjsP=null; rej(new Error("pdfjs")); }; document.head.appendChild(s); });
+  return pdfjsP; }
+async function pvOeffnen(id){
+  const x=PROT.find(y=>y.id===id); if(!x) return; closeOverlays(); $("#pv")?.remove();
+  document.body.insertAdjacentHTML("beforeend",`<div class="pv${PV_MODUS==="seiten"?" m-seiten":""}" id="pv" role="dialog" aria-modal="true" aria-label="Vorschau"><div class="pv-kopf"><div class="pv-l"><button class="pv-rund" data-act="pvZu" aria-label="Schließen">${icon("close")}</button></div><div class="pv-t" data-act="pvKopfAuf"><b>${esc(x.titel)}</b><span>${esc([deDate(x.datum),x.art,x.fassung>1?`Fassung ${x.fassung}`:""].filter(Boolean).join(" · "))}</span></div><div class="pv-r"><button class="pv-rund" data-act="pvTeilen" aria-label="Teilen">${icon("share")}</button><button class="pv-rund" data-act="pvMenu" aria-label="Weitere Aktionen" aria-haspopup="menu">${icon("moreH")}</button></div></div><div class="pv-seiten" id="pvSeiten"><p class="pv-lade">PDF wird geladen …</p></div><span class="pv-zahl" id="pvZahl"></span><button class="pv-pfeil l" data-act="pvZurueck" aria-label="Vorherige Seite">${icon("chev")}</button><button class="pv-pfeil r" data-act="pvWeiter" aria-label="Nächste Seite">${icon("chev")}</button></div>`);
+  document.body.classList.add("pv-offen"); PV={id,z:1,doc:null}; const P=PV; pvGesten();
+  try{ const [lib,blob]=await Promise.all([pdfjsLaden(),protBlob(id)]); if(PV!==P) return; if(!blob) throw new Error("blob");
+    P.blob=blob; P.doc=await lib.getDocument({data:new Uint8Array(await blob.arrayBuffer())}).promise; if(PV!==P) return; $("#pvSeiten").innerHTML=""; await pvZeichnen(); }
+  catch(e){ const s=$("#pvSeiten"); if(s&&PV===P) s.innerHTML=`<p class="pv-lade">Vorschau nicht möglich${navigator.onLine?"":" – beim allerersten Öffnen wird einmal Internet gebraucht"}.<br>Über ⋯ oben rechts lässt sich das PDF trotzdem speichern oder teilen.</p>`; }
 }
+const PV_KEY="pv_modus"; let PV_MODUS=(()=>{ try{ return localStorage.getItem(PV_KEY)==="seiten"?"seiten":"scroll"; }catch(e){ return "scroll"; } })();
+function pvSeite(){ const box=$("#pvSeiten"); if(!box) return 1; const bl=[...box.querySelectorAll(".pv-blatt")]; if(!bl.length) return 1;
+  if(PV_MODUS==="seiten") return Math.min(bl.length,Math.round(box.scrollLeft/Math.max(1,box.clientWidth))+1);
+  const r=box.getBoundingClientRect(); let n=1; bl.forEach((b,i)=>{ if(b.getBoundingClientRect().top<r.top+r.height/2) n=i+1; }); return n; }
+function pvGehe(n,glatt){ const box=$("#pvSeiten"); if(!box||!PV||!PV.doc) return; n=Math.max(1,Math.min(PV.doc.numPages,n)); const bl=box.querySelector(`.pv-blatt[data-s="${n}"]`); if(!bl) return;
+  if(PV_MODUS==="seiten") box.scrollTo({left:(n-1)*box.clientWidth,behavior:glatt?"smooth":"auto"}); else box.scrollTo({top:bl.offsetTop-16,behavior:glatt?"smooth":"auto"}); }
+function pvZahl(fest){ const P=PV, z=$("#pvZahl"); if(!P||!P.doc||!z) return; const n=pvSeite(); z.textContent=`${n} von ${P.doc.numPages}`;
+  const l=$("#pv .pv-pfeil.l"), r=$("#pv .pv-pfeil.r"); if(l) l.disabled=n<=1; if(r) r.disabled=n>=P.doc.numPages;
+  z.classList.add("an"); clearTimeout(P.st); P.st=setTimeout(()=>z.classList.remove("an"),1500); }
+async function pvZeichnen(){ const P=PV, box=$("#pvSeiten"); if(!P||!P.doc||!box) return; const tok=P.tok=(P.tok||0)+1;
+  const seiten=PV_MODUS==="seiten", bw=box.clientWidth, bh=box.clientHeight, dpr=Math.min(window.devicePixelRatio||1,2.5);
+  for(let i=1;i<=P.doc.numPages;i++){ if(P.tok!==tok||PV!==P) return;
+    const pg=await P.doc.getPage(i), v1=pg.getViewport({scale:1});
+    const breite=Math.min(bw-24,1200)*P.z, hoehe=breite*v1.height/v1.width;
+    let bl=box.querySelector(`.pv-blatt[data-s="${i}"]`); if(!bl){ bl=document.createElement("div"); bl.className="pv-blatt"; bl.dataset.s=i; bl.innerHTML=`<canvas class="pv-seite"></canvas>`; box.appendChild(bl); }
+    const c=bl.firstChild; c.style.width=Math.floor(breite)+"px"; c.style.height=Math.floor(hoehe)+"px";
+    const vp=pg.getViewport({scale:breite/v1.width*dpr}), off=document.createElement("canvas"); off.width=Math.floor(vp.width); off.height=Math.floor(vp.height);
+    await pg.render({canvasContext:off.getContext("2d"),viewport:vp}).promise; if(P.tok!==tok||PV!==P) return;
+    c.width=off.width; c.height=off.height; c.getContext("2d").drawImage(off,0,0); if(i===1) pvZahl(); }
+}
+function pvNeuAufbau(){ if(!PV) return; const n=pvSeite(), box=$("#pvSeiten"); if(!box) return; box.querySelectorAll(".pv-blatt").forEach(b=>b.remove()); PV.z=1;
+  pvZeichnen().then(()=>{}); requestAnimationFrame(()=>requestAnimationFrame(()=>{ pvGehe(n); pvZahl(); })); }
+function pvModus(m){ PV_MODUS=m; try{ localStorage.setItem(PV_KEY,m); }catch(e){} const pv=$("#pv"); if(!pv) return; pv.classList.toggle("m-seiten",m==="seiten"); pvNeuAufbau(); }
+function pvZoom(z,cx,cy){ const P=PV, box=$("#pvSeiten"); if(!P||!box) return; z=Math.max(.5,Math.min(4,z)); const f=z/P.z; if(Math.abs(f-1)<.01) return;
+  const el=PV_MODUS==="seiten"?box.querySelector(`.pv-blatt[data-s="${pvSeite()}"]`)||box:box;
+  const r=el.getBoundingClientRect(), x=cx-r.left, y=cy-r.top, sl=el.scrollLeft, st=el.scrollTop;
+  box.querySelectorAll(".pv-seite").forEach(c=>{ c.style.width=parseFloat(c.style.width)*f+"px"; c.style.height=parseFloat(c.style.height)*f+"px"; });
+  P.z=z; P.zoomBis=Date.now()+200; el.scrollLeft=(sl+x)*f-x; el.scrollTop=(st+y)*f-y; }
+function pvGesten(){ const box=$("#pvSeiten"); let pinch=null, tap=0, letzte=1, raf=0, ziel=null;
+  const d=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+  box.addEventListener("touchstart",e=>{ if(e.touches.length===2&&PV){ pinch={d:d(e.touches),z:PV.z}; PV.pinch=true; e.preventDefault(); }
+    else if(e.touches.length===1){ const n=Date.now(); if(n-tap<300&&PV){ pvZoom(Math.abs(PV.z-1)>.05?1:2,e.touches[0].clientX,e.touches[0].clientY); pvScharf(); tap=0; e.preventDefault(); } else tap=n; } },{passive:false});
+  box.addEventListener("touchmove",e=>{ if(pinch&&e.touches.length===2){ e.preventDefault();
+    ziel=[pinch.z*d(e.touches)/pinch.d,(e.touches[0].clientX+e.touches[1].clientX)/2,(e.touches[0].clientY+e.touches[1].clientY)/2];
+    if(!raf) raf=requestAnimationFrame(()=>{ raf=0; if(ziel) pvZoom(...ziel); }); } },{passive:false});
+  const ende=e=>{ if(pinch&&e.touches.length<2){ pinch=null; if(PV){ PV.pinch=false; if(PV.z<1&&PV.z>.92) pvZoom(1,innerWidth/2,innerHeight/2); pvScharf(); } } };
+  box.addEventListener("touchend",ende); box.addEventListener("touchcancel",ende);
+  box.addEventListener("dblclick",e=>{ if(PV){ pvZoom(Math.abs(PV.z-1)>.05?1:2,e.clientX,e.clientY); pvScharf(); } });
+  box.addEventListener("wheel",e=>{ if(e.ctrlKey&&PV){ e.preventDefault(); pvZoom(PV.z*(e.deltaY<0?1.1:1/1.1),e.clientX,e.clientY); pvScharf(); } },{passive:false});
+  box.addEventListener("scroll",e=>{ if(!PV) return; const el=e.target; if(el===box){ pvZahl(); const n=pvSeite(); if(PV_MODUS==="seiten"&&n!==letzte){ letzte=n; if(PV.z>1){ PV.z=1; pvScharf(); } } }
+    if(PV_MODUS==="seiten"&&el===box) return; if(!(el instanceof Element)) return;
+    const t=el.scrollTop, alt=el._lt||0; el._lt=t; if(PV.pinch||Date.now()<(PV.zoomBis||0)) return; const pv=$("#pv"); if(!pv) return;
+    if(t<24) pv.classList.remove("kompakt"); else if(t-alt>6) pv.classList.add("kompakt"); else if(alt-t>10) pv.classList.remove("kompakt"); },{passive:true,capture:true});
+}
+function pvScharf(){ if(!PV) return; clearTimeout(PV.zt); PV.zt=setTimeout(pvZeichnen,PV.pinch?400:120); }
+function pvZu(){ PV=null; $("#pv")?.remove(); document.body.classList.remove("pv-offen"); closeOverlays(); }
+function pvMenu(){ const x=PV&&PROT.find(y=>y.id===PV.id); if(!x) return;
+  const it=[PV_MODUS==="seiten"?["pvModus","Durchgehend scrollen","swapV"]:["pvModus","Seitenweise blättern","swapH"],"-",["pvMail","Per Mail senden","mail"],["pvSpeichern","Auf dem Gerät speichern","pdf"]].concat(PV_EXTRA(x));
+  $("#menu").innerHTML=it.map(m=>m==="-"?"<hr>":`<button class="mi ${m[3]||""}" role="menuitem" data-act="${m[0]}">${icon(m[2])}<span>${m[1]}</span></button>`).join("");
+  $("#menu").hidden=false; $("#scrim").hidden=false; }
+async function pvAktion(a){ const x=PV&&PROT.find(y=>y.id===PV.id); if(!x) return; const blob=PV.blob||await protBlob(x.id); if(!blob){ toast("PDF nicht gefunden"); return; }
+  const f=new File([blob],x.name+".pdf",{type:"application/pdf"});
+  if(a==="pvSpeichern"){ saveFile(blob,x.name+".pdf"); return; }
+  if(a==="pvTeilen"){ if(navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f],title:x.name}); }catch(e){} } else saveFile(blob,x.name+".pdf"); return; }
+  const an=mailAn(); try{ navigator.clipboard&&navigator.clipboard.writeText(an); }catch(e){}
+  const text=`Hallo,\n\nanbei das Prüfprotokoll ${x.titel}${x.auftragsnr?`, Auftrag ${x.auftragsnr}`:""} vom ${deDate(x.datum)}.\n\nViele Grüße\n${who().name||x.pruefer||""}${who().mail?"\n"+who().mail:""}`;
+  if(navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f],title:`Prüfprotokoll ${x.name}`,text}); toast(`Adresse ${an} liegt in der Zwischenablage`); }catch(e){} return; }
+  saveFile(blob,x.name+".pdf"); location.href=`mailto:${an}?subject=${encodeURIComponent("Prüfprotokoll "+x.name)}&body=${encodeURIComponent(text+"\n\n(PDF bitte anhängen)")}`; toast("PDF gespeichert – bitte in der Mail anhängen"); }
+addEventListener("keydown",e=>{ if(!PV||!$("#menu").hidden||!$("#dlg").hidden) return; if(e.key==="Escape") pvZu(); else if(e.key==="ArrowRight"||e.key==="PageDown"){ e.preventDefault(); pvGehe(pvSeite()+1,true); } else if(e.key==="ArrowLeft"||e.key==="PageUp"){ e.preventDefault(); pvGehe(pvSeite()-1,true); } });
+addEventListener("resize",()=>{ if(PV){ clearTimeout(PV.rt); PV.rt=setTimeout(pvNeuAufbau,200); } });
+const PROT_B=()=>PROT.filter(x=>x.app==="baustelle");
+async function protAblegenB(meta,blob){ const d=await protOpen(), x=Object.assign({id:uid(),app:"baustelle",created:Date.now(),von:who(),size:blob.size},meta);
+  const tx=d.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").put(x); tx.objectStore("blob").put(blob,x.id); await new Promise(r=>{ tx.oncomplete=r; tx.onerror=r; }); PROT.push(x); return x; }
+function bibliothekView(){ const L=PROT_B().sort((a,b)=>b.created-a.created);
+  if(!L.length) return `<div class="empty">${icon("folder")}<h2>Noch keine Protokolle</h2><p>Hier landen die gespeicherten Aufnahmeprotokolle und später die Baustellenberichte – genau so, wie sie erstellt wurden.</p></div>`;
+  return `<div class="narrow"><div class="list">${L.map(x=>`<div class="li" role="button" tabindex="0" data-act="bibOpen" data-id="${esc(x.id)}"><span class="av">${icon("doc")}</span><span class="lt"><span class="h">${esc(x.titel)}</span>
+    <span class="s">${esc([x.art,deDate(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`].filter(Boolean).join(" · "))}</span><span class="s">${esc(`Gespeichert ${protZeit(x.created)}${x.von&&x.von.name?` · ${x.von.name}`:""}`)}</span>
+    <span class="st">${x.fassung>1?pill("open",`Fassung ${x.fassung}`):""}${x.unterschrift?"":pill("open","ohne Unterschrift")}${x.demo?pill("open","Beispiel"):""}</span></span>${icon("chev")}</div>`).join("")}</div>
+    <p class="hint">Jedes Speichern legt eine neue Fassung ab. Ältere Fassungen bleiben erhalten.</p></div>`; }
 (()=>{ let w=null; const app=()=>$("#app");
   const darf=e=>WIDE.matches&&typeof pfadTeile==="function"&&pfadTeile().length&&$("#dlg").hidden&&$("#menu").hidden&&!$("#pv")&&!e.target.closest("canvas,.sigfull,input,textarea,select");
   document.addEventListener("touchstart",e=>{ if(e.touches.length!==1) return; const t=e.touches[0]; if(t.clientX>22||!darf(e)) return; w={x:t.clientX,y:t.clientY,dx:0,an:false}; },{passive:true});
@@ -1630,17 +1790,24 @@ function bItem(b){
       ${e?`<span class="b-stand">${esc(e.stand||"")}</span><span class="s b-von">${icon("person")}${esc(vonText(e)||"–")} · ${esc(e.datum===today()?"heute":tagText(e.datum))}</span>`:`<span class="s">Noch keine Übergabe</span>`}
       <span class="st">${b.status&&b.status!=="aktiv"?pill(b.status==="fertig"?"ok":"open",STATUS_TXT[b.status]):""}${e&&String(e.material||"").trim()?pill("wip","Material offen"):""}</span></span>${icon("chev")}</div>`;
 }
+function kundenKacheln(){ const q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
+  const ks=live("kunden").map(k=>({k,B:live("baustellen").filter(b=>b.kundeId===k.id)})).filter(x=>x.B.length&&(!q||H(x.k.name)||x.B.some(b=>H(b.name)))).sort((a,b)=>a.k.name.localeCompare(b.k.name,"de"));
+  if(!ks.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:"Noch keine Kunden mit Baustellen."}</p>`;
+  return `<div class="k-kacheln">${ks.map(({k,B})=>{ const z=STATUS.map(([v,t])=>[v,t,B.filter(b=>(b.status||"aktiv")===v).length]).filter(x=>x[2]);
+    return `<button class="k-kachel" data-act="nav" data-v="kunde" data-id="${esc(k.id)}"><span class="kk-av">${icon("firma")}</span><span class="kk-n">${esc(k.name)}</span><span class="kk-o">${esc(k.ort||"")}</span>
+      <span class="kk-z">${z.map(([v,t,c])=>`<span class="kk-s"><i class="bs-dot ${v}"></i>${c} ${esc(t)}</span>`).join("")}</span></button>`; }).join("")}</div>`; }
 function baustellenListe(){
+  if(META.filter==="kunden") return kundenKacheln();
   const q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
   const L=live("baustellen").filter(b=>(q?true:(b.status||"aktiv")===META.filter)&&(!q||H(b.name)||H(b.auftragsnr)||H(pfadText(b))||H((standortOf(b.standortId)||{}).ort))).sort((a,b)=>aktiv(b)-aktiv(a));
-  if(!L.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:META.filter==="aktiv"?"Keine aktiven Baustellen.":`Keine ${STATUS_TXT[META.filter].toLowerCase()}en Baustellen.`}</p>`;
+  if(!L.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:META.filter==="aktiv"?"Keine aktiven Baustellen.":`Keine Baustellen im Status „${STATUS_TXT[META.filter]}“.`}</p>`;
   return listOf(L.map(bItem));
 }
 function startView(){
   if(!live("baustellen").length) return `<div class="empty">${icon("baustelle")}<h2>Noch keine Baustellen</h2><p>Lege mit „Baustelle“ die erste an. Danach schreibt jeder am Ende des Tages kurz rein, was der Stand ist – der Nächste ist sofort im Bild.</p></div>`;
   const n=s=>live("baustellen").filter(b=>(b.status||"aktiv")===s).length;
   return `<div class="narrow">${searchBar("Baustelle, Kunde, Ort oder Auftragsnr. suchen")}
-    <div class="chips filt">${STATUS.map(([v,t])=>`<button class="chip" data-act="filter" data-v="${v}" aria-pressed="${META.filter===v}">${icon("check")}${t} (${n(v)})</button>`).join("")}</div>
+    <div class="chips filt">${STATUS.map(([v,t])=>`<button class="chip" data-act="filter" data-v="${v}" aria-pressed="${META.filter===v}"><i class="bs-dot ${v}"></i>${t} (${n(v)})</button>`).join("")}<button class="chip" data-act="filter" data-v="kunden" aria-pressed="${META.filter==="kunden"}">${icon("firma")}Kunden</button></div>
     <div id="res">${baustellenListe()}</div></div>`;
 }
 function eintragKarte(e,erster){
@@ -1656,11 +1823,11 @@ function baustelleView(b){
   const s=standortOf(b.standortId), E=eintraegeVon(b.id);
   let h=`<div class="narrow">`;
   h+=`<div class="b-kopf"><div class="b-meta">${b.auftragsnr?`<span>${icon("tag")}Auftrag ${esc(b.auftragsnr)}</span>`:""}${b.notiz?`<span>${icon("notes")}${esc(b.notiz)}</span>`:""}</div>
-    ${seg("bStatus",b.status||"aktiv",STATUS)}</div>`;
-  const [an,am]=afGesamt(b);
-  h+=`<div class="b-tabs">${seg("bTab",nav.tab||"uebergaben",[["uebergaben","Übergaben"],["aufnahme",`Aufnahme${an?` · ${Math.round(an/am*100)} %`:""}`]])}</div>`;
-  if(nav.tab==="aufnahme") return h+aufnahmeView(b)+`</div>`;
+    ${!WIDE.matches&&canEdit(b)?bStatusKnopf(b):""}</div>`;
   if(s) h+=infoKarte(s,"standorte");
+  const [an,am]=afGesamt(b);
+  h+=`<div class="b-tabs">${seg("bTab",nav.tab||"uebergaben",[["aufnahme",`Aufnahme${an?` · ${Math.round(an/am*100)} %`:""}`],["uebergaben",`Übergaben${E.length?` · ${E.length}`:""}`]])}</div>`;
+  if(nav.tab==="aufnahme") return h+aufnahmeView(b)+`</div>`;
   const NZ=notizenAlle().filter(n=>n.baustelleId===b.id);
   h+=`<div class="sec-row"><div class="sec-lbl">Notizen</div><button class="btn-text" data-act="neueNotizHier">${icon("add")}Notiz</button></div>${NZ.length?nGrid(NZ):`<p class="meta">Eigene Notizen zur Baustelle – z. B. Tagesablauf, Checkliste oder Skizze.</p>`}`;
   h+=`<div class="sec-row"><div class="sec-lbl">Übergaben</div><button class="btn-text" data-act="neuerEintrag">${icon("add")}Übergabe</button></div>`;
@@ -2116,8 +2283,19 @@ document.addEventListener("click",ev=>{
   case "neueBaustelleHier": { const s=standortOf(nav.id); bDialog({k:s.kundeId,s:s.id}); return; }
   case "bSave": bSpeichern(); return;
   case "bEdit": { const x=DB.baustellen.get(nav.id); bDialog({id:x.id,k:x.kundeId,s:x.standortId,name:x.name,auftragsnr:x.auftragsnr||"",notiz:x.notiz||""}); return; }
+  case "bibOpen": pvOeffnen(b.dataset.id); return;
+  case "pvZu": pvZu(); return;
+  case "pvKopfAuf": $("#pv")?.classList.remove("kompakt"); return;
+  case "pvModus": closeOverlays(); pvModus(PV_MODUS==="seiten"?"scroll":"seiten"); return;
+  case "pvZurueck": pvGehe(pvSeite()-1,true); return;
+  case "pvWeiter": pvGehe(pvSeite()+1,true); return;
+  case "pvMenu": pvMenu(); return;
+  case "pvMail": case "pvTeilen": case "pvSpeichern": closeOverlays(); pvAktion(a); return;
+  case "bStatusPick": { const x=DB.baustellen.get(nav.id); if(!x) return; const m=$("#menu"), r=b.getBoundingClientRect();
+    m.innerHTML=STATUS.map(([v,t])=>`<button class="mi spick-mi${(x.status||"aktiv")===v?" an":""}" role="menuitem" data-act="bStatus" data-v="${v}"><i class="bs-dot ${v}"></i><span>${t}</span></button>`).join("");
+    const bw=Math.max(220,r.width); m.style.top=(r.bottom+6)+"px"; m.style.right="auto"; m.style.left=Math.max(8,Math.min(r.right-bw,innerWidth-bw-8))+"px"; m.style.minWidth=bw+"px"; m.hidden=false; $("#scrim").hidden=false; return; }
   case "bTab": nav={...nav,tab:b.dataset.v}; render(); scrollTo(0,0); return;
-  case "bStatus": { const x=DB.baustellen.get(nav.id); x.status=b.dataset.v; saveRec("baustellen",x); render(); toast(`Status: ${STATUS_TXT[x.status]}`); return; }
+  case "bStatus": { closeOverlays(); const x=DB.baustellen.get(nav.id); x.status=b.dataset.v; saveRec("baustellen",x); render(); toast(`Status: ${STATUS_TXT[x.status]}`); return; }
   case "bDelAsk": { const x=DB.baustellen.get(nav.id); confirmDlg("Baustelle löschen?",`„${x.name}“ mit allen Übergaben und Fotos löschen? Das lässt sich nicht rückgängig machen.`,"Löschen","bDel"); return; }
   case "bDel": { const x=DB.baustellen.get(nav.id); closeOverlays(); if(!x||!canEdit(x)) return;
     eintraegeVon(x.id).forEach(e=>{ fotoDel(e.fotos||[]); e.deleted=true; e.fotos=[]; saveRec("eintraege",e); });
@@ -2162,7 +2340,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
 (async()=>{
   await dataLoad(); await einstLaden(); loginSync(); await Auth.init(); setMe();
   if(SYNC_ON&&!ME.signedIn) nav={v:"login"};
-  render(); fotoInit();
+  render(); fotoInit(); protLaden().then(()=>{ if(nav.v==="bibliothek"||nav.v==="baustelle") softRender(); });
   if(SYNC_ON&&ME.signedIn){ syncNow(); setInterval(()=>{ if(document.visibilityState==="visible") syncNow(); },120000); }
 })();
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") syncSoon(); else notizSpeichernStill(); });
