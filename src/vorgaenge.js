@@ -85,7 +85,7 @@ function vorgaengeView(){ vgAbgleich();
   const f=META.vgF||"offen", L=vgFilter(f), n=x=>vgFilter(x).length;
   const chips=`<div class="chips filt vg-chips">${VG_F.map(([k,t])=>`<button class="chip" data-act="vgFilter" data-v="${k}" aria-pressed="${f===k}">${icon("check")}${esc(t)}${k==="erledigt"||k==="abgelehnt"?"":` (${n(k)})`}</button>`).join("")}</div>`;
   if(!live("vorgaenge").length) return `<div class="narrow vg">${chips}<div class="empty">${icon("board")}<h2>Noch keine Aufträge</h2><p>Kommt ein Anruf rein: auf „+“ tippen, Kunde und Anliegen eintragen – fertig. Danach rückt der Vorgang Schritt für Schritt weiter: Anfrage ans Büro, Auftrag, Termin, ausgeführt.</p></div></div>`;
-  return `<div class="narrow vg">${chips}<div class="vg-tab"><div class="vg-th"><span>Kunde</span>${VG_S.map(([,t])=>`<span>${t}</span>`).join("")}</div>
+  return `<div class="narrow vg">${chips}<div class="vg-tab"><div class="vg-th"><span>Kunde</span>${VG_S.map(([k,t])=>`<span class="vg-thk"><i class="vg-dot" style="background:var(--vg-${k}-d,var(--ok))"></i>${t}</span>`).join("")}</div>
     ${L.length?L.map(vgZeile).join(""):`<p class="meta" style="margin:16px 4px">Keine Vorgänge in dieser Auswahl.</p>`}</div>
     <p class="hint">Anfrage stellen darf jeder. Den Auftrag erteilt das Büro und trägt dabei die Auftragsnummer aus SCC ein. Mit dem Termin entsteht die Baustelle in der Baustellen-App; steht sie dort auf „Fertig“, ist der Vorgang ausgeführt.</p></div>`; }
 /* Erfassen / Bearbeiten */

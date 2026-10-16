@@ -1001,6 +1001,14 @@ html::after{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-
 .vg-zw{overflow-wrap:anywhere}
 .vg-z.leer{opacity:.55}
 .vg-z.ok{background:var(--ok-c);color:var(--on-ok-c)} .vg-z.ok .vg-zk,.vg-z.ok em{color:var(--on-ok-c)}
+/* Jeder Schritt hat seine eigene Farbe – Anruf babyblau, Anfrage flieder, Auftrag türkis, Termin sand, Ausgeführt grün */
+.vg{--vg-anruf:#D3E9FF;--vg-anruf-t:#0B3A63;--vg-anruf-d:#3B8EDB;--vg-anfrage:#E7DEFF;--vg-anfrage-t:#2F1F66;--vg-anfrage-d:#7B5CD6;--vg-auftrag:#CFF1EC;--vg-auftrag-t:#0D3F3A;--vg-auftrag-d:#1F9488;--vg-termin:#F1E6D2;--vg-termin-t:#47361A;--vg-termin-d:#A47C3B}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .vg{--vg-anruf:#163650;--vg-anruf-t:#CFE6FF;--vg-anruf-d:#7DBBF2;--vg-anfrage:#2E2650;--vg-anfrage-t:#E3DAFF;--vg-anfrage-d:#B39DF5;--vg-auftrag:#123D39;--vg-auftrag-t:#C6F1EB;--vg-auftrag-d:#5CCFC2;--vg-termin:#3D3222;--vg-termin-t:#F3E6CF;--vg-termin-d:#D6B47A}}
+:root[data-theme="dark"] .vg{--vg-anruf:#163650;--vg-anruf-t:#CFE6FF;--vg-anruf-d:#7DBBF2;--vg-anfrage:#2E2650;--vg-anfrage-t:#E3DAFF;--vg-anfrage-d:#B39DF5;--vg-auftrag:#123D39;--vg-auftrag-t:#C6F1EB;--vg-auftrag-d:#5CCFC2;--vg-termin:#3D3222;--vg-termin-t:#F3E6CF;--vg-termin-d:#D6B47A}
+.vg-z.ok[data-k=anruf]{background:var(--vg-anruf);color:var(--vg-anruf-t)} .vg-z.ok[data-k=anruf] .vg-zk,.vg-z.ok[data-k=anruf] em{color:var(--vg-anruf-t)} .vg-z.ok[data-k=anruf] .vg-dot{background:var(--vg-anruf-d)}
+.vg-z.ok[data-k=anfrage]{background:var(--vg-anfrage);color:var(--vg-anfrage-t)} .vg-z.ok[data-k=anfrage] .vg-zk,.vg-z.ok[data-k=anfrage] em{color:var(--vg-anfrage-t)} .vg-z.ok[data-k=anfrage] .vg-dot{background:var(--vg-anfrage-d)}
+.vg-z.ok[data-k=auftrag]{background:var(--vg-auftrag);color:var(--vg-auftrag-t)} .vg-z.ok[data-k=auftrag] .vg-zk,.vg-z.ok[data-k=auftrag] em{color:var(--vg-auftrag-t)} .vg-z.ok[data-k=auftrag] .vg-dot{background:var(--vg-auftrag-d)}
+.vg-z.ok[data-k=termin]{background:var(--vg-termin);color:var(--vg-termin-t)} .vg-z.ok[data-k=termin] .vg-zk,.vg-z.ok[data-k=termin] em{color:var(--vg-termin-t)} .vg-z.ok[data-k=termin] .vg-dot{background:var(--vg-termin-d)}
 .vg-z.warte{background:var(--wip-c);color:var(--on-wip-c)} .vg-z.warte .vg-zk{color:var(--on-wip-c)}
 .vg-z.next{display:none}
 .vg-z.nextm{border:1.5px dashed var(--primary);background:transparent}
@@ -1044,6 +1052,7 @@ button.vg-z{cursor:pointer;-webkit-tap-highlight-color:transparent} button.vg-z:
 .vg-tel{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;color:var(--primary);font-weight:700;text-decoration:none}
 .vg-vlauf{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--outline-v);padding-top:10px}
 .vg-vl{display:grid;grid-template-columns:12px 72px 1fr;align-items:baseline;gap:6px;font-size:13px;color:var(--on-sv)} .vg-vl b{color:var(--on-surface)}
+.vg-thk{display:flex;align-items:center;gap:6px}
 .vg-mitw{display:flex;flex-direction:column;gap:8px}
 .vg-mitl{font-size:13px;font-weight:600;color:var(--on-sv);padding:0 4px}
 .vg-mit{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
