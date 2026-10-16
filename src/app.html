@@ -1810,6 +1810,7 @@ function weiterKnopf(s,st){ const li=st==="geraet"?-1:+st.slice(2), k=(v,t)=>`<d
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>setTimeout(bald,50));
   document.addEventListener("transitionend",bald,true); bald();
 })();
+/*DEMO*/
 function render(){
   const app=$("#app"), ed=EDITOR.includes(nav.v);
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
@@ -1922,7 +1923,7 @@ function suche(q){
 }
 function startView(){
   const all=live("pruefungen"), empty=!all.length&&!live("kunden").length;
-  if(empty) return `<div class="empty">${icon("doc")}<h2>Noch keine Prüfungen</h2><p>Lege mit „Neue Prüfung“ die erste an – Kunde und Standort werden dabei gleich mit angelegt. Zum Ausprobieren gibt es Beispieldaten.</p><button class="btn-tonal" data-act="demo">Beispieldaten laden</button></div>`;
+  if(empty) return `<div class="empty">${icon("doc")}<h2>Noch keine Prüfungen</h2><p>Lege mit „Neue Prüfung“ die erste an – Kunde und Standort werden dabei gleich mit angelegt. Zum Ausprobieren gibt es Beispieldaten.</p><button class="btn-tonal" data-act="demo">Beispieldaten einblenden</button></div>`;
   let h=`<div class="narrow">${searchBar("Kunde, Ort, Auftrag oder SN suchen")}<div id="res">`;
   h+=query?suche(query):startListen();
   return h+`</div></div>`;
@@ -2067,7 +2068,7 @@ function mehrView(){
       ${SYNC_ON?row("syncNow","sync","Jetzt abgleichen",esc(syncText())):""}
       ${row("export","backup","Alle sichern","Sicherungsdatei mit allen Daten und Fotos")}
       ${row("import","upload","Sicherung laden","Daten aus einer Sicherungsdatei übernehmen")}
-      ${!demoFehlt()?row("demoHide","bulb","Beispieldaten ausblenden","Zum Vorführen angelegte Daten entfernen"):row("demo","bulb","Beispieldaten laden","Zum Ausprobieren und Vorführen")}</div>
+      ${demoDa()?row("demoHide","bulb","Beispieldaten ausblenden","In allen vier Apps entfernen"):row("demo","bulb","Beispieldaten einblenden","Drei Beispielkunden in allen vier Apps zum Vorführen")}</div>
     <div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list"><a class="li" href="../uebersicht/" style="text-decoration:none;color:inherit"><span class="av">${icon("home")}</span><span class="lt"><span class="h">Übersicht</span><span class="s">Startseite mit Statistik und Kunden</span></span>${icon("chev")}</a><a class="li" href="../baustelle/" style="text-decoration:none;color:inherit"><span class="av">${icon("baustelle")}</span><span class="lt"><span class="h">Baustelle</span><span class="s">Tagesstand, offene Punkte und Material pro Baustelle</span></span>${icon("chev")}</a><a class="li" href="../echeck/" style="text-decoration:none;color:inherit"><span class="av">${icon("home")}</span><span class="lt"><span class="h">E-Check</span><span class="s">Hausinstallation und Geräte · in Vorbereitung</span></span>${icon("chev")}</a></div></div>
     <div class="sec-lbl">Rechtliches und Info</div><div class="list">
       ${row("nav:impressum","doc","Impressum","")}
@@ -2519,7 +2520,7 @@ function openMenu(){
     if(nav.v!=="archiv") it.push(["nav:archiv",`Archiv${META.archiv.length?` (${live("pruefungen").filter(p=>META.archiv.includes(p.id)).length})`:""}`,"archive"]);
     if(SYNC_ON) it.push(["syncNow","Jetzt abgleichen","sync"]);
     it.push(["export","Alle sichern","backup"],["import","Sicherung laden","upload"]);
-    it.push(!demoFehlt()?["demoHide","Beispieldaten ausblenden","bulb"]:["demo","Beispieldaten laden","bulb"]);
+    it.push(demoDa()?["demoHide","Beispieldaten ausblenden","bulb"]:["demo","Beispieldaten einblenden","bulb"]);
   } else if(nav.v==="katmodell"){
     const r=DB.katalog.get(nav.id);
     it.push(["katEdit","Steckbrief bearbeiten","edit"],["katHNeu","Hinweis hinzufügen","add"]);
@@ -2670,6 +2671,7 @@ function neuePruefung(kundeId,standortId,ladeparkId,st,vorlage){
   if(prev){
     p.p.art="Wiederholungsprüfung"; ["netz","standort","umfang"].forEach(f=>p.p[f]=prev.p[f]); p.p.normen=[...prev.p.normen]; p.a.funktion=prev.a.funktion;
     if(prev.a.fristJ){ p.a.fristJ=prev.a.fristJ; const d=new Date(p.p.datum+"T12:00:00"); d.setFullYear(d.getFullYear()+(+p.a.fristJ)); p.a.naechste=d.toISOString().slice(0,10); } }
+  if((ortRec(standortId,ladeparkId||null)||{}).demo||(kundeOf(kundeId)||{}).demo) p.demo=true;
   saveRec("pruefungen",p,true); zurueckAnOrt(p); cur=JSON.parse(JSON.stringify(p)); dirtyCur=false;
   go({v:"projekt"}); if(cur.s.length>1) setTimeout(umfangDlg,150); toast(!st&&G0.length?`${p.s.length} ${p.s.length>1?"Geräte":"Gerät"} aus dem ${ladeparkId?"Ladepark":"Standort"} übernommen`:"Neue Prüfung angelegt");
 }
@@ -2956,9 +2958,8 @@ document.addEventListener("click",ev=>{
   case "setTheme": theme=b.dataset.v; applyTheme(theme); closeOverlays(); render(); return;
   case "export": exportBackup(); return;
   case "import": $("#importFile").click(); return;
-  case "demo": demoLaden(); render(); toast("Beispieldaten angelegt – sie werden nicht abgeglichen"); return;
-  case "demoHide": { PROT.filter(x=>x.demo).forEach(x=>protWeg(x.id)); let n=0; for(const k of KINDS) for(const r of [...DB[k].values()]) if(r.demo){ if(k==="pruefungen") fotoDel(r.s.flatMap(fotoIds)); dbDelHard(k,r.id); n++; }
-    META.pins=META.pins.filter(id=>KINDS.some(k=>DB[k].has(id))); metaSave(); if(cur&&!DB.pruefungen.has(cur.id)) cur=null; go({v:"start"}); toast("Beispieldaten ausgeblendet"); return; }
+  case "demo": closeOverlays(); saveNow(); demoSchalten(true); return;
+  case "demoHide": closeOverlays(); saveNow(); demoSchalten(false); return;
   case "newAny": if(nameFehlt("newAny")) return; pick={mode:"new"}; pickDialog(); return;
   case "pickOk": { const r=pickResolve(); if(!r) return; const mode=pick.mode; pick=null; closeOverlays();
     if(mode==="new"){ neuePruefung(r.k.id,r.s.id,r.l&&r.l.id); return; }
@@ -3227,71 +3228,6 @@ async function testAnmelden(){
   loginMerken(m); ichBin(m); META.angemeldet={mail,at:Date.now()}; metaSave(); go({v:"start"}); toast(`Angemeldet als ${m.name}`);
 }
 document.addEventListener("submit",ev=>{ if(ev.target.id==="tlForm"){ ev.preventDefault(); testAnmelden(); } });
-
-function demoLP(o={}){
-  const v={rpe:"0,06",riso:"200",risov:"500 V",pevt:"ok",cp:"ok",u1:"234,0",u2:"227,3",u3:"234,5",unpe:"0,4",dreh:"rechts (123)",
-    zs1:"0,44",zs2:"0,42",zs3:"0,41",r05:"ok",r1:"26,7",r5:"5,7",ria:"21",ub:"1,3",dc6:"1,8",fe:"ok",ff:"ok"};
-  return {v:Object.assign(v,o.v||{}), bem:o.bem||""};
-}
-function demoSaeule(n,sn,lp1,lp2,extra={}){
-  const s=Object.assign({id:uid(), bauart:"Ladesäule", name:`Ladesäule ${n}`, typ:"Mennekes AMTRON Charge Control", sn, ort:`Stellplatz ${2*n-1}/${2*n}`, fw:"5.22.3",
-    absTyp:"LS B", absIn:"32", zsMan:"", inenn:"32", rcd:"A + RDC-DD 6 mA", idn:"30", freigabe:"Ladekarte", phasen:3, lps:2, lp:[lp1,lp2], fotos:{}}, extra);
-  if(!extra.typ&&s.typ==="Mennekes AMTRON Charge Control"){ const r=DB.katalog.get("kat-mennekes-amedio-professional-plus-22-kw"); if(r){ s.katId=r.id; s.typ=katVoll(r); } }
-  return s;
-}
-const DEMO_AH="BEISPIEL Autohaus Sonnenberg GmbH";
-const demoFehlt=()=>!live("kunden").some(k=>k.demo&&k.name==="BEISPIEL Musterfirma GmbH")||!live("kunden").some(k=>k.demo&&k.name===DEMO_AH);
-function demoAutohaus(D){
-  const zahl=(b,i,sp,st=2)=>(b+(((i*37+11)%17)/16-0.5)*sp).toFixed(st).replace(".",",");
-  const lp=(i,o={})=>demoLP({v:Object.assign({rpe:zahl(0.07,i,0.04),riso:i%3?"200":zahl(48,i,30,0),zs1:zahl(0.38,i,0.08),zs2:zahl(0.37,i,0.08),zs3:zahl(0.39,i,0.08),
-    u1:zahl(232,i,6,1),u2:zahl(231,i,6,1),u3:zahl(233,i,6,1),unpe:zahl(0.5,i,0.6,1),ria:String(19+(i*7)%9),r1:zahl(24,i,10,1),ub:zahl(1.2,i,0.8,1),dc6:zahl(1.8,i,1.2,1),r5:zahl(6,i,3,1)},o.v||{}),bem:o.bem||""});
-  const kat=(s,id)=>{ katAnwenden(s,DB.katalog.get(id)); return s; };
-  const saeule=(n,sn,i,o1,o2)=>kat(demoSaeule(n,sn,lp(i,o1),lp(i+50,o2),{ort:`Stellplatz ${2*n-1}/${2*n}`,absIn:"32",inenn:"32",freigabe:"Ladekarte"}),"kat-mennekes-amedio-professional-plus-22-kw");
-  const wallbox=(n,sn,i,o)=>kat(Object.assign(demoSaeule(n,sn,lp(i,o),newLP()),{bauart:"Wallbox",name:`Wallbox ${n}`,absIn:"16",inenn:"16",lps:1,ort:`Mitarbeiterplatz ${n}`,freigabe:"App",fw:"5.32.0"}),"kat-mennekes-amtron-charge-control-11-kw");
-  const SN_S=[1,2,3,4,5,6].map(n=>`1522${(4100+n*13)}MA.0${7000+n*41}`), SN_W=[1,2,3,4].map(n=>`1491${(3300+n*7)}PP.0${5200+n*29}`);
-  const k=D("kunden",{name:DEMO_AH,kdnr:"30455",strasse:"Gewerbepark 12",plz:"51545",ort:"Waldbröl",ansprech:"Herr Sonnenberg (Geschäftsführung)",tel:"02291 000000",mail:"info@example.com",notiz:"Beispiel: 6 Ladesäulen und 4 Wallboxen auf zwei Parkplätzen, Erst- und Wiederholungsprüfung"});
-  const s=D("standorte",{kundeId:k.id,name:"Autohaus Waldbröl",strasse:"Gewerbepark 12",plz:"51545",ort:"Waldbröl",ansprech:"Herr Werkstattmeister",tel:"02291 000000-20",notiz:"Unterverteilung UV-Lade im Technikraum hinter der Werkstatt"});
-  if(!META.pins.includes(s.id)){ META.pins.push(s.id); metaSave(); }
-  const lK=D("ladeparks",{standortId:s.id,name:"Kundenparkplatz",notiz:"6 Ladesäulen mit je 2 Ladepunkten, Zuleitung aus UV-Lade"});
-  const lM=D("ladeparks",{standortId:s.id,name:"Mitarbeiterparkplatz",notiz:"4 Wallboxen an der Hallenwand"});
-  const proto=(datum,art,auftragsnr,ladeparkId,st,a)=>{ const p=newProto(); Object.assign(p.p,{pruefer:"Max",geraetSn:"MFT-000123",kal:"10.2027",datum,art,auftragsnr,standort:"UV-Lade",
-      normen:art==="Erstprüfung"?["DIN VDE 0100-600","DIN VDE 0100-722"]:["DIN VDE 0105-100","DIN VDE 0100-722"]});
-    return Object.assign(p,{kundeId:k.id,standortId:s.id,ladeparkId,s:st,a:Object.assign({...newProto().a,sigPName:"Max",sigKName:"Herr Sonnenberg"},a)}); };
-  const ok1={maengel:"",fristJ:"1"};
-  D("pruefungen",proto("2025-10-14","Erstprüfung","2510-210",lK.id,SN_S.map((sn,i)=>saeule(i+1,sn,i)),{...ok1,naechste:"2026-10-14"}));
-  D("pruefungen",proto("2025-10-14","Erstprüfung","2510-210",lM.id,SN_W.map((sn,i)=>wallbox(i+1,sn,i+20)),{...ok1,naechste:"2026-10-14"}));
-  D("pruefungen",proto("2026-10-14","Wiederholungsprüfung","2610-118",lK.id,SN_S.map((sn,i)=>saeule(i+1,sn,i+3,i===3?{v:{rpe:"0,24"}}:{},{})),
-    {maengel:"",fristJ:"1",naechste:"2027-10-14"}));
-  D("pruefungen",proto("2026-10-14","Wiederholungsprüfung","2610-118",lM.id,SN_W.map((sn,i)=>wallbox(i+1,sn,i+23,i===2?{v:{riso:"0,8"},bem:"Isolationswiderstand 0,8 MΩ – Feuchtigkeit in der Anschlussdose, Wallbox außer Betrieb genommen."}:{})),
-    {maengel:"Wallbox 3: Isolationswiderstand 0,8 MΩ (< 1 MΩ). Anschlussdose trocknen, Dichtung erneuern, danach erneut messen.",fristJ:"1",naechste:"2027-10-14"}));
-}
-function demoLaden(){
-  const D=(kind,r)=>{ if(kind==="pruefungen") (r.s||[]).forEach(x=>{ x.sicht=Object.fromEntries(SICHT.map(q=>[q.k,"ok"])); }); r.demo=true; r.id=r.id||uid(); r.created=r.updated=Date.now(); r.createdBy=r.updatedBy={name:"Beispiel",mail:""}; dbPut(kind,r); return r; };
-  if(!live("kunden").some(k=>k.demo&&k.name===DEMO_AH)) demoAutohaus(D);
-  if(live("kunden").some(k=>k.demo&&k.name==="BEISPIEL Musterfirma GmbH")) return;
-  const k1=D("kunden",{name:"BEISPIEL Musterfirma GmbH",kdnr:"10234",strasse:"Industriestraße 1",plz:"53359",ort:"Rheinbach",ansprech:"Frau Beispiel (Facility Management)",tel:"02226 0000-0",mail:"facility@example.com",notiz:"Mehrere Standorte"});
-  const s1=D("standorte",{kundeId:k1.id,name:"Werk Rheinbach",strasse:"Industriestraße 1",plz:"53359",ort:"Rheinbach",ansprech:"Herr Pförtner",tel:"02226 0000-10",notiz:"Anmeldung an der Pforte, Schlüssel Tiefgarage dort"});
-  const s2=D("standorte",{kundeId:k1.id,name:"Verwaltung Nümbrecht",strasse:"Hauptstraße 5",plz:"51588",ort:"Nümbrecht"});
-  const l1=D("ladeparks",{standortId:s1.id,name:"Parkplatz Nord",notiz:"Tiefgarage, Verteiler UV-TG"});
-  const l2=D("ladeparks",{standortId:s1.id,name:"Besucherparkplatz",notiz:""});
-  const base=(o)=>{ const p=newProto(); Object.assign(p.p,{pruefer:"Max",geraetSn:"MFT-000123",kal:"10.2027"},o.p||{}); return Object.assign(p,o.x); };
-  D("pruefungen",base({p:{auftragsnr:"2210-031",datum:"2022-10-12",art:"Erstprüfung",standort:"UV-TG"},x:{kundeId:k1.id,standortId:s1.id,ladeparkId:l1.id,
-    s:[demoSaeule(1,"151612202MA.05006",demoLP(),demoLP()),demoSaeule(2,"151812202MA.05030",demoLP(),demoLP())]}}));
-  D("pruefungen",base({p:{auftragsnr:"2510-099",datum:today(),art:"Wiederholungsprüfung",standort:"UV-TG",normen:["DIN VDE 0105-100","DIN VDE 0100-722"]},x:{kundeId:k1.id,standortId:s1.id,ladeparkId:l1.id,
-    s:[demoSaeule(1,"151612202MA.05006",demoLP(),demoLP({v:{zs1:"0,46",r1:"24,5"}})),
-       demoSaeule(2,"151812202MA.05030",demoLP({v:{zs1:"0,40"}}),demoLP({v:{riso:"0,4"},bem:"Isolationswert LP 2 zu niedrig (0,4 MΩ). Dichtung Kabeleinführung defekt. LP 2 außer Betrieb genommen."}))],
-    a:{maengel:"Ladesäule 2, LP 2: Isolationswiderstand 0,4 MΩ (< 1 MΩ). Dichtung der Kabeleinführung erneuern, Anschlussraum trocknen, danach erneut messen.",funktion:DEF_FUNKTION,fristJ:"4",naechste:String(new Date().getFullYear()+4)+today().slice(4),sigP:"",sigK:"",sigPName:"Max",sigKName:""}}}));
-  D("pruefungen",base({p:{auftragsnr:"2510-104",art:"Erstprüfung",standort:"HV Besucherparkplatz"},x:{kundeId:k1.id,standortId:s1.id,ladeparkId:l2.id,
-    s:[demoSaeule(1,"GE-204411",demoLP(),{v:{risov:"500 V",rpe:"0,07",riso:"200"},bem:"Messung LP 2 noch offen – Freigabe durch Betreiber ausstehend."})]}}));
-  D("pruefungen",base({p:{auftragsnr:"2509-017",datum:"2025-12-03",art:"Erstprüfung",standort:"HV Keller"},x:{kundeId:k1.id,standortId:s2.id,ladeparkId:null,a:{...newProto().a,naechste:"2026-12-03",fristJ:"1"},
-    s:[Object.assign(demoSaeule(1,"GE-118822",demoLP({v:{zs1:"0,92",zs2:"0,88",zs3:"0,90"}}),newLP()),{bauart:"Wallbox",name:"Wallbox 1",typ:"go-e Charger Gemini 11 kW",katId:"",absIn:"16",inenn:"16",lps:1,ort:"Chefparkplatz"})]}}));
-  const k2=D("kunden",{name:"BEISPIEL Erika Mustermann",kdnr:"20871",strasse:"Am Weiher 3",plz:"51545",ort:"Waldbröl",tel:"02291 000000"});
-  const s3=D("standorte",{kundeId:k2.id,name:"Einfamilienhaus",strasse:"Am Weiher 3",plz:"51545",ort:"Waldbröl"});
-  D("pruefungen",base({p:{auftragsnr:"2510-120",art:"Erstprüfung",standort:"HV Garage"},x:{kundeId:k2.id,standortId:s3.id,ladeparkId:null,
-    s:[Object.assign(demoSaeule(1,"GE-204499",demoLP({v:{zs1:"0,92",zs2:"0,88",zs3:"0,90",r1:"21,3"}}),newLP()),{bauart:"Wallbox",name:"Wallbox Garage",typ:"go-e Charger Gemini 11 kW",katId:"",absIn:"16",inenn:"16",lps:1,ort:"Garage links",freigabe:"App"})]}}));
-  if(!META.pins.includes(s1.id)){ META.pins.push(s1.id); metaSave(); }
-}
-
 
 function setupSigs(){
   ["sigP","sigK"].forEach(k=>{

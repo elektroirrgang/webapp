@@ -15,6 +15,7 @@ def baue(quelle, ziel, icon):
     html = html.replace("<!--MSAL-->", (root / "vendor/msal-browser-3.28.1.min.js").read_text(encoding="utf-8"))
     html = html.replace("<!--EHANDWERK-->", "data:image/jpeg;base64," + b64("brand/e-handwerk.jpg"))
     html = html.replace("<!--VERSION-->", version)
+    html = html.replace("/*DEMO*/", (root / "src/demo.js").read_text(encoding="utf-8"))
     html = html.replace('href="manifest.webmanifest"', f'href="manifest.webmanifest?v={n}"')
     html = html.replace("<!--ICON-->", "data:image/png;base64," + b64(icon))
     html = html.replace("<!--ICON_EVSE-->", "data:image/png;base64," + b64("evse/icon-180.png"))

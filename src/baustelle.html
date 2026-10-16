@@ -1537,6 +1537,7 @@ document.addEventListener("click",e=>{
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>setTimeout(bald,50));
   document.addEventListener("transitionend",bald,true); bald();
 })();
+/*DEMO*/
 function render(){
   const app=$("#app");
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
@@ -1648,6 +1649,7 @@ function entwSpeichern(){
   if(!String(e.stand||"").trim()&&!String(e.offen||"").trim()&&!String(e.material||"").trim()&&!e.fotos.length){ toast("Bitte mindestens den Stand eintragen"); return; }
   const neu=!e.id||!DB.eintraege.has(e.id), rec=neu?{id:uid()}:DB.eintraege.get(e.id);
   const alt=neu?[]:(rec.fotos||[]); fotoDel(alt.filter(x=>!e.fotos.includes(x)));
+  if((DB.baustellen.get(e.baustelleId)||{}).demo) rec.demo=true;
   Object.assign(rec,{baustelleId:e.baustelleId,datum:e.datum||today(),stand:e.stand.trim(),offen:e.offen.trim(),material:e.material.trim(),fotos:[...e.fotos]});
   saveRec("eintraege",rec,neu); e.fotos.filter(x=>!alt.includes(x)).forEach(fotoQueue);
   const b=DB.baustellen.get(e.baustelleId); if(b&&b.status==="pausiert"&&neu){ b.status="aktiv"; saveRec("baustellen",b); }
@@ -1727,7 +1729,7 @@ function bSpeichern(){
   const s=P.s==="__neu"?saveRec("standorte",{id:uid(),kundeId:k.id,name:P.sNeu},true):standortOf(P.s);
   const name=P.name||s.name;
   if(P.id){ const b=DB.baustellen.get(P.id); Object.assign(b,{kundeId:k.id,standortId:s.id,name,auftragsnr:P.auftragsnr,notiz:P.notiz}); saveRec("baustellen",b); nb=null; closeOverlays(); render(); return; }
-  const b=saveRec("baustellen",{id:uid(),kundeId:k.id,standortId:s.id,name,auftragsnr:P.auftragsnr,notiz:P.notiz,status:"aktiv"},true);
+  const b=saveRec("baustellen",Object.assign({id:uid(),kundeId:k.id,standortId:s.id,name,auftragsnr:P.auftragsnr,notiz:P.notiz,status:"aktiv"},k.demo?{demo:true}:{}),true);
   nb=null; closeOverlays(); go({v:"baustelle",id:b.id}); toast("Baustelle angelegt");
 }
 
@@ -1929,6 +1931,8 @@ function mehrView(){
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}`)):""}
       ${row("nav:team","person","Mitarbeiter",esc(META.profil.name||""))}
       ${row("theme","theme","Darstellung",TH_LABEL[theme])}</div>
+    <div class="sec-lbl">Vorführen</div><div class="list">
+      ${demoDa()?row("demoHide","bulb","Beispieldaten ausblenden","In allen vier Apps entfernen"):row("demo","bulb","Beispieldaten einblenden","Drei Beispielkunden in allen vier Apps zum Vorführen")}</div>
     <div class="sec-lbl">Daten</div><div class="list">
       ${SYNC_ON?row("syncNow","sync","Jetzt abgleichen",esc(syncText())):""}
       ${row("export","backup","Alle sichern","Baustellen, Übergaben, Fotos und Kunden")}
@@ -2054,6 +2058,8 @@ document.addEventListener("click",ev=>{
   case "logout": Auth.logout(); return;
   case "testLogout": confirmDlg("Abmelden?","Die Daten bleiben auf diesem Gerät. Zum Weiterarbeiten wieder mit Name und Passwort anmelden.","Abmelden","testLogoutOk"); return;
   case "testLogoutOk": loginMerken(null); delete META.angemeldet; tlSel=null; metaSave(); closeOverlays(); go({v:"login"}); return;
+  case "demo": closeOverlays(); demoSchalten(true); return;
+  case "demoHide": closeOverlays(); demoSchalten(false); return;
   case "theme": dialog("Darstellung",THEMES.map(t=>`<button class="radio" role="radio" data-act="setTheme" data-v="${t}" aria-checked="${t===theme}"><span class="rb"></span>${TH_LABEL[t]}</button>`).join(""),`<button class="btn-text" data-act="cancel">Schließen</button>`); return;
   case "setTheme": theme=b.dataset.v; applyTheme(theme); closeOverlays(); render(); return;
   case "export": exportBackup(); return;
