@@ -1028,8 +1028,7 @@ const GROUPS = [
     "MFT auf RCD, Mode „current“ (Rampe), RCD-Typ einstellen. Eine Messung zeigt Auslösestrom IΔ, Berührungsspannung UB und Auslösezeit t.",
     "6 mA DC: nur bei DC-Erkennung in der Wallbox bzw. RCD Typ A-EV – die Ladung muss abbrechen.",
     "Die Einzelmessungen bei ½ × und 5 × IΔn sind optional (z. B. AUTO-Modus des MFT).",
-    "Hat die Wallbox einen eigenen Fehlerstromschutz, schaltet sie bei der Rampe selbst ab (rote LED) – der RCD im Verteiler lässt sich dann nicht über den FEV300 messen. Oben „Wallbox schaltet intern ab“ wählen und den Wert eintragen."], rows:[
-    {k:"rcdw", l:"Wallbox schaltet intern ab bei", d:"Rampe über den FEV300, Wallbox blinkt rot", u:"mA", soll:"≤ 30 mA", t:v=>v<=30, rcdw:true},
+    "Klappt die RCD-Messung über den FEV300 nicht (die Wallbox schaltet selbst ab, rote LED), oben „Nein“ wählen – die RCD-Werte entfallen dann. Die 6-mA-DC-Prüfung der Wallbox bleibt."], rows:[
     {k:"ria", l:"Auslösestrom IΔ", d:"Rampe", u:"mA", ria:true, rcd:true},
     {k:"ub", l:"Berührungsspannung UB", u:"V", soll:"≤ 50 V", t:v=>v<=50, rcd:true},
     {k:"r1", l:"Auslösezeit t", d:"bei der Rampe mit angezeigt", u:"ms", soll:"≤ 300 ms", t:v=>v<=300, rcd:true},
@@ -1107,7 +1106,7 @@ const polRCBO=s=>s.phasen===3?"4-polig":"2-polig";
 /* Isolation: bis 16.10.2026 ein Wert „gebrückt gegen PE“, seitdem jede Strecke einzeln. Alte Prüfungen behalten ihre Zeile. */
 const ISO_K=["riso12","riso13","riso23","riso1pe","riso2pe","riso3pe"];
 const isoAlt=s=>(s.lp||[]).some(lp=>lp&&lp.v&&lp.v.riso!=null&&lp.v.riso!==""&&!ISO_K.some(k=>lp.v[k]!=null&&lp.v[k]!==""));
-function rowVisible(r,s){ if(r.rcdw) return !!s.rcdIntern; if(r.rcd&&s.rcdIntern) return false; if(r.isoAlt) return isoAlt(s); if(r.iso&&isoAlt(s)) return false; if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
+function rowVisible(r,s){ if(r.rcd&&s.rcdIntern) return false; if(r.isoAlt) return isoAlt(s); if(r.iso&&isoAlt(s)) return false; if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
 function evalRow(r,val,s){
   if(val==null||val==="") return r.opt?"skip":"open";
   if(r.type==="chk") return val==="ok"?"ok":val==="nok"?"bad":"open";
@@ -2284,7 +2283,7 @@ function saeuleView(){
     const gr=groupState(g,s,li); nr++;
     h+=`<section class="card step"><div class="gh"><span class="stepno">${nr}</span><div><h3>${esc(g.t)}</h3><p>${esc(g.sub)}</p></div><span class="pill ${gr}" data-gres="${g.id}">${RES_SHORT[gr]}</span></div>`;
     if(g.how) h+=`<details class="how"><summary>So wird gemessen</summary><ol>${g.how.map(x=>`<li>${x}</li>`).join("")}</ol></details>`;
-    if(g.id==="rcd") h+=`<div class="rcdi"><div class="lbl">RCD im Verteiler über den FEV300 messbar?</div>${seg("rcdIntern",s.rcdIntern?"1":"0",[["0","Ja, messbar"],["1","Wallbox schaltet intern ab"]])}${s.rcdIntern?`<p class="sup">Auslösestrom, Berührungsspannung und Auslösezeit des RCD entfallen hier. Im Protokoll steht, dass die Wallbox selbst abschaltet.</p>`:""}</div>`;
+    if(g.id==="rcd") h+=`<div class="rcdi"><div class="lbl">RCD im Verteiler über den FEV300 messbar?</div>${seg("rcdIntern",s.rcdIntern?"1":"0",[["0","Ja"],["1","Nein, nicht messbar"]])}${s.rcdIntern?`<p class="sup">Auslösestrom, Berührungsspannung und Auslösezeit des RCD entfallen hier. Im Protokoll steht, dass der RCD nicht über den Prüfadapter messbar war.</p>`:""}</div>`;
     let optOpen=false; h+=`<div class="mgrid">`;
     for(const r of rows){
       if(r.opt&&!optOpen){ optOpen=true; const hasVal=rows.some(x=>x.opt&&lp.v[x.k]); h+=`</div><details class="optrows"${hasVal?" open":""}><summary>Zusätzliche Messungen (optional)</summary><div class="mgrid">`; }
@@ -3437,7 +3436,7 @@ function buildPDF(P){
     d.setFillColor(...NAVY); d.rect(M,y-4.6,CW,8,"F"); d.setTextColor(255); d.setFont("helvetica","bold"); d.setFontSize(8.5);
     d.text("Prüfung",cP,y+0.6); d.text("Sollwert",cS,y+0.6); d.text(s.lps===2?"Ladepunkt 1 (links)":"Ladepunkt 1",c1,y+0.6); if(s.lps===2) d.text("Ladepunkt 2 (rechts)",c2,y+0.6); y+=8;
     for(const {g,rows} of groups){
-      d.setFillColor(...SUNK); d.rect(M,y-off,CW,gh,"F"); d.setTextColor(...NAVY); d.setFont("helvetica","bold"); d.setFontSize(fs-0.5); d.text(pt(g.id==="rcd"&&s.rcdIntern?`${g.t} (RCD nicht über den Prüfadapter messbar – Wallbox schaltet intern ab)`:`${g.t} (${g.ps||g.sub})`),cP,y+(gh-rh)/2); y+=gh;
+      d.setFillColor(...SUNK); d.rect(M,y-off,CW,gh,"F"); d.setTextColor(...NAVY); d.setFont("helvetica","bold"); d.setFontSize(fs-0.5); d.text(pt(g.id==="rcd"&&s.rcdIntern?`${g.t} (RCD nicht über den Prüfadapter messbar)`:`${g.t} (${g.ps||g.sub})`),cP,y+(gh-rh)/2); y+=gh;
       rows.forEach((r,ri)=>{
         if(ri%2){ d.setFillColor(250,251,252); d.rect(M,y-off,CW,rh,"F"); }
         d.setFont("helvetica","normal"); d.setFontSize(fs); d.setTextColor(20); d.text(pt(r.l),cP,y); d.setTextColor(...GR); d.text(fitTxt(pt(r.psoll||sollOf(r,s)),c1-cS-3),cS,y);
