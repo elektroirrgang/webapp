@@ -1079,7 +1079,7 @@ function zsInfo(s){
   const In=num(s.absIn);
   if((s.absTyp==="LS B"||s.absTyp==="LS C")&&In>0){
     const f=s.absTyp==="LS B"?5:10, Ia=f*In, z=230/Ia, z23=z*2/3, r=Math.round(z23*100)/100;
-    return {zul:r, calc:`${s.absTyp}${fmt(In)}: Ia = ${f} · ${fmt(In)} A = ${fmt(Ia)} A → 230 V / ${fmt(Ia)} A = ${fmt(z,6)} Ω → · 2/3 = ${fmt(z23,6)} Ω → ${fmt(r,2)} Ω`};
+    return {zul:r, calc:`${s.rcbo?"FI/LS "+s.absTyp.replace("LS ",""):s.absTyp}${fmt(In)}: Ia = ${f} · ${fmt(In)} A = ${fmt(Ia)} A → 230 V / ${fmt(Ia)} A = ${fmt(z,6)} Ω → · 2/3 = ${fmt(z23,6)} Ω → ${fmt(r,2)} Ω`};
   }
   const m=num(s.zsMan);
   return {zul:isNaN(m)?NaN:m, calc:s.absTyp==="manuell"?"Zs zulässig aus der Sicherungstabelle eintragen.":"Nennstrom des LS eintragen."};
@@ -1093,6 +1093,8 @@ const RCD_TYPEN=["A","A-EV","F","B"];
 function rcdInfo(s){ const r=String(s.rcd||""), t=s.rcdTyp||(/^B/.test(r)?"B":/A-EV/.test(r)?"A-EV":/^F/.test(r)?"F":"A"); return {t, dc:(t==="A"||t==="F")&&(s.rdc!==undefined?!!s.rdc:/RDC-DD/.test(r))}; }
 function setRcd(s,t,dc){ if(t==="B"||t==="A-EV") dc=false; s.rcdTyp=t; s.rdc=dc; s.rcd=`${t}${dc?" + RDC-DD 6 mA":""}`; }
 const polLS=s=>s.phasen===3?"3-polig":"1-polig", polRCD=s=>s.phasen===3?"4-polig":"2-polig";
+/* FI/LS-Schalter (RCBO): LS und RCD in einem Gerät, mit Neutralleiter – 3-phasig also 4-polig (3P+N) */
+const polRCBO=s=>s.phasen===3?"4-polig":"2-polig";
 function rowVisible(r,s){ if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
 function evalRow(r,val,s){
   if(val==null||val==="") return r.opt?"skip":"open";
@@ -1891,7 +1893,7 @@ function sf(path,label,val,opts,o={}){
   return `<div class="tf fl${o.full?" full":""}"><select id="${esc(id)}" ${bind}>${opts.map(x=>{ const [v,t]=Array.isArray(x)?x:[x,x]; return `<option value="${esc(v)}" ${v===val?"selected":""}>${esc(t||"–")}</option>`; }).join("")}</select><label for="${esc(id)}">${esc(label)}</label><span class="arr">${icon("drop")}</span></div>`;
 }
 const datalist=(id,vals)=>`<datalist id="${id}">${[...new Set(vals.map(v=>String(v||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"de",{numeric:true})).map(v=>`<option value="${esc(v)}">`).join("")}</datalist>`;
-const LEITUNGEN=["NYM-J 5×2,5 mm²","NYM-J 5×4 mm²","NYM-J 5×6 mm²","NYM-J 5×10 mm²","NYM-J 5×16 mm²","NYY-J 5×6 mm²","NYY-J 5×10 mm²","NYY-J 5×16 mm²","NYY-J 5×25 mm²","NYM-J 3×2,5 mm²","NYM-J 3×6 mm²"];
+const LEITUNGEN=["NYM-J 5×2,5 mm²","NYM-J 5×4 mm²","NYM-J 5×6 mm²","NYM-J 5×10 mm²","NYM-J 5×16 mm²","NYY-J 5×4 mm²","NYY-J 5×6 mm²","NYY-J 5×10 mm²","NYY-J 5×16 mm²","NYY-J 5×25 mm²","NYM-J 3×2,5 mm²","NYM-J 3×6 mm²"];
 const chipSel=(act,cur,vals,unit,anders)=>`<div class="chips">${vals.map(v=>`<button type="button" class="chip" data-act="pick" data-f="${act}" data-v="${v}" aria-pressed="${!anders&&String(cur)===v}">${icon("check")}${v} ${unit}</button>`).join("")}${act==="absIn"?`<button type="button" class="chip" data-act="pick" data-f="${act}" data-v="x" aria-pressed="${!!anders||(!!cur&&!vals.includes(String(cur)))}">${icon("check")}Andere</button>`:""}</div>`;
 const seg=(act,cur,opts,cls="")=>`<div class="seg ${cls}" role="group">${opts.map(([v,t])=>`<button type="button" data-act="${act}" data-v="${v}" aria-pressed="${String(cur)===String(v)}">${icon("check")}${esc(t)}</button>`).join("")}</div>`;
 
@@ -2232,17 +2234,19 @@ function saeuleView(){
       ${(()=>{ const sr=sichtState(s); return `<section class="card"><div class="gh sicht-k"><div><h3>Sichtprüfung</h3><p>Vor dem Messen, Ladestation und Anschlussraum ansehen</p></div><span class="pill ${sr}" data-sicht="${si}">${RES_SHORT[sr]}</span></div><div class="mgrid">${SICHT.map(r=>{ const val=(s.sicht||{})[r.k]||"", path=`s.${si}.sicht.${r.k}`; return `<div class="mrow"><div class="txt"><div class="l">${esc(r.l)}</div>${r.d?`<div class="s">${esc(r.d)}</div>`:""}</div><div class="ctl wide">${seg("chk",val,[["ok","i.O."],["nok","n.i.O."]],"ev").replace(/data-act="chk"/g,`data-act="chk" data-path="${path}"`)}</div></div>`; }).join("")}</div><div class="sicht-alle"><button type="button" class="btn-text" data-act="sichtAlle" data-si="${si}">Alle i.O. setzen</button></div></section>`; })()}
       <section class="card"><h3>Schutzeinrichtungen im Verteiler</h3><div class="fg">
         ${tf(b+"bmk","Beschriftung im Verteiler",s.bmk,{full:true,ph:"z. B. EVSE Säule / -F12"})}
-        <div class="full"><div class="lbl">Leitungsschutzschalter · ${polLS(s)}</div>${seg("abs",s.absTyp,[["LS B","B"],["LS C","C"],["manuell","Sicherung"]])}</div>
+        <div class="full"><div class="lbl">Bauform</div>${seg("bauf",s.rcbo?"rcbo":"getrennt",[["getrennt","LS + RCD"],["rcbo","FI/LS (RCBO)"]])}</div>
+        <div class="full"><div class="lbl">${s.rcbo?`FI/LS-Schalter (RCBO) · ${polRCBO(s)} · Charakteristik`:`Leitungsschutzschalter · ${polLS(s)}`}</div>${seg("abs",s.absTyp,s.rcbo?[["LS B","B"],["LS C","C"]]:[["LS B","B"],["LS C","C"],["manuell","Sicherung"]])}</div>
         ${s.absTyp==="manuell"?tf(b+"zsMan","Zs zulässig (aus Tabelle)",s.zsMan,{im:"decimal",sfx:"Ω",full:true})
           :`<div class="full"><div class="lbl">Nennstrom</div>${chipSel("absIn",s.absIn,["16","20","25","32","40","50","63"],"A",s.absInAnders)}</div>
             ${s.absInAnders||(s.absIn&&!["16","20","25","32","40","50","63"].includes(String(s.absIn)))?tf(b+"absIn","Nennstrom",s.absIn,{im:"decimal",sfx:"A"}):""}
             <div class="full"><div class="lbl">Schaltvermögen (optional)</div>${chipSel("lsIcn",s.lsIcn,["6","10"],"kA")}</div>
-            ${tf(b+"lsTyp","Hersteller / Typ LS (optional)",s.lsTyp,{list:"dl-ls",ph:"z. B. Schneider iC60N"})}${datalist("dl-ls",["Schneider iC60N","Hager MCN","ABB S203","Siemens 5SY","Eaton FAZ","Doepke DLS",...live("pruefungen").flatMap(p=>p.s.map(x=>x.lsTyp))])}`}
+            ${s.rcbo?`${tf(b+"lsTyp","Hersteller / Typ FI/LS (optional)",s.lsTyp,{list:"dl-rcbo",ph:"z. B. Doepke DFL 8"})}${datalist("dl-rcbo",["Doepke DFL 8 B","Doepke DFL 8 A-EV","Hager ADC","ABB DS203","Schneider iC60 RCBO","Siemens 5SU1","Eaton FRBm6",...live("pruefungen").flatMap(p=>p.s.filter(x=>x.rcbo).map(x=>x.lsTyp))])}`:""}
+            ${s.rcbo?"":tf(b+"lsTyp","Hersteller / Typ LS (optional)",s.lsTyp,{list:"dl-ls",ph:"z. B. Schneider iC60N"})}${s.rcbo?"":datalist("dl-ls",["Schneider iC60N","Hager MCN","ABB S203","Siemens 5SY","Eaton FAZ","Doepke DLS",...live("pruefungen").flatMap(p=>p.s.map(x=>x.lsTyp))])}`}
         <p class="calc full" id="calc">${esc(z.calc)}</p>
-        <div class="full"><div class="lbl">Fehlerstromschutzschalter (RCD) · ${polRCD(s)}</div>${seg("rcdTyp",ri.t,RCD_TYPEN.map(t=>[t,"Typ "+t]))}</div>
+        <div class="full"><div class="lbl">${s.rcbo?"Fehlerstromteil des FI/LS":`Fehlerstromschutzschalter (RCD) · ${polRCD(s)}`}</div>${seg("rcdTyp",ri.t,RCD_TYPEN.map(t=>[t,"Typ "+t]))}</div>
         <div class="full"><div class="lbl">Bemessungsfehlerstrom IΔn</div>${chipSel("idn",s.idn,["30","100","300"],"mA")}</div>
-        <div class="full"><div class="lbl">Bemessungsstrom (optional)</div>${chipSel("rcdIn",s.rcdIn,["25","40","63","80","100"],"A")}</div>
-        ${tf(b+"rcdHT","Hersteller / Typ RCD (optional)",s.rcdHT,{list:"dl-rcd",ph:"z. B. Schneider RCCB-ID"})}${datalist("dl-rcd",["Schneider RCCB-ID","Doepke DFS 4 B","Hager CDB","ABB F204 B","Siemens 5SV","Eaton PFIM",...live("pruefungen").flatMap(p=>p.s.map(x=>x.rcdHT))])}
+        ${s.rcbo?"":`<div class="full"><div class="lbl">Bemessungsstrom (optional)</div>${chipSel("rcdIn",s.rcdIn,["25","40","63","80","100"],"A")}</div>`}
+        ${s.rcbo?"":tf(b+"rcdHT","Hersteller / Typ RCD (optional)",s.rcdHT,{list:"dl-rcd",ph:"z. B. Schneider RCCB-ID"})}${datalist("dl-rcd",["Schneider RCCB-ID","Doepke DFS 4 B","Hager CDB","ABB F204 B","Siemens 5SV","Eaton PFIM",...live("pruefungen").flatMap(p=>p.s.map(x=>x.rcdHT))])}
         ${ri.t==="A"||ri.t==="F"?`<div class="full"><div class="lbl">Erkennt die Wallbox 6 mA DC selbst (RDC-DD)?</div>${seg("rdc",ri.dc?"1":"0",[["0","Nein"],["1","Ja"]])}
           ${!ri.dc?`<p class="warnline">${icon("warn")}RCD Typ ${ri.t} nur zulässig, wenn die Wallbox 6 mA DC selbst erkennt – sonst RCD Typ B (oder A-EV) nötig.</p>`:""}</div>`
           :`<p class="sup full">${ri.t==="B"?"Typ B erfasst auch glatte Gleichfehlerströme – keine DC-Erkennung in der Wallbox nötig.":"Typ A-EV erkennt 6 mA DC selbst."} Polzahl aus dem Anschluss (${s.phasen===3?"3-phasig":"1-phasig"}).</p>`}
@@ -2602,7 +2606,7 @@ let nachName=null;
 function nameFehlt(weiter){ if(SYNC_ON||META.profil.name) return false; nachName=weiter;
   dialog("Wer prüft?",`<div class="list wahl">${team().map(m=>`<div class="li" role="button" tabindex="0" data-act="ichBin" data-mail="${esc(m.mail)}"><span class="av">${icon("person")}</span><span class="lt"><span class="h">${esc(m.name)}</span><span class="s">${esc(m.mail)}</span></span></div>`).join("")}</div>
     <div class="fg1" style="margin-top:12px">${tf("name","Oder Name eingeben",``,{form:true})}</div><p class="sup" style="margin:12px 0 0">Einmalig pro Gerät. Ändern und weitere Mitarbeiter: Mehr → Mitarbeiter und Mail.</p>`,`<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="saveName">Weiter</button>`); return true; }
-const ST_TECHNIK=["absTyp","absIn","absInAnders","zsMan","lsIcn","lsTyp","rcd","rcdTyp","rdc","idn","rcdIn","rcdHT","inenn","inennAnders","leitung"];
+const ST_TECHNIK=["rcbo","absTyp","absIn","absInAnders","zsMan","lsIcn","lsTyp","rcd","rcdTyp","rdc","idn","rcdIn","rcdHT","inenn","inennAnders","leitung"];
 const ST_GERAET=["bauart","katId","typ","fw","freigabe","lps","phasen"];
 let stDlg=null;
 const stTypListe=()=>[...live("katalog").map(r=>[r.hersteller,katName(r)].filter(Boolean).join(" ")),...live("pruefungen").flatMap(p=>p.s.map(x=>x.typ))];
@@ -3063,6 +3067,7 @@ document.addEventListener("click",ev=>{
     if(f==="absIn"&&v==="x"){ s.absInAnders=true; } else { s[f]=String(s[f])===v&&f!=="absIn"&&f!=="idn"?"":v; if(f==="absIn") delete s.absInAnders; }
     scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "leistung": { const s=cur.s[nav.si], v=b.dataset.v; if(v==="x"){ s.inennAnders=true; } else { s.inenn=v; delete s.inennAnders; if(!s.absIn) s.absIn=v; } scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
+  case "bauf": { const s=cur.s[nav.si]; s.rcbo=b.dataset.v==="rcbo"; if(!s.rcbo) delete s.rcbo; else if(s.absTyp==="manuell") s.absTyp="LS B"; scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "abs": { const s=cur.s[nav.si]; s.absTyp=b.dataset.v; scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "rcdTyp": case "rdc": { const s=cur.s[nav.si], i=rcdInfo(s); if(a==="rcdTyp") setRcd(s,b.dataset.v,i.dc); else setRcd(s,i.t,b.dataset.v==="1"); scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "freigabe": { const s=cur.s[nav.si], v=b.dataset.v; let L=freigabeListe(s);
@@ -3082,7 +3087,7 @@ document.addEventListener("click",ev=>{
   case "norm": { const n=b.dataset.n, L=cur.p.normen, i=L.indexOf(n); if(i>=0) L.splice(i,1); else L.push(n); b.setAttribute("aria-pressed",i<0); scheduleSave(); return; }
   case "addS": stDialog({mode:"add",bauart:BAUART(cur.s[cur.s.length-1]||{})}); return;
   case "addS_": { const prev=cur.s[cur.s.length-1], s=newSaeule(cur.s.length+1);
-    if(prev) ["bauart","typ","absTyp","absIn","zsMan","lsIcn","lsTyp","rcd","rcdTyp","rdc","idn","rcdIn","rcdHT","inenn","freigabe","phasen","lps","leitung"].forEach(k=>s[k]=prev[k]);
+    if(prev) ["bauart","typ","rcbo","absTyp","absIn","zsMan","lsIcn","lsTyp","rcd","rcdTyp","rdc","idn","rcdIn","rcdHT","inenn","freigabe","phasen","lps","leitung"].forEach(k=>s[k]=prev[k]);
     s.name=""; cur.s.push(s); nummeriere(); commit(); go({v:"saeule",si:cur.s.length-1,st:"geraet"}); toast(`${s.name} angelegt`); return; }
   case "dupAsk": { const src=cur.s[nav.si];
     dialog("Ladestation vervielfältigen",`<div class="fg1">${tf("n","Anzahl Kopien",String(1),{form:true,im:"numeric",sfx:"Stück"})}</div>
@@ -3390,8 +3395,8 @@ function buildPDF(P){
   P.s.forEach(s=>{
     np(s.name,[/^(Ladesäule|Wallbox) \d+$/.test(s.name||"")?"":BAUART(s),s.typ,s.ort].filter(Boolean).join(" | ")||BAUART(s));
     const z=zsInfo(s); sec("Gerätedaten");
-    kv([["Hersteller / Typ",s.typ],["Seriennummer",s.sn],["Stellplatz",s.ort],["Firmware",s.fw],["Absicherung",s.absTyp==="manuell"?"Sicherung, Zs lt. Tabelle":[`${s.absTyp}${s.absIn} A, ${polLS(s)}`,s.lsIcn&&`${s.lsIcn} kA`,s.lsTyp].filter(Boolean).join(", ")],["Zs zulässig",isNaN(z.zul)?"-":`${fmt(z.zul,2)} Ohm`],
-        ["RCD",[`Typ ${rcdInfo(s).t}, ${s.idn} mA`,s.rcdIn&&`${s.rcdIn} A`,polRCD(s),s.rcdHT].filter(Boolean).join(", ")],["Im Verteiler",s.bmk],["DC 6 mA",rcdInfo(s).dc?"in der Wallbox (RDC-DD)":rcdInfo(s).t==="A-EV"?"im RCD (Typ A-EV)":rcdInfo(s).t==="B"?"RCD Typ B":"-"],["Zuleitung",[s.leitung,s.laenge&&`ca. ${s.laenge} m`].filter(Boolean).join(", ")],["Ladeleistung",s.inenn?`${s.inenn} A${num(s.inenn)?` (${fmt(Math.round(num(s.inenn)*230*(s.phasen===3?3:1)/100)/10,1)} kW)`:""}`:"-"],["Freigabe",s.freigabe],["Anschluss",s.phasen===3?"3-phasig":"1-phasig"]]);
+    kv([["Hersteller / Typ",s.typ],["Seriennummer",s.sn],["Stellplatz",s.ort],["Firmware",s.fw],["Absicherung",s.absTyp==="manuell"?"Sicherung, Zs lt. Tabelle":s.rcbo?[`FI/LS (RCBO) ${s.absTyp.replace("LS ","")}${s.absIn} A, ${polRCBO(s)}`,s.lsIcn&&`${s.lsIcn} kA`,s.lsTyp].filter(Boolean).join(", "):[`${s.absTyp}${s.absIn} A, ${polLS(s)}`,s.lsIcn&&`${s.lsIcn} kA`,s.lsTyp].filter(Boolean).join(", ")],["Zs zulässig",isNaN(z.zul)?"-":`${fmt(z.zul,2)} Ohm`],
+        ["RCD",s.rcbo?`Typ ${rcdInfo(s).t}, ${s.idn} mA, im FI/LS (RCBO)`:[`Typ ${rcdInfo(s).t}, ${s.idn} mA`,s.rcdIn&&`${s.rcdIn} A`,polRCD(s),s.rcdHT].filter(Boolean).join(", ")],["Im Verteiler",s.bmk],["DC 6 mA",rcdInfo(s).dc?"in der Wallbox (RDC-DD)":rcdInfo(s).t==="A-EV"?"im RCD (Typ A-EV)":rcdInfo(s).t==="B"?"RCD Typ B":"-"],["Zuleitung",[s.leitung,s.laenge&&`ca. ${s.laenge} m`].filter(Boolean).join(", ")],["Ladeleistung",s.inenn?`${s.inenn} A${num(s.inenn)?` (${fmt(Math.round(num(s.inenn)*230*(s.phasen===3?3:1)/100)/10,1)} kW)`:""}`:"-"],["Freigabe",s.freigabe],["Anschluss",s.phasen===3?"3-phasig":"1-phasig"]]);
     const F=FOTO_SLOTS.map(([k,l,h])=>({l,h,id:(s.fotos||{})[k],data:fotoCache.get((s.fotos||{})[k])}));
     const hasF=F.some(f=>f.data);
     if(hasF){
