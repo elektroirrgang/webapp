@@ -30,7 +30,7 @@ function demoDaten(){
     p:{projekt:"",auftraggeber:"",auftragsnr:o.nr,standort:o.uv,datum:o.datum,pruefer:"Max Pevec",geraet:"Wiha MFT one",geraetSn:"MFT-000123",kal:"10.2027",adapter:"Fluke FEV300",adapterSn:"FEV-004711",
       art:o.art,normen:o.art==="Erstprüfung"?["DIN VDE 0100-600","DIN VDE 0100-722"]:["DIN VDE 0105-100","DIN VDE 0100-722"],netz:"TN-C-S",umfang:UMFANG},
     s:stationen,a:Object.assign({maengel:"",funktion:FUNKTION,naechste:"",fristJ:"1",sigP:"",sigK:"",sigPName:"Max Pevec",sigKName:"",abweichung:""},a)}));
-  const D={kunden:[],standorte:[],ladeparks:[],pruefungen:[],baustellen:[],eintraege:[]};
+  const D={kunden:[],standorte:[],ladeparks:[],pruefungen:[],baustellen:[],eintraege:[],notizen:[]};
 
   /* 1 · Werk mit mehreren Parkplätzen */
   D.kunden.push(R("demo-k-werk",{name:"BEISPIEL Industriewerk Homburg GmbH",kdnr:"40112",strasse:"Industriestraße 20",plz:"51588",ort:"Nümbrecht",
@@ -82,14 +82,22 @@ function demoDaten(){
       hWdvs:"Nein",hFenster:"Ja",hTuer:"Nein",hRoll:"Nein",
       fZp:"Ja",fHak:"Ja",fErd:"Ja",fUv:"Ja",fRaum:"Ja",fMangel:"Ja",
       dKunde:"Ja",dArbeit:"Ja",dTermin:"Ja",dPlaene:"noch zu klären",dGewerke:"Ja",dOffen:"Ja",dMaengel:"Ja",dKundeDurch:"Ja",
-      bem:"Überspannungsschutz im Zählerplatz nachrüsten (Angebot separat)."},fotos:{},sigName:"Max Pevec",sigDatum:tag(-30)}}));
+      bem:"Überspannungsschutz im Zählerplatz nachrüsten (Angebot separat)."},fotos:{fZp:["demo-f-zp"],fHak:["demo-f-hak"],fUv:["demo-f-uvalt"],fMangel:["demo-f-mangel"]},sig:"demo-sig",sigName:"Max Pevec",sigDatum:tag(-30),pdf:[{at:Date.now()-30*864e5,von:"Max Pevec"}]}}));
   D.baustellen.push(R("demo-b-halle",{kundeId:"demo-k-werk",standortId:"demo-s-werk",name:"LED-Beleuchtung Lagerhalle",auftragsnr:"",status:"besichtigung",
     notiz:"Anfrage von Frau Beispiel: alte Leuchtstoffröhren in Lagerhalle 2 gegen LED tauschen.",
     aufnahme:{v:{datum:tag(0),von:"Max Pevec",anwesend:"Frau Beispiel",objektart:"Gewerbe",nutzung:"Eigennutzung",zustand:["gepflegt"],
       wunsch:"Lagerhalle 2 (ca. 900 m²): 48 Leuchtstoffröhren-Leuchten gegen LED-Hallenstrahler tauschen, Steuerung über Präsenzmelder je Gang.",budget:"noch offen"},fotos:{}}}));
-  D.eintraege.push(R("demo-e-haus-1",{baustelleId:"demo-b-haus",datum:tag(-14),stand:"EG: Schlitze gestemmt, Leerrohre in Küche, Wohnzimmer und Flur verlegt.",offen:"EG Leitungen ziehen, UV-EG setzen.",material:"Leerrohr M20 (2 Rollen), Gerätedosen 30 Stück",fotos:[]}));
-  D.eintraege.push(R("demo-e-haus-2",{baustelleId:"demo-b-haus",datum:tag(-8),stand:"EG: Leitungen gezogen, UV-EG gesetzt und verdrahtet. Küche: Herdanschluss vorbereitet.",offen:"OG beginnen: Schlitze Bad und Schlafzimmer.",material:"NYM-J 3×1,5 mm² (100 m), NYM-J 5×2,5 mm² (25 m)",fotos:[]}));
-  D.eintraege.push(R("demo-e-haus-3",{baustelleId:"demo-b-haus",datum:tag(-1),stand:"OG: Leerrohre in Bad und Schlafzimmer verlegt, Gehäuse UV-OG montiert.",offen:"OG Leitungen ziehen, im Bad Schutzpotentialausgleich anschließen, danach Messung beider Etagen.",material:"Potentialausgleichsschiene, Erdungsbandschellen, NYM-J 3×2,5 mm² (50 m)",fotos:[]}));
+  const MON={name:"Monteur (Beispiel)",mail:""}, MAX={name:"Max Pevec",mail:""};
+  const UE=(id,d,o,wer=MAX)=>D.eintraege.push(R(id,Object.assign({baustelleId:"demo-b-haus",datum:tag(d),fotos:[],createdBy:wer,updatedBy:wer},o)));
+  UE("demo-e-haus-1",-15,{stand:"Baustelle eingerichtet. EG: Strom in Küche, Wohnzimmer und Flur abgeklemmt, Baustromverteiler am Zählerplatz angeschlossen. Staubschutzwand zum Treppenhaus gestellt.",offen:"Schlitze EG stemmen.",material:"Baustromverteiler, Staubschutzwand, 40 m² Abdeckvlies",fotos:["demo-f-ue-baustrom"]});
+  UE("demo-e-haus-2",-14,{stand:"EG: Schlitze in Küche und Wohnzimmer gestemmt, Leerrohre M20 verlegt. Gerätedosen gesetzt.",offen:"Flur und Bad EG stemmen.",material:"Leerrohr M20 (2 Rollen), Gerätedosen 30 Stück",fotos:["demo-f-ue-leerrohr"]},MON);
+  UE("demo-e-haus-3",-11,{stand:"EG: Flur und Bad fertig gestemmt. Herdanschlussdose und Geschirrspüler-Steckdose vorbereitet.",offen:"Leitungen EG ziehen.",material:"NYM-J 3×1,5 mm² (100 m), NYM-J 5×2,5 mm² (25 m)"});
+  UE("demo-e-haus-4",-8,{stand:"EG: Alle Leitungen gezogen, UV-EG im Flur gesetzt und verdrahtet. FI/LS beschriftet.",offen:"UV-EG Abdeckung montieren, OG beginnen.",material:"",fotos:["demo-f-ue-uv"]},MON);
+  UE("demo-e-haus-5",-5,{stand:"OG: Mieterin informiert, Strom OG abgeschaltet. Schlitze Bad und Schlafzimmer gestemmt.",offen:"Leerrohre OG verlegen. Achtung: Mieterin hat Homeoffice Mo–Mi, laute Arbeiten nur nachmittags.",material:"Leerrohr M20 (1 Rolle)"});
+  UE("demo-e-haus-6",-1,{stand:"OG: Leerrohre in Bad und Schlafzimmer verlegt, Gehäuse UV-OG im Abstellraum montiert. Mangel entdeckt: Wasserleitung im Bad nicht im Potentialausgleich.",offen:"OG Leitungen ziehen, Bad: Schutzpotentialausgleich anschließen, danach Messung beider Etagen.",material:"Potentialausgleichsschiene, Erdungsbandschellen, NYM-J 3×2,5 mm² (50 m)",fotos:["demo-f-ue-pa"]});
+  D.notizen=[R("demo-n-haus",{titel:"Materialliste OG",sicht:"firma",personen:[],baustelleId:"demo-b-haus",createdBy:MAX,updatedBy:MAX,bloecke:[
+    {id:"demo-nb-1",typ:"check",items:[{id:"demo-ni-1",t:"UV-OG Verteiler 2-reihig",ok:true},{id:"demo-ni-2",t:"4× FI/LS B16 Typ A",ok:true},{id:"demo-ni-3",t:"NYM-J 3×1,5 mm² (100 m)",ok:false},{id:"demo-ni-4",t:"Potentialausgleichsschiene + Bandschellen",ok:false},{id:"demo-ni-5",t:"Rauchwarnmelder 3 Stück",ok:false}]},
+    {id:"demo-nb-2",typ:"text",text:"Mieterin OG: Frau Schulz, Tel. 0171 0000001 – Termine 2 Tage vorher abstimmen."}]})];
 
   /* 3 · Einzelne Wallbox */
   D.kunden.push(R("demo-k-wb",{name:"BEISPIEL Jonas Schmitz",kdnr:"20944",strasse:"Lindenweg 8",plz:"51588",ort:"Nümbrecht",tel:"02293 000000",notiz:"Beispiel: einzelne Wallbox am Einfamilienhaus"}));
@@ -101,15 +109,46 @@ function demoDaten(){
   D.eintraege.forEach(e=>{ e.created=e.updated=zeit(e.datum); });
   return D;
 }
+
+/* Beispielfotos: werden beim Einblenden gezeichnet (keine echten Bilder im Code) */
+function demoBild(art){
+  const c=document.createElement("canvas"); c.width=800; c.height=600; const x=c.getContext("2d");
+  const verlauf=(a,b)=>{ const g=x.createLinearGradient(0,0,0,600); g.addColorStop(0,a); g.addColorStop(1,b); x.fillStyle=g; x.fillRect(0,0,800,600); };
+  const rr=(X,Y,w,h,r,f)=>{ x.beginPath(); x.roundRect(X,Y,w,h,r); x.fillStyle=f; x.fill(); };
+  const ls=(X,Y,n)=>{ for(let i=0;i<n;i++){ rr(X+i*34,Y,30,70,4,"#f4f4f2"); rr(X+i*34+8,Y+22,14,22,2,i%4===0?"#1d6fd1":"#3a3a3a"); } };
+  if(art==="zp"){ verlauf("#b9b2a6","#8f897e"); rr(150,40,500,520,10,"#e9e8e3"); rr(170,60,460,480,6,"#d9d8d2");
+    for(const X of [190,410]){ rr(X,90,200,170,6,"#2f3133"); rr(X+30,115,140,60,4,"#c8d6c4"); x.fillStyle="#111"; x.font="bold 30px monospace"; x.fillText("0"+(X===190?"48213":"10577"),X+40,155); }
+    ls(200,330,12); rr(190,440,420,60,4,"#c9c8c2"); }
+  else if(art==="hak"){ verlauf("#a7a39b","#7d7a73"); rr(240,80,320,440,8,"#3b3d40"); rr(270,120,260,360,6,"#55585c"); for(let i=0;i<3;i++){ rr(300+i*70,180,50,140,6,"#d8c25a"); rr(312+i*70,200,26,100,4,"#f0e6b0"); }
+    x.strokeStyle="#111"; x.lineWidth=18; for(let i=0;i<5;i++){ x.beginPath(); x.moveTo(320+i*40,480); x.lineTo(320+i*40,600); x.stroke(); } }
+  else if(art==="uvalt"||art==="uv"){ verlauf(art==="uv"?"#ecebe7":"#c7c1b4",art==="uv"?"#d4d2cc":"#a29b8d"); rr(130,60,540,480,10,art==="uv"?"#ffffff":"#d6d1c4"); for(let r=0;r<3;r++) ls(160,100+r*140,14);
+    if(art==="uvalt"){ x.strokeStyle="#7a5a2a"; x.lineWidth=3; for(let i=0;i<14;i++){ x.beginPath(); x.moveTo(175+i*34,100); x.bezierCurveTo(160+i*30,40,220+i*20,20,200+i*25,0); x.stroke(); } }
+    else { x.fillStyle="#333"; x.font="14px sans-serif"; for(let i=0;i<14;i++) x.fillText("F"+(i+1),168+i*34,190); } }
+  else if(art==="mangel"){ verlauf("#d9d4c8","#b8b1a2"); rr(200,180,400,240,12,"#efe9dc"); x.fillStyle="rgba(120,70,20,.55)"; x.beginPath(); x.ellipse(420,300,120,70,0.3,0,7); x.fill();
+    x.strokeStyle="#c62828"; x.lineWidth=8; x.beginPath(); x.ellipse(420,300,170,110,0.3,0,7); x.stroke(); }
+  else if(art==="baustrom"){ verlauf("#9fb3c4","#6f8291"); rr(260,120,280,380,14,"#1f5fae"); rr(290,160,220,90,8,"#e9eef3"); for(let i=0;i<4;i++) rr(300+i*52,300,40,50,8,"#f2c230"); }
+  else if(art==="leerrohr"){ verlauf("#d8d2c6","#bdb5a6"); x.strokeStyle="#e47a1d"; x.lineWidth=22; x.lineCap="round"; for(let i=0;i<4;i++){ x.beginPath(); x.moveTo(120+i*40,600); x.bezierCurveTo(140+i*40,320,380+i*30,260,700,180+i*40); x.stroke(); } rr(560,140,90,90,45,"#9b9b98"); }
+  else if(art==="pa"){ verlauf("#e3e1dc","#c3c0b8"); rr(120,240,560,70,10,"#c08a3e"); x.fillStyle="#7b5420"; for(let i=0;i<8;i++){ x.beginPath(); x.arc(170+i*66,275,14,0,7); x.fill(); } x.strokeStyle="#2e7d32"; x.lineWidth=14; x.beginPath(); x.moveTo(250,310); x.lineTo(250,600); x.stroke(); x.strokeStyle="#f2c230"; x.setLineDash([24,24]); x.stroke(); }
+  x.setLineDash([]); x.fillStyle="rgba(0,0,0,.55)"; rr(16,548,190,36,8,"rgba(0,0,0,.55)"); x.fillStyle="#fff"; x.font="bold 18px sans-serif"; x.fillText("Beispielfoto",36,573);
+  return c.toDataURL("image/jpeg",0.78);
+}
+function demoUnterschrift(){ const c=document.createElement("canvas"); c.width=600; c.height=220; const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,600,220);
+  x.strokeStyle="#14202c"; x.lineWidth=4; x.lineCap="round"; x.beginPath(); x.moveTo(60,150);
+  for(let i=0;i<=60;i++){ const t=i/60; x.lineTo(60+t*460, 130-Math.sin(t*18)*38*(1-t*0.5)-t*30); } x.stroke(); x.beginPath(); x.moveTo(90,170); x.quadraticCurveTo(300,190,520,150); x.stroke(); return c.toDataURL("image/jpeg",0.8); }
+const DEMO_FOTOS={"demo-f-zp":"zp","demo-f-hak":"hak","demo-f-uvalt":"uvalt","demo-f-mangel":"mangel","demo-f-ue-baustrom":"baustrom","demo-f-ue-leerrohr":"leerrohr","demo-f-ue-uv":"uv","demo-f-ue-pa":"pa"};
+async function demoFotosSchreiben(an){ try{ const rq=indexedDB.open("baustelle_fotos",1); rq.onupgradeneeded=()=>rq.result.createObjectStore("f"); const db=await demoIdb(rq);
+    if(!db.objectStoreNames.contains("f")){ db.close(); return; }
+    const tx=db.transaction("f","readwrite"), st=tx.objectStore("f"); Object.keys(DEMO_FOTOS).forEach(id=>{ if(an) st.put(demoBild(DEMO_FOTOS[id]),id); else st.delete(id); }); await demoTx(tx); db.close(); }catch(e){} }
 function demoIdb(rq){ return new Promise((res,rej)=>{ rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); }); }
 function demoTx(tx){ return new Promise(res=>{ tx.oncomplete=tx.onerror=tx.onabort=()=>res(); }); }
 async function demoSchalten(an){
   for(const [name,stores] of DEMO_SPEICHER){
     const db=await openStores(name,stores,true);
     for(const s of stores){ const alle=await demoIdb(db.transaction(s).objectStore(s).getAll()); const tx=db.transaction(s,"readwrite"); alle.filter(r=>r.demo).forEach(r=>tx.objectStore(s).delete(r.id)); await demoTx(tx); }
-    if(an){ const D=demoDaten(); for(const s of stores){ if(!D[s]||!D[s].length) continue; const tx=db.transaction(s,"readwrite"); D[s].forEach(r=>tx.objectStore(s).put(r)); await demoTx(tx); } }
+    if(an){ const D=demoDaten(); const sig=demoUnterschrift(); (D.baustellen||[]).forEach(b=>{ if(b.aufnahme&&b.aufnahme.sig==="demo-sig") b.aufnahme.sig=sig; }); for(const s of stores){ if(!D[s]||!D[s].length) continue; const tx=db.transaction(s,"readwrite"); D[s].forEach(r=>tx.objectStore(s).put(r)); await demoTx(tx); } }
     db.close();
   }
+  await demoFotosSchreiben(an);
   if(!an) try{ const db=await demoIdb(indexedDB.open("evse_protokolle"));
     if(db.objectStoreNames.contains("meta")){ const m=await demoIdb(db.transaction("meta").objectStore("meta").getAll()), weg=m.filter(x=>x.demo).map(x=>x.id);
       if(weg.length){ const tx=db.transaction(["meta","blob"],"readwrite"); weg.forEach(id=>{ tx.objectStore("meta").delete(id); tx.objectStore("blob").delete(id); }); await demoTx(tx); } }

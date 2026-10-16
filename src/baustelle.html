@@ -1395,7 +1395,7 @@ async function fotoFetch(ids){
 function idbOpen(){ return new Promise((res,rej)=>{ if(!window.indexedDB) return rej(0); const r=indexedDB.open("baustelle_fotos",1); r.onupgradeneeded=()=>r.result.createObjectStore("f"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
 async function fotoInit(){
   try{ fotoDB=await idbOpen(); const all=await idbAll(fotoDB);
-    const used=new Set([...live("eintraege").flatMap(e=>e.fotos||[]),...(entw?entw.fotos:[]),...notizFotos(),...(META.sync.fotoQueue||[])]);
+    const used=new Set([...live("eintraege").flatMap(e=>e.fotos||[]),...live("baustellen").flatMap(b=>afFotoIds(b)),...(entw?entw.fotos:[]),...notizFotos(),...(META.sync.fotoQueue||[])]);
     const orphan=[]; for(const [k,v] of all){ if(used.has(k)) fotoCache.set(k,v); else orphan.push(k); } fotoDel(orphan);
   }catch(e){ fotoDB=null; }
   if(["baustelle","eintrag","notizen","notiz"].includes(nav.v)) softRender();
