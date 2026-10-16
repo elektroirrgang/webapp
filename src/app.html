@@ -1028,13 +1028,15 @@ const GROUPS = [
     "MFT auf RCD, Mode „current“ (Rampe), RCD-Typ einstellen. Eine Messung zeigt Auslösestrom IΔ, Berührungsspannung UB und Auslösezeit t.",
     "6 mA DC: nur bei DC-Erkennung in der Wallbox bzw. RCD Typ A-EV – die Ladung muss abbrechen.",
     "Die Einzelmessungen bei ½ × und 5 × IΔn sind optional (z. B. AUTO-Modus des MFT).",
-    "Klappt die RCD-Messung über den FEV300 nicht (die Wallbox schaltet selbst ab, rote LED), oben „Nein“ wählen – die RCD-Werte entfallen dann. Die 6-mA-DC-Prüfung der Wallbox bleibt."], rows:[
+    "Schaltet die Wallbox bei der RCD-Rampe selbst ab (rote LED), misst das MFT die Wallbox und nicht den RCD im Verteiler. Dann oben „Nein“ wählen und die angezeigten Werte (mA, ms) optional als Abschaltung der Wallbox eintragen. Die 6-mA-DC-Prüfung bleibt."], rows:[
     {k:"ria", l:"Auslösestrom IΔ", d:"Rampe", u:"mA", ria:true, rcd:true},
     {k:"ub", l:"Berührungsspannung UB", u:"V", soll:"≤ 50 V", t:v=>v<=50, rcd:true},
     {k:"r1", l:"Auslösezeit t", d:"bei der Rampe mit angezeigt", u:"ms", soll:"≤ 300 ms", t:v=>v<=300, rcd:true},
     {k:"dc6", l:"6 mA DC (EVSE)", d:"Ladung bricht ab", u:"s", soll:"≤ 10 s", t:v=>v<=10, dc:true},
     {k:"r05", l:"½ × IΔn", type:"chk", soll:"keine Auslösung", opt:true, rcd:true},
     {k:"r5", l:"5 × IΔn Auslösezeit", u:"ms", soll:"≤ 40 ms", t:v=>v<=40, opt:true, rcd:true},
+    {k:"rcdw", l:"Wallbox schaltet ab bei", d:"RCD-Rampe über den FEV300, rote LED", u:"mA", soll:"≤ 30 mA", t:v=>v<=30, rcdw:true, opt:true},
+    {k:"rcdwt", l:"Abschaltzeit Wallbox", d:"bei der Rampe mit angezeigt", u:"ms", soll:"≤ 300 ms", t:v=>v<=300, rcdw:true, opt:true},
   ]},
   {id:"fkt", ps:"am FEV300", t:"Funktion / Fehlersimulation", sub:"am FEV300, Wallbox lädt (CP = C)", how:[
     "Taste E (CP-Fehler gegen PE) drücken: Die Wallbox muss die Ladung abbrechen.",
@@ -1106,7 +1108,7 @@ const polRCBO=s=>s.phasen===3?"4-polig":"2-polig";
 /* Isolation: bis 16.10.2026 ein Wert „gebrückt gegen PE“, seitdem jede Strecke einzeln. Alte Prüfungen behalten ihre Zeile. */
 const ISO_K=["riso12","riso13","riso23","riso1pe","riso2pe","riso3pe"];
 const isoAlt=s=>(s.lp||[]).some(lp=>lp&&lp.v&&lp.v.riso!=null&&lp.v.riso!==""&&!ISO_K.some(k=>lp.v[k]!=null&&lp.v[k]!==""));
-function rowVisible(r,s){ if(r.rcd&&s.rcdIntern) return false; if(r.isoAlt) return isoAlt(s); if(r.iso&&isoAlt(s)) return false; if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
+function rowVisible(r,s){ if(r.rcdw) return !!s.rcdIntern; if(r.rcd&&s.rcdIntern) return false; if(r.isoAlt) return isoAlt(s); if(r.iso&&isoAlt(s)) return false; if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
 function evalRow(r,val,s){
   if(val==null||val==="") return r.opt?"skip":"open";
   if(r.type==="chk") return val==="ok"?"ok":val==="nok"?"bad":"open";
@@ -2283,7 +2285,7 @@ function saeuleView(){
     const gr=groupState(g,s,li); nr++;
     h+=`<section class="card step"><div class="gh"><span class="stepno">${nr}</span><div><h3>${esc(g.t)}</h3><p>${esc(g.sub)}</p></div><span class="pill ${gr}" data-gres="${g.id}">${RES_SHORT[gr]}</span></div>`;
     if(g.how) h+=`<details class="how"><summary>So wird gemessen</summary><ol>${g.how.map(x=>`<li>${x}</li>`).join("")}</ol></details>`;
-    if(g.id==="rcd") h+=`<div class="rcdi"><div class="lbl">RCD im Verteiler über den FEV300 messbar?</div>${seg("rcdIntern",s.rcdIntern?"1":"0",[["0","Ja"],["1","Nein, nicht messbar"]])}${s.rcdIntern?`<p class="sup">Auslösestrom, Berührungsspannung und Auslösezeit des RCD entfallen hier. Im Protokoll steht, dass der RCD nicht über den Prüfadapter messbar war.</p>`:""}</div>`;
+    if(g.id==="rcd") h+=`<div class="rcdi"><div class="lbl">RCD im Verteiler über den FEV300 messbar?</div>${seg("rcdIntern",s.rcdIntern?"1":"0",[["0","Ja"],["1","Nein, nicht messbar"]])}${s.rcdIntern?`<p class="sup">Auslösestrom, Berührungsspannung und Auslösezeit des RCD entfallen. Was das MFT dabei angezeigt hat, kannst du unten als Abschaltung der Wallbox eintragen (optional).</p>`:""}</div>`;
     let optOpen=false; h+=`<div class="mgrid">`;
     for(const r of rows){
       if(r.opt&&!optOpen){ optOpen=true; const hasVal=rows.some(x=>x.opt&&lp.v[x.k]); h+=`</div><details class="optrows"${hasVal?" open":""}><summary>Zusätzliche Messungen (optional)</summary><div class="mgrid">`; }
