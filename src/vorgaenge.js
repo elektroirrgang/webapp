@@ -20,21 +20,56 @@ function vgNaechster(v){ const i=vgStufe(v); if(vgZu(v)) return null;
   if(i===1) return istBuero()?{act:"vgAuftrag",t:"Auftrag erteilen"}:{warte:"wartet aufs Büro"};
   if(i===2) return {act:"vgTermin",t:"Termin eintragen"};
   return {act:"vgErledigt",t:"Abschließen"}; }
-function vgZelle(v,k,i){ const s=v.s&&v.s[k], st=vgStufe(v);
+function vgZelle(v,k,i){ const s=v.s&&v.s[k], st=vgStufe(v), id=esc(v.id), lbl=`<span class="vg-zk"><i class="vg-dot DOT"></i>${esc(VG_S[i][1])}</span>`;
+  const knopf=(kl,dot,inhalt)=>`<button class="vg-z ${kl}" data-act="vgStep" data-id="${id}" data-k="${k}">${lbl.replace("DOT",dot)}${inhalt}</button>`;
   if(s){ const extra=k==="auftrag"&&s.nr?`<em>SCC ${esc(s.nr)}</em>`:k==="termin"&&s.datum?`<em>${esc(deDate(s.datum))}${s.zeit?` · ${esc(s.zeit)} Uhr`:""}${s.mit?` · ${esc(s.mit)}`:""}</em>`:"";
-    return `<div class="vg-z ok"><span class="vg-zk"><i class="vg-dot ok"></i>${esc(VG_S[i][1])}</span><span class="vg-zw"><span class="vg-wer">${esc(vgVorn(s.wer&&s.wer.name)||"–")} · </span>${esc(vgZeit(s.at))}</span>${extra}</div>`; }
-  if(i===st+1&&!vgZu(v)){ const n=vgNaechster(v); if(n&&n.act) return `<button class="vg-z next" data-act="${n.act}" data-id="${esc(v.id)}"><span class="vg-zk"><i class="vg-dot nx"></i>${esc(VG_S[i][1])}</span><span class="vg-nt">${icon("add")}<span>${esc(n.t)}</span></span><span class="vg-zw vg-nm">offen</span></button>`;
-    if(n&&n.warte) return `<div class="vg-z warte"><span class="vg-zk"><i class="vg-dot warte"></i>${esc(VG_S[i][1])}</span><span class="vg-zw">${esc(n.warte)}</span></div>`; }
-  return `<div class="vg-z leer"><span class="vg-zk"><i class="vg-dot"></i>${esc(VG_S[i][1])}</span></div>`; }
+    return knopf("ok","ok",`<span class="vg-zw"><span class="vg-wer">${esc(vgVorn(s.wer&&s.wer.name)||"–")} · </span>${esc(vgZeit(s.at))}</span>${extra}`); }
+  if(v.abgelehnt&&i===st+1) return knopf("bad","bad",`<span class="vg-zw">abgelehnt</span>`);
+  if(i===st+1&&!vgZu(v)){ const n=vgNaechster(v);
+    if(n&&n.act) return `<button class="vg-z next" data-act="${n.act}" data-id="${id}"><span class="vg-nt">${icon("add")}<span>${esc(n.t)}</span></span></button>${knopf("nextm","nx",`<span class="vg-zw">offen</span>`)}`;
+    if(n&&n.warte) return knopf("warte","warte",`<span class="vg-zw">${esc(n.warte)}</span>`); }
+  return `<div class="vg-z leer">${lbl.replace("DOT","")}</div>`; }
+/* Pop-up zu einem einzelnen Schritt: was war der Anruf, ist die Anfrage beim Büro, welcher Auftrag, welcher Termin */
+function vgSeit(t){ const h=(Date.now()-t)/36e5; return h<1?"seit weniger als einer Stunde":h<24?`seit ${Math.floor(h)} Std.`:`seit ${Math.floor(h/24)} Tag${Math.floor(h/24)>1?"en":""}`; }
+function vgStepDlg(v,k){ const s=(v.s||{})[k], st=vgStufe(v), n=vgNaechster(v), id=esc(v.id), wer=x=>esc((x&&x.wer&&x.wer.name)||"–");
+  const z=(l,w)=>w?`<div class="vg-kv"><span>${esc(l)}</span><b>${w}</b></div>`:"";
+  const stat=(kl,t)=>`<div class="vg-stat ${kl}"><i class="vg-dot ${kl}"></i><span>${t}</span></div>`;
+  let body="", weiter="";
+  if(k==="anruf"){
+    body=`<div class="vg-betr"><small>Betreff</small><p>${esc(v.anliegen||"–")}</p></div>${v.dringend?`<span class="vg-dr">dringend</span>`:""}
+      ${z("Kunde",esc(vgKunde(v)))}${v.tel?z("Telefon",`<a class="vg-tel" href="tel:${esc(v.tel.replace(/[^\d+]/g,""))}">${icon("phone")}${esc(v.tel)}</a>`):""}
+      ${z("Angenommen von",wer(s))}${z("Wann",esc(vgZeit(s&&s.at)))}`;
+    if(st===0&&!vgZu(v)) weiter=`<button class="btn-text" data-act="vgAnfrage" data-id="${id}">Anfrage ans Büro</button>`; }
+  else if(k==="anfrage"){
+    body=s?stat("ok","An das Büro weitergeleitet")+z("Weitergeleitet von",wer(s))+z("Wann",esc(vgZeit(s.at))):stat("","Noch nicht an das Büro weitergeleitet");
+    if(s) body+= v.s.auftrag?stat("ok",`Vom Büro angenommen – Auftrag erteilt${v.s.auftrag.nr?` (SCC ${esc(v.s.auftrag.nr)})`:""}`)
+      : v.abgelehnt?stat("bad",`Vom Büro abgelehnt${v.abgelehnt.grund?`: ${esc(v.abgelehnt.grund)}`:""}`)
+      : stat("warte",`Liegt beim Büro, ${vgSeit(s.at)} – noch nicht bearbeitet`);
+    if(!s&&!vgZu(v)) weiter=`<button class="btn-text" data-act="vgAnfrage" data-id="${id}">Jetzt weiterleiten</button>`;
+    else if(st===1&&!vgZu(v)&&istBuero()) weiter=`<button class="btn-text danger" data-act="vgAblehnen" data-id="${id}">Ablehnen</button><button class="btn-text" data-act="vgAuftrag" data-id="${id}">Auftrag erteilen</button>`; }
+  else if(k==="auftrag"){
+    if(s) body=stat("ok","Auftrag erteilt")+z("SCC-Auftragsnummer",esc(s.nr||"–"))+z("Erteilt von",wer(s))+z("Wann",esc(vgZeit(s.at)));
+    else if(v.abgelehnt) body=stat("bad","Vom Büro abgelehnt")+z("Grund",esc(v.abgelehnt.grund||"–"))+z("Von",wer(v.abgelehnt))+z("Wann",esc(vgZeit(v.abgelehnt.at)));
+    else if(st===1) body=stat("warte",`Wartet aufs Büro, ${vgSeit(v.s.anfrage.at)}`)+(istBuero()?"":`<p class="sup">Den Auftrag erteilt das Büro.</p>`);
+    else body=stat("","Erst kommt die Anfrage ans Büro.");
+    if(st===1&&!vgZu(v)&&istBuero()) weiter=`<button class="btn-text danger" data-act="vgAblehnen" data-id="${id}">Ablehnen</button><button class="btn-text" data-act="vgAuftrag" data-id="${id}">Auftrag erteilen</button>`; }
+  else if(k==="termin"){
+    if(s) body=stat(s.datum<today()&&!v.erledigt?"warte":"ok",s.datum<today()&&!v.erledigt?"Termin ist vorbei – noch nicht abgeschlossen":"Termin steht")
+      +z("Datum",esc(deDate(s.datum)))+z("Uhrzeit",s.zeit?esc(s.zeit)+" Uhr":"")+z("Wer fährt hin",esc(s.mit||""))+z("Eingetragen von",wer(s))+(v.erledigt?stat("ok",`Erledigt – ${wer(v.erledigt)}, ${esc(vgZeit(v.erledigt.at))}`):"");
+    else body=stat("",st===2?"Noch kein Termin eingetragen":"Erst muss der Auftrag erteilt sein.");
+    if(!vgZu(v)&&st>=2) weiter=(s?`<button class="btn-text" data-act="vgTermin" data-id="${id}">Termin ändern</button><button class="btn-text" data-act="vgErledigt" data-id="${id}">Abschließen</button>`:`<button class="btn-text" data-act="vgTermin" data-id="${id}">Termin eintragen</button>`); }
+  const titel={anruf:"Anruf",anfrage:"Anfrage",auftrag:"Auftrag",termin:"Termin"}[k];
+  dialog(`${titel} – ${vgKunde(v)}`,`<div class="vg-dlg">${body}</div>`,
+    `${k==="anruf"?`<button class="btn-text" data-act="vgEdit" data-id="${id}">Bearbeiten</button>`:""}<span style="flex:1"></span>${weiter||`<button class="btn-text" data-act="cancel">Schließen</button>`}`); }
 function vgKopf(v){ const a=vgAlter(v);
-  return `<button class="vg-k" data-act="vgOpen" data-id="${esc(v.id)}"><span class="vg-kn">${v.dringend?`<i class="vg-dr">dringend</i>`:""}${esc(vgKunde(v))}</span><span class="vg-ka">${esc(v.anliegen||"")}</span>
+  return `<button class="vg-k" data-act="vgOpen" data-id="${esc(v.id)}"><span class="vg-kn">${v.dringend?`<i class="vg-dr">dringend</i>`:""}${esc(vgKunde(v))}</span>
     <span class="vg-kf">${v.tel?`<span>${icon("phone")}${esc(v.tel)}</span>`:""}${a?pill(a.kl,a.txt):""}${v.erledigt?pill("ok","erledigt"):v.abgelehnt?pill("bad","abgelehnt"):""}</span></button>`; }
-function vgZeile(v){ return `<div class="vg-row${v.dringend?" dr":""}">${vgKopf(v)}${VG_S.map(([k],i)=>vgZelle(v,k,i)).join("")}${vgZu(v)?"":`<div class="vg-mob">${(()=>{ const n=vgNaechster(v); return n&&n.act?`<button class="btn-tonal" data-act="${n.act}" data-id="${esc(v.id)}">${icon("add")}${esc(n.t)}</button>`:n&&n.warte?`<span class="meta">${esc(n.warte)}</span>`:""; })()}</div>`}</div>`; }
+function vgZeile(v){ return `<div class="vg-row${v.dringend?" dr":""}">${vgKopf(v)}${VG_S.map(([k],i)=>vgZelle(v,k,i)).join("")}${vgZu(v)?"":`<div class="vg-mob">${(()=>{ const n=vgNaechster(v); return n&&n.act?`<button class="btn-tonal" data-act="${n.act}" data-id="${esc(v.id)}">${icon("add")}${esc(n.t)}</button>`:""; })()}</div>`}</div>`; }
 function vorgaengeView(){
   const f=META.vgF||"offen", L=vgFilter(f), n=x=>vgFilter(x).length;
   const chips=`<div class="chips filt vg-chips">${VG_F.map(([k,t])=>`<button class="chip" data-act="vgFilter" data-v="${k}" aria-pressed="${f===k}">${icon("check")}${esc(t)}${k==="erledigt"||k==="abgelehnt"?"":` (${n(k)})`}</button>`).join("")}</div>`;
   if(!live("vorgaenge").length) return `<div class="narrow vg">${chips}<div class="empty">${icon("board")}<h2>Noch keine Aufträge</h2><p>Kommt ein Anruf rein: unten auf „Anruf“ tippen, Kunde und Anliegen eintragen – fertig. Danach rückt der Vorgang Schritt für Schritt weiter: Anfrage ans Büro, Auftrag, Termin.</p></div></div>`;
-  return `<div class="narrow vg">${chips}<div class="vg-tab"><div class="vg-th"><span>Kunde und Anliegen</span>${VG_S.map(([,t])=>`<span>${t}</span>`).join("")}</div>
+  return `<div class="narrow vg">${chips}<div class="vg-tab"><div class="vg-th"><span>Kunde</span>${VG_S.map(([,t])=>`<span>${t}</span>`).join("")}</div>
     ${L.length?L.map(vgZeile).join(""):`<p class="meta" style="margin:16px 4px">Keine Vorgänge in dieser Auswahl.</p>`}</div>
     <p class="hint">Anfrage stellen darf jeder. Den Auftrag erteilt das Büro und trägt dabei die Auftragsnummer aus SCC ein.</p></div>`; }
 /* Erfassen / Bearbeiten */
@@ -73,14 +108,15 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="vgSpeichern") vgSpeichern();
   else if(a==="vgFilter"){ META.vgF=b.dataset.v; metaSave(); render(); }
   else if(a==="vgOpen"&&v) vgOpen(v);
+  else if(a==="vgStep"&&v) vgStepDlg(v,b.dataset.k);
   else if(a==="vgEdit"&&v){ closeOverlays(); vgDialog(v); }
   else if(a==="vgAnfrage"&&v) vgSchritt(id,"anfrage");
   else if(a==="vgAuftrag"&&v){ if(!istBuero()){ toast("Den Auftrag erteilt das Büro"); return; }
     dialog("Auftrag erteilen",`<p class="sup" style="margin:0 0 12px">${esc(vgKunde(v))} – ${esc(v.anliegen||"")}</p><div class="fg1">${tf("vgNr","Auftragsnummer aus SCC (optional)","",{form:true,ph:"z. B. 2610-150"})}</div>`,
       `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="vgAuftragOk" data-id="${esc(id)}">Auftrag erteilen</button>`); }
   else if(a==="vgAuftragOk"&&v){ vgSchritt(id,"auftrag",{nr:formVals().vgNr||""}); }
-  else if(a==="vgTermin"&&v){ dialog("Termin eintragen",`<p class="sup" style="margin:0 0 12px">${esc(vgKunde(v))} – ${esc(v.anliegen||"")}</p><div class="fg1">
-      ${tf("vgDatum","Datum",today(),{form:true,type:"date"})}${tf("vgZeitE","Uhrzeit",(v.s.termin&&v.s.termin.zeit)||"",{form:true,ph:"z. B. 8:00"})}${tf("vgMit","Wer fährt hin? (optional)","",{form:true,list:"dl-vgm",ph:"Name"})}${datalist("dl-vgm",team().map(m=>m.name))}</div>`,
+  else if(a==="vgTermin"&&v){ dialog(v.s.termin?"Termin ändern":"Termin eintragen",`<p class="sup" style="margin:0 0 12px">${esc(vgKunde(v))} – ${esc(v.anliegen||"")}</p><div class="fg1">
+      ${tf("vgDatum","Datum",(v.s.termin&&v.s.termin.datum)||today(),{form:true,type:"date"})}${tf("vgZeitE","Uhrzeit",(v.s.termin&&v.s.termin.zeit)||"",{form:true,ph:"z. B. 8:00"})}${tf("vgMit","Wer fährt hin? (optional)",(v.s.termin&&v.s.termin.mit)||"",{form:true,list:"dl-vgm",ph:"Name"})}${datalist("dl-vgm",team().map(m=>m.name))}</div>`,
       `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="vgTerminOk" data-id="${esc(id)}">Eintragen</button>`); }
   else if(a==="vgTerminOk"&&v){ const F=formVals(); if(!F.vgDatum){ toast("Bitte ein Datum wählen"); return; } vgSchritt(id,"termin",{datum:F.vgDatum,zeit:F.vgZeitE,mit:F.vgMit}); }
   else if(a==="vgErledigt"&&v){ v.erledigt={wer:who(),at:Date.now()}; saveRec("vorgaenge",v); closeOverlays(); render(); toast("Vorgang abgeschlossen","Rückgängig",()=>{ delete v.erledigt; saveRec("vorgaenge",v); render(); }); }
