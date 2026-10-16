@@ -33,7 +33,7 @@ function vgZelle(v,k,i){ const s=v.s&&v.s[k], st=vgStufe(v), id=esc(v.id), lbl=`
   const knopf=(kl,dot,inhalt)=>`<button class="vg-z ${kl}" data-act="vgStep" data-id="${id}" data-k="${k}">${lbl.replace("DOT",dot)}${inhalt}</button>`;
   if(s){ const extra=k==="auftrag"&&s.nr?`<em>SCC ${esc(s.nr)}</em>`:k==="termin"&&s.datum?`<em>${esc(deDate(s.datum))}${s.zeit?` · ${esc(s.zeit)} Uhr`:""}${s.mit?` · ${esc(s.mit)}`:""}</em>`:"";
     return knopf("ok","ok",`<span class="vg-zw"><span class="vg-wer">${esc(vgVorn(s.wer&&s.wer.name)||"–")} · </span>${esc(vgZeit(s.at))}</span>${extra}`); }
-  if(v.abgelehnt&&i===st+1) return knopf("bad","bad",`<span class="vg-zw">abgelehnt</span>`);
+  if(v.abgelehnt&&i===st+1) return knopf("bad","bad",`<span class="vg-zw">abgelehnt</span><em>${esc(vgVorn(v.abgelehnt.wer&&v.abgelehnt.wer.name)||"")}</em>`);
   if(i===st+1&&!vgZu(v)){ const n=vgNaechster(v);
     if(n&&n.act) return `<button class="vg-z next" data-act="${n.act}" data-id="${id}"><span class="vg-nt">${icon("add")}<span>${esc(n.t)}</span></span></button>${knopf("nextm","nx",`<span class="vg-zw">offen</span>`)}`;
     if(n&&n.warte) return knopf("warte","warte",`<span class="vg-zw">${esc(n.warte)}</span>`); }
@@ -79,14 +79,37 @@ function vgStepDlg(v,k){ const s=(v.s||{})[k], st=vgStufe(v), n=vgNaechster(v), 
     `${k==="anruf"?`<button class="btn-text" data-act="vgEdit" data-id="${id}">Bearbeiten</button>`:""}<span style="flex:1"></span>${weiter||`<button class="btn-text" data-act="cancel">Schließen</button>`}`); }
 function vgKopf(v){ const a=vgAlter(v);
   return `<button class="vg-k" data-act="vgOpen" data-id="${esc(v.id)}"><span class="vg-kn">${v.dringend?`<i class="vg-dr">dringend</i>`:""}${esc(vgKunde(v))}</span>
-    <span class="vg-kf">${v.tel?`<span>${icon("phone")}${esc(v.tel)}</span>`:""}${a?pill(a.kl,a.txt):""}${vgZu(v)&&!v.abgelehnt?pill("ok","ausgeführt"):v.abgelehnt?pill("bad","abgelehnt"):""}</span></button>`; }
+    <span class="vg-kf">${v.tel?`<span>${icon("phone")}${esc(v.tel)}</span>`:""}${a?pill(a.kl,a.txt):""}${vgZu(v)&&!v.abgelehnt?pill("ok","ausgeführt"):v.abgelehnt?pill("bad",`abgelehnt${v.abgelehnt.wer&&v.abgelehnt.wer.name?` von ${vgVorn(v.abgelehnt.wer.name)}`:""}`):""}</span></button>`; }
 function vgZeile(v){ return `<div class="vg-row${v.dringend?" dr":""}">${vgKopf(v)}${VG_S.map(([k],i)=>vgZelle(v,k,i)).join("")}${vgZu(v)?"":`<div class="vg-mob">${(()=>{ const n=vgNaechster(v); return n&&n.act?`<button class="btn-tonal" data-act="${n.act}" data-id="${esc(v.id)}">${icon("add")}${esc(n.t)}</button>`:""; })()}</div>`}</div>`; }
+/* Suche + Sortier-/Filterknopf (gleiches Muster wie Kunden und Bibliothek) */
+FDEF.vg={std:{sort:"dringend",dr:"alle",wer:"alle"},
+  sort:[["dringend","Dringende zuerst"],["neu","Neueste zuerst"],["alt","Älteste zuerst"],["az","Kunde A–Z"],["termin","Nächster Termin zuerst"]],
+  gruppen:[{k:"dr",t:"Dringend",opts:[["alle","Alle"],["ja","Nur dringende"]]},{k:"wer",t:"Person",opts:[["alle","Alle"],["mein","Nur meine"]]}],
+  liste:()=>vgListe()};
+const vgAt=v=>(v.s&&v.s.anruf&&v.s.anruf.at)||v.created||0;
+function vgMein(v){ const m=String(ME.mail||"").toLowerCase(), n=String(ME.name||"").trim(); if(!m&&!n) return true;
+  return Object.values(v.s||{}).some(x=>x&&x.wer&&((m&&String(x.wer.mail||"").toLowerCase()===m)||(n&&x.wer.name===n)))||(v.createdBy&&String(v.createdBy.mail||"").toLowerCase()===m)
+    ||(n&&v.s&&v.s.termin&&String(v.s.termin.mit||"").split(/\s*,\s*/).includes(n)); }
+function vgListe(){ const f=META.vgF||"offen", q=String(query||"").trim().toLowerCase(), H=x=>String(x||"").toLowerCase().includes(q);
+  let L=vgFilter(f);
+  if(q) L=L.filter(v=>H(vgKunde(v))||H(v.anliegen)||H(v.tel)||H(v.s&&v.s.auftrag&&v.s.auftrag.nr)||H(v.s&&v.s.termin&&v.s.termin.mit));
+  if(fW("vg","dr")==="ja") L=L.filter(v=>v.dringend);
+  if(fW("vg","wer")==="mein") L=L.filter(vgMein);
+  const so=fW("vg","sort"), td=v=>(v.s&&v.s.termin&&v.s.termin.datum)||"9999";
+  if(so==="neu") L.sort((a,b)=>vgAt(b)-vgAt(a)); else if(so==="alt") L.sort((a,b)=>vgAt(a)-vgAt(b));
+  else if(so==="az") L.sort((a,b)=>vgKunde(a).replace(/^BEISPIEL\s+/,"").localeCompare(vgKunde(b).replace(/^BEISPIEL\s+/,""),"de")||vgAt(b)-vgAt(a));
+  else if(so==="termin") L.sort((a,b)=>td(a).localeCompare(td(b))||vgAt(b)-vgAt(a));
+  const kopf=`<div class="vg-th"><span>Kunde</span>${VG_S.map(([k,t])=>`<span class="vg-thk"><i class="vg-dot" style="background:var(--vg-${k}-d,var(--ok))"></i>${t}</span>`).join("")}</div>`;
+  if(!L.length) return fInfo("vg",0,"Vorgang","Vorgänge")+`<p class="meta" style="margin:16px 4px">${q?`Nichts gefunden für „${esc(query)}“.`:"Keine Vorgänge in dieser Auswahl."}</p>`;
+  let zeilen;
+  if(so==="az"){ let b0=null; zeilen=L.map(v=>{ const b=(typeof abcB==="function"?abcB(vgKunde(v).replace(/^BEISPIEL\s+/,"")):vgKunde(v)[0]||"#"); const h=b!==b0?`<div class="vg-abc">${esc(b)}</div>`:""; b0=b; return h+vgZeile(v); }).join(""); }
+  else zeilen=L.map(vgZeile).join("");
+  return fInfo("vg",L.length,"Vorgang","Vorgänge")+`<div class="vg-tab">${kopf}${zeilen}</div>`; }
 function vorgaengeView(){ vgAbgleich();
-  const f=META.vgF||"offen", L=vgFilter(f), n=x=>vgFilter(x).length;
+  const f=META.vgF||"offen", n=x=>vgFilter(x).length;
   const chips=`<div class="chips filt vg-chips">${VG_F.map(([k,t])=>`<button class="chip" data-act="vgFilter" data-v="${k}" aria-pressed="${f===k}">${icon("check")}${esc(t)}${k==="erledigt"||k==="abgelehnt"?"":` (${n(k)})`}</button>`).join("")}</div>`;
   if(!live("vorgaenge").length) return `<div class="narrow vg">${chips}<div class="empty">${icon("board")}<h2>Noch keine Aufträge</h2><p>Kommt ein Anruf rein: auf „+“ tippen, Kunde und Anliegen eintragen – fertig. Danach rückt der Vorgang Schritt für Schritt weiter: Anfrage ans Büro, Auftrag, Termin, ausgeführt.</p></div></div>`;
-  return `<div class="narrow vg">${chips}<div class="vg-tab"><div class="vg-th"><span>Kunde</span>${VG_S.map(([k,t])=>`<span class="vg-thk"><i class="vg-dot" style="background:var(--vg-${k}-d,var(--ok))"></i>${t}</span>`).join("")}</div>
-    ${L.length?L.map(vgZeile).join(""):`<p class="meta" style="margin:16px 4px">Keine Vorgänge in dieser Auswahl.</p>`}</div>
+  return `<div class="narrow vg">${searchBar("Kunde, Betreff, SCC-Nr.",fKnopf("vg"))}${chips}<div id="res">${vgListe()}</div>
     <p class="hint">Anfrage stellen darf jeder. Den Auftrag erteilt das Büro und trägt dabei die Auftragsnummer aus SCC ein. Mit dem Termin entsteht die Baustelle in der Baustellen-App; steht sie dort auf „Fertig“, ist der Vorgang ausgeführt.</p></div>`; }
 /* Erfassen / Bearbeiten */
 let vgE=null;

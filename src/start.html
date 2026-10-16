@@ -1052,6 +1052,8 @@ button.vg-z{cursor:pointer;-webkit-tap-highlight-color:transparent} button.vg-z:
 .vg-tel{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;color:var(--primary);font-weight:700;text-decoration:none}
 .vg-vlauf{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--outline-v);padding-top:10px}
 .vg-vl{display:grid;grid-template-columns:12px 72px 1fr;align-items:baseline;gap:6px;font-size:13px;color:var(--on-sv)} .vg-vl b{color:var(--on-surface)}
+.vg-abc{font-size:13px;font-weight:800;color:var(--primary);padding:6px 6px 0}
+.vg .search{margin-bottom:12px}
 .vg-thk{display:flex;align-items:center;gap:6px}
 .vg-mitw{display:flex;flex-direction:column;gap:8px}
 .vg-mitl{font-size:13px;font-weight:600;color:var(--on-sv);padding:0 4px}
@@ -2089,7 +2091,7 @@ function zurueck(){
   go({v:"start"});
 }
 
-document.addEventListener("input",ev=>{ if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():kundenListe(); } });
+document.addEventListener("input",ev=>{ if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():nav.v==="auftraege"?vgListe():kundenListe(); } });
 document.addEventListener("change",ev=>{
   const el=ev.target;
   if(el.id==="ablageFile"){ dateiAufnehmen(el); return; }
