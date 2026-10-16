@@ -1213,8 +1213,8 @@ const standorteVon=kid=>live("standorte").filter(s=>s.kundeId===kid).sort((a,b)=
 const ladeparksVon=sid=>live("ladeparks").filter(l=>l.standortId===sid).sort((a,b)=>a.name.localeCompare(b.name,"de"));
 function adrText(r){ if(!r) return ""; const z=[r.strasse,[r.plz,r.ort].filter(Boolean).join(" ")].filter(Boolean).join(", "); return z||r.adresse||""; }
 function adrSplit(r){ if(r.strasse||r.plz||r.ort||!r.adresse) return; const m=r.adresse.match(/^(.*?),\s*(\d{5})\s+(.+)$/); if(m){ r.strasse=m[1]; r.plz=m[2]; r.ort=m[3]; } else r.strasse=r.adresse; }
-const FREIGABEN=["Ladekarte","App","Frei (ohne Freigabe)"];
-const freigabeListe=s=>String(s.freigabe||"").split(/\s*[,/+]\s*|\s+und\s+/).map(x=>x.trim()).filter(Boolean).map(x=>/^frei/i.test(x)?FREIGABEN[2]:/karte|rfid/i.test(x)?"Ladekarte":/app/i.test(x)?"App":x);
+const FREIGABEN=["Ladekarte","RFID-Dongle","App","Frei (ohne Freigabe)"], FREI=FREIGABEN[3];
+const freigabeListe=s=>String(s.freigabe||"").split(/\s*[,/+]\s*|\s+und\s+/).map(x=>x.trim()).filter(Boolean).map(x=>/^frei/i.test(x)?FREI:/dongle|dongel|anh(ä|ae)nger|transponder|chip/i.test(x)?"RFID-Dongle":/karte|rfid/i.test(x)?"Ladekarte":/app/i.test(x)?"App":x);
 const pTitel=p=>`${deDate(p.p.datum)||"ohne Datum"} · ${p.p.art}`;
 
 function importLegacy(list){
@@ -2243,7 +2243,7 @@ function saeuleView(){
         ${tf(b+"typ","Hersteller / Typ",s.typ,{list:"dl-typ"})}${datalist("dl-typ",live("pruefungen").flatMap(p=>p.s.map(x=>x.typ)))}
         <div>${tf(b+"sn","Seriennummer",s.sn)}<div id="snWarn">${snWarnHtml(cur,si)}</div>${(()=>{ const n=geraeteTreffer(s.sn).filter(t=>t.p.id!==cur.id).length; return n?`<button type="button" class="btn-text akte-link" data-act="akte" data-sn="${esc(s.sn)}">${icon("wallbox")}Geräteakte · ${n} frühere Prüfung${n>1?"en":""}</button>`:""; })()}</div>
         ${tf(b+"fw","Firmware (optional)",s.fw,{full:true})}
-        <div class="full"><div class="lbl">Freigabe zum Laden</div><div class="chips">${FREIGABEN.map(f=>`<button type="button" class="chip${f!==FREIGABEN[2]&&freigabeListe(s).includes(FREIGABEN[2])?" dim":""}" data-act="freigabe" data-v="${f}" aria-pressed="${freigabeListe(s).includes(f)}">${icon("check")}${f}</button>`).join("")}</div></div>
+        <div class="full"><div class="lbl">Freigabe zum Laden</div><div class="chips">${FREIGABEN.map(f=>`<button type="button" class="chip${f!==FREI&&freigabeListe(s).includes(FREI)?" dim":""}" data-act="freigabe" data-v="${f}" aria-pressed="${freigabeListe(s).includes(f)}">${icon("check")}${f}</button>`).join("")}</div></div>
         <div><div class="lbl">Ladepunkte</div>${seg("lps",s.lps,[[1,"1"],[2,"2"]])}</div>
         <div><div class="lbl">Anschluss</div>${seg("phasen",s.phasen,[[1,"1-phasig"],[3,"3-phasig"]])}</div>
       </div></section>
@@ -3127,9 +3127,9 @@ document.addEventListener("click",ev=>{
   case "abs": { const s=cur.s[nav.si]; s.absTyp=b.dataset.v; scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "rcdTyp": case "rdc": { const s=cur.s[nav.si], i=rcdInfo(s); if(a==="rcdTyp") setRcd(s,b.dataset.v,i.dc); else setRcd(s,i.t,b.dataset.v==="1"); scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "freigabe": { const s=cur.s[nav.si], v=b.dataset.v; let L=freigabeListe(s);
-    if(L.includes(v)) L=L.filter(x=>x!==v); else L=v===FREIGABEN[2]?[v]:[...L.filter(x=>x!==FREIGABEN[2]),v];
+    if(L.includes(v)) L=L.filter(x=>x!==v); else L=v===FREI?[v]:[...L.filter(x=>x!==FREI),v];
     s.freigabe=FREIGABEN.filter(f=>L.includes(f)).join(", "); scheduleSave();
-    b.parentElement.querySelectorAll("button").forEach(x=>{ x.setAttribute("aria-pressed",L.includes(x.dataset.v)); x.classList.toggle("dim",x.dataset.v!==FREIGABEN[2]&&L.includes(FREIGABEN[2])); }); return; }
+    b.parentElement.querySelectorAll("button").forEach(x=>{ x.setAttribute("aria-pressed",L.includes(x.dataset.v)); x.classList.toggle("dim",x.dataset.v!==FREI&&L.includes(FREI)); }); return; }
   case "pdfIn": { const L=cur.a.pdfOhne=cur.a.pdfOhne||[], id=b.dataset.id, i=L.indexOf(id);
     if(i>=0) L.splice(i,1); else { if(cur.s.length-L.length<=1){ toast("Mindestens eine Ladestation muss in der Prüfung bleiben"); return; } L.push(id); }
     b.setAttribute("aria-pressed",i>=0); scheduleSave(); if(!b.closest("#dlg")){ const y=scrollY; render(); scrollTo(0,y); } return; }
