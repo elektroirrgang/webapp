@@ -996,9 +996,15 @@ const GROUPS = [
   {id:"frei", ps:"Helfer: LS aus", t:"Spannungsfrei", sub:"Helfer schaltet den LS der Ladestation aus", how:[
     "Spannungsfreiheit feststellen, FEV300 in die Ladedose stecken.",
     "Schutzleiter: MFT auf R<sub>LO</sub>, Prüfspitze an eine blanke Gehäuseschraube, zweite Leitung an die PE-Buchse des FEV300.",
-    "Isolation: Erstprüfung an der Zuleitung vor dem Anklemmen, Wiederholungsprüfung im Verteiler – L1+L2+L3+N gebrückt gegen PE. Mit Überspannungsschutz 250 V, sonst 500 V."], rows:[
+    "Isolation: händisch an der Wallbox, Zuleitung angeschlossen, jede Strecke einzeln messen – Außenleiter untereinander und jeder Außenleiter gegen PE. L – N lässt sich nicht messen (Elektronik der Wallbox dazwischen). Mit Überspannungsschutz 250 V, sonst 500 V."], rows:[
     {k:"rpe", l:"Schutzleiter", d:"Gehäuseschraube ↔ PE-Buchse FEV300", u:"Ω", soll:"≤ 0,3 Ω", t:v=>v<=0.3},
-    {k:"riso", l:"Isolation", d:"L1+L2+L3+N gebrückt gegen PE", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1},
+    {k:"riso", l:"Isolation (alt)", d:"L1+L2+L3+N gebrückt gegen PE", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, isoAlt:true},
+    {k:"riso12", l:"Isolation L1 – L2", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, p3:true},
+    {k:"riso13", l:"Isolation L1 – L3", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, p3:true},
+    {k:"riso23", l:"Isolation L2 – L3", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, p3:true},
+    {k:"riso1pe", l:"Isolation L1 – PE", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true},
+    {k:"riso2pe", l:"Isolation L2 – PE", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, p3:true},
+    {k:"riso3pe", l:"Isolation L3 – PE", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, p3:true},
     {k:"risov", l:"Prüfspannung Isolation", type:"sel", pre:true, opts:["500 V","250 V"], soll:"250 V bei Überspannungsschutz", psoll:"500 V (250 V mit SPD)"},
   ]},
   {id:"spann", ps:"FEV300 auf CP = C", t:"Unter Spannung", sub:"Helfer schaltet den LS wieder ein, FEV300 auf CP = C", how:[
@@ -1095,7 +1101,10 @@ function setRcd(s,t,dc){ if(t==="B"||t==="A-EV") dc=false; s.rcdTyp=t; s.rdc=dc;
 const polLS=s=>s.phasen===3?"3-polig":"1-polig", polRCD=s=>s.phasen===3?"4-polig":"2-polig";
 /* FI/LS-Schalter (RCBO): LS und RCD in einem Gerät, mit Neutralleiter – 3-phasig also 4-polig (3P+N) */
 const polRCBO=s=>s.phasen===3?"4-polig":"2-polig";
-function rowVisible(r,s){ if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
+/* Isolation: bis 16.10.2026 ein Wert „gebrückt gegen PE“, seitdem jede Strecke einzeln. Alte Prüfungen behalten ihre Zeile. */
+const ISO_K=["riso12","riso13","riso23","riso1pe","riso2pe","riso3pe"];
+const isoAlt=s=>(s.lp||[]).some(lp=>lp&&lp.v&&lp.v.riso!=null&&lp.v.riso!==""&&!ISO_K.some(k=>lp.v[k]!=null&&lp.v[k]!==""));
+function rowVisible(r,s){ if(r.isoAlt) return isoAlt(s); if(r.iso&&isoAlt(s)) return false; if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
 function evalRow(r,val,s){
   if(val==null||val==="") return r.opt?"skip":"open";
   if(r.type==="chk") return val==="ok"?"ok":val==="nok"?"bad":"open";
@@ -2764,7 +2773,7 @@ function saeuleEntfernen(si){
   cur.s.splice(si,1); if(!cur.s.length) cur.s.push(newSaeule(1)); nummeriere(); commit(); softRender();
   toast(`${name} entfernt`,"Rückgängig",()=>{ if(!cur) return; cur.s=vorher; commit(); softRender(); });
 }
-const AKTE_SP=[["rpe","R<sub>PE</sub>","Ω"],["riso","R<sub>ISO</sub>","MΩ"],["zs1","Zs L1","Ω"],["ria","IΔ","mA"],["r1","t<sub>A</sub>","ms"],["dc6","6 mA DC","s"]];
+const AKTE_SP=[["rpe","R<sub>PE</sub>","Ω"],["riso","R<sub>ISO</sub> min","MΩ"],["zs1","Zs L1","Ω"],["ria","IΔ","mA"],["r1","t<sub>A</sub>","ms"],["dc6","6 mA DC","s"]];
 const ROW_BY_K=Object.fromEntries(GROUPS.flatMap(g=>g.rows).map(r=>[r.k,r]));
 function geraeteTreffer(sn){ const n=snNorm(sn); if(!n) return [];
   return live("pruefungen").flatMap(p=>p.s.map((s,i)=>snNorm(s.sn)===n?{p,s,i}:null).filter(Boolean)).sort((a,b)=>byDate(a.p,b.p)); }
@@ -2822,7 +2831,8 @@ function verlaufKopf(standortId,ladeparkId){ const p=pruefAt(standortId,ladepark
 function akteView(sn){
   const T=geraeteTreffer(sn); if(!T.length) return `<div class="empty">${icon("wallbox")}<h2>Keine Prüfungen gefunden</h2><p>Zu dieser Seriennummer gibt es keine Prüfung.</p></div>`;
   const L=T[0], s=L.s, kat=s.katId&&DB.katalog.get(s.katId), orte=[...new Set(T.map(t=>pfadText(t.p)))];
-  const zelle=(t,li,k)=>{ const r=ROW_BY_K[k], lp=t.s.lp[li]; if(!r||!lp) return "<td>–</td>"; if(r.p3&&+t.s.phasen!==3) return "<td>–</td>";
+  const zelle=(t,li,k)=>{ const r=ROW_BY_K[k], lp=t.s.lp[li]; if(!r||!lp) return "<td>–</td>";
+    if(k==="riso"){ const w=[...ISO_K,"riso"].map(x=>num(lp.v[x])).filter(x=>!isNaN(x)); if(!w.length) return "<td class='leer'>–</td>"; const m=Math.min(...w); return `<td class="${m<1?"bad":""}">${esc(String(m).replace(".",","))}</td>`; } if(r.p3&&+t.s.phasen!==3) return "<td>–</td>";
     const v=lp.v[r.k]; if(v==null||v==="") return "<td class='leer'>–</td>"; let e="open"; try{ e=evalRow(r,v,t.s); }catch(x){}
     return `<td class="${e==="bad"?"bad":""}">${esc(v)}</td>`; };
   const zeilen=T.map(t=>Array.from({length:Math.max(1,+t.s.lps||1)},(_,li)=>`<tr${li?" class='lp2'":""}>${li?`<td></td>`:`<td class="d"><b>${esc(deDate(t.p.p.datum))}</b><small>${esc(t.p.p.art)}</small></td>`}<td>${(+t.s.lps||1)>1?`LP ${li+1}`:""}</td>${AKTE_SP.map(([k])=>zelle(t,li,k)).join("")}<td>${li?"":pill(saeuleResult(t.s))}</td></tr>`).join("")).join("");

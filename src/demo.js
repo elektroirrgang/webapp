@@ -14,7 +14,7 @@ function demoDaten(){
   const UMFANG="Prüfung der Ladeeinrichtung für Elektrofahrzeuge nach DIN VDE 0100-722 einschließlich Zuleitung ab Unterverteilung.";
   // Messwerte leicht streuen, damit nicht alles gleich aussieht
   const z=(b,i,sp,st=2)=>(b+(((i*37+11)%17)/16-0.5)*sp).toFixed(st).replace(".",",");
-  const lp=(i,ph3=true,o={})=>({v:Object.assign({risov:"500 V",rpe:z(0.07,i,0.04),riso:i%3?"200":z(48,i,30,0),pevt:"ok",cp:"ok",
+  const lp=(i,ph3=true,o={})=>({v:Object.assign({risov:"500 V",rpe:z(0.07,i,0.04),riso12:ph3?z(35,i,20,1):"",riso13:ph3?z(30,i,20,1):"",riso23:ph3?z(38,i,20,1):"",riso1pe:z(6,i,4,2),riso2pe:ph3?z(7,i,4,2):"",riso3pe:ph3?z(7.5,i,4,2):"",pevt:"ok",cp:"ok",
       u1:z(232,i,6,1),u2:ph3?z(231,i,6,1):"",u3:ph3?z(233,i,6,1):"",unpe:z(0.5,i,0.6,1),dreh:ph3?"rechts (123)":"",
       zs1:z(0.38,i,0.08),zs2:ph3?z(0.37,i,0.08):"",zs3:ph3?z(0.39,i,0.08):"",r05:"ok",r1:z(24,i,10,1),r5:z(6,i,3,1),ria:String(19+(i*7)%9),ub:z(1.2,i,0.8,1),dc6:z(1.8,i,1.2,1),fe:"ok",ff:"ok"},o.v||{}),bem:o.bem||""});
   const leer=()=>({v:{risov:"500 V"},bem:""});
@@ -50,7 +50,7 @@ function demoDaten(){
   D.pruefungen.push(pruef("demo-p-bes",{...W,l:"demo-l-bes",nr:"2511-061",uv:"UV-P2",datum:jahr(-1,30),art:"Erstprüfung"},BES.map(s=>neuId(s,"erst")),{naechste:tag(30)},"ok"));
   const FU=[1,2,3,4].map(n=>wallbox(n,`Wallbox ${n}`,`1491${3300+n*7}PP.0${5200+n*29}`,n+30,`Hallenwand Feld ${n}`));
   D.pruefungen.push(pruef("demo-p-fuhr-erst",{...W,l:"demo-l-fuhr",nr:"2409-115",uv:"UV-Halle",datum:jahr(-2,-20),art:"Erstprüfung"},FU.map(s=>neuId(s,"erst")),{naechste:jahr(-1,-20)},"ok"));
-  const FUw=FU.map((s,i)=>{ const x=neuId(s,"wdh"); if(i===1) x.lp=[lp(41,true,{v:{riso:"0,6"},bem:"Isolationswiderstand 0,6 MΩ – Feuchtigkeit in der Anschlussdose. Wallbox bis zur Instandsetzung außer Betrieb genommen."}),leer()]; else x.lp=[lp(i+40),leer()]; return x; });
+  const FUw=FU.map((s,i)=>{ const x=neuId(s,"wdh"); if(i===1) x.lp=[lp(41,true,{v:{riso2pe:"0,6"},bem:"Isolationswiderstand L2 – PE 0,6 MΩ – Feuchtigkeit in der Anschlussdose. Wallbox bis zur Instandsetzung außer Betrieb genommen."}),leer()]; else x.lp=[lp(i+40),leer()]; return x; });
   D.pruefungen.push(pruef("demo-p-fuhr-wdh",{...W,l:"demo-l-fuhr",nr:"2609-088",uv:"UV-Halle",datum:tag(-20),art:"Wiederholungsprüfung"},FUw,
     {maengel:"Wallbox 2: Isolationswiderstand 0,6 MΩ (< 1 MΩ). Anschlussdose trocknen, Dichtung der Kabeleinführung erneuern, danach erneut messen.",naechste:jahr(1,-20),sigK:"",sigKName:"Frau Beispiel"},"bad"));
   D.baustellen.push(R("demo-b-fuhr",{kundeId:"demo-k-werk",standortId:"demo-s-werk",name:"Erweiterung Fuhrpark-Halle: 4 Wallboxen",auftragsnr:"2610-142",status:"aktiv",
