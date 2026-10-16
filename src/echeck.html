@@ -931,6 +931,14 @@ html,body{overscroll-behavior-y:none}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--sb:var(--surface)}}
 :root[data-theme="dark"]{--sb:var(--surface)}
 html::after{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--sb);z-index:2147483000;pointer-events:none}
+/* Pop-up offen: Hintergrund steht still (iOS 16+ und Android respektieren overflow:hidden am html) */
+html.scroll-sperre,html.scroll-sperre body{overflow:hidden!important;overscroll-behavior:none}
+#scrim{touch-action:none;overscroll-behavior:none}
+#dlg{overscroll-behavior:contain}
+/* iOS stellt Datum/Uhrzeit mittig dar – linksbündig wie alle anderen Felder */
+input[type=date],input[type=time]{text-align:left}
+input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and-time-value{text-align:left;margin:0}
+@supports (-webkit-touch-callout:none){ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;display:block;min-height:1.5em} }
 </style>
 </head>
 <body class="is-list">
@@ -1691,6 +1699,12 @@ window.addEventListener("online",()=>syncSoon()); window.addEventListener("offli
 try{ navigator.storage&&navigator.storage.persist&&navigator.storage.persist(); }catch(e){}
 window.__EVSE__={DB,syncNow,get SY(){return SY},get ME(){return ME}};
 })();
+</script>
+<script>/* Hintergrund sperren, solange ein Pop-up offen ist */
+(()=>{ const pr=()=>{ const d=document.getElementById("dlg"), s=document.getElementById("scrim");
+  const offen=!!((d&&!d.hidden)||(s&&!s.hidden&&s.classList.contains("dim"))); document.documentElement.classList.toggle("scroll-sperre",offen); };
+  const go=()=>{ ["dlg","scrim"].forEach(id=>{ const el=document.getElementById(id); if(el) new MutationObserver(pr).observe(el,{attributes:true,attributeFilter:["hidden","class"]}); }); pr(); };
+  document.readyState==="loading"?document.addEventListener("DOMContentLoaded",go):go(); })();
 </script>
 </body>
 </html>

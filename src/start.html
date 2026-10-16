@@ -1042,7 +1042,22 @@ button.vg-z{cursor:pointer;-webkit-tap-highlight-color:transparent} button.vg-z:
 .vg-tel{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;color:var(--primary);font-weight:700;text-decoration:none}
 .vg-vlauf{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--outline-v);padding-top:10px}
 .vg-vl{display:grid;grid-template-columns:12px 72px 1fr;align-items:baseline;gap:6px;font-size:13px;color:var(--on-sv)} .vg-vl b{color:var(--on-surface)}
+.vg-mitw{display:flex;flex-direction:column;gap:8px}
+.vg-mitl{font-size:13px;font-weight:600;color:var(--on-sv);padding:0 4px}
+.vg-mit{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.vg-mitc{border:0;border-radius:12px;min-height:40px;padding:0 14px;background:var(--feld,var(--sc-highest));color:var(--on-surface);font:inherit;font-size:14px;font-weight:600}
+.vg-mitc[aria-pressed="true"]{background:var(--sec-c);color:var(--on-sec-c)}
+.vg-mitp{display:flex;align-items:center;gap:6px;flex:1 1 200px;min-width:0} .vg-mitp .tf{flex:1;min-width:0}
+.vg-mitadd{width:44px;height:44px;border:0;border-radius:12px;background:var(--sec-c);color:var(--on-sec-c);display:grid;place-items:center;flex:none}
 .vg-drw{display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:600}
+/* Pop-up offen: Hintergrund steht still (iOS 16+ und Android respektieren overflow:hidden am html) */
+html.scroll-sperre,html.scroll-sperre body{overflow:hidden!important;overscroll-behavior:none}
+#scrim{touch-action:none;overscroll-behavior:none}
+#dlg{overscroll-behavior:contain}
+/* iOS stellt Datum/Uhrzeit mittig dar – linksbündig wie alle anderen Felder */
+input[type=date],input[type=time]{text-align:left}
+input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and-time-value{text-align:left;margin:0}
+@supports (-webkit-touch-callout:none){ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;display:block;min-height:1.5em} }
 </style>
 </head>
 <body class="is-list">
@@ -2172,6 +2187,12 @@ window.addEventListener("online",()=>syncSoon()); window.addEventListener("offli
 try{ navigator.storage&&navigator.storage.persist&&navigator.storage.persist(); }catch(e){}
 window.__EVSE__={DB,syncNow,get SY(){return SY},get ME(){return ME}};
 })();
+</script>
+<script>/* Hintergrund sperren, solange ein Pop-up offen ist */
+(()=>{ const pr=()=>{ const d=document.getElementById("dlg"), s=document.getElementById("scrim");
+  const offen=!!((d&&!d.hidden)||(s&&!s.hidden&&s.classList.contains("dim"))); document.documentElement.classList.toggle("scroll-sperre",offen); };
+  const go=()=>{ ["dlg","scrim"].forEach(id=>{ const el=document.getElementById(id); if(el) new MutationObserver(pr).observe(el,{attributes:true,attributeFilter:["hidden","class"]}); }); pr(); };
+  document.readyState==="loading"?document.addEventListener("DOMContentLoaded",go):go(); })();
 </script>
 </body>
 </html>
