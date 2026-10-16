@@ -1,26 +1,35 @@
-/* Aufträge (Vorgänge): Anruf → Anfrage → Auftrag → Termin.
+/* Aufträge (Vorgänge): Anruf → Anfrage → Auftrag → Termin → Ausgeführt.
    Schließt die Lücke vor SCC-CONTROL: Anrufe sofort festhalten, Anfrage ans Büro, Büro erteilt den Auftrag
-   (SCC-Auftragsnummer), Termin eintragen. Anfrage darf jeder stellen, Auftrag nur das Büro (Admins). */
-const VG_S=[["anruf","Anruf"],["anfrage","Anfrage"],["auftrag","Auftrag"],["termin","Termin"]];
-const VG_F=[["offen","Offen"],["buero","Wartet aufs Büro"],["termin","Ohne Termin"],["erledigt","Erledigt"],["abgelehnt","Abgelehnt"]];
-const istBuero=()=>!!ME.admin;
+   (SCC-Auftragsnummer), Termin eintragen. Anfrage darf jeder stellen, den Auftrag erteilt nur das Büro-Konto (info@).
+   Mit dem Termin entsteht die Baustelle in der Baustellen-App (gleicher Gerätespeicher, gleicher Abgleich);
+   steht die Baustelle auf „Fertig“, ist der Vorgang ausgeführt – und umgekehrt. */
+const VG_S=[["anruf","Anruf"],["anfrage","Anfrage"],["auftrag","Auftrag"],["termin","Termin"],["ausgefuehrt","Ausgeführt","Fertig"]];
+const VG_F=[["offen","Offen"],["buero","Wartet aufs Büro"],["termin","Ohne Termin"],["erledigt","Ausgeführt"],["abgelehnt","Abgelehnt"]];
+const VG_BUERO=["info@elektro-irrgang.de"];
+const istBuero=()=>VG_BUERO.includes(String(ME.mail||"").toLowerCase());
 const vgStufe=v=>{ let n=-1; VG_S.forEach(([k],i)=>{ if(v.s&&v.s[k]) n=i; }); return n; };
-const vgZu=v=>!!(v.erledigt||v.abgelehnt);
+const vgZu=v=>!!((v.s&&v.s.ausgefuehrt)||v.erledigt||v.abgelehnt);
+const vgBau=v=>{ const b=v.baustelleId&&DB.baustellen&&DB.baustellen.get(v.baustelleId); return b&&!b.deleted?b:null; };
+/* Abgleich mit der Baustellen-App: Baustelle „Fertig“ ⇒ Vorgang ausgeführt; wieder geöffnet ⇒ zurück */
+function vgAbgleich(){ live("vorgaenge").forEach(v=>{ const b=vgBau(v); if(!b||!v.s||!v.s.termin||v.abgelehnt) return; const a=v.s.ausgefuehrt;
+  if(b.status==="fertig"&&!a){ v.s.ausgefuehrt={wer:b.updatedBy||who(),at:b.updated||Date.now(),ausBaustelle:true}; saveRec("vorgaenge",v); }
+  else if(b.status!=="fertig"&&a){ delete v.s.ausgefuehrt; saveRec("vorgaenge",v); } }); }
 const vgAlle=()=>live("vorgaenge").sort((a,b)=>(!!a.dringend===!!b.dringend?0:a.dringend?-1:1)||((b.s&&b.s.anruf&&b.s.anruf.at)||0)-((a.s&&a.s.anruf&&a.s.anruf.at)||0));
 const vgKunde=v=>v.kundeId&&kundeOf(v.kundeId)?kundeOf(v.kundeId).name:(v.kundeName||"Ohne Namen");
 const vgZeit=t=>{ if(!t) return ""; const d=new Date(t), h=new Date(); const tag=d.toDateString()===h.toDateString()?"heute":new Date(h-864e5).toDateString()===d.toDateString()?"gestern":d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}); return `${tag}, ${d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}`; };
 const vgVorn=n=>String(n||"").trim();
 /* wie lange hängt der Vorgang schon im aktuellen Schritt? */
 function vgAlter(v){ if(vgZu(v)) return null; const i=vgStufe(v); if(i<0) return null; const k=VG_S[i][0], seit=v.s[k].at||0, std=(Date.now()-seit)/36e5;
-  const grenze=[24,48,72,null][i]; if(i===3){ const d=v.s.termin&&v.s.termin.datum; if(d&&d<today()) return {txt:"Termin vorbei – abschließen?",kl:"wip"}; return null; }
+  const grenze=[24,48,72,null][i]; if(i>=3){ const d=v.s.termin&&v.s.termin.datum; if(d&&d<today()) return {txt:"Termin vorbei – noch nicht ausgeführt",kl:"wip"}; return null; }
   if(std<grenze) return null; const tage=Math.floor(std/24); return {txt:tage>=1?`seit ${tage} Tag${tage>1?"en":""}`:`seit ${Math.floor(std)} Std.`,kl:std>grenze*2?"bad":"wip"}; }
-function vgFilter(f){ return vgAlle().filter(v=>f==="erledigt"?!!v.erledigt:f==="abgelehnt"?!!v.abgelehnt:f==="buero"?!vgZu(v)&&vgStufe(v)===1:f==="termin"?!vgZu(v)&&vgStufe(v)===2:!vgZu(v)); }
+function vgFilter(f){ return vgAlle().filter(v=>f==="erledigt"?!!((v.s&&v.s.ausgefuehrt)||v.erledigt):f==="abgelehnt"?!!v.abgelehnt:f==="buero"?!vgZu(v)&&vgStufe(v)===1:f==="termin"?!vgZu(v)&&vgStufe(v)===2:!vgZu(v)); }
 function vgNaechster(v){ const i=vgStufe(v); if(vgZu(v)) return null;
   if(i===0) return {act:"vgAnfrage",t:"Anfrage ans Büro"};
   if(i===1) return istBuero()?{act:"vgAuftrag",t:"Auftrag erteilen"}:{warte:"wartet aufs Büro"};
   if(i===2) return {act:"vgTermin",t:"Termin eintragen"};
-  return {act:"vgErledigt",t:"Abschließen"}; }
-function vgZelle(v,k,i){ const s=v.s&&v.s[k], st=vgStufe(v), id=esc(v.id), lbl=`<span class="vg-zk"><i class="vg-dot DOT"></i>${esc(VG_S[i][1])}</span>`;
+  if(i===3) return {act:"vgAusgef",t:"Ausgeführt melden"};
+  return null; }
+function vgZelle(v,k,i){ const s=v.s&&v.s[k], st=vgStufe(v), id=esc(v.id), lbl=`<span class="vg-zk"><i class="vg-dot DOT"></i>${VG_S[i][2]?`<span class="vg-lv">${esc(VG_S[i][1])}</span><span class="vg-lk">${esc(VG_S[i][2])}</span>`:esc(VG_S[i][1])}</span>`;
   const knopf=(kl,dot,inhalt)=>`<button class="vg-z ${kl}" data-act="vgStep" data-id="${id}" data-k="${k}">${lbl.replace("DOT",dot)}${inhalt}</button>`;
   if(s){ const extra=k==="auftrag"&&s.nr?`<em>SCC ${esc(s.nr)}</em>`:k==="termin"&&s.datum?`<em>${esc(deDate(s.datum))}${s.zeit?` · ${esc(s.zeit)} Uhr`:""}${s.mit?` · ${esc(s.mit)}`:""}</em>`:"";
     return knopf("ok","ok",`<span class="vg-zw"><span class="vg-wer">${esc(vgVorn(s.wer&&s.wer.name)||"–")} · </span>${esc(vgZeit(s.at))}</span>${extra}`); }
@@ -53,25 +62,32 @@ function vgStepDlg(v,k){ const s=(v.s||{})[k], st=vgStufe(v), n=vgNaechster(v), 
     else if(st===1) body=stat("warte",`Wartet aufs Büro, ${vgSeit(v.s.anfrage.at)}`)+(istBuero()?"":`<p class="sup">Den Auftrag erteilt das Büro.</p>`);
     else body=stat("","Erst kommt die Anfrage ans Büro.");
     if(st===1&&!vgZu(v)&&istBuero()) weiter=`<button class="btn-text danger" data-act="vgAblehnen" data-id="${id}">Ablehnen</button><button class="btn-text" data-act="vgAuftrag" data-id="${id}">Auftrag erteilen</button>`; }
-  else if(k==="termin"){
-    if(s) body=stat(s.datum<today()&&!v.erledigt?"warte":"ok",s.datum<today()&&!v.erledigt?"Termin ist vorbei – noch nicht abgeschlossen":"Termin steht")
-      +z("Datum",esc(deDate(s.datum)))+z("Uhrzeit",s.zeit?esc(s.zeit)+" Uhr":"")+z("Wer fährt hin",esc(s.mit||""))+z("Eingetragen von",wer(s))+(v.erledigt?stat("ok",`Erledigt – ${wer(v.erledigt)}, ${esc(vgZeit(v.erledigt.at))}`):"");
-    else body=stat("",st===2?"Noch kein Termin eingetragen":"Erst muss der Auftrag erteilt sein.");
-    if(!vgZu(v)&&st>=2) weiter=(s?`<button class="btn-text" data-act="vgTermin" data-id="${id}">Termin ändern</button><button class="btn-text" data-act="vgErledigt" data-id="${id}">Abschließen</button>`:`<button class="btn-text" data-act="vgTermin" data-id="${id}">Termin eintragen</button>`); }
-  const titel={anruf:"Anruf",anfrage:"Anfrage",auftrag:"Auftrag",termin:"Termin"}[k];
+  else if(k==="termin"){ const bau=vgBau(v), offen=!vgZu(v);
+    if(s) body=stat(s.datum<today()&&offen?"warte":"ok",s.datum<today()&&offen?"Termin ist vorbei – noch nicht ausgeführt":"Termin steht")
+      +z("Datum",esc(deDate(s.datum)))+z("Uhrzeit",s.zeit?esc(s.zeit)+" Uhr":"")+z("Wer fährt hin",esc(s.mit||""))+z("Eingetragen von",wer(s))
+      +(bau?z("Baustelle",`<a class="vg-link" href="../baustelle/">${esc(bau.name)} · ${esc({besichtigung:"Besichtigung",aktiv:"Aktiv",pausiert:"Pausiert",fertig:"Fertig"}[bau.status||"aktiv"])}</a>`):"");
+    else body=stat("",st===2?"Noch kein Termin eingetragen":"Erst muss der Auftrag erteilt sein.")+(st===2?`<p class="sup">Mit dem Termin wird die Baustelle in der Baustellen-App angelegt.</p>`:"");
+    if(offen&&st>=2) weiter=`<button class="btn-text" data-act="vgTermin" data-id="${id}">${s?"Termin ändern":"Termin eintragen"}</button>`; }
+  else if(k==="ausgefuehrt"){ const bau=vgBau(v);
+    if(s) body=stat("ok","Ausgeführt")+z("Gemeldet von",wer(s))+z("Wann",esc(vgZeit(s.at)))+(bau?z("Baustelle",`${esc(bau.name)} · Fertig`):"")+(s.ausBaustelle?`<p class="sup">Kam aus der Baustellen-App (Baustelle auf „Fertig“ gesetzt).</p>`:"");
+    else if(st===3) body=stat("warte",(v.s.termin.datum<today()?"Termin war am ":"Termin am ")+esc(deDate(v.s.termin.datum))+" – noch nicht ausgeführt")+`<p class="sup">Wird automatisch erledigt, sobald die Baustelle in der Baustellen-App auf „Fertig“ steht.</p>`;
+    else body=stat("","Erst kommt der Termin.");
+    if(s&&!v.abgelehnt) weiter=`<button class="btn-text" data-act="vgWiederAuf" data-id="${id}">Wieder öffnen</button>`;
+    else if(st===3) weiter=`<button class="btn-text" data-act="vgAusgef" data-id="${id}">Ausgeführt melden</button>`; }
+  const titel={anruf:"Anruf",anfrage:"Anfrage",auftrag:"Auftrag",termin:"Termin",ausgefuehrt:"Ausgeführt"}[k];
   dialog(`${titel} – ${vgKunde(v)}`,`<div class="vg-dlg">${body}</div>`,
     `${k==="anruf"?`<button class="btn-text" data-act="vgEdit" data-id="${id}">Bearbeiten</button>`:""}<span style="flex:1"></span>${weiter||`<button class="btn-text" data-act="cancel">Schließen</button>`}`); }
 function vgKopf(v){ const a=vgAlter(v);
   return `<button class="vg-k" data-act="vgOpen" data-id="${esc(v.id)}"><span class="vg-kn">${v.dringend?`<i class="vg-dr">dringend</i>`:""}${esc(vgKunde(v))}</span>
-    <span class="vg-kf">${v.tel?`<span>${icon("phone")}${esc(v.tel)}</span>`:""}${a?pill(a.kl,a.txt):""}${v.erledigt?pill("ok","erledigt"):v.abgelehnt?pill("bad","abgelehnt"):""}</span></button>`; }
+    <span class="vg-kf">${v.tel?`<span>${icon("phone")}${esc(v.tel)}</span>`:""}${a?pill(a.kl,a.txt):""}${vgZu(v)&&!v.abgelehnt?pill("ok","ausgeführt"):v.abgelehnt?pill("bad","abgelehnt"):""}</span></button>`; }
 function vgZeile(v){ return `<div class="vg-row${v.dringend?" dr":""}">${vgKopf(v)}${VG_S.map(([k],i)=>vgZelle(v,k,i)).join("")}${vgZu(v)?"":`<div class="vg-mob">${(()=>{ const n=vgNaechster(v); return n&&n.act?`<button class="btn-tonal" data-act="${n.act}" data-id="${esc(v.id)}">${icon("add")}${esc(n.t)}</button>`:""; })()}</div>`}</div>`; }
-function vorgaengeView(){
+function vorgaengeView(){ vgAbgleich();
   const f=META.vgF||"offen", L=vgFilter(f), n=x=>vgFilter(x).length;
   const chips=`<div class="chips filt vg-chips">${VG_F.map(([k,t])=>`<button class="chip" data-act="vgFilter" data-v="${k}" aria-pressed="${f===k}">${icon("check")}${esc(t)}${k==="erledigt"||k==="abgelehnt"?"":` (${n(k)})`}</button>`).join("")}</div>`;
-  if(!live("vorgaenge").length) return `<div class="narrow vg">${chips}<div class="empty">${icon("board")}<h2>Noch keine Aufträge</h2><p>Kommt ein Anruf rein: auf „+“ tippen, Kunde und Anliegen eintragen – fertig. Danach rückt der Vorgang Schritt für Schritt weiter: Anfrage ans Büro, Auftrag, Termin.</p></div></div>`;
+  if(!live("vorgaenge").length) return `<div class="narrow vg">${chips}<div class="empty">${icon("board")}<h2>Noch keine Aufträge</h2><p>Kommt ein Anruf rein: auf „+“ tippen, Kunde und Anliegen eintragen – fertig. Danach rückt der Vorgang Schritt für Schritt weiter: Anfrage ans Büro, Auftrag, Termin, ausgeführt.</p></div></div>`;
   return `<div class="narrow vg">${chips}<div class="vg-tab"><div class="vg-th"><span>Kunde</span>${VG_S.map(([,t])=>`<span>${t}</span>`).join("")}</div>
     ${L.length?L.map(vgZeile).join(""):`<p class="meta" style="margin:16px 4px">Keine Vorgänge in dieser Auswahl.</p>`}</div>
-    <p class="hint">Anfrage stellen darf jeder. Den Auftrag erteilt das Büro und trägt dabei die Auftragsnummer aus SCC ein.</p></div>`; }
+    <p class="hint">Anfrage stellen darf jeder. Den Auftrag erteilt das Büro und trägt dabei die Auftragsnummer aus SCC ein. Mit dem Termin entsteht die Baustelle in der Baustellen-App; steht sie dort auf „Fertig“, ist der Vorgang ausgeführt.</p></div>`; }
 /* Erfassen / Bearbeiten */
 let vgE=null;
 function vgDialog(v){ vgE=v?JSON.parse(JSON.stringify(v)):{id:null,kundeName:"",tel:"",anliegen:"",dringend:false};
@@ -93,13 +109,13 @@ function vgSchritt(id,k,extra={}){ const v=DB.vorgaenge.get(id); if(!v) return; 
 function vgOpen(v){ const n=vgNaechster(v);
   const verlauf=VG_S.filter(([k])=>v.s&&v.s[k]).map(([k,t])=>{ const s=v.s[k]; return `<div class="vg-vl"><i class="vg-dot ok"></i><b>${t}</b><span>${esc((s.wer&&s.wer.name)||"–")} · ${esc(vgZeit(s.at))}${k==="auftrag"&&s.nr?` · SCC ${esc(s.nr)}`:""}${k==="termin"&&s.datum?` · ${esc(deDate(s.datum))}${s.zeit?` ${esc(s.zeit)} Uhr`:""}${s.mit?` · ${esc(s.mit)}`:""}`:""}</span></div>`; }).join("")
     +(v.abgelehnt?`<div class="vg-vl"><i class="vg-dot bad"></i><b>Abgelehnt</b><span>${esc(v.abgelehnt.wer&&v.abgelehnt.wer.name||"–")} · ${esc(vgZeit(v.abgelehnt.at))}${v.abgelehnt.grund?` · ${esc(v.abgelehnt.grund)}`:""}</span></div>`:"")
-    +(v.erledigt?`<div class="vg-vl"><i class="vg-dot ok"></i><b>Erledigt</b><span>${esc(v.erledigt.wer&&v.erledigt.wer.name||"–")} · ${esc(vgZeit(v.erledigt.at))}</span></div>`:"");
+    +(v.erledigt&&!(v.s&&v.s.ausgefuehrt)?`<div class="vg-vl"><i class="vg-dot ok"></i><b>Erledigt</b><span>${esc(v.erledigt.wer&&v.erledigt.wer.name||"–")} · ${esc(vgZeit(v.erledigt.at))}</span></div>`:"");
   const k=v.kundeId&&kundeOf(v.kundeId);
   dialog(vgKunde(v),`<div class="vg-dlg">${v.dringend?`<span class="vg-dr">dringend</span>`:""}<p class="vg-an">${esc(v.anliegen||"–")}</p>
       ${v.tel?`<a class="vg-tel" href="tel:${esc(v.tel.replace(/[^\d+]/g,""))}">${icon("phone")}${esc(v.tel)}</a>`:""}
       ${!k&&v.kundeName?`<p class="sup">Noch kein Kunde in der Kundendatenbank.</p>`:""}
       <div class="vg-vlauf">${verlauf}</div></div>`,
-    `<button class="btn-text" data-act="vgEdit" data-id="${esc(v.id)}">Bearbeiten</button>${!vgZu(v)&&istBuero()&&vgStufe(v)>=1&&vgStufe(v)<3?`<button class="btn-text danger" data-act="vgAblehnen" data-id="${esc(v.id)}">Ablehnen</button>`:""}<span style="flex:1"></span>
+    `<button class="btn-text" data-act="vgEdit" data-id="${esc(v.id)}">Bearbeiten</button>${!vgZu(v)&&istBuero()&&vgStufe(v)===1?`<button class="btn-text danger" data-act="vgAblehnen" data-id="${esc(v.id)}">Ablehnen</button>`:""}<span style="flex:1"></span>
      ${n&&n.act?`<button class="btn-text" data-act="${n.act}" data-id="${esc(v.id)}">${esc(n.t)}</button>`:`<button class="btn-text" data-act="cancel">Schließen</button>`}`); }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="vg"]'); if(!b) return; const a=b.dataset.act, id=b.dataset.id, v=id&&DB.vorgaenge.get(id);
   if(a==="vgDring"){ e.stopPropagation(); if(vgE) vgE.dringend=b.dataset.v==="ja"; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)); if(typeof segInd==="function") segInd(); return; }
@@ -115,18 +131,43 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     dialog("Auftrag erteilen",`<p class="sup" style="margin:0 0 12px">${esc(vgKunde(v))} – ${esc(v.anliegen||"")}</p><div class="fg1">${tf("vgNr","Auftragsnummer aus SCC (optional)","",{form:true,ph:"z. B. 2610-150"})}</div>`,
       `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="vgAuftragOk" data-id="${esc(id)}">Auftrag erteilen</button>`); }
   else if(a==="vgAuftragOk"&&v){ vgSchritt(id,"auftrag",{nr:formVals().vgNr||""}); }
-  else if(a==="vgTermin"&&v){ dialog(v.s.termin?"Termin ändern":"Termin eintragen",`<p class="sup" style="margin:0 0 12px">${esc(vgKunde(v))} – ${esc(v.anliegen||"")}</p><div class="fg1">
-      ${tf("vgDatum","Datum",(v.s.termin&&v.s.termin.datum)||today(),{form:true,type:"date"})}${tf("vgZeitE","Uhrzeit",(v.s.termin&&v.s.termin.zeit)||"",{form:true,ph:"z. B. 8:00"})}${tf("vgMit","Wer fährt hin? (optional)",(v.s.termin&&v.s.termin.mit)||"",{form:true,list:"dl-vgm",ph:"Name"})}${datalist("dl-vgm",team().map(m=>m.name))}</div>`,
+  else if(a==="vgTermin"&&v){ const t=v.s.termin||{}, bau=vgBau(v), SS=v.kundeId?standorteVon(v.kundeId):[], kd=v.kundeId&&kundeOf(v.kundeId);
+    const ortVor=kd?[kd.strasse,[kd.plz,kd.ort].filter(Boolean).join(" ")].filter(Boolean).join(", "):"";
+    const ort=bau?"":SS.length?`${sf("vgOrt","Wo? (Standort der Baustelle)",SS.length===1?SS[0].id:"",[...(SS.length>1?[["","Bitte wählen"]]:[]),...SS.map(x=>[x.id,x.name]),["__neu","Anderer Ort …"]],{form:true})}<div id="vgOrtNeuW" hidden>${tf("vgOrtNeu","Anderer Ort (Adresse)","",{form:true,ph:"Straße, Ort"})}</div>`
+      :tf("vgOrtNeu","Wo? (Adresse der Baustelle)",ortVor,{form:true,ph:"Straße, Ort"});
+    dialog(v.s.termin?"Termin ändern":"Termin eintragen",`<p class="sup" style="margin:0 0 12px">${esc(vgKunde(v))} – ${esc(v.anliegen||"")}</p><div class="fg1">
+      ${tf("vgDatum","Datum",t.datum||today(),{form:true,type:"date"})}${tf("vgZeitE","Uhrzeit",t.zeit||"",{form:true,ph:"z. B. 8:00"})}${tf("vgMit","Wer fährt hin? (optional)",t.mit||"",{form:true,list:"dl-vgm",ph:"Name"})}${datalist("dl-vgm",team().map(m=>m.name))}${ort}</div>
+      <p class="sup" style="margin:12px 0 0">${bau?`Der Termin wird auch an der Baustelle „${esc(bau.name)}“ geändert.`:"Dazu wird die Baustelle in der Baustellen-App angelegt – mit Termin und Auftragsnummer."}</p>`,
       `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="vgTerminOk" data-id="${esc(id)}">Eintragen</button>`); }
-  else if(a==="vgTerminOk"&&v){ const F=formVals(); if(!F.vgDatum){ toast("Bitte ein Datum wählen"); return; } vgSchritt(id,"termin",{datum:F.vgDatum,zeit:F.vgZeitE,mit:F.vgMit}); }
-  else if(a==="vgErledigt"&&v){ v.erledigt={wer:who(),at:Date.now()}; saveRec("vorgaenge",v); closeOverlays(); render(); toast("Vorgang abgeschlossen","Rückgängig",()=>{ delete v.erledigt; saveRec("vorgaenge",v); render(); }); }
+  else if(a==="vgTerminOk"&&v){ const F=formVals(); if(!F.vgDatum){ toast("Bitte ein Datum wählen"); return; }
+    if(!vgBau(v)&&F.vgOrt===""&&document.getElementById("f_vgOrt")){ toast("Bitte den Standort wählen"); return; }
+    const neuBau=!vgBau(v); vgZuBaustelle(v,F); vgSchritt(id,"termin",{datum:F.vgDatum,zeit:F.vgZeitE,mit:F.vgMit});
+    if(neuBau) toast("Termin eingetragen – Baustelle angelegt"); }
+  else if(a==="vgAusgef"&&v){ v.s.ausgefuehrt={wer:who(),at:Date.now()}; saveRec("vorgaenge",v); const bau=vgBau(v), alt=bau&&bau.status;
+    if(bau){ bau.status="fertig"; saveRec("baustellen",bau); }
+    closeOverlays(); render(); toast(bau?"Ausgeführt – Baustelle steht auf „Fertig“":"Als ausgeführt gemeldet","Rückgängig",()=>{ delete v.s.ausgefuehrt; saveRec("vorgaenge",v); if(bau){ bau.status=alt||"aktiv"; saveRec("baustellen",bau); } render(); }); }
+  else if(a==="vgWiederAuf"&&v){ delete v.s.ausgefuehrt; delete v.erledigt; saveRec("vorgaenge",v); const bau=vgBau(v); if(bau&&bau.status==="fertig"){ bau.status="aktiv"; saveRec("baustellen",bau); }
+    closeOverlays(); render(); toast(bau?"Wieder offen – Baustelle steht wieder auf „Aktiv“":"Wieder offen"); }
   else if(a==="vgAblehnen"&&v){ dialog("Anfrage ablehnen",`<div class="fg1">${tf("vgGrund","Grund (optional)","",{form:true,ph:"z. B. machen wir nicht, an Kollegen verwiesen"})}</div>`,
       `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text danger" data-act="vgAblehnenOk" data-id="${esc(id)}">Ablehnen</button>`); }
   else if(a==="vgAblehnenOk"&&v){ v.abgelehnt={wer:who(),at:Date.now(),grund:formVals().vgGrund||""}; saveRec("vorgaenge",v); closeOverlays(); render(); toast("Anfrage abgelehnt"); }
   else if(a==="vgDel"&&v){ v.deleted=true; saveRec("vorgaenge",v); closeOverlays(); render(); toast("Vorgang gelöscht","Rückgängig",()=>{ delete v.deleted; saveRec("vorgaenge",v); render(); }); }
 },true);
+/* Baustelle zum Termin anlegen bzw. Termin an der Baustelle nachziehen */
+function vgKurz(t,n=48){ t=String(t||"").trim(); if(t.length<=n) return t; const c=t.slice(0,n); return c.slice(0,Math.max(c.lastIndexOf(" "),30)).replace(/[\s,–-]+$/,"")+" …"; }
+function vgZuBaustelle(v,F){ const termin={datum:F.vgDatum,zeit:F.vgZeitE||"",mit:F.vgMit||""}, nr=(v.s.auftrag&&v.s.auftrag.nr)||"", dm=v.demo?{demo:true}:{};
+  let b=vgBau(v);
+  if(b){ b.termin=termin; if(nr&&!b.auftragsnr) b.auftragsnr=nr; saveRec("baustellen",b); return b; }
+  let k=v.kundeId&&kundeOf(v.kundeId);
+  if(!k){ k=saveRec("kunden",Object.assign({id:uid(),name:v.kundeName||"Ohne Namen",tel:v.tel||""},dm),true); v.kundeId=k.id; v.kundeName=""; }
+  let s=F.vgOrt&&F.vgOrt!=="__neu"?standortOf(F.vgOrt):null;
+  if(!s){ const txt=String(F.vgOrtNeu||"").trim(), vonKunde=!txt||txt===[k.strasse,[k.plz,k.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+    s=saveRec("standorte",Object.assign({id:uid(),kundeId:k.id,name:txt||"Beim Kunden"},vonKunde?{strasse:k.strasse||"",plz:k.plz||"",ort:k.ort||""}:{},dm),true); }
+  b=saveRec("baustellen",Object.assign({id:uid(),kundeId:k.id,standortId:s.id,name:vgKurz(v.anliegen)||"Auftrag",auftragsnr:nr,notiz:v.anliegen||"",status:"aktiv",termin,vorgangId:v.id},dm),true);
+  v.baustelleId=b.id; return b; }
+document.addEventListener("change",e=>{ if(e.target&&e.target.id==="f_vgOrt"){ const w=document.getElementById("vgOrtNeuW"); if(w) w.hidden=e.target.value!=="__neu"; } });
 /* Hinweis auf der Startseite */
-function vgStartKarte(){ const L=vgFilter("offen"); if(!L.length) return "";
+function vgStartKarte(){ vgAbgleich(); const L=vgFilter("offen"); if(!L.length) return "";
   const buero=L.filter(v=>vgStufe(v)===1).length, ohne=L.filter(v=>vgStufe(v)===0).length, alt=L.filter(v=>vgAlter(v)).length;
   return `<button class="vg-start" data-act="nav" data-v="auftraege"><span class="vg-si">${icon("board")}</span><span class="vg-st"><b>${L.length} ${L.length===1?"offener Vorgang":"offene Vorgänge"}</b>
     <span>${[buero&&`${buero} warte${buero===1?"t":"n"} aufs Büro`,ohne&&`${ohne} Anruf${ohne===1?"":"e"} ohne Anfrage`,alt&&`${alt} liegen länger`].filter(Boolean).join(" · ")||"alles im Fluss"}</span></span>${icon("chev")}</button>`; }

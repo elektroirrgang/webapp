@@ -1259,7 +1259,7 @@ function applyTheme(t){
   const dark = t==="dark" || (t==="auto" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
   document.querySelector('meta[name="theme-color"]').setAttribute("content", dark?"#131314":"#FCFCFD"); if(window.sbFarbe) sbFarbe();
 }
-const IC={moreH:"M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",swapV:"M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z",swapH:"M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z",
+const IC={cal:"M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z",moreH:"M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",swapV:"M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z",swapH:"M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z",
   notiz:"M19 3H4.99C3.89 3 3 3.9 3 5l.01 14c0 1.1.89 2 1.99 2h10l6-6V5c0-1.1-.9-2-2-2zM7 8h10v2H7V8zm5 6H7v-2h5v2zm2 5.5V14h5.5L14 19.5z",
   stift:"M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 0 0 0-1.41z",
   checkliste:"M22 7h-9v2h9V7zm0 8h-9v2h9v-2zM5.54 11L2 7.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 11zm0 8L2 15.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 19z",
@@ -1801,10 +1801,11 @@ function render(){
 function bItem(b){
   const e=letzter(b), k=kundeOf(b.kundeId);
   const zeile=[pfadText(b),b.auftragsnr&&`Auftrag ${b.auftragsnr}`].filter(Boolean).join(" · ");
+  const tm=b.termin&&b.termin.datum&&b.status!=="fertig"?pill(b.termin.datum<today()?"wip":"open",`Termin ${b.termin.datum===today()?"heute":new Date(b.termin.datum+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}${b.termin.zeit?`, ${b.termin.zeit}`:""}`):"";
   return `<div class="li bitem" role="button" tabindex="0" data-act="nav" data-v="baustelle" data-id="${esc(b.id)}"><span class="av">${icon("baustelle")}</span>
     <span class="lt"><span class="h">${esc(b.name)}</span>${zeile?`<span class="s">${esc(zeile)}</span>`:""}
       ${e?`<span class="b-stand">${esc(e.stand||"")}</span><span class="s b-von">${icon("person")}${esc(vonText(e)||"–")} · ${esc(e.datum===today()?"heute":tagText(e.datum))}</span>`:`<span class="s">Noch keine Übergabe</span>`}
-      <span class="st">${b.status&&b.status!=="aktiv"?pill(b.status==="fertig"?"ok":"open",STATUS_TXT[b.status]):""}${e&&String(e.material||"").trim()?pill("wip","Material offen"):""}</span></span>${icon("chev")}</div>`;
+      <span class="st">${tm}${b.status&&b.status!=="aktiv"?pill(b.status==="fertig"?"ok":"open",STATUS_TXT[b.status]):""}${e&&String(e.material||"").trim()?pill("wip","Material offen"):""}</span></span>${icon("chev")}</div>`;
 }
 function kundenKacheln(){ const q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
   const ks=live("kunden").map(k=>({k,B:live("baustellen").filter(b=>b.kundeId===k.id)})).filter(x=>x.B.length&&(!q||H(x.k.name)||x.B.some(b=>H(b.name)))).sort((a,b)=>a.k.name.localeCompare(b.k.name,"de"));
@@ -1838,7 +1839,7 @@ function eintragKarte(e,erster){
 function baustelleView(b){
   const s=standortOf(b.standortId), E=eintraegeVon(b.id);
   let h=`<div class="narrow">`;
-  h+=`<div class="b-kopf"><div class="b-meta">${b.auftragsnr?`<span>${icon("tag")}Auftrag ${esc(b.auftragsnr)}</span>`:""}${b.notiz?`<span>${icon("notes")}${esc(b.notiz)}</span>`:""}</div>
+  h+=`<div class="b-kopf"><div class="b-meta">${b.termin&&b.termin.datum?`<span>${icon("cal")}Termin ${esc(deDate(b.termin.datum))}${b.termin.zeit?` · ${esc(b.termin.zeit)} Uhr`:""}${b.termin.mit?` · ${esc(b.termin.mit)}`:""}</span>`:""}${b.auftragsnr?`<span>${icon("tag")}Auftrag ${esc(b.auftragsnr)}</span>`:""}${b.notiz?`<span>${icon("notes")}${esc(b.notiz)}</span>`:""}</div>
     ${!WIDE.matches&&canEdit(b)?bStatusKnopf(b):""}</div>`;
   if(s){ let auf=true; try{ auf=localStorage.getItem("bau_info")!=="zu"; }catch(e){}
     h+=`<details class="ik-klapp" ${auf?"open":""}><summary><span class="ikk-ic">${icon("ort")}</span><span class="ikk-t"><b>${esc(s.name)}</b><small>${esc(adrText(s)||"")}</small></span><span class="ikk-p">${icon("drop")}</span></summary>${infoKarte(s,"standorte")}</details>`; }
