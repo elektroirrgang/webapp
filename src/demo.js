@@ -16,7 +16,7 @@ function demoDaten(){
   const z=(b,i,sp,st=2)=>(b+(((i*37+11)%17)/16-0.5)*sp).toFixed(st).replace(".",",");
   const lp=(i,ph3=true,o={})=>({v:Object.assign({risov:"500 V",rpe:z(0.07,i,0.04),riso12:ph3?z(35,i,20,1):"",riso13:ph3?z(30,i,20,1):"",riso23:ph3?z(38,i,20,1):"",riso1pe:z(6,i,4,2),riso2pe:ph3?z(7,i,4,2):"",riso3pe:ph3?z(7.5,i,4,2):"",pevt:"ok",cp:"ok",
       u1:z(232,i,6,1),u2:ph3?z(231,i,6,1):"",u3:ph3?z(233,i,6,1):"",unpe:z(0.5,i,0.6,1),dreh:ph3?"rechts (123)":"",
-      zs1:z(0.38,i,0.08),zs2:ph3?z(0.37,i,0.08):"",zs3:ph3?z(0.39,i,0.08):"",r05:"ok",r1:z(24,i,10,1),r5:z(6,i,3,1),ria:String(19+(i*7)%9),ub:z(1.2,i,0.8,1),dc6:z(1.8,i,1.2,1),fe:"ok",ff:"ok"},o.v||{}),bem:o.bem||""});
+      zs1:z(0.38,i,0.08),zs2:ph3?z(0.37,i,0.08):"",zs3:ph3?z(0.39,i,0.08):"",r05:"ok",r1:z(24,i,10,1),r5:z(6,i,3,1),ria:String(19+(i*7)%9),ub:z(1.2,i,0.8,1),dc6ms:String(Math.round(90+((i*37+11)%17)*9)),fe:"ok",ff:"ok"},o.v||{}),bem:o.bem||""});
   const leer=()=>({v:{risov:"500 V"},bem:""});
   const saeule=(n,sn,i,ort,o1,o2)=>({id:`demo-st-${sn}`,sicht:SICHT_OK,bauart:"Ladesäule",name:`Ladesäule ${n}`,typ:"Mennekes AMEDIO Professional+ 22 kW",katId:"kat-mennekes-amedio-professional-plus-22-kw",
     sn,ort,fw:"5.22.3",absTyp:"LS B",absIn:"32",zsMan:"",inenn:"32",rcd:"A + RDC-DD 6 mA",rcdTyp:"A",rdc:true,idn:"30",freigabe:"Ladekarte",phasen:3,lps:2,

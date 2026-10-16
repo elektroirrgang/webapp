@@ -1032,7 +1032,8 @@ const GROUPS = [
     {k:"ria", l:"Auslösestrom IΔ", d:"Rampe", u:"mA", ria:true, rcd:true},
     {k:"ub", l:"Berührungsspannung UB", u:"V", soll:"≤ 50 V", t:v=>v<=50, rcd:true},
     {k:"r1", l:"Auslösezeit t", d:"bei der Rampe mit angezeigt", u:"ms", soll:"≤ 300 ms", t:v=>v<=300, rcd:true},
-    {k:"dc6", l:"6 mA DC (EVSE)", d:"Ladung bricht ab", u:"s", soll:"≤ 10 s", t:v=>v<=10, dc:true},
+    {k:"dc6", l:"6 mA DC (EVSE, alt in s)", d:"Ladung bricht ab", u:"s", soll:"≤ 10 s", t:v=>v<=10, dc:true, dcAlt:true},
+    {k:"dc6ms", l:"6 mA DC (EVSE)", d:"Ladung bricht ab", u:"ms", soll:"≤ 10 000 ms (10 s)", t:v=>v<=10000, dc:true, dcNeu:true},
     {k:"r05", l:"½ × IΔn", type:"chk", soll:"keine Auslösung", opt:true, rcd:true},
     {k:"r5", l:"5 × IΔn Auslösezeit", u:"ms", soll:"≤ 40 ms", t:v=>v<=40, opt:true, rcd:true},
     {k:"rcdw", l:"Wallbox schaltet ab bei", d:"RCD-Rampe über den FEV300, rote LED", u:"mA", soll:"≤ 30 mA", t:v=>v<=30, rcdw:true, opt:true},
@@ -1108,7 +1109,9 @@ const polRCBO=s=>s.phasen===3?"4-polig":"2-polig";
 /* Isolation: bis 16.10.2026 ein Wert „gebrückt gegen PE“, seitdem jede Strecke einzeln. Alte Prüfungen behalten ihre Zeile. */
 const ISO_K=["riso12","riso13","riso23","riso1pe","riso2pe","riso3pe"];
 const isoAlt=s=>(s.lp||[]).some(lp=>lp&&lp.v&&lp.v.riso!=null&&lp.v.riso!==""&&!ISO_K.some(k=>lp.v[k]!=null&&lp.v[k]!==""));
-function rowVisible(r,s){ if(r.rcdw) return !!s.rcdIntern; if(r.rcd&&s.rcdIntern) return false; if(r.isoAlt) return isoAlt(s); if(r.iso&&isoAlt(s)) return false; if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
+/* 6 mA DC: bis 16.10.2026 in Sekunden, seitdem in ms (das MFT zeigt ms). Alte Prüfungen behalten ihre Zeile. */
+const dcAlt=s=>(s.lp||[]).some(lp=>lp&&lp.v&&lp.v.dc6!=null&&lp.v.dc6!==""&&(lp.v.dc6ms==null||lp.v.dc6ms===""));
+function rowVisible(r,s){ if(r.dcAlt&&!dcAlt(s)) return false; if(r.dcNeu&&dcAlt(s)) return false; if(r.rcdw) return !!s.rcdIntern; if(r.rcd&&s.rcdIntern) return false; if(r.isoAlt) return isoAlt(s); if(r.iso&&isoAlt(s)) return false; if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
 function evalRow(r,val,s){
   if(val==null||val==="") return r.opt?"skip":"open";
   if(r.type==="chk") return val==="ok"?"ok":val==="nok"?"bad":"open";
@@ -2778,7 +2781,7 @@ function saeuleEntfernen(si){
   cur.s.splice(si,1); if(!cur.s.length) cur.s.push(newSaeule(1)); nummeriere(); commit(); softRender();
   toast(`${name} entfernt`,"Rückgängig",()=>{ if(!cur) return; cur.s=vorher; commit(); softRender(); });
 }
-const AKTE_SP=[["rpe","R<sub>PE</sub>","Ω"],["riso","R<sub>ISO</sub> min","MΩ"],["zs1","Zs L1","Ω"],["ria","IΔ","mA"],["r1","t<sub>A</sub>","ms"],["dc6","6 mA DC","s"]];
+const AKTE_SP=[["rpe","R<sub>PE</sub>","Ω"],["riso","R<sub>ISO</sub> min","MΩ"],["zs1","Zs L1","Ω"],["ria","IΔ","mA"],["r1","t<sub>A</sub>","ms"],["dc6ms","6 mA DC","ms"]];
 const ROW_BY_K=Object.fromEntries(GROUPS.flatMap(g=>g.rows).map(r=>[r.k,r]));
 function geraeteTreffer(sn){ const n=snNorm(sn); if(!n) return [];
   return live("pruefungen").flatMap(p=>p.s.map((s,i)=>snNorm(s.sn)===n?{p,s,i}:null).filter(Boolean)).sort((a,b)=>byDate(a.p,b.p)); }
@@ -2837,6 +2840,7 @@ function akteView(sn){
   const T=geraeteTreffer(sn); if(!T.length) return `<div class="empty">${icon("wallbox")}<h2>Keine Prüfungen gefunden</h2><p>Zu dieser Seriennummer gibt es keine Prüfung.</p></div>`;
   const L=T[0], s=L.s, kat=s.katId&&DB.katalog.get(s.katId), orte=[...new Set(T.map(t=>pfadText(t.p)))];
   const zelle=(t,li,k)=>{ const r=ROW_BY_K[k], lp=t.s.lp[li]; if(!r||!lp) return "<td>–</td>";
+    if(k==="dc6ms"&&(lp.v.dc6ms==null||lp.v.dc6ms==="")&&!isNaN(num(lp.v.dc6))){ const m=num(lp.v.dc6)*1000; return `<td class="${m>10000?"bad":""}">${esc(String(Math.round(m)))}</td>`; }
     if(k==="riso"){ const w=[...ISO_K,"riso"].map(x=>num(lp.v[x])).filter(x=>!isNaN(x)); if(!w.length) return "<td class='leer'>–</td>"; const m=Math.min(...w); return `<td class="${m<1?"bad":""}">${esc(String(m).replace(".",","))}</td>`; } if(r.p3&&+t.s.phasen!==3) return "<td>–</td>";
     const v=lp.v[r.k]; if(v==null||v==="") return "<td class='leer'>–</td>"; let e="open"; try{ e=evalRow(r,v,t.s); }catch(x){}
     return `<td class="${e==="bad"?"bad":""}">${esc(v)}</td>`; };
