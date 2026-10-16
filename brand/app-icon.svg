@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#FFFFFF"/>
+  <!-- Typ-2-Steckgesicht als Kontur: Kreis, oben abgeflacht -->
+  <path d="M168.6 112 A148 148 0 1 0 343.4 112 Z" fill="none" stroke="#E11D2F" stroke-width="30" stroke-linejoin="round" transform="translate(-14 0)"/>
+  <g fill="#E11D2F" transform="translate(-14 0)">
+    <circle cx="214" cy="160" r="14"/><circle cx="298" cy="160" r="14"/>
+    <circle cx="176" cy="234" r="25"/><circle cx="256" cy="234" r="25"/><circle cx="336" cy="234" r="25"/>
+    <circle cx="214" cy="310" r="25"/><circle cx="298" cy="310" r="25"/>
+  </g>
+  <!-- Prüf-Haken -->
+  <circle cx="378" cy="378" r="86" fill="#E11D2F" stroke="#FFFFFF" stroke-width="20"/>
+  <path d="M337 380 l28 28 l54 -58" fill="none" stroke="#FFFFFF" stroke-width="23" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

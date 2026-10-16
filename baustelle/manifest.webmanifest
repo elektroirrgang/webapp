@@ -1,0 +1,39 @@
+{
+  "id": "./",
+  "name": "Baustelle · Elektro Irrgang",
+  "short_name": "Baustelle",
+  "description": "Tägliche Übergaben auf der Baustelle: Stand, offene Punkte, Material und Fotos",
+  "lang": "de",
+  "start_url": "./?start=3",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FCFCFD",
+  "theme_color": "#FCFCFD",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "user_preferences": {
+    "color_scheme_dark": {
+      "theme_color": "#131314",
+      "background_color": "#131314"
+    }
+  }
+}
