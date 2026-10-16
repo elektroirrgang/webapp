@@ -979,6 +979,60 @@ body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dl
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--sb:var(--surface)}}
 :root[data-theme="dark"]{--sb:var(--surface)}
 html::after{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--sb);z-index:2147483000;pointer-events:none}
+/* Aufträge-Tafel */
+.narrow.vg{max-width:1120px;container-type:inline-size}
+.vg-chips{margin:0 0 12px}
+.vg-tab{display:flex;flex-direction:column;gap:10px}
+.vg-th{display:none}
+.vg-row{background:var(--sc-low);border:1px solid var(--outline-v);border-radius:20px;padding:12px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.vg-row.dr{border-color:var(--primary)}
+.vg-k{grid-column:1/-1;display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;background:none;border:0;padding:2px 4px 6px;color:var(--on-surface);font:inherit;min-width:0}
+.vg-kn{font-weight:700;font-size:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.vg-ka{font-size:14px;color:var(--on-sv);line-height:1.35}
+.vg-kf{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;color:var(--on-sv)}
+.vg-kf>span:not(.pill){display:inline-flex;align-items:center;gap:4px}
+.vg-kf .ic{width:16px;height:16px}
+.vg-dr{font-style:normal;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;background:var(--primary);color:var(--on-primary);border-radius:6px;padding:2px 6px}
+.vg-z{display:flex;flex-direction:column;gap:2px;min-width:0;border-radius:12px;padding:8px;font-size:12px;line-height:1.3;background:var(--sc);color:var(--on-sv);border:0;text-align:left;font:inherit;font-size:12px}
+.vg-z em{font-style:normal;font-weight:600;color:var(--on-surface);overflow-wrap:anywhere}
+.vg-zk{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--on-surface)}
+.vg-zw{overflow-wrap:anywhere}
+.vg-z.leer{opacity:.55}
+.vg-z.ok{background:var(--ok-c);color:var(--on-ok-c)} .vg-z.ok .vg-zk,.vg-z.ok em{color:var(--on-ok-c)}
+.vg-z.warte{background:var(--wip-c);color:var(--on-wip-c)} .vg-z.warte .vg-zk{color:var(--on-wip-c)}
+.vg-z.next{border:1.5px dashed var(--primary);background:transparent} .vg-z.next .vg-nt{display:none}
+.vg-dot.nx{background:var(--primary)}
+.vg-mob .btn-tonal{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;padding:0 18px} .vg-mob .btn-tonal .ic{width:18px;height:18px}
+.vg-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--outline);display:inline-block}
+.vg-dot.ok{background:var(--ok)} .vg-dot.warte{background:var(--wip)} .vg-dot.bad{background:var(--err)}
+.vg-mob{grid-column:1/-1;display:flex;justify-content:flex-end;padding-top:4px}
+.vg-mob:empty{display:none}
+.vg-mob .meta{font-size:13px;color:var(--on-sv);padding:8px 4px}
+/* schmal: nur Punkte + Kurzinfo, damit 4 Schritte nebeneinander passen */
+@container (max-width:520px){ .vg-z{padding:6px 7px;font-size:11px} .vg-z em,.vg-wer{display:none} .vg-zk{font-size:12px;gap:4px} }
+/* breit: echte Tabelle */
+@container (min-width:760px){
+  .vg-th{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(4,minmax(0,1fr));gap:8px;padding:0 12px;font-size:12px;font-weight:700;color:var(--on-sv);letter-spacing:.02em}
+  .vg-tab{gap:8px}
+  .vg-row{grid-template-columns:minmax(0,1.6fr) repeat(4,minmax(0,1fr));gap:8px;align-items:stretch;padding:8px}
+  .vg-k{grid-column:auto;padding:4px 6px}
+  .vg-z{padding:10px} .vg-z .vg-zk{display:none} .vg-z.leer{background:transparent;border:1px dashed var(--outline-v)}
+  .vg-z.next .vg-nt{display:flex;align-items:center;gap:6px} .vg-z.next .vg-zk,.vg-z.next .vg-nm{display:none}
+  .vg-z.next{border:0;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;background:var(--sec-c);color:var(--on-sec-c);font-weight:700;font-size:13px;cursor:pointer}
+  .vg-z.next .ic{width:18px;height:18px}
+  .vg-z.warte .vg-zw{font-weight:700}
+  .vg-mob{display:none}
+}
+.vg-start{display:flex;align-items:center;gap:14px;width:100%;margin:0 0 12px;padding:14px 16px;border-radius:24px;border:1px solid var(--outline-v);background:var(--pc);color:var(--on-pc);text-align:left;font:inherit}
+.vg-si{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--primary);color:var(--on-primary);flex:none}
+.vg-st{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0} .vg-st b{font-size:16px} .vg-st span{font-size:13px}
+.vg-dlg{display:flex;flex-direction:column;gap:10px}
+.vg-dlg .vg-dr{align-self:flex-start}
+.vg-an{margin:0;font-size:15px;line-height:1.4;color:var(--on-surface)}
+.vg-tel{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;color:var(--primary);font-weight:700;text-decoration:none}
+.vg-vlauf{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--outline-v);padding-top:10px}
+.vg-vl{display:grid;grid-template-columns:12px 72px 1fr;align-items:baseline;gap:6px;font-size:13px;color:var(--on-sv)} .vg-vl b{color:var(--on-surface)}
+.vg-drw{display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:600}
 </style>
 </head>
 <body class="is-list">
@@ -1195,7 +1249,7 @@ function applyTheme(t){
   document.querySelector('meta[name="theme-color"]').setAttribute("content", dark?"#131314":"#FCFCFD"); if(window.sbFarbe) sbFarbe();
 }
 const FDEF={};
-const IC={filt:"M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z",
+const IC={board:"M3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2zm2 0h4v14H5V5zm6 0h8v6h-8V5zm0 8h8v6h-8v-6z",filt:"M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z",
   chart:"M4 9h4v11H4zm12 4h4v7h-4zm-6-9h4v16h-4z",
   baustelle:"M2 18h20v2.5H2zM4 16.5c0-3.9 2.6-7.1 6-8.1V5.6c0-.6.4-1.1 1-1.1h2c.6 0 1 .5 1 1.1v2.8c3.4 1 6 4.2 6 8.1z",
   share:"M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z",
@@ -1335,7 +1389,7 @@ const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
 
 const TH_KEY="evse_theme";
 const RES_TXT={ok:"fertig",bad:"Mängel",open:"offen",wip:"in Arbeit"};
-const KINDS=["kunden","standorte","ladeparks","pruefungen","baustellen","eintraege","einstellungen","dateien"];
+const KINDS=["kunden","standorte","ladeparks","pruefungen","baustellen","eintraege","einstellungen","dateien","vorgaenge"];
 const EVSE_KINDS=["kunden","standorte","ladeparks","pruefungen"], BAU_KINDS=["baustellen","eintraege"];
 const DB=Object.fromEntries(KINDS.map(k=>[k,new Map()]));
 let META={profil:{name:""},sync:{}};
@@ -1358,7 +1412,7 @@ function dbPut(kind,rec){ DB[kind].set(rec.id,rec); const db=dbOf(kind); if(!db)
   if(kind==="einstellungen") einstSetzen(live("einstellungen")); }
 function metaSave(){ if(aDB) try{ aDB.transaction("meta","readwrite").objectStore("meta").put(META,"meta"); }catch(e){} }
 async function dataLoad(){
-  try{ kDB=await openStores("evse_daten",[...EVSE_KINDS,"katalog"],true); bDB=await openStores("baustelle_daten",BAU_KINDS,true); aDB=await openStores("irrgang_apps",["einstellungen","dateien"],true);
+  try{ kDB=await openStores("evse_daten",[...EVSE_KINDS,"katalog"],true); bDB=await openStores("baustelle_daten",BAU_KINDS,true); aDB=await openStores("irrgang_apps",["einstellungen","dateien","vorgaenge"],true);
     for(const k of KINDS){ (await idbReq(dbOf(k).transaction(k).objectStore(k).getAll())).forEach(r=>DB[k].set(r.id,r)); }
     const m=await idbReq(aDB.transaction("meta").objectStore("meta").get("meta")); if(m) META=Object.assign(META,m);
   }catch(e){ kDB=bDB=aDB=null; toast("Gerätespeicher nicht verfügbar – Daten nur bis zum Schließen"); }
@@ -1469,11 +1523,12 @@ const ENTWICKLUNG=[
   {t:"EVSE",st:"ok",s:"Im Testbetrieb",d:"Prüfablauf, PDF-Protokoll, Wallbox-Katalog, Wiederholungsprüfung, Plausibilitätsprüfung."},
   {t:"Baustelle",st:"ok",s:"Im Testbetrieb",d:"Seit 15.10.2026. Übergaben mit Stand, offenen Punkten, Material und Fotos."},
   {t:"Übersicht (Startseite)",st:"ok",s:"Im Testbetrieb",d:"Seit 15.10.2026. Alle Apps an einem Ort, Statistiken, Kundendatenbank mit Ablage, Mitarbeiter."},
+  {t:"Aufträge-Tafel",st:"wip",s:"Neu im Test",d:"Seit 16.10.2026. Anruf → Anfrage → Auftrag → Termin. Anfrage stellt jeder, den Auftrag erteilt das Büro (mit SCC-Auftragsnummer). Ersetzt die externen Listen vor SCC."},
   {t:"Microsoft-365-Anbindung",st:"open",s:"Wartet auf EDV Achenbach",d:"Erst damit landen alle Daten in der Firmen-Ablage und jeder sieht die Einträge der Kollegen. Bis dahin bleibt alles auf dem jeweiligen Gerät."},
   {t:"Firmenadresse",st:"open",s:"Geplant",d:"Umzug auf ein Firmenkonto bei GitHub und ggf. eine eigene Adresse unter elektro-irrgang.de."},
   {t:"E-Check (Hausinstallation und Geräte)",st:"wip",s:"In Vorbereitung",d:"App angelegt mit Anmeldung und Kunden. Offen: Messgeräte, Protokollvorlagen, Datenübernahme aus dem Messgerät, Abgrenzung zu SCC Mobile."}];
 const ENTW_STAND="15.10.2026";
-const TOPDEST_ALLE=[["start","Start","home"],["uebersicht","Statistik","chart"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
+const TOPDEST_ALLE=[["start","Start","home"],["auftraege","Aufträge","board"],["uebersicht","Statistik","chart"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
 const topdest=()=>TOPDEST_ALLE.filter(d=>d[0]!=="uebersicht"||ME.admin);
 const MEHR_SUB={team:"Mitarbeiter",impressum:"Impressum",about:"Über",entwicklung:"Entwicklung"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
@@ -1745,6 +1800,7 @@ document.addEventListener("click",e=>{
   document.addEventListener("transitionend",bald,true); bald();
 })();
 /*DEMO*/
+/*VORGAENGE*/
 function render(){
   const app=$("#app");
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
@@ -1766,6 +1822,7 @@ function render(){
   else if(nav.v==="uebersicht"){ title="Statistik"; body=uebersichtView()+(SYNC_ON?"":`<p class="hint">Daten auf diesem Gerät – mit der Microsoft-Anbindung kommen die Daten aller Mitarbeiter dazu.</p>`); }
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=ME.admin?["newKunde","Kunde","add"]:null; }
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
+  else if(nav.v==="auftraege"){ title="Aufträge"; body=vorgaengeView(); fab=["vgNeu","Anruf","phone"]; }
   else if(nav.v==="mehr"){ title="Mehr"; body=mehrView(); }
   else if(nav.v==="team"){ title="Mitarbeiter"; body=teamView(); fab=["teamNeu","Mitarbeiter","add"]; }
   else if(nav.v==="entwicklung"){ title="Entwicklung der Apps"; body=entwicklungView(); }
@@ -1788,7 +1845,7 @@ function gruss(){ const h=new Date().getHours(); return h<11?"Guten Morgen":h<18
 function startView(){
   const kacheln=APPS.map(a=>a.geplant?`<div class="app-k geplant"><span class="app-ph">${icon("bulb")}</span><span class="app-t"><b>${a.name}</b><span>${a.text}</span></span>${pill("open","in Planung")}</div>`
     :`<a class="app-k" href="${a.href}"><img src="${a.ic}" alt=""><span class="app-t"><b>${a.name}</b><span>${a.text}</span></span>${icon("chev")}</a>`).join("");
-  let h=`<div class="narrow"><h2 class="gruss">${gruss()}${ME.name?`, ${esc(ME.name)}`:""}</h2><div class="apps app-weiter">${kacheln}</div>`;
+  let h=`<div class="narrow"><h2 class="gruss">${gruss()}${ME.name?`, ${esc(ME.name)}`:""}</h2>${vgStartKarte()}<div class="apps app-weiter">${kacheln}</div>`;
   if(ME.admin){
     const bs=echt("baustellen"), F=faellig(), t=today(), bald=new Date(Date.now()+90*864e5).toISOString().slice(0,10);
     const inArbeit=echt("pruefungen").filter(p=>["wip","open"].includes(pStand(p))).length;

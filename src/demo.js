@@ -2,7 +2,7 @@
    Feste IDs (demo-…), damit jede App dieselben Datensätze anlegt, sieht und wieder entfernt.
    Ein- und Ausschalten schreibt direkt in die gemeinsamen Gerätespeicher (evse_daten, baustelle_daten)
    und lädt die App danach neu – so sehen alle Apps sofort denselben Stand. */
-const DEMO_SPEICHER=[["evse_daten",["kunden","standorte","ladeparks","pruefungen","katalog"]],["baustelle_daten",["baustellen","eintraege","notizen"]]];
+const DEMO_SPEICHER=[["evse_daten",["kunden","standorte","ladeparks","pruefungen","katalog"]],["baustelle_daten",["baustellen","eintraege","notizen"]],["irrgang_apps",["vorgaenge"]]];
 function demoDaten(){
   const T=new Date(); T.setHours(12,0,0,0);
   const tag=d=>{ const x=new Date(T); x.setDate(x.getDate()+d); return x.toISOString().slice(0,10); };
@@ -106,6 +106,16 @@ function demoDaten(){
   D.pruefungen.push(pruef("demo-p-wb",{k:"demo-k-wb",s:"demo-s-wb",nr:"2610-131",uv:"Zählerschrank Keller",datum:tag(-3),art:"Erstprüfung"},[neuId(WB,"erst")],{naechste:jahr(4,-3),fristJ:"4",sigKName:"Herr Schmitz"},"ok"));
   D.baustellen.push(R("demo-b-wb",{kundeId:"demo-k-wb",standortId:"demo-s-wb",name:"Wallbox Carport",auftragsnr:"2610-131",status:"fertig",notiz:"Wallbox 11 kW, Leitung durch den Garten im Leerrohr verlegt."}));
   D.eintraege.push(R("demo-e-wb-1",{baustelleId:"demo-b-wb",datum:tag(-3),stand:"Wallbox montiert, angeschlossen, in Betrieb genommen und geprüft (Protokoll in der EVSE-App).",offen:"",material:"",fotos:[]}));
+  /* Aufträge-Tafel: Anruf → Anfrage → Auftrag → Termin */
+  const BUERO={name:"Büro (Beispiel)",mail:""}, std=h=>jetzt-h*36e5;
+  const vg=(id,o,s)=>R(id,Object.assign({kundeId:"",kundeName:"",tel:"",anliegen:"",dringend:false,s},o));
+  D.vorgaenge=[
+    vg("demo-v-klein",{kundeName:"BEISPIEL Frau Klein",tel:"02291 000000",anliegen:"Steckdosen im Bad ohne Funktion, FI fliegt immer wieder raus",dringend:true},{anruf:{wer:MON,at:std(0.5)}}),
+    vg("demo-v-becker",{kundeId:"demo-k-haus",tel:"02262 000000",anliegen:"Zusätzliche Außensteckdose und Licht auf der Terrasse"},{anruf:{wer:MAX,at:std(76)},anfrage:{wer:MAX,at:std(75)}}),
+    vg("demo-v-werk",{kundeId:"demo-k-werk",tel:"02293 000000",anliegen:"Zwei weitere Ladesäulen auf P1 – Angebot gewünscht"},{anruf:{wer:BUERO,at:std(30)},anfrage:{wer:BUERO,at:std(30)},auftrag:{wer:BUERO,at:std(20),nr:"2610-152"}}),
+    vg("demo-v-schmitz",{kundeId:"demo-k-wb",tel:"02293 000000",anliegen:"Zählerschrank für PV-Anlage prüfen"},{anruf:{wer:MAX,at:std(120)},anfrage:{wer:MAX,at:std(119)},auftrag:{wer:BUERO,at:std(96),nr:"2610-148"},termin:{wer:BUERO,at:std(95),datum:tag(2),zeit:"8:00",mit:"Max Pevec"}}),
+    Object.assign(vg("demo-v-rauch",{kundeId:"demo-k-haus",anliegen:"Rauchmelder im Altbau-Teil tauschen"},{anruf:{wer:MON,at:std(300)},anfrage:{wer:MON,at:std(299)},auftrag:{wer:BUERO,at:std(280),nr:"2610-139"},termin:{wer:BUERO,at:std(279),datum:tag(-5),zeit:"13:00",mit:"Monteur (Beispiel)"}}),{erledigt:{wer:MON,at:std(110)}}),
+    Object.assign(vg("demo-v-weber",{kundeName:"BEISPIEL Herr Weber",tel:"0171 0000002",anliegen:"Satellitenschüssel neu ausrichten"},{anruf:{wer:MAX,at:std(50)},anfrage:{wer:MAX,at:std(49)}}),{abgelehnt:{wer:BUERO,at:std(26),grund:"machen wir nicht – an Antennenbauer verwiesen"}})];
   D.eintraege.forEach(e=>{ e.created=e.updated=zeit(e.datum); });
   return D;
 }
