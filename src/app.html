@@ -959,6 +959,7 @@ html.scroll-sperre,html.scroll-sperre body{overflow:hidden!important;overscroll-
 input[type=date],input[type=time]{text-align:left}
 input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and-time-value{text-align:left;margin:0}
 @supports (-webkit-touch-callout:none){ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;display:block;min-height:1.5em} }
+.rcdi{margin:0 0 12px;display:flex;flex-direction:column;gap:6px} .rcdi .sup{margin:2px 4px 0}
 </style>
 </head>
 <body class="is-list">
@@ -1026,13 +1027,15 @@ const GROUPS = [
   {id:"rcd", ps:"CP = C", t:"RCD / DC-Fehlerstrom", sub:"CP = C, Helfer schaltet den RCD nach jeder Auslösung wieder ein", how:[
     "MFT auf RCD, Mode „current“ (Rampe), RCD-Typ einstellen. Eine Messung zeigt Auslösestrom IΔ, Berührungsspannung UB und Auslösezeit t.",
     "6 mA DC: nur bei DC-Erkennung in der Wallbox bzw. RCD Typ A-EV – die Ladung muss abbrechen.",
-    "Die Einzelmessungen bei ½ × und 5 × IΔn sind optional (z. B. AUTO-Modus des MFT)."], rows:[
-    {k:"ria", l:"Auslösestrom IΔ", d:"Rampe", u:"mA", ria:true},
-    {k:"ub", l:"Berührungsspannung UB", u:"V", soll:"≤ 50 V", t:v=>v<=50},
-    {k:"r1", l:"Auslösezeit t", d:"bei der Rampe mit angezeigt", u:"ms", soll:"≤ 300 ms", t:v=>v<=300},
+    "Die Einzelmessungen bei ½ × und 5 × IΔn sind optional (z. B. AUTO-Modus des MFT).",
+    "Hat die Wallbox einen eigenen Fehlerstromschutz, schaltet sie bei der Rampe selbst ab (rote LED) – der RCD im Verteiler lässt sich dann nicht über den FEV300 messen. Oben „Wallbox schaltet intern ab“ wählen und den Wert eintragen."], rows:[
+    {k:"rcdw", l:"Wallbox schaltet intern ab bei", d:"Rampe über den FEV300, Wallbox blinkt rot", u:"mA", soll:"≤ 30 mA", t:v=>v<=30, rcdw:true},
+    {k:"ria", l:"Auslösestrom IΔ", d:"Rampe", u:"mA", ria:true, rcd:true},
+    {k:"ub", l:"Berührungsspannung UB", u:"V", soll:"≤ 50 V", t:v=>v<=50, rcd:true},
+    {k:"r1", l:"Auslösezeit t", d:"bei der Rampe mit angezeigt", u:"ms", soll:"≤ 300 ms", t:v=>v<=300, rcd:true},
     {k:"dc6", l:"6 mA DC (EVSE)", d:"Ladung bricht ab", u:"s", soll:"≤ 10 s", t:v=>v<=10, dc:true},
-    {k:"r05", l:"½ × IΔn", type:"chk", soll:"keine Auslösung", opt:true},
-    {k:"r5", l:"5 × IΔn Auslösezeit", u:"ms", soll:"≤ 40 ms", t:v=>v<=40, opt:true},
+    {k:"r05", l:"½ × IΔn", type:"chk", soll:"keine Auslösung", opt:true, rcd:true},
+    {k:"r5", l:"5 × IΔn Auslösezeit", u:"ms", soll:"≤ 40 ms", t:v=>v<=40, opt:true, rcd:true},
   ]},
   {id:"fkt", ps:"am FEV300", t:"Funktion / Fehlersimulation", sub:"am FEV300, Wallbox lädt (CP = C)", how:[
     "Taste E (CP-Fehler gegen PE) drücken: Die Wallbox muss die Ladung abbrechen.",
@@ -1104,7 +1107,7 @@ const polRCBO=s=>s.phasen===3?"4-polig":"2-polig";
 /* Isolation: bis 16.10.2026 ein Wert „gebrückt gegen PE“, seitdem jede Strecke einzeln. Alte Prüfungen behalten ihre Zeile. */
 const ISO_K=["riso12","riso13","riso23","riso1pe","riso2pe","riso3pe"];
 const isoAlt=s=>(s.lp||[]).some(lp=>lp&&lp.v&&lp.v.riso!=null&&lp.v.riso!==""&&!ISO_K.some(k=>lp.v[k]!=null&&lp.v[k]!==""));
-function rowVisible(r,s){ if(r.isoAlt) return isoAlt(s); if(r.iso&&isoAlt(s)) return false; if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
+function rowVisible(r,s){ if(r.rcdw) return !!s.rcdIntern; if(r.rcd&&s.rcdIntern) return false; if(r.isoAlt) return isoAlt(s); if(r.iso&&isoAlt(s)) return false; if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
 function evalRow(r,val,s){
   if(val==null||val==="") return r.opt?"skip":"open";
   if(r.type==="chk") return val==="ok"?"ok":val==="nok"?"bad":"open";
@@ -1885,7 +1888,7 @@ function render(){
 }
 function applyRO(){
   $("#app").querySelectorAll("input,select,textarea").forEach(e=>e.disabled=true);
-  $("#app").querySelectorAll('[data-act="pdfIn"],[data-act="katPick"],[data-act="sigOpen"],[data-act="frist"],[data-act="kAbw"],[data-act="pick"],[data-act="leistung"],[data-act="abs"],[data-act="rcdTyp"],[data-act="rdc"],[data-act="freigabe"],[data-act="chk"],[data-act="lps"],[data-act="phasen"],[data-act="bauart"],[data-act="norm"],[data-act="fotoAdd"],[data-act="sigclear"],[data-act="move"]').forEach(e=>e.disabled=true);
+  $("#app").querySelectorAll('[data-act="pdfIn"],[data-act="katPick"],[data-act="sigOpen"],[data-act="frist"],[data-act="kAbw"],[data-act="pick"],[data-act="leistung"],[data-act="abs"],[data-act="bauf"],[data-act="rcdIntern"],[data-act="rcdTyp"],[data-act="rdc"],[data-act="freigabe"],[data-act="chk"],[data-act="lps"],[data-act="phasen"],[data-act="bauart"],[data-act="norm"],[data-act="fotoAdd"],[data-act="sigclear"],[data-act="move"]').forEach(e=>e.disabled=true);
 }
 
 function tf(path,label,val,o={}){
@@ -2281,6 +2284,7 @@ function saeuleView(){
     const gr=groupState(g,s,li); nr++;
     h+=`<section class="card step"><div class="gh"><span class="stepno">${nr}</span><div><h3>${esc(g.t)}</h3><p>${esc(g.sub)}</p></div><span class="pill ${gr}" data-gres="${g.id}">${RES_SHORT[gr]}</span></div>`;
     if(g.how) h+=`<details class="how"><summary>So wird gemessen</summary><ol>${g.how.map(x=>`<li>${x}</li>`).join("")}</ol></details>`;
+    if(g.id==="rcd") h+=`<div class="rcdi"><div class="lbl">RCD im Verteiler über den FEV300 messbar?</div>${seg("rcdIntern",s.rcdIntern?"1":"0",[["0","Ja, messbar"],["1","Wallbox schaltet intern ab"]])}${s.rcdIntern?`<p class="sup">Auslösestrom, Berührungsspannung und Auslösezeit des RCD entfallen hier. Im Protokoll steht, dass die Wallbox selbst abschaltet.</p>`:""}</div>`;
     let optOpen=false; h+=`<div class="mgrid">`;
     for(const r of rows){
       if(r.opt&&!optOpen){ optOpen=true; const hasVal=rows.some(x=>x.opt&&lp.v[x.k]); h+=`</div><details class="optrows"${hasVal?" open":""}><summary>Zusätzliche Messungen (optional)</summary><div class="mgrid">`; }
@@ -2615,7 +2619,7 @@ let nachName=null;
 function nameFehlt(weiter){ if(SYNC_ON||META.profil.name) return false; nachName=weiter;
   dialog("Wer prüft?",`<div class="list wahl">${team().map(m=>`<div class="li" role="button" tabindex="0" data-act="ichBin" data-mail="${esc(m.mail)}"><span class="av">${icon("person")}</span><span class="lt"><span class="h">${esc(m.name)}</span><span class="s">${esc(m.mail)}</span></span></div>`).join("")}</div>
     <div class="fg1" style="margin-top:12px">${tf("name","Oder Name eingeben",``,{form:true})}</div><p class="sup" style="margin:12px 0 0">Einmalig pro Gerät. Ändern und weitere Mitarbeiter: Mehr → Mitarbeiter und Mail.</p>`,`<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="saveName">Weiter</button>`); return true; }
-const ST_TECHNIK=["rcbo","absTyp","absIn","absInAnders","zsMan","lsIcn","lsTyp","rcd","rcdTyp","rdc","idn","rcdIn","rcdHT","inenn","inennAnders","leitung"];
+const ST_TECHNIK=["rcbo","rcdIntern","absTyp","absIn","absInAnders","zsMan","lsIcn","lsTyp","rcd","rcdTyp","rdc","idn","rcdIn","rcdHT","inenn","inennAnders","leitung"];
 const ST_GERAET=["bauart","katId","typ","fw","freigabe","lps","phasen"];
 let stDlg=null;
 const stTypListe=()=>[...live("katalog").map(r=>[r.hersteller,katName(r)].filter(Boolean).join(" ")),...live("pruefungen").flatMap(p=>p.s.map(x=>x.typ))];
@@ -3077,6 +3081,7 @@ document.addEventListener("click",ev=>{
     if(f==="absIn"&&v==="x"){ s.absInAnders=true; } else { s[f]=String(s[f])===v&&f!=="absIn"&&f!=="idn"?"":v; if(f==="absIn") delete s.absInAnders; }
     scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "leistung": { const s=cur.s[nav.si], v=b.dataset.v; if(v==="x"){ s.inennAnders=true; } else { s.inenn=v; delete s.inennAnders; if(!s.absIn) s.absIn=v; } scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
+  case "rcdIntern": { const s=cur.s[nav.si]; if(b.dataset.v==="1") s.rcdIntern=true; else delete s.rcdIntern; scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "bauf": { const s=cur.s[nav.si]; s.rcbo=b.dataset.v==="rcbo"; if(!s.rcbo) delete s.rcbo; else if(s.absTyp==="manuell") s.absTyp="LS B"; scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "abs": { const s=cur.s[nav.si]; s.absTyp=b.dataset.v; scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "rcdTyp": case "rdc": { const s=cur.s[nav.si], i=rcdInfo(s); if(a==="rcdTyp") setRcd(s,b.dataset.v,i.dc); else setRcd(s,i.t,b.dataset.v==="1"); scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
@@ -3097,7 +3102,7 @@ document.addEventListener("click",ev=>{
   case "norm": { const n=b.dataset.n, L=cur.p.normen, i=L.indexOf(n); if(i>=0) L.splice(i,1); else L.push(n); b.setAttribute("aria-pressed",i<0); scheduleSave(); return; }
   case "addS": stDialog({mode:"add",bauart:BAUART(cur.s[cur.s.length-1]||{})}); return;
   case "addS_": { const prev=cur.s[cur.s.length-1], s=newSaeule(cur.s.length+1);
-    if(prev) ["bauart","typ","rcbo","absTyp","absIn","zsMan","lsIcn","lsTyp","rcd","rcdTyp","rdc","idn","rcdIn","rcdHT","inenn","freigabe","phasen","lps","leitung"].forEach(k=>s[k]=prev[k]);
+    if(prev) ["bauart","typ","rcbo","rcdIntern","absTyp","absIn","zsMan","lsIcn","lsTyp","rcd","rcdTyp","rdc","idn","rcdIn","rcdHT","inenn","freigabe","phasen","lps","leitung"].forEach(k=>s[k]=prev[k]);
     s.name=""; cur.s.push(s); nummeriere(); commit(); go({v:"saeule",si:cur.s.length-1,st:"geraet"}); toast(`${s.name} angelegt`); return; }
   case "dupAsk": { const src=cur.s[nav.si];
     dialog("Ladestation vervielfältigen",`<div class="fg1">${tf("n","Anzahl Kopien",String(1),{form:true,im:"numeric",sfx:"Stück"})}</div>
@@ -3432,7 +3437,7 @@ function buildPDF(P){
     d.setFillColor(...NAVY); d.rect(M,y-4.6,CW,8,"F"); d.setTextColor(255); d.setFont("helvetica","bold"); d.setFontSize(8.5);
     d.text("Prüfung",cP,y+0.6); d.text("Sollwert",cS,y+0.6); d.text(s.lps===2?"Ladepunkt 1 (links)":"Ladepunkt 1",c1,y+0.6); if(s.lps===2) d.text("Ladepunkt 2 (rechts)",c2,y+0.6); y+=8;
     for(const {g,rows} of groups){
-      d.setFillColor(...SUNK); d.rect(M,y-off,CW,gh,"F"); d.setTextColor(...NAVY); d.setFont("helvetica","bold"); d.setFontSize(fs-0.5); d.text(pt(`${g.t} (${g.ps||g.sub})`),cP,y+(gh-rh)/2); y+=gh;
+      d.setFillColor(...SUNK); d.rect(M,y-off,CW,gh,"F"); d.setTextColor(...NAVY); d.setFont("helvetica","bold"); d.setFontSize(fs-0.5); d.text(pt(g.id==="rcd"&&s.rcdIntern?`${g.t} (RCD nicht über den Prüfadapter messbar – Wallbox schaltet intern ab)`:`${g.t} (${g.ps||g.sub})`),cP,y+(gh-rh)/2); y+=gh;
       rows.forEach((r,ri)=>{
         if(ri%2){ d.setFillColor(250,251,252); d.rect(M,y-off,CW,rh,"F"); }
         d.setFont("helvetica","normal"); d.setFontSize(fs); d.setTextColor(20); d.text(pt(r.l),cP,y); d.setTextColor(...GR); d.text(fitTxt(pt(r.psoll||sollOf(r,s)),c1-cS-3),cS,y);
