@@ -1830,7 +1830,7 @@ function render(){
   else if(nav.v==="uebersicht"){ title="Statistik"; body=uebersichtView()+(SYNC_ON?"":`<p class="hint">Daten auf diesem Gerät – mit der Microsoft-Anbindung kommen die Daten aller Mitarbeiter dazu.</p>`); }
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=ME.admin?["newKunde","Kunde","add"]:null; }
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
-  else if(nav.v==="auftraege"){ title="Aufträge"; body=vorgaengeView(); fab=["vgNeu","Anruf","phone"]; }
+  else if(nav.v==="auftraege"){ title="Aufträge"; body=vorgaengeView(); fab=["vgNeu","Vorgang","add"]; }
   else if(nav.v==="mehr"){ title="Mehr"; body=mehrView(); }
   else if(nav.v==="team"){ title="Mitarbeiter"; body=teamView(); fab=["teamNeu","Mitarbeiter","add"]; }
   else if(nav.v==="entwicklung"){ title="Entwicklung der Apps"; body=entwicklungView(); }
