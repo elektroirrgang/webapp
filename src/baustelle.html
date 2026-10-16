@@ -1028,6 +1028,20 @@ body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dl
 .btn-tonal{display:inline-flex;align-items:center;justify-content:center;gap:8px}.btn-tonal .ic{width:20px;height:20px;flex:none}
 .af-fuss{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:20px 2px 8px}
 @media (max-width:743.98px){.b-kopf{flex-direction:column;align-items:stretch}.b-kopf .bs-pick{align-self:flex-end}}
+
+.plus-k{width:40px;height:40px;border:0;border-radius:50%;background:var(--sc-high);color:var(--on-surface);display:grid;place-items:center;cursor:pointer;flex:none}
+.plus-k:hover,.plus-k:active{background:var(--sc-highest)}.plus-k .ic{width:22px;height:22px}
+.sk-stift{flex:none;width:44px;height:44px;margin-top:4px;border:0;border-radius:50%;background:var(--sc-high);color:var(--on-surface);display:grid;place-items:center;cursor:pointer}
+.sk-stift:hover,.sk-stift:active{background:var(--sc-highest)}.sk-stift .ic{width:22px;height:22px}
+.kopf-rechts{display:flex;justify-content:flex-end;margin:0 0 8px}
+.ik-klapp{margin:0 0 16px}
+.ik-klapp > summary{list-style:none;display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:20px;background:var(--sc-low);cursor:pointer;-webkit-user-select:none;user-select:none}
+.ik-klapp > summary::-webkit-details-marker{display:none}
+.ik-klapp[open] > summary{border-radius:20px 20px 0 0;padding-bottom:4px}
+.ik-klapp[open] > .infok2{border-radius:0 0 20px 20px;margin-top:0!important;padding-top:8px}
+.ikk-ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--pc);color:var(--on-pc);flex:none}.ikk-ic .ic{width:20px;height:20px}
+.ikk-t{flex:1;min-width:0;display:flex;flex-direction:column}.ikk-t b{font-size:15px}.ikk-t small{font-size:13px;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ikk-p{display:grid;color:var(--on-sv);transition:transform .2s}.ik-klapp[open] .ikk-p{transform:rotate(180deg)}
 </style>
 </head>
 <body class="is-list">
@@ -1483,7 +1497,8 @@ const KIND_NAME={kunden:"Kunde",standorte:"Standort"};
 function go(n){ nav=n; closeOverlays(); render(); window.scrollTo(0,0); }
 const KOPF_START="Baustellen";
 const bStatusKnopf=b=>`<button class="spick bs-pick" data-act="bStatusPick" aria-label="Status ändern"><i class="bs-dot ${b.status||"aktiv"}"></i><span class="spick-t">${STATUS_TXT[b.status||"aktiv"]}</span><span class="spick-p">${icon("chev")}</span></button>`;
-const skRechts=()=>{ if(nav.v!=="baustelle") return ""; const b=DB.baustellen.get(nav.id); return b&&canEdit(b)?bStatusKnopf(b):""; };
+const stiftKnopf=()=>`<button class="sk-stift" data-act="editLoc" aria-label="Daten bearbeiten" title="Daten bearbeiten">${icon("edit")}</button>`;
+const skRechts=()=>{ if(VIEW_KIND[nav.v]){ const r=DB[VIEW_KIND[nav.v]].get(nav.id); return r&&canEdit(r)?stiftKnopf():""; } if(nav.v!=="baustelle") return ""; const b=DB.baustellen.get(nav.id); return b&&canEdit(b)?bStatusKnopf(b):""; };
 function seitenKopf(t,s,f){ t=t||(f?KOPF_START:""); if(!t&&!f) return "";
   const T=pfadTeile(); if(!t&&!f&&typeof skRechts==="function"&&skRechts()) t=KOPF_START; if(s&&s.includes("›")) s=s.split(/\s*›\s*/).pop(); 
   const pf="";
@@ -1741,6 +1756,7 @@ document.addEventListener("click",e=>{
 })();
 /*DEMO*/
 /*AUFNAHME*/
+document.addEventListener("toggle",e=>{ if(e.target.classList&&e.target.classList.contains("ik-klapp")) try{ localStorage.setItem("bau_info",e.target.open?"auf":"zu"); }catch(x){} },true);
 function render(){
   const app=$("#app");
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
@@ -1769,11 +1785,11 @@ function render(){
   else if(nav.v==="about"){ title="Über die App"; body=aboutView(); }
   else if(nav.v==="baustelle"){ const b=DB.baustellen.get(nav.id); if(!b||b.deleted){ nav={v:"start"}; return render(); }
     if(!nav.tab) nav.tab=b.status==="besichtigung"?"aufnahme":"uebergaben";
-    title=b.name; sub=pfadText(b); body=baustelleView(b); fab=nav.tab==="aufnahme"?null:["neuerEintrag","Übergabe","add"]; fotoFetch([...eintraegeVon(b.id).flatMap(e=>e.fotos||[]),...afFotoIds(b)]); }
+    title=b.name; sub=pfadText(b); body=baustelleView(b); fab=null; fotoFetch([...eintraegeVon(b.id).flatMap(e=>e.fotos||[]),...afFotoIds(b)]); }
   else if(nav.v==="eintrag"){ const b=DB.baustellen.get(entw.baustelleId); title=entw.id&&DB.eintraege.has(entw.id)?"Übergabe bearbeiten":"Neue Übergabe"; sub=b?b.name:""; body=eintragView(); fab=["entwSave","Speichern","check"]; }
   else if(VIEW_KIND[nav.v]){ const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id); if(!r||r.deleted){ nav={v:"kunden"}; return render(); }
     title=r.name; sub=kind==="kunden"?"Kunde":(kundeOf(r.kundeId)||{}).name||""; body=kind==="kunden"?kundeView(r):standortView(r);
-    fab=kind==="kunden"?["newStandort","Standort","add"]:["neueBaustelleHier","Baustelle","add"]; }
+    fab=null; }
   if(SY.state==="anmelden"&&!login) body=`<div class="robanner warn">${icon("sync")}<span>Anmeldung abgelaufen – Änderungen werden nur auf dem Gerät gespeichert.</span><button class="btn-text" data-act="relogin">Anmelden</button></div>`+body;
   app.innerHTML=(WIDE.matches&&!login?seitenKopf(title,sub,fab):"")+body; backSetzen(); navIndSetzen(); segInd(); if(nav.v==="notiz") requestAnimationFrame(nGrow);
   $("#topTitle").innerHTML=title?`<span>${esc(title)}</span>${sub?`<small>${esc(String(sub).split(/\s*›\s*/).pop())}</small>`:""}`:"";
@@ -1807,7 +1823,7 @@ function startView(){
   if(!live("baustellen").length) return `<div class="empty">${icon("baustelle")}<h2>Noch keine Baustellen</h2><p>Lege mit „Baustelle“ die erste an. Danach schreibt jeder am Ende des Tages kurz rein, was der Stand ist – der Nächste ist sofort im Bild.</p></div>`;
   const n=s=>live("baustellen").filter(b=>(b.status||"aktiv")===s).length;
   return `<div class="narrow">${searchBar("Baustelle, Kunde, Ort oder Auftragsnr. suchen")}
-    <div class="chips filt">${STATUS.map(([v,t])=>`<button class="chip" data-act="filter" data-v="${v}" aria-pressed="${META.filter===v}"><i class="bs-dot ${v}"></i>${t} (${n(v)})</button>`).join("")}<button class="chip" data-act="filter" data-v="kunden" aria-pressed="${META.filter==="kunden"}">${icon("firma")}Kunden</button></div>
+    <div class="chips filt"><button class="chip" data-act="filter" data-v="kunden" aria-pressed="${META.filter==="kunden"}">${icon("firma")}Kunden</button>${STATUS.map(([v,t])=>`<button class="chip" data-act="filter" data-v="${v}" aria-pressed="${META.filter===v}"><i class="bs-dot ${v}"></i>${t} (${n(v)})</button>`).join("")}</div>
     <div id="res">${baustellenListe()}</div></div>`;
 }
 function eintragKarte(e,erster){
@@ -1824,13 +1840,14 @@ function baustelleView(b){
   let h=`<div class="narrow">`;
   h+=`<div class="b-kopf"><div class="b-meta">${b.auftragsnr?`<span>${icon("tag")}Auftrag ${esc(b.auftragsnr)}</span>`:""}${b.notiz?`<span>${icon("notes")}${esc(b.notiz)}</span>`:""}</div>
     ${!WIDE.matches&&canEdit(b)?bStatusKnopf(b):""}</div>`;
-  if(s) h+=infoKarte(s,"standorte");
+  if(s){ let auf=true; try{ auf=localStorage.getItem("bau_info")!=="zu"; }catch(e){}
+    h+=`<details class="ik-klapp" ${auf?"open":""}><summary><span class="ikk-ic">${icon("ort")}</span><span class="ikk-t"><b>${esc(s.name)}</b><small>${esc(adrText(s)||"")}</small></span><span class="ikk-p">${icon("drop")}</span></summary>${infoKarte(s,"standorte")}</details>`; }
   const [an,am]=afGesamt(b);
   h+=`<div class="b-tabs">${seg("bTab",nav.tab||"uebergaben",[["aufnahme",`Aufnahme${an?` · ${Math.round(an/am*100)} %`:""}`],["uebergaben",`Übergaben${E.length?` · ${E.length}`:""}`]])}</div>`;
   if(nav.tab==="aufnahme") return h+aufnahmeView(b)+`</div>`;
   const NZ=notizenAlle().filter(n=>n.baustelleId===b.id);
-  h+=`<div class="sec-row"><div class="sec-lbl">Notizen</div><button class="btn-text" data-act="neueNotizHier">${icon("add")}Notiz</button></div>${NZ.length?nGrid(NZ):`<p class="meta">Eigene Notizen zur Baustelle – z. B. Tagesablauf, Checkliste oder Skizze.</p>`}`;
-  h+=`<div class="sec-row"><div class="sec-lbl">Übergaben</div><button class="btn-text" data-act="neuerEintrag">${icon("add")}Übergabe</button></div>`;
+  h+=`<div class="sec-row"><div class="sec-lbl">Notizen</div><button class="plus-k" data-act="neueNotizHier" aria-label="Notiz anlegen" title="Notiz anlegen">${icon("add")}</button></div>${NZ.length?nGrid(NZ):`<p class="meta">Eigene Notizen zur Baustelle – z. B. Tagesablauf, Checkliste oder Skizze.</p>`}`;
+  h+=`<div class="sec-row"><div class="sec-lbl">Übergaben</div><button class="plus-k" data-act="neuerEintrag" aria-label="Übergabe schreiben" title="Übergabe schreiben">${icon("add")}</button></div>`;
   h+=E.length?E.map((e,i)=>eintragKarte(e,i===0)).join(""):`<p class="meta">Noch keine Übergabe. Am Ende des Tages kurz festhalten: Stand, was offen ist und welches Material morgen gebraucht wird.</p>`;
   return h+`</div>`;
 }
@@ -1902,13 +1919,14 @@ function kundenView(){
   return `<div class="narrow">${searchBar("Kunde, Kundennr. oder Ort suchen")}<div id="res">${kundenListe()}</div><p class="hint">Gemeinsame Kundendatenbank mit EVSE.</p></div>`;
 }
 function kundeView(k){
-  const ss=standorteVon(k.id), bs=live("baustellen").filter(b=>b.kundeId===k.id).sort((a,b)=>aktiv(b)-aktiv(a));
-  return `<div class="narrow">${infoKarte(k,"kunden")}<div class="sec-lbl">Standorte</div>${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Noch kein Standort – über „Standort“ anlegen.</p>`}
-    <div class="sec-lbl">Baustellen</div>${bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle bei diesem Kunden.</p>`}</div>`;
+  const ss=standorteVon(k.id), bs=live("baustellen").filter(b=>b.kundeId===k.id).sort((a,b)=>aktiv(b)-aktiv(a)), ed=canEdit(k);
+  return `<div class="narrow">${!WIDE.matches&&ed?`<div class="kopf-rechts">${stiftKnopf()}</div>`:""}${infoKarte(k,"kunden")}
+    <div class="sec-row"><div class="sec-lbl">Standorte</div>${ed?`<button class="plus-k" data-act="newStandort" aria-label="Standort anlegen" title="Standort anlegen">${icon("add")}</button>`:""}</div>${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Noch kein Standort.</p>`}
+    <div class="sec-row"><div class="sec-lbl">Baustellen</div><button class="plus-k" data-act="neueBaustelleKunde" aria-label="Baustelle anlegen" title="Baustelle anlegen">${icon("add")}</button></div>${bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle bei diesem Kunden.</p>`}</div>`;
 }
 function standortView(s){
   const bs=live("baustellen").filter(b=>b.standortId===s.id).sort((a,b)=>aktiv(b)-aktiv(a));
-  return `<div class="narrow">${infoKarte(s,"standorte")}<div class="sec-lbl">Baustellen</div>${bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle – über „Baustelle“ anlegen.</p>`}</div>`;
+  return `<div class="narrow">${!WIDE.matches&&canEdit(s)?`<div class="kopf-rechts">${stiftKnopf()}</div>`:""}${infoKarte(s,"standorte")}<div class="sec-row"><div class="sec-lbl">Baustellen</div><button class="plus-k" data-act="neueBaustelleHier" aria-label="Baustelle anlegen" title="Baustelle anlegen">${icon("add")}</button></div>${bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle.</p>`}</div>`;
 }
 let locForm=null;
 function locDialog(kind,rec,parentId){
@@ -2280,6 +2298,7 @@ document.addEventListener("click",ev=>{
   case "import": $("#importFile").click(); return;
   case "filter": META.filter=b.dataset.v; metaSave(); render(); return;
   case "neueBaustelle": bDialog({}); return;
+  case "neueBaustelleKunde": { const ss=standorteVon(nav.id); bDialog({k:nav.id,s:ss.length===1?ss[0].id:""}); return; }
   case "neueBaustelleHier": { const s=standortOf(nav.id); bDialog({k:s.kundeId,s:s.id}); return; }
   case "bSave": bSpeichern(); return;
   case "bEdit": { const x=DB.baustellen.get(nav.id); bDialog({id:x.id,k:x.kundeId,s:x.standortId,name:x.name,auftragsnr:x.auftragsnr||"",notiz:x.notiz||""}); return; }
