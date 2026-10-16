@@ -75,8 +75,25 @@ function vgStepDlg(v,k){ const s=(v.s||{})[k], st=vgStufe(v), n=vgNaechster(v), 
     if(s&&!v.abgelehnt) weiter=`<button class="btn-text" data-act="vgWiederAuf" data-id="${id}">Wieder öffnen</button>`;
     else if(st===3) weiter=`<button class="btn-text" data-act="vgAusgef" data-id="${id}">Ausgeführt melden</button>`; }
   const titel={anruf:"Anruf",anfrage:"Anfrage",auftrag:"Auftrag",termin:"Termin",ausgefuehrt:"Ausgeführt"}[k];
+  const zur=istBuero()&&k!=="anruf"?(s?`<button class="btn-text danger" data-act="vgZurueck" data-id="${id}" data-k="${k}">Zurücknehmen</button>`
+      :v.abgelehnt&&vgStufe(v)+1===VG_S.findIndex(x=>x[0]===k)?`<button class="btn-text danger" data-act="vgAblZurueck" data-id="${id}">Ablehnung zurücknehmen</button>`:""):"";
+  if(zur&&k==="ausgefuehrt") weiter=weiter.replace(/<button class="btn-text" data-act="vgWiederAuf"[^>]*>Wieder öffnen<\/button>/,"");
   dialog(`${titel} – ${vgKunde(v)}`,`<div class="vg-dlg">${body}</div>`,
-    `${k==="anruf"?`<button class="btn-text" data-act="vgEdit" data-id="${id}">Bearbeiten</button>`:""}<span style="flex:1"></span>${weiter||`<button class="btn-text" data-act="cancel">Schließen</button>`}`); }
+    `${k==="anruf"?`<button class="btn-text" data-act="vgEdit" data-id="${id}">Bearbeiten</button>`:""}${zur}<span style="flex:1"></span>${weiter||`<button class="btn-text" data-act="cancel">Schließen</button>`}`); }
+/* Büro: Schritte zurücknehmen (nicht den Anruf). Ein Schritt nimmt alle späteren mit, sonst passt die Kette nicht mehr. */
+function vgBauUnberuehrt(b){ return b&&b.vorgangId&&!live("eintraege").some(e=>e.baustelleId===b.id)&&!(b.aufnahme&&(Object.keys(b.aufnahme.v||{}).length||b.aufnahme.sig)); }
+function vgZurueckFragen(v,k){ const i=VG_S.findIndex(x=>x[0]===k), weg=VG_S.slice(i).filter(([kk])=>v.s&&v.s[kk]).map(x=>`„${x[1]}“`), bau=vgBau(v), mitTermin=v.s&&v.s.termin&&i<=3;
+  const satz=weg.length>1?`Damit werden ${weg.slice(0,-1).join(", ")} und ${weg[weg.length-1]} zurückgenommen.`:`Damit wird ${weg[0]} zurückgenommen.`;
+  const bauTxt=bau&&mitTermin?(vgBauUnberuehrt(bau)?` Die Baustelle „${bau.name}“ ist noch leer und wird wieder entfernt.`:` Die Baustelle „${bau.name}“ hat schon Einträge – sie bleibt, nur der Termin wird dort gelöscht.`):"";
+  dialog(`${VG_S[i][1]} zurücknehmen?`,`<p style="margin:0">${esc(satz+bauTxt)}</p><p class="sup">Der Anruf selbst bleibt erhalten.</p>`,
+    `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text danger" data-act="vgZurueckOk" data-id="${esc(v.id)}" data-k="${k}">Zurücknehmen</button>`); }
+function vgZurueckTun(v,k){ const i=VG_S.findIndex(x=>x[0]===k), altS=JSON.parse(JSON.stringify(v.s||{})), altBau=v.baustelleId;
+  const bau=vgBau(v), bauAlt=bau&&JSON.parse(JSON.stringify({status:bau.status,termin:bau.termin,deleted:bau.deleted}));
+  VG_S.slice(i).forEach(([kk])=>{ if(v.s) delete v.s[kk]; }); delete v.erledigt; const altAbl=v.abgelehnt; if(i<=1) delete v.abgelehnt;
+  if(bau){ if(i<=3){ if(vgBauUnberuehrt(bau)){ bau.deleted=true; delete v.baustelleId; } else { delete bau.termin; if(bau.status==="fertig") bau.status="aktiv"; } }
+    else if(bau.status==="fertig") bau.status="aktiv"; saveRec("baustellen",bau); }
+  saveRec("vorgaenge",v); closeOverlays(); render();
+  toast(`${VG_S[i][1]} zurückgenommen`,"Rückgängig",()=>{ v.s=altS; if(altAbl) v.abgelehnt=altAbl; if(altBau) v.baustelleId=altBau; saveRec("vorgaenge",v); if(bau){ Object.assign(bau,bauAlt); if(!bauAlt.termin) delete bau.termin; if(!bauAlt.deleted) delete bau.deleted; saveRec("baustellen",bau); } render(); }); }
 function vgKopf(v){ const a=vgAlter(v);
   return `<button class="vg-k" data-act="vgOpen" data-id="${esc(v.id)}"><span class="vg-kn">${v.dringend?`<i class="vg-dr">dringend</i>`:""}${esc(vgKunde(v))}</span>
     <span class="vg-kf">${v.tel?`<span>${icon("phone")}${esc(v.tel)}</span>`:""}${a?pill(a.kl,a.txt):""}${vgZu(v)&&!v.abgelehnt?pill("ok","ausgeführt"):v.abgelehnt?pill("bad",`abgelehnt${v.abgelehnt.wer&&v.abgelehnt.wer.name?` von ${vgVorn(v.abgelehnt.wer.name)}`:""}`):""}</span></button>`; }
@@ -173,6 +190,9 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="vgAusgef"&&v){ v.s.ausgefuehrt={wer:who(),at:Date.now()}; saveRec("vorgaenge",v); const bau=vgBau(v), alt=bau&&bau.status;
     if(bau){ bau.status="fertig"; saveRec("baustellen",bau); }
     closeOverlays(); render(); toast(bau?"Ausgeführt – Baustelle steht auf „Fertig“":"Als ausgeführt gemeldet","Rückgängig",()=>{ delete v.s.ausgefuehrt; saveRec("vorgaenge",v); if(bau){ bau.status=alt||"aktiv"; saveRec("baustellen",bau); } render(); }); }
+  else if(a==="vgZurueck"&&v){ if(!istBuero()) return; vgZurueckFragen(v,b.dataset.k); }
+  else if(a==="vgZurueckOk"&&v){ if(!istBuero()) return; vgZurueckTun(v,b.dataset.k); }
+  else if(a==="vgAblZurueck"&&v){ if(!istBuero()) return; const alt=v.abgelehnt; delete v.abgelehnt; saveRec("vorgaenge",v); closeOverlays(); render(); toast("Ablehnung zurückgenommen – wartet wieder aufs Büro","Rückgängig",()=>{ v.abgelehnt=alt; saveRec("vorgaenge",v); render(); }); }
   else if(a==="vgWiederAuf"&&v){ delete v.s.ausgefuehrt; delete v.erledigt; saveRec("vorgaenge",v); const bau=vgBau(v); if(bau&&bau.status==="fertig"){ bau.status="aktiv"; saveRec("baustellen",bau); }
     closeOverlays(); render(); toast(bau?"Wieder offen – Baustelle steht wieder auf „Aktiv“":"Wieder offen"); }
   else if(a==="vgAblehnen"&&v){ dialog("Anfrage ablehnen",`<div class="fg1">${tf("vgGrund","Grund (optional)","",{form:true,ph:"z. B. machen wir nicht, an Kollegen verwiesen"})}</div>`,
