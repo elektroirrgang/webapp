@@ -66,7 +66,27 @@ function demoDaten(){
   const HW=wallbox(1,"Wallbox Garage","1491350PP.05380",61,"Garage, Wand rechts",{v:{u2:"231,4",u3:"233,0"}});
   D.pruefungen.push(pruef("demo-p-haus",{k:"demo-k-haus",s:"demo-s-haus",nr:"2610-090",uv:"Zählerplatz Keller",datum:tag(-9),art:"Erstprüfung"},[neuId(HW,"erst")],{naechste:jahr(4,-9),fristJ:"4",sigKName:"Herr Becker"},"ok"));
   D.baustellen.push(R("demo-b-haus",{kundeId:"demo-k-haus",standortId:"demo-s-haus",name:"Sanierung Elektro EG und OG",auftragsnr:"2609-117",status:"aktiv",
-    notiz:"Komplette Erneuerung der Elektroinstallation in beiden Etagen, je Etage neue Unterverteilung. Zählerplatz bleibt."}));
+    notiz:"Komplette Erneuerung der Elektroinstallation in beiden Etagen, je Etage neue Unterverteilung. Zählerplatz bleibt.",
+    aufnahme:{v:{datum:tag(-30),von:"Max Pevec",anwesend:"Herr und Frau Becker",ansprech:"Herr Becker, 0171 0000000",
+      objektart:"MFH",mfh:"Allgemeinbereich",nutzung:"Vermietung",zustand:["historisch gewachsen","gealtert"],baujahr:"1968 / Bad EG 2004",stockwerke:"KG, EG, OG",
+      bauart:"Massivbau, Decken Beton, Innenwände teils Ständerwerk (OG).",
+      wunsch:"Komplette Erneuerung der Elektroinstallation in EG und OG. Je Etage eine eigene Unterverteilung mit FI/LS. Küche EG mit Herd- und Geschirrspüleranschluss. Bad OG mit Potentialausgleich. Zählerplatz bleibt, wird nur nachgerüstet.",
+      rahmen:["Kinder / Bewohner","feste Termine"],rahmenTxt:"OG vermietet – Termine mit Mieterin 2 Tage vorher abstimmen.",budget:"ca. 18.000 € netto",beginn:tag(-15),ende:tag(25),
+      verantw:"Elektro: Elektro Irrgang · Putz- und Malerarbeiten: Kunde selbst",ansprechOk:"Ja",zeitfenster:"Mo–Fr 7:30–16:30 Uhr",budgetOk:"Ja",
+      hakOrt:"Keller, Hausanschlussraum links",hakSich:{a:"3",b:"63"},hakZust:"i. O.",zuleitung:{a:"5",b:"16"},
+      erdOrt:"Keller, neben HAK",erdZust:"gealtert",erdMess:"veranlasst",blitzOk:"Nein",paOk:"Nein",erdBem:"Wasserleitung nicht im Potentialausgleich, wird mit erledigt.",
+      zpOrt:"Keller",zpVors:{a:"3",b:"35"},zpUess:"Nein",zpArt:["Drehstrom"],zpZust:"gealtert",zpRes:"Ja",zpResTxt:"1 Zählerfeld frei",
+      uvAnz:"2",uvOrte:"UV-EG Flur, UV-OG Abstellraum (beide neu)",uvBj:"neu",uvZust:"gealtert",uvBeschr:"noch offen",uvAbg:"Ja",uvUess:"Nein",uvRes:"Ja",
+      rZust:"gealtert",rZug:"Ja",staub:["Staubschutzwand","Abdeckvlies selbstklebend"],vliesSk:"40",instArt:"Unterputz",rBem:"EG: Küche, Wohnen, Flur, Bad · OG: 3 Zimmer, Bad, Abstellraum",
+      sBlitz:"nicht vorhanden",sUess:"Nein",sRwm:"Ja",sBrand:"Nein",sFlucht:"nicht vorhanden",sEma:"nicht vorhanden",
+      hWdvs:"Nein",hFenster:"Ja",hTuer:"Nein",hRoll:"Nein",
+      fZp:"Ja",fHak:"Ja",fErd:"Ja",fUv:"Ja",fRaum:"Ja",fMangel:"Ja",
+      dKunde:"Ja",dArbeit:"Ja",dTermin:"Ja",dPlaene:"noch zu klären",dGewerke:"Ja",dOffen:"Ja",dMaengel:"Ja",dKundeDurch:"Ja",
+      bem:"Überspannungsschutz im Zählerplatz nachrüsten (Angebot separat)."},fotos:{},sigName:"Max Pevec",sigDatum:tag(-30)}}));
+  D.baustellen.push(R("demo-b-halle",{kundeId:"demo-k-werk",standortId:"demo-s-werk",name:"LED-Beleuchtung Lagerhalle",auftragsnr:"",status:"besichtigung",
+    notiz:"Anfrage von Frau Beispiel: alte Leuchtstoffröhren in Lagerhalle 2 gegen LED tauschen.",
+    aufnahme:{v:{datum:tag(0),von:"Max Pevec",anwesend:"Frau Beispiel",objektart:"Gewerbe",nutzung:"Eigennutzung",zustand:["gepflegt"],
+      wunsch:"Lagerhalle 2 (ca. 900 m²): 48 Leuchtstoffröhren-Leuchten gegen LED-Hallenstrahler tauschen, Steuerung über Präsenzmelder je Gang.",budget:"noch offen"},fotos:{}}}));
   D.eintraege.push(R("demo-e-haus-1",{baustelleId:"demo-b-haus",datum:tag(-14),stand:"EG: Schlitze gestemmt, Leerrohre in Küche, Wohnzimmer und Flur verlegt.",offen:"EG Leitungen ziehen, UV-EG setzen.",material:"Leerrohr M20 (2 Rollen), Gerätedosen 30 Stück",fotos:[]}));
   D.eintraege.push(R("demo-e-haus-2",{baustelleId:"demo-b-haus",datum:tag(-8),stand:"EG: Leitungen gezogen, UV-EG gesetzt und verdrahtet. Küche: Herdanschluss vorbereitet.",offen:"OG beginnen: Schlitze Bad und Schlafzimmer.",material:"NYM-J 3×1,5 mm² (100 m), NYM-J 5×2,5 mm² (25 m)",fotos:[]}));
   D.eintraege.push(R("demo-e-haus-3",{baustelleId:"demo-b-haus",datum:tag(-1),stand:"OG: Leerrohre in Bad und Schlafzimmer verlegt, Gehäuse UV-OG montiert.",offen:"OG Leitungen ziehen, im Bad Schutzpotentialausgleich anschließen, danach Messung beider Etagen.",material:"Potentialausgleichsschiene, Erdungsbandschellen, NYM-J 3×2,5 mm² (50 m)",fotos:[]}));

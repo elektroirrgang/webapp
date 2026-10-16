@@ -919,6 +919,46 @@ html,body{overscroll-behavior-y:none}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--sb:var(--surface)}}
 :root[data-theme="dark"]{--sb:var(--surface)}
 html::after{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--sb);z-index:2147483000;pointer-events:none}
+
+/* Aufnahmeprotokoll */
+.b-tabs{margin:4px 0 16px}.b-tabs .seg{width:100%}
+.af-kopf{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 2px 14px;font-size:14px;color:var(--on-sv)}
+.af-bar{flex:1 1 160px;height:8px;border-radius:4px;background:var(--sc-highest);overflow:hidden}.af-bar i{display:block;height:100%;background:var(--primary);border-radius:4px;transition:width .3s}
+.af-pdfinfo{display:inline-flex;align-items:center;gap:6px}.af-pdfinfo .ic{width:18px;height:18px}
+.af-grid{display:grid;gap:16px}
+.af-sec{margin:0!important}
+.af-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.af-h h3{margin:0}
+.af-sec .fg{grid-template-columns:minmax(0,1fr)!important}
+@media (min-width:744px){.af-sec .fg{grid-template-columns:repeat(2,minmax(0,1fr))!important}.af-sec .fg .full{grid-column:1/-1}}
+.af-seg .lbl,.af-pair .lbl{font-size:13px;font-weight:600;color:var(--on-sv);margin:0 2px 8px}
+.af-seg .seg{width:100%}.af-seg .seg button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.af-chips{display:flex;flex-wrap:wrap;gap:8px}
+.af-chips .chip{border:0!important;background:var(--feld)!important;padding:4px 14px!important}
+.af-chips .chip[aria-pressed="true"]{background:var(--sec-c)!important;color:var(--on-sec-c)}
+.af-pair-f{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1.4fr);align-items:center;gap:8px}.af-x{font-weight:700;color:var(--on-sv)}
+.af-pair .tf input{padding-top:8px!important}
+.tf.gross textarea{min-height:120px}
+.af-kd{display:flex;gap:12px;align-items:flex-start;background:var(--feld);border-radius:14px;padding:12px 14px;margin-bottom:12px}.af-kd div{display:flex;flex-direction:column;gap:2px}.af-kd span{font-size:13px;color:var(--on-sv)}
+.af-liste{display:flex;flex-direction:column}
+.af-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);align-items:center;gap:12px;padding:8px 0}
+.af-row + .af-row{border-top:1px solid color-mix(in srgb,var(--on-surface) 7%,transparent)}
+.af-row > span{font-size:15px}
+.af-row .seg{width:100%}.af-row .seg button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+@media (max-width:743.98px){.af-row{grid-template-columns:minmax(0,1fr)}}
+.af-fotos{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.af-fotos .foto{width:76px;height:76px;border-radius:12px;overflow:hidden;border:0;padding:0;background:var(--feld);display:grid;place-items:center;color:var(--on-sv)}
+.af-fotos .foto img{width:100%;height:100%;object-fit:cover}
+@media (max-width:743.98px){.af-fotos{justify-content:flex-start}}
+.af-sig{display:flex;align-items:center;gap:16px;flex-wrap:wrap}.af-sig img{height:72px;background:#fff;border-radius:10px;padding:4px}.af-sig span{color:var(--on-sv);font-size:14px}
+.af-sigvoll{position:fixed;inset:0;z-index:80;background:var(--surface);display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+.af-sigk{display:flex;align-items:center;gap:8px;padding:8px 12px}.af-sigk b{flex:1;text-align:center}
+.af-sigf{flex:1;position:relative;margin:8px 16px 16px;background:#fff;border-radius:20px;overflow:hidden}
+.af-sigf canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+.af-sigl{position:absolute;left:8%;right:8%;bottom:28%;border-bottom:2px solid #c9ced6;pointer-events:none}
+.af-sigf p{position:absolute;left:0;right:0;bottom:12%;text-align:center;color:#6b7480;font-size:14px;pointer-events:none;margin:0}
+.weiter{display:flex;justify-content:flex-end;margin:20px 0 8px}
+.af-fr{display:flex;align-items:center;gap:10px;justify-content:flex-end}.af-fr .seg{flex:1;max-width:220px}.af-fr .af-fotos{flex:none}.af-fr .af-fotos .foto{width:56px;height:56px}
+@media (max-width:743.98px){.af-fr{justify-content:flex-start}}
 </style>
 </head>
 <body class="is-list">
@@ -943,7 +983,9 @@ html::after{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-
 <div class="snackbar" id="toast" role="status" hidden></div>
 <input type="file" id="importFile" accept=".json,application/json" hidden>
 <input type="file" id="fotoFile" accept="image/*" hidden>
+<input type="file" id="afFotoIn" accept="image/*" hidden>
 
+<script><!--JSPDF--></script>
 <script><!--MSAL--></script>
 <script>
 (() => {
@@ -1317,7 +1359,7 @@ const pfadText=b=>[(kundeOf(b.kundeId)||{}).name,(standortOf(b.standortId)||{}).
 const eintraegeVon=bid=>live("eintraege").filter(e=>e.baustelleId===bid).sort((a,b)=>(b.datum||"").localeCompare(a.datum||"")||(b.created||0)-(a.created||0));
 const letzter=b=>eintraegeVon(b.id)[0];
 const aktiv=b=>Math.max(b.updated||0,...eintraegeVon(b.id).map(e=>e.updated||0));
-const STATUS=[["aktiv","Aktiv"],["pausiert","Pausiert"],["fertig","Abgeschlossen"]];
+const STATUS=[["besichtigung","Besichtigung"],["aktiv","Aktiv"],["pausiert","Pausiert"],["fertig","Fertig"]];
 const STATUS_TXT=Object.fromEntries(STATUS);
 const vonText=r=>r&&r.createdBy&&r.createdBy.name?r.createdBy.name:"";
 function wann(ts){ if(!ts) return ""; const d=new Date(ts), h=new Date(); const tage=Math.round((new Date(h.toDateString())-new Date(d.toDateString()))/864e5);
@@ -1538,6 +1580,7 @@ document.addEventListener("click",e=>{
   document.addEventListener("transitionend",bald,true); bald();
 })();
 /*DEMO*/
+/*AUFNAHME*/
 function render(){
   const app=$("#app");
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
@@ -1565,7 +1608,8 @@ function render(){
   else if(nav.v==="impressum"){ title="Impressum"; body=impressumView(); }
   else if(nav.v==="about"){ title="Über die App"; body=aboutView(); }
   else if(nav.v==="baustelle"){ const b=DB.baustellen.get(nav.id); if(!b||b.deleted){ nav={v:"start"}; return render(); }
-    title=b.name; sub=pfadText(b); body=baustelleView(b); fab=["neuerEintrag","Übergabe","add"]; fotoFetch(eintraegeVon(b.id).flatMap(e=>e.fotos||[])); }
+    if(!nav.tab) nav.tab=b.status==="besichtigung"?"aufnahme":"uebergaben";
+    title=b.name; sub=pfadText(b); body=baustelleView(b); fab=nav.tab==="aufnahme"?null:["neuerEintrag","Übergabe","add"]; fotoFetch([...eintraegeVon(b.id).flatMap(e=>e.fotos||[]),...afFotoIds(b)]); }
   else if(nav.v==="eintrag"){ const b=DB.baustellen.get(entw.baustelleId); title=entw.id&&DB.eintraege.has(entw.id)?"Übergabe bearbeiten":"Neue Übergabe"; sub=b?b.name:""; body=eintragView(); fab=["entwSave","Speichern","check"]; }
   else if(VIEW_KIND[nav.v]){ const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id); if(!r||r.deleted){ nav={v:"kunden"}; return render(); }
     title=r.name; sub=kind==="kunden"?"Kunde":(kundeOf(r.kundeId)||{}).name||""; body=kind==="kunden"?kundeView(r):standortView(r);
@@ -1613,6 +1657,9 @@ function baustelleView(b){
   let h=`<div class="narrow">`;
   h+=`<div class="b-kopf"><div class="b-meta">${b.auftragsnr?`<span>${icon("tag")}Auftrag ${esc(b.auftragsnr)}</span>`:""}${b.notiz?`<span>${icon("notes")}${esc(b.notiz)}</span>`:""}</div>
     ${seg("bStatus",b.status||"aktiv",STATUS)}</div>`;
+  const [an,am]=afGesamt(b);
+  h+=`<div class="b-tabs">${seg("bTab",nav.tab||"uebergaben",[["uebergaben","Übergaben"],["aufnahme",`Aufnahme${an?` · ${Math.round(an/am*100)} %`:""}`]])}</div>`;
+  if(nav.tab==="aufnahme") return h+aufnahmeView(b)+`</div>`;
   if(s) h+=infoKarte(s,"standorte");
   const NZ=notizenAlle().filter(n=>n.baustelleId===b.id);
   h+=`<div class="sec-row"><div class="sec-lbl">Notizen</div><button class="btn-text" data-act="neueNotizHier">${icon("add")}Notiz</button></div>${NZ.length?nGrid(NZ):`<p class="meta">Eigene Notizen zur Baustelle – z. B. Tagesablauf, Checkliste oder Skizze.</p>`}`;
@@ -2069,6 +2116,7 @@ document.addEventListener("click",ev=>{
   case "neueBaustelleHier": { const s=standortOf(nav.id); bDialog({k:s.kundeId,s:s.id}); return; }
   case "bSave": bSpeichern(); return;
   case "bEdit": { const x=DB.baustellen.get(nav.id); bDialog({id:x.id,k:x.kundeId,s:x.standortId,name:x.name,auftragsnr:x.auftragsnr||"",notiz:x.notiz||""}); return; }
+  case "bTab": nav={...nav,tab:b.dataset.v}; render(); scrollTo(0,0); return;
   case "bStatus": { const x=DB.baustellen.get(nav.id); x.status=b.dataset.v; saveRec("baustellen",x); render(); toast(`Status: ${STATUS_TXT[x.status]}`); return; }
   case "bDelAsk": { const x=DB.baustellen.get(nav.id); confirmDlg("Baustelle löschen?",`„${x.name}“ mit allen Übergaben und Fotos löschen? Das lässt sich nicht rückgängig machen.`,"Löschen","bDel"); return; }
   case "bDel": { const x=DB.baustellen.get(nav.id); closeOverlays(); if(!x||!canEdit(x)) return;
