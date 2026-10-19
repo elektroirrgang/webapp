@@ -623,9 +623,16 @@ body.zg-offen{overflow:hidden}
 .zg-chip:disabled{opacity:.38}
 .zg-zoom{position:absolute;left:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:3;height:40px;padding:0 14px;border-radius:20px;font-variant-numeric:tabular-nums}
 .zg-sel{position:absolute;z-index:5;display:flex;align-items:center;gap:2px;padding:4px;border-radius:22px}
+.zg-links-k{display:flex;align-items:center;gap:8px;min-width:0}
+.zg-links-k>.zg-b{width:44px;height:44px;border-radius:22px;background:var(--zg-knopf)}
+.zg-titel{width:min(240px,calc(50vw - 290px));min-width:90px;height:40px;border:0;border-radius:12px;padding:0 12px;background:transparent;color:var(--on-surface);font:inherit;font-size:17px;font-weight:700;outline:none;text-overflow:ellipsis}
+.zg-titel:focus{background:var(--zg-knopf)}
+.zg-titel::placeholder{color:var(--on-sv);opacity:1}
+.zg-flaeche .zg-karte{position:absolute;inset:auto;left:auto;top:auto;right:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:3;width:208px;height:136px;border-radius:14px;box-shadow:var(--zg-schatten);touch-action:none;cursor:pointer;background:var(--zg-pill)}
+.zg-ztext{box-shadow:none!important;caret-color:#1F1F22!important;border-radius:0}
 .zg-farbwahl{position:absolute;left:50%;top:60px;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
 .zg-text{position:absolute;z-index:2;box-sizing:content-box;border:0;outline:none;resize:none;overflow:hidden;border-radius:4px;padding:2px 4px;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;box-shadow:0 0 0 2px var(--primary);caret-color:var(--primary);-webkit-user-select:text;user-select:text;letter-spacing:normal}
-@media (max-width:700px){.zg-werkz{position:static;transform:none}.zg-opt{top:64px;max-width:calc(100% - 24px)}.zg-werkz .zg-b{width:42px}.zg-ok{padding:0 14px}}
+@media (max-width:700px){.zg-flaeche .zg-karte{width:150px;height:100px}.zg-bar{flex-wrap:wrap;row-gap:6px}.zg-links-k{flex:1}.zg-titel{width:auto;flex:1;min-width:0}.zg-werkz{position:static;transform:none;order:3;width:100%;justify-content:space-between;gap:0}.zg-opt{top:64px;max-width:calc(100% - 24px)}.zg-werkz .zg-b{width:40px}.zg-ok{padding:0 14px}}
 
 html.standalone .app-weiter{display:none!important}html.standalone a.li.weiter{pointer-events:none}html.standalone a.li.weiter > .ic:last-child{display:none}
 
@@ -1533,7 +1540,7 @@ function applyTheme(t){
   const dark = t==="dark" || (t==="auto" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
   document.querySelector('meta[name="theme-color"]').setAttribute("content", dark?"#131314":"#FCFCFD"); if(window.sbFarbe) sbFarbe();
 }
-const IC={hoch:"M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z",runter:"M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z",cal:"M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z",moreH:"M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",swapV:"M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z",swapH:"M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z",
+const IC={board:"M21 3H3c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H3V5h18v11zM6 7h5v4H6zm7 0h5v2h-5zm0 3h4v2h-4z",hoch:"M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z",runter:"M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z",cal:"M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z",moreH:"M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",swapV:"M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z",swapH:"M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z",
   notiz:"M19 3H4.99C3.89 3 3 3.9 3 5l.01 14c0 1.1.89 2 1.99 2h10l6-6V5c0-1.1-.9-2-2-2zM7 8h10v2H7V8zm5 6H7v-2h5v2zm2 5.5V14h5.5L14 19.5z",
   stift:"M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 0 0 0-1.41z",
   checkliste:"M22 7h-9v2h9V7zm0 8h-9v2h9v-2zM5.54 11L2 7.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 11zm0 8L2 15.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 19z",
@@ -2102,7 +2109,9 @@ function edKopf(t,s){
 function menuAn(btn,items){ const m=$("#menu"); if(!m||!items.length) return;
   m.innerHTML=items.map(x=>`<button class="mi ${x[3]||""}" role="menuitem" data-act="${x[0]}" ${Object.entries(x[4]||{}).map(([k,v])=>`data-${k}="${esc(v)}"`).join(" ")}>${icon(x[2])}<span>${esc(x[1])}</span></button>`).join("");
   const r=btn.getBoundingClientRect(); m.style.top=Math.round(r.bottom+6)+"px"; m.style.right=Math.max(8,Math.round(innerWidth-r.right))+"px"; m.style.left="auto";
-  m.hidden=false; $("#scrim").hidden=false; }
+  m.hidden=false; $("#scrim").hidden=false;
+  /* passt das Menü unten nicht mehr hin (z. B. am schwebenden Knopf), klappt es nach oben auf */
+  const h=m.offsetHeight; if(r.bottom+6+h>innerHeight-8&&r.top-6-h>8) m.style.top=Math.round(r.top-6-h)+"px"; }
 
 function bItem(b){
   const e=letzter(b), k=kundeOf(b.kundeId);
@@ -2305,20 +2314,21 @@ function nKarte(n){
     else if(b.typ==="zeichnung"&&(b.striche||[]).length) teile.push(`<div class="n-papier klein" style="--pap:${zgPapierFarbe(b)}">${zeichnungSvg(b)}</div>`);
     else if(b.typ==="foto"&&!fotoDa){ const s=fotoCache.get(b.foto); if(s){ teile.push(`<img class="nk-f" src="${s}" alt="">`); fotoDa=true; } } }
   const bs=n.baustelleId&&DB.baustellen.get(n.baustelleId), meine=istMeine(n);
-  return `<button class="nk" data-act="nOeffnen" data-id="${esc(n.id)}">${n.titel?`<b class="nk-h">${esc(n.titel)}</b>`:""}${teile.join("")||(!n.titel?`<p class="nk-t leer">Leere Notiz</p>`:"")}
-    <span class="nk-fuss"><span class="nk-s" title="${esc(SICHT_TXT[n.sicht||"privat"])}">${icon(SICHT_IC[n.sicht||"privat"])}${esc(meine?sichtText(n):vonText(n))}</span>${bs?`<span class="nk-b">${icon("baustelle")}${esc(bs.name)}</span>`:""}<span class="nk-w">${esc(wann(n.updated))}</span></span></button>`;
+  if(n.board&&!teile.length) teile.push(`<p class="nk-t leer">Leeres Whiteboard</p>`);
+  return `<button class="nk${n.board?" nk-board":""}" data-act="nOeffnen" data-id="${esc(n.id)}">${n.titel?`<b class="nk-h">${esc(n.titel)}</b>`:""}${teile.join("")||(!n.titel?`<p class="nk-t leer">Leere Notiz</p>`:"")}
+    <span class="nk-fuss"><span class="nk-s" title="${esc(SICHT_TXT[n.sicht||"privat"])}">${icon(SICHT_IC[n.sicht||"privat"])}${esc(meine?sichtText(n):vonText(n))}</span>${n.board?`<span class="nk-b">${icon("board")}Whiteboard</span>`:""}${bs?`<span class="nk-b">${icon("baustelle")}${esc(bs.name)}</span>`:""}<span class="nk-w">${esc(wann(n.updated))}</span></span></button>`;
 }
 const nGrid=L=>`<div class="ngrid">${L.map(nKarte).join("")}</div>`;
 function notizenListe(){
   const q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
   const f=META.nfilter||"meine";
-  const L=notizenAlle().filter(n=>q?(H(n.titel)||(n.bloecke||[]).some(b=>H(b.text)||(b.items||[]).some(i=>H(i.t)))):(f==="meine"?istMeine(n):!istMeine(n)));
+  const L=notizenAlle().filter(n=>q?(H(n.titel)||(n.bloecke||[]).some(b=>H(b.text)||(b.items||[]).some(i=>H(i.t))||(b.striche||[]).some(x=>x.s&&H(x.s)))):(f==="meine"?istMeine(n):!istMeine(n)));
   if(!L.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:f==="meine"?"Noch keine eigenen Notizen.":"Noch hat niemand eine Notiz mit dir geteilt."}</p>`;
   return nGrid(L);
 }
 function notizenView(){
   const alle=notizenAlle(), nM=alle.filter(istMeine).length, nG=alle.length-nM, f=META.nfilter||"meine";
-  if(!alle.length) return `<div class="empty">${icon("notiz")}<h2>Noch keine Notizen</h2><p>Für Tagesablauf, Checklisten, Skizzen und Fotos – wie ein Notizblock. Beim Speichern legst du fest, wer die Notiz sehen darf.</p></div>`;
+  if(!alle.length) return `<div class="empty">${icon("notiz")}<h2>Noch keine Notizen</h2><p>Für Tagesablauf, Checklisten, Skizzen und Fotos – wie ein Notizblock. Für größere Planungen gibt es Whiteboards mit Haftnotizen. Beim Speichern legst du fest, wer die Notiz sehen darf.</p></div>`;
   return `<div class="wide-n">${searchBar("Notizen durchsuchen")}
     <div class="chips filt"><button class="chip" data-act="nFilter" data-v="meine" aria-pressed="${f==="meine"}">${icon("check")}Meine (${nM})</button><button class="chip" data-act="nFilter" data-v="geteilt" aria-pressed="${f==="geteilt"}">${icon("check")}Mit mir geteilt (${nG})</button></div>
     <div id="res">${notizenListe()}</div></div>`;
@@ -2327,13 +2337,21 @@ function notizenView(){
 let nEntw=null, nZurueck=null, nTimer=null;
 const nNeuBlock=typ=>typ==="check"||typ==="liste"?{id:uid(),typ,items:[{id:uid(),t:"",ok:false}]}:typ==="zeichnung"?{id:uid(),typ,striche:[],h:600}:{id:uid(),typ,text:""};
 function notizNeu(o={}){ nZurueck=nav; ED.st="leer"; nEdit=null; nEntw={id:uid(),neu:true,titel:"",sicht:"privat",personen:[],baustelleId:o.baustelleId||"",bloecke:[nNeuBlock(o.typ||"text")]}; go({v:"notiz"}); setTimeout(()=>{ const e=$(o.typ==="check"?".ni input":".n-ta"); if(e) e.focus(); },50); }
-function notizOeffnen(id){ const n=DB.notizen.get(id); if(!n) return; nZurueck=nav; ED.st="ok"; nEdit=null; nEntw=JSON.parse(JSON.stringify(n)); go({v:"notiz"}); }
+function notizOeffnen(id){ const n=DB.notizen.get(id); if(!n) return; nZurueck=nav; ED.st="ok"; nEdit=null; nEntw=JSON.parse(JSON.stringify(n));
+  if(n.board){ let b=nEntw.bloecke.find(x=>x.typ==="zeichnung"); if(!b){ b={...nNeuBlock("zeichnung"),format:"board"}; nEntw.bloecke=[b]; }
+    zeichnenOeffnen(b,{board:true,titel:n.titel||""}); if(!istMeine(n)) toast("Nur ansehen – Änderungen an fremden Whiteboards werden nicht gespeichert"); return; }
+  go({v:"notiz"}); }
+/* Whiteboard: eigener Eintrag in den Notizen, öffnet sich direkt als große Zeichenfläche */
+function boardNeu(o={}){ closeOverlays(); nZurueck=nav; ED.st="leer"; nEdit=null; const b={...nNeuBlock("zeichnung"),format:"board",h:0};
+  nEntw={id:uid(),neu:true,board:true,titel:"",sicht:"privat",personen:[],baustelleId:o.baustelleId||"",bloecke:[b]}; zeichnenOeffnen(b,{board:true,titel:""}); }
+function boardZu(){ const e=nEntw; let ok=false; if(e&&istMeine(e)) ok=notizSpeichernStill(); nEntw=null; const z=nZurueck; nZurueck=null; go(z&&z.v!=="notiz"?z:{v:"notizen"});
+ }
 function notizSpeichernStill(){
   clearTimeout(nTimer); const e=nEntw; if(!e||!istMeine(e)) return false;
   if(leer(e)){ if(!e.neu){ const r=DB.notizen.get(e.id); if(r){ r.deleted=true; saveRec("notizen",r); } } return false; }
   const neu=!DB.notizen.has(e.id), r=neu?{id:e.id}:DB.notizen.get(e.id);
   const alt=JSON.stringify([r.titel,r.bloecke,r.sicht,r.personen,r.baustelleId]);
-  Object.assign(r,{titel:e.titel.trim(),bloecke:JSON.parse(JSON.stringify(e.bloecke)),sicht:e.sicht,personen:[...(e.personen||[])],baustelleId:e.baustelleId||""});
+  Object.assign(r,{titel:e.titel.trim(),bloecke:JSON.parse(JSON.stringify(e.bloecke)),sicht:e.sicht,personen:[...(e.personen||[])],baustelleId:e.baustelleId||""}); if(e.board) r.board=true;
   if(neu||alt!==JSON.stringify([r.titel,r.bloecke,r.sicht,r.personen,r.baustelleId])) saveRec("notizen",r,neu);
   e.neu=false; return true;
 }
@@ -2527,8 +2545,10 @@ document.addEventListener("paste",ev=>{ if(nav.v!=="notiz"||!nEntw) return; cons
   b.items.splice(k+1,0,...neu); nAuto(); nBlockNeu(b,`input[data-i="${(neu[neu.length-1]||cur).id}"]`); });
 function notizKlick(a,el){
   switch(a){
-  case "neueNotiz": notizNeu(); return true;
-  case "neueNotizHier": notizNeu({baustelleId:nav.id}); return true;
+  case "neueNotiz": menuAn(el,[["neueNotizText","Notiz","notiz"],["neuesBoard","Whiteboard","board"]]); return true;
+  case "neueNotizHier": menuAn(el,[["neueNotizText","Notiz","notiz","",{bs:nav.id}],["neuesBoard","Whiteboard","board","",{bs:nav.id}]]); return true;
+  case "neueNotizText": notizNeu({baustelleId:el.dataset.bs||""}); return true;
+  case "neuesBoard": boardNeu({baustelleId:el.dataset.bs||""}); return true;
   case "nOeffnen": notizOeffnen(el.dataset.id); return true;
   case "nFilter": META.nfilter=el.dataset.v; metaSave(); render(); return true;
   case "nAdd": { const t=el.dataset.v; if(t==="foto"){ $("#fotoFile").click(); return true; } const b=nNeuBlock(t); nEntw.bloecke.push(b); nAuto();
