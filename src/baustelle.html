@@ -597,6 +597,25 @@ body.zg-offen{overflow:hidden}
 .zg-slider{padding:4px 8px;gap:12px;flex-wrap:nowrap}
 .zg-slider input{width:200px;accent-color:var(--primary)}
 .zg-wert{min-width:36px;text-align:right;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--on-surface)}
+.zg-blatt{position:absolute;inset:0;z-index:8;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;padding:24px}
+.zg-blatt-k{width:min(640px,100%);max-height:100%;overflow:auto;background:var(--zg-pill);color:var(--on-surface);border-radius:28px;box-shadow:var(--zg-schatten);padding:16px 22px 22px;scrollbar-width:none}
+.zg-blatt-kopf{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:2px}
+.zg-blatt-kopf b{font-size:20px;font-weight:700}
+.zg-blatt-kopf .zg-b{background:var(--zg-akt)}
+.zg-blatt .zg-pop-sec{padding:16px 0 8px}
+.zg-blatt .zg-pop-r{gap:6px}
+.zg-blatt .zg-rb{background:var(--zg-akt)}
+.zg-blatt .zg-rb[aria-pressed="true"]{background:var(--fab);color:var(--on-fab)}
+.zg-blatt .zg-rb.zg-rot{background:transparent;margin-top:14px;padding-left:4px}
+.zg-formate{display:flex;gap:10px}
+.zg-format{flex:1;height:52px;display:flex;align-items:center;justify-content:center;gap:10px;border:0;border-radius:16px;background:var(--zg-akt);color:var(--on-surface);font:inherit;font-size:15px;font-weight:650;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.zg-format[aria-pressed="true"]{background:var(--fab);color:var(--on-fab)}
+.zg-vorlagen{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 12px}
+.zg-vorl{border:0;background:transparent;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--on-surface);font:inherit;font-size:14px;font-weight:600;-webkit-tap-highlight-color:transparent}
+.zg-vorl svg{display:block;height:150px;width:auto;max-width:100%;border-radius:8px;box-shadow:0 1px 5px rgba(0,0,0,.22)}
+.zg-vorlagen.quer .zg-vorl svg{height:auto;width:100%}
+.zg-vorl[aria-pressed="true"] svg{box-shadow:0 0 0 3px var(--fab),0 1px 5px rgba(0,0,0,.22)}
+.zg-vorl[aria-pressed="true"]{color:var(--fab)}
 .zg-zoom{position:absolute;left:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:3;height:40px;padding:0 14px;border-radius:20px;font-variant-numeric:tabular-nums}
 .zg-sel{position:absolute;z-index:5;display:flex;align-items:center;gap:2px;padding:4px;border-radius:22px}
 .zg-farbwahl{position:absolute;left:50%;top:60px;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}

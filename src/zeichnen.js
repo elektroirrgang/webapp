@@ -51,7 +51,12 @@ const ZG_IC={
   bg:'<rect x="3.5" y="5" width="17" height="14" rx="2.5" fill="currentColor" fill-opacity=".22"/><path d="M8 9.5h8M8 13.5h5"/>',
   stil:'<path d="M4 7h16"/><path d="M4 12h3.5M10.2 12h3.6M16.5 12H20"/><path d="M4 17h.01M8 17h.01M12 17h.01M16 17h.01M20 17h.01" stroke-width="2.6"/>',
   gerade:'<path d="M4 18L20 6"/><path d="M4 21h16" stroke-opacity=".4"/>',
-  chev:'<path d="M7 10l5 5 5-5"/>'};
+  chev:'<path d="M7 10l5 5 5-5"/>',
+  unter:'<path d="M7 4v7a5 5 0 0 0 10 0V4"/><path d="M5 20h14"/>',
+  pinsel:'<path d="M14.5 4.5l5 5"/><path d="M20.4 3.6a2 2 0 0 0-2.8 0L9.5 11.7l2.8 2.8 8.1-8.1a2 2 0 0 0 0-2.8z"/><path d="M9.5 11.7c-2.4-.4-4.6 1.3-4.9 3.7-.2 1.8-.9 3.1-2.1 3.9 3.6 1.4 7.6.6 9.2-2.2.6-1 .8-1.9.6-2.6"/>',
+  box:'<rect x="4.5" y="5.5" width="15" height="13" rx="1" stroke-dasharray="3 2.6"/>',
+  hoch:'<rect x="6.5" y="3.5" width="11" height="17" rx="1.5"/>',
+  quer:'<rect x="3.5" y="6.5" width="17" height="11" rx="1.5"/>'};
 const zgIc=k=>`<svg class="zg-ic" viewBox="0 0 24 24" aria-hidden="true">${ZG_IC[k]||""}</svg>`;
 const zgEsc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const zgKontrast=c=>{ const n=parseInt(String(c).slice(1),16); if(isNaN(n)) return "#fff"; const r=n>>16&255, g=n>>8&255, b=n&255; return (r*299+g*587+b*114)/1000>150?"#1F1F22":"#FFFFFF"; };
@@ -59,8 +64,8 @@ const zgR=n=>Math.round(n*10)/10;
 
 /* --- Einstellungen je Werkzeug (merkt sich das Gerät) --- */
 const ZG_STD={wz:"stift",stift:{art:"kugel",c:"#1F1F22",ws:[2,4,7],wi:1,d:""},marker:{c:"#FFEB3B",ws:[14,24,36],wi:1,gerade:false},
-  radierer:{modus:"strich",nurMarker:false,ws:[8,18,36],wi:1},text:{c:"#1F1F22",fs:28,fam:"modern",b:false,i:false,al:"l",bg:""},
-  form:{art:"rechteck",c:"#1F1F22",ws:[2,4,8],wi:1,d:"",fill:false},seite:{raster:"kaestchen",rmm:5,rs:1,rf:"grau",papier:""}};
+  radierer:{modus:"strich",nurMarker:false,ws:[8,18,36],wi:1},text:{c:"#1F1F22",fs:28,fam:"modern",b:false,i:false,u:false,al:"l",bg:""},lasso:{art:"frei"},
+  form:{art:"rechteck",c:"#1F1F22",ws:[2,4,8],wi:1,d:"",fill:false},seite:{raster:"kaestchen",rmm:5,rs:1,rf:"grau",papier:"",format:"hoch"}};
 function zgCfgLaden(){ let c={}; try{ c=JSON.parse(localStorage.getItem("zg_cfg")||"{}")||{}; }catch(e){}
   const o={wz:["lasso","stift","marker","radierer","text","form"].includes(c.wz)?c.wz:ZG_STD.wz};
   for(const k of Object.keys(ZG_STD)) if(k!=="wz"){ const v=c[k]&&typeof c[k]==="object"?c[k]:{}; o[k]={...ZG_STD[k],...v};
@@ -106,6 +111,7 @@ function zgFuellerPfad(s){ const p=s.p, n=p.length/2, pr=s.pr||[]; if(!n) return
 /* Formen: [Hauptpfad, Pfeilspitzen] – Spitzen werden nie gestrichelt */
 function zgFormTeile(s){ const t=s.t||"stift", p=s.p||[];
   if(t==="stift"||t==="marker") return [strichPfad(p),""];
+  if(t==="poly"){ let d=""; for(let i=0;i<p.length;i+=2) d+=(i?"L":"M")+p[i]+" "+p[i+1]; return [d+(s.zu?"Z":""),""]; }
   const [x0,y0,x1,y1]=p; if(x1==null) return ["",""];
   const spitze=(xa,ya,xb,yb)=>{ const a=Math.atan2(yb-ya,xb-xa), L=Math.max(16,(s.w||4)*3.4), k=.45; return `M${zgR(xb-L*Math.cos(a-k))} ${zgR(yb-L*Math.sin(a-k))}L${xb} ${yb}L${zgR(xb-L*Math.cos(a+k))} ${zgR(yb-L*Math.sin(a+k))}`; };
   if(t==="linie") return [`M${x0} ${y0}L${x1} ${y1}`,""];
@@ -121,6 +127,7 @@ function zgFormTeile(s){ const t=s.t||"stift", p=s.p||[];
 /* Punkte entlang eines Objekts (Treffer, Radierer, Lasso) */
 function zgPunkte(s){ const t=s.t||"stift", p=s.p||[]; if(t==="stift"||t==="marker"||t==="fueller") return p;
   if(t==="text"){ const [a,b,c,d]=zgBox(s); return [a,b,c,b,a,d,c,d,(a+c)/2,(b+d)/2]; }
+  if(t==="poly"){ const o=[], n=p.length/2; for(let i=0;i<n-(s.zu?0:1);i++){ const j=(i+1)%n; for(let k=0;k<24;k++) o.push(p[2*i]+(p[2*j]-p[2*i])*k/24,p[2*i+1]+(p[2*j+1]-p[2*i+1])*k/24); } if(!s.zu) o.push(p[p.length-2],p[p.length-1]); else o.push(p[0],p[1]); return o; }
   const [x0,y0,x1,y1]=p, o=[], lin=(a,b,c,d)=>{ for(let i=0;i<=24;i++) o.push(a+(c-a)*i/24,b+(d-b)*i/24); };
   const xa=Math.min(x0,x1), xb=Math.max(x0,x1), ya=Math.min(y0,y1), yb=Math.max(y0,y1), mx=(xa+xb)/2, my=(ya+yb)/2;
   if(t==="linie"||t==="pfeil"||t==="doppelpfeil") lin(x0,y0,x1,y1);
@@ -160,18 +167,19 @@ function zgRasterTeile(r,y0,y1,xa=0,xb=1000){ const t=r.raster; if(!t) return nu
     for(let c=Math.floor((y0-xb*s)/g)*g;c<=y1-xa*s+g;c+=g) mittel+=`M${xa} ${zgR(c+xa*s)}L${xb} ${zgR(c+xb*s)}`;
     for(let c=Math.floor((y0+xa*s)/g)*g;c<=y1+xb*s+g;c+=g) mittel+=`M${xa} ${zgR(c-xa*s)}L${xb} ${zgR(c-xb*s)}`; }
   return {farbe,teile:[{d:fein,w:.6*wm,a:.5*am},{d:mittel,w:1*wm,a:am},{d:stark,w:1.5*wm,a:Math.min(1,am*1.15)},{d:punkte,f:1,a:am}].filter(x=>x.d)}; }
-function zgRasterSvg(b,y0,y1){ const r=zgRasterTeile(b,y0,y1,-2000,3000); if(!r) return "";
-  return r.teile.map(x=>x.f?`<path d="${x.d}" fill="${r.farbe}" fill-opacity="${zgR(x.a)}"/>`:`<path d="${x.d}" fill="none" stroke="${r.farbe}" stroke-width="${zgR(x.w)}" stroke-opacity="${zgR(x.a)}"/>`).join(""); }
+function zgRasterSvg(b,y0,y1,o){ o=o||{}; const r=zgRasterTeile(b,y0,y1,o.xa==null?-2000:o.xa,o.xb==null?3000:o.xb); if(!r) return ""; const ns=o.fein?` vector-effect="non-scaling-stroke"`:"";
+  return r.teile.map(x=>x.f?`<path d="${x.d}" fill="${r.farbe}" fill-opacity="${zgR(x.a)}"/>`:`<path d="${x.d}" fill="none" stroke="${r.farbe}" stroke-width="${o.fein?zgR(x.w*.9):zgR(x.w)}" stroke-opacity="${zgR(x.a)}"${ns}/>`).join(""); }
 
 /* --- Vorschau (SVG) --- */
 function zgSvgEl(s,dunkel){ s=zgNorm(s);
   if(s.t==="text"){ const m=zgTextMass(s), lh=zgLH(s), fs=s.fs||28; let bg="";
     if(s.bg){ const [a,b,c,d]=zgBox(s); bg=`<rect x="${zgR(a)}" y="${zgR(b)}" width="${zgR(c-a)}" height="${zgR(d-b)}" rx="8" fill="${s.bg==="notiz"?"#FFF1A8":s.c}"${s.bg==="notiz"?"":` fill-opacity=".14"`}/>`; }
-    return bg+`<text fill="${s.c}" font-size="${fs}" font-weight="${s.b?700:500}"${s.i?` font-style="italic"`:""} font-family="${zgEsc(zgFam(s))}">${m.L.map((z,i)=>`<tspan x="${zgR(s.p[0]+zgAlX(s,m,i))}" y="${zgR(s.p[1]+i*lh+fs*.95)}">${zgEsc(z)||" "}</tspan>`).join("")}</text>`; }
+    return bg+`<text fill="${s.c}" font-size="${fs}" font-weight="${s.b?700:500}"${s.i?` font-style="italic"`:""} font-family="${zgEsc(zgFam(s))}">${m.L.map((z,i)=>`<tspan x="${zgR(s.p[0]+zgAlX(s,m,i))}" y="${zgR(s.p[1]+i*lh+fs*.95)}">${zgEsc(z)||" "}</tspan>`).join("")}</text>`
+      +(s.u?m.L.map((z,i)=>m.lw[i]?`<rect x="${zgR(s.p[0]+zgAlX(s,m,i))}" y="${zgR(s.p[1]+i*lh+fs*1.07)}" width="${zgR(m.lw[i])}" height="${zgR(Math.max(1,fs*.065))}" fill="${s.c}"/>`:"").join(""):""); }
   const c=zgCache(s);
   if(s.t==="fueller") return `<path d="${c.d}" fill="${s.c}"/>`;
   const da=s.d?` stroke-dasharray="${zgDash(s).map(zgR).join(" ")}"`:"", mul=s.t==="marker"&&!dunkel?` style="mix-blend-mode:multiply"`:"";
-  return `<path d="${c.d}" stroke="${s.c}" stroke-width="${s.w}" fill="${s.fill&&ZG_GESCHLOSSEN.includes(s.t)?s.c:"none"}"${s.fill?` fill-opacity=".18"`:""} stroke-linecap="round" stroke-linejoin="round"${s.o?` stroke-opacity="${s.o}"`:""}${da}${mul}/>`+(c.k?`<path d="${c.k}" stroke="${s.c}" stroke-width="${s.w}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`:""); }
+  return `<path d="${c.d}" stroke="${s.c}" stroke-width="${s.w}" fill="${zgGefuellt(s)?s.c:"none"}"${zgGefuellt(s)?` fill-opacity=".18"`:""} stroke-linecap="round" stroke-linejoin="round"${s.o?` stroke-opacity="${s.o}"`:""}${da}${mul}/>`+(c.k?`<path d="${c.k}" stroke="${s.c}" stroke-width="${s.w}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`:""); }
 /* Vorschau: Papier und Raster laufen seitlich weiter, damit bei schmalen Ausschnitten kein Rand entsteht */
 const zgPapierFarbe=b=>(ZG_PAPIER[b.papier]||ZG_PAPIER[""])[1];
 const zeichnungSvg=b=>{ const [y0,h]=zBox(b), pap=zgPapierFarbe(b);
@@ -183,13 +191,13 @@ const ZG_MALT=["stift","marker","radierer","form"];
 const zgWzIc=c=>({lasso:"lasso",stift:c.stift.art==="fueller"?"fueller":"kugel",marker:"marker",radierer:"radierer",text:"text",form:c.form.art});
 function zeichnenOeffnen(b){
   const cfg=zgCfgLaden(), neu=!(b.striche||[]).length&&b.raster==null&&!b.papier;
-  const seite=neu?{...cfg.seite}:{raster:b.raster||"",rmm:b.rmm,rs:b.rs==null?1:b.rs,rf:b.rf||"grau",papier:b.papier||""};
+  const seite=neu?{...cfg.seite}:{raster:b.raster||"",rmm:b.rmm,rs:b.rs==null?1:b.rs,rf:b.rf||"grau",papier:b.papier||"",format:b.format||"hoch"};
   const ic=zgWzIc(cfg), wz=(k,l)=>`<button class="zg-b" data-z="wz" data-v="${k}" aria-pressed="${k===cfg.wz}" aria-label="${l}" title="${l}">${zgIc(ic[k])}</button>`;
   const ov=document.createElement("div"); ov.className="zg"; ov.id="zg";
   ov.innerHTML=`<div class="zg-bar">
       <button class="zg-b" data-z="abbr" aria-label="Abbrechen" title="Abbrechen">${zgIc("zu")}</button>
       <div class="zg-werkz" role="toolbar" aria-label="Werkzeuge">${wz("lasso","Lasso – auswählen, verschieben, vergrößern")}${wz("stift","Stift")}${wz("marker","Textmarker")}${wz("radierer","Radierer")}${wz("text","Text")}${wz("form","Formen")}</div>
-      <div class="zg-rechts"><button class="zg-b" data-z="seite" aria-label="Seite: Papier und Raster" title="Papier und Raster">${zgIc("seite")}</button><button class="zg-ok" data-z="ok">Fertig</button></div></div>
+      <div class="zg-rechts"><button class="zg-b" data-z="seite" aria-label="Papier und Vorlage" title="Papier und Vorlage">${zgIc("pinsel")}</button><button class="zg-ok" data-z="ok">Fertig</button></div></div>
     <div class="zg-flaeche"><canvas></canvas>
       <div class="zg-undo"><button class="zg-b" data-z="undo" aria-label="Rückgängig" title="Rückgängig">${zgIc("undo")}</button><button class="zg-b" data-z="redo" aria-label="Wiederholen" title="Wiederholen">${zgIc("redo")}</button></div><button class="zg-chip zg-zoom" data-z="zoom1" title="Zurück auf 100 %" hidden>100 %</button>
       <div class="zg-opt" id="zgOpt"></div></div>
@@ -198,7 +206,7 @@ function zeichnenOeffnen(b){
     <input type="color" id="zgFarbWahl" class="zg-farbwahl" tabindex="-1" aria-hidden="true">`;
   document.body.appendChild(ov); document.body.classList.add("zg-offen");
   const fl=ov.querySelector(".zg-flaeche"), cv=fl.querySelector("canvas");
-  ZG={b,ov,fl,cv,ctx:cv.getContext("2d"),cfg,seite,seiteAend:false,h:Math.max(b.h||0,1414),striche:(b.striche||[]).map(zgNorm),hist:[],redo:[],
+  ZG={b,ov,fl,cv,ctx:cv.getContext("2d"),cfg,seite,seiteAend:false,h:Math.max(b.h||0,seite.format==="quer"?707:1414),striche:(b.striche||[]).map(zgNorm),hist:[],redo:[],
     sy:0,sx:0,z:1,sk0:0,zoomZeit:0,sel:[],akt:null,lasso:null,zug:null,rad:null,edit:null,ta:null,extra:0,stift:false,penDown:false,pid:null,tz:new Map(),pz:new Map(),pan:null,mom:0,scrollZeit:0,tapAlt:null,start:null,textTap:null};
   zgOptBauen(); zgLayout();
   cv.addEventListener("pointerdown",zgDown); cv.addEventListener("pointermove",zgMove); cv.addEventListener("pointerup",zgUp); cv.addEventListener("pointercancel",zgUp);
@@ -217,7 +225,7 @@ function zeichnenOeffnen(b){
 /* Ansicht: z = Zoom (1 = Blattbreite), sx/sy = Verschiebung in Bildschirmpunkten; sk = Bildschirmpunkte je Blatteinheit, px = linker Blattrand */
 function zgLayout(){ if(!ZG) return; const r=ZG.fl.getBoundingClientRect(), dpr=window.devicePixelRatio||1, ay=ZG.sk?ZG.sy/ZG.sk:0, ax=ZG.sk?ZG.sx/ZG.sk:0;
   if(!r.width||!r.height) return;
-  ZG.vw=r.width; ZG.vh=r.height; ZG.dpr=dpr; ZG.sk0=Math.min(r.width-32,880)/1000; ZG.top=r.width<700?122:76;
+  ZG.vw=r.width; ZG.vh=r.height; ZG.dpr=dpr; ZG.sk0=Math.min(r.width-32,ZG.seite.format==="quer"?1240:880)/1000; ZG.top=r.width<700?122:76;
   ZG.cv.width=Math.round(r.width*dpr); ZG.cv.height=Math.round(r.height*dpr);
   zgGeom(); zgScrollen(ay*ZG.sk,true,ax*ZG.sk); }
 function zgGeom(){ ZG.sk=ZG.sk0*ZG.z; const W=1000*ZG.sk, frei=ZG.vw-32; ZG.pw=W;
@@ -242,10 +250,10 @@ function zgMalen(){ if(!ZG||!ZG.sk) return; const {ctx,dpr,sk,px,pw}=ZG, oy=ZG.t
   const dunkel=ZG.seite.papier==="dunkel", ed=ZG.edit?ZG.edit.i:null;
   ZG.striche.forEach((s,i)=>{ if(i===ed) return; const b=zgBox(s); if(b[3]<y0-30||b[1]>y1+30) return; zgZeichne(ctx,s,dunkel); });
   if(ZG.akt) zgZeichne(ctx,ZG.akt,dunkel);
-  if(ZG.lasso&&ZG.lasso.length>2){ ctx.save(); ctx.strokeStyle="#C8102E"; ctx.lineWidth=1.6/sk; ctx.setLineDash([6/sk,5/sk]); ctx.fillStyle="rgba(200,16,46,.06)"; const p=new Path2D(strichPfad(ZG.lasso)+"Z"); ctx.fill(p); ctx.stroke(p); ctx.restore(); }
+  if(ZG.lasso&&ZG.lasso.length>2){ ctx.save(); ctx.strokeStyle="#C8102E"; ctx.lineWidth=1.6/sk; ctx.setLineDash([6/sk,5/sk]); ctx.fillStyle="rgba(200,16,46,.06)"; const L=ZG.lasso, p=new Path2D(ZG.lassoBox?`M${L[0]} ${L[1]}L${L[2]} ${L[3]}L${L[4]} ${L[5]}L${L[6]} ${L[7]}Z`:strichPfad(L)+"Z"); ctx.fill(p); ctx.stroke(p); ctx.restore(); }
   if(ZG.rad&&ZG.rad.pos){ const [x,y]=ZG.rad.pos; ctx.save(); ctx.strokeStyle="rgba(0,0,0,.45)"; ctx.fillStyle="rgba(255,255,255,.35)"; ctx.lineWidth=1.2/sk; ctx.beginPath(); ctx.arc(x,y,zgRadR(),0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.restore(); }
-  zgAuswahlRahmen(ctx);
   ctx.restore();
+  ctx.save(); ctx.translate(px,oy); ctx.scale(sk,sk); zgAuswahlRahmen(ctx); ctx.restore();
   if(Date.now()-ZG.scrollZeit<800&&zgMaxSy()>0){ const ges=ZG.top+ZG.h*sk+48, l=Math.max(40,ZG.vh*ZG.vh/ges), y=(ZG.vh-l)*(ZG.sy/Math.max(1,zgMaxSy()));
     ctx.fillStyle="rgba(120,120,128,.55)"; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(ZG.vw-7,y+2,4,l-4,2); else ctx.rect(ZG.vw-7,y+2,4,l-4); ctx.fill(); }
   if(Date.now()-ZG.scrollZeit<800&&zgMaxSx()>0){ const ges=1000*sk+32, l=Math.max(40,ZG.vw*ZG.vw/ges), x=(ZG.vw-l)*(ZG.sx/Math.max(1,zgMaxSx()));
@@ -256,10 +264,10 @@ function zgMalen(){ if(!ZG||!ZG.sk) return; const {ctx,dpr,sk,px,pw}=ZG, oy=ZG.t
 function zgZeichne(ctx,s,dunkel){ ctx.save();
   if(s.t==="text"){ const m=zgTextMass(s), lh=zgLH(s), fs=s.fs||28;
     if(s.bg){ const [a,b,c,d]=zgBox(s); ctx.fillStyle=s.bg==="notiz"?"#FFF1A8":s.c; ctx.globalAlpha=s.bg==="notiz"?1:.14; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(a,b,c-a,d-b,8); else ctx.rect(a,b,c-a,d-b); ctx.fill(); ctx.globalAlpha=1; }
-    ctx.fillStyle=s.c; ctx.font=zgFont(s); ctx.textBaseline="alphabetic"; m.L.forEach((z,i)=>ctx.fillText(z,s.p[0]+zgAlX(s,m,i),s.p[1]+i*lh+fs*.95)); }
+    ctx.fillStyle=s.c; ctx.font=zgFont(s); ctx.textBaseline="alphabetic"; m.L.forEach((z,i)=>{ const x=s.p[0]+zgAlX(s,m,i), y=s.p[1]+i*lh+fs*.95; ctx.fillText(z,x,y); if(s.u&&m.lw[i]) ctx.fillRect(x,y+fs*.12,m.lw[i],Math.max(1,fs*.065)); }); }
   else if(s.t==="fueller"){ ctx.fillStyle=s.c; ctx.fill(zgP2(s)); }
   else { if(s.t==="marker"&&!dunkel) ctx.globalCompositeOperation="multiply"; ctx.globalAlpha=s.o||1;
-    if(s.fill&&ZG_GESCHLOSSEN.includes(s.t)){ ctx.save(); ctx.globalAlpha=.18; ctx.fillStyle=s.c; ctx.fill(zgP2(s)); ctx.restore(); }
+    if(zgGefuellt(s)){ ctx.save(); ctx.globalAlpha=.18; ctx.fillStyle=s.c; ctx.fill(zgP2(s)); ctx.restore(); }
     ctx.strokeStyle=s.c; ctx.lineWidth=s.w; ctx.lineCap="round"; ctx.lineJoin="round"; if(s.d) ctx.setLineDash(zgDash(s)); ctx.stroke(zgP2(s));
     const k=zgK2(s); if(k){ ctx.setLineDash([]); ctx.stroke(k); } }
   ctx.restore(); }
@@ -267,8 +275,11 @@ function zgSnap(){ ZG.hist.push(ZG.striche.slice()); if(ZG.hist.length>200) ZG.h
 function zgWachsen(unten){ if(unten>ZG.h-350) ZG.h=Math.ceil((unten+700)/100)*100; }
 
 /* --- Treffer, Lasso, Auswahl --- */
+const zgSchliessbar=s=>ZG_GESCHLOSSEN.includes(s.t)||(s.t==="poly"&&!!s.zu);
+const zgGefuellt=s=>!!s.fill&&zgSchliessbar(s);
+const ZG_LINIENART=["linie","pfeil","doppelpfeil","poly"];
 function zgToleranz(ev){ return ((ev&&ev.pointerType==="pen")?8:16)/ZG.sk; }
-function zgTrifft(s,x,y,tol){ if(s.t==="text"||(s.fill&&ZG_GESCHLOSSEN.includes(s.t))){ const [a,b,c,d]=zgBox(s); return x>=a-tol&&x<=c+tol&&y>=b-tol&&y<=d+tol; }
+function zgTrifft(s,x,y,tol){ if(s.t==="text"||zgGefuellt(s)){ const [a,b,c,d]=zgBox(s); return x>=a-tol&&x<=c+tol&&y>=b-tol&&y<=d+tol; }
   const P=zgPunkte(s), w=(s.w||4)/2+tol; for(let k=0;k<P.length;k+=2) if(Math.hypot(P[k]-x,P[k+1]-y)<w) return true;
   for(let k=2;k<P.length;k+=2){ const ax=P[k-2],ay=P[k-1],bx=P[k],by=P[k+1], l=(bx-ax)**2+(by-ay)**2; if(!l) continue; const u=Math.max(0,Math.min(1,((x-ax)*(bx-ax)+(y-ay)*(by-ay))/l)); if(Math.hypot(ax+u*(bx-ax)-x,ay+u*(by-ay)-y)<w) return true; }
   return false; }
@@ -279,23 +290,81 @@ function zgLassoWahl(L){ const out=[]; ZG.striche.forEach((s,i)=>{ if(s.t==="tex
 function zgSelBox(){ let a=Infinity,b=Infinity,c=-Infinity,d=-Infinity; for(const i of ZG.sel){ const s=ZG.striche[i]; if(!s) continue; const x=zgBox(s); a=Math.min(a,x[0]); b=Math.min(b,x[1]); c=Math.max(c,x[2]); d=Math.max(d,x[3]); }
   return isFinite(a)?[a,b,c,d]:null; }
 const zgPad=()=>10/ZG.sk;
-function zgGriffe(){ const B=zgSelBox(); if(!B) return null; const p=zgPad(), out={box:B,skal:[B[2]+p,B[3]+p]};
-  if(ZG.sel.length===1&&ZG.striche[ZG.sel[0]].t==="text") out.breite=[B[2]+p,(B[1]+B[3])/2]; return out; }
+/* Griffe: Linien und Polygone bekommen Punkte an den Ecken (verlängern, verschieben);
+   alles andere 8 Griffe am Rahmen (Seiten ziehen = nur in eine Richtung, Ecken = beide). Text: Seiten = Breite, Ecken = Schriftgröße. */
+function zgGriffe(){ const B=zgSelBox(); if(!B) return null; const p=zgPad(), [a,b,c,d]=B, eins=ZG.sel.length===1?ZG.striche[ZG.sel[0]]:null, out={box:B,punkte:false,g:[]};
+  if(eins&&ZG_LINIENART.includes(eins.t)){ out.punkte=true; for(let k=0;k<eins.p.length;k+=2) out.g.push({art:"pkt",k:k/2,x:eins.p[k],y:eins.p[k+1]}); return out; }
+  const alle=eins&&eins.t==="text"?["nw","ne","sw","se","w","e"]:["nw","n","ne","e","se","s","sw","w"];
+  for(const h of alle) out.g.push({art:h,x:h.includes("w")?a-p:h.includes("e")?c+p:(a+c)/2,y:h.includes("n")?b-p:h.includes("s")?d+p:(b+d)/2});
+  return out; }
+function zgGriffTreffer(x,y){ const G=zgGriffe(), tol=20/ZG.sk; if(!G) return null; let best=null, bd=tol; for(const g of G.g){ const d=Math.hypot(x-g.x,y-g.y); if(d<bd){ bd=d; best=g; } } return best; }
+function zgSelInnen(x,y,ev){ const G=zgGriffe(); if(!G) return false;
+  if(G.punkte||ZG.selWz) return ZG.sel.some(i=>zgTrifft(ZG.striche[i],x,y,zgToleranz(ev)));
+  const [a,b,c,d]=G.box, p=zgPad(); return x>=a-p&&x<=c+p&&y>=b-p&&y<=d+p; }
 function zgAuswahlRahmen(ctx){ if(!ZG.sel.length||ZG.edit) return; const G=zgGriffe(); if(!G) return; const [a,b,c,d]=G.box, p=zgPad(), sk=ZG.sk;
-  ctx.save(); ctx.strokeStyle="#C8102E"; ctx.lineWidth=1.6/sk; ctx.setLineDash([6/sk,5/sk]); ctx.strokeRect(a-p,b-p,c-a+2*p,d-b+2*p); ctx.setLineDash([]);
-  ctx.fillStyle="#fff"; ctx.lineWidth=2/sk; for(const g of [G.skal,G.breite]) if(g){ ctx.beginPath(); ctx.arc(g[0],g[1],8/sk,0,Math.PI*2); ctx.fill(); ctx.stroke(); }
+  ctx.save(); ctx.strokeStyle="#C8102E"; ctx.lineWidth=1.6/sk;
+  if(!G.punkte){ ctx.setLineDash([6/sk,5/sk]); ctx.strokeRect(a-p,b-p,c-a+2*p,d-b+2*p); ctx.setLineDash([]); }
+  for(const g of G.g){ ctx.beginPath(); ctx.arc(g.x,g.y,(G.punkte?9:7)/sk,0,Math.PI*2); ctx.fillStyle=G.punkte?"#C8102E":"#fff"; ctx.fill(); ctx.lineWidth=2.2/sk; ctx.strokeStyle=G.punkte?"#fff":"#C8102E"; ctx.stroke(); }
   ctx.restore(); }
 const zgPageZuClient=(x,y)=>{ const r=ZG.cv.getBoundingClientRect(); return [r.left+ZG.px+x*ZG.sk,r.top+ZG.top-ZG.sy+y*ZG.sk]; };
 const zgRel=(cx,cy)=>{ const r=ZG.ov.getBoundingClientRect(); return [cx-r.left,cy-r.top]; };
-function zgSelLeiste(){ const bar=ZG.ov.querySelector("#zgSel"); if(!ZG.sel.length||ZG.edit||ZG.zug){ bar.hidden=true; return; }
+function zgSelLeiste(){ const bar=ZG.ov.querySelector("#zgSel"); if(!ZG.sel.length||ZG.selWz||ZG.edit||ZG.zug){ bar.hidden=true; return; }
   const B=zgSelBox(); if(!B){ bar.hidden=true; return; } const einText=ZG.sel.length===1&&ZG.striche[ZG.sel[0]].t==="text";
   const k=(z,l,rot)=>`<button class="zg-chip${rot?" zg-rot":""}" data-z="${z}">${l}</button>`;
   const html=(einText?k("selEdit","Bearbeiten"):"")+k("selKopie","Kopieren")+k("selAus","Ausschneiden")+k("selDup","Duplizieren")+k("selDel","Löschen",1);
   if(bar.dataset.h!==html){ bar.innerHTML=html; bar.dataset.h=html; }
-  bar.hidden=false; const p=zgPad(), [l,t]=zgPageZuClient(B[0]-p,B[1]-p), [rr,u]=zgPageZuClient(B[2]+p,B[3]+p), [L,T]=zgRel((l+rr)/2,t), [,U]=zgRel(0,u);
+  bar.hidden=false; const p=zgPad()+12/ZG.sk, [l,t]=zgPageZuClient(B[0]-p,B[1]-p), [rr,u]=zgPageZuClient(B[2]+p,B[3]+p), [L,T]=zgRel((l+rr)/2,t), [,U]=zgRel(0,u);
   const fr=ZG.fl.getBoundingClientRect(), [,flTop]=zgRel(0,fr.top), bw=bar.offsetWidth, bh=bar.offsetHeight;
-  let top=T-bh-12; if(top<flTop+ZG.top-20) top=U+14; top=Math.min(top,ZG.ov.clientHeight-bh-12);
+  let top=T-bh-8; if(top<flTop+ZG.top-20) top=U+8; top=Math.min(top,ZG.ov.clientHeight-bh-12);
   bar.style.left=Math.max(8,Math.min(ZG.ov.clientWidth-bw-8,L-bw/2))+"px"; bar.style.top=Math.max(flTop+8,top)+"px"; }
+/* Griff ziehen */
+function zgGriffZiehen(z,x,y){ const g=z.g, [a,b,c,d]=z.box, MIN=8, p=zgPad();
+  if(g.art==="pkt"){ const i=ZG.sel[0], o=z.orig[0], P=o.p.slice(); let nx=x, ny=y;
+    if(P.length===4){ const k=g.k?0:2; [nx,ny]=zgWinkelFang(P[k],P[k+1],nx,ny); }
+    P[2*g.k]=zgR(nx); P[2*g.k+1]=zgR(ny); ZG.striche[i]={...o,p:P}; return; }
+  const h=g.art, px=h.includes("w")?x+p:h.includes("e")?x-p:x, py=h.includes("n")?y+p:h.includes("s")?y-p:y, eins=z.orig.length===1?z.orig[0]:null;
+  if(eins&&eins.t==="text"){ const i=ZG.sel[0], o=eins, m=zgTextMass(o), fs=o.fs||28;
+    if(h==="e"){ ZG.striche[i]={...o,bw:zgR(Math.max(fs*1.5,px-o.p[0]))}; return; }
+    if(h==="w"){ const re=o.p[0]+m.w, l=Math.min(px,re-fs*1.5); ZG.striche[i]={...o,p:[zgR(l),o.p[1]],bw:zgR(re-l)}; return; }
+    const ax=h.includes("w")?c:a, ay=h.includes("n")?d:b, f=Math.max(.2,Math.abs(px-ax)/Math.max(1,c-a));
+    const n={...o,fs:Math.max(6,zgR(fs*f)),p:[zgR(ax+(o.p[0]-ax)*f),zgR(ay+(o.p[1]-ay)*f)]}; if(o.bw) n.bw=zgR(o.bw*f); ZG.striche[i]=n; return; }
+  let A=a,B=b,C=c,D=d; if(h.includes("w")) A=Math.min(px,c-MIN); if(h.includes("e")) C=Math.max(px,a+MIN); if(h.includes("n")) B=Math.min(py,d-MIN); if(h.includes("s")) D=Math.max(py,b+MIN);
+  const fx=(C-A)/Math.max(1e-6,c-a), fy=(D-B)/Math.max(1e-6,d-b);
+  ZG.sel.forEach((i,k)=>{ const o=z.orig[k]; ZG.striche[i]={...o,p:o.p.map((v,j)=>zgR(j%2?B+(v-b)*fy:A+(v-a)*fx))}; }); }
+function zgWinkelFang(x0,y0,x,y){ const ang=Math.atan2(y-y0,x-x0), sn=Math.round(ang/(Math.PI/4))*(Math.PI/4); if(Math.abs(ang-sn)<.09){ const l=Math.hypot(x-x0,y-y0); return [zgR(x0+l*Math.cos(sn)),zgR(y0+l*Math.sin(sn))]; } return [x,y]; }
+
+/* --- Formerkennung: Strich zeichnen und am Ende kurz halten ⇒ gerade Linie, Rechteck, Kreis, Dreieck oder Vieleck --- */
+function zgRdp(P,eps){ if(P.length<3) return P.slice(); const [x1,y1]=P[0],[x2,y2]=P[P.length-1], dx=x2-x1, dy=y2-y1, l=Math.hypot(dx,dy);
+  let mi=-1, md=0; for(let i=1;i<P.length-1;i++){ const d=l>1e-6?Math.abs(dy*P[i][0]-dx*P[i][1]+x2*y1-y2*x1)/l:Math.hypot(P[i][0]-x1,P[i][1]-y1); if(d>md){ md=d; mi=i; } }
+  if(md>eps){ const a=zgRdp(P.slice(0,mi+1),eps), b=zgRdp(P.slice(mi),eps); return a.slice(0,-1).concat(b); }
+  return [P[0],P[P.length-1]]; }
+function zgEckenBereinigen(V,zu){ let fertig=false; while(!fertig&&V.length>(zu?3:2)){ fertig=true;
+    for(let i=zu?0:1;i<(zu?V.length:V.length-1);i++){ const p=V[(i-1+V.length)%V.length], q=V[i], r=V[(i+1)%V.length];
+      let d=Math.abs(Math.atan2(r[1]-q[1],r[0]-q[0])-Math.atan2(q[1]-p[1],q[0]-p[0])); if(d>Math.PI) d=2*Math.PI-d;
+      if(d<.42||Math.hypot(q[0]-p[0],q[1]-p[1])<6){ V=V.slice(0,i).concat(V.slice(i+1)); fertig=false; break; } } }
+  return V; }
+function zgErkenne(a){ const P=[]; for(let i=0;i<a.p.length;i+=2) P.push([a.p[i],a.p[i+1]]); if(P.length<4) return null;
+  let L=0; for(let i=1;i<P.length;i++) L+=Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1]);
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity; P.forEach(([x,y])=>{ x0=Math.min(x0,x); x1=Math.max(x1,x); y0=Math.min(y0,y); y1=Math.max(y1,y); });
+  const w=x1-x0, h=y1-y0, diag=Math.hypot(w,h); if(diag<24||L<30) return null;
+  const A=P[0], E=P[P.length-1], D=Math.hypot(E[0]-A[0],E[1]-A[1]);
+  const basis={c:a.c,w:a.t==="fueller"?zgR(Math.max(1,a.w*.62)):a.w}; if(a.d) basis.d=a.d;
+  if(D/L>.9){ const [ex,ey]=zgWinkelFang(A[0],A[1],E[0],E[1]); return {...basis,t:"linie",p:[zgR(A[0]),zgR(A[1]),zgR(ex),zgR(ey)]}; }
+  const zu=D<Math.max(30,diag*.25); let V=zgRdp(P,Math.max(6,diag*.06));
+  if(zu){ if(V.length>2&&Math.hypot(V[V.length-1][0]-V[0][0],V[V.length-1][1]-V[0][1])<Math.max(30,diag*.25)) V=V.slice(0,-1);
+    V=zgEckenBereinigen(V,true);
+    const mx=(x0+x1)/2, my=(y0+y1)/2; let fehl=0; P.forEach(([x,y])=>{ fehl+=Math.abs(Math.hypot((x-mx)/Math.max(1,w/2),(y-my)/Math.max(1,h/2))-1); }); fehl/=P.length;
+    const achsen=V.length===4&&V.every((q,i)=>{ const r=V[(i+1)%4]; let g=Math.abs(Math.atan2(r[1]-q[1],r[0]-q[0]))%(Math.PI/2); return Math.min(g,Math.PI/2-g)<.22; });
+    const poly=()=>({...basis,t:"poly",zu:true,p:V.flat().map(zgR)});
+    if(V.length===4&&achsen&&fehl>.08){ const xs=V.map(v=>v[0]), ys=V.map(v=>v[1]); return {...basis,t:"rechteck",p:[zgR(Math.min(...xs)),zgR(Math.min(...ys)),zgR(Math.max(...xs)),zgR(Math.max(...ys))]}; }
+    if(V.length>=3&&V.length<=4&&fehl>.1) return poly();
+    if(fehl<.16&&Math.min(w,h)>10) return {...basis,t:"kreis",p:[zgR(x0),zgR(y0),zgR(x1),zgR(y1)]};
+    if(V.length>=3&&V.length<=6) return poly();
+    return null; }
+  V=zgEckenBereinigen(V,false); if(V.length>=3&&V.length<=8) return {...basis,t:"poly",zu:false,p:V.flat().map(zgR)};
+  return null; }
+function zgHalten(x,y){ clearTimeout(ZG.haltT); ZG.haltP=[x,y]; ZG.haltT=setTimeout(zgFormAusHand,520); }
+function zgFormAusHand(){ const a=ZG&&ZG.akt; if(!a||a._erkannt||!(a.t==="stift"||a.t==="fueller")) return; const f=zgErkenne(a); if(!f) return; f._erkannt=true; ZG.akt=f; zgMalen(); }
 
 /* --- Zeiger: Stift zeichnet, Finger scrollt (mit Pencil) bzw. zwei Finger scrollen --- */
 const zgMitte=()=>{ let x=0,y=0,n=0; ZG.pz.forEach(p=>{ x+=p.x; y+=p.y; n++; }); const r=ZG.cv.getBoundingClientRect(); return n?[x/n-r.left,y/n-r.top]:[0,0]; };
@@ -308,7 +377,7 @@ function zgPanMove(){ const P=ZG.pan, [cx,cy]=zgMitte(), now=performance.now(), 
   ZG.sk=ZG.sk0*ZG.z; zgScrollen(ZG.top-(cy-P.P[1]*ZG.sk),false,16-(cx-P.P[0]*ZG.sk)); }
 function zgMomentStop(){ cancelAnimationFrame(ZG.mom); ZG.mom=0; }
 function zgMoment(vx,vy){ let t=performance.now(); const f=now=>{ if(!ZG) return; const dt=Math.max(1,now-t); t=now; const k=Math.pow(.94,dt/16); vx*=k; vy*=k; if(Math.hypot(vx,vy)<.03) return; zgScrollen(ZG.sy-vy*dt,false,ZG.sx-vx*dt); ZG.mom=requestAnimationFrame(f); }; ZG.mom=requestAnimationFrame(f); }
-function zgAktionAbbrechen(){ ZG.akt=null; ZG.lasso=null; ZG.textTap=null; ZG.zug=null; if(ZG.rad){ if(!ZG.rad.aend) ZG.hist.pop(); ZG.rad=null; } ZG.pid=null; }
+function zgAktionAbbrechen(){ clearTimeout(ZG.haltT); ZG.akt=null; ZG.lasso=null; ZG.textTap=null; ZG.zug=null; if(ZG.rad){ if(!ZG.rad.aend) ZG.hist.pop(); ZG.rad=null; } ZG.pid=null; }
 function zgDown(ev){ if(!ZG) return; zgPopZu();
   if(ZG.ta){ ev.preventDefault(); ZG.ta.blur(); return; }
   const typ=ev.pointerType; try{ ZG.cv.setPointerCapture(ev.pointerId); }catch(e){}
@@ -319,16 +388,16 @@ function zgDown(ev){ if(!ZG) return; zgPopZu();
   if(ZG.pid!=null) return;
   ev.preventDefault(); zgMomentStop(); ZG.pid=ev.pointerId;
   const [x,y]=zgPunkt(ev), wz=ZG.cfg.wz; ZG.start={x,y,cx:ev.clientX,cy:ev.clientY,typ,bewegt:false};
-  if(wz==="lasso"){ const G=zgGriffe(), tol=22/ZG.sk;
-    if(G){ const orig=ZG.sel.map(i=>ZG.striche[i]);
-      if(G.breite&&Math.hypot(x-G.breite[0],y-G.breite[1])<tol){ zgSnap(); ZG.zug={art:"breite",orig}; return; }
-      if(Math.hypot(x-G.skal[0],y-G.skal[1])<tol){ zgSnap(); ZG.zug={art:"skal",orig,box:G.box}; return; }
-      const [a,b,c,d]=G.box, p=zgPad(); if(x>=a-p&&x<=c+p&&y>=b-p&&y<=d+p){ zgSnap(); ZG.zug={art:"ziehen",orig,x,y}; return; } }
-    ZG.lasso=[x,y]; return; }
+  /* Auswahl bearbeiten: Griff ziehen oder Auswahl verschieben */
+  if(ZG.sel.length&&(wz==="lasso"||ZG.selWz)){ const g=zgGriffTreffer(x,y), orig=ZG.sel.map(i=>ZG.striche[i]);
+    if(g){ zgSnap(); ZG.zug={art:"griff",g,orig,box:zgSelBox()}; zgMalen(); return; }
+    if(zgSelInnen(x,y,ev)){ zgSnap(); ZG.zug={art:"ziehen",orig,x,y}; return; } }
+  if(ZG.selWz){ ZG.sel=[]; ZG.selWz=false; }
+  if(wz==="lasso"){ ZG.lasso=[x,y]; ZG.lassoBox=ZG.cfg.lasso.art==="box"; return; }
   if(wz==="text"){ ZG.textTap={x,y}; return; }
   if(wz==="radierer"){ zgSnap(); ZG.rad={aend:false,pos:[x,y],last:[x,y]}; zgRadier(x,y); zgMalen(); return; }
   ZG.sel=[]; const c=ZG.cfg;
-  if(wz==="stift"){ const w=c.stift.ws[c.stift.wi]; ZG.akt=c.stift.art==="fueller"?{t:"fueller",c:c.stift.c,w:zgR(w*1.6),p:[x,y],pr:[zgDruck(ev,null)]}:{t:"stift",c:c.stift.c,w,p:[x,y]}; if(c.stift.art!=="fueller"&&c.stift.d) ZG.akt.d=c.stift.d; }
+  if(wz==="stift"){ const w=c.stift.ws[c.stift.wi]; ZG.akt=c.stift.art==="fueller"?{t:"fueller",c:c.stift.c,w:zgR(w*1.6),p:[x,y],pr:[zgDruck(ev,null)]}:{t:"stift",c:c.stift.c,w,p:[x,y]}; if(c.stift.art!=="fueller"&&c.stift.d) ZG.akt.d=c.stift.d; zgHalten(x,y); }
   else if(wz==="marker") ZG.akt={t:"marker",c:c.marker.c,w:c.marker.ws[c.marker.wi],p:[x,y],o:.5,_g:c.marker.gerade};
   else if(wz==="form"){ ZG.akt={t:c.form.art,c:c.form.c,w:c.form.ws[c.form.wi],p:[x,y,x,y]}; if(c.form.d) ZG.akt.d=c.form.d; if(c.form.fill&&ZG_GESCHLOSSEN.includes(c.form.art)) ZG.akt.fill=true; }
   zgOptBauen(); zgMalen(); }
@@ -345,40 +414,44 @@ function zgMove(ev){ if(!ZG) return; const id=ev.pointerId;
   if(ZG.textTap){ if(st.bewegt){ /* Ziehen im Textmodus scrollt */ ZG.textTap=null; ZG.pid=null; ZG.pz=new Map([[id,{x:st.cx,y:st.cy}]]); zgPanStart(); ZG.pz.set(id,{x:ev.clientX,y:ev.clientY}); } return; }
   if(ZG.zug){ const z=ZG.zug; if(!st.bewegt) return;
     if(z.art==="ziehen"){ const dx=x-z.x, dy=y-z.y; ZG.sel.forEach((i,k)=>{ const o=z.orig[k]; ZG.striche[i]={...o,p:o.p.map((v,j)=>zgR(j%2?v+dy:v+dx))}; }); }
-    else if(z.art==="skal"){ const [a,b,c,d]=z.box, f=Math.max(.12,((x-a)+(y-b))/Math.max(1,(c-a)+(d-b)));
-      ZG.sel.forEach((i,k)=>{ const o=z.orig[k], n={...o,p:o.p.map((v,j)=>zgR(j%2?b+(v-b)*f:a+(v-a)*f))}; if(o.w) n.w=Math.max(.5,zgR(o.w*f)); if(o.fs) n.fs=Math.max(6,zgR(o.fs*f)); if(o.bw) n.bw=zgR(o.bw*f); ZG.striche[i]=n; }); }
-    else if(z.art==="breite"){ const o=z.orig[0]; ZG.striche[ZG.sel[0]]={...o,bw:zgR(Math.max((o.fs||28)*1.5,x-o.p[0]-zgPad()))}; }
+    else if(z.art==="griff") zgGriffZiehen(z,x,y);
     zgMalen(); return; }
-  if(ZG.lasso){ const L=ZG.lasso; if(Math.hypot(L[L.length-2]-x,L[L.length-1]-y)>3/ZG.sk) L.push(x,y); zgMalen(); return; }
+  if(ZG.lasso){ const L=ZG.lasso;
+    if(ZG.lassoBox){ const x0=st.x, y0=st.y; ZG.lasso=[x0,y0,x,y0,x,y,x0,y]; }
+    else if(Math.hypot(L[L.length-2]-x,L[L.length-1]-y)>3/ZG.sk) L.push(x,y);
+    zgMalen(); return; }
   if(ZG.rad){ const [lx,ly]=ZG.rad.last, r=zgRadR(), n=Math.max(1,Math.ceil(Math.hypot(x-lx,y-ly)/(r/2))); for(let k=1;k<=n;k++) zgRadier(lx+(x-lx)*k/n,ly+(y-ly)*k/n); ZG.rad.last=[x,y]; ZG.rad.pos=[x,y]; zgMalen(); return; }
   const a=ZG.akt; if(!a) return;
-  if(a.t==="stift"||a.t==="fueller"||(a.t==="marker"&&!a._g)){ for(const e of evs){ const [ex,ey]=zgPunkt(e), p=a.p; if(Math.hypot(p[p.length-2]-ex,p[p.length-1]-ey)>=(a.t==="fueller"?1.2:2)){ if(a.t==="fueller") a.pr.push(zgDruck(e,a)); p.push(ex,ey); } } }
+  if(a._erkannt&&a.t!=="linie") return;
+  if(a.t==="stift"||a.t==="fueller"||(a.t==="marker"&&!a._g)){ for(const e of evs){ const [ex,ey]=zgPunkt(e), p=a.p; if(Math.hypot(p[p.length-2]-ex,p[p.length-1]-ey)>=(a.t==="fueller"?1.2:2)){ if(a.t==="fueller") a.pr.push(zgDruck(e,a)); p.push(ex,ey); } }
+    if((a.t==="stift"||a.t==="fueller")&&ZG.haltP&&Math.hypot(x-ZG.haltP[0],y-ZG.haltP[1])>5/ZG.sk) zgHalten(x,y); }
   else if(a.t==="marker"){ a.p=[a.p[0],a.p[1],x,y]; }
-  else { const [x0,y0]=a.p; let nx=x, ny=y;
-    if(["linie","pfeil","doppelpfeil"].includes(a.t)){ const ang=Math.atan2(ny-y0,nx-x0), sn=Math.round(ang/(Math.PI/4))*(Math.PI/4); if(Math.abs(ang-sn)<.09){ const l=Math.hypot(nx-x0,ny-y0); nx=zgR(x0+l*Math.cos(sn)); ny=zgR(y0+l*Math.sin(sn)); } }
-    a.p=[x0,y0,nx,ny]; }
+  else { const [x0,y0]=a.p; let [nx,ny]=["linie","pfeil","doppelpfeil"].includes(a.t)?zgWinkelFang(x0,y0,x,y):[x,y]; a.p=[x0,y0,nx,ny]; }
   zgMalen(); }
 function zgUp(ev){ if(!ZG) return; const id=ev.pointerId;
   if(ev.pointerType==="pen") ZG.penDown=false;
   ZG.tz.delete(id);
   if(ZG.pz.has(id)){ ZG.pz.delete(id); if(!ZG.pz.size){ const P=ZG.pan; ZG.pan=null; if(P&&P.d0<=20&&performance.now()-P.t<90&&Math.hypot(P.vx,P.vy)>.15){ const c=v=>Math.max(-4,Math.min(4,v)); zgMoment(c(P.vx),c(P.vy)); } } else if(ZG.pan) zgPanStart(); return; }
-  if(id!==ZG.pid) return; ZG.pid=null; const st=ZG.start||{};
+  if(id!==ZG.pid) return; ZG.pid=null; clearTimeout(ZG.haltT); const st=ZG.start||{};
   if(ZG.textTap){ const {x,y}=ZG.textTap; ZG.textTap=null; const i=zgTreffer(x,y,6/ZG.sk); if(i!=null&&ZG.striche[i].t==="text") zgTextFeld(i); else zgTextFeld(null,x,Math.max(0,y-(ZG.cfg.text.fs||28)*.62)); return; }
   if(ZG.zug){ const z=ZG.zug; ZG.zug=null;
-    if(!st.bewegt){ ZG.hist.pop(); if(z.art==="ziehen"&&ZG.sel.length===1&&ZG.striche[ZG.sel[0]].t==="text"){ zgTextFeld(ZG.sel[0]); return; } }
+    if(!st.bewegt){ ZG.hist.pop(); if(z.art==="ziehen"&&!ZG.selWz&&ZG.sel.length===1&&ZG.striche[ZG.sel[0]].t==="text"){ zgTextFeld(ZG.sel[0]); return; } }
     else { const B=zgSelBox(); if(B) zgWachsen(B[3]); }
     zgOptBauen(); zgMalen(); return; }
   if(ZG.lasso){ const L=ZG.lasso; ZG.lasso=null;
-    if(!st.bewegt||L.length<8){ const i=zgTreffer(st.x,st.y,zgToleranz(ev)), jetzt=Date.now();
+    if(!st.bewegt||(!ZG.lassoBox&&L.length<8)){ const i=zgTreffer(st.x,st.y,zgToleranz(ev)), jetzt=Date.now();
       if(i!=null&&ZG.tapAlt&&ZG.tapAlt.i===i&&jetzt-ZG.tapAlt.t<380&&ZG.striche[i].t==="text"){ ZG.tapAlt=null; zgTextFeld(i); return; }
       ZG.tapAlt=i!=null?{i,t:jetzt}:null; ZG.sel=i!=null?[i]:[]; }
     else ZG.sel=zgLassoWahl(L);
-    zgOptBauen(); zgMalen(); return; }
+    ZG.selWz=false; zgOptBauen(); zgMalen(); return; }
   if(ZG.rad){ if(!ZG.rad.aend) ZG.hist.pop(); ZG.rad=null; zgMalen(); return; }
-  const a=ZG.akt; if(!a) return; ZG.akt=null; delete a._g;
+  const a=ZG.akt; if(!a) return; ZG.akt=null; delete a._g; const erk=a._erkannt; delete a._erkannt;
+  /* Linie oder Form mit Stift/Formwerkzeug antippen ⇒ Griffe zeigen statt Punkt setzen */
+  if(!st.bewegt&&!erk&&(a.t==="stift"||a.t==="fueller"||ZG_IST_FORM(a.t))){ const i=zgTreffer(st.x,st.y,zgToleranz(ev)), s=i!=null&&ZG.striche[i];
+    if(s&&(ZG_IST_FORM(s.t)||s.t==="poly")){ ZG.sel=[i]; ZG.selWz=true; zgOptBauen(); zgMalen(); return; } }
   const kurz=ZG_IST_FORM(a.t)&&Math.hypot(a.p[2]-a.p[0],a.p[3]-a.p[1])<4;
-  if(!kurz){ zgSnap(); ZG.striche.push(a); zgWachsen(zgBox(a)[3]); }
-  zgMalen(); }
+  if(!kurz){ zgSnap(); ZG.striche.push(a); zgWachsen(zgBox(a)[3]); if(erk||ZG_IST_FORM(a.t)){ ZG.sel=[ZG.striche.length-1]; ZG.selWz=true; } }
+  zgOptBauen(); zgMalen(); }
 
 /* --- Radierer: ganzer Strich oder präzise (teilt Striche) --- */
 const zgRadR=()=>{ const r=ZG.cfg.radierer; return r.ws[r.wi]; };
@@ -400,8 +473,8 @@ function zgTeile(s,x,y,r){ const P=zgPunkte(s), PR=s.t==="fueller"?s.pr||[]:null
 
 /* --- Textfeld: wächst mit dem Text, bricht am Rand um, Enter = neue Zeile, Wegtippen übernimmt --- */
 function zgTextFeld(i,x,y){ if(ZG.ta) ZG.ta.blur();
-  const T=ZG.cfg.text, s=i!=null?{...ZG.striche[i]}:{t:"text",v:2,p:[zgR(Math.max(0,x)),zgR(Math.max(0,y))],s:"",fs:T.fs,c:T.c,b:T.b,i:T.i,fam:T.fam,al:T.al,bg:T.bg};
-  if(i!=null) ["fs","c","b","i","fam","al","bg"].forEach(k=>{ if(s[k]!=null) T[k]=s[k]; });
+  const T=ZG.cfg.text, s=i!=null?{...ZG.striche[i]}:{t:"text",v:2,p:[zgR(Math.max(0,x)),zgR(Math.max(0,y))],s:"",fs:T.fs,c:T.c,b:T.b,i:T.i,u:T.u,fam:T.fam,al:T.al,bg:T.bg};
+  if(i!=null) ["fs","c","b","i","u","fam","al","bg"].forEach(k=>{ if(s[k]!=null) T[k]=s[k]; });
   ZG.edit={i,s,bw:s.bw}; ZG.sel=[]; ZG.extra=420;
   const ta=document.createElement("textarea"); ta.id="zgText"; ta.className="zg-text"; ta.value=s.s||""; ta.rows=1; ta.spellcheck=true; ta.setAttribute("autocapitalize","sentences");
   ZG.fl.appendChild(ta); ZG.ta=ta;
@@ -421,7 +494,7 @@ function zgTextPassen(){ const e=ZG&&ZG.edit, ta=ZG&&ZG.ta; if(!e||!ta) return; 
   e.bwAuto=e.bw?0:bw; const m=zgTextMass({...tmp,bw}); e.m=m; e.mw=Math.max(m.w,(s.fs||28)*1.2); zgTextPos(); }
 function zgTextPos(){ const e=ZG&&ZG.edit, ta=ZG&&ZG.ta; if(!e||!ta||!e.m) return; const s=e.s, sk=ZG.sk, bg=s.bg==="notiz"?"#FFF1A8":s.bg==="farbe"?s.c+"24":"rgba(255,255,255,.55)";
   Object.assign(ta.style,{left:(ZG.px+s.p[0]*sk-4)+"px",top:(ZG.top-ZG.sy+s.p[1]*sk-2)+"px",width:(e.mw*sk+3)+"px",height:(e.m.h*sk)+"px",fontSize:(s.fs*sk)+"px",lineHeight:(zgLH(s)*sk)+"px",
-    fontFamily:zgFam(s),fontWeight:s.b?700:500,fontStyle:s.i?"italic":"normal",textAlign:s.al==="m"?"center":s.al==="r"?"right":"left",color:s.c,background:bg}); }
+    fontFamily:zgFam(s),fontWeight:s.b?700:500,fontStyle:s.i?"italic":"normal",textDecoration:s.u?"underline":"none",textAlign:s.al==="m"?"center":s.al==="r"?"right":"left",color:s.c,background:bg}); }
 function zgSichtbar(){ if(!ZG||!ZG.ta) return; const r=ZG.ta.getBoundingClientRect(), vv=window.visualViewport, unten=vv?vv.offsetTop+vv.height:innerHeight;
   const fr=ZG.fl.getBoundingClientRect(); if(r.bottom+20>unten) zgScrollen(ZG.sy+(r.bottom+20-unten),true); else if(r.top<fr.top+ZG.top-10) zgScrollen(ZG.sy-(fr.top+ZG.top-10-r.top),true); }
 /* Text-Eigenschaft ändern: beim Schreiben am offenen Feld, sonst an der Auswahl; immer auch als Vorgabe merken */
@@ -444,17 +517,17 @@ function zgGroessen(k){ const c=ZG.cfg[k]; return [6,11,17].map((d,n)=>`<button 
 function zgTextOpt(s){ const fs=Math.round(s.fs||28), al=s.al||"l";
   return zgPunktKnopf(s.c)+zgTr+`<button class="zg-b" data-z="fsStufe" data-v="-1" aria-label="Schrift kleiner" title="Schrift kleiner">${zgIc("minus")}</button><button class="zg-chip zg-fsz" data-z="fsPop" aria-label="Schriftgröße ${fs}">${fs}</button><button class="zg-b" data-z="fsStufe" data-v="1" aria-label="Schrift größer" title="Schrift größer">${zgIc("plus")}</button>`
     +`<button class="zg-chip zg-fam" data-z="famPop" style="font-family:${zgEsc(zgFam(s))}">${(ZG_FAM[s.fam]||ZG_FAM.modern)[0]}${zgIc("chev")}</button>`+zgTr
-    +zgKnopf("tFett",null,"fett","Fett",s.b)+zgKnopf("tKursiv",null,"kursiv","Kursiv",s.i)+zgKnopf("tAl",null,"al_"+al,"Ausrichtung")+zgKnopf("bgPop",null,"bg","Hintergrund",!!s.bg); }
+    +zgKnopf("tFett",null,"fett","Fett",s.b)+zgKnopf("tKursiv",null,"kursiv","Kursiv",s.i)+zgKnopf("tUnter",null,"unter","Unterstrichen",s.u)+zgKnopf("tAl",null,"al_"+al,"Ausrichtung")+zgKnopf("bgPop",null,"bg","Hintergrund",!!s.bg); }
 function zgOptBauen(){ if(!ZG) return; const o=ZG.ov.querySelector("#zgOpt"), c=ZG.cfg, wz=c.wz; let h="";
-  const selO=ZG.sel.map(i=>ZG.striche[i]).filter(Boolean);
+  if(!ZG.sel.length) ZG.selWz=false; const selO=ZG.sel.map(i=>ZG.striche[i]).filter(Boolean);
   if(ZG.edit) h=zgTextOpt(ZG.edit.s);
-  else if(selO.length){ const txt=selO.filter(s=>s.t==="text"), str=selO.filter(s=>s.t!=="text");
+  else if(selO.length&&!ZG.selWz){ const txt=selO.filter(s=>s.t==="text"), str=selO.filter(s=>s.t!=="text");
     if(txt.length===selO.length) h=zgTextOpt(txt[0]);
     else { h=txt.length?zgPunktKnopf(selO[0].c):zgKarussell(zgFarbListe(""),selO[0].c);
       if(txt.length) h+=zgTr+`<button class="zg-b" data-z="fsStufe" data-v="-1" aria-label="Schrift kleiner">${zgIc("minus")}</button><button class="zg-b" data-z="fsStufe" data-v="1" aria-label="Schrift größer">${zgIc("plus")}</button>`;
       h+=zgTr+`<button class="zg-chip" data-z="selStaerke">Stärke</button>`+zgKnopf("stilPop",null,"stil","Linienart");
-      if(str.some(s=>ZG_GESCHLOSSEN.includes(s.t))) h+=zgKnopf("selFill",null,"fuellung","Füllung",str.some(s=>s.fill)); } }
-  else if(wz==="lasso") h=`<span class="zg-hint">Einkreisen oder antippen</span>`+(ZG_CLIP?zgChip("einf","","Einfügen"):"")+(ZG.striche.length?zgChip("alle","","Alles auswählen"):"");
+      if(str.some(zgSchliessbar)) h+=zgKnopf("selFill",null,"fuellung","Füllung",str.some(s=>s.fill)); } }
+  else if(wz==="lasso") h=zgKnopf("lassoArt","frei","lasso","Freihand einkreisen",c.lasso.art!=="box")+zgKnopf("lassoArt","box","box","Rechteck aufziehen",c.lasso.art==="box")+zgTr+`<span class="zg-hint">${c.lasso.art==="box"?"Rechteck aufziehen":"Einkreisen"} oder antippen</span>`+(ZG_CLIP?zgChip("einf","","Einfügen"):"")+(ZG.striche.length?zgChip("alle","","Alles auswählen"):"");
   else if(wz==="stift") h=zgKnopf("art","kugel","kugel","Kugelschreiber",c.stift.art!=="fueller")+zgKnopf("art","fueller","fueller","Füller (Druck und Tempo)",c.stift.art==="fueller")+(c.stift.art!=="fueller"?zgKnopf("stilPop",null,"stil","Linienart",!!c.stift.d):"")+zgTr+zgGroessen("stift")+zgTr+zgKarussell(zgFarbListe("stift"),c.stift.c);
   else if(wz==="marker") h=zgKnopf("gerade",null,"gerade","Gerade Linie",c.marker.gerade)+zgTr+zgGroessen("marker")+zgTr+zgKarussell(zgFarbListe("marker"),c.marker.c);
   else if(wz==="radierer") h=zgChip("radModus","strich","Ganzer Strich",c.radierer.modus!=="praezise")+zgChip("radModus","praezise","Präzise",c.radierer.modus==="praezise")+zgTr+zgChip("nurMarker","","Nur Marker",c.radierer.nurMarker)+zgTr+zgGroessen("radierer");
@@ -472,7 +545,7 @@ function zgWerkzeug(k){ if(ZG.ta) ZG.ta.blur(); ZG.cfg.wz=k; if(k!=="lasso") ZG.
 const zgFarbZiel=()=>({stift:"stift",marker:"marker",text:"text",form:"form"})[ZG.cfg.wz];
 function zgFarbeSetzen(c){ c=c.toUpperCase();
   if(ZG.edit){ zgTextSetzen("c",()=>c); return; }
-  if(ZG.sel.length){ zgSnap(); ZG.sel.forEach(i=>{ ZG.striche[i]={...ZG.striche[i],c}; }); zgOptBauen(); zgMalen(); return; }
+  if(ZG.sel.length){ zgSnap(); ZG.sel.forEach(i=>{ ZG.striche[i]={...ZG.striche[i],c}; }); if(ZG.selWz&&zgFarbZiel()){ ZG.cfg[zgFarbZiel()].c=c; zgCfgSichern(); } zgOptBauen(); zgMalen(); return; }
   let z=zgFarbZiel(); if(!z){ ZG.cfg.wz="stift"; z="stift"; } ZG.cfg[z].c=c; zgCfgSichern(); zgOptBauen(); zgMalen(); }
 function zgFarbWahlOeffnen(btn,ersetzen){ const i=ZG.ov.querySelector("#zgFarbWahl"); if(!i) return; const r=btn.getBoundingClientRect(), [x,y]=zgRel(r.left+r.width/2,r.bottom);
   i.style.left=x+"px"; i.style.top=y+"px"; i.dataset.ersetzen=ersetzen||""; const akt=ZG.sel.length?ZG.striche[ZG.sel[0]].c:ZG.edit?ZG.edit.s.c:(ZG.cfg[zgFarbZiel()]||{}).c; i.value=/^#[0-9a-f]{6}$/i.test(akt||"")?akt.toLowerCase():"#1f1f22";
@@ -491,16 +564,24 @@ function zgPop(btn,html,key,rechts){ const p=ZG.ov.querySelector("#zgPop"); if(!
   p.dataset.fuer=key; p.innerHTML=html; p.hidden=false; const r=btn.getBoundingClientRect(), [x,y]=zgRel(r.left,r.bottom), w=p.offsetWidth, W=ZG.ov.clientWidth;
   p.style.top=(y+8)+"px"; p.style.left=Math.max(8,Math.min(W-w-8,rechts?x+r.width-w:x+r.width/2-w/2))+"px"; }
 const zgPopZeile=(t,inh)=>`<div class="zg-pop-sec">${t}</div><div class="zg-pop-r">${inh}</div>`;
-function zgSeitePop(btn,neu){ const S=ZG.seite, ch=(z,v,l,an)=>`<button class="zg-rb" data-z="${z}" data-v="${v}" aria-pressed="${!!an}">${l}</button>`;
-  const html=`<div class="zg-pop-s">`
-    +zgPopZeile("Papier",Object.entries(ZG_PAPIER).map(([k,[l,c]])=>`<button class="zg-rb zg-pap" data-z="papier" data-v="${k}" aria-pressed="${S.papier===k}" style="--c:${c}"><span></span>${l}</button>`).join(""))
-    +zgPopZeile("Raster",ZG_RASTER.map(([v,l])=>ch("raster",v,l,S.raster===v)).join(""))
-    +(S.raster&&S.raster!=="mm"?zgPopZeile("Rastergröße",ZG_RMM.map(m=>ch("rmm",m,m+" mm",S.rmm===m)).join("")):"")
-    +(S.raster?zgPopZeile("Linien",ZG_RS.map((l,k)=>ch("rs",k,l,(S.rs==null?1:S.rs)===k)).join("")+zgTr+ch("rf","grau","Grau",S.rf!=="blau")+ch("rf","blau","Blau",S.rf==="blau")):"")
-    +`<button class="zg-rb zg-rot zg-leer" data-z="leeren">${zgIc("leeren")}Alles löschen</button></div>`;
-  if(neu){ const p=ZG.ov.querySelector("#zgPop"); p.innerHTML=html; return; }
-  zgPop(btn,html,"seite",true); }
-function zgSeiteSetzen(k,v){ ZG.seite={...ZG.seite,[k]:v}; ZG.seiteAend=true; ZG.cfg.seite={...ZG.seite}; zgCfgSichern(); zgSeitePop(null,true); zgMalen(); }
+/* Seite gestalten: eigenes Fenster mit Format, Papier und Vorlagen als Vorschaubilder */
+function zgSeiteBlatt(){ if(ZG.ta) ZG.ta.blur(); zgPopZu(); let el=ZG.ov.querySelector("#zgBlatt");
+  if(!el){ el=document.createElement("div"); el.id="zgBlatt"; el.className="zg-blatt"; ZG.ov.appendChild(el); el.addEventListener("click",e=>{ if(e.target===el) el.hidden=true; }); }
+  el.innerHTML=zgSeiteHtml(); el.hidden=false; }
+function zgSeiteHtml(){ const S=ZG.seite, quer=S.format==="quer", pap=(ZG_PAPIER[S.papier]||ZG_PAPIER[""])[1], vw=quer?420:297, vh=quer?297:420;
+  const ch=(z,v,l,an)=>`<button class="zg-rb" data-z="${z}" data-v="${v}" aria-pressed="${!!an}">${l}</button>`;
+  const mini=r=>`<svg viewBox="0 0 ${vw} ${vh}" aria-hidden="true"><rect width="${vw}" height="${vh}" fill="${pap}"/>${zgRasterSvg({...S,raster:r},0,vh,{xa:0,xb:vw,fein:true})}</svg>`;
+  return `<div class="zg-blatt-k" role="dialog" aria-label="Papier und Vorlage">
+    <div class="zg-blatt-kopf"><b>Papier und Vorlage</b><button class="zg-b" data-z="blattZu" aria-label="Schließen">${zgIc("zu")}</button></div>
+    <div class="zg-pop-sec">Format</div><div class="zg-formate">${[["hoch","Hochformat"],["quer","Querformat"]].map(([k,l])=>`<button class="zg-format" data-z="format" data-v="${k}" aria-pressed="${(S.format||"hoch")===k}">${zgIc(k)}${l}</button>`).join("")}</div>
+    <div class="zg-pop-sec">Papier</div><div class="zg-pop-r">${Object.entries(ZG_PAPIER).map(([k,[l,c]])=>`<button class="zg-rb zg-pap" data-z="papier" data-v="${k}" aria-pressed="${S.papier===k}" style="--c:${c}"><span></span>${l}</button>`).join("")}</div>
+    <div class="zg-pop-sec">Vorlage</div><div class="zg-vorlagen${quer?" quer":""}">${ZG_RASTER.map(([v,l])=>`<button class="zg-vorl" data-z="raster" data-v="${v}" aria-pressed="${S.raster===v}">${mini(v)}<span>${l}</span></button>`).join("")}</div>
+    ${S.raster&&S.raster!=="mm"?`<div class="zg-pop-sec">Rastergröße</div><div class="zg-pop-r">${ZG_RMM.map(m=>ch("rmm",m,m+" mm",S.rmm===m)).join("")}</div>`:""}
+    ${S.raster?`<div class="zg-pop-sec">Linien</div><div class="zg-pop-r">${ZG_RS.map((l,k)=>ch("rs",k,l,(S.rs==null?1:S.rs)===k)).join("")}${zgTr}${ch("rf","grau","Grau",S.rf!=="blau")}${ch("rf","blau","Blau",S.rf==="blau")}</div>`:""}
+    <button class="zg-rb zg-rot zg-leer" data-z="leeren">${zgIc("leeren")}Alles löschen</button></div>`; }
+function zgSeiteSetzen(k,v){ const alt=ZG.seite.format; ZG.seite={...ZG.seite,[k]:v}; ZG.seiteAend=true; ZG.cfg.seite={...ZG.seite}; zgCfgSichern();
+  if(k==="format"&&v!==alt){ let unten=0; ZG.striche.forEach(s=>{ unten=Math.max(unten,zgBox(s)[3]); }); const basis=v==="quer"?707:1414; ZG.h=Math.max(basis,unten?Math.ceil((unten+350)/100)*100:0); zgLayout(); }
+  const el=ZG.ov.querySelector("#zgBlatt"); if(el&&!el.hidden) el.innerHTML=zgSeiteHtml(); zgMalen(); }
 function zgFarbenPop(btn){ const akt=ZG.sel.length?ZG.striche[ZG.sel[0]].c:ZG.edit?ZG.edit.s.c:ZG.cfg.text.c, liste=[...ZFARBEN,...ZMARKER,...zgEigene().filter(c=>!ZFARBEN.includes(c)&&!ZMARKER.includes(c))];
   zgPop(btn,`<div class="zg-pop-g">${liste.map(c=>zgSw(c,akt)).join("")}<button class="zg-b zg-fplus" data-z="farbeNeu" aria-label="Eigene Farbe anlegen">${zgIc("plus")}</button></div>`,"farben"); }
 
@@ -522,7 +603,10 @@ function zgKlick(ev){ const t=ev.target.closest("[data-z]"); if(!t||!ZG||t.tagNa
     case "farbPop": zgFarbenPop(t); return;
     case "gr": { const k=zgFarbZiel()||c.wz, C=c[k]; if(!C||!C.ws) return; const n=+v;
       if(C.wi===n){ const max=k==="radierer"?80:k==="marker"?60:40; zgPop(t,`<div class="zg-pop-r zg-slider"><input type="range" min="1" max="${max}" step="0.5" value="${C.ws[n]}" data-z="grWert" data-k="${k}" data-n="${n}" aria-label="Größe"><span class="zg-wert">${C.ws[n]}</span></div>`,"gr"); return; }
-      zgPopZu(); C.wi=n; zgCfgSichern(); zgOptBauen(); return; }
+      zgPopZu(); C.wi=n; zgCfgSichern();
+      if(ZG.selWz&&ZG.sel.length){ zgSnap(); ZG.sel.forEach(i=>{ const s=ZG.striche[i]; if(s.t!=="text") ZG.striche[i]={...s,w:C.ws[n]}; }); zgMalen(); }
+      zgOptBauen(); return; }
+    case "lassoArt": c.lasso.art=v; zgCfgSichern(); zgOptBauen(); return;
     case "art": c.stift.art=v; zgCfgSichern(); zgOptBauen(); return;
     case "gerade": c.marker.gerade=!c.marker.gerade; zgCfgSichern(); zgOptBauen(); return;
     case "radModus": c.radierer.modus=v; zgCfgSichern(); zgOptBauen(); return;
@@ -530,7 +614,7 @@ function zgKlick(ev){ const t=ev.target.closest("[data-z]"); if(!t||!ZG||t.tagNa
     case "formPop": zgPop(t,`<div class="zg-pop-r">${ZG_FORMEN.map(([k,l])=>`<button class="zg-b" data-z="formArt" data-v="${k}" aria-pressed="${k===c.form.art}" aria-label="${l}" title="${l}">${zgIc(k)}</button>`).join("")}</div>`,"form"); return;
     case "formArt": c.form.art=v; zgCfgSichern(); zgPopZu(); zgOptBauen(); return;
     case "formFill": c.form.fill=!c.form.fill; zgCfgSichern(); zgOptBauen(); return;
-    case "selFill": { const an=!ZG.sel.some(i=>ZG.striche[i].fill); zgSnap(); ZG.sel.forEach(i=>{ const s=ZG.striche[i]; if(ZG_GESCHLOSSEN.includes(s.t)) ZG.striche[i]={...s,fill:an}; }); zgOptBauen(); zgMalen(); return; }
+    case "selFill": { const an=!ZG.sel.some(i=>ZG.striche[i].fill); zgSnap(); ZG.sel.forEach(i=>{ const s=ZG.striche[i]; if(zgSchliessbar(s)) ZG.striche[i]={...s,fill:an}; }); zgOptBauen(); zgMalen(); return; }
     case "stilPop": { const akt=ZG.sel.length?((ZG.sel.map(i=>ZG.striche[i]).find(s=>s.t!=="text")||{}).d||""):c.wz==="form"?c.form.d:c.stift.d;
       zgPop(t,`<div class="zg-pop-s">${ZG_STIL.map(([k,l])=>`<button class="zg-rb zg-stil" data-z="stil" data-v="${k}" aria-pressed="${(akt||"")===k}"><svg viewBox="0 0 60 8" aria-hidden="true"><path d="M4 4H56" stroke="currentColor" stroke-width="3" stroke-linecap="round"${k==="strich"?' stroke-dasharray="9 6"':k==="punkt"?' stroke-dasharray="0.1 7"':""}/></svg>${l}</button>`).join("")}</div>`,"stil"); return; }
     case "stil": zgPopZu(); if(ZG.sel.length){ zgSnap(); ZG.sel.forEach(i=>{ const s=ZG.striche[i]; if(s.t==="text"||s.t==="fueller") return; const n={...s}; if(v) n.d=v; else delete n.d; ZG.striche[i]=n; }); zgMalen(); }
@@ -544,17 +628,20 @@ function zgKlick(ev){ const t=ev.target.closest("[data-z]"); if(!t||!ZG||t.tagNa
     case "fam": zgPopZu(); zgTextSetzen("fam",()=>v); return;
     case "tFett": zgTextSetzen("b",s=>!s.b); return;
     case "tKursiv": zgTextSetzen("i",s=>!s.i); return;
+    case "tUnter": zgTextSetzen("u",s=>!s.u); return;
     case "tAl": zgTextSetzen("al",s=>({l:"m",m:"r",r:"l"})[s.al||"l"]); return;
     case "bgPop": { const akt=(ZG.edit?ZG.edit.s:ZG.sel.length?ZG.striche[ZG.sel[0]]:c.text).bg||""; zgPop(t,`<div class="zg-pop-s">${ZG_BG.map(([k,l])=>`<button class="zg-rb zg-links" data-z="bg" data-v="${k}" aria-pressed="${k===akt}">${l}</button>`).join("")}</div>`,"bg"); return; }
     case "bg": zgPopZu(); zgTextSetzen("bg",()=>v); return;
-    case "seite": if(ZG.ta) ZG.ta.blur(); zgSeitePop(t); return;
+    case "seite": zgSeiteBlatt(); return;
+    case "blattZu": { const el=ZG.ov.querySelector("#zgBlatt"); if(el) el.hidden=true; return; }
+    case "format": zgSeiteSetzen("format",v); return;
     case "papier": zgSeiteSetzen("papier",v); return;
     case "raster": zgSeiteSetzen("raster",v); return;
     case "rmm": zgSeiteSetzen("rmm",+v); return;
     case "rs": zgSeiteSetzen("rs",+v); return;
     case "rf": zgSeiteSetzen("rf",v); return;
-    case "leeren": zgPopZu(); if(ZG.striche.length){ zgSnap(); ZG.striche=[]; ZG.sel=[]; zgOptBauen(); zgMalen(); toast("Zeichnung geleert","Rückgängig",()=>{ if(ZG&&ZG.hist.length){ ZG.redo.push(ZG.striche); ZG.striche=ZG.hist.pop(); zgMalen(); } }); } return;
-    case "alle": ZG.sel=ZG.striche.map((s,i)=>i); zgOptBauen(); zgMalen(); return;
+    case "leeren": zgPopZu(); { const el=ZG.ov.querySelector("#zgBlatt"); if(el) el.hidden=true; } if(ZG.striche.length){ zgSnap(); ZG.striche=[]; ZG.sel=[]; zgOptBauen(); zgMalen(); toast("Zeichnung geleert","Rückgängig",()=>{ if(ZG&&ZG.hist.length){ ZG.redo.push(ZG.striche); ZG.striche=ZG.hist.pop(); zgMalen(); } }); } return;
+    case "alle": ZG.sel=ZG.striche.map((s,i)=>i); ZG.selWz=false; zgOptBauen(); zgMalen(); return;
     case "einf": zgEinfuegen(); return;
     case "selEdit": if(ZG.sel.length===1) zgTextFeld(ZG.sel[0]); return;
     case "selKopie": zgKopieren(); toast(ZG.sel.length===1?"Kopiert":"Kopiert ("+ZG.sel.length+")"); return;
@@ -568,7 +655,7 @@ function zgKopieren(){ ZG_CLIP=ZG.sel.map(i=>({...ZG.striche[i],p:ZG.striche[i].
 function zgSelLoeschen(){ if(!ZG.sel.length) return; zgSnap(); const weg=new Set(ZG.sel); ZG.striche=ZG.striche.filter((s,i)=>!weg.has(i)); ZG.sel=[]; zgOptBauen(); zgMalen(); }
 function zgEinfuegen(){ if(!ZG_CLIP||!ZG_CLIP.length) return; let a=Infinity,b=Infinity,c=-Infinity,d=-Infinity; ZG_CLIP.forEach(s=>{ const x=zgBox(s); a=Math.min(a,x[0]); b=Math.min(b,x[1]); c=Math.max(c,x[2]); d=Math.max(d,x[3]); });
   const mitte=(ZG.sy-ZG.top+ZG.vh/2)/ZG.sk, dx=(ZG.vw/2-ZG.px)/ZG.sk-(a+c)/2, dy=Math.max(10,mitte-(d-b)/2)-b; zgSnap(); const n0=ZG.striche.length;
-  ZG.striche.push(...ZG_CLIP.map(s=>({...s,p:s.p.map((v,j)=>zgR(j%2?v+dy:v+dx))}))); ZG.sel=ZG_CLIP.map((s,k)=>n0+k); zgWachsen(d+dy); zgOptBauen(); zgMalen(); }
+  ZG.striche.push(...ZG_CLIP.map(s=>({...s,p:s.p.map((v,j)=>zgR(j%2?v+dy:v+dx))}))); ZG.sel=ZG_CLIP.map((s,k)=>n0+k); ZG.selWz=false; zgWachsen(d+dy); zgOptBauen(); zgMalen(); }
 function zgTaste(e){ if(!ZG||ZG.ta) return; const cmd=e.metaKey||e.ctrlKey, k=(e.key||"").toLowerCase();
   if(cmd&&k==="z"){ e.preventDefault(); ZG.ov.querySelector(`[data-z="${e.shiftKey?"redo":"undo"}"]`).click(); }
   else if((e.key==="Backspace"||e.key==="Delete")&&ZG.sel.length){ e.preventDefault(); zgSelLoeschen(); }
@@ -576,8 +663,8 @@ function zgTaste(e){ if(!ZG||ZG.ta) return; const cmd=e.metaKey||e.ctrlKey, k=(e
   else if(cmd&&k==="v"&&ZG_CLIP){ e.preventDefault(); ZG.cfg.wz="lasso"; zgEinfuegen(); }
   else if(e.key==="Escape"&&ZG.sel.length){ ZG.sel=[]; zgOptBauen(); zgMalen(); } }
 function zgZu(ok){ if(ZG.ta) ZG.ta.blur(); zgMomentStop(); zgCfgSichern();
-  if(ok&&nEntw){ const b=nBlock(ZG.b.id); if(b){ const S=ZG.seite; b.striche=ZG.striche; b.h=ZG.h; b.raster=S.raster; b.rmm=S.rmm; b.rs=S.rs; b.rf=S.rf; b.papier=S.papier; nAuto(); } }
+  if(ok&&nEntw){ const b=nBlock(ZG.b.id); if(b){ const S=ZG.seite; b.striche=ZG.striche; b.h=ZG.h; b.raster=S.raster; b.rmm=S.rmm; b.rs=S.rs; b.rf=S.rf; b.papier=S.papier; b.format=S.format; nAuto(); } }
   if(ZG.ro) ZG.ro.disconnect(); else removeEventListener("resize",zgLayout); document.removeEventListener("keydown",ZG.taste); if(ZG.vvF&&window.visualViewport) visualViewport.removeEventListener("resize",ZG.vvF);
   ZG.ov.remove(); document.body.classList.remove("zg-offen"); ZG=null; nRender(); }
 /* Für automatische Tests: Zustand lesbar machen (ändert nichts) */
-try{ Object.defineProperty(window,"__zg",{get:()=>ZG,configurable:true}); }catch(e){}
+try{ Object.defineProperty(window,"__zg",{get:()=>ZG,configurable:true}); window.__zgf={zgBox,zgTextMass,zgGriffe}; }catch(e){}
