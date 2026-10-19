@@ -66,7 +66,11 @@ const ZG_IC={
   quer:'<rect x="3.5" y="6.5" width="17" height="11" rx="1.5"/>',
   zettel:'<path d="M5 4.5h14v9.5l-5 5.5H5z"/><path d="M19 14h-5v5.5"/>',
   zurueck:'<path d="M15 5l-7 7 7 7"/>',
-  edit:'<path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14 7l3 3"/>'};
+  edit:'<path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14 7l3 3"/>',
+  stapel:'<rect x="8" y="3.5" width="12.5" height="12.5" rx="1.5"/><path d="M5.5 7v10.5a2 2 0 0 0 2 2H18"/><path d="M3 9.5v10a2 2 0 0 0 2 2h10" stroke-opacity=".5"/>',
+  blaettern:'<rect x="3.5" y="7.5" width="11" height="13" rx="1.5"/><path d="M8 4.5h9a2 2 0 0 1 2 2v9"/><path d="M15.5 11.5l3 3 3-3" transform="translate(-1 0)"/>',
+  faechern:'<rect x="2.5" y="8" width="6" height="9" rx="1"/><rect x="9" y="6" width="6" height="9" rx="1"/><rect x="15.5" y="8" width="6" height="9" rx="1"/>',
+  vorne:'<rect x="9" y="9" width="11.5" height="11.5" rx="1.5" fill="currentColor" fill-opacity=".25"/><path d="M15 6V5a1.5 1.5 0 0 0-1.5-1.5h-8A1.5 1.5 0 0 0 4 5v8a1.5 1.5 0 0 0 1.5 1.5H6"/>'};
 const zgIc=k=>`<svg class="zg-ic" viewBox="0 0 24 24" aria-hidden="true">${ZG_IC[k]||""}</svg>`;
 const zgEsc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const zgKontrast=c=>{ const n=parseInt(String(c).slice(1),16); if(isNaN(n)) return "#fff"; const r=n>>16&255, g=n>>8&255, b=n&255; return (r*299+g*587+b*114)/1000>150?"#1F1F22":"#FFFFFF"; };
@@ -203,11 +207,13 @@ function zgRasterSvg(b,y0,y1,o){ o=o||{}; const r=zgRasterTeile(b,y0,y1,o.xa==nu
   return r.teile.map(x=>x.f?`<path d="${x.d}" fill="${r.farbe}" fill-opacity="${zgR(x.a)}"/>`:`<path d="${x.d}" fill="none" stroke="${r.farbe}" stroke-width="${o.fein?zgR(x.w*.9):zgR(x.w)}" stroke-opacity="${zgR(x.a)}"${ns}/>`).join(""); }
 
 /* --- Vorschau (SVG) --- */
-function zgSvgEl(s,dunkel){ s=zgNorm(s); const inn=zgSvgElRoh(s,dunkel); if(!s.rot) return inn; const [cx,cy]=zgZentrum(s); return `<g transform="rotate(${zgR(s.rot*180/Math.PI)} ${zgR(cx)} ${zgR(cy)})">${inn}</g>`; }
-function zgSvgElRoh(s,dunkel){
+function zgSvgEl(s,dunkel,info){ s=zgNorm(s); const inn=zgSvgElRoh(s,dunkel,info); if(!s.rot) return inn; const [cx,cy]=zgZentrum(s); return `<g transform="rotate(${zgR(s.rot*180/Math.PI)} ${zgR(cx)} ${zgR(cy)})">${inn}</g>`; }
+function zgSvgElRoh(s,dunkel,info){
   if(s.t==="zettel"){ const [a,b,c,d]=zgBoxRoh(s), tt=zgZettelText(s), m=zgTextMass(tt), lh=zgLH(tt), fs=tt.fs;
-    return `<rect x="${zgR(a+1)}" y="${zgR(b+3)}" width="${zgR(c-a)}" height="${zgR(d-b)}" rx="5" fill="#000" fill-opacity=".08"/><rect x="${zgR(a)}" y="${zgR(b)}" width="${zgR(c-a)}" height="${zgR(d-b)}" rx="5" fill="${s.c}"/>`
-      +(tt.s?`<text fill="#1F1F22" font-size="${fs}" font-weight="${tt.b?700:500}"${tt.i?` font-style="italic"`:""} font-family="${zgEsc(zgFam(tt))}">${m.L.map((z,i)=>`<tspan x="${zgR(a+ZG_ZPAD+zgAlX(tt,m,i))}" y="${zgR(b+ZG_ZPAD+i*lh+fs*.95)}">${zgEsc(z)||" "}</tspan>`).join("")}</text>`:""); }
+    const kanten=info&&info.unten?[2,1].slice(0,Math.min(2,info.zahl-1)).map(k=>`<rect x="${zgR(a+k*6)}" y="${zgR(b+k*6)}" width="${zgR(c-a)}" height="${zgR(d-b)}" rx="5" fill="${s.c}"/><rect x="${zgR(a+k*6)}" y="${zgR(b+k*6)}" width="${zgR(c-a)}" height="${zgR(d-b)}" rx="5" fill="#000" fill-opacity="${.06+.04*k}"/>`).join(""):"";
+    const zahl=info&&info.oben?`<circle cx="${zgR(c-4)}" cy="${zgR(b+4)}" r="15" fill="#1F1F22"/><text x="${zgR(c-4)}" y="${zgR(b+9.5)}" fill="#fff" font-size="15" font-weight="700" text-anchor="middle" font-family="system-ui,sans-serif">${info.zahl}</text>`:"";
+    return kanten+`<rect x="${zgR(a+1)}" y="${zgR(b+3)}" width="${zgR(c-a)}" height="${zgR(d-b)}" rx="5" fill="#000" fill-opacity=".08"/><rect x="${zgR(a)}" y="${zgR(b)}" width="${zgR(c-a)}" height="${zgR(d-b)}" rx="5" fill="${s.c}"/>`
+      +(tt.s?`<text fill="#1F1F22" font-size="${fs}" font-weight="${tt.b?700:500}"${tt.i?` font-style="italic"`:""} font-family="${zgEsc(zgFam(tt))}">${m.L.map((z,i)=>`<tspan x="${zgR(a+ZG_ZPAD+zgAlX(tt,m,i))}" y="${zgR(b+ZG_ZPAD+i*lh+fs*.95)}">${zgEsc(z)||" "}</tspan>`).join("")}</text>`:"")+zahl; }
   if(s.t==="bild"){ const [a,b,c,d]=zgBoxRoh(s), src=typeof fotoCache!=="undefined"&&fotoCache.get(s.foto); return src?`<image href="${src}" x="${zgR(a)}" y="${zgR(b)}" width="${zgR(c-a)}" height="${zgR(d-b)}" preserveAspectRatio="none"/>`:`<rect x="${zgR(a)}" y="${zgR(b)}" width="${zgR(c-a)}" height="${zgR(d-b)}" fill="#E3E5E9"/>`; }
   if(s.t==="text"){ const m=zgTextMass(s), lh=zgLH(s), fs=s.fs||28; let bg="";
     if(s.bg){ const [a,b,c,d]=zgBoxRoh(s); bg=`<rect x="${zgR(a)}" y="${zgR(b)}" width="${zgR(c-a)}" height="${zgR(d-b)}" rx="8" fill="${s.bg==="notiz"?"#FFF1A8":s.c}"${s.bg==="notiz"?"":` fill-opacity=".14"`}/>`; }
@@ -219,7 +225,7 @@ function zgSvgElRoh(s,dunkel){
   return `<path d="${c.d}" stroke="${s.c}" stroke-width="${s.w}" fill="${zgGefuellt(s)?s.c:"none"}"${zgGefuellt(s)?` fill-opacity=".18"`:""} stroke-linecap="round" stroke-linejoin="round"${s.o?` stroke-opacity="${s.o}"`:""}${da}${mul}/>`+(c.k?`<path d="${c.k}" stroke="${s.c}" stroke-width="${s.w}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`:""); }
 /* Vorschau: Papier und Raster laufen seitlich weiter, damit bei schmalen Ausschnitten kein Rand entsteht */
 const zgPapierFarbe=b=>(ZG_PAPIER[b.papier]||ZG_PAPIER[""])[1];
-const zeichnungSvg=b=>{ const pap=zgPapierFarbe(b), L=zgVerbAktualisieren((b.striche||[]).map(zgNorm),false), inh=L.map(s=>zgSvgEl(s,b.papier==="dunkel")).join("");
+const zeichnungSvg=b=>{ const pap=zgPapierFarbe(b), L=zgVerbAktualisieren((b.striche||[]).map(zgNorm),false), SI=zgStapelInfo(L), inh=L.map((s,i)=>zgSvgEl(s,b.papier==="dunkel",SI.get(i))).join("");
   if(b.format==="board"){ let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity; L.forEach(s=>{ const q=zgBox(s); x0=Math.min(x0,q[0]); y0=Math.min(y0,q[1]); x1=Math.max(x1,q[2]); y1=Math.max(y1,q[3]); });
     if(!isFinite(x0)){ x0=0; y0=0; x1=1000; y1=600; } x0-=40; y0-=40; x1+=40; y1+=40; const w=Math.max(x1-x0,(y1-y0)*1.6), h=Math.max(y1-y0,w/2.4), mx=(x0+x1)/2, my=(y0+y1)/2; x0=mx-w/2; y0=my-h/2;
     return `<svg class="n-svg" viewBox="${zgR(x0)} ${zgR(y0)} ${zgR(w)} ${zgR(h)}" preserveAspectRatio="xMidYMid meet" style="overflow:visible"><rect x="${zgR(x0-w)}" y="${zgR(y0)}" width="${zgR(w*3)}" height="${zgR(h)}" fill="${pap}"/>${zgRasterSvg(b,y0,y0+h,{xa:x0-w,xb:x0+2*w})}${inh}</svg>`; }
@@ -312,9 +318,9 @@ function zgMalen(){ if(!ZG||!ZG.sk) return; const {ctx,dpr,sk,px,pw}=ZG, oy=ZG.t
     ctx.save(); ctx.beginPath(); ctx.rect(px,oy,pw,ph); ctx.clip(); ctx.translate(px,oy); ctx.scale(sk,sk);
     y0=Math.max(0,(ZG.sy-ZG.top)/sk); y1=Math.min(ZG.h,(ZG.sy-ZG.top+ZG.vh)/sk); x0=0; x1=1000; }
   const r=zgRasterTeile(S,y0,y1,bd?x0:0,bd?x1:1000,rk,bd); if(r){ for(const t of r.teile){ ctx.globalAlpha=t.a; if(t.f){ ctx.fillStyle=r.farbe; ctx.fill(new Path2D(t.d)); } else { ctx.strokeStyle=r.farbe; ctx.lineWidth=bd?t.w/ZG.z:t.w/Math.max(1,ZG.z); ctx.stroke(new Path2D(t.d)); } } ctx.globalAlpha=1; }
-  const dunkel=ZG.seite.papier==="dunkel", ed=ZG.edit?ZG.edit.i:null;
+  const dunkel=ZG.seite.papier==="dunkel", ed=ZG.edit?ZG.edit.i:null, SI=zgStapelInfo(ZG.striche);
   ZG.striche.forEach((s,i)=>{ const b=zgBox(s); if(b[3]<y0-30||b[1]>y1+30||b[2]<x0-30||b[0]>x1+30) return;
-    if(i===ed){ if(ZG.edit.zettel) zgZeichne(ctx,{...ZG.edit.s,s:""},dunkel); return; } zgZeichne(ctx,s,dunkel); });
+    if(i===ed){ if(ZG.edit.zettel) zgZeichne(ctx,{...ZG.edit.s,s:""},dunkel,SI.get(i)); return; } zgZeichne(ctx,s,dunkel,SI.get(i)); });
   if(ZG.akt) zgZeichne(ctx,ZG.akt,dunkel);
   if(ZG.lasso&&ZG.lasso.length>2){ ctx.save(); ctx.strokeStyle=ZG_BLAU; ctx.lineWidth=1.6/sk; ctx.setLineDash([5/sk,4/sk]); ctx.fillStyle="rgba(211,18,47,.05)"; const L=ZG.lasso, p=new Path2D(ZG.lassoBox?`M${L[0]} ${L[1]}L${L[2]} ${L[3]}L${L[4]} ${L[5]}L${L[6]} ${L[7]}Z`:strichPfad(L)+"Z"); ctx.fill(p); ctx.stroke(p); ctx.restore(); }
   if(ZG.rad&&ZG.rad.pos){ const [x,y]=ZG.rad.pos; ctx.save(); ctx.strokeStyle="rgba(0,0,0,.45)"; ctx.fillStyle="rgba(255,255,255,.35)"; ctx.lineWidth=1.2/sk; ctx.beginPath(); ctx.arc(x,y,zgRadR(),0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.restore(); }
@@ -355,11 +361,14 @@ function zgInBlock(){ if(typeof nEntw==="undefined"||!nEntw||typeof nBlock!=="fu
 function zgAutoSichern(){ if(!ZG||!ZG.board||ZG.aend===ZG.gesp||ZG.zug||ZG.akt) return; ZG.gesp=ZG.aend; zgInBlock(); try{ if(typeof notizSpeichernStill==="function") notizSpeichernStill(); }catch(e){} }
 const zgBilder=new Map();
 function zgBildEl(id){ let im=zgBilder.get(id); if(!im){ const src=typeof fotoCache!=="undefined"&&fotoCache.get(id); if(!src) return null; im=new Image(); im.onload=()=>{ if(ZG) zgMalen(); }; im.src=src; zgBilder.set(id,im); } return im.complete&&im.naturalWidth?im:null; }
-function zgZeichne(ctx,s,dunkel){ ctx.save();
+function zgZeichne(ctx,s,dunkel,info){ ctx.save();
   if(s.rot){ const [cx,cy]=zgZentrum(s); ctx.translate(cx,cy); ctx.rotate(s.rot); ctx.translate(-cx,-cy); }
-  if(s.t==="zettel"){ const [a,b,c,d]=zgBoxRoh(s); ctx.save(); ctx.shadowColor="rgba(0,0,0,.2)"; ctx.shadowBlur=10; ctx.shadowOffsetY=3; ctx.fillStyle=s.c; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(a,b,c-a,d-b,5); else ctx.rect(a,b,c-a,d-b); ctx.fill(); ctx.restore();
+  if(s.t==="zettel"){ const [a,b,c,d]=zgBoxRoh(s), rr=(x,y)=>{ ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(x,y,c-a,d-b,5); else ctx.rect(x,y,c-a,d-b); };
+    if(info&&info.unten) for(let k=Math.min(2,info.zahl-1);k>=1;k--){ ctx.save(); ctx.shadowColor="rgba(0,0,0,.18)"; ctx.shadowBlur=6; ctx.shadowOffsetY=2; ctx.fillStyle=s.c; rr(a+k*6,b+k*6); ctx.fill(); ctx.restore(); ctx.fillStyle=`rgba(0,0,0,${.06+.04*k})`; rr(a+k*6,b+k*6); ctx.fill(); }
+    ctx.save(); ctx.shadowColor="rgba(0,0,0,.2)"; ctx.shadowBlur=10; ctx.shadowOffsetY=3; ctx.fillStyle=s.c; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(a,b,c-a,d-b,5); else ctx.rect(a,b,c-a,d-b); ctx.fill(); ctx.restore();
     if(s.s){ const tt=zgZettelText(s), m=zgTextMass(tt), lh=zgLH(tt), fs=tt.fs; ctx.save(); ctx.beginPath(); ctx.rect(a,b,c-a,d-b); ctx.clip(); ctx.fillStyle="#1F1F22"; ctx.font=zgFont(tt); ctx.textBaseline="alphabetic";
-      m.L.forEach((z,i)=>{ const x=a+ZG_ZPAD+zgAlX(tt,m,i), y=b+ZG_ZPAD+i*lh+fs*.95; ctx.fillText(z,x,y); if(tt.u&&m.lw[i]) ctx.fillRect(x,y+fs*.12,m.lw[i],Math.max(1,fs*.065)); }); ctx.restore(); } }
+      m.L.forEach((z,i)=>{ const x=a+ZG_ZPAD+zgAlX(tt,m,i), y=b+ZG_ZPAD+i*lh+fs*.95; ctx.fillText(z,x,y); if(tt.u&&m.lw[i]) ctx.fillRect(x,y+fs*.12,m.lw[i],Math.max(1,fs*.065)); }); ctx.restore(); }
+    if(info&&info.oben){ ctx.fillStyle="#1F1F22"; ctx.beginPath(); ctx.arc(c-4,b+4,15,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#fff"; ctx.font="700 15px system-ui,-apple-system,sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(String(info.zahl),c-4,b+4.5); ctx.textAlign="start"; } }
   else if(s.t==="bild"){ const [a,b,c,d]=zgBoxRoh(s), im=zgBildEl(s.foto); if(im) ctx.drawImage(im,a,b,c-a,d-b); else { ctx.fillStyle="#E3E5E9"; ctx.fillRect(a,b,c-a,d-b); } }
   else if(s.t==="text"){ const m=zgTextMass(s), lh=zgLH(s), fs=s.fs||28;
     if(s.bg){ const [a,b,c,d]=zgBoxRoh(s); ctx.fillStyle=s.bg==="notiz"?"#FFF1A8":s.c; ctx.globalAlpha=s.bg==="notiz"?1:.14; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(a,b,c-a,d-b,8); else ctx.rect(a,b,c-a,d-b); ctx.fill(); ctx.globalAlpha=1; }
@@ -436,7 +445,9 @@ const zgRel=(cx,cy)=>{ const r=ZG.ov.getBoundingClientRect(); return [cx-r.left,
 function zgSelLeiste(){ const bar=ZG.ov.querySelector("#zgSel"); if(!ZG.sel.length||ZG.edit||ZG.zug){ bar.hidden=true; return; }
   const G=zgGriffe(); if(!G){ bar.hidden=true; return; } const einText=ZG.sel.length===1&&["text","zettel"].includes(ZG.striche[ZG.sel[0]].t);
   const k=(z,ic,l,rot)=>`<button class="zg-b${rot?" zg-rot":""}" data-z="${z}" aria-label="${l}" title="${l}">${zgIc(ic)}</button>`;
-  const html=(einText?k("selEdit","edit","Text bearbeiten"):"")+k("selAus","schere","Ausschneiden")+k("selKopie","kopie","Kopieren")+k("selDup","dupl","Duplizieren")+k("selDel","leeren","Löschen",1);
+  const s0=ZG.sel.length===1?ZG.striche[ZG.sel[0]]:null, istZ=!!s0&&s0.t==="zettel", gest=istZ&&!!s0.st&&zgStapel(s0.st).length>1, zN=ZG.sel.filter(i=>ZG.striche[i]&&ZG.striche[i].t==="zettel").length;
+  const html=(zN>=2?k("stapeln","stapel","Stapeln"):"")+(einText?k("selEdit","edit",istZ?"Haftnotiz bearbeiten":"Text bearbeiten"):"")
+    +(gest?k("blaettern","blaettern","Durchblättern – nächste Haftnotiz nach oben")+k("faechern","faechern","Stapel auffächern")+k("stapelWahl","stapel","Ganzen Stapel auswählen"):istZ?k("vorne","vorne","Nach vorne holen"):"")+k("selAus","schere","Ausschneiden")+k("selKopie","kopie","Kopieren")+k("selDup","dupl","Duplizieren")+k("selDel","leeren","Löschen",1);
   if(bar.dataset.h!==html){ bar.innerHTML=html; bar.dataset.h=html; }
   bar.hidden=false; const F=G.f, p=zgPad(), pts=G.punkte?ZG.striche[ZG.sel[0]].p.reduce((o,v,i)=>(i%2?o[o.length-1].push(v):o.push([v]),o),[]):G.g.filter(g=>g.art!=="rot").map(g=>[g.x,g.y]);
   if(!pts.length){ bar.hidden=true; return; }
@@ -492,13 +503,48 @@ function zgGriffZiehen(z,x,y){ const g=z.g, [a,b,c,d]=z.box, MIN=8, p=zgPad(), F
 function zgWinkelFang(x0,y0,x,y){ const ang=Math.atan2(y-y0,x-x0), sn=Math.round(ang/(Math.PI/4))*(Math.PI/4); if(Math.abs(ang-sn)<.09){ const l=Math.hypot(x-x0,y-y0); return [zgR(x0+l*Math.cos(sn)),zgR(y0+l*Math.sin(sn))]; } return [x,y]; }
 
 /* --- Haftnotiz: was darauf geschrieben/gezeichnet ist (darüber liegt und mit der Mitte auf dem Zettel sitzt), bewegt sich mit --- */
-function zgAngeheftet(idx){ const inSel=new Set(idx), out=[];
-  [...idx].sort((a,b)=>b-a).forEach(zi=>{ const Z=ZG.striche[zi]; if(!Z||Z.t!=="zettel") return; const [cx,cy]=zgZentrum(Z), [a,b,c,d]=zgBoxRoh(Z), L=[];
-    for(let j=zi+1;j<ZG.striche.length;j++){ if(inSel.has(j)) continue; const s=ZG.striche[j]; if(s.t==="zettel"||s.t==="verb") continue;
-      const q=zgBox(s); let mx=(q[0]+q[2])/2, my=(q[1]+q[3])/2; if(Z.rot) [mx,my]=zgDreh([mx,my],cx,cy,-Z.rot);
-      if(mx>=a&&mx<=c&&my>=b&&my<=d){ L.push({j,o:s}); inSel.add(j); } }
-    if(L.length) out.push({zi,Z,L}); });
+const zgAufZettel=(Z,x,y)=>{ if(Z.rot){ const [cx,cy]=zgZentrum(Z); [x,y]=zgDreh([x,y],cx,cy,-Z.rot); } const [a,b,c,d]=zgBoxRoh(Z); return x>=a&&x<=c&&y>=b&&y<=d; };
+/* Jedes Objekt gehört zum obersten Zettel darunter, auf dem seine Mitte liegt (so bleibt Geschriebenes in einem Stapel beim richtigen Zettel) */
+function zgBesitzer(){ const Z=[], own=new Map(); ZG.striche.forEach((s,j)=>{ if(s.t==="zettel"){ Z.push(j); return; } if(s.t==="verb"||!Z.length) return;
+    const q=zgBox(s), mx=(q[0]+q[2])/2, my=(q[1]+q[3])/2; for(let k=Z.length-1;k>=0;k--) if(zgAufZettel(ZG.striche[Z[k]],mx,my)){ own.set(j,Z[k]); break; } }); return own; }
+function zgAngeheftet(idx){ const inSel=new Set(idx), own=zgBesitzer(), out=[];
+  idx.forEach(zi=>{ const Z=ZG.striche[zi]; if(!Z||Z.t!=="zettel") return; const L=[]; own.forEach((z,j)=>{ if(z===zi&&!inSel.has(j)) L.push({j,o:ZG.striche[j]}); }); if(L.length) out.push({zi,Z,L}); });
   return out; }
+/* --- Stapel: Haftnotizen mit gleicher Stapel-Kennung (st) liegen aufeinander; oben ist die mit dem höchsten Index --- */
+const zgStapel=st=>ZG.striche.map((s,i)=>s.t==="zettel"&&s.st===st?i:-1).filter(i=>i>=0);
+function zgStapelInfo(L){ const g=new Map(), m=new Map(); L.forEach((s,i)=>{ if(s.t==="zettel"&&s.st){ if(!g.has(s.st)) g.set(s.st,[]); g.get(s.st).push(i); } });
+  g.forEach(a=>{ if(a.length<2) return; m.set(a[0],{unten:true,zahl:a.length}); const o=a[a.length-1]; m.set(o,{...(m.get(o)||{}),oben:true,zahl:a.length}); }); return m; }
+function zgStapelPflegen(){ const n=new Map(); ZG.striche.forEach(s=>{ if(s.t==="zettel"&&s.st) n.set(s.st,(n.get(s.st)||0)+1); });
+  ZG.striche.forEach((s,i)=>{ if(s.t==="zettel"&&s.st&&n.get(s.st)<2){ const c={...s}; delete c.st; ZG.striche[i]=c; } }); }
+/* Objekte (Zettel samt Inhalt) in der Reihenfolge verschieben: vor Index „vor“ oder ganz nach oben; liefert den neuen Index von zi */
+function zgBlockVerschieben(block,zi,vor){ const set=new Set(block), moved=block.map(i=>ZG.striche[i]), rest=[]; let at=null;
+  ZG.striche.forEach((s,i)=>{ if(i===vor) at=rest.length; if(!set.has(i)) rest.push(s); }); if(at==null) at=rest.length; rest.splice(at,0,...moved); ZG.striche=rest; return at+block.indexOf(zi); }
+/* Zettel (mit Inhalt) auf Mitte/Winkel eines anderen legen */
+function zgAufLegen(i,T,st){ const Z=ZG.striche[i], mit=zgAngeheftet([i]), [tx,ty]=zgZentrum(T), [a,b,c,d]=zgBoxRoh(Z), hw=(c-a)/2, hh=(d-b)/2;
+  const n={...Z,st,p:[tx-hw,ty-hh,tx+hw,ty+hh].map(zgR)}; if(T.rot) n.rot=T.rot; else delete n.rot; ZG.striche[i]=n; zgFolgen(mit); }
+/* Nach dem Ziehen: einen einzelnen Zettel auf einen anderen fallen lassen ⇒ Stapel; vom Stapel weggezogen ⇒ wieder einzeln */
+function zgStapelNachZiehen(){ if(ZG.sel.length!==1) return; const zi=ZG.sel[0], Z=ZG.striche[zi]; if(!Z||Z.t!=="zettel") return; const [cx,cy]=zgZentrum(Z);
+  let ti=null; for(let i=ZG.striche.length-1;i>=0;i--){ const s=ZG.striche[i]; if(i!==zi&&s.t==="zettel"&&zgAufZettel(s,cx,cy)){ ti=i; break; } }
+  if(ti==null){ if(Z.st){ const n={...Z}; delete n.st; ZG.striche[zi]=n; zgStapelPflegen(); } return; }
+  const T=ZG.striche[ti], st=T.st||zgId(), neu=Z.st!==st; if(!T.st) ZG.striche[ti]={...T,st};
+  const block=zgMitIdx([zi]); zgAufLegen(zi,ZG.striche[ti],st); ZG.sel=[zgBlockVerschieben(block,zi,null)]; zgStapelPflegen();
+  if(neu&&typeof toast==="function") toast(`Gestapelt – ${zgStapel(st).length} Haftnotizen`); }
+function zgStapeln(){ const Z=ZG.sel.filter(i=>ZG.striche[i]&&ZG.striche[i].t==="zettel").sort((a,b)=>a-b); if(Z.length<2) return; zgSnap();
+  const oben=Z[Z.length-1], T=ZG.striche[oben], st=T.st||zgId(); ZG.striche[oben]={...T,st}; Z.slice(0,-1).forEach(i=>zgAufLegen(i,ZG.striche[oben],st));
+  zgStapelPflegen(); ZG.sel=[oben]; ZG.selWz=false; zgOptBauen(); zgMalen(); if(typeof toast==="function") toast(`${Z.length} Haftnotizen gestapelt`); }
+/* Durchblättern: die oberste Haftnotiz wandert nach unten, die nächste liegt oben */
+function zgBlaettern(zi){ const st=ZG.striche[zi]&&ZG.striche[zi].st; if(!st) return; const S=zgStapel(st); if(S.length<2) return; zgSnap();
+  zgBlockVerschieben(zgMitIdx([S[S.length-1]]),S[S.length-1],S[0]); const S2=zgStapel(st); ZG.sel=[S2[S2.length-1]]; ZG.selWz=false; zgOptBauen(); zgMalen(); }
+/* Auffächern: alle Haftnotizen eines Stapels nebeneinander legen (oberste zuerst) */
+function zgFaechern(zi){ const st=ZG.striche[zi]&&ZG.striche[zi].st; if(!st) return; const S=zgStapel(st).reverse(); if(S.length<2) return; zgSnap();
+  const [a,b,c,d]=zgBoxRoh(ZG.striche[S[0]]), w=c-a, h=d-b, gap=28, x0=ZG.board?(a+c)/2-(Math.min(S.length,5)*(w+gap)-gap)/2:Math.max(8,Math.min(a,1000-8-Math.min(S.length,Math.floor((1000-16+gap)/(w+gap)))*(w+gap)+gap));
+  const proReihe=ZG.board?Math.min(S.length,5):Math.max(1,Math.floor((1000-8-x0+gap)/(w+gap))), mits=S.map(i=>zgAngeheftet([i]));
+  S.forEach((i,k)=>{ const Z=ZG.striche[i], [za,zb]=zgBoxRoh(Z), dx=x0+(k%proReihe)*(w+gap)-za, dy=b+Math.floor(k/proReihe)*(h+gap)-zb, n={...Z,p:[Z.p[0]+dx,Z.p[1]+dy,Z.p[2]+dx,Z.p[3]+dy].map(zgR)}; delete n.st; ZG.striche[i]=n; });
+  mits.forEach(m=>zgFolgen(m)); ZG.sel=S.slice().sort((p,q)=>p-q); ZG.selWz=false; const B=zgSelBox(); if(B) zgWachsen(B[3]);
+  if(B&&ZG.board){ const vx0=-ZG.px/ZG.sk, vy0=(ZG.sy-ZG.top)/ZG.sk; if(B[0]<vx0||B[2]>vx0+ZG.vw/ZG.sk||B[1]<vy0+ZG.top/ZG.sk||B[3]>vy0+ZG.vh/ZG.sk-60/ZG.sk)
+      zgAnsicht((B[0]+B[2])/2,(B[1]+B[3])/2,zgZoomGrenze(Math.min(ZG.z,(ZG.vw-80)/((B[2]-B[0])*ZG.sk0),(ZG.vh-ZG.top-140)/((B[3]-B[1])*ZG.sk0)))); }
+  zgOptBauen(); zgMalen(); }
+function zgNachVorne(zi){ zgSnap(); ZG.sel=[zgBlockVerschieben(zgMitIdx([zi]),zi,null)]; zgOptBauen(); zgMalen(); }
 const zgMitIdx=idx=>[...new Set([...idx,...zgAngeheftet(idx).flatMap(m=>m.L.map(x=>x.j))])].sort((a,b)=>a-b);
 function zgFolgen(mit){ for(const m of mit){ const N=ZG.striche[m.zi], O=m.Z; if(!N||N.t!=="zettel") continue;
     const [oa,ob,oc,od]=zgBoxRoh(O), [na,nb,nc,nd]=zgBoxRoh(N), ocx=(oa+oc)/2, ocy=(ob+od)/2, ncx=(na+nc)/2, ncy=(nb+nd)/2;
@@ -511,7 +557,7 @@ function zgFolgen(mit){ for(const m of mit){ const N=ZG.striche[m.zi], O=m.Z; if
       else { const hw=Math.abs(o.p[2]-o.p[0])/2*f, hh=Math.abs(o.p[3]-o.p[1])/2*f; n.p=[zgR(nx-hw),zgR(ny-hh),zgR(nx+hw),zgR(ny+hh)]; }
       ZG.striche[j]=n; } } }
 /* Kopien bekommen neue Kennungen; Verbinder zeigen auf die kopierten Objekte (fehlt eins, wird ein normaler Pfeil daraus) */
-function zgKlone(L){ const M=new Map(); const out=L.map(s=>{ const n={...s,p:s.p.slice()}; if(s.id){ n.id=zgId(); M.set(s.id,n.id); } return n; });
+function zgKlone(L){ const M=new Map(), ST=new Map(); const out=L.map(s=>{ const n={...s,p:s.p.slice()}; if(s.id){ n.id=zgId(); M.set(s.id,n.id); } if(s.st){ if(!ST.has(s.st)) ST.set(s.st,zgId()); n.st=ST.get(s.st); } return n; });
   return out.map(n=>{ if(n.t!=="verb") return n; if(M.has(n.von)&&M.has(n.nach)) return {...n,von:M.get(n.von),nach:M.get(n.nach)}; const {von,nach,art,...rest}=n; return {...rest,t:art||"pfeil"}; }); }
 /* Verbinder: Linie/Pfeil, die auf einem Objekt beginnt und auf einem anderen endet, bleibt an beiden hängen */
 function zgBindZiel(x,y){ const tol=8/ZG.sk; for(let i=ZG.striche.length-1;i>=0;i--){ const s=ZG.striche[i]; if(!(s.t==="zettel"||s.t==="text"||s.t==="bild"||zgSchliessbar(s))) continue;
@@ -578,8 +624,10 @@ function zgMoment(vx,vy){ let t=performance.now(); const f=now=>{ if(!ZG) return
 function zgLangStart(ev,x,y){ clearTimeout(ZG.langT); ZG.lang={cx:ev.clientX,cy:ev.clientY,x,y,id:ev.pointerId}; ZG.langT=setTimeout(zgLangDruck,550); }
 function zgLangStop(){ clearTimeout(ZG.langT); ZG.lang=null; }
 function zgLangDruck(){ const L=ZG&&ZG.lang; if(!L) return; ZG.lang=null; ZG.langFired=L.id;
-  ZG.lasso=null; ZG.textTap=null; ZG.akt=null; clearTimeout(ZG.haltT); ZG.pan=null; ZG.pz.clear(); ZG.pid=null; zgMomentStop(); zgMalen();
-  ZG.kPos=[L.x,L.y]; const k=(z,ic,l,aus)=>`<button class="zg-chip" data-z="${z}"${aus?" disabled":""}>${zgIc(ic)}${l}</button>`;
+  ZG.lasso=null; ZG.textTap=null; ZG.akt=null; clearTimeout(ZG.haltT); ZG.pan=null; ZG.pz.clear(); ZG.pid=null; zgMomentStop();
+  /* auf einer Haftnotiz: auswählen (Leiste mit Löschen, Stapel usw.) */
+  const zi=zgZettelBei(L.x,L.y); if(zi!=null){ ZG.sel=[zi]; ZG.selWz=ZG.cfg.wz!=="lasso"; zgOptBauen(); zgMalen(); return; }
+  zgMalen(); ZG.kPos=[L.x,L.y]; const k=(z,ic,l,aus)=>`<button class="zg-chip" data-z="${z}"${aus?" disabled":""}>${zgIc(ic)}${l}</button>`;
   const p=ZG.ov.querySelector("#zgPop"); p.dataset.fuer="kontext"; p.innerHTML=`<div class="zg-pop-r zg-kontext">${k("einfHier","dupl","Einfügen",!ZG_CLIP)}${k("textHier","text","Text")}${k("bildHier","bild","Bild")}</div>`; p.hidden=false;
   const [x,y]=zgRel(L.cx,L.cy), w=p.offsetWidth, h=p.offsetHeight; let top=y-h-28; if(top<8) top=y+28;
   p.style.left=Math.max(8,Math.min(ZG.ov.clientWidth-w-8,x-w/2))+"px"; p.style.top=top+"px"; }
@@ -598,7 +646,7 @@ function zgDown(ev){ if(!ZG) return; zgPopZu();
   if(ZG.sel.length&&(wz==="lasso"||ZG.selWz)){ const g=zgGriffTreffer(x,y), orig=ZG.sel.map(i=>ZG.striche[i]);
     if(g){ zgSnap(); const G=zgGriffe(); ZG.zug={art:"griff",g,orig,box:zgSelBox(),f:G.f,d0:ZG.selDreh||0,mit:zgAngeheftet(ZG.sel)}; zgMalen(); return; }
     if(zgSelInnen(x,y,ev)){ zgSnap(); ZG.zug={art:"ziehen",orig,x,y,mit:zgAngeheftet(ZG.sel)}; return; } }
-  if(ZG.selWz){ ZG.sel=[]; ZG.selWz=false; }
+  if(ZG.selWz){ ZG.sel=[]; ZG.selWz=false; if(wz==="text"||wz==="zettel"){ ZG.pid=null; zgOptBauen(); zgMalen(); return; } }
   if(wz==="lasso"){ ZG.lasso=[x,y]; ZG.lassoBox=ZG.cfg.lasso.art==="box"; zgLangStart(ev,x,y); return; }
   if(wz==="text"||wz==="zettel"){ ZG.textTap={x,y,z:wz==="zettel"}; zgLangStart(ev,x,y); return; }
   if(wz==="radierer"){ zgSnap(); ZG.rad={aend:false,pos:[x,y],last:[x,y]}; zgRadier(x,y); zgMalen(); return; }
@@ -652,7 +700,7 @@ function zgUp(ev){ if(!ZG) return; const id=ev.pointerId;
     const ty=y-(ZG.cfg.text.fs||28)*.62; zgTextFeld(null,x,ZG.board?ty:Math.max(0,ty)); return; }
   if(ZG.zug){ const z=ZG.zug; ZG.zug=null;
     if(!st.bewegt){ ZG.hist.pop(); ZG.aend--; if(z.art==="ziehen"&&!ZG.selWz&&ZG.sel.length===1&&["text","zettel"].includes(ZG.striche[ZG.sel[0]].t)){ zgTextFeld(ZG.sel[0]); return; } }
-    else { const B=zgSelBox(); if(B) zgWachsen(B[3]); }
+    else { if(z.art==="ziehen") zgStapelNachZiehen(); const B=zgSelBox(); if(B) zgWachsen(B[3]); }
     zgOptBauen(); zgMalen(); return; }
   if(ZG.lasso){ const L=ZG.lasso; ZG.lasso=null;
     if(!st.bewegt||(!ZG.lassoBox&&L.length<8)){ const i=zgTreffer(st.x,st.y,zgToleranz(ev)), jetzt=Date.now();
@@ -751,7 +799,8 @@ const zgZettelFarben=akt=>ZG_ZETTEL.map(c=>`<button class="zg-f" data-z="zfarbe"
 function zgZettelOpt(s){ const fs=Math.round(s.fs||26), al=s.al||"l";
   return zgZettelFarben(s.c)+zgTr+`<button class="zg-b" data-z="fsStufe" data-v="-1" aria-label="Schrift kleiner" title="Schrift kleiner">${zgIc("minus")}</button><button class="zg-chip zg-fsz" data-z="fsPop" aria-label="Schriftgröße ${fs}">${fs}</button><button class="zg-b" data-z="fsStufe" data-v="1" aria-label="Schrift größer" title="Schrift größer">${zgIc("plus")}</button>`
     +`<button class="zg-chip zg-fam" data-z="famPop" style="font-family:${zgEsc(zgFam(s))}">${(ZG_FAM[s.fam]||ZG_FAM.modern)[0]}${zgIc("chev")}</button>`+zgTr
-    +zgKnopf("tFett",null,"fett","Fett",s.b)+zgKnopf("tKursiv",null,"kursiv","Kursiv",s.i)+zgKnopf("tUnter",null,"unter","Unterstrichen",s.u)+zgKnopf("tAl",null,"al_"+al,"Ausrichtung"); }
+    +zgKnopf("tFett",null,"fett","Fett",s.b)+zgKnopf("tKursiv",null,"kursiv","Kursiv",s.i)+zgKnopf("tUnter",null,"unter","Unterstrichen",s.u)+zgKnopf("tAl",null,"al_"+al,"Ausrichtung")
+    +(ZG.edit&&ZG.edit.zettel?zgTr+`<button class="zg-b zg-rot" data-z="zLoeschen" aria-label="Haftnotiz löschen" title="Haftnotiz löschen">${zgIc("leeren")}</button>`:""); }
 function zgOptBauen(){ if(!ZG) return; const o=ZG.ov.querySelector("#zgOpt"), c=ZG.cfg, wz=c.wz; let h="";
   if(!ZG.sel.length) ZG.selWz=false; const selO=ZG.sel.map(i=>ZG.striche[i]).filter(Boolean);
   if(ZG.edit) h=ZG.edit.zettel?zgZettelOpt(ZG.edit.s):zgTextOpt(ZG.edit.s);
@@ -896,6 +945,12 @@ function zgKlick(ev){ const t=ev.target.closest("[data-z]"); if(!t||!ZG||t.tagNa
     case "selEdit": if(ZG.sel.length===1) zgTextFeld(ZG.sel[0]); return;
     case "selKopie": zgKopieren(); toast(ZG.sel.length===1?"Kopiert":"Kopiert ("+ZG.sel.length+")"); return;
     case "selAus": zgKopieren(); zgSelLoeschen(); return;
+    case "stapeln": zgStapeln(); return;
+    case "blaettern": if(ZG.sel.length===1) zgBlaettern(ZG.sel[0]); return;
+    case "faechern": if(ZG.sel.length===1) zgFaechern(ZG.sel[0]); return;
+    case "stapelWahl": if(ZG.sel.length===1&&ZG.striche[ZG.sel[0]].st){ ZG.sel=zgStapel(ZG.striche[ZG.sel[0]].st); ZG.selWz=false; zgOptBauen(); zgMalen(); } return;
+    case "vorne": if(ZG.sel.length===1) zgNachVorne(ZG.sel[0]); return;
+    case "zLoeschen": if(ZG.edit&&ZG.edit.zettel){ const i=ZG.edit.i; ZG.ta.blur(); ZG.sel=[i]; zgSelLoeschen(); } return;
     case "selDup": { zgSnap(); const alle=zgMitIdx(ZG.sel), haupt=new Set(ZG.sel), neu=zgKlone(alle.map(i=>ZG.striche[i])).map(s=>({...s,p:s.p.map(x=>zgR(x+24))})); const n0=ZG.striche.length; ZG.striche.push(...neu); ZG.sel=alle.map((i,k)=>haupt.has(i)?n0+k:-1).filter(k=>k>=0); zgOptBauen(); zgMalen(); return; }
     case "selDel": zgSelLoeschen(); return; } }
 function zgEingabe(ev){ const t=ev.target; if(!ZG||!t.dataset||!t.dataset.z) return; const w=t.parentNode.querySelector(".zg-wert");
@@ -910,7 +965,8 @@ async function zgBildNeu(ev){ const f=ev.target.files&&ev.target.files[0]; ev.ta
     zgSnap(); ZG.striche.unshift({t:"bild",foto:id,p:[zgR(cx-w/2),zgR(cy-h/2),zgR(cx+w/2),zgR(cy+h/2)]}); ZG.cfg.wz="lasso"; ZG.sel=[0]; ZG.selWz=false; zgWachsen(cy+h/2); zgOptBauen(); zgScrollen(ZG.sy,true); };
   im.src=data; }
 function zgKopieren(){ ZG_CLIP=zgMitIdx(ZG.sel).map(i=>({...ZG.striche[i],p:ZG.striche[i].p.slice()})); zgOptBauen(); }
-function zgSelLoeschen(){ if(!ZG.sel.length) return; zgSnap(); const weg=new Set(zgMitIdx(ZG.sel)); ZG.striche=ZG.striche.filter((s,i)=>!weg.has(i)); ZG.sel=[]; zgOptBauen(); zgMalen(); }
+function zgSelLoeschen(){ if(!ZG.sel.length) return; zgSnap(); const weg=new Set(zgMitIdx(ZG.sel)), ids=new Set([...weg].map(i=>ZG.striche[i].id).filter(Boolean));
+  ZG.striche=ZG.striche.filter((s,i)=>!weg.has(i)&&!(s.t==="verb"&&(ids.has(s.von)||ids.has(s.nach)))); zgStapelPflegen(); ZG.sel=[]; zgOptBauen(); zgMalen(); }
 function zgEinfuegen(pos){ if(!ZG_CLIP||!ZG_CLIP.length) return; let a=Infinity,b=Infinity,c=-Infinity,d=-Infinity; ZG_CLIP.forEach(s=>{ const x=zgBox(s); a=Math.min(a,x[0]); b=Math.min(b,x[1]); c=Math.max(c,x[2]); d=Math.max(d,x[3]); });
   const mitte=(ZG.sy-ZG.top+ZG.vh/2)/ZG.sk; let dx=(ZG.vw/2-ZG.px)/ZG.sk-(a+c)/2, dy=(ZG.board?mitte-(d-b)/2:Math.max(10,mitte-(d-b)/2))-b; if(pos){ dx=pos[0]-(a+c)/2; dy=ZG.board?pos[1]-(b+d)/2:Math.max(10-b,pos[1]-(b+d)/2); } zgSnap(); const n0=ZG.striche.length;
   ZG.striche.push(...zgKlone(ZG_CLIP).map(s=>({...s,p:s.p.map((v,j)=>zgR(j%2?v+dy:v+dx))}))); ZG.sel=ZG_CLIP.map((s,k)=>n0+k); ZG.selWz=false; zgWachsen(d+dy); zgOptBauen(); zgMalen(); }
@@ -927,4 +983,4 @@ function zgZu(ok){ if(ZG.ta) ZG.ta.blur(); zgMomentStop(); zgCfgSichern(); const
   ZG.ov.remove(); document.body.classList.remove("zg-offen"); ZG=null;
   if(board&&typeof boardZu==="function") boardZu(); else nRender(); }
 /* Für automatische Tests: Zustand lesbar machen (ändert nichts) */
-try{ Object.defineProperty(window,"__zg",{get:()=>ZG,configurable:true}); window.__zgf={zgBox,zgBoxRoh,zgTextMass,zgGriffe,zgZentrum,zgAnsichtJetzt,zgAutoSichern}; }catch(e){}
+try{ Object.defineProperty(window,"__zg",{get:()=>ZG,configurable:true}); window.__zgf={zgStapelInfo,zgBox,zgBoxRoh,zgTextMass,zgGriffe,zgZentrum,zgAnsichtJetzt,zgAutoSichern}; }catch(e){}
