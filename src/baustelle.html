@@ -2431,7 +2431,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(!hatteSW) return; toast("Neue Version verfügbar","Jetzt laden",()=>location.reload()); });
 }
 (async()=>{
-  await dataLoad(); await einstLaden(); loginSync(); await Auth.init(); setMe();
+  await dataLoad(); try{ matStammSeed(); }catch(e){} await einstLaden(); loginSync(); await Auth.init(); setMe();
   if(SYNC_ON&&!ME.signedIn) nav={v:"login"};
   render(); fotoInit(); protLaden().then(()=>{ if(nav.v==="bibliothek"||nav.v==="baustelle") softRender(); });
   if(SYNC_ON&&ME.signedIn){ syncNow(); setInterval(()=>{ if(document.visibilityState==="visible") syncNow(); },120000); }
