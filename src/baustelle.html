@@ -2292,6 +2292,10 @@ function notizView(){
 }
 function nBlock(id){ return nEntw&&nEntw.bloecke.find(b=>b.id===id); }
 function nRender(fokus){ const y=scrollY; render(); scrollTo(0,y); if(fokus){ const e=$(fokus); if(e){ e.focus(); if(e.setSelectionRange) try{ e.setSelectionRange(e.value.length,e.value.length); }catch(x){} } } nGrow(); }
+/* Nur einen Block neu zeichnen – die Seite (und der feste Kopf) bleibt stehen, nichts springt oder blitzt */
+function nBlockNeu(b,fokus){ const el=b&&document.querySelector(`.nedit .nb[data-b="${b.id}"]`); if(!el||!nEntw){ nRender(fokus); return; }
+  const L=nEntw.bloecke; el.outerHTML=nBlockHtml(b,false,L.indexOf(b),L.length);
+  if(fokus){ const f=document.querySelector(fokus); if(f){ f.focus(); if(f.setSelectionRange) try{ f.setSelectionRange(f.value.length,f.value.length); }catch(x){} } } }
 function nGrow(){ document.querySelectorAll(".n-ta").forEach(t=>{ t.style.height="auto"; t.style.height=t.scrollHeight+"px"; }); }
 function sichtDialog(){
   const e=nEntw, andere=team().filter(m=>m.mail!==ichMail());
@@ -2374,8 +2378,8 @@ function notizTaste(ev){
       if(!b.items.length) L.splice(bi,1);
       if(nach&&nach.typ==="text"&&!String(nach.text||"").trim()){ nAuto(); nRender(`.n-ta[data-b="${nach.id}"]`); return; }
       const t=nNeuBlock("text"); L.splice(b.items.length?bi+1:bi,0,t); nAuto(); nRender(`.n-ta[data-b="${t.id}"]`); return; }
-    const n={id:uid(),t:"",ok:false}; b.items.splice(k+1,0,n); nAuto(); nRender(`input[data-i="${n.id}"]`); }
-  else if(ev.key==="Backspace"&&!el.value&&b.items.length>1){ ev.preventDefault(); const vor=b.items[Math.max(0,k-1)]; b.items.splice(k,1); nAuto(); nRender(`input[data-i="${vor.id}"]`); }
+    const n={id:uid(),t:"",ok:false}; b.items.splice(k+1,0,n); nAuto(); nBlockNeu(b,`input[data-i="${n.id}"]`); }
+  else if(ev.key==="Backspace"&&!el.value&&b.items.length>1){ ev.preventDefault(); const vor=b.items[Math.max(0,k-1)]; b.items.splice(k,1); nAuto(); nBlockNeu(b,`input[data-i="${vor.id}"]`); }
 }
 /* Mehrzeiligen Text in einen Listenpunkt einfügen ⇒ jede Zeile wird ein Punkt („- “, „• “, „1.“, „[ ]“, „[x]“ werden erkannt) */
 document.addEventListener("paste",ev=>{ if(nav.v!=="notiz"||!nEntw) return; const el=ev.target; if(!el||el.tagName!=="INPUT"||!el.dataset.i) return;
@@ -2384,7 +2388,7 @@ document.addEventListener("paste",ev=>{ if(nav.v!=="notiz"||!nEntw) return; cons
   const P=txt.split(/\r?\n/).map(z=>z.trim()).filter(Boolean).map(z=>{ const m=/^(?:\[( |x|X)?\]\s*|[-*•–]\s+|\d+[.)]\s+)?(.*)$/.exec(z); return {t:m[2],ok:/x/i.test(m[1]||"")}; });
   const vor=el.value.slice(0,el.selectionStart), nach=el.value.slice(el.selectionEnd);
   cur.t=vor+P[0].t; const neu=P.slice(1).map(z=>({id:uid(),t:z.t,ok:b.typ==="check"&&z.ok})); (neu[neu.length-1]||cur).t+=nach;
-  b.items.splice(k+1,0,...neu); nAuto(); nRender(`input[data-i="${(neu[neu.length-1]||cur).id}"]`); });
+  b.items.splice(k+1,0,...neu); nAuto(); nBlockNeu(b,`input[data-i="${(neu[neu.length-1]||cur).id}"]`); });
 function notizKlick(a,el){
   switch(a){
   case "neueNotiz": notizNeu(); return true;
@@ -2397,11 +2401,11 @@ function notizKlick(a,el){
   case "nBlockMenu": { const L=nEntw.bloecke, i=L.findIndex(x=>x.id===el.dataset.b); if(i<0) return true; const d={b:el.dataset.b};
     menuAn(el,[...(i>0?[["nBlockHoch","Nach oben","hoch","",d]]:[]),...(i<L.length-1?[["nBlockRunter","Nach unten","runter","",d]]:[]),["nBlockDel","Block löschen","del","danger",d]]); return true; }
   case "nBlockHoch": case "nBlockRunter": { const L=nEntw.bloecke, i=L.findIndex(x=>x.id===el.dataset.b), j=a==="nBlockHoch"?i-1:i+1; if(i<0||j<0||j>=L.length) return true; [L[i],L[j]]=[L[j],L[i]]; nAuto(); const id=el.dataset.b; nRender(`.nb[data-b="${id}"] textarea, .nb[data-b="${id}"] input`); return true; }
-  case "nErlTog": { const b=nBlock(el.dataset.b); if(b){ b.zu=!b.zu; nAuto(); nRender(); } return true; }
+  case "nErlTog": { const b=nBlock(el.dataset.b); if(b){ b.zu=!b.zu; nAuto(); nBlockNeu(b); } return true; }
   case "nSichtAuf": sichtDialog(); return true;
-  case "nCheck": { const b=nBlock(el.dataset.b), i=b&&b.items.find(x=>x.id===el.dataset.i); if(i){ i.ok=!i.ok; nAuto(); nRender(); } return true; }
-  case "nItemAdd": { const b=nBlock(el.dataset.b); if(!b) return true; const n={id:uid(),t:"",ok:false}; b.items.push(n); nAuto(); nRender(`input[data-i="${n.id}"]`); return true; }
-  case "nItemDel": { const b=nBlock(el.dataset.b); if(!b) return true; b.items=b.items.filter(x=>x.id!==el.dataset.i); if(!b.items.length) nEntw.bloecke=nEntw.bloecke.filter(x=>x!==b); nAuto(); nRender(); return true; }
+  case "nCheck": { const b=nBlock(el.dataset.b), i=b&&b.items.find(x=>x.id===el.dataset.i); if(i){ i.ok=!i.ok; nAuto(); nBlockNeu(b); } return true; }
+  case "nItemAdd": { const b=nBlock(el.dataset.b); if(!b) return true; const n={id:uid(),t:"",ok:false}; b.items.push(n); nAuto(); nBlockNeu(b,`input[data-i="${n.id}"]`); return true; }
+  case "nItemDel": { const b=nBlock(el.dataset.b); if(!b) return true; b.items=b.items.filter(x=>x.id!==el.dataset.i); if(!b.items.length){ nEntw.bloecke=nEntw.bloecke.filter(x=>x!==b); nAuto(); nRender(); return true; } nAuto(); nBlockNeu(b); return true; }
   case "nZeichnen": { const b=nBlock(el.dataset.b); if(b) zeichnenOeffnen(b); return true; }
   case "nFotoShow": { const b=nBlock(el.dataset.b); if(b) dialog("Foto",`<img class="dimg" src="${fotoCache.get(b.foto)||""}" alt="">`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return true; }
   case "nSpeichern": if(nEntw&&istMeine(nEntw)) notizFertig(); else notizVerlassen(); return true;
