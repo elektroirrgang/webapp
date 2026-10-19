@@ -1230,7 +1230,9 @@ function importLegacy(list){
   return n;
 }
 
-const SCOPES=["User.Read","Files.ReadWrite.All"];
+/* Rechte: SharePoint-Website-Adresse ⇒ nur Sites.Selected (Zugriff nur auf diese eine Website), sonst Freigabe-Link ⇒ Files.ReadWrite.All */
+const SITE_MODUS=/^https:\/\/[^/]+\.sharepoint\.com\/sites\/[^/?#]+/i.test(CONFIG.shareUrl||"")&&!/\/:[a-z]:\//i.test(CONFIG.shareUrl||"");
+const SCOPES=SITE_MODUS?["User.Read","Sites.Selected"]:["User.Read","Files.ReadWrite.All"];
 const Auth={pca:null,account:null,test:null,
   async init(){
     if(window.__EVSE_TEST_AUTH__){ this.test=window.__EVSE_TEST_AUTH__; this.account=this.test.account; return; }
@@ -1281,7 +1283,16 @@ async function syncRoot(){
   if(SY.drive) return;
   const c=META.sync.root;
   if(c&&c.url===CONFIG.shareUrl){ SY.drive=c.drive; SY.rootId=c.id; SY.folders=c.folders||{}; return; }
-  const it=await gj(`/shares/u!${b64u(CONFIG.shareUrl)}/driveItem`);
+  /* SharePoint-Website (https://<firma>.sharepoint.com/sites/<name>[/<Bibliothek>/<Ordner>]) – geht mit Sites.Selected.
+     Alles andere wird als Freigabe-Link aufgelöst (braucht Files.ReadWrite.All). */
+  const m=/^https:\/\/([^/]+\.sharepoint\.com)\/sites\/([^/?#]+)(\/[^?#]*)?$/i.exec(CONFIG.shareUrl.trim());
+  let it;
+  if(m&&!/\/:[a-z]:\//i.test(CONFIG.shareUrl)){
+    const site=await gj(`/sites/${m[1]}:/sites/${m[2]}`), teile=decodeURIComponent(m[3]||"").split("/").filter(Boolean);
+    const bib=teile.length?(await gj(`/sites/${site.id}/drives`)).value.find(d=>[d.name,decodeURIComponent((d.webUrl||"").split("/").pop()||"")].includes(teile[0])):null;
+    const drive=bib?bib.id:(await gj(`/sites/${site.id}/drive`)).id, rest=bib?teile.slice(1):teile;
+    it=await gj(`/drives/${drive}/root${rest.length?":/"+rest.map(encodeURIComponent).join("/"):""}`); it.parentReference=Object.assign({},it.parentReference,{driveId:drive});
+  } else it=await gj(`/shares/u!${b64u(CONFIG.shareUrl)}/driveItem`);
   SY.drive=it.parentReference.driveId; SY.rootId=it.id; SY.folders={};
   META.sync.root={url:CONFIG.shareUrl,drive:SY.drive,id:SY.rootId,folders:SY.folders}; metaSave();
 }

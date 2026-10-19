@@ -21,17 +21,28 @@ Eine Registrierung („Elektro Irrgang Apps“) gilt für alle Apps. Die Adresse
 
 Kein Client-Geheimnis und kein Zertifikat nötig: Die Anmeldung läuft als SPA mit PKCE.
 
-## 2. API-Berechtigungen
+## 2. API-Berechtigungen (eingeschränkt auf eine SharePoint-Website)
+
+Die Apps arbeiten **nur auf einer eigenen, geschützten SharePoint-Website** (z. B. „Prüfprotokolle“). Deshalb reicht `Sites.Selected` – die App sieht keine anderen Dateien, Websites oder OneDrives.
 
 **API-Berechtigungen → Berechtigung hinzufügen → Microsoft Graph → Delegierte Berechtigungen**
 
 - `User.Read` – Name und E-Mail des angemeldeten Mitarbeiters
-- `Files.ReadWrite.All` – Lesen/Schreiben im freigegebenen Ordner (im Namen des angemeldeten Nutzers, nur dort, wo der Nutzer ohnehin Rechte hat)
-- `Mail.Send` – *optional:* fertige Prüfprotokolle direkt aus der App vom Konto des angemeldeten Mitarbeiters an info@elektro-irrgang.de senden (nur im Namen des angemeldeten Nutzers, kein Zugriff auf Postfächer)
+- `Sites.Selected` – Zugriff nur auf die Website(s), für die die App ausdrücklich freigeschaltet wird
+- `Files.ReadWrite.AppFolder` – *optional, für später:* persönliche Notizen im eigenen App-Ordner des Mitarbeiters im OneDrive (kein Zugriff auf andere Dateien)
 
 Danach **„Administratorzustimmung für … erteilen“**.
 
-*Alternative mit geringeren Rechten:* Liegt der Ordner auf einer **SharePoint-Teamwebsite** (nicht im OneDrive einer Person), kann statt `Files.ReadWrite.All` auch `Sites.Selected` verwendet werden; dann muss der Website zusätzlich gezielt Schreibzugriff für die App erteilt werden. Bitte kurz Bescheid geben, falls dieser Weg gewünscht ist.
+**Freischalten der Website für die App** (einmalig, durch einen Admin), z. B. mit PnP PowerShell:
+
+```powershell
+Grant-PnPAzureADAppSitePermission -AppId "<Anwendungs-ID>" -DisplayName "Elektro Irrgang Apps" `
+  -Site "https://<firma>.sharepoint.com/sites/Pruefprotokolle" -Permissions Write
+```
+
+(alternativ per Graph: `POST /sites/{site-id}/permissions` mit `roles: ["write"]` für die Anwendungs-ID). Zusätzlich brauchen die Mitarbeiter selbst **Bearbeiten**-Rechte auf der Website – bei delegierten Rechten gilt immer die Schnittmenge aus App-Freigabe und Benutzerrechten.
+
+*Alternative:* Ohne eigene Website (Freigabe-Link auf einen Ordner) bräuchte die App `Files.ReadWrite.All`. Das ist nicht nötig, wenn die Website eingerichtet wird.
 
 ## 3. App-Rolle „Admin“ (für die Geschäftsleitung)
 
@@ -43,13 +54,12 @@ In der App gilt: Jeder bearbeitet nur seine eigenen Prüfungen, sieht aber alle.
    - Wert: `Admin` (genau so geschrieben)
    - Beschreibung: `Darf alle Prüfprotokolle bearbeiten`
 2. **Unternehmensanwendungen → EVSE-Prüfprotokoll → Benutzer und Gruppen → Benutzer hinzufügen** → Geschäftsführer der Rolle **Admin** zuweisen.
-3. Empfohlen: Unter **Eigenschaften** „Zuweisung erforderlich?“ = **Ja** und alle Mitarbeiter, die prüfen, zuweisen (ohne Rolle oder als Gruppe). Dann können sich nur diese Personen anmelden.
+3. Unter **Eigenschaften** „Zuweisung erforderlich?“ = **Ja** und die Mitarbeiter **einzeln** zuweisen (ohne Rolle bzw. Rolle „Admin“). Dann können sich nur diese Personen anmelden. Einzelzuweisung geht mit den vorhandenen Lizenzen; eine Zuweisung über Gruppen bräuchte Entra ID P1 und ist bei der Teamgröße nicht nötig.
 
-## 4. Ordner
+## 4. SharePoint-Website
 
-- Ordner **„Prüfprotokolle“** auf einer SharePoint-Teamwebsite (empfohlen) oder im OneDrive der Geschäftsleitung.
-- Alle prüfenden Mitarbeiter brauchen **Bearbeiten**-Rechte auf diesen Ordner.
-- Benötigt wird der **Freigabe-Link** des Ordners (Ordner → Teilen → Link kopieren).
+- Eigene, geschützte SharePoint-Website, z. B. **„Prüfprotokolle“** (Mitglieder: nur die Mitarbeiter aus der Liste, Bearbeiten-Rechte).
+- Benötigt wird die **Adresse der Website**, z. B. `https://<firma>.sharepoint.com/sites/Pruefprotokolle`. Soll die App in einem Unterordner arbeiten, die Adresse bis dorthin, z. B. `…/sites/Pruefprotokolle/Freigegebene Dokumente/Apps`.
 
 Die App legt darin an:
 
@@ -74,7 +84,7 @@ Empfehlung: Ordner auf einer SharePoint-Teamwebsite statt im persönlichen OneDr
 |---|---|
 | **Verzeichnis-ID (Mandanten-ID)** | App-Registrierung → Übersicht |
 | **Anwendungs-ID (Client-ID)** | App-Registrierung → Übersicht |
-| **Freigabe-Link des Ordners** | Ordner → Teilen → Link kopieren |
+| **Adresse der SharePoint-Website** | Website öffnen → Adresse aus der Adressleiste |
 
 Diese drei Werte werden in der App eingetragen (`CONFIG` am Anfang von `src/app.html`). Geheim sind sie nicht – es sind keine Passwörter.
 
