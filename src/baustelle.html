@@ -1128,6 +1128,8 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 /* iPad/PC: Kopf fest unter der Kopfleiste (fixed statt sticky – sticky ruckelt auf dem iPad beim Scrollen mit) */
 @media (min-width:744px){
   .edk-platz{display:block;height:84px}
+  /* eigene Ebene, damit iOS den festen Kopf beim Neuzeichnen darunter nicht kurz verliert */
+  .edk,.topbar{-webkit-transform:translateZ(0);transform:translateZ(0);-webkit-backface-visibility:hidden;backface-visibility:hidden}
   .edk{position:fixed;top:max(var(--tbh,0px),var(--tbmin));left:0;right:0;z-index:19;height:76px;margin:0;box-sizing:border-box;background:var(--surface);
     padding:10px max(calc(16px + env(safe-area-inset-right,0px)),calc((100vw - 880px)/2)) 14px max(calc(16px + env(safe-area-inset-left,0px)),calc((100vw - 880px)/2))}
 }
@@ -1147,7 +1149,7 @@ body[data-speichert="1"] .avatar::after{display:block!important;background:var(-
 @keyframes edPuls{50%{opacity:.3}}
 
 /* ===== Notiz-Editor (M3, iPad zuerst) ===== */
-.nedit{padding-bottom:150px}
+.nedit{padding-bottom:150px;overflow-anchor:none}
 .nedit .n-titel{font-size:30px;font-weight:800;letter-spacing:-.01em;padding:2px 2px 4px;line-height:1.25}
 .nedit .n-titel::placeholder{color:var(--on-sv);opacity:.6}
 .n-chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 20px}
@@ -2294,7 +2296,9 @@ function nBlock(id){ return nEntw&&nEntw.bloecke.find(b=>b.id===id); }
 function nRender(fokus){ const y=scrollY; render(); scrollTo(0,y); if(fokus){ const e=$(fokus); if(e){ e.focus(); if(e.setSelectionRange) try{ e.setSelectionRange(e.value.length,e.value.length); }catch(x){} } } nGrow(); }
 /* Nur einen Block neu zeichnen – die Seite (und der feste Kopf) bleibt stehen, nichts springt oder blitzt */
 function nBlockNeu(b,fokus){ const el=b&&document.querySelector(`.nedit .nb[data-b="${b.id}"]`); if(!el||!nEntw){ nRender(fokus); return; }
-  const L=nEntw.bloecke; el.outerHTML=nBlockHtml(b,false,L.indexOf(b),L.length);
+  /* Seite darf beim Einklappen nicht kürzer werden – sonst muss iOS die Scrollposition zurücksetzen und die Seite springt */
+  const ed=document.querySelector(".nedit"); if(ed){ const h=ed.offsetHeight; if(h>(parseFloat(ed.style.minHeight)||0)) ed.style.minHeight=h+"px"; }
+  const y=scrollY, L=nEntw.bloecke; el.outerHTML=nBlockHtml(b,false,L.indexOf(b),L.length); if(scrollY!==y) scrollTo(0,y);
   if(fokus){ const f=document.querySelector(fokus); if(f){ f.focus(); if(f.setSelectionRange) try{ f.setSelectionRange(f.value.length,f.value.length); }catch(x){} } } }
 function nGrow(){ document.querySelectorAll(".n-ta").forEach(t=>{ t.style.height="auto"; t.style.height=t.scrollHeight+"px"; }); }
 function sichtDialog(){
