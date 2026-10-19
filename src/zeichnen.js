@@ -468,7 +468,7 @@ function zgMoment(vx,vy){ let t=performance.now(); const f=now=>{ if(!ZG) return
 function zgLangStart(ev,x,y){ clearTimeout(ZG.langT); ZG.lang={cx:ev.clientX,cy:ev.clientY,x,y,id:ev.pointerId}; ZG.langT=setTimeout(zgLangDruck,550); }
 function zgLangStop(){ clearTimeout(ZG.langT); ZG.lang=null; }
 function zgLangDruck(){ const L=ZG&&ZG.lang; if(!L) return; ZG.lang=null; ZG.langFired=L.id;
-  ZG.lasso=null; ZG.textTap=null; ZG.pan=null; ZG.pz.clear(); ZG.pid=null; zgMomentStop(); zgMalen();
+  ZG.lasso=null; ZG.textTap=null; ZG.akt=null; clearTimeout(ZG.haltT); ZG.pan=null; ZG.pz.clear(); ZG.pid=null; zgMomentStop(); zgMalen();
   ZG.kPos=[L.x,L.y]; const k=(z,ic,l,aus)=>`<button class="zg-chip" data-z="${z}"${aus?" disabled":""}>${zgIc(ic)}${l}</button>`;
   const p=ZG.ov.querySelector("#zgPop"); p.dataset.fuer="kontext"; p.innerHTML=`<div class="zg-pop-r zg-kontext">${k("einfHier","dupl","Einfügen",!ZG_CLIP)}${k("textHier","text","Text")}${k("bildHier","bild","Bild")}</div>`; p.hidden=false;
   const [x,y]=zgRel(L.cx,L.cy), w=p.offsetWidth, h=p.offsetHeight; let top=y-h-28; if(top<8) top=y+28;
@@ -495,7 +495,8 @@ function zgDown(ev){ if(!ZG) return; zgPopZu();
   ZG.sel=[]; const c=ZG.cfg;
   if(wz==="stift"){ const w=c.stift.ws[c.stift.wi]; ZG.akt=c.stift.art==="fueller"?{t:"fueller",c:c.stift.c,w:zgR(w*1.6),p:[x,y],pr:[zgDruck(ev,null)]}:{t:"stift",c:c.stift.c,w,p:[x,y]}; if(c.stift.art!=="fueller"&&c.stift.d) ZG.akt.d=c.stift.d; zgHalten(x,y); }
   else if(wz==="marker") ZG.akt={t:"marker",c:c.marker.c,w:c.marker.ws[c.marker.wi],p:[x,y],o:.5,_g:c.marker.gerade};
-  else if(wz==="form"){ ZG.akt={t:c.form.art,c:c.form.c,w:c.form.ws[c.form.wi],p:[x,y,x,y]}; if(c.form.d) ZG.akt.d=c.form.d; if(c.form.fill&&ZG_GESCHLOSSEN.includes(c.form.art)) ZG.akt.fill=true; }
+  if(ZG_MALT.includes(wz)&&wz!=="radierer") zgLangStart(ev,x,y);
+  if(wz==="form"){ ZG.akt={t:c.form.art,c:c.form.c,w:c.form.ws[c.form.wi],p:[x,y,x,y]}; if(c.form.d) ZG.akt.d=c.form.d; if(c.form.fill&&ZG_GESCHLOSSEN.includes(c.form.art)) ZG.akt.fill=true; }
   zgOptBauen(); zgMalen(); }
 function zgDruck(e,akt){ if(e.pointerType==="pen"&&e.pressure>0) return Math.round(Math.max(.05,Math.min(1,e.pressure))*100)/100;
   if(!akt) return .6; const p=akt.p, n=p.length; const [x,y]=zgPunkt(e), d=Math.hypot(x-p[n-2],y-p[n-1]); const ziel=Math.max(.3,Math.min(1,1.05-d/16)); const alt=akt.pr[akt.pr.length-1];
@@ -549,6 +550,8 @@ function zgUp(ev){ if(!ZG) return; const id=ev.pointerId;
   /* Linie oder Form mit Stift/Formwerkzeug antippen ⇒ Griffe zeigen statt Punkt setzen */
   if(!st.bewegt&&!erk&&(a.t==="stift"||a.t==="fueller"||ZG_IST_FORM(a.t))){ const i=zgTreffer(st.x,st.y,zgToleranz(ev)), s=i!=null&&ZG.striche[i];
     if(s&&(ZG_IST_FORM(s.t)||s.t==="poly")){ ZG.sel=[i]; ZG.selWz=true; zgOptBauen(); zgMalen(); return; } }
+  if(!st.bewegt&&!erk&&(a.t==="stift"||a.t==="fueller"||a.t==="marker")){ const n=80; const nah=ZG.striche.some(o=>{ if(o.t==="bild") return false; const [a1,b1,c1,d1]=zgBox(o); return st.x>a1-n&&st.x<c1+n&&st.y>b1-n&&st.y<d1+n; });
+    if(!nah){ zgMalen(); return; } }
   const kurz=ZG_IST_FORM(a.t)&&Math.hypot(a.p[2]-a.p[0],a.p[3]-a.p[1])<4;
   if(!kurz){ zgSnap(); ZG.striche.push(a); zgWachsen(zgBox(a)[3]); if(erk||ZG_IST_FORM(a.t)){ ZG.sel=[ZG.striche.length-1]; ZG.selWz=true; } }
   zgOptBauen(); zgMalen(); }
