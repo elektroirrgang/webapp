@@ -188,7 +188,7 @@ function zeichnenOeffnen(b){
       <div class="zg-werkz" role="toolbar" aria-label="Werkzeuge">${wz("lasso","Lasso – auswählen, verschieben, vergrößern")}${wz("stift","Stift")}${wz("marker","Textmarker")}${wz("radierer","Radierer")}${wz("text","Text")}${wz("form","Formen")}</div>
       <div class="zg-rechts"><button class="zg-b" data-z="seite" aria-label="Seite: Papier und Raster" title="Papier und Raster">${zgIc("seite")}</button><button class="zg-ok" data-z="ok">Fertig</button></div></div>
     <div class="zg-flaeche"><canvas></canvas>
-      <div class="zg-undo"><button class="zg-b" data-z="undo" aria-label="Rückgängig" title="Rückgängig">${zgIc("undo")}</button><button class="zg-b" data-z="redo" aria-label="Wiederholen" title="Wiederholen">${zgIc("redo")}</button></div>
+      <div class="zg-undo"><button class="zg-b" data-z="undo" aria-label="Rückgängig" title="Rückgängig">${zgIc("undo")}</button><button class="zg-b" data-z="redo" aria-label="Wiederholen" title="Wiederholen">${zgIc("redo")}</button></div><button class="zg-chip zg-zoom" data-z="zoom1" title="Zurück auf 100 %" hidden>100 %</button>
       <div class="zg-opt" id="zgOpt"></div></div>
     <div class="zg-sel" id="zgSel" hidden></div>
     <div class="zg-pop" id="zgPop" hidden></div>
@@ -196,27 +196,35 @@ function zeichnenOeffnen(b){
   document.body.appendChild(ov); document.body.classList.add("zg-offen");
   const fl=ov.querySelector(".zg-flaeche"), cv=fl.querySelector("canvas");
   ZG={b,ov,fl,cv,ctx:cv.getContext("2d"),cfg,seite,seiteAend:false,h:Math.max(b.h||0,1414),striche:(b.striche||[]).map(zgNorm),hist:[],redo:[],
-    sy:0,sel:[],akt:null,lasso:null,zug:null,rad:null,edit:null,ta:null,extra:0,stift:false,penDown:false,pid:null,tz:new Map(),pz:new Map(),pan:null,mom:0,scrollZeit:0,tapAlt:null,start:null,textTap:null};
+    sy:0,sx:0,z:1,sk0:0,zoomZeit:0,sel:[],akt:null,lasso:null,zug:null,rad:null,edit:null,ta:null,extra:0,stift:false,penDown:false,pid:null,tz:new Map(),pz:new Map(),pan:null,mom:0,scrollZeit:0,tapAlt:null,start:null,textTap:null};
   zgOptBauen(); zgLayout();
   cv.addEventListener("pointerdown",zgDown); cv.addEventListener("pointermove",zgMove); cv.addEventListener("pointerup",zgUp); cv.addEventListener("pointercancel",zgUp);
-  cv.addEventListener("wheel",e=>{ e.preventDefault(); zgMomentStop(); zgScrollen(ZG.sy+e.deltaY); },{passive:false});
+  cv.addEventListener("wheel",e=>{ e.preventDefault(); zgMomentStop();
+    if(e.ctrlKey){ const r=ZG.cv.getBoundingClientRect(); zgZoomBei(e.clientX-r.left,e.clientY-r.top,ZG.z*Math.exp(-e.deltaY*.01)); }
+    else zgScrollen(ZG.sy+e.deltaY,false,ZG.sx+e.deltaX); },{passive:false});
   cv.addEventListener("click",()=>{ if(ZG&&ZG.ta&&document.activeElement!==ZG.ta) ZG.ta.focus({preventScroll:true}); });
   ov.addEventListener("click",zgKlick); ov.addEventListener("input",zgEingabe);
-  ["#zgOpt","#zgPop","#zgSel",".zg-undo"].forEach(s=>ov.querySelector(s).addEventListener("mousedown",e=>{ if(!e.target.closest("input")) e.preventDefault(); }));
+  ["#zgOpt","#zgPop","#zgSel",".zg-undo",".zg-zoom"].forEach(s=>ov.querySelector(s).addEventListener("mousedown",e=>{ if(!e.target.closest("input")) e.preventDefault(); }));
   ov.querySelector("#zgFarbWahl").addEventListener("change",zgFarbeNeu);
   ov.addEventListener("pointerdown",zgFarbDruck,true); ["pointerup","pointercancel","pointerleave"].forEach(t=>ov.addEventListener(t,()=>clearTimeout(zgFarbDruck.t),true));
   ZG.ro=window.ResizeObserver?new ResizeObserver(()=>{ if(ZG) zgLayout(); }):null; if(ZG.ro) ZG.ro.observe(fl); else addEventListener("resize",zgLayout);
   ZG.taste=zgTaste; document.addEventListener("keydown",ZG.taste);
   if(window.visualViewport){ ZG.vvF=()=>{ if(ZG&&ZG.ta) setTimeout(zgSichtbar,60); }; visualViewport.addEventListener("resize",ZG.vvF); }
 }
-function zgLayout(){ if(!ZG) return; const r=ZG.fl.getBoundingClientRect(), dpr=window.devicePixelRatio||1, alt=ZG.sk?ZG.sy/ZG.sk:0;
+/* Ansicht: z = Zoom (1 = Blattbreite), sx/sy = Verschiebung in Bildschirmpunkten; sk = Bildschirmpunkte je Blatteinheit, px = linker Blattrand */
+function zgLayout(){ if(!ZG) return; const r=ZG.fl.getBoundingClientRect(), dpr=window.devicePixelRatio||1, ay=ZG.sk?ZG.sy/ZG.sk:0, ax=ZG.sk?ZG.sx/ZG.sk:0;
   if(!r.width||!r.height) return;
-  ZG.vw=r.width; ZG.vh=r.height; ZG.dpr=dpr; ZG.pw=Math.round(Math.min(r.width-32,880)); ZG.px=Math.round((r.width-ZG.pw)/2); ZG.sk=ZG.pw/1000;
-  ZG.top=r.width<700?122:76;
+  ZG.vw=r.width; ZG.vh=r.height; ZG.dpr=dpr; ZG.sk0=Math.min(r.width-32,880)/1000; ZG.top=r.width<700?122:76;
   ZG.cv.width=Math.round(r.width*dpr); ZG.cv.height=Math.round(r.height*dpr);
-  ZG.sy=alt*ZG.sk; zgScrollen(ZG.sy,true); }
+  zgGeom(); zgScrollen(ay*ZG.sk,true,ax*ZG.sk); }
+function zgGeom(){ ZG.sk=ZG.sk0*ZG.z; const W=1000*ZG.sk, frei=ZG.vw-32; ZG.pw=W;
+  if(W<=frei){ ZG.sx=0; ZG.px=Math.round((ZG.vw-W)/2); } else { ZG.sx=Math.max(0,Math.min(W-frei,ZG.sx)); ZG.px=16-ZG.sx; } }
 const zgMaxSy=()=>Math.max(0,ZG.top+ZG.h*ZG.sk+48-ZG.vh)+(ZG.edit?ZG.extra:0);
-function zgScrollen(y,still){ if(!ZG) return; ZG.sy=Math.max(0,Math.min(zgMaxSy(),y)); if(!still) ZG.scrollZeit=Date.now(); zgMalen();
+const zgMaxSx=()=>Math.max(0,1000*ZG.sk-(ZG.vw-32));
+/* Zoomen, sodass der Blattpunkt unter (cx,cy) dort bleibt */
+function zgZoomBei(cx,cy,z){ const P=[(cx-ZG.px)/ZG.sk,(cy-ZG.top+ZG.sy)/ZG.sk]; ZG.z=Math.max(.5,Math.min(6,z)); if(Math.abs(ZG.z-1)<.03) ZG.z=1; ZG.sk=ZG.sk0*ZG.z; ZG.zoomZeit=Date.now();
+  zgScrollen(ZG.top-(cy-P[1]*ZG.sk),false,16-(cx-P[0]*ZG.sk)); }
+function zgScrollen(y,still,x){ if(!ZG) return; if(x!=null) ZG.sx=x; zgGeom(); ZG.sy=Math.max(0,Math.min(zgMaxSy(),y)); if(!still) ZG.scrollZeit=Date.now(); zgMalen();
   clearTimeout(zgScrollen.t); if(!still) zgScrollen.t=setTimeout(()=>{ if(ZG) zgMalen(); },900); }
 function zgPunkt(ev){ const r=ZG.cv.getBoundingClientRect(); return [zgR((ev.clientX-r.left-ZG.px)/ZG.sk),zgR((ev.clientY-r.top-ZG.top+ZG.sy)/ZG.sk)]; }
 const zgPapier=()=>(ZG_PAPIER[ZG.seite.papier]||ZG_PAPIER[""])[1];
@@ -227,7 +235,7 @@ function zgMalen(){ if(!ZG||!ZG.sk) return; const {ctx,dpr,sk,px,pw}=ZG, oy=ZG.t
   ctx.save(); ctx.shadowColor="rgba(0,0,0,.22)"; ctx.shadowBlur=16; ctx.shadowOffsetY=2; ctx.fillStyle=zgPapier(); ctx.fillRect(px,oy,pw,ph); ctx.restore();
   ctx.save(); ctx.beginPath(); ctx.rect(px,oy,pw,ph); ctx.clip(); ctx.translate(px,oy); ctx.scale(sk,sk);
   const y0=Math.max(0,(ZG.sy-ZG.top)/sk), y1=Math.min(ZG.h,(ZG.sy-ZG.top+ZG.vh)/sk);
-  const r=zgRasterTeile(ZG.seite,y0,y1); if(r){ for(const t of r.teile){ ctx.globalAlpha=t.a; if(t.f){ ctx.fillStyle=r.farbe; ctx.fill(new Path2D(t.d)); } else { ctx.strokeStyle=r.farbe; ctx.lineWidth=t.w; ctx.stroke(new Path2D(t.d)); } } ctx.globalAlpha=1; }
+  const r=zgRasterTeile(ZG.seite,y0,y1); if(r){ for(const t of r.teile){ ctx.globalAlpha=t.a; if(t.f){ ctx.fillStyle=r.farbe; ctx.fill(new Path2D(t.d)); } else { ctx.strokeStyle=r.farbe; ctx.lineWidth=t.w/Math.max(1,ZG.z); ctx.stroke(new Path2D(t.d)); } } ctx.globalAlpha=1; }
   const dunkel=ZG.seite.papier==="dunkel", ed=ZG.edit?ZG.edit.i:null;
   ZG.striche.forEach((s,i)=>{ if(i===ed) return; const b=zgBox(s); if(b[3]<y0-30||b[1]>y1+30) return; zgZeichne(ctx,s,dunkel); });
   if(ZG.akt) zgZeichne(ctx,ZG.akt,dunkel);
@@ -237,6 +245,9 @@ function zgMalen(){ if(!ZG||!ZG.sk) return; const {ctx,dpr,sk,px,pw}=ZG, oy=ZG.t
   ctx.restore();
   if(Date.now()-ZG.scrollZeit<800&&zgMaxSy()>0){ const ges=ZG.top+ZG.h*sk+48, l=Math.max(40,ZG.vh*ZG.vh/ges), y=(ZG.vh-l)*(ZG.sy/Math.max(1,zgMaxSy()));
     ctx.fillStyle="rgba(120,120,128,.55)"; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(ZG.vw-7,y+2,4,l-4,2); else ctx.rect(ZG.vw-7,y+2,4,l-4); ctx.fill(); }
+  if(Date.now()-ZG.scrollZeit<800&&zgMaxSx()>0){ const ges=1000*sk+32, l=Math.max(40,ZG.vw*ZG.vw/ges), x=(ZG.vw-l)*(ZG.sx/Math.max(1,zgMaxSx()));
+    ctx.fillStyle="rgba(120,120,128,.55)"; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(x+2,ZG.vh-7,l-4,4,2); else ctx.rect(x+2,ZG.vh-7,l-4,4); ctx.fill(); }
+  const zc=ZG.ov.querySelector(".zg-zoom"); if(zc){ const t=Math.round(ZG.z*100)+" %", aus=ZG.z===1; if(zc.hidden!==aus) zc.hidden=aus; if(zc.textContent!==t) zc.textContent=t; }
   zgSelLeiste(); zgTextPos();
   const u=ZG.ov.querySelector('[data-z="undo"]'), rd=ZG.ov.querySelector('[data-z="redo"]'); if(u) u.disabled=!ZG.hist.length; if(rd) rd.disabled=!ZG.redo.length; }
 function zgZeichne(ctx,s,dunkel){ ctx.save();
@@ -284,10 +295,16 @@ function zgSelLeiste(){ const bar=ZG.ov.querySelector("#zgSel"); if(!ZG.sel.leng
   bar.style.left=Math.max(8,Math.min(ZG.ov.clientWidth-bw-8,L-bw/2))+"px"; bar.style.top=Math.max(flTop+8,top)+"px"; }
 
 /* --- Zeiger: Stift zeichnet, Finger scrollt (mit Pencil) bzw. zwei Finger scrollen --- */
-const zgMittelY=()=>{ let s=0,n=0; ZG.pz.forEach(p=>{ s+=p.y; n++; }); return n?s/n:0; };
-function zgPanStart(){ zgMomentStop(); ZG.pan={y:zgMittelY(),t:performance.now(),v:0}; }
+const zgMitte=()=>{ let x=0,y=0,n=0; ZG.pz.forEach(p=>{ x+=p.x; y+=p.y; n++; }); const r=ZG.cv.getBoundingClientRect(); return n?[x/n-r.left,y/n-r.top]:[0,0]; };
+const zgAbst=()=>{ const a=[...ZG.pz.values()]; return a.length>=2?Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y):0; };
+/* Ein Finger verschiebt, zwei Finger verschieben und zoomen (Blattpunkt unter den Fingern bleibt dort) */
+function zgPanStart(){ zgMomentStop(); const [cx,cy]=zgMitte(); ZG.pan={P:[(cx-ZG.px)/ZG.sk,(cy-ZG.top+ZG.sy)/ZG.sk],d0:zgAbst(),z0:ZG.z,t:performance.now(),vx:0,vy:0,lx:cx,ly:cy}; }
+function zgPanMove(){ const P=ZG.pan, [cx,cy]=zgMitte(), now=performance.now(), dt=Math.max(1,now-P.t);
+  P.vx=P.vx*.6+((cx-P.lx)/dt)*.4; P.vy=P.vy*.6+((cy-P.ly)/dt)*.4; P.lx=cx; P.ly=cy; P.t=now;
+  if(P.d0>20){ const d=zgAbst(); if(d>0){ let z=Math.max(.5,Math.min(6,P.z0*d/P.d0)); if(Math.abs(z-1)<.05) z=1; ZG.z=z; ZG.zoomZeit=now; } }
+  ZG.sk=ZG.sk0*ZG.z; zgScrollen(ZG.top-(cy-P.P[1]*ZG.sk),false,16-(cx-P.P[0]*ZG.sk)); }
 function zgMomentStop(){ cancelAnimationFrame(ZG.mom); ZG.mom=0; }
-function zgMoment(v){ let t=performance.now(); const f=now=>{ if(!ZG) return; const dt=Math.max(1,now-t); t=now; v*=Math.pow(.94,dt/16); if(Math.abs(v)<.03) return; zgScrollen(ZG.sy-v*dt); ZG.mom=requestAnimationFrame(f); }; ZG.mom=requestAnimationFrame(f); }
+function zgMoment(vx,vy){ let t=performance.now(); const f=now=>{ if(!ZG) return; const dt=Math.max(1,now-t); t=now; const k=Math.pow(.94,dt/16); vx*=k; vy*=k; if(Math.hypot(vx,vy)<.03) return; zgScrollen(ZG.sy-vy*dt,false,ZG.sx-vx*dt); ZG.mom=requestAnimationFrame(f); }; ZG.mom=requestAnimationFrame(f); }
 function zgAktionAbbrechen(){ ZG.akt=null; ZG.lasso=null; ZG.textTap=null; ZG.zug=null; if(ZG.rad){ if(!ZG.rad.aend) ZG.hist.pop(); ZG.rad=null; } ZG.pid=null; }
 function zgDown(ev){ if(!ZG) return; zgPopZu();
   if(ZG.ta){ ev.preventDefault(); ZG.ta.blur(); return; }
@@ -317,13 +334,12 @@ function zgDruck(e,akt){ if(e.pointerType==="pen"&&e.pressure>0) return Math.rou
   return Math.round((alt*.65+ziel*.35)*100)/100; }
 function zgMove(ev){ if(!ZG) return; const id=ev.pointerId;
   if(ZG.tz.has(id)) ZG.tz.set(id,{x:ev.clientX,y:ev.clientY});
-  if(ZG.pan&&ZG.pz.has(id)){ ZG.pz.set(id,{x:ev.clientX,y:ev.clientY}); const y=zgMittelY(), now=performance.now(), dy=y-ZG.pan.y, dt=Math.max(1,now-ZG.pan.t);
-    ZG.pan.v=ZG.pan.v*.6+(dy/dt)*.4; ZG.pan.y=y; ZG.pan.t=now; zgScrollen(ZG.sy-dy); return; }
+  if(ZG.pan&&ZG.pz.has(id)){ ZG.pz.set(id,{x:ev.clientX,y:ev.clientY}); zgPanMove(); return; }
   if(id!==ZG.pid) return;
   let evs=ev.getCoalescedEvents&&ev.pointerType!=="mouse"?ev.getCoalescedEvents():[ev]; if(!evs||!evs.length) evs=[ev]; const st=ZG.start;
   if(st&&!st.bewegt&&Math.hypot(ev.clientX-st.cx,ev.clientY-st.cy)>7) st.bewegt=true;
   const [x,y]=zgPunkt(ev);
-  if(ZG.textTap){ if(st.bewegt){ /* Ziehen im Textmodus scrollt */ ZG.textTap=null; ZG.pid=null; ZG.pz=new Map([[id,{x:ev.clientX,y:st.cy}]]); zgPanStart(); ZG.pz.set(id,{x:ev.clientX,y:ev.clientY}); } return; }
+  if(ZG.textTap){ if(st.bewegt){ /* Ziehen im Textmodus scrollt */ ZG.textTap=null; ZG.pid=null; ZG.pz=new Map([[id,{x:st.cx,y:st.cy}]]); zgPanStart(); ZG.pz.set(id,{x:ev.clientX,y:ev.clientY}); } return; }
   if(ZG.zug){ const z=ZG.zug; if(!st.bewegt) return;
     if(z.art==="ziehen"){ const dx=x-z.x, dy=y-z.y; ZG.sel.forEach((i,k)=>{ const o=z.orig[k]; ZG.striche[i]={...o,p:o.p.map((v,j)=>zgR(j%2?v+dy:v+dx))}; }); }
     else if(z.art==="skal"){ const [a,b,c,d]=z.box, f=Math.max(.12,((x-a)+(y-b))/Math.max(1,(c-a)+(d-b)));
@@ -342,7 +358,7 @@ function zgMove(ev){ if(!ZG) return; const id=ev.pointerId;
 function zgUp(ev){ if(!ZG) return; const id=ev.pointerId;
   if(ev.pointerType==="pen") ZG.penDown=false;
   ZG.tz.delete(id);
-  if(ZG.pz.has(id)){ ZG.pz.delete(id); if(!ZG.pz.size){ const P=ZG.pan; ZG.pan=null; if(P&&performance.now()-P.t<90&&Math.abs(P.v)>.15) zgMoment(Math.max(-4,Math.min(4,P.v))); } else if(ZG.pan){ ZG.pan.y=zgMittelY(); } return; }
+  if(ZG.pz.has(id)){ ZG.pz.delete(id); if(!ZG.pz.size){ const P=ZG.pan; ZG.pan=null; if(P&&P.d0<=20&&performance.now()-P.t<90&&Math.hypot(P.vx,P.vy)>.15){ const c=v=>Math.max(-4,Math.min(4,v)); zgMoment(c(P.vx),c(P.vy)); } } else if(ZG.pan) zgPanStart(); return; }
   if(id!==ZG.pid) return; ZG.pid=null; const st=ZG.start||{};
   if(ZG.textTap){ const {x,y}=ZG.textTap; ZG.textTap=null; const i=zgTreffer(x,y,6/ZG.sk); if(i!=null&&ZG.striche[i].t==="text") zgTextFeld(i); else zgTextFeld(null,x,Math.max(0,y-(ZG.cfg.text.fs||28)*.62)); return; }
   if(ZG.zug){ const z=ZG.zug; ZG.zug=null;
@@ -488,6 +504,7 @@ function zgKlick(ev){ const t=ev.target.closest("[data-z]"); if(!t||!ZG||t.tagNa
   switch(z){
     case "abbr": if(!ZG.hist.length&&!ZG.seiteAend){ zgZu(false); return; } zgPop(t,`<div class="zg-pop-r"><span class="zg-pop-t">Änderungen verwerfen?</span><button class="zg-rb zg-rot" data-z="verwerfen">Verwerfen</button></div>`,"abbr"); return;
     case "verwerfen": zgZu(false); return;
+    case "zoom1": zgZoomBei(ZG.vw/2,ZG.vh/2,1); return;
     case "ok": zgZu(true); return;
     case "wz": zgWerkzeug(v); return;
     case "undo": if(ZG.ta) ZG.ta.blur(); if(ZG.hist.length){ ZG.redo.push(ZG.striche); ZG.striche=ZG.hist.pop(); ZG.sel=[]; zgOptBauen(); zgMalen(); } return;
@@ -542,7 +559,7 @@ function zgEingabe(ev){ const t=ev.target; if(!ZG||!t.dataset||!t.dataset.z) ret
 function zgKopieren(){ ZG_CLIP=ZG.sel.map(i=>({...ZG.striche[i],p:ZG.striche[i].p.slice()})); }
 function zgSelLoeschen(){ if(!ZG.sel.length) return; zgSnap(); const weg=new Set(ZG.sel); ZG.striche=ZG.striche.filter((s,i)=>!weg.has(i)); ZG.sel=[]; zgOptBauen(); zgMalen(); }
 function zgEinfuegen(){ if(!ZG_CLIP||!ZG_CLIP.length) return; let a=Infinity,b=Infinity,c=-Infinity,d=-Infinity; ZG_CLIP.forEach(s=>{ const x=zgBox(s); a=Math.min(a,x[0]); b=Math.min(b,x[1]); c=Math.max(c,x[2]); d=Math.max(d,x[3]); });
-  const mitte=(ZG.sy-ZG.top+ZG.vh/2)/ZG.sk, dx=500-(a+c)/2, dy=Math.max(10,mitte-(d-b)/2)-b; zgSnap(); const n0=ZG.striche.length;
+  const mitte=(ZG.sy-ZG.top+ZG.vh/2)/ZG.sk, dx=(ZG.vw/2-ZG.px)/ZG.sk-(a+c)/2, dy=Math.max(10,mitte-(d-b)/2)-b; zgSnap(); const n0=ZG.striche.length;
   ZG.striche.push(...ZG_CLIP.map(s=>({...s,p:s.p.map((v,j)=>zgR(j%2?v+dy:v+dx))}))); ZG.sel=ZG_CLIP.map((s,k)=>n0+k); zgWachsen(d+dy); zgOptBauen(); zgMalen(); }
 function zgTaste(e){ if(!ZG||ZG.ta) return; const cmd=e.metaKey||e.ctrlKey, k=(e.key||"").toLowerCase();
   if(cmd&&k==="z"){ e.preventDefault(); ZG.ov.querySelector(`[data-z="${e.shiftKey?"redo":"undo"}"]`).click(); }
