@@ -538,11 +538,12 @@ body.is-login .topbar{display:none}
 .n-p{display:flex;align-items:center;gap:10px;min-height:40px;font-size:15px}
 .n-p input{width:20px;height:20px;accent-color:var(--primary)}
 body.zg-offen{overflow:hidden}
-.zg{--zg-bg:#DFE1E6;--zg-pill:#FFFFFF;--zg-akt:#ECEDF1;--zg-schatten:0 6px 20px rgba(0,0,0,.16),0 1px 3px rgba(0,0,0,.1);position:fixed;inset:0;z-index:60;background:var(--zg-bg);display:flex;flex-direction:column;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) 0 env(safe-area-inset-left,0);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .zg{--zg-bg:#121314;--zg-pill:#2C2C2F;--zg-akt:#46464A;--zg-schatten:0 8px 24px rgba(0,0,0,.55)}}
-:root[data-theme="dark"] .zg{--zg-bg:#121314;--zg-pill:#2C2C2F;--zg-akt:#46464A;--zg-schatten:0 8px 24px rgba(0,0,0,.55)}
-.zg-bar{position:relative;z-index:4;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);box-shadow:0 1px 0 rgba(0,0,0,.07)}
-.zg-werkz{justify-self:center;display:flex;gap:4px}
+.zg{--zg-bg:#DFE1E6;--zg-knopf:#ECEDF1;--zg-pill:#FFFFFF;--zg-akt:#ECEDF1;--zg-schatten:0 6px 20px rgba(0,0,0,.16),0 1px 3px rgba(0,0,0,.1);position:fixed;inset:0;z-index:60;background:var(--zg-bg);display:flex;flex-direction:column;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) 0 env(safe-area-inset-left,0);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .zg{--zg-bg:#121314;--zg-knopf:#2C2C2F;--zg-pill:#2C2C2F;--zg-akt:#46464A;--zg-schatten:0 8px 24px rgba(0,0,0,.55)}}
+:root[data-theme="dark"] .zg{--zg-bg:#121314;--zg-knopf:#2C2C2F;--zg-pill:#2C2C2F;--zg-akt:#46464A;--zg-schatten:0 8px 24px rgba(0,0,0,.55)}
+.zg-bar{position:relative;z-index:4;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:60px;padding:8px 12px;background:var(--surface);box-shadow:0 1px 0 rgba(0,0,0,.07)}
+.zg-werkz{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;gap:4px}
+.zg-bar>.zg-b,.zg-rechts>.zg-b{width:44px;height:44px;border-radius:22px;background:var(--zg-knopf)}
 .zg-rechts{display:flex;gap:8px;align-items:center}
 .zg-b{position:relative;width:40px;height:40px;border:0;border-radius:20px;background:transparent;color:var(--on-surface);display:grid;place-items:center;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent;flex:none;touch-action:manipulation}
 .zg-b[aria-pressed="true"]{background:var(--zg-akt);color:var(--fab)}
@@ -568,13 +569,13 @@ body.zg-offen{overflow:hidden}
 .zg-mehr{position:absolute;right:6px;bottom:6px;width:0;height:0;border-left:4px solid transparent;border-top:4px solid transparent;border-right:4px solid currentColor;border-bottom:4px solid currentColor;opacity:.55}
 .zg-gr .zg-pt{display:block;width:var(--d);height:var(--d);border-radius:50%;background:currentColor}
 .zg-gr[aria-pressed="true"]{color:var(--on-surface);background:var(--zg-akt)}
-.zg-farben{position:relative;display:flex;align-items:center;width:232px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:2px 8px;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 8px,#000 calc(100% - 8px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 8px,#000 calc(100% - 8px),transparent 100%)}
+.zg-farben{position:relative;display:flex;align-items:center;width:228px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:4px 0}
 .zg-farben::-webkit-scrollbar{display:none}
-.zg-f{position:relative;width:30px;height:30px;border-radius:50%;border:0;background:var(--c);padding:0;margin:0 4px;cursor:pointer;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.14);scroll-snap-align:start;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+.zg-f{position:relative;width:30px;height:30px;border-radius:50%;border:0;background:var(--c);padding:0;margin:0 4px;cursor:pointer;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.14);scroll-snap-align:start;scroll-margin:0 4px;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 .zg-f.eigen{border-radius:9px}
 .zg-f[aria-pressed="true"]{box-shadow:0 0 0 2px var(--zg-pill),0 0 0 4px var(--on-surface)}
 .zg-f[aria-pressed="true"]::after{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;border-right:2px solid var(--k);border-bottom:2px solid var(--k);transform:translate(-50%,-70%) rotate(45deg)}
-.zg-fplus{width:34px;height:34px;scroll-snap-align:start}
+.zg-fplus{width:34px;height:34px;margin:0 2px;scroll-snap-align:start;scroll-margin:0 2px}
 .zg-fdot{display:block;width:26px;height:26px;border-radius:50%;background:var(--c);box-shadow:0 0 0 2px var(--zg-pill),0 0 0 3.5px var(--outline)}
 .zg-pop{position:absolute;z-index:6;border-radius:20px;padding:8px}
 .zg-pop-r{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
@@ -600,7 +601,7 @@ body.zg-offen{overflow:hidden}
 .zg-sel{position:absolute;z-index:5;display:flex;align-items:center;gap:2px;padding:4px;border-radius:22px}
 .zg-farbwahl{position:absolute;left:50%;top:60px;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
 .zg-text{position:absolute;z-index:2;box-sizing:content-box;border:0;outline:none;resize:none;overflow:hidden;border-radius:4px;padding:2px 4px;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;box-shadow:0 0 0 2px var(--primary);caret-color:var(--primary);-webkit-user-select:text;user-select:text;letter-spacing:normal}
-@media (max-width:700px){.zg-opt{top:64px;max-width:calc(100% - 24px)}.zg-werkz .zg-b{width:42px}.zg-ok{padding:0 14px}}
+@media (max-width:700px){.zg-werkz{position:static;transform:none}.zg-opt{top:64px;max-width:calc(100% - 24px)}.zg-werkz .zg-b{width:42px}.zg-ok{padding:0 14px}}
 
 html.standalone .app-weiter{display:none!important}html.standalone a.li.weiter{pointer-events:none}html.standalone a.li.weiter > .ic:last-child{display:none}
 

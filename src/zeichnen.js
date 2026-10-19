@@ -461,8 +461,13 @@ function zgOptBauen(){ if(!ZG) return; const o=ZG.ov.querySelector("#zgOpt"), c=
   else if(wz==="text") h=zgTextOpt(c.text);
   else if(wz==="form") h=`<button class="zg-b zg-mehrb" data-z="formPop" aria-label="Form wählen" title="Form wählen">${zgIc(c.form.art)}<i class="zg-mehr"></i></button>`+zgKnopf("formFill",null,"fuellung","Füllung",c.form.fill)+zgKnopf("stilPop",null,"stil","Linienart",!!c.form.d)+zgTr+zgGroessen("form")+zgTr+zgKarussell(zgFarbListe("form"),c.form.c);
   if(o.dataset.h!==h){ const alt=o.querySelector("#zgFarben"), sl=alt?alt.scrollLeft:0, gl=alt?alt.dataset.l:""; o.innerHTML=h; o.dataset.h=h; const f=o.querySelector("#zgFarben");
-    if(f){ const l=[...f.querySelectorAll(".zg-f")].map(x=>x.dataset.v).join(); f.dataset.l=l; if(l===gl) f.scrollLeft=sl; const a=f.querySelector('[aria-pressed="true"]'); if(a&&(a.offsetLeft<f.scrollLeft||a.offsetLeft+a.offsetWidth>f.scrollLeft+f.clientWidth)) f.scrollLeft=a.offsetLeft-6; } }
+    if(f){ const l=[...f.querySelectorAll(".zg-f")].map(x=>x.dataset.v).join(); f.dataset.l=l; const gleich=l===gl; if(gleich) f.scrollLeft=sl;
+      f.addEventListener("scroll",()=>zgFade(f),{passive:true}); zgFarbeZeigen(f,gleich); } }
   const ic=zgWzIc(c); ZG.ov.querySelectorAll('[data-z="wz"]').forEach(b=>{ b.setAttribute("aria-pressed",String(b.dataset.v===wz)); const n=zgIc(ic[b.dataset.v]); if(b.dataset.ic!==n){ b.innerHTML=n; b.dataset.ic=n; } }); }
+/* Gewählte Farbe in die Mitte des Farbstreifens holen (ganz sichtbar, nie halb am Rand) */
+function zgFarbeZeigen(f,weich){ const a=f.querySelector('.zg-f[aria-pressed="true"]'); if(a){ const L=a.offsetLeft-4, ziel=Math.max(0,Math.min(f.scrollWidth-f.clientWidth,L-(f.clientWidth-38)/2));
+    if(Math.abs(ziel-f.scrollLeft)>1){ if(weich&&f.scrollTo) f.scrollTo({left:ziel,behavior:"smooth"}); else f.scrollLeft=ziel; } } zgFade(f); }
+function zgFade(f){ f.classList.toggle("fl",f.scrollLeft>1); f.classList.toggle("fr",f.scrollLeft+f.clientWidth<f.scrollWidth-1); }
 function zgWerkzeug(k){ if(ZG.ta) ZG.ta.blur(); ZG.cfg.wz=k; if(k!=="lasso") ZG.sel=[]; zgCfgSichern(); zgOptBauen(); zgMalen(); }
 const zgFarbZiel=()=>({stift:"stift",marker:"marker",text:"text",form:"form"})[ZG.cfg.wz];
 function zgFarbeSetzen(c){ c=c.toUpperCase();
