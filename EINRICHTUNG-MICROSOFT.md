@@ -40,7 +40,7 @@ Grant-PnPAzureADAppSitePermission -AppId "<Anwendungs-ID>" -DisplayName "Elektro
   -Site "https://<firma>.sharepoint.com/sites/Pruefprotokolle" -Permissions Write
 ```
 
-(alternativ per Graph: `POST /sites/{site-id}/permissions` mit `roles: ["write"]` für die Anwendungs-ID). **Dasselbe für die bestehende SharePoint-Website mit den Kundenordnern**, damit die App fertige Prüfprotokolle zusätzlich im jeweiligen Kundenordner ablegen kann. Zusätzlich brauchen die Mitarbeiter selbst **Bearbeiten**-Rechte auf der Website – bei delegierten Rechten gilt immer die Schnittmenge aus App-Freigabe und Benutzerrechten.
+(alternativ per Graph: `POST /sites/{site-id}/permissions` mit `roles: ["write"]` für die Anwendungs-ID). **Falls es bereits eine SharePoint-Ablage für Kundenunterlagen gibt:** dieselbe Freischaltung auch dort, damit die App fertige Prüfprotokolle zusätzlich im jeweiligen Kundenordner ablegen kann. Gibt es keine, legt die App die Kundenordner auf der Website „Prüfprotokolle“ selbst an. Zusätzlich brauchen die Mitarbeiter selbst **Bearbeiten**-Rechte auf der Website – bei delegierten Rechten gilt immer die Schnittmenge aus App-Freigabe und Benutzerrechten.
 
 *Alternative:* Ohne eigene Website (Freigabe-Link auf einen Ordner) bräuchte die App `Files.ReadWrite.All`. Das ist nicht nötig, wenn die Website eingerichtet wird.
 
@@ -85,7 +85,7 @@ Empfehlung: Ordner auf einer SharePoint-Teamwebsite statt im persönlichen OneDr
 | **Verzeichnis-ID (Mandanten-ID)** | App-Registrierung → Übersicht |
 | **Anwendungs-ID (Client-ID)** | App-Registrierung → Übersicht |
 | **Adresse der SharePoint-Website** | Website öffnen → Adresse aus der Adressleiste |
-| **Adresse der Website/Bibliothek mit den Kundenordnern** | Kundenordner-Bibliothek öffnen → Adresse aus der Adressleiste |
+| *falls vorhanden:* **Adresse der Bibliothek mit den Kundenordnern** | Kundenordner-Bibliothek öffnen → Adresse aus der Adressleiste |
 
 Diese drei Werte werden in der App eingetragen (`CONFIG` am Anfang von `src/app.html`). Geheim sind sie nicht – es sind keine Passwörter.
 
