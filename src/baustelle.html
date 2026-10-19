@@ -1077,6 +1077,24 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 .mat-ck.alt{grid-template-columns:auto minmax(0,1fr)}
 .mat-box{width:24px;height:24px;border-radius:7px;background:var(--surface);display:grid;place-items:center} .mat-box .ic{width:18px;height:18px}
 .mat-ck.ok{opacity:.6} .mat-ck.ok .mat-tt,.mat-ck.ok b{text-decoration:line-through} .mat-ck.ok .mat-box{background:var(--ok);color:#fff}
+/* Materialstamm */
+.fg2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.mat-chips{margin:0 0 10px}
+.mat-opt{display:flex;gap:8px;justify-content:space-between;margin:0 0 12px} .mat-opt .seg{max-width:320px;flex:1 1 auto} .mat-opt .seg.mat-ans{flex:0 0 104px} .mat-ans button .ic{display:block!important;width:20px;height:20px;margin:0!important} .mat-opt .seg button{font-size:14px;padding:0 6px}
+.mat-wplus{display:inline-flex;align-items:center;gap:6px;align-self:flex-start}
+.mat-st .sec-lbl small{font-weight:600;opacity:.7;margin-left:4px}
+.li.ml{width:100%;text-align:left;border:0;font:inherit;color:inherit}
+.ml .av{font-weight:800;font-size:15px}
+.ml-n{font-size:12px;font-weight:700;color:var(--on-sv);margin-left:6px;flex:none}
+.mk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.mk{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;border:0;border-radius:18px;background:var(--sc-low);padding:12px;font:inherit;color:var(--on-surface);min-height:0}
+.mk b{font-size:15px;line-height:1.3}
+.mk-u{font-size:13px;color:var(--on-sv);font-weight:600} .mk-nr{font-size:12px;color:var(--on-sv);line-height:1.35}
+.mk-kat{font-size:11px;font-weight:800;border-radius:6px;padding:2px 7px}
+.k-leitung{background:#D3E9FF;color:#0B3A63}.k-schutz{background:#FFDAD6;color:#410002}.k-verteiler{background:#E7DEFF;color:#2F1F66}.k-klemmen{background:#FFE7C2;color:#4A2C00}
+.k-dosen{background:#E3E6EA;color:#2A3038}.k-schalter{background:#CFF1EC;color:#0D3F3A}.k-rohr{background:#F1E6D2;color:#47361A}.k-befest{background:#E9E2D9;color:#3B3127}
+.k-erdung{background:#D9F0C9;color:#1F3B0E}.k-licht{background:#FFF1B8;color:#4A3B00}.k-sonst{background:var(--sc-highest);color:var(--on-sv)}
+.mat-w{align-items:center} .mat-wn{display:flex;align-items:center;gap:4px} .mat-wn .tf{flex:1}
 </style>
 </head>
 <body class="is-list">
@@ -1313,6 +1331,9 @@ const IC={cal:"M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1
   undo:"M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z",
   radierer:"M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4.008 4.008 0 0 1-5.66 0L2.81 17c-.78-.79-.78-2.05 0-2.84l10.6-10.6c.79-.78 2.05-.78 2.83 0zM4.22 15.58l3.54 3.53c.78.79 2.04.79 2.83 0l3.53-3.53-4.95-4.95-4.95 4.95z",
   minus:"M19 13H5v-2h14v2z",
+  ansListe:"M3 14h4v-4H3v4zm0 5h4v-4H3v4zM3 9h4V5H3v4zm5 5h13v-4H8v4zm0 5h13v-4H8v4zM8 5v4h13V5H8z",
+  ansKachel:"M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-4zm6 6h-4V5h4v4zm-6 4v8h8v-8h-4zm6 6h-4v-4h4v4z",
+  lager:"M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.69V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.7c.57-.35 1-.97 1-1.69V4c0-1.1-1-2-2-2zm-5 12H9v-2h6v2zm5-7H4V4l16-.02V7z",
   close:"M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
   baustelle:"M2 18h20v2.5H2zM4 16.5c0-3.9 2.6-7.1 6-8.1V5.6c0-.6.4-1.1 1-1.1h2c.6 0 1 .5 1 1.1v2.8c3.4 1 6 4.2 6 8.1z",
   share:"M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z",
@@ -1452,9 +1473,9 @@ const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
 
 const TH_KEY="evse_theme";
 const RES_TXT={ok:"bestanden",bad:"nicht bestanden",open:"offen",wip:"in Arbeit"};
-const KINDS=["kunden","standorte","baustellen","eintraege"];
+const KINDS=["kunden","standorte","baustellen","eintraege","material"];
 const KUNDEN_KINDS=["kunden","standorte"];
-const DB={kunden:new Map(),standorte:new Map(),baustellen:new Map(),eintraege:new Map(),notizen:new Map()};
+const DB={kunden:new Map(),standorte:new Map(),baustellen:new Map(),eintraege:new Map(),notizen:new Map(),material:new Map()};
 let META={profil:{name:""},filter:"aktiv",sync:{}};
 let nav={v:"start"}, query="", kDB=null, bDB=null, warned=false, syncT=null;
 let ME={name:"",mail:"",admin:false,signedIn:false};
@@ -1476,7 +1497,7 @@ function dbPut(kind,rec){ DB[kind].set(rec.id,rec); const db=dbOf(kind); if(!db)
 function dbDelHard(kind,id){ DB[kind].delete(id); const db=dbOf(kind); if(db) try{ db.transaction(kind,"readwrite").objectStore(kind).delete(id); }catch(e){} }
 function metaSave(){ if(bDB) try{ bDB.transaction("meta","readwrite").objectStore("meta").put(META,"meta"); }catch(e){} }
 async function dataLoad(){
-  try{ kDB=await openStores("evse_daten",KUNDEN_KINDS,false); bDB=await openStores("baustelle_daten",["baustellen","eintraege","notizen"],true);
+  try{ kDB=await openStores("evse_daten",KUNDEN_KINDS,false); bDB=await openStores("baustelle_daten",["baustellen","eintraege","notizen","material"],true);
     for(const k of KINDS){ (await idbReq(dbOf(k).transaction(k).objectStore(k).getAll())).forEach(r=>DB[k].set(r.id,r)); }
     (await idbReq(bDB.transaction("notizen").objectStore("notizen").getAll())).forEach(r=>DB.notizen.set(r.id,r));
     const m=await idbReq(bDB.transaction("meta").objectStore("meta").get("meta")); if(m) META=Object.assign(META,m);
@@ -1536,7 +1557,7 @@ applyTheme(theme);
 WIDE.addEventListener?.("change",()=>{ if(typeof render==="function"&&nav) render(); });
 
 const APP_VERSION="<!--VERSION-->";
-const TOPDEST=[["start","Baustellen","baustelle"],["notizen","Notizen","notiz"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
+const TOPDEST=[["start","Baustellen","baustelle"],["notizen","Notizen","notiz"],["material","Material","lager"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
 const TOP=TOPDEST.map(x=>x[0]), MEHR_SUB={team:"Mitarbeiter",impressum:"Impressum",about:"Über die App"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
 const KIND_NAME={kunden:"Kunde",standorte:"Standort"};
@@ -1827,6 +1848,7 @@ function render(){
   else if(nav.v==="notizen"){ title="Notizen"; body=notizenView(); fab=["neueNotiz","Notiz","add"]; }
   else if(nav.v==="notiz"){ const ro=!istMeine(nEntw), b=nEntw.baustelleId&&DB.baustellen.get(nEntw.baustelleId); title=ro?"Notiz":DB.notizen.has(nEntw.id)?"Notiz bearbeiten":"Neue Notiz"; sub=b?b.name:""; body=notizView(); fab=ro?null:["nSpeichern","Speichern","check"]; }
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
+  else if(nav.v==="material"){ title="Material"; body=materialView(); fab=["matStammNeu","Material","add"]; }
   else if(nav.v==="mehr"){ title="Mehr"; body=mehrView(); }
   else if(nav.v==="team"){ title="Mitarbeiter"; body=teamView(); }
   else if(nav.v==="impressum"){ title="Impressum"; body=impressumView(); }
@@ -1934,7 +1956,7 @@ function entwSpeichern(){
   const alt=neu?[]:(rec.fotos||[]); fotoDel(alt.filter(x=>!e.fotos.includes(x)));
   if((DB.baustellen.get(e.baustelleId)||{}).demo) rec.demo=true;
   Object.assign(rec,{baustelleId:e.baustelleId,datum:e.datum||today(),stand:e.stand.trim(),offen:e.offen.trim(),material:e.material,mat:e.mat,fotos:[...e.fotos]});
-  saveRec("eintraege",rec,neu); e.fotos.filter(x=>!alt.includes(x)).forEach(fotoQueue);
+  saveRec("eintraege",rec,neu); matStammMerken(e.mat); e.fotos.filter(x=>!alt.includes(x)).forEach(fotoQueue);
   const b=DB.baustellen.get(e.baustelleId); if(b&&b.status==="pausiert"&&neu){ b.status="aktiv"; saveRec("baustellen",b); }
   entw=null; const z=entwZurueck; entwZurueck=null; go(z||{v:"baustelle",id:e.baustelleId}); toast(neu?"Übergabe gespeichert":"Änderung gespeichert");
 }
@@ -2311,7 +2333,7 @@ async function importBackup(el){
 }
 
 document.addEventListener("input",ev=>{
-  if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():nav.v==="kunden"?kundenListe():nav.v==="notizen"?notizenListe():baustellenListe(); return; }
+  if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():nav.v==="kunden"?kundenListe():nav.v==="notizen"?notizenListe():nav.v==="material"?materialListe():baustellenListe(); return; }
   if(nav.v==="notiz"&&notizEingabe(ev.target)) return;
 });
 document.addEventListener("change",ev=>{
