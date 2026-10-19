@@ -597,8 +597,8 @@ body.zg-offen{overflow:hidden}
 .zg-slider{padding:4px 8px;gap:12px;flex-wrap:nowrap}
 .zg-slider input{width:200px;accent-color:var(--primary)}
 .zg-wert{min-width:36px;text-align:right;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--on-surface)}
-.zg-blatt{position:absolute;inset:0;z-index:8;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;padding:24px}
-.zg-blatt-k{width:min(640px,100%);max-height:100%;overflow:auto;background:var(--zg-pill);color:var(--on-surface);border-radius:28px;box-shadow:var(--zg-schatten);padding:16px 22px 22px;scrollbar-width:none}
+.zg-blatt{position:absolute;inset:0;z-index:8;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;padding:max(20px,calc(env(safe-area-inset-top,0px) + 12px)) 24px max(20px,env(safe-area-inset-bottom,0px))}
+.zg-blatt-k{width:min(980px,100%);max-height:100%;overflow:auto;background:var(--zg-pill);color:var(--on-surface);border-radius:28px;box-shadow:var(--zg-schatten);padding:16px 22px 22px;scrollbar-width:none}
 .zg-blatt-kopf{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:2px}
 .zg-blatt-kopf b{font-size:20px;font-weight:700}
 .zg-blatt-kopf .zg-b{background:var(--zg-akt)}
@@ -610,9 +610,11 @@ body.zg-offen{overflow:hidden}
 .zg-formate{display:flex;gap:10px}
 .zg-format{flex:1;height:52px;display:flex;align-items:center;justify-content:center;gap:10px;border:0;border-radius:16px;background:var(--zg-akt);color:var(--on-surface);font:inherit;font-size:15px;font-weight:650;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .zg-format[aria-pressed="true"]{background:var(--fab);color:var(--on-fab)}
-.zg-vorlagen{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 12px}
+.zg-vorlagen{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.zg-blatt-zeile{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:900px){.zg-blatt-zeile{grid-template-columns:1fr}}
 .zg-vorl{border:0;background:transparent;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--on-surface);font:inherit;font-size:14px;font-weight:600;-webkit-tap-highlight-color:transparent}
-.zg-vorl svg{display:block;height:150px;width:auto;max-width:100%;border-radius:8px;box-shadow:0 1px 5px rgba(0,0,0,.22)}
+.zg-vorl svg{display:block;height:128px;width:auto;max-width:100%;border-radius:8px;box-shadow:0 1px 5px rgba(0,0,0,.22)}
 .zg-vorlagen.quer .zg-vorl svg{height:auto;width:100%}
 .zg-vorl[aria-pressed="true"] svg{box-shadow:0 0 0 3px var(--fab),0 1px 5px rgba(0,0,0,.22)}
 .zg-vorl[aria-pressed="true"]{color:var(--fab)}
@@ -2287,7 +2289,7 @@ const ichMail=()=>(ME.mail||META.profil.mail||"").toLowerCase();
 const istMeine=n=>!n.createdBy||!n.createdBy.mail||n.createdBy.mail.toLowerCase()===ichMail();
 const sichtbar=n=>istMeine(n)||n.sicht==="firma"||(n.sicht==="personen"&&(n.personen||[]).includes(ichMail()));
 const notizenAlle=()=>live("notizen").filter(sichtbar).sort((a,b)=>(b.updated||0)-(a.updated||0));
-const notizFotos=()=>[...live("notizen"),...(nEntw?[nEntw]:[])].flatMap(n=>(n.bloecke||[]).filter(b=>b.typ==="foto").map(b=>b.foto));
+const notizFotos=()=>[...live("notizen"),...(nEntw?[nEntw]:[])].flatMap(n=>(n.bloecke||[]).flatMap(b=>b.typ==="foto"?[b.foto]:b.typ==="zeichnung"?(b.striche||[]).filter(s=>s.t==="bild").map(s=>s.foto):[]));
 const leer=n=>!String(n.titel||"").trim()&&!(n.bloecke||[]).some(b=>b.typ==="foto"||b.typ==="zeichnung"&&(b.striche||[]).length||String(b.text||"").trim()||(b.items||[]).some(i=>String(i.t||"").trim()));
 const sichtText=n=>n.sicht==="personen"?`${(n.personen||[]).length} Person${(n.personen||[]).length===1?"":"en"}`:SICHT_TXT[n.sicht||"privat"];
 function nKarte(n){
