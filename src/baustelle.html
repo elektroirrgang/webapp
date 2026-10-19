@@ -1235,6 +1235,10 @@ body.zg-offen .snackbar{z-index:70}
 .n-wbg .l,.n-wbg .r{display:none;align-items:center;gap:8px} .n-wbg .ic{width:22px;height:22px}
 .n-wbg.links{background:color-mix(in srgb,var(--err) 55%,var(--sc-highest))} .n-wbg.links.weit{background:#C62828} .n-wbg.links .r{display:flex;margin-left:auto}
 .n-wbg.rechts{background:color-mix(in srgb,#2E7D32 55%,var(--sc-highest))} .n-wbg.rechts.weit{background:#2E7D32} .n-wbg.rechts .l{display:flex}
+
+/* Notiz: auf der ganzen Seite nichts markieren (iOS markiert sonst beim Gedrückthalten alles) – nur in Eingabefeldern */
+body.n-modus,body.n-modus *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body.n-modus input,body.n-modus textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 </style>
 </head>
 <body class="is-list">
@@ -2003,7 +2007,7 @@ function render(){
     title=r.name; sub=kind==="kunden"?"Kunde":(kundeOf(r.kundeId)||{}).name||""; body=kind==="kunden"?kundeView(r):standortView(r);
     fab=null; }
   if(SY.state==="anmelden"&&!login) body=`<div class="robanner warn">${icon("sync")}<span>Anmeldung abgelaufen – Änderungen werden nur auf dem Gerät gespeichert.</span><button class="btn-text" data-act="relogin">Anmelden</button></div>`+body;
-  const edAn=(nav.v==="eintrag")||(nav.v==="notiz"&&istMeine(nEntw));
+  const edAn=(nav.v==="eintrag")||(nav.v==="notiz"&&istMeine(nEntw)); document.body.classList.toggle("n-modus",nav.v==="notiz");
   app.innerHTML=(WIDE.matches&&!login?(edAn?edKopf(title,sub):seitenKopf(title,sub,fab)):"")+body; backSetzen(); navIndSetzen(); segInd(); if(nav.v==="notiz") requestAnimationFrame(nGrow);
   $("#topTitle").innerHTML=title?`<span>${esc(title)}</span>${sub?`<small>${esc(String(sub).split(/\s*›\s*/).pop())}</small>`:""}`:"";
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
@@ -2382,12 +2386,12 @@ function nWischEnde(e){ const w=nSw; nSw=null; if(!w||!w.an||(e&&e.pointerId!==w
   w.el.style.transition="transform .2s cubic-bezier(.2,.8,.2,1)"; w.el.style.transform="translateX(0)"; setTimeout(weg,210); }
 document.addEventListener("pointerup",nWischEnde,true); document.addEventListener("pointercancel",e=>{ const w=nSw; if(w&&w.an){ nWischEnde(e); } else nSw=null; },true);
 /* iOS soll beim Gedrückthalten keinen Text markieren (außer in einem offenen Eingabefeld) */
-document.addEventListener("selectstart",e=>{ const t=e.target&&(e.target.nodeType===3?e.target.parentElement:e.target); if(t&&t.closest&&t.closest(".nedit .nb")&&!t.closest("input,textarea")) e.preventDefault(); });
+document.addEventListener("selectstart",e=>{ if(nav.v!=="notiz") return; const t=e.target&&(e.target.nodeType===3?e.target.parentElement:e.target); if(!t||!t.closest||!t.closest("input,textarea")) e.preventDefault(); });
 function menuAt(x,y,items){ const m=$("#menu"); if(!m||!items.length) return;
   m.innerHTML=items.map(x=>x==="-"?`<hr>`:`<button class="mi ${x[3]||""}" role="menuitem" data-act="${x[0]}" ${Object.entries(x[4]||{}).map(([k,v])=>`data-${k}="${esc(v)}"`).join(" ")}>${icon(x[2])}<span>${esc(x[1])}</span></button>`).join("");
   m.style.right="auto"; m.hidden=false; $("#scrim").hidden=false; const w=m.offsetWidth, h=m.offsetHeight;
   m.style.left=Math.max(8,Math.min(innerWidth-w-8,x-24))+"px"; m.style.top=(y+12+h<innerHeight-8?y+12:Math.max(8,y-h-12))+"px"; }
-function nLangMenu(bid,iid,x,y){ const b=nBlock(bid); if(!b) return; const L=nEntw.bloecke, k=L.indexOf(b), d={b:bid};
+function nLangMenu(bid,iid,x,y){ const b=nBlock(bid); if(!b) return; try{ const sel=getSelection(); if(sel&&!(document.activeElement&&document.activeElement.matches("input,textarea"))) sel.removeAllRanges(); }catch(e){} const L=nEntw.bloecke, k=L.indexOf(b), d={b:bid};
   const art={text:"Text",check:"Checkliste",liste:"Liste",zeichnung:"Zeichnung",foto:"Foto"}[b.typ]||"Block";
   const blockIt=[...(k>0?[["nBlockHoch",`${art} nach oben`,"hoch","",d]]:[]),...(k<L.length-1?[["nBlockRunter",`${art} nach unten`,"runter","",d]]:[]),["nBlockDel",`${art} löschen`,"del","danger",d]];
   const it=iid&&(b.items||[]).find(z=>z.id===iid);
