@@ -71,6 +71,7 @@ function matNeuAus(text){ if(matBusy) return; const i=document.getElementById("m
   if(da) da.q+=x.q; else entw.mat.push({t:x.t,q:x.q,u:x.u,ok:false});
   const y=scrollY; render(); scrollTo(0,y); matBusy=false; const n=document.getElementById("matNeu"); if(n){ n.value=""; n.focus(); } }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="matHaken"],[data-act="matAdd"],[data-act="matPlus"],[data-act="matMinus"],[data-act="matDel"]'); if(!b) return; const a=b.dataset.act;
+  if(a==="matHaken"&&e.target.closest('[data-act="matKopier"]')) return;
   if(a==="matHaken"){ e.stopPropagation(); const r=DB.eintraege.get(b.dataset.id); if(!r) return; const L=matListe(r).map(x=>({t:x.t,q:x.q,u:x.u,ok:!!x.ok})); const x=L[+b.dataset.i]; if(!x) return;
     x.ok=!x.ok; x.okVon=x.ok?who():null; r.mat=L; r.material=matText(L.filter(z=>!z.ok)); saveRec("eintraege",r); const y=scrollY; render(); scrollTo(0,y); return; }
   if(!entw) return; e.stopPropagation(); e.preventDefault(); const i=+b.dataset.i; entwLesen();
@@ -94,8 +95,8 @@ function matBlock(e){
   const L=matListe(e); if(!L.length) return "";
   const neu=Array.isArray(e.mat), ok=L.filter(x=>x.ok).length;
   return `<div class="eb mat-k"><div class="mat-kk"><small>Material</small>${neu&&L.length?`<span>${ok} von ${L.length} besorgt</span>`:""}</div>
-    <div class="mat-kl">${L.map((x,i)=>neu?`<button type="button" class="mat-ck${x.ok?" ok":""}" data-act="matHaken" data-id="${esc(e.id)}" data-i="${i}" aria-pressed="${!!x.ok}"><span class="mat-box">${x.ok?icon("check"):""}</span><b>${esc(matFmt(x.q))} ${esc(x.u)}</b><span class="mat-tt">${esc(x.t)}</span>${x.ok&&x.okVon&&x.okVon.name?`<small>besorgt von ${esc(x.okVon.name)}</small>`:""}</button>`
-      :`<div class="mat-ck alt"><b>${esc(matFmt(x.q))} ${esc(x.u)}</b><span class="mat-tt">${esc(x.t)}</span></div>`).join("")}</div></div>`;
+    <div class="mat-kl">${L.map((x,i)=>neu?`<button type="button" class="mat-ck${x.ok?" ok":""}" data-act="matHaken" data-id="${esc(e.id)}" data-i="${i}" aria-pressed="${!!x.ok}"><span class="mat-box">${x.ok?icon("check"):""}</span><b>${esc(matFmt(x.q))} ${esc(x.u)}</b><span class="mat-tt">${esc(x.t)}</span>${matNrChip(matNr(matStamm(x.t)))}${x.ok&&x.okVon&&x.okVon.name?`<small>besorgt von ${esc(x.okVon.name)}</small>`:""}</button>`
+      :`<div class="mat-ck alt"><b>${esc(matFmt(x.q))} ${esc(x.u)}</b><span class="mat-tt">${esc(x.t)}</span>${matNrChip(matNr(matStamm(x.t)))}</div>`).join("")}</div></div>`;
 }
 
 /* ===== Materialstamm: eigener Bereich „Material“ =====
@@ -133,9 +134,19 @@ function matFirma(){ if(matFirmaObj) return matFirmaObj;
 function matAlle(){ if(!DB.material) return [];
   const recs=[...DB.material.values()], byId=new Map(recs.map(r=>[r.id,r])), byName=new Map(), used=new Set(), out=[];
   recs.forEach(r=>{ if(!r.deleted) byName.set(matNorm(r.name),r); });
-  matFirma().forEach(f=>{ const r=byId.get(f.id)||byName.get(matNorm(f.name)); if(!r){ out.push(f); return; } if(used.has(r.id)) return; used.add(r.id); if(!r.deleted) out.push({...f,...r}); });
+  const zu=new Map(); Object.entries(MAT_GRUND_ZU).forEach(([g,fn])=>{ const r=byName.get(matNorm(g)); if(r) zu.set(matNorm(fn),r); });
+  matFirma().forEach(f=>{ const r=byId.get(f.id)||byName.get(matNorm(f.name))||zu.get(matNorm(f.name)); if(!r){ out.push(f); return; } if(used.has(r.id)) return; used.add(r.id); if(r.deleted) return;
+    const m={...f}; Object.entries(r).forEach(([k,v])=>{ if(v===""||v==null||(Array.isArray(v)&&!v.length&&r.grund)) return; m[k]=v; });
+    if(matNorm(m.name)!==matNorm(f.name)) m.listeName=f.name; out.push(m); });
   recs.forEach(r=>{ if(!used.has(r.id)&&!r.deleted) out.push(r); });
   return out; }
+/* Kurze Namen der Grundliste, die eindeutig einem Artikel der Firmenliste entsprechen: Name bleibt, Nummern kommen aus der Liste */
+const MAT_GRUND_ZU={"Wago 221-413":"WAGO Hebelklemme 3-polig","Wago 221-415":"WAGO Hebelklemme 5-polig","Aderendhülsen 1,5 mm²":"Aderendhülsen isoliert 1,5 mm²",
+  "Aderendhülsen 2,5 mm²":"Aderendhülsen isoliert 2,5 mm²","Hutschiene":"Hutschiene gelocht","Herdanschlussdose":"Herdanschlussdose UP","Kabelkanal 40×60":"Kanal 40 / 60",
+  "H07V-K 2,5 mm²":"Draht flexibel 2,5 mm²","Erdungsschelle":"Banderdungsschelle","Rauchmelder":"EI 650 Rauchmelder 10 Jahre","Gips":"Haftputz Gips / Rotband","Schnellzement":"Montagezement Raccofix"};
+/* Die Nummer, mit der der Artikel gesucht wird: Spalte „EDV-Nummer Sonepar“ der Firmenliste – dort stehen auch die Kürzel der Pauschalen */
+function matNr(m){ if(!m) return ""; return m.sonepar||((m.weitere||[]).find(w=>w&&w.bei==="Kürzel"&&w.nr)||{}).nr||""; }
+const matNrChip=nr=>nr?`<span class="mat-nr" role="button" tabindex="0" data-act="matKopier" data-nr="${esc(nr)}" aria-label="Nummer ${esc(nr)} kopieren">${esc(nr)}${icon("copy")}</span>`:"";
 const matGet=id=>matAlle().find(m=>m.id===id)||null;
 function matStamm(t){ const k=matNorm(t); if(!k||!DB.material) return null; return matAlle().find(m=>matNorm(m.name)===k)||null; }
 function matStammSeed(){ if(!DB.material||(META.matSeed||0)>=1) return;
@@ -155,16 +166,16 @@ function materialListe(){
   const q=matNorm(query), f=MAT_F(), {z,zul}=matNutzung();
   let L=matAlle().filter(m=>f==="alle"?true:f==="neu"?m.neu:f==="haeufig"?z[matNorm(m.name)]:m.kategorie===f);
   if(q){ const W=q.replace(/(\d)\s*×\s*(?=\d)/g,"$1×").split(" ").filter(Boolean);
-    L=L.filter(m=>{ const t=[m.name,m.hersteller,m.herstellerNr,m.sonepar,m.egu,m.ean,m.notiz,m.gruppe,MAT_KAT_TXT[m.kategorie],...(m.weitere||[]).flatMap(w=>[w.nr,w.bei])].map(matNorm).join(" | "); return W.every(w=>t.includes(w)); }); }
+    L=L.filter(m=>{ const t=[m.name,m.hersteller,m.herstellerNr,m.sonepar,m.egu,m.ean,m.notiz,m.gruppe,m.listeName,MAT_KAT_TXT[m.kategorie],...(m.weitere||[]).flatMap(w=>[w.nr,w.bei])].map(matNorm).join(" | "); return W.every(w=>t.includes(w)); }); }
   const so=f==="haeufig"?"haeufig":MAT_SORT(), az=(a,b)=>a.name.localeCompare(b.name,"de",{numeric:true});
   if(so==="haeufig") L.sort((a,b)=>(z[matNorm(b.name)]||0)-(z[matNorm(a.name)]||0)||(zul[matNorm(b.name)]||0)-(zul[matNorm(a.name)]||0)||az(a,b)); else L.sort(az);
   if(!L.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:"Keine Teile in dieser Auswahl."}</p>${q?`<div style="text-align:center"><button class="btn-tonal" data-act="matStammNeu" data-name="${esc(query)}">${icon("add")}„${esc(query)}“ anlegen</button></div>`:""}`;
   const kachel=MAT_ANS()==="kacheln", gruppiert=so==="kat"&&f==="alle"&&!q;
   const item=m=>{ const n=z[matNorm(m.name)]||0, nr=matNummern(m);
     return kachel?`<button class="mk" data-act="matStammOpen" data-id="${esc(m.id)}">${gruppiert?"":`<span class="mk-kat k-${esc(m.kategorie||"sonst")}">${esc(MAT_KAT_TXT[m.kategorie]||"Sonstiges")}</span>`}<b>${esc(m.name)}</b>
-        <span class="mk-u">${esc(m.einheit||"Stück")}${n?` · ${n}× benutzt`:""}</span>${nr.length?`<span class="mk-nr">${esc(nr.join(" · "))}</span>`:""}${m.neu?`<span class="pill wip">neu</span>`:""}</button>`
+        <span class="mk-u">${esc(m.einheit||"Stück")}${n?` · ${n}× benutzt`:""}</span>${matNrChip(matNr(m))}${m.listeName?`<span class="mk-nr">Liste: ${esc(m.listeName)}</span>`:""}${nr.length?`<span class="mk-nr">${esc(nr.join(" · "))}</span>`:""}${m.neu?`<span class="pill wip">neu</span>`:""}</button>`
       :`<button class="li ml" data-act="matStammOpen" data-id="${esc(m.id)}"><span class="av k-${esc(m.kategorie||"sonst")}">${esc((MAT_KAT_TXT[m.kategorie]||"S")[0])}</span><span class="lt"><span class="h">${esc(m.name)}</span>
-        <span class="s">${esc([m.einheit||"Stück",...nr].join(" · "))}</span></span>${m.neu?pill("wip","neu"):""}${n?`<span class="ml-n">${n}×</span>`:""}</button>`; };
+        <span class="s">${esc([m.einheit||"Stück",m.listeName&&"Liste: "+m.listeName,...nr].filter(Boolean).join(" · "))}</span></span>${m.neu?pill("wip","neu"):""}${n?`<span class="ml-n">${n}×</span>`:""}${matNrChip(matNr(m))}</button>`; };
   const block=G=>kachel?`<div class="mk-grid">${G.map(item).join("")}</div>`:`<div class="list">${G.map(item).join("")}</div>`;
   if(so==="kat"&&f==="alle"&&!q) return MAT_KAT.map(([k,t])=>{ const G=L.filter(m=>(m.kategorie||"sonst")===k); return G.length?`<div class="sec-lbl">${esc(t)} <small>${G.length}</small></div>${block(G)}`:""; }).join("");
   return `<p class="meta f-info">${L.length} Teil${L.length===1?"":"e"}</p>`+block(L);
@@ -192,7 +203,7 @@ function matStammDialog(m,name){ const r=m||{name:name||"",kategorie:matKatRaten
     <button type="button" class="btn-text mat-wplus" data-act="matWeiterPlus">${icon("add")}Weitere Bestellnummer</button>
     ${tf("mEan","EAN / GTIN (optional)",r.ean||"",{form:true,im:"numeric"})}
     ${ta("mNotiz","Notiz",r.notiz||"",{form:true,ph:"z. B. nur in Grau lieferbar, Alternative …"})}
-    ${m&&m.firma?`<p class="sup">Aus der Firmen-Materialliste (Stand ${esc(MAT_FIRMA_STAND)})${m.gruppe?`, Abschnitt „${esc(m.gruppe)}“`:""}.</p>`:""}
+    ${m&&m.firma?`<p class="sup">Aus der Firmen-Materialliste (Stand ${esc(MAT_FIRMA_STAND)})${m.gruppe?`, Abschnitt „${esc(m.gruppe)}“`:""}.${m.listeName?` Dort heißt es „${esc(m.listeName)}“.`:""}</p>`:""}
     ${m?`<p class="sup">${n?`${n}× in Übergaben verwendet, zuletzt ${esc(wann(zul[matNorm(m.name)]))}.`:"Noch nicht in Übergaben verwendet."}${m.updatedBy&&m.updatedBy.name?` Zuletzt geändert von ${esc(m.updatedBy.name)}.`:""}</p>`:""}
   </div>`,`${m?`<button class="btn-text danger" data-act="matStammDel" data-id="${esc(m.id)}">Löschen</button><span style="flex:1"></span>`:""}<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="matStammSave">${m&&m.neu?"Prüfen & speichern":"Speichern"}</button>`); }
 function matWeitereHtml(){ return (matEd.weitere||[]).map((w,i)=>`<div class="fg2 mat-w">${tf("mWb"+i,"Lieferant",w.bei||"",{form:true,list:"dl-ml"})}<div class="mat-wn">${tf("mWn"+i,"Bestellnummer",w.nr||"",{form:true})}<button type="button" class="icon-btn sm" data-act="matWeiterDel" data-i="${i}" aria-label="Entfernen">${icon("close")}</button></div></div>`).join("")+datalist("dl-ml",MAT_LIEF); }
@@ -203,9 +214,10 @@ function matStammSpeichern(){ const F=formVals(); matWeitereLesen(F); const name
   if(neu&&((DB.material.has(r.id)&&!DB.material.get(r.id).deleted)||matFirma().some(f=>f.id===r.id))) r.id=r.id+"-"+uid().slice(-4);
   Object.assign(r,{name,kategorie:F.mKat||"sonst",einheit:F.mEinh||"Stück",hersteller:F.mHerst,herstellerNr:F.mHNr,sonepar:F.mSon,egu:F.mEgu,ean:F.mEan,notiz:F.mNotiz,weitere:matEd.weitere.filter(w=>w.nr||w.bei)});
   delete r.neu; delete r.deleted; saveRec("material",r,neu||!vorh); closeOverlays(); render(); toast(neu?"Material angelegt":"Gespeichert"); }
-document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="matStamm"],[data-act="matF"],[data-act="matSort"],[data-act="matAns"],[data-act^="matWeiter"]'); if(!b) return; const a=b.dataset.act;
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="matKopier"],[data-act^="matStamm"],[data-act="matF"],[data-act="matSort"],[data-act="matAns"],[data-act^="matWeiter"]'); if(!b) return; const a=b.dataset.act;
   e.stopPropagation(); e.preventDefault();
-  if(a==="matF"){ META.matF=b.dataset.v; metaSave(); render(); }
+  if(a==="matKopier"){ const nr=b.dataset.nr; (navigator.clipboard?navigator.clipboard.writeText(nr):Promise.reject()).then(()=>toast(`${nr} kopiert`),()=>toast(`Nummer: ${nr}`)); }
+  else if(a==="matF"){ META.matF=b.dataset.v; metaSave(); render(); }
   else if(a==="matSort"){ META.matSort=b.dataset.v; metaSave(); render(); }
   else if(a==="matAns"){ META.matAns=b.dataset.v; metaSave(); render(); }
   else if(a==="matStammNeu") matStammDialog(null,b.dataset.name||"");

@@ -1075,6 +1075,12 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 .mat-ck{display:grid;grid-template-columns:28px auto minmax(0,1fr);align-items:center;gap:10px;width:100%;text-align:left;border:0;border-radius:12px;background:color-mix(in srgb,var(--surface) 55%,transparent);color:inherit;font:inherit;font-size:15px;padding:10px 12px;min-height:48px}
 .mat-ck b{white-space:nowrap} .mat-ck .mat-tt{min-width:0;overflow-wrap:break-word} .mat-ck small{grid-column:2/-1;margin-top:-6px;font-size:12px;opacity:.75;text-transform:none;letter-spacing:0;font-weight:600}
 .mat-ck.alt{grid-template-columns:auto minmax(0,1fr)}
+.mat-ck{grid-template-columns:28px auto minmax(0,1fr) auto} .mat-ck.alt{grid-template-columns:auto minmax(0,1fr) auto}
+.mat-nr{display:inline-flex;align-items:center;gap:6px;flex:none;align-self:center;background:var(--surface);color:var(--on-surface);border-radius:10px;padding:6px 8px 6px 10px;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.02em;cursor:pointer;text-decoration:none!important;white-space:nowrap}
+.mat-nr .ic{width:16px;height:16px;opacity:.7} .mat-nr:active{filter:brightness(.92)}
+@media (max-width:560px){ .mat-ck{grid-template-columns:28px auto minmax(0,1fr)} .mat-ck.alt{grid-template-columns:auto minmax(0,1fr)}
+  .mat-ck .mat-nr{grid-column:3;justify-self:start;margin-top:-4px} .mat-ck.alt .mat-nr{grid-column:2} .ml .mat-nr .ic{display:none} .ml .mat-nr{padding:6px 9px;font-size:13px} }
+.mat-ck.ok .mat-nr{text-decoration:none} .ml .mat-nr{margin-left:8px;background:var(--sc-high,var(--sc))} .mk .mat-nr{background:var(--sc-high,var(--sc))}
 .mat-box{width:24px;height:24px;border-radius:7px;background:var(--surface);display:grid;place-items:center} .mat-box .ic{width:18px;height:18px}
 .mat-ck.ok{opacity:.6} .mat-ck.ok .mat-tt,.mat-ck.ok b{text-decoration:line-through} .mat-ck.ok .mat-box{background:var(--ok);color:#fff}
 /* Materialstamm */
@@ -1971,7 +1977,7 @@ async function entwFotoAufnehmen(el){
 function teilenText(e){
   const b=DB.baustellen.get(e.baustelleId)||{}, s=standortOf(b.standortId);
   return [`Baustellenübergabe – ${b.name||""}`,[pfadText(b),s&&s.ort].filter(Boolean).join(", "),`${tagText(e.datum)} · ${vonText(e)}`,"",
-    e.stand&&`Stand:\n${e.stand}`,e.offen&&`Offen / nächste Schritte:\n${e.offen}`,matListe(e).length&&`Material:\n${matListe(e).map(x=>`– ${matFmt(x.q)} ${x.u} ${x.t}${x.ok?" (besorgt)":""}`).join("\n")}`].filter(x=>x!==undefined&&x!=="").join("\n\n").replace(/\n\n\n+/g,"\n\n");
+    e.stand&&`Stand:\n${e.stand}`,e.offen&&`Offen / nächste Schritte:\n${e.offen}`,matListe(e).length&&`Material:\n${matListe(e).map(x=>{ const nr=matNr(matStamm(x.t)); return `– ${matFmt(x.q)} ${x.u} ${x.t}${nr?` · Nr. ${nr}`:""}${x.ok?" (besorgt)":""}`; }).join("\n")}`].filter(x=>x!==undefined&&x!=="").join("\n\n").replace(/\n\n\n+/g,"\n\n");
 }
 async function teilen(e){
   const text=teilenText(e);
