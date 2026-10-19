@@ -267,7 +267,7 @@ function zgMalen(){ if(!ZG||!ZG.sk) return; const {ctx,dpr,sk,px,pw}=ZG, oy=ZG.t
   const dunkel=ZG.seite.papier==="dunkel", ed=ZG.edit?ZG.edit.i:null;
   ZG.striche.forEach((s,i)=>{ if(i===ed) return; const b=zgBox(s); if(b[3]<y0-30||b[1]>y1+30) return; zgZeichne(ctx,s,dunkel); });
   if(ZG.akt) zgZeichne(ctx,ZG.akt,dunkel);
-  if(ZG.lasso&&ZG.lasso.length>2){ ctx.save(); ctx.strokeStyle=ZG_BLAU; ctx.lineWidth=1.6/sk; ctx.setLineDash([5/sk,4/sk]); ctx.fillStyle="rgba(30,123,242,.05)"; const L=ZG.lasso, p=new Path2D(ZG.lassoBox?`M${L[0]} ${L[1]}L${L[2]} ${L[3]}L${L[4]} ${L[5]}L${L[6]} ${L[7]}Z`:strichPfad(L)+"Z"); ctx.fill(p); ctx.stroke(p); ctx.restore(); }
+  if(ZG.lasso&&ZG.lasso.length>2){ ctx.save(); ctx.strokeStyle=ZG_BLAU; ctx.lineWidth=1.6/sk; ctx.setLineDash([5/sk,4/sk]); ctx.fillStyle="rgba(211,18,47,.05)"; const L=ZG.lasso, p=new Path2D(ZG.lassoBox?`M${L[0]} ${L[1]}L${L[2]} ${L[3]}L${L[4]} ${L[5]}L${L[6]} ${L[7]}Z`:strichPfad(L)+"Z"); ctx.fill(p); ctx.stroke(p); ctx.restore(); }
   if(ZG.rad&&ZG.rad.pos){ const [x,y]=ZG.rad.pos; ctx.save(); ctx.strokeStyle="rgba(0,0,0,.45)"; ctx.fillStyle="rgba(255,255,255,.35)"; ctx.lineWidth=1.2/sk; ctx.beginPath(); ctx.arc(x,y,zgRadR(),0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.restore(); }
   ctx.restore();
   ctx.save(); ctx.translate(px,oy); ctx.scale(sk,sk); zgAuswahlRahmen(ctx); ctx.restore();
@@ -311,9 +311,9 @@ function zgLassoWahl(L){ const out=[]; ZG.striche.forEach((s,i)=>{ if(s.t==="tex
 function zgSelBox(){ let a=Infinity,b=Infinity,c=-Infinity,d=-Infinity; for(const i of ZG.sel){ const s=ZG.striche[i]; if(!s) continue; const x=zgBox(s); a=Math.min(a,x[0]); b=Math.min(b,x[1]); c=Math.max(c,x[2]); d=Math.max(d,x[3]); }
   return isFinite(a)?[a,b,c,d]:null; }
 const zgPad=()=>10/ZG.sk;
-/* Auswahl wie GoodNotes: dünner blauer Rahmen, runde Eckgriffe, kleine Punkte an den Seiten, Drehgriff als Kreis mit Pfeil.
+/* Auswahl wie GoodNotes (in Irrgang-Rot): dünner Rahmen, runde Eckgriffe, kleine Punkte an den Seiten, Drehgriff als Kreis mit Pfeil.
    Der Rahmen dreht sich bei einem einzelnen gedrehten Objekt mit; der Drehgriff wandert beim Drehen um die Auswahl herum. */
-const ZG_BLAU="#1E7BF2";
+const ZG_BLAU="#D3122F"; /* Auswahlfarbe: Irrgang-Rot */
 function zgRahmen(){ const eins=ZG.sel.length===1?ZG.striche[ZG.sel[0]]:null;
   if(eins&&eins.rot&&!ZG_PUNKTART.includes(eins.t)){ const [a,b,c,d]=zgBoxRoh(eins); return {lok:true,a,b,c,d,cx:(a+c)/2,cy:(b+d)/2,rot:eins.rot}; }
   const B=zgSelBox(); if(!B) return null; const [a,b,c,d]=B; return {lok:false,a,b,c,d,cx:(a+c)/2,cy:(b+d)/2,rot:0}; }
