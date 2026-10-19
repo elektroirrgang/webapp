@@ -1224,6 +1224,17 @@ body.zg-offen .snackbar{z-index:70}
 
 /* Tastatur auf dem iPad: feste Leisten um den Versatz der sichtbaren Fläche nach unten schieben */
 @media (min-width:744px){ .topbar,body .navbar,.edk{translate:0 var(--vvt,0px)} html::after{translate:0 var(--vvt,0px)} }
+
+/* Wischen */
+.nedit .nb,.nedit .ni[data-i]{touch-action:pan-y}
+.nedit .n-tx,.nedit .n-tap,.nedit .nb-kopf,.nedit .n-erl{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
+.nedit .ni.n-wischt{position:relative;z-index:1;background:var(--sc)}
+.nedit .nb.nl{overflow:hidden} .nedit .nbl{overflow-x:clip}
+.nedit .nb.n-wischt{position:relative;z-index:1}
+.n-wbg{position:absolute;z-index:0;display:flex;align-items:center;justify-content:space-between;padding:0 22px;overflow:hidden;background:var(--sc-highest);color:#fff;font-size:15px;font-weight:700;pointer-events:none;transition:background .15s}
+.n-wbg .l,.n-wbg .r{display:none;align-items:center;gap:8px} .n-wbg .ic{width:22px;height:22px}
+.n-wbg.links{background:color-mix(in srgb,var(--err) 55%,var(--sc-highest))} .n-wbg.links.weit{background:#C62828} .n-wbg.links .r{display:flex;margin-left:auto}
+.n-wbg.rechts{background:color-mix(in srgb,#2E7D32 55%,var(--sc-highest))} .n-wbg.rechts.weit{background:#2E7D32} .n-wbg.rechts .l{display:flex}
 </style>
 </head>
 <body class="is-list">
@@ -2344,6 +2355,34 @@ document.addEventListener("pointerdown",e=>{ nLPStop(); if(nav.v!=="notiz"||!nEn
 document.addEventListener("pointermove",e=>{ if(nLP&&Math.hypot(e.clientX-nLP.x,e.clientY-nLP.y)>8) nLPStop(); },true);
 addEventListener("scroll",nLPStop,{passive:true});
 document.addEventListener("contextmenu",e=>{ if(e.target.closest&&e.target.closest(".nedit .nb")) e.preventDefault(); });
+/* Wischen wie bei iOS: nach links ⇒ löschen (mit Rückgängig), nach rechts auf einer Aufgabe ⇒ erledigt / wieder offen */
+let nSw=null;
+document.addEventListener("pointerdown",e=>{ nSw=null; if(nav.v!=="notiz"||!nEntw||!istMeine(nEntw)||(e.pointerType==="mouse"&&e.button!==0)) return;
+  const nb=e.target.closest&&e.target.closest(".nedit .nb"); if(!nb||e.target.closest("input:focus,textarea:focus")) return;
+  const ni=e.target.closest(".ni[data-i]"); nSw={el:ni||nb,ni:!!ni,b:nb.dataset.b,i:ni?ni.dataset.i:null,x:e.clientX,y:e.clientY,dx:0,an:false,id:e.pointerId}; },true);
+document.addEventListener("pointermove",e=>{ const w=nSw; if(!w||e.pointerId!==w.id) return; const dx=e.clientX-w.x, dy=e.clientY-w.y;
+  if(!w.an){ if(Math.abs(dy)>12&&Math.abs(dy)>Math.abs(dx)){ nSw=null; return; } if(Math.abs(dx)<14||Math.abs(dx)<Math.abs(dy)*1.4) return;
+    w.an=true; nLPStop(); w.bg=nWischGrund(w.el); w.el.classList.add("n-wischt"); }
+  const b=nBlock(w.b), rechtsOk=w.ni&&b&&b.typ==="check", d=dx>0&&!rechtsOk?Math.min(dx*.25,24):dx; w.dx=d;
+  w.el.style.transform=`translateX(${d}px)`; nWischLabel(w,b);
+  if(e.cancelable) e.preventDefault(); },{capture:true,passive:false});
+function nWischGrund(el){ const p=el.parentElement; if(getComputedStyle(p).position==="static") p.style.position="relative";
+  const d=document.createElement("div"); d.className="n-wbg"; Object.assign(d.style,{top:el.offsetTop+"px",left:el.offsetLeft+"px",width:el.offsetWidth+"px",height:el.offsetHeight+"px",borderRadius:getComputedStyle(el).borderRadius});
+  d.innerHTML=`<span class="l">${icon("check")}<b></b></span><span class="r"><b></b>${icon("del")}</span>`; p.insertBefore(d,el); return d; }
+function nWischLabel(w,b){ const g=w.bg; if(!g) return; const it=w.ni&&b&&(b.items||[]).find(z=>z.id===w.i), weit=Math.abs(w.dx)>nWischGrenze(w);
+  g.classList.toggle("links",w.dx<0); g.classList.toggle("rechts",w.dx>0); g.classList.toggle("weit",weit);
+  g.querySelector(".r b").textContent=w.ni?"Löschen":"Block löschen"; g.querySelector(".l b").textContent=it&&it.ok?"Wieder offen":"Erledigt"; }
+const nWischGrenze=w=>Math.max(90,Math.min(180,w.el.offsetWidth*.3));
+function nWischEnde(e){ const w=nSw; nSw=null; if(!w||!w.an||(e&&e.pointerId!==w.id)) return; nLang=true; setTimeout(()=>{ nLang=false; },400);
+  const b=nBlock(w.b), grenze=nWischGrenze(w), weg=()=>{ if(w.bg) w.bg.remove(); w.el.classList.remove("n-wischt"); w.el.style.transform=""; w.el.style.transition=""; };
+  const fake={dataset:{b:w.b,i:w.i||""}};
+  if(w.dx<-grenze){ w.el.style.transition="transform .18s ease-in"; w.el.style.transform=`translateX(${-w.el.offsetWidth-40}px)`;
+    setTimeout(()=>{ weg(); notizKlick(w.ni?"nItemDel":"nBlockDel",fake); },170); return; }
+  if(w.dx>grenze&&w.ni&&b&&b.typ==="check"){ weg(); notizKlick("nCheck",fake); return; }
+  w.el.style.transition="transform .2s cubic-bezier(.2,.8,.2,1)"; w.el.style.transform="translateX(0)"; setTimeout(weg,210); }
+document.addEventListener("pointerup",nWischEnde,true); document.addEventListener("pointercancel",e=>{ const w=nSw; if(w&&w.an){ nWischEnde(e); } else nSw=null; },true);
+/* iOS soll beim Gedrückthalten keinen Text markieren (außer in einem offenen Eingabefeld) */
+document.addEventListener("selectstart",e=>{ const t=e.target&&(e.target.nodeType===3?e.target.parentElement:e.target); if(t&&t.closest&&t.closest(".nedit .nb")&&!t.closest("input,textarea")) e.preventDefault(); });
 function menuAt(x,y,items){ const m=$("#menu"); if(!m||!items.length) return;
   m.innerHTML=items.map(x=>x==="-"?`<hr>`:`<button class="mi ${x[3]||""}" role="menuitem" data-act="${x[0]}" ${Object.entries(x[4]||{}).map(([k,v])=>`data-${k}="${esc(v)}"`).join(" ")}>${icon(x[2])}<span>${esc(x[1])}</span></button>`).join("");
   m.style.right="auto"; m.hidden=false; $("#scrim").hidden=false; const w=m.offsetWidth, h=m.offsetHeight;
@@ -2432,7 +2471,7 @@ function notizKlick(a,el){
   case "nSichtAuf": sichtDialog(); return true;
   case "nCheck": { const b=nBlock(el.dataset.b), i=b&&b.items.find(x=>x.id===el.dataset.i); if(i){ i.ok=!i.ok; nAuto(); nBlockNeu(b); } return true; }
   case "nItemAdd": { const b=nBlock(el.dataset.b); if(!b) return true; const n={id:uid(),t:"",ok:false}; b.items.push(n); nAuto(); nBlockNeu(b,`input[data-i="${n.id}"]`); return true; }
-  case "nItemDel": { const b=nBlock(el.dataset.b); if(!b) return true; const vI=b.items.slice(), vB=nEntw.bloecke.slice(); setTimeout(()=>toast("Gelöscht","Rückgängig",()=>{ if(nEntw){ b.items=vI; nEntw.bloecke=vB; nAuto(); nRender(); } }),0); b.items=b.items.filter(x=>x.id!==el.dataset.i); if(!b.items.length){ nEntw.bloecke=nEntw.bloecke.filter(x=>x!==b); nAuto(); nRender(); return true; } nAuto(); nBlockNeu(b); return true; }
+  case "nItemDel": { const b=nBlock(el.dataset.b); if(!b||!el.dataset.i) return true; const vI=b.items.slice(), vB=nEntw.bloecke.slice(); setTimeout(()=>toast("Gelöscht","Rückgängig",()=>{ if(nEntw){ b.items=vI; nEntw.bloecke=vB; nAuto(); nRender(); } }),0); b.items=b.items.filter(x=>x.id!==el.dataset.i); if(!b.items.length){ nEntw.bloecke=nEntw.bloecke.filter(x=>x!==b); nAuto(); nRender(); return true; } nAuto(); nBlockNeu(b); return true; }
   case "nZeichnen": { const b=nBlock(el.dataset.b); if(b) zeichnenOeffnen(b); return true; }
   case "nFotoShow": { const b=nBlock(el.dataset.b); if(b) dialog("Foto",`<img class="dimg" src="${fotoCache.get(b.foto)||""}" alt="">`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return true; }
   case "nSpeichern": if(nEntw&&istMeine(nEntw)) notizFertig(); else notizVerlassen(); return true;
