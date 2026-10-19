@@ -315,7 +315,11 @@ function zgGriffe(){ const B=zgSelBox(); if(!B) return null; const p=zgPad(), [a
   const alle=eins&&eins.t==="text"&&!eins.rot?["nw","ne","sw","se","w","e"]:eins&&eins.t==="bild"?["nw","ne","sw","se","n","s","w","e"]:["nw","n","ne","e","se","s","sw","w"];
   for(const h of alle) out.g.push({art:h,x:h.includes("w")?a-p:h.includes("e")?c+p:(a+c)/2,y:h.includes("n")?b-p:h.includes("s")?d+p:(b+d)/2});
   zgDrehGriff(out); return out; }
-function zgDrehGriff(out){ if(ZG.selWz) return; const [a,b,c]=out.box; out.dreh={x:(a+c)/2,y:b-zgPad()-36/ZG.sk}; out.g.push({art:"rot",x:out.dreh.x,y:out.dreh.y}); }
+/* Drehgriff unten mittig – oben sitzt die Leiste mit Kopieren/Löschen */
+function zgDrehGriff(out){ if(ZG.selWz) return; const [a,b,c,d]=out.box, ab=zgPad()+38/ZG.sk; let y=d+ab, oben=false;
+  /* passt unten nicht mehr auf den Bildschirm ⇒ nach oben, die Leiste rutscht dann nach unten */
+  if(ZG.top-ZG.sy+y*ZG.sk>ZG.vh-28&&ZG.top-ZG.sy+(b-ab)*ZG.sk>ZG.top){ y=b-ab; oben=true; }
+  out.dreh={x:(a+c)/2,y,oben}; out.g.push({art:"rot",x:out.dreh.x,y}); }
 function zgGriffTreffer(x,y){ const G=zgGriffe(), tol=20/ZG.sk; if(!G) return null; let best=null, bd=tol; for(const g of G.g){ const d=Math.hypot(x-g.x,y-g.y); if(d<bd){ bd=d; best=g; } } return best; }
 function zgSelInnen(x,y,ev){ const G=zgGriffe(); if(!G) return false;
   if(G.punkte||ZG.selWz) return ZG.sel.some(i=>zgTrifft(ZG.striche[i],x,y,zgToleranz(ev)));
@@ -323,12 +327,12 @@ function zgSelInnen(x,y,ev){ const G=zgGriffe(); if(!G) return false;
 function zgAuswahlRahmen(ctx){ if(!ZG.sel.length||ZG.edit) return; const G=zgGriffe(); if(!G) return; const [a,b,c,d]=G.box, p=zgPad(), sk=ZG.sk;
   ctx.save(); ctx.strokeStyle="#C8102E"; ctx.lineWidth=1.6/sk;
   if(!G.punkte){ ctx.setLineDash([6/sk,5/sk]); ctx.strokeRect(a-p,b-p,c-a+2*p,d-b+2*p); ctx.setLineDash([]); }
-  if(G.dreh){ ctx.beginPath(); ctx.moveTo(G.dreh.x,b-(G.punkte?0:p)); ctx.lineTo(G.dreh.x,G.dreh.y); ctx.lineWidth=1.4/sk; ctx.stroke(); }
+  if(G.dreh){ ctx.beginPath(); ctx.moveTo(G.dreh.x,G.dreh.oben?b-(G.punkte?0:p):d+(G.punkte?0:p)); ctx.lineTo(G.dreh.x,G.dreh.y); ctx.lineWidth=1.4/sk; ctx.stroke(); }
   for(const g of G.g){ if(g.art==="rot") continue; ctx.beginPath(); ctx.arc(g.x,g.y,(G.punkte?9:7)/sk,0,Math.PI*2); ctx.fillStyle=G.punkte?"#C8102E":"#fff"; ctx.fill(); ctx.lineWidth=2.2/sk; ctx.strokeStyle=G.punkte?"#fff":"#C8102E"; ctx.stroke(); }
   if(G.dreh){ const {x,y}=G.dreh, R=13/sk; ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2); ctx.fillStyle="#C8102E"; ctx.fill();
     ctx.strokeStyle="#fff"; ctx.lineWidth=1.8/sk; ctx.beginPath(); ctx.arc(x,y,R*.48,-Math.PI*.15,Math.PI*1.35); ctx.stroke();
     const ex=x+R*.48*Math.cos(-Math.PI*.15), ey=y+R*.48*Math.sin(-Math.PI*.15); ctx.beginPath(); ctx.moveTo(ex-R*.28,ey-R*.12); ctx.lineTo(ex,ey); ctx.lineTo(ex+R*.05,ey-R*.32); ctx.stroke();
-    const z=ZG.zug; if(z&&z.art==="griff"&&z.g.art==="rot"&&z.anzeige!=null){ const t=z.anzeige+"°"; ctx.font=`700 ${13/sk}px system-ui,-apple-system,sans-serif`; const w=ctx.measureText(t).width+14/sk, hx=x-w/2, hy=y-R-30/sk;
+    const z=ZG.zug; if(z&&z.art==="griff"&&z.g.art==="rot"&&z.anzeige!=null){ const t=z.anzeige+"°"; ctx.font=`700 ${13/sk}px system-ui,-apple-system,sans-serif`; const w=ctx.measureText(t).width+14/sk, hx=x-w/2, hy=G.dreh.oben?y-R-30/sk:y+R+8/sk;
       ctx.fillStyle="rgba(31,31,34,.88)"; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(hx,hy,w,22/sk,11/sk); else ctx.rect(hx,hy,w,22/sk); ctx.fill(); ctx.fillStyle="#fff"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(t,x,hy+11/sk); } }
   ctx.restore(); }
 const zgPageZuClient=(x,y)=>{ const r=ZG.cv.getBoundingClientRect(); return [r.left+ZG.px+x*ZG.sk,r.top+ZG.top-ZG.sy+y*ZG.sk]; };
@@ -340,7 +344,8 @@ function zgSelLeiste(){ const bar=ZG.ov.querySelector("#zgSel"); if(!ZG.sel.leng
   if(bar.dataset.h!==html){ bar.innerHTML=html; bar.dataset.h=html; }
   bar.hidden=false; const p=zgPad()+12/ZG.sk, [l,t]=zgPageZuClient(B[0]-p,B[1]-p), [rr,u]=zgPageZuClient(B[2]+p,B[3]+p), [L,T]=zgRel((l+rr)/2,t), [,U]=zgRel(0,u);
   const fr=ZG.fl.getBoundingClientRect(), [,flTop]=zgRel(0,fr.top), bw=bar.offsetWidth, bh=bar.offsetHeight;
-  let top=T-bh-8; if(top<flTop+ZG.top-20) top=U+8; top=Math.min(top,ZG.ov.clientHeight-bh-12);
+  const G=zgGriffe(), oben=G&&G.dreh&&G.dreh.oben;
+  let top=oben?U+8:T-bh-8; if(!oben&&top<flTop+ZG.top-20) top=U+58; if(oben&&top+bh>ZG.ov.clientHeight-12) top=T-bh-58; top=Math.min(top,ZG.ov.clientHeight-bh-12);
   bar.style.left=Math.max(8,Math.min(ZG.ov.clientWidth-bw-8,L-bw/2))+"px"; bar.style.top=Math.max(flTop+8,top)+"px"; }
 /* Griff ziehen */
 function zgGriffZiehen(z,x,y){ const g=z.g, [a,b,c,d]=z.box, MIN=8, p=zgPad();
@@ -565,7 +570,7 @@ function zgOptBauen(){ if(!ZG) return; const o=ZG.ov.querySelector("#zgOpt"), c=
   if(!ZG.sel.length) ZG.selWz=false; const selO=ZG.sel.map(i=>ZG.striche[i]).filter(Boolean);
   if(ZG.edit) h=zgTextOpt(ZG.edit.s);
   else if(selO.length&&!ZG.selWz){ const txt=selO.filter(s=>s.t==="text"), str=selO.filter(s=>s.t!=="text"&&s.t!=="bild");
-    if(!txt.length&&!str.length) h=`<span class="zg-hint">Bild verschieben, an den Ecken vergrößern, oben drehen</span>`;
+    if(!txt.length&&!str.length) h=`<span class="zg-hint">Bild verschieben, an den Ecken vergrößern, unten drehen</span>`;
     else if(txt.length===selO.length) h=zgTextOpt(txt[0]);
     else { h=txt.length?zgPunktKnopf(selO[0].c):zgKarussell(zgFarbListe(""),selO[0].c);
       if(txt.length) h+=zgTr+`<button class="zg-b" data-z="fsStufe" data-v="-1" aria-label="Schrift kleiner">${zgIc("minus")}</button><button class="zg-b" data-z="fsStufe" data-v="1" aria-label="Schrift größer">${zgIc("plus")}</button>`;
