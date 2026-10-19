@@ -1093,7 +1093,7 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 .mk-kat{font-size:11px;font-weight:800;border-radius:6px;padding:2px 7px}
 .k-leitung{background:#D3E9FF;color:#0B3A63}.k-schutz{background:#FFDAD6;color:#410002}.k-verteiler{background:#E7DEFF;color:#2F1F66}.k-klemmen{background:#FFE7C2;color:#4A2C00}
 .k-dosen{background:#E3E6EA;color:#2A3038}.k-schalter{background:#CFF1EC;color:#0D3F3A}.k-rohr{background:#F1E6D2;color:#47361A}.k-befest{background:#E9E2D9;color:#3B3127}
-.k-erdung{background:#D9F0C9;color:#1F3B0E}.k-licht{background:#FFF1B8;color:#4A3B00}.k-sonst{background:var(--sc-highest);color:var(--on-sv)}
+.k-erdung{background:#D9F0C9;color:#1F3B0E}.k-kommu{background:#F6D9F1;color:#4A1242}.k-pausch{background:#E6E8C4;color:#373A0B}.k-licht{background:#FFF1B8;color:#4A3B00}.k-sonst{background:var(--sc-highest);color:var(--on-sv)}
 .mat-w{align-items:center} .mat-wn{display:flex;align-items:center;gap:4px} .mat-wn .tf{flex:1}
 </style>
 </head>
@@ -1785,7 +1785,9 @@ document.addEventListener("click",e=>{
     const unten=vh-r.bottom-12, oben=r.top-12, voll=m.scrollHeight, h=Math.min(voll,264,Math.max(unten,oben));
     m.style.left=Math.max(8,r.left)+"px"; m.style.width=Math.min(r.width,innerWidth-16)+"px"; m.style.maxHeight=h+"px";
     m.style.top=(unten>=Math.min(voll,160)||unten>=oben?r.bottom+6:r.top-6-h)+"px"; };
-  const zeig=i=>{ const q=i.value.trim().toLowerCase(), L=werte(i).filter(v=>v.toLowerCase()!==q&&(!q||v.toLowerCase().includes(q))).slice(0,40);
+  /* Suchwörter einzeln und in beliebiger Reihenfolge; „3x1,5“ findet auch „3×1,5“ */
+  const vn=t=>String(t).toLowerCase().replace(/(\d)\s*[x×]\s*(?=\d)/g,"$1×");
+  const zeig=i=>{ const q=i.value.trim().toLowerCase(), W=vn(q).split(/\s+/).filter(Boolean), L=werte(i).filter(v=>{ const n=vn(v); return v.toLowerCase()!==q&&W.every(w=>n.includes(w)); }).slice(0,40);
     if(!L.length){ $("#vlist")?.remove(); return; }
     let m=$("#vlist"); if(!m){ m=document.createElement("div"); m.id="vlist"; m.className="vl"; m.setAttribute("role","listbox"); document.body.appendChild(m); }
     inp=i; hl=-1;
