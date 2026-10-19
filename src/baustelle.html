@@ -1124,7 +1124,13 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 
 /* ===== Editor-Kopf (Notiz, Übergabe): Werkzeuge oben wie bei Apple, Papierkorb, Fertig – bleibt oben stehen ===== */
 .edk{display:flex;align-items:center;gap:10px;margin:4px 0 16px}
-@media (min-width:744px){ .edk{position:sticky;top:max(var(--tbh,0px),var(--tbmin));z-index:6;background:var(--surface);margin:0 -12px 12px;padding:10px 12px 12px} }
+.edk-platz{display:none}
+/* iPad/PC: Kopf fest unter der Kopfleiste (fixed statt sticky – sticky ruckelt auf dem iPad beim Scrollen mit) */
+@media (min-width:744px){
+  .edk-platz{display:block;height:84px}
+  .edk{position:fixed;top:max(var(--tbh,0px),var(--tbmin));left:0;right:0;z-index:19;height:76px;margin:0;box-sizing:border-box;background:var(--surface);
+    padding:10px max(calc(16px + env(safe-area-inset-right,0px)),calc((100vw - 880px)/2)) 14px max(calc(16px + env(safe-area-inset-left,0px)),calc((100vw - 880px)/2))}
+}
 .edk-t{flex:1;min-width:0} .edk-t h1{margin:0;font-size:24px;font-weight:800;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .edk-t p{margin:2px 0 0;font-size:14px;font-weight:600;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .edk-tools{display:flex;gap:2px;padding:4px;border-radius:26px;background:var(--sc-high);flex:none}
@@ -1980,7 +1986,7 @@ function edKopf(t,s){
     del=`<button class="edk-del" data-act="nDelAsk" aria-label="Notiz löschen" title="Notiz löschen">${icon("del")}</button>`; }
   else if(nav.v==="eintrag"&&entw){ const da=entw.id&&DB.eintraege.has(entw.id), neu=entw._neu||!da; tools=tool("entwFoto","","cam","Foto aufnehmen");
     del=`<button class="edk-del" data-act="${neu?"entwVerwerfenAsk":"eintragDelAsk"}" aria-label="${neu?"Übergabe verwerfen":"Übergabe löschen"}" title="${neu?"Übergabe verwerfen":"Übergabe löschen"}">${icon("del")}</button>`; }
-  return `<div class="edk"><button class="sk-zur" data-act="skZurueck" aria-label="Zurück" title="Zurück">${icon("back")}</button>
+  return `<div class="edk-platz" aria-hidden="true"></div><div class="edk"><button class="sk-zur" data-act="skZurueck" aria-label="Zurück" title="Zurück">${icon("back")}</button>
   <div class="edk-t"><h1>${esc(t)}</h1>${s?`<p>${esc(s)}</p>`:""}</div>
   ${tools?`<div class="edk-tools" role="toolbar" aria-label="Hinzufügen">${tools}</div>`:""}${del}
   <button class="edk-fertig" data-act="edFertig">Fertig</button></div>`; }
