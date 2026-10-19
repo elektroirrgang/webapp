@@ -575,7 +575,7 @@ html.standalone .app-weiter{display:none!important}html.standalone a.li.weiter{p
   #railBtn{display:grid;margin-right:4px}
   .navbar{top:var(--kopf,calc(64px + env(safe-area-inset-top,0px)));background:var(--surface);padding-top:12px}
   .topbar{position:fixed;top:0;left:0;right:0}
-  main{padding-top:calc(var(--tbh,64px) + 8px)}
+  main{padding-top:calc(max(var(--tbh,0px), var(--tbmin)) + 8px)}
   .nav-head{display:none!important}
   body.has-nav .topbar,body.rail-open.has-nav .topbar{margin-left:0}
   body.has-nav .tabs{margin-left:88px}
@@ -589,7 +589,7 @@ html.standalone .app-weiter{display:none!important}html.standalone a.li.weiter{p
 @media (min-width:744px){
   #railBtn,.nav-head{display:none!important}
   .topbar{position:fixed;top:0;left:0;right:0;margin-left:0!important;background:var(--surface)}
-  body.has-nav main,body.rail-open.has-nav main,main{margin-left:0!important;padding-bottom:48px!important}
+  body.has-nav main,body.rail-open.has-nav main,main{margin-left:0!important;padding-bottom:calc(48px + env(safe-area-inset-bottom,0px))!important}
   .tb-row{height:64px;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
   .tb-title{visibility:hidden}
   #menuBtn{order:1}#avBtn{order:2}
@@ -727,7 +727,7 @@ html,body{overscroll-behavior-y:none}
 
 /* iPad/PC: Erfassungsseiten (Ladestation, Auftrag, Abschluss) */
 @media all{
-  .stabs{position:sticky;top:var(--tbh,72px);z-index:5;display:flex;gap:4px;width:max-content;max-width:100%;margin:-4px 0 20px;padding:4px;border-radius:24px;background:var(--sc-high);box-shadow:0 0 0 10px var(--surface)}
+  .stabs{position:sticky;top:max(var(--tbh,0px), var(--tbmin));z-index:5;display:flex;gap:4px;width:max-content;max-width:100%;margin:-4px 0 20px;padding:4px;border-radius:24px;background:var(--sc-high);box-shadow:0 0 0 10px var(--surface)}
   .stabs .tab{flex:none;height:40px;max-width:none;padding:0 20px;border-radius:20px;font-size:15px;font-weight:650;color:var(--on-sv);transition:background .2s,color .2s}
   .stabs .tab .tl::after{display:none!important}
   .stabs .tab[aria-selected="true"]{background:var(--surface);color:var(--on-surface);box-shadow:0 1px 3px rgba(0,0,0,.18)}
@@ -745,13 +745,13 @@ html,body{overscroll-behavior-y:none}
 @media (min-width:744px){:root[data-theme="dark"] .stabs .tab[aria-selected="true"]{background:var(--on-surface);color:var(--surface)}}
 
 @media (min-width:744px){
-  .stabs-band{position:sticky;top:var(--tbh,72px);z-index:5;background:var(--surface);margin:-8px -12px 12px;padding:4px 12px 8px}
+  .stabs-band{position:sticky;top:max(var(--tbh,0px), var(--tbmin));z-index:5;background:var(--surface);margin:-8px -12px 12px;padding:4px 12px 8px}
   .stabs{position:static!important;margin:0!important;box-shadow:none!important}
 }
 
 @media (min-width:744px){
   .sk .stabs{flex:none;margin-top:2px!important;height:48px}
-  .sk:has(.spick){position:sticky;top:var(--tbh,72px);z-index:5;background:var(--surface);margin:0 -12px 12px!important;padding:12px 12px 8px}
+  .sk:has(.spick){position:sticky;top:max(var(--tbh,0px), var(--tbmin));z-index:5;background:var(--surface);margin:0 -12px 12px!important;padding:12px 12px 8px}
 }
 
 @media (min-width:744px){
@@ -1114,6 +1114,13 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .k-leitung{background:#0E3A5C;color:#BFE0FF}:root:not([data-theme="light"]) .k-schutz{background:#5C1A17;color:#FFC9C2}:root:not([data-theme="light"]) .k-verteiler{background:#3A2F66;color:#DCD0FF}:root:not([data-theme="light"]) .k-klemmen{background:#4D3300;color:#FFDCA3}:root:not([data-theme="light"]) .k-dosen{background:#343A42;color:#D8DDE4}:root:not([data-theme="light"]) .k-schalter{background:#0F4A43;color:#B5EDE4}:root:not([data-theme="light"]) .k-kommu{background:#4F1846;color:#F7C8EE}:root:not([data-theme="light"]) .k-rohr{background:#4A3A1C;color:#EBD9B5}:root:not([data-theme="light"]) .k-befest{background:#403529;color:#E3D7C8}:root:not([data-theme="light"]) .k-erdung{background:#24451A;color:#C7EBB0}:root:not([data-theme="light"]) .k-licht{background:#4D4000;color:#FFE88A}:root:not([data-theme="light"]) .k-pausch{background:#3E4112;color:#E2E5A8}}
 :root[data-theme="dark"] .k-leitung{background:#0E3A5C;color:#BFE0FF}:root[data-theme="dark"] .k-schutz{background:#5C1A17;color:#FFC9C2}:root[data-theme="dark"] .k-verteiler{background:#3A2F66;color:#DCD0FF}:root[data-theme="dark"] .k-klemmen{background:#4D3300;color:#FFDCA3}:root[data-theme="dark"] .k-dosen{background:#343A42;color:#D8DDE4}:root[data-theme="dark"] .k-schalter{background:#0F4A43;color:#B5EDE4}:root[data-theme="dark"] .k-kommu{background:#4F1846;color:#F7C8EE}:root[data-theme="dark"] .k-rohr{background:#4A3A1C;color:#EBD9B5}:root[data-theme="dark"] .k-befest{background:#403529;color:#E3D7C8}:root[data-theme="dark"] .k-erdung{background:#24451A;color:#C7EBB0}:root[data-theme="dark"] .k-licht{background:#4D4000;color:#FFE88A}:root[data-theme="dark"] .k-pausch{background:#3E4112;color:#E2E5A8}.k-licht{background:#FFF1B8;color:#4A3B00}.k-sonst{background:var(--sc-highest);color:var(--on-sv)}
 .mat-w{align-items:center} .mat-wn{display:flex;align-items:center;gap:4px} .mat-wn .tf{flex:1}
+
+/* Kopfleiste: Mindesthöhe inkl. Statusleiste, falls die JS-Messung beim Start der Home-Bildschirm-App zu früh lief */
+:root{--tbmin:calc(env(safe-area-inset-top,0px) + 64px)}
+@media (min-width:744px){:root{--tbmin:calc(env(safe-area-inset-top,0px) + 72px)}}
+.btn-del{display:inline-flex;align-items:center;gap:8px;height:48px;margin-top:20px;padding:0 20px 0 16px;border:0;border-radius:14px;background:var(--err-c);color:var(--on-err-c);font:inherit;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn-del .ic{width:20px;height:20px}
+.btn-del:active{filter:brightness(.92)}
 </style>
 </head>
 <body class="is-list">
@@ -1956,7 +1963,7 @@ function eintragView(){
     <div class="fotos e-fotos">${fs.map(id=>{ const src=fotoCache.get(id); return src?`<button class="foto" data-act="entwFotoShow" data-id="${id}"><img src="${src}" alt=""></button>`:""; }).join("")}
       ${fs.length<8?`<button class="foto leer" data-act="entwFoto">${icon("cam")}<span class="fl">Foto</span></button>`:""}</div></section>
     ${vor?`<details class="vorher"><summary>${icon("doc")}<span>Letzte Übergabe: ${esc(tagText(vor.datum))} · ${esc(vonText(vor))}</span>${icon("drop")}</summary>${eintragKarte(vor,false)}</details>`:""}
-    ${e.id&&DB.eintraege.has(e.id)&&canEdit(DB.eintraege.get(e.id))?`<button class="btn-text danger" data-act="eintragDelAsk" style="margin-top:16px">${icon("del")}Übergabe löschen</button>`:""}
+    ${e.id&&DB.eintraege.has(e.id)&&canEdit(DB.eintraege.get(e.id))?`<button class="btn-del" data-act="eintragDelAsk">${icon("del")}Übergabe löschen</button>`:""}
   </div>`;
 }
 function entwLesen(){ if(!entw) return; $("#app").querySelectorAll("[data-f]").forEach(el=>entw[el.dataset.f]=el.value); matLesen(); }
@@ -2149,7 +2156,7 @@ function notizView(){
       <button data-act="nAdd" data-v="foto">${icon("cam")}<span>Foto</span></button></div>
     <div class="n-meta">${sf("nBaustelle","Zur Baustelle (optional)",e.baustelleId||"",[["","Keine"],...bs.map(b=>[b.id,b.name])],{form:true})}
       <p class="n-stand"><span>${icon(SICHT_IC[e.sicht])}${esc(sichtText(e))}</span> · <span id="nStand">${DB.notizen.has(e.id)?"Automatisch gespeichert":"Wird automatisch gespeichert"}</span></p></div>
-    ${DB.notizen.has(e.id)?`<button class="btn-text danger" data-act="nDelAsk" style="margin-top:8px">${icon("del")}Notiz löschen</button>`:""}</div>`;
+    ${DB.notizen.has(e.id)?`<button class="btn-del" data-act="nDelAsk">${icon("del")}Notiz löschen</button>`:""}</div>`;
 }
 function nBlock(id){ return nEntw&&nEntw.bloecke.find(b=>b.id===id); }
 function nRender(fokus){ const y=scrollY; render(); scrollTo(0,y); if(fokus){ const e=$(fokus); if(e){ e.focus(); if(e.setSelectionRange) try{ e.setSelectionRange(e.value.length,e.value.length); }catch(x){} } } nGrow(); }
@@ -2441,7 +2448,7 @@ $("#backBtn").addEventListener("click",zurueck);
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeOverlays(); if(e.key==="Enter"&&e.target.matches(".li[role=button]")) e.target.click(); });
 window.addEventListener("scroll",()=>{ $("#topbar").classList.toggle("scrolled",scrollY>4); document.body.classList.toggle("fab-klein",scrollY>60); },{passive:true});
 
-try{ const kopf=()=>{ const t=$("#topbar"), r=t&&t.querySelector(".tb-row"); if(!t||!r) return; const s=document.documentElement.style; s.setProperty("--tbh",t.offsetHeight+"px"); s.setProperty("--kopf",(r.offsetTop+r.offsetHeight)+"px"); }; kopf(); if(window.ResizeObserver) new ResizeObserver(kopf).observe($("#topbar")); addEventListener("resize",kopf); }catch(e){}
+try{ const kopf=()=>{ const t=$("#topbar"), r=t&&t.querySelector(".tb-row"); if(!t||!r) return; const s=document.documentElement.style; s.setProperty("--tbh",Math.ceil(t.getBoundingClientRect().height)+"px"); s.setProperty("--kopf",(r.offsetTop+r.offsetHeight)+"px"); }; kopf(); if(window.ResizeObserver) new ResizeObserver(kopf).observe($("#topbar"),{box:"border-box"}); ["resize","orientationchange","pageshow"].forEach(ev=>addEventListener(ev,kopf)); document.addEventListener("visibilitychange",kopf); if(window.visualViewport) visualViewport.addEventListener("resize",kopf); [150,500,1500].forEach(ms=>setTimeout(kopf,ms)); }catch(e){}
 $("#railBtn").innerHTML=icon(railOpen?"menuOpen":"menu"); backSetzen(); $("#menuBtn").innerHTML=icon("more");
 if("serviceWorker" in navigator && location.protocol==="https:"){
   const hatteSW=!!navigator.serviceWorker.controller;

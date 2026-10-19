@@ -587,7 +587,7 @@ html.standalone .app-weiter{display:none!important}html.standalone a.li.weiter{p
   #railBtn{display:grid;margin-right:4px}
   .navbar{top:var(--kopf,calc(64px + env(safe-area-inset-top,0px)));background:var(--surface);padding-top:12px}
   .topbar{position:fixed;top:0;left:0;right:0}
-  main{padding-top:calc(var(--tbh,64px) + 8px)}
+  main{padding-top:calc(max(var(--tbh,0px), var(--tbmin)) + 8px)}
   .nav-head{display:none!important}
   body.has-nav .topbar,body.rail-open.has-nav .topbar{margin-left:0}
   body.has-nav .tabs{margin-left:88px}
@@ -601,7 +601,7 @@ html.standalone .app-weiter{display:none!important}html.standalone a.li.weiter{p
 @media (min-width:744px){
   #railBtn,.nav-head{display:none!important}
   .topbar{position:fixed;top:0;left:0;right:0;margin-left:0!important;background:var(--surface)}
-  body.has-nav main,body.rail-open.has-nav main,main{margin-left:0!important;padding-bottom:48px!important}
+  body.has-nav main,body.rail-open.has-nav main,main{margin-left:0!important;padding-bottom:calc(48px + env(safe-area-inset-bottom,0px))!important}
   .tb-row{height:64px;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
   .tb-title{visibility:hidden}
   #menuBtn{order:1}#avBtn{order:2}
@@ -739,7 +739,7 @@ html,body{overscroll-behavior-y:none}
 
 /* iPad/PC: Erfassungsseiten (Ladestation, Auftrag, Abschluss) */
 @media all{
-  .stabs{position:sticky;top:var(--tbh,72px);z-index:5;display:flex;gap:4px;width:max-content;max-width:100%;margin:-4px 0 20px;padding:4px;border-radius:24px;background:var(--sc-high);box-shadow:0 0 0 10px var(--surface)}
+  .stabs{position:sticky;top:max(var(--tbh,0px), var(--tbmin));z-index:5;display:flex;gap:4px;width:max-content;max-width:100%;margin:-4px 0 20px;padding:4px;border-radius:24px;background:var(--sc-high);box-shadow:0 0 0 10px var(--surface)}
   .stabs .tab{flex:none;height:40px;max-width:none;padding:0 20px;border-radius:20px;font-size:15px;font-weight:650;color:var(--on-sv);transition:background .2s,color .2s}
   .stabs .tab .tl::after{display:none!important}
   .stabs .tab[aria-selected="true"]{background:var(--surface);color:var(--on-surface);box-shadow:0 1px 3px rgba(0,0,0,.18)}
@@ -757,13 +757,13 @@ html,body{overscroll-behavior-y:none}
 @media (min-width:744px){:root[data-theme="dark"] .stabs .tab[aria-selected="true"]{background:var(--on-surface);color:var(--surface)}}
 
 @media (min-width:744px){
-  .stabs-band{position:sticky;top:var(--tbh,72px);z-index:5;background:var(--surface);margin:-8px -12px 12px;padding:4px 12px 8px}
+  .stabs-band{position:sticky;top:max(var(--tbh,0px), var(--tbmin));z-index:5;background:var(--surface);margin:-8px -12px 12px;padding:4px 12px 8px}
   .stabs{position:static!important;margin:0!important;box-shadow:none!important}
 }
 
 @media (min-width:744px){
   .sk .stabs{flex:none;margin-top:2px!important;height:48px}
-  .sk:has(.spick){position:sticky;top:var(--tbh,72px);z-index:5;background:var(--surface);margin:0 -12px 12px!important;padding:12px 12px 8px}
+  .sk:has(.spick){position:sticky;top:max(var(--tbh,0px), var(--tbmin));z-index:5;background:var(--surface);margin:0 -12px 12px!important;padding:12px 12px 8px}
 }
 
 @media (min-width:744px){
@@ -939,6 +939,10 @@ html.scroll-sperre,html.scroll-sperre body{overflow:hidden!important;overscroll-
 input[type=date],input[type=time]{text-align:left}
 input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and-time-value{text-align:left;margin:0}
 @supports (-webkit-touch-callout:none){ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;display:block;min-height:1.5em} }
+
+/* Kopfleiste: Mindesthöhe inkl. Statusleiste, falls die JS-Messung beim Start der Home-Bildschirm-App zu früh lief */
+:root{--tbmin:calc(env(safe-area-inset-top,0px) + 64px)}
+@media (min-width:744px){:root{--tbmin:calc(env(safe-area-inset-top,0px) + 72px)}}
 </style>
 </head>
 <body class="is-list">
@@ -1689,7 +1693,7 @@ $("#backBtn").addEventListener("click",zurueck);
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeOverlays(); if(e.key==="Enter"&&e.target.matches(".li[role=button]")) e.target.click(); });
 window.addEventListener("scroll",()=>{ $("#topbar").classList.toggle("scrolled",scrollY>4); document.body.classList.toggle("fab-klein",scrollY>60); },{passive:true});
 
-try{ const kopf=()=>{ const t=$("#topbar"), r=t&&t.querySelector(".tb-row"); if(!t||!r) return; const s=document.documentElement.style; s.setProperty("--tbh",t.offsetHeight+"px"); s.setProperty("--kopf",(r.offsetTop+r.offsetHeight)+"px"); }; kopf(); if(window.ResizeObserver) new ResizeObserver(kopf).observe($("#topbar")); addEventListener("resize",kopf); }catch(e){}
+try{ const kopf=()=>{ const t=$("#topbar"), r=t&&t.querySelector(".tb-row"); if(!t||!r) return; const s=document.documentElement.style; s.setProperty("--tbh",Math.ceil(t.getBoundingClientRect().height)+"px"); s.setProperty("--kopf",(r.offsetTop+r.offsetHeight)+"px"); }; kopf(); if(window.ResizeObserver) new ResizeObserver(kopf).observe($("#topbar"),{box:"border-box"}); ["resize","orientationchange","pageshow"].forEach(ev=>addEventListener(ev,kopf)); document.addEventListener("visibilitychange",kopf); if(window.visualViewport) visualViewport.addEventListener("resize",kopf); [150,500,1500].forEach(ms=>setTimeout(kopf,ms)); }catch(e){}
 $("#railBtn").innerHTML=icon(railOpen?"menuOpen":"menu"); backSetzen(); $("#menuBtn").innerHTML=icon("more");
 if("serviceWorker" in navigator && location.protocol==="https:"){
   const hatteSW=!!navigator.serviceWorker.controller;
