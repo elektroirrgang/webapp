@@ -1076,7 +1076,7 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 .mat-ck b{white-space:nowrap} .mat-ck .mat-tt{min-width:0;overflow-wrap:break-word} .mat-ck small{grid-column:2/-1;margin-top:-6px;font-size:12px;opacity:.75;text-transform:none;letter-spacing:0;font-weight:600}
 .mat-ck.alt{grid-template-columns:auto minmax(0,1fr)}
 .mat-ck{grid-template-columns:28px auto minmax(0,1fr) auto} .mat-ck.alt{grid-template-columns:auto minmax(0,1fr) auto}
-.mat-nr{display:inline-flex;align-items:center;gap:6px;flex:none;align-self:center;background:var(--surface);color:var(--on-surface);border-radius:10px;padding:6px 8px 6px 10px;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.02em;cursor:pointer;text-decoration:none!important;white-space:nowrap}
+.mat-nr{display:inline-flex;align-items:center;gap:6px;flex:none;background:var(--surface);color:var(--on-surface);border-radius:10px;padding:6px 8px 6px 10px;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.02em;cursor:pointer;text-decoration:none!important;white-space:nowrap}
 .mat-nr .ic{width:16px;height:16px;opacity:.7} .mat-nr:active{filter:brightness(.92)}
 @media (max-width:560px){ .mat-ck{grid-template-columns:28px auto minmax(0,1fr)} .mat-ck.alt{grid-template-columns:auto minmax(0,1fr)}
   .mat-ck .mat-nr{grid-column:3;justify-self:start;margin-top:-4px} .mat-ck.alt .mat-nr{grid-column:2} .ml .mat-nr .ic{display:none} .ml .mat-nr{padding:6px 9px;font-size:13px} }
@@ -1086,20 +1086,33 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 /* Materialstamm */
 .fg2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
 .mat-chips{margin:0 0 10px}
-.mat-opt{display:flex;gap:8px;justify-content:space-between;margin:0 0 12px} .mat-opt .seg{max-width:320px;flex:1 1 auto} .mat-opt .seg.mat-ans{flex:0 0 104px} .mat-ans button .ic{display:block!important;width:20px;height:20px;margin:0!important} .mat-opt .seg button{font-size:14px;padding:0 6px}
+.mat-opt{display:flex;gap:8px;justify-content:space-between;margin:0 0 12px} .mat-opt .seg.mat-ans{flex:0 0 104px} .mat-ans button .ic{display:block!important;width:20px;height:20px;margin:0!important} .mat-opt .seg button{font-size:14px;padding:0 6px}
 .mat-wplus{display:inline-flex;align-items:center;gap:6px;align-self:flex-start}
 .mat-st .sec-lbl small{font-weight:600;opacity:.7;margin-left:4px}
 .li.ml{width:100%;text-align:left;border:0;font:inherit;color:inherit}
 .ml .av{font-weight:800;font-size:15px}
 .ml-n{font-size:12px;font-weight:700;color:var(--on-sv);margin-left:6px;flex:none}
-.mk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
-.mk{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;border:0;border-radius:18px;background:var(--sc-low);padding:12px;font:inherit;color:var(--on-surface);min-height:0}
-.mk b{font-size:15px;line-height:1.3}
-.mk-u{font-size:13px;color:var(--on-sv);font-weight:600} .mk-nr{font-size:12px;color:var(--on-sv);line-height:1.35}
-.mk-kat{font-size:11px;font-weight:800;border-radius:6px;padding:2px 7px}
+/* Kacheln: Symbol oben, Name, Zweitzeile, Nummer immer unten links – alle Kacheln einer Reihe gleich hoch */
+.mk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.mk{display:flex;flex-direction:column;align-items:stretch;text-align:left;border:0;border-radius:20px;background:var(--sc-low);padding:14px 14px 12px;font:inherit;color:var(--on-surface);min-height:178px;cursor:pointer}
+.mk:hover,.mk:active{background:var(--sc)}
+.mk-top{display:flex;align-items:center;gap:8px;margin-bottom:12px;min-height:40px} .mk-top .pill{margin-left:auto} .mk-n{margin-left:auto;font-size:12px;font-weight:700;color:var(--on-sv)} .mk-top .pill + .mk-n{margin-left:6px}
+.mk-name{font-size:16px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.mk-sub{margin-top:4px;font-size:13px;color:var(--on-sv);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .mk-liste{margin-top:2px;font-size:12px}
+.mk-fuss{margin-top:auto;padding-top:12px;display:flex;align-items:center;min-height:46px}
+.mk-ohne{font-size:13px;color:var(--on-sv);opacity:.75}
+.mk-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none} .mk-ic .kic{width:24px;height:24px}
+.mk-ic.sm{width:28px;height:28px;border-radius:8px} .mk-ic.sm .kic{width:18px;height:18px}
+.li.ml .mk-ic.av{border-radius:12px;width:44px;height:44px}
+.kic{fill:none!important;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round} .kic .f{fill:currentColor;stroke:none}
+.mat-sec{display:flex;align-items:center;gap:10px} .mat-sec small{margin-left:0!important}
+.mat-chips .chip.mat-kc .kic{display:block!important;width:18px;height:18px} .mat-chips .chip small{font-size:12px;font-weight:700;opacity:.7;margin-left:2px}
+.mat-sortw{flex:0 1 380px;min-width:0} .mat-sortw .seg{max-width:none!important} .mat-opt{align-items:center}
 .k-leitung{background:#D3E9FF;color:#0B3A63}.k-schutz{background:#FFDAD6;color:#410002}.k-verteiler{background:#E7DEFF;color:#2F1F66}.k-klemmen{background:#FFE7C2;color:#4A2C00}
 .k-dosen{background:#E3E6EA;color:#2A3038}.k-schalter{background:#CFF1EC;color:#0D3F3A}.k-rohr{background:#F1E6D2;color:#47361A}.k-befest{background:#E9E2D9;color:#3B3127}
-.k-erdung{background:#D9F0C9;color:#1F3B0E}.k-kommu{background:#F6D9F1;color:#4A1242}.k-pausch{background:#E6E8C4;color:#373A0B}.k-licht{background:#FFF1B8;color:#4A3B00}.k-sonst{background:var(--sc-highest);color:var(--on-sv)}
+.k-erdung{background:#D9F0C9;color:#1F3B0E}.k-kommu{background:#F6D9F1;color:#4A1242}.k-pausch{background:#E6E8C4;color:#373A0B}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .k-leitung{background:#0E3A5C;color:#BFE0FF}:root:not([data-theme="light"]) .k-schutz{background:#5C1A17;color:#FFC9C2}:root:not([data-theme="light"]) .k-verteiler{background:#3A2F66;color:#DCD0FF}:root:not([data-theme="light"]) .k-klemmen{background:#4D3300;color:#FFDCA3}:root:not([data-theme="light"]) .k-dosen{background:#343A42;color:#D8DDE4}:root:not([data-theme="light"]) .k-schalter{background:#0F4A43;color:#B5EDE4}:root:not([data-theme="light"]) .k-kommu{background:#4F1846;color:#F7C8EE}:root:not([data-theme="light"]) .k-rohr{background:#4A3A1C;color:#EBD9B5}:root:not([data-theme="light"]) .k-befest{background:#403529;color:#E3D7C8}:root:not([data-theme="light"]) .k-erdung{background:#24451A;color:#C7EBB0}:root:not([data-theme="light"]) .k-licht{background:#4D4000;color:#FFE88A}:root:not([data-theme="light"]) .k-pausch{background:#3E4112;color:#E2E5A8}}
+:root[data-theme="dark"] .k-leitung{background:#0E3A5C;color:#BFE0FF}:root[data-theme="dark"] .k-schutz{background:#5C1A17;color:#FFC9C2}:root[data-theme="dark"] .k-verteiler{background:#3A2F66;color:#DCD0FF}:root[data-theme="dark"] .k-klemmen{background:#4D3300;color:#FFDCA3}:root[data-theme="dark"] .k-dosen{background:#343A42;color:#D8DDE4}:root[data-theme="dark"] .k-schalter{background:#0F4A43;color:#B5EDE4}:root[data-theme="dark"] .k-kommu{background:#4F1846;color:#F7C8EE}:root[data-theme="dark"] .k-rohr{background:#4A3A1C;color:#EBD9B5}:root[data-theme="dark"] .k-befest{background:#403529;color:#E3D7C8}:root[data-theme="dark"] .k-erdung{background:#24451A;color:#C7EBB0}:root[data-theme="dark"] .k-licht{background:#4D4000;color:#FFE88A}:root[data-theme="dark"] .k-pausch{background:#3E4112;color:#E2E5A8}.k-licht{background:#FFF1B8;color:#4A3B00}.k-sonst{background:var(--sc-highest);color:var(--on-sv)}
 .mat-w{align-items:center} .mat-wn{display:flex;align-items:center;gap:4px} .mat-wn .tf{flex:1}
 </style>
 </head>

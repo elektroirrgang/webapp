@@ -107,6 +107,23 @@ const MAT_KAT=[["leitung","Leitungen & Kabel"],["schutz","Schutzgeräte"],["vert
   ["schalter","Schalter & Steckdosen"],["kommu","Daten, SAT & Telefon"],["rohr","Rohr & Kanal"],["befest","Befestigung & Kleinmaterial"],["erdung","Erdung & Potentialausgleich"],["licht","Leuchten & Melder"],
   ["pausch","Geräte & Pauschalen"],["sonst","Sonstiges"]];
 const MAT_KAT_TXT=Object.fromEntries(MAT_KAT);
+/* Symbole je Kategorie (Strichzeichnung, 24er Raster) */
+const MAT_IC={
+  leitung:'<circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="8.2" r="2.4"/><circle cx="8.6" cy="14.1" r="2.4"/><circle cx="15.4" cy="14.1" r="2.4"/>',
+  schutz:'<rect x="6" y="2" width="12" height="20" rx="2.5"/><rect x="10" y="8" width="4" height="7" rx="1"/><path d="M9.5 5h5M9.5 18.5h5"/>',
+  verteiler:'<rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M3 9h18M3 15h18M9 9v6M15 9v6"/>',
+  klemmen:'<rect x="3" y="8.5" width="18" height="10.5" rx="2.5"/><path d="M7 8.5V4.5h2.5v4M10.75 8.5V4.5h2.5v4M14.5 8.5V4.5H17v4"/><circle class="f" cx="8.2" cy="14" r="1.3"/><circle class="f" cx="12" cy="14" r="1.3"/><circle class="f" cx="15.8" cy="14" r="1.3"/>',
+  dosen:'<rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><circle class="f" cx="7.6" cy="7.6" r="1.2"/><circle class="f" cx="16.4" cy="7.6" r="1.2"/><circle class="f" cx="7.6" cy="16.4" r="1.2"/><circle class="f" cx="16.4" cy="16.4" r="1.2"/><path d="M10 12h4"/>',
+  schalter:'<rect x="3" y="3" width="18" height="18" rx="4.5"/><circle cx="12" cy="12" r="5.5"/><circle class="f" cx="9.8" cy="12" r="1.1"/><circle class="f" cx="14.2" cy="12" r="1.1"/>',
+  kommu:'<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M8 16.5v-5h2v-2h4v2h2v5z"/>',
+  rohr:'<ellipse cx="6.5" cy="12" rx="2.5" ry="5.5"/><path d="M6.5 6.5h11a2.5 5.5 0 0 1 0 11h-11"/>',
+  befest:'<rect x="7.5" y="2.5" width="9" height="3.5" rx="1"/><path d="M10 6v11l2 4.5 2-4.5V6M10 10l4-1.5M10 13.5l4-1.5M10 17l4-1.5"/>',
+  erdung:'<path d="M12 3v9M4.5 12h15M7.5 16h9M10.5 20h3"/>',
+  licht:'<path d="M9.2 18h5.6M10.2 21h3.6M12 3a6 6 0 0 0-3.6 10.8c.6.5.8 1.2.8 2.2h5.6c0-1 .2-1.7.8-2.2A6 6 0 0 0 12 3z"/>',
+  pausch:'<rect x="3" y="8" width="18" height="12" rx="2.5"/><path d="M9 8V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V8M3 13.5h18M10.5 12v3h3v-3"/>',
+  sonst:'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/>'};
+const matKatIc=k=>`<svg class="ic kic" viewBox="0 0 24 24" aria-hidden="true">${MAT_IC[k]||MAT_IC.sonst}</svg>`;
+const matKatBadge=(k,cls="")=>`<span class="mk-ic k-${esc(k||"sonst")}${cls?" "+cls:""}" title="${esc(MAT_KAT_TXT[k]||"Sonstiges")}">${matKatIc(k||"sonst")}</span>`;
 const MAT_LIEF=["Sonepar","EGU","EFG","Gäfgen","Kürzel","Rexel","FEGA & Schmitt","Obeta","Zajadacz","Hornbach Profi"];
 function matKatRaten(n){ const k=String(n||"");
   if(/nym|nyy|h07|j-y|cat\.?\s?\d|kabel(?!binder|kanal|schell)|leitung|litze/i.test(k)) return "leitung";
@@ -171,21 +188,27 @@ function materialListe(){
   if(so==="haeufig") L.sort((a,b)=>(z[matNorm(b.name)]||0)-(z[matNorm(a.name)]||0)||(zul[matNorm(b.name)]||0)-(zul[matNorm(a.name)]||0)||az(a,b)); else L.sort(az);
   if(!L.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:"Keine Teile in dieser Auswahl."}</p>${q?`<div style="text-align:center"><button class="btn-tonal" data-act="matStammNeu" data-name="${esc(query)}">${icon("add")}„${esc(query)}“ anlegen</button></div>`:""}`;
   const kachel=MAT_ANS()==="kacheln", gruppiert=so==="kat"&&f==="alle"&&!q;
-  const item=m=>{ const n=z[matNorm(m.name)]||0, nr=matNummern(m);
-    return kachel?`<button class="mk" data-act="matStammOpen" data-id="${esc(m.id)}">${gruppiert?"":`<span class="mk-kat k-${esc(m.kategorie||"sonst")}">${esc(MAT_KAT_TXT[m.kategorie]||"Sonstiges")}</span>`}<b>${esc(m.name)}</b>
-        <span class="mk-u">${esc(m.einheit||"Stück")}${n?` · ${n}× benutzt`:""}</span>${matNrChip(matNr(m))}${m.listeName?`<span class="mk-nr">Liste: ${esc(m.listeName)}</span>`:""}${nr.length?`<span class="mk-nr">${esc(nr.join(" · "))}</span>`:""}${m.neu?`<span class="pill wip">neu</span>`:""}</button>`
-      :`<button class="li ml" data-act="matStammOpen" data-id="${esc(m.id)}"><span class="av k-${esc(m.kategorie||"sonst")}">${esc((MAT_KAT_TXT[m.kategorie]||"S")[0])}</span><span class="lt"><span class="h">${esc(m.name)}</span>
-        <span class="s">${esc([m.einheit||"Stück",m.listeName&&"Liste: "+m.listeName,...nr].filter(Boolean).join(" · "))}</span></span>${m.neu?pill("wip","neu"):""}${n?`<span class="ml-n">${n}×</span>`:""}${matNrChip(matNr(m))}</button>`; };
+  /* Zweitzeile: Einheit, Hersteller-Nr., andere Bestellnummern – die Hauptnummer steht im Feld unten */
+  const unter=m=>{ const nr=matNr(m); return [m.einheit||"Stück",m.herstellerNr&&`${m.hersteller?m.hersteller+" ":""}${m.herstellerNr}`,
+    ...(m.weitere||[]).filter(w=>w&&w.nr&&w.nr!==nr).map(w=>`${w.bei||"Nr."} ${w.nr}`),m.egu&&`EGU ${m.egu}`].filter(Boolean).join(" · "); };
+  const item=m=>{ const n=z[matNorm(m.name)]||0, nr=matNr(m);
+    return kachel?`<button class="mk" data-act="matStammOpen" data-id="${esc(m.id)}">
+        <span class="mk-top">${matKatBadge(m.kategorie)}${m.neu?pill("wip","neu"):""}${n?`<span class="mk-n">${n}× benutzt</span>`:""}</span>
+        <span class="mk-name">${esc(m.name)}</span>
+        <span class="mk-sub">${esc(unter(m))}</span>${m.listeName?`<span class="mk-sub mk-liste">Liste: ${esc(m.listeName)}</span>`:""}
+        <span class="mk-fuss">${nr?matNrChip(nr):`<span class="mk-ohne">Keine Nummer</span>`}</span></button>`
+      :`<button class="li ml" data-act="matStammOpen" data-id="${esc(m.id)}">${matKatBadge(m.kategorie,"av")}<span class="lt"><span class="h">${esc(m.name)}</span>
+        <span class="s">${esc([unter(m),m.listeName&&"Liste: "+m.listeName].filter(Boolean).join(" · "))}</span></span>${m.neu?pill("wip","neu"):""}${n?`<span class="ml-n">${n}×</span>`:""}${matNrChip(nr)}</button>`; };
   const block=G=>kachel?`<div class="mk-grid">${G.map(item).join("")}</div>`:`<div class="list">${G.map(item).join("")}</div>`;
-  if(so==="kat"&&f==="alle"&&!q) return MAT_KAT.map(([k,t])=>{ const G=L.filter(m=>(m.kategorie||"sonst")===k); return G.length?`<div class="sec-lbl">${esc(t)} <small>${G.length}</small></div>${block(G)}`:""; }).join("");
+  if(gruppiert) return MAT_KAT.map(([k,t])=>{ const G=L.filter(m=>(m.kategorie||"sonst")===k); return G.length?`<div class="sec-lbl mat-sec">${matKatBadge(k,"sm")}<span>${esc(t)}</span><small>${G.length}</small></div>${block(G)}`:""; }).join("");
   return `<p class="meta f-info">${L.length} Teil${L.length===1?"":"e"}</p>`+block(L);
 }
 function materialView(){ matStammSeed();
   const f=MAT_F(), {z}=matNutzung(), A=matAlle(), anz=k=>A.filter(m=>k==="neu"?m.neu:k==="haeufig"?z[matNorm(m.name)]:m.kategorie===k).length;
-  const chips=[["alle","Alle"],["haeufig","Häufig benutzt"],["neu","Neu"],...MAT_KAT].map(([k,t])=>{ const n=k==="alle"?0:anz(k); return k!=="alle"&&!n&&f!==k?"":`<button class="chip" data-act="matF" data-v="${k}" aria-pressed="${f===k}">${icon("check")}${esc(t)}${k==="alle"?"":` (${n})`}</button>`; }).join("");
+  const chips=[["alle","Alle"],["haeufig","Häufig benutzt"],["neu","Neu"],...MAT_KAT].map(([k,t])=>{ const n=k==="alle"?0:anz(k); return k!=="alle"&&!n&&f!==k?"":`<button class="chip${MAT_KAT_TXT[k]?" mat-kc":""}" data-act="matF" data-v="${k}" aria-pressed="${f===k}">${MAT_KAT_TXT[k]?matKatIc(k):""}${esc(t)}${k==="alle"?"":`<small>${n}</small>`}</button>`; }).join("");
   return `<div class="narrow mat-st">${searchBar("Teil oder Nummer suchen")}
     <div class="chips filt mat-chips">${chips}</div>
-    <div class="mat-opt">${f==="haeufig"?"":seg("matSort",MAT_SORT(),[["kat","Kategorie"],["az","A–Z"],["haeufig","Häufig"]])}<div class="seg mat-ans" role="group">${[["liste","ansListe","Liste"],["kacheln","ansKachel","Kacheln"]].map(([v,ic,l])=>`<button type="button" data-act="matAns" data-v="${v}" aria-pressed="${MAT_ANS()===v}" aria-label="${l}" title="${l}">${icon(ic)}</button>`).join("")}</div></div>
+    <div class="mat-opt"><div class="mat-sortw">${f==="haeufig"?"":seg("matSort",MAT_SORT(),[["kat","Kategorie"],["az","A–Z"],["haeufig","Häufig"]])}</div><div class="seg mat-ans" role="group">${[["liste","ansListe","Liste"],["kacheln","ansKachel","Kacheln"]].map(([v,ic,l])=>`<button type="button" data-act="matAns" data-v="${v}" aria-pressed="${MAT_ANS()===v}" aria-label="${l}" title="${l}">${icon(ic)}</button>`).join("")}</div></div>
     <div id="res">${materialListe()}</div>
     <p class="hint">Gemeinsame Materialliste für alle, mit der Firmen-Materialliste (Stand ${esc(MAT_FIRMA_STAND)}) samt Sonepar-, EFG- und Gäfgen-Nummern. Teile, die in einer Übergabe neu eingetippt werden, erscheinen hier als „neu“ – kurz prüfen, Kategorie und Nummern ergänzen.</p></div>`; }
 let matEd=null;
