@@ -964,6 +964,14 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 /* Kopfleiste: Mindesthöhe inkl. Statusleiste, falls die JS-Messung beim Start der Home-Bildschirm-App zu früh lief */
 :root{--tbmin:calc(env(safe-area-inset-top,0px) + 64px)}
 @media (min-width:744px){:root{--tbmin:calc(env(safe-area-inset-top,0px) + 72px)}}
+
+/* Speicherstatus (gleich wie in der Baustellen-App) */
+.edk-st{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:18px;background:var(--sc-high);font-size:13px;font-weight:650;color:var(--on-sv);white-space:nowrap;flex:none}
+.sk .edk-st{margin-top:8px}
+.edk-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+.edk-st[data-s="speichert"] .edk-dot{background:var(--wip,#E8A317);animation:edPuls 1s ease-in-out infinite}
+@keyframes edPuls{50%{opacity:.3}}
+@media (max-width:743.98px){ .sk .edk-st{display:none} }
 </style>
 </head>
 <body class="is-list">
@@ -1198,7 +1206,9 @@ function saveNow(){
   setSub(SYNC_ON?"Gespeichert · wird abgeglichen":"Gespeichert auf diesem Gerät"); syncSoon();
 }
 let saveTxt="Gespeichert auf diesem Gerät";
-function setSub(t){ saveTxt=t; const e=$("#saveState"); if(e) e.textContent=t; }
+function setSub(t){ saveTxt=t; const e=$("#saveState"); if(e) e.textContent=t; const p=$("#edStand"); if(p){ const st=/^Unge/.test(t)?"speichert":"ok"; p.dataset.s=st; p.lastElementChild.textContent=st==="ok"?"Gespeichert":"Speichert …"; } }
+/* Speicherstatus im Seitenkopf der Prüfung (wie Notiz und Übergabe in der Baustellen-App): die Prüfung speichert beim Tippen selbst */
+const edPill=()=>{ const st=/^Unge/.test(saveTxt||"")?"speichert":"ok"; return `<span class="edk-st" id="edStand" data-s="${st}" role="status"><span class="edk-dot"></span><span>${st==="ok"?"Gespeichert":"Speichert …"}</span></span>`; };
 function toast(t,action,fn){ const el=$("#toast"); el.innerHTML=`<span>${esc(t)}</span>${action?`<button type="button">${esc(action)}</button>`:""}`; el.hidden=false;
   if(action) el.querySelector("button").onclick=()=>{ el.hidden=true; fn(); };
   clearTimeout(toast._t); toast._t=setTimeout(()=>el.hidden=true,action?6000:2800); }
@@ -1738,7 +1748,8 @@ addEventListener("resize",()=>{ if(PV){ clearTimeout(PV.rt); PV.rt=setTimeout(pv
 })();
 const spickListe=()=>{ const sx=cur.s[nav.si]; return [["geraet","Gerät",null],...Array.from({length:sx.lps},(_,i)=>[`lp${i}`,sx.lps>1?`Ladepunkt ${i+1}`:"Ladepunkt",lpState(sx,i)])]; };
 const SP_TXT={ok:"i.O.",bad:"Mängel",wip:"in Arbeit",open:"offen"};
-const skRechts=()=>{ if(nav.v!=="saeule"||!cur||!cur.s[nav.si]) return ""; const st=nav.st||"geraet", L=spickListe(), a=L.find(x=>x[0]===st)||L[0];
+const skRechts=()=>(cur&&["projekt","saeulen","saeule","abschluss"].includes(nav.v)&&canEdit(cur)?edPill():"")+skRechtsSpick();
+const skRechtsSpick=()=>{ if(nav.v!=="saeule"||!cur||!cur.s[nav.si]) return ""; const st=nav.st||"geraet", L=spickListe(), a=L.find(x=>x[0]===st)||L[0];
   return `<button class="spick" data-act="spick" aria-haspopup="menu" aria-label="Bereich wählen">${a[2]?`<i class="sd ${a[2]}" data-lpres="${a[0]}"></i>`:`<span class="spick-ic">${icon("wallbox")}</span>`}<span class="spick-t">${a[1]}</span><span class="spick-p">${icon("chev")}</span></button>`; };
 function spickOeffnen(b){ const st=nav.st||"geraet";
   $("#menu").innerHTML=spickListe().map(([k,l,r])=>`<button class="mi spick-mi${k===st?" an":""}" role="menuitem" data-act="sub" data-v="${k}">${r?`<i class="sd ${r}"></i>`:`<span class="spick-ic">${icon("wallbox")}</span>`}<span>${l}</span>${r?`<small>${SP_TXT[r]||""}</small>`:""}${k===st?icon("check"):""}</button>`).join("");

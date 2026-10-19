@@ -1121,6 +1121,69 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 .btn-del{display:inline-flex;align-items:center;gap:8px;height:48px;margin-top:20px;padding:0 20px 0 16px;border:0;border-radius:14px;background:var(--err-c);color:var(--on-err-c);font:inherit;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .btn-del .ic{width:20px;height:20px}
 .btn-del:active{filter:brightness(.92)}
+
+/* ===== Editor-Kopf (Notiz, Übergabe): Status, Mehr, Fertig – bleibt oben stehen ===== */
+.edk{display:flex;align-items:center;gap:12px;margin:4px 0 16px}
+@media (min-width:744px){ .edk{position:sticky;top:max(var(--tbh,0px),var(--tbmin));z-index:6;background:var(--surface);margin:0 -12px 12px;padding:10px 12px 12px} }
+.edk-t{flex:1;min-width:0} .edk-t h1{margin:0;font-size:24px;font-weight:800;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.edk-t p{margin:2px 0 0;font-size:14px;font-weight:600;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.edk-st{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:18px;background:var(--sc-high);font-size:13px;font-weight:650;color:var(--on-sv);white-space:nowrap;flex:none}
+.edk-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+.edk-st[data-s="speichert"] .edk-dot{background:var(--wip);animation:edPuls 1s ease-in-out infinite} .edk-st[data-s="leer"] .edk-dot{background:var(--on-sv);opacity:.45}
+@keyframes edPuls{50%{opacity:.3}}
+.edk-mehr{width:44px;height:44px;border-radius:50%;background:var(--sc-high)!important;flex:none}
+.edk-fertig{flex:none;height:48px;padding:0 26px;border:0;border-radius:16px;background:var(--fab);color:var(--on-fab);font:inherit;font-size:16px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.edk-fertig:active{filter:brightness(.92)}
+
+/* ===== Notiz-Editor (M3, iPad zuerst) ===== */
+.nedit{padding-bottom:150px}
+.nedit .n-titel{font-size:30px;font-weight:800;letter-spacing:-.01em;padding:2px 2px 4px;line-height:1.25}
+.nedit .n-titel::placeholder{color:var(--on-sv);opacity:.6}
+.n-chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 20px}
+.n-chip{position:relative;display:inline-flex;align-items:center;gap:8px;height:40px;max-width:100%;padding:0 10px 0 12px;border:0;border-radius:12px;background:var(--sc-high);color:var(--on-sv);font:inherit;font-size:14px;font-weight:650;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.n-chip.an{color:var(--on-surface)} .n-chip .ic{width:18px;height:18px;flex:none} .n-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.n-chip select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px;border:0}
+.nedit .nbl{display:flex;flex-direction:column;gap:12px}
+.nedit .nb{position:relative;border-radius:22px;background:var(--sc)}
+.nedit .nb.nt:focus-within{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--primary) 70%,transparent)}
+.nedit .n-ta{background:transparent;border-radius:22px;padding:16px 56px 16px 20px;font-size:17px;line-height:1.55;min-height:58px}
+.nedit .n-ta:focus{outline:none}
+.nedit .n-ta::placeholder{color:var(--on-sv);opacity:.7}
+.nb-m{position:absolute;top:9px;right:9px;width:40px;height:40px;border:0;border-radius:50%;background:transparent;color:var(--on-sv);display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.nb-m .ic{width:22px;height:22px} .nb-m:active{background:var(--sc-high)}
+.nedit .nb.nz .nb-m,.nedit .nb.nf .nb-m{background:color-mix(in srgb,var(--surface) 80%,transparent)}
+.nedit .nl{background:var(--sc);padding:8px 10px 10px}
+.nb-kopf{display:flex;align-items:center;gap:16px;min-height:40px;padding:0 48px 2px 8px;font-size:13px;font-weight:700;color:var(--on-sv)}
+.nb-art{display:inline-flex;align-items:center;gap:6px} .nb-art .ic{width:18px;height:18px}
+.nb-fort{display:inline-flex;align-items:center;gap:8px;font-weight:650}
+.nb-bar{display:inline-block;width:88px;height:6px;border-radius:3px;background:var(--sc-highest);overflow:hidden} .nb-bar i{display:block;height:100%;border-radius:3px;background:var(--primary)}
+.nedit .ni{min-height:52px;gap:6px;padding:0 4px 0 2px;border-radius:14px}
+.nedit .ni:focus-within{background:var(--sc-high)}
+.nedit .ni input{font-size:17px;padding:10px 2px}
+.nedit .ni input:focus{box-shadow:none}
+.nedit .ni input::placeholder{color:var(--on-sv);opacity:.7}
+.n-cb{border:0!important;background:var(--sc-highest)!important;border-radius:8px!important;width:28px!important;height:28px!important}
+.n-cb[aria-pressed="true"]{background:var(--primary)!important;color:var(--on-primary)!important}
+.ni-nr:empty{display:none} .ni-nr{flex:none} .ni-nr .mat-nr{background:var(--sc-highest);font-size:13px;padding:5px 8px 5px 10px}
+.nedit .ni .ni-x{opacity:0} .nedit .ni:focus-within .ni-x{opacity:.75}
+.ni-neu{width:100%;border:0;background:transparent;color:var(--on-sv);font:inherit;font-size:17px;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ni-neu:active{background:var(--sc-high)}
+.ni-plus{width:28px;height:28px;margin:0 6px;display:grid;place-items:center;color:var(--primary);flex:none} .ni-plus .ic{width:22px;height:22px}
+.nl.liste .ni-plus{margin:0 2px}
+.nl.hat-leer .ni-neu{display:none}
+@media (max-width:600px){ .nedit .ni{flex-wrap:wrap} .nedit .ni input{flex:1 1 0} .nedit .ni .ni-nr{order:5;flex-basis:100%;padding:0 0 8px 46px;margin-top:-6px} .nedit .nl.liste .ni .ni-nr{padding-left:22px} }
+.n-erl{display:flex;align-items:center;gap:6px;border:0;background:transparent;color:var(--on-sv);font:inherit;font-size:14px;font-weight:700;padding:12px 8px 6px;cursor:pointer}
+.n-erl .ic{width:20px;height:20px;transition:transform .2s} .n-erl[aria-expanded="false"] .ic{transform:rotate(-90deg)}
+.n-erl-l .ni{opacity:.7}
+.nedit .n-papier{border:0;border-radius:22px}
+.nedit .n-foto{border-radius:22px}
+.n-ro a{color:var(--primary);font-weight:650}
+@media (min-width:744px){
+  .nedit .n-add{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:15;margin:0;padding:6px;gap:4px;border-radius:30px;background:var(--sc-highest);box-shadow:0 8px 24px rgba(0,0,0,.28),0 2px 6px rgba(0,0,0,.14);overflow:visible;max-width:calc(100vw - 32px)}
+  .nedit .n-add button{flex:none;flex-direction:row;gap:8px;height:48px;min-width:0;padding:0 18px;border-radius:24px;font-size:15px;font-weight:650;background:transparent!important;color:var(--on-surface)}
+  .nedit .n-add button:active,.nedit .n-add button:hover{background:color-mix(in srgb,var(--on-surface) 9%,transparent)!important}
+  .nedit .n-add .ic{width:22px;height:22px}
+}
 </style>
 </head>
 <body class="is-list">
@@ -1349,7 +1412,7 @@ function applyTheme(t){
   const dark = t==="dark" || (t==="auto" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
   document.querySelector('meta[name="theme-color"]').setAttribute("content", dark?"#131314":"#FCFCFD"); if(window.sbFarbe) sbFarbe();
 }
-const IC={cal:"M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z",moreH:"M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",swapV:"M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z",swapH:"M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z",
+const IC={hoch:"M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z",runter:"M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z",cal:"M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z",moreH:"M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",swapV:"M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z",swapH:"M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z",
   notiz:"M19 3H4.99C3.89 3 3 3.9 3 5l.01 14c0 1.1.89 2 1.99 2h10l6-6V5c0-1.1-.9-2-2-2zM7 8h10v2H7V8zm5 6H7v-2h5v2zm2 5.5V14h5.5L14 19.5z",
   stift:"M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 0 0 0-1.41z",
   checkliste:"M22 7h-9v2h9V7zm0 8h-9v2h9v-2zM5.54 11L2 7.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 11zm0 8L2 15.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 19z",
@@ -1813,7 +1876,7 @@ document.addEventListener("click",e=>{
     m.style.top=(unten>=Math.min(voll,160)||unten>=oben?r.bottom+6:r.top-6-h)+"px"; };
   /* Suchwörter einzeln und in beliebiger Reihenfolge; „3x1,5“ findet auch „3×1,5“ */
   const vn=t=>String(t).toLowerCase().replace(/(\d)\s*[x×]\s*(?=\d)/g,"$1×");
-  const zeig=i=>{ const q=i.value.trim().toLowerCase(), W=vn(q).split(/\s+/).filter(Boolean), L=werte(i).filter(v=>{ const n=vn(v); return v.toLowerCase()!==q&&W.every(w=>n.includes(w)); }).slice(0,40);
+  const zeig=i=>{ const q=i.value.trim().toLowerCase(), W=vn(q).split(/\s+/).filter(Boolean); if(!q&&i.dataset.vl==="dl-mat"){ $("#vlist")?.remove(); return; } const L=werte(i).filter(v=>{ const n=vn(v); return v.toLowerCase()!==q&&W.every(w=>n.includes(w)); }).slice(0,40);
     if(!L.length){ $("#vlist")?.remove(); return; }
     let m=$("#vlist"); if(!m){ m=document.createElement("div"); m.id="vlist"; m.className="vl"; m.setAttribute("role","listbox"); document.body.appendChild(m); }
     inp=i; hl=-1;
@@ -1874,7 +1937,7 @@ function render(){
   else if(nav.v==="start"){ body=startView(); fab=["neueBaustelle","Baustelle","add"]; }
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=["newKunde","Kunde","add"]; }
   else if(nav.v==="notizen"){ title="Notizen"; body=notizenView(); fab=["neueNotiz","Notiz","add"]; }
-  else if(nav.v==="notiz"){ const ro=!istMeine(nEntw), b=nEntw.baustelleId&&DB.baustellen.get(nEntw.baustelleId); title=ro?"Notiz":DB.notizen.has(nEntw.id)?"Notiz bearbeiten":"Neue Notiz"; sub=b?b.name:""; body=notizView(); fab=ro?null:["nSpeichern","Speichern","check"]; }
+  else if(nav.v==="notiz"){ const ro=!istMeine(nEntw); title=ro||DB.notizen.has(nEntw.id)?"Notiz":"Neue Notiz"; sub=ro?`Von ${vonText(nEntw)}`:""; body=notizView(); fab=ro?null:["edFertig","Fertig","check"]; }
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
   else if(nav.v==="material"){ title="Material"; body=materialView(); fab=["matStammNeu","Material","add"]; }
   else if(nav.v==="mehr"){ title="Mehr"; body=mehrView(); }
@@ -1884,17 +1947,39 @@ function render(){
   else if(nav.v==="baustelle"){ const b=DB.baustellen.get(nav.id); if(!b||b.deleted){ nav={v:"start"}; return render(); }
     if(!nav.tab) nav.tab=b.status==="besichtigung"?"aufnahme":"uebergaben";
     title=b.name; sub=pfadText(b); body=baustelleView(b); fab=null; fotoFetch([...eintraegeVon(b.id).flatMap(e=>e.fotos||[]),...afFotoIds(b)]); }
-  else if(nav.v==="eintrag"){ const b=DB.baustellen.get(entw.baustelleId); title=entw.id&&DB.eintraege.has(entw.id)?"Übergabe bearbeiten":"Neue Übergabe"; sub=b?b.name:""; body=eintragView(); fab=["entwSave","Speichern","check"]; }
+  else if(nav.v==="eintrag"){ const b=DB.baustellen.get(entw.baustelleId); title=entw._neu||!entw.id?"Neue Übergabe":"Übergabe"; sub=b?b.name:""; body=eintragView(); fab=["edFertig","Fertig","check"]; }
   else if(VIEW_KIND[nav.v]){ const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id); if(!r||r.deleted){ nav={v:"kunden"}; return render(); }
     title=r.name; sub=kind==="kunden"?"Kunde":(kundeOf(r.kundeId)||{}).name||""; body=kind==="kunden"?kundeView(r):standortView(r);
     fab=null; }
   if(SY.state==="anmelden"&&!login) body=`<div class="robanner warn">${icon("sync")}<span>Anmeldung abgelaufen – Änderungen werden nur auf dem Gerät gespeichert.</span><button class="btn-text" data-act="relogin">Anmelden</button></div>`+body;
-  app.innerHTML=(WIDE.matches&&!login?seitenKopf(title,sub,fab):"")+body; backSetzen(); navIndSetzen(); segInd(); if(nav.v==="notiz") requestAnimationFrame(nGrow);
+  const edAn=(nav.v==="eintrag")||(nav.v==="notiz"&&istMeine(nEntw));
+  app.innerHTML=(WIDE.matches&&!login?(edAn?edKopf(title,sub):seitenKopf(title,sub,fab)):"")+body; backSetzen(); navIndSetzen(); segInd(); if(nav.v==="notiz") requestAnimationFrame(nGrow);
   $("#topTitle").innerHTML=title?`<span>${esc(title)}</span>${sub?`<small>${esc(String(sub).split(/\s*›\s*/).pop())}</small>`:""}`:"";
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
   if(fab){ f.dataset.act=fab[0]; f.setAttribute("aria-label",fab[1]); f.innerHTML=`${icon(fab[2])}<span>${fab[1]}</span>`; }
   $("#avTxt").textContent=initials(ME.name||META.profil.name); $("#avBtn").dataset.sync=SY.state;
+  if(nav.v==="eintrag"&&entw) eAuto(false);
 }
+/* ===== Editoren (ganze Seite): automatisch speichern, Kopf mit Status, Mehr-Menü und „Fertig“ =====
+   Regel fürs ganze System: Seiten-Editoren speichern beim Tippen selbst. „Fertig“ und „Zurück“ schließen nur.
+   Löschen/Verwerfen und seltene Aktionen liegen im Mehr-Menü oben. Kurze Dialoge behalten Abbrechen/Speichern unten rechts. */
+const ED={st:"ok"};
+const ED_TXT={ok:"Gespeichert",speichert:"Speichert …",leer:"Noch leer"};
+function edStand(st){ ED.st=st; const el=document.getElementById("edStand"); if(el){ el.dataset.s=st; el.lastElementChild.textContent=ED_TXT[st]||""; } }
+function edKopf(t,s){ return `<div class="edk"><button class="sk-zur" data-act="skZurueck" aria-label="Zurück" title="Zurück">${icon("back")}</button>
+  <div class="edk-t"><h1>${esc(t)}</h1>${s?`<p>${esc(s)}</p>`:""}</div>
+  <span class="edk-st" id="edStand" data-s="${ED.st}" role="status"><span class="edk-dot"></span><span>${ED_TXT[ED.st]||""}</span></span>
+  <button class="icon-btn edk-mehr" data-act="edMehr" aria-label="Weitere Aktionen" title="Weitere Aktionen">${icon("moreH")}</button>
+  <button class="edk-fertig" data-act="edFertig">Fertig</button></div>`; }
+/* Menü an einem Knopf aufklappen: [act,Text,Symbol,Klasse,{data-…}] */
+function menuAn(btn,items){ const m=$("#menu"); if(!m||!items.length) return;
+  m.innerHTML=items.map(x=>`<button class="mi ${x[3]||""}" role="menuitem" data-act="${x[0]}" ${Object.entries(x[4]||{}).map(([k,v])=>`data-${k}="${esc(v)}"`).join(" ")}>${icon(x[2])}<span>${esc(x[1])}</span></button>`).join("");
+  const r=btn.getBoundingClientRect(); m.style.top=Math.round(r.bottom+6)+"px"; m.style.right=Math.max(8,Math.round(innerWidth-r.right))+"px"; m.style.left="auto";
+  m.hidden=false; $("#scrim").hidden=false; }
+function edMehr(btn){
+  if(nav.v==="notiz"&&nEntw) menuAn(btn,[["nSichtAuf","Wer darf die Notiz sehen?",SICHT_IC[nEntw.sicht||"privat"]],["nDelAsk",DB.notizen.has(nEntw.id)?"Notiz löschen":"Notiz verwerfen","del","danger"]]);
+  else if(nav.v==="eintrag"&&entw){ const da=entw.id&&DB.eintraege.has(entw.id);
+    menuAn(btn,[...(da?[["entwTeilen","Teilen","share"]]:[]),entw._neu||!da?["entwVerwerfenAsk","Übergabe verwerfen","del","danger"]:["eintragDelAsk","Übergabe löschen","del","danger"]]); } }
 
 function bItem(b){
   const e=letzter(b), k=kundeOf(b.kundeId);
@@ -1963,7 +2048,6 @@ function eintragView(){
     <div class="fotos e-fotos">${fs.map(id=>{ const src=fotoCache.get(id); return src?`<button class="foto" data-act="entwFotoShow" data-id="${id}"><img src="${src}" alt=""></button>`:""; }).join("")}
       ${fs.length<8?`<button class="foto leer" data-act="entwFoto">${icon("cam")}<span class="fl">Foto</span></button>`:""}</div></section>
     ${vor?`<details class="vorher"><summary>${icon("doc")}<span>Letzte Übergabe: ${esc(tagText(vor.datum))} · ${esc(vonText(vor))}</span>${icon("drop")}</summary>${eintragKarte(vor,false)}</details>`:""}
-    ${e.id&&DB.eintraege.has(e.id)&&canEdit(DB.eintraege.get(e.id))?`<button class="btn-del" data-act="eintragDelAsk">${icon("del")}Übergabe löschen</button>`:""}
   </div>`;
 }
 function entwLesen(){ if(!entw) return; $("#app").querySelectorAll("[data-f]").forEach(el=>entw[el.dataset.f]=el.value); matLesen(); }
@@ -1971,27 +2055,38 @@ function entwNeu(b,e){
   entwZurueck=nav;
   entw=e?JSON.parse(JSON.stringify(e)):{id:null,baustelleId:b.id,datum:today(),stand:"",offen:"",material:"",fotos:[]};
   entw.mat=matListe(entw).map(x=>({t:x.t,q:x.q,u:x.u,ok:!!x.ok,okVon:x.okVon||null}));
-  entw._neueFotos=[]; go({v:"eintrag"});
+  entw._neueFotos=[]; ED.st=e?"ok":"leer"; go({v:"eintrag"});
 }
-function entwVerwerfen(){ if(entw) fotoDel(entw._neueFotos||[]); entw=null; const z=entwZurueck; entwZurueck=null; go(z||{v:"start"}); }
-function entwSpeichern(){
-  entwLesen(); const e=entw;
-  const nf=document.getElementById("matNeu"); if(nf&&nf.value.trim()){ const x=matZeile(nf.value); if(x) e.mat.push(Object.assign(x,{ok:false})); }
-  e.mat=(e.mat||[]).filter(x=>String(x.t||"").trim()).map(x=>({t:String(x.t).trim(),q:x.q,u:x.u,ok:!!x.ok,okVon:x.okVon||null}));
-  e.material=matText(e.mat.filter(x=>!x.ok));
-  if(!String(e.stand||"").trim()&&!String(e.offen||"").trim()&&!e.mat.length&&!e.fotos.length){ toast("Bitte mindestens den Stand eintragen"); return; }
-  const neu=!e.id||!DB.eintraege.has(e.id), rec=neu?{id:uid()}:DB.eintraege.get(e.id);
+function entwVerwerfen(){ clearTimeout(eTimer); if(entw){ fotoDel(entw._neueFotos||[]); if(entw._neu&&entw.id){ const r=DB.eintraege.get(entw.id); if(r&&!r.deleted){ r.deleted=true; r.fotos=[]; saveRec("eintraege",r); } } }
+  entw=null; const z=entwZurueck; entwZurueck=null; go(z||{v:"start"}); }
+/* Übergabe speichert beim Tippen selbst (wie Notizen). Neu angelegt wird erst, wenn etwas drinsteht. */
+let eTimer=null;
+const eMatSauber=L=>(L||[]).filter(x=>String(x.t||"").trim()).map(x=>({t:String(x.t).trim(),q:x.q,u:x.u,ok:!!x.ok,okVon:x.okVon||null}));
+function eAuto(zeigen=true){ if(!entw) return; if(zeigen) edStand("speichert"); clearTimeout(eTimer); eTimer=setTimeout(()=>eSpeichernStill(),800); }
+function eSpeichernStill(fertig){
+  clearTimeout(eTimer); if(!entw||nav.v!=="eintrag") return false; entwLesen(); const e=entw;
+  if(fertig){ const nf=document.getElementById("matNeu"); if(nf&&nf.value.trim()){ const x=matZeile(nf.value); if(x){ e.mat.push(Object.assign(x,{ok:false})); nf.value=""; } } }
+  const mat=eMatSauber(e.mat);
+  if(!String(e.stand||"").trim()&&!String(e.offen||"").trim()&&!mat.length&&!(e.fotos||[]).length){ edStand("leer"); return false; }
+  const neu=!e.id||!DB.eintraege.has(e.id), rec=neu?{id:e.id||uid()}:DB.eintraege.get(e.id);
+  if(neu){ e.id=rec.id; e._neu=true; }
   const alt=neu?[]:(rec.fotos||[]); fotoDel(alt.filter(x=>!e.fotos.includes(x)));
   if((DB.baustellen.get(e.baustelleId)||{}).demo) rec.demo=true;
-  Object.assign(rec,{baustelleId:e.baustelleId,datum:e.datum||today(),stand:e.stand.trim(),offen:e.offen.trim(),material:e.material,mat:e.mat,fotos:[...e.fotos]});
-  saveRec("eintraege",rec,neu); matStammMerken(e.mat); e.fotos.filter(x=>!alt.includes(x)).forEach(fotoQueue);
-  const b=DB.baustellen.get(e.baustelleId); if(b&&b.status==="pausiert"&&neu){ b.status="aktiv"; saveRec("baustellen",b); }
-  entw=null; const z=entwZurueck; entwZurueck=null; go(z||{v:"baustelle",id:e.baustelleId}); toast(neu?"Übergabe gespeichert":"Änderung gespeichert");
+  const vorher=JSON.stringify([rec.datum,rec.stand,rec.offen,rec.mat,rec.fotos]);
+  Object.assign(rec,{baustelleId:e.baustelleId,datum:e.datum||today(),stand:String(e.stand||"").trim(),offen:String(e.offen||"").trim(),material:matText(mat.filter(x=>!x.ok)),mat,fotos:[...e.fotos]});
+  if(neu||vorher!==JSON.stringify([rec.datum,rec.stand,rec.offen,rec.mat,rec.fotos])){ saveRec("eintraege",rec,neu); e.fotos.filter(x=>!alt.includes(x)).forEach(fotoQueue); }
+  edStand("ok"); return true;
 }
+function entwFertig(ziel,ohneGo){ if(!entw) return; const e=entw, ok=eSpeichernStill(true);
+  if(ok){ const r=DB.eintraege.get(e.id); if(r) matStammMerken(r.mat);
+    if(e._neu){ const b=DB.baustellen.get(e.baustelleId); if(b&&b.status==="pausiert"){ b.status="aktiv"; saveRec("baustellen",b); } } }
+  else if(e._neu&&e.id){ const r=DB.eintraege.get(e.id); if(r&&!r.deleted){ r.deleted=true; saveRec("eintraege",r); } }
+  entw=null; const z=entwZurueck; entwZurueck=null; if(ohneGo) return;
+  go(ziel||z||{v:"baustelle",id:e.baustelleId}); if(ok&&e._neu) toast("Übergabe gespeichert"); }
 async function entwFotoAufnehmen(el){
   const f=el.files[0]; el.value=""; if(!f||!entw) return;
   let data; try{ data=await fotoVerkleinern(f); }catch(e){ toast("Das Bild konnte nicht gelesen werden"); return; }
-  entwLesen(); const id=uid(), ok=await fotoPut(id,data); entw.fotos.push(id); entw._neueFotos.push(id); render();
+  entwLesen(); const id=uid(), ok=await fotoPut(id,data); entw.fotos.push(id); entw._neueFotos.push(id); render(); eAuto();
   if(!ok) toast("Foto nur bis zum Schließen der App gespeichert – Speicher nicht verfügbar");
 }
 function teilenText(e){
@@ -2116,8 +2211,8 @@ function notizenView(){
 
 let nEntw=null, nZurueck=null, nTimer=null;
 const nNeuBlock=typ=>typ==="check"||typ==="liste"?{id:uid(),typ,items:[{id:uid(),t:"",ok:false}]}:typ==="zeichnung"?{id:uid(),typ,striche:[],h:600}:{id:uid(),typ,text:""};
-function notizNeu(o={}){ nZurueck=nav; nEntw={id:uid(),neu:true,titel:"",sicht:"privat",personen:[],baustelleId:o.baustelleId||"",bloecke:[nNeuBlock(o.typ||"text")]}; go({v:"notiz"}); setTimeout(()=>{ const e=$(o.typ==="check"?".ni input":".n-ta"); if(e) e.focus(); },50); }
-function notizOeffnen(id){ const n=DB.notizen.get(id); if(!n) return; nZurueck=nav; nEntw=JSON.parse(JSON.stringify(n)); go({v:"notiz"}); }
+function notizNeu(o={}){ nZurueck=nav; ED.st="leer"; nEntw={id:uid(),neu:true,titel:"",sicht:"privat",personen:[],baustelleId:o.baustelleId||"",bloecke:[nNeuBlock(o.typ||"text")]}; go({v:"notiz"}); setTimeout(()=>{ const e=$(o.typ==="check"?".ni input":".n-ta"); if(e) e.focus(); },50); }
+function notizOeffnen(id){ const n=DB.notizen.get(id); if(!n) return; nZurueck=nav; ED.st="ok"; nEntw=JSON.parse(JSON.stringify(n)); go({v:"notiz"}); }
 function notizSpeichernStill(){
   clearTimeout(nTimer); const e=nEntw; if(!e||!istMeine(e)) return false;
   if(leer(e)){ if(!e.neu){ const r=DB.notizen.get(e.id); if(r){ r.deleted=true; saveRec("notizen",r); } } return false; }
@@ -2127,36 +2222,55 @@ function notizSpeichernStill(){
   if(neu||alt!==JSON.stringify([r.titel,r.bloecke,r.sicht,r.personen,r.baustelleId])) saveRec("notizen",r,neu);
   e.neu=false; return true;
 }
-function nAuto(){ clearTimeout(nTimer); nTimer=setTimeout(()=>{ if(notizSpeichernStill()){ const s=$("#nStand"); if(s) s.textContent="Automatisch gespeichert"; } },700); }
-function notizVerlassen(){ notizSpeichernStill(); nEntw=null; const z=nZurueck; nZurueck=null; go(z&&z.v!=="notiz"?z:{v:"notizen"}); }
+function nAuto(){ if(!nEntw) return; edStand("speichert"); clearTimeout(nTimer); nTimer=setTimeout(()=>{ const ok=notizSpeichernStill(); edStand(ok?"ok":nEntw&&leer(nEntw)?"leer":"ok"); },700); }
+/* Beim Schließen: leere Punkte und leere Textblöcke entfernen (ein Block bleibt immer) */
+function nAufraeumen(){ const e=nEntw; if(!e||!istMeine(e)) return;
+  e.bloecke.forEach(b=>{ if(b.items) b.items=b.items.filter(i=>String(i.t||"").trim()); });
+  const voll=e.bloecke.filter(b=>b.typ==="foto"||b.typ==="zeichnung"||(b.items?b.items.length:String(b.text||"").trim()));
+  e.bloecke=voll.length?voll:e.bloecke.slice(0,1); }
+function notizVerlassen(){ nAufraeumen(); notizSpeichernStill(); nEntw=null; const z=nZurueck; nZurueck=null; go(z&&z.v!=="notiz"?z:{v:"notizen"}); }
+function notizFertig(){ const e=nEntw; if(!e) return; const neu=!DB.notizen.has(e.id); nAufraeumen(); const ok=notizSpeichernStill(); nEntw=null; const z=nZurueck; nZurueck=null;
+  go(z&&z.v!=="notiz"?z:{v:"notizen"}); if(ok&&neu) toast(e.sicht==="privat"?"Notiz gespeichert – nur für dich":`Notiz gespeichert – sichtbar für ${sichtText(e)}`); }
+/* Materialnummer zu einem Listenpunkt („NYM-J 3×1,5 mm² (100 m)“ → 0110320) */
+function nNrChip(t){ try{ const x=String(t||"").trim(); if(!x||typeof matStamm!=="function") return ""; const z=matZeile(x), m=(z&&matStamm(z.t))||matStamm(x); return matNrChip(matNr(m)); }catch(e){ return ""; } }
+/* Telefonnummern in gelesenen Notizen antippbar */
+const nLinks=t=>esc(t).replace(/(\+?\d[\d \/-]{6,}\d)/g,m=>`<a href="tel:${m.replace(/[^\d+]/g,"")}">${m}</a>`);
 
 function nBlockHtml(b,ro){
-  const del=ro?"":`<button class="icon-btn sm nb-x" data-act="nBlockDel" data-b="${b.id}" aria-label="Block entfernen">${icon("close")}</button>`;
-  if(b.typ==="text") return `<div class="nb" data-b="${b.id}">${ro?`<p class="n-ro">${esc(b.text)}</p>`:`<textarea class="n-ta" data-b="${b.id}" data-bf="text" rows="2" placeholder="Notiz schreiben …">${esc(b.text)}</textarea>`}${del}</div>`;
-  if(b.typ==="check"||b.typ==="liste") return `<div class="nb nl ${b.typ}" data-b="${b.id}">${(b.items||[]).map((i,k)=>`<div class="ni${i.ok?" ok":""}">
-      ${b.typ==="check"?`<button class="n-cb" data-act="nCheck" data-b="${b.id}" data-i="${i.id}" aria-pressed="${!!i.ok}" ${ro?"disabled":""} aria-label="Erledigt">${icon("check")}</button>`:`<span class="pt"></span>`}
-      ${ro?`<span class="n-it">${esc(i.t)}</span>`:`<input data-b="${b.id}" data-i="${i.id}" value="${esc(i.t)}" placeholder="${b.typ==="check"?"Aufgabe":"Punkt"}" enterkeyhint="next">
-      <button class="icon-btn sm ni-x" data-act="nItemDel" data-b="${b.id}" data-i="${i.id}" aria-label="Entfernen">${icon("close")}</button>`}</div>`).join("")}
-    ${ro?"":`<button class="btn-text ni-add" data-act="nItemAdd" data-b="${b.id}">${icon("add")}${b.typ==="check"?"Aufgabe":"Punkt"}</button>`}${del}</div>`;
-  if(b.typ==="zeichnung") return `<div class="nb" data-b="${b.id}"><button class="n-papier" data-act="${ro?"":"nZeichnen"}" data-b="${b.id}" aria-label="Zeichnung bearbeiten" ${ro?"disabled":""}>${(b.striche||[]).length?zeichnungSvg(b):`<span class="n-zl">${icon("stift")}Antippen zum Zeichnen</span>`}</button>${del}</div>`;
-  if(b.typ==="foto"){ const s=fotoCache.get(b.foto); return `<div class="nb" data-b="${b.id}"><button class="n-foto" data-act="nFotoShow" data-b="${b.id}">${s?`<img src="${s}" alt="">`:`<span class="n-zl">${icon("sync")}Foto wird geladen</span>`}</button>${del}</div>`; }
+  const menu=ro?"":`<button class="nb-m" data-act="nBlockMenu" data-b="${b.id}" aria-label="Block-Optionen" title="Block-Optionen">${icon("moreH")}</button>`;
+  if(b.typ==="text") return `<div class="nb nt" data-b="${b.id}">${ro?`<p class="n-ro">${nLinks(b.text)}</p>`:`<textarea class="n-ta" data-b="${b.id}" data-bf="text" rows="1" placeholder="Schreiben … (mit „- “ wird eine Liste, mit „[] “ eine Checkliste daraus)">${esc(b.text)}</textarea>`}${menu}</div>`;
+  if(b.typ==="check"||b.typ==="liste"){ const ck=b.typ==="check", items=b.items||[], offen=ck?items.filter(i=>!i.ok):items, erl=ck?items.filter(i=>i.ok):[];
+    const ph=ck?"Neue Aufgabe":"Neuer Punkt", voll=items.filter(i=>String(i.t||"").trim()).length;
+    const zeile=i=>`<div class="ni${i.ok?" ok":""}" data-i="${i.id}">
+      ${ck?`<button class="n-cb" data-act="nCheck" data-b="${b.id}" data-i="${i.id}" aria-pressed="${!!i.ok}" ${ro?"disabled":""} aria-label="${i.ok?"Wieder offen":"Erledigt"}">${icon("check")}</button>`:`<span class="pt"></span>`}
+      ${ro?`<span class="n-it">${esc(i.t)}</span>`:`<input data-b="${b.id}" data-i="${i.id}" value="${esc(i.t)}" placeholder="${ph}" enterkeyhint="next" autocomplete="off">`}
+      <span class="ni-nr">${nNrChip(i.t)}</span>
+      ${ro?"":`<button class="icon-btn sm ni-x" data-act="nItemDel" data-b="${b.id}" data-i="${i.id}" aria-label="Entfernen">${icon("close")}</button>`}</div>`;
+    const letzte=offen[offen.length-1], hatLeer=!!letzte&&!String(letzte.t||"").trim();
+    const kopf=`<div class="nb-kopf"><span class="nb-art">${icon(ck?"checkliste":"liste")}${ck?"Checkliste":"Liste"}</span>${ck&&voll?`<span class="nb-fort"><span class="nb-bar"><i style="width:${Math.round(erl.length/Math.max(1,items.length)*100)}%"></i></span>${erl.length} von ${items.length}</span>`:""}</div>`;
+    const neu=ro?"":`<button class="ni ni-neu" data-act="nItemAdd" data-b="${b.id}"><span class="ni-plus">${icon("add")}</span><span>${ph}</span></button>`;
+    const fertig=erl.length?`<button class="n-erl" data-act="nErlTog" data-b="${b.id}" aria-expanded="${!b.zu}">${icon("drop")}<span>${erl.length} erledigt</span></button>${b.zu?"":`<div class="n-erl-l">${erl.map(zeile).join("")}</div>`}`:"";
+    return `<div class="nb nl ${b.typ}${hatLeer?" hat-leer":""}" data-b="${b.id}">${kopf}${offen.map(zeile).join("")}${neu}${fertig}${menu}</div>`; }
+  if(b.typ==="zeichnung") return `<div class="nb nz" data-b="${b.id}"><button class="n-papier" data-act="${ro?"":"nZeichnen"}" data-b="${b.id}" aria-label="Zeichnung bearbeiten" ${ro?"disabled":""}>${(b.striche||[]).length?zeichnungSvg(b):`<span class="n-zl">${icon("stift")}Antippen zum Zeichnen</span>`}</button>${menu}</div>`;
+  if(b.typ==="foto"){ const s=fotoCache.get(b.foto); return `<div class="nb nf" data-b="${b.id}"><button class="n-foto" data-act="nFotoShow" data-b="${b.id}">${s?`<img src="${s}" alt="">`:`<span class="n-zl">${icon("sync")}Foto wird geladen</span>`}</button>${menu}</div>`; }
   return "";
 }
 function notizView(){
   const e=nEntw, ro=!istMeine(e), bs=live("baustellen").filter(b=>(b.status||"aktiv")!=="fertig"||b.id===e.baustelleId).sort((a,b)=>a.name.localeCompare(b.name,"de"));
   if(ro) return `<div class="narrow nedit ro">${e.titel?`<h2 class="n-titel-ro">${esc(e.titel)}</h2>`:""}<div class="nbl">${(e.bloecke||[]).map(b=>nBlockHtml(b,true)).join("")}</div>
     <p class="hint">${icon(SICHT_IC[e.sicht])} Von ${esc(vonText(e))} · ${esc(wann(e.updated))} · nur lesen</p></div>`;
-  return `<div class="narrow nedit"><input class="n-titel" data-nf="titel" value="${esc(e.titel)}" placeholder="Titel" autocomplete="off">
-    <div class="nbl">${e.bloecke.map(b=>nBlockHtml(b,false)).join("")}</div>
+  const b=e.baustelleId&&DB.baustellen.get(e.baustelleId);
+  return `<div class="narrow nedit"><input class="n-titel" data-nf="titel" value="${esc(e.titel)}" placeholder="Titel" autocomplete="off" enterkeyhint="next">
+    <div class="n-chips">
+      <label class="n-chip${b?" an":""}">${icon("baustelle")}<span>${b?esc(b.name):"Keiner Baustelle zugeordnet"}</span>${icon("drop")}<select id="f_nBaustelle" aria-label="Zur Baustelle"><option value="">Keine Baustelle</option>${bs.map(x=>`<option value="${esc(x.id)}" ${x.id===e.baustelleId?"selected":""}>${esc(x.name)}</option>`).join("")}</select></label>
+      <button class="n-chip" data-act="nSichtAuf">${icon(SICHT_IC[e.sicht||"privat"])}<span>${esc(e.sicht==="privat"?"Nur ich":sichtText(e))}</span>${icon("drop")}</button></div>
+    <div class="nbl">${e.bloecke.map(x=>nBlockHtml(x,false)).join("")}</div>
     <div class="n-add" role="toolbar" aria-label="Hinzufügen">
       <button data-act="nAdd" data-v="text">${icon("notes")}<span>Text</span></button>
       <button data-act="nAdd" data-v="check">${icon("checkliste")}<span>Checkliste</span></button>
       <button data-act="nAdd" data-v="liste">${icon("liste")}<span>Liste</span></button>
       <button data-act="nAdd" data-v="zeichnung">${icon("stift")}<span>Zeichnen</span></button>
-      <button data-act="nAdd" data-v="foto">${icon("cam")}<span>Foto</span></button></div>
-    <div class="n-meta">${sf("nBaustelle","Zur Baustelle (optional)",e.baustelleId||"",[["","Keine"],...bs.map(b=>[b.id,b.name])],{form:true})}
-      <p class="n-stand"><span>${icon(SICHT_IC[e.sicht])}${esc(sichtText(e))}</span> · <span id="nStand">${DB.notizen.has(e.id)?"Automatisch gespeichert":"Wird automatisch gespeichert"}</span></p></div>
-    ${DB.notizen.has(e.id)?`<button class="btn-del" data-act="nDelAsk">${icon("del")}Notiz löschen</button>`:""}</div>`;
+      <button data-act="nAdd" data-v="foto">${icon("cam")}<span>Foto</span></button></div></div>`;
 }
 function nBlock(id){ return nEntw&&nEntw.bloecke.find(b=>b.id===id); }
 function nRender(fokus){ const y=scrollY; render(); scrollTo(0,y); if(fokus){ const e=$(fokus); if(e){ e.focus(); if(e.setSelectionRange) try{ e.setSelectionRange(e.value.length,e.value.length); }catch(x){} } } nGrow(); }
@@ -2166,14 +2280,12 @@ function sichtDialog(){
   dialog("Wer soll die Notiz sehen?",`<div class="sicht">${SICHT.map(([v,t,ic])=>`<button class="radio" role="radio" data-act="nSicht" data-v="${v}" aria-checked="${e.sicht===v}"><span class="rb"></span>${icon(ic)}${t}</button>`).join("")}</div>
     <div class="n-pers" ${e.sicht==="personen"?"":"hidden"}>${andere.length?andere.map(m=>`<label class="n-p"><input type="checkbox" value="${esc(m.mail)}" ${(e.personen||[]).includes(m.mail)?"checked":""}><span>${esc(m.name)}</span></label>`).join(""):`<p class="meta">Keine weiteren Mitarbeiter eingetragen.</p>`}</div>
     <p class="sup" style="margin:12px 0 0">${SYNC_ON?"Andere sehen die Notiz nach dem nächsten Abgleich.":"Hinweis: Solange die Microsoft-Anbindung fehlt, bleibt jede Notiz auf diesem Gerät."}</p>`,
-    `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="nSichtOk">Speichern</button>`);
+    `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="nSichtOk">Übernehmen</button>`);
 }
 function nSichtOk(){
   const e=nEntw; if(!e) return;
   if(e.sicht==="personen"){ e.personen=[...document.querySelectorAll(".n-pers input:checked")].map(x=>x.value); if(!e.personen.length){ toast("Bitte mindestens eine Person auswählen"); return; } } else e.personen=[];
-  if(leer(e)){ closeOverlays(); toast("Die Notiz ist leer"); return; }
-  notizSpeichernStill(); closeOverlays(); const t=e.sicht==="privat"?"Gespeichert – nur für dich":e.sicht==="firma"?"Gespeichert – für die ganze Firma":`Gespeichert – für ${sichtText(e)}`;
-  nEntw=null; const z=nZurueck; nZurueck=null; go(z&&z.v!=="notiz"?z:{v:"notizen"}); toast(t);
+  closeOverlays(); nAuto(); nRender(); toast(e.sicht==="privat"?"Nur für dich sichtbar":`Sichtbar für ${sichtText(e)}`);
 }
 async function notizFotoAufnehmen(el){
   const f=el.files[0]; el.value=""; if(!f||!nEntw) return;
@@ -2223,16 +2335,38 @@ function zgKlick(ev){ const t=ev.target.closest("[data-z]"); if(!t) return; cons
 function notizEingabe(el){
   if(!nEntw) return false;
   if(el.dataset.nf==="titel"){ nEntw.titel=el.value; nAuto(); return true; }
-  if(el.dataset.bf==="text"){ const b=nBlock(el.dataset.b); if(b){ b.text=el.value; el.style.height="auto"; el.style.height=el.scrollHeight+"px"; nAuto(); } return true; }
-  if(el.dataset.i&&el.tagName==="INPUT"){ const b=nBlock(el.dataset.b), i=b&&b.items.find(x=>x.id===el.dataset.i); if(i){ i.t=el.value; nAuto(); } return true; }
+  if(el.dataset.bf==="text"){ const b=nBlock(el.dataset.b); if(b){ b.text=el.value;
+      const m=/^\s*(\[ ?\]|[-*•]) $/.exec(b.text); /* „- “ ⇒ Liste, „[] “ ⇒ Checkliste */
+      if(m){ b.typ=m[1].startsWith("[")?"check":"liste"; delete b.text; const n={id:uid(),t:"",ok:false}; b.items=[n]; nAuto(); nRender(`input[data-i="${n.id}"]`); return true; }
+      el.style.height="auto"; el.style.height=el.scrollHeight+"px"; nAuto(); } return true; }
+  if(el.dataset.i&&el.tagName==="INPUT"){ const b=nBlock(el.dataset.b), i=b&&b.items.find(x=>x.id===el.dataset.i); if(i){ i.t=el.value; nAuto();
+      const nr=el.parentElement&&el.parentElement.querySelector(".ni-nr"); if(nr) nr.innerHTML=nNrChip(i.t);
+      const bl=el.closest(".nl"), off=b.typ==="check"?b.items.filter(x=>!x.ok):b.items, l=off[off.length-1]; if(bl) bl.classList.toggle("hat-leer",!!l&&!String(l.t||"").trim()); } return true; }
   return false;
 }
 function notizTaste(ev){
-  const el=ev.target; if(!nEntw||!el.dataset||!el.dataset.i||el.tagName!=="INPUT") return;
+  const el=ev.target; if(!nEntw||!el||!el.dataset) return;
+  if(el.classList&&el.classList.contains("n-titel")&&ev.key==="Enter"){ ev.preventDefault(); const f=$(".nedit .n-ta, .nedit .ni input"); if(f) f.focus(); return; }
+  if(!el.dataset.i||el.tagName!=="INPUT") return;
   const b=nBlock(el.dataset.b); if(!b) return; const k=b.items.findIndex(x=>x.id===el.dataset.i);
-  if(ev.key==="Enter"){ ev.preventDefault(); const n={id:uid(),t:"",ok:false}; b.items.splice(k+1,0,n); nAuto(); nRender(`input[data-i="${n.id}"]`); }
+  if(ev.key==="Enter"){ ev.preventDefault();
+    const off=b.typ==="check"?b.items.filter(x=>!x.ok):b.items, letzte=off[off.length-1];
+    if(!el.value.trim()&&letzte&&letzte.id===el.dataset.i){ /* Enter in leerer letzter Zeile ⇒ Liste beenden, mit Text weiter */
+      b.items.splice(k,1); const L=nEntw.bloecke, bi=L.indexOf(b), nach=L[bi+1];
+      if(!b.items.length) L.splice(bi,1);
+      if(nach&&nach.typ==="text"&&!String(nach.text||"").trim()){ nAuto(); nRender(`.n-ta[data-b="${nach.id}"]`); return; }
+      const t=nNeuBlock("text"); L.splice(b.items.length?bi+1:bi,0,t); nAuto(); nRender(`.n-ta[data-b="${t.id}"]`); return; }
+    const n={id:uid(),t:"",ok:false}; b.items.splice(k+1,0,n); nAuto(); nRender(`input[data-i="${n.id}"]`); }
   else if(ev.key==="Backspace"&&!el.value&&b.items.length>1){ ev.preventDefault(); const vor=b.items[Math.max(0,k-1)]; b.items.splice(k,1); nAuto(); nRender(`input[data-i="${vor.id}"]`); }
 }
+/* Mehrzeiligen Text in einen Listenpunkt einfügen ⇒ jede Zeile wird ein Punkt („- “, „• “, „1.“, „[ ]“, „[x]“ werden erkannt) */
+document.addEventListener("paste",ev=>{ if(nav.v!=="notiz"||!nEntw) return; const el=ev.target; if(!el||el.tagName!=="INPUT"||!el.dataset.i) return;
+  const txt=(ev.clipboardData||window.clipboardData).getData("text")||""; if(!/\n/.test(txt.trim())) return; ev.preventDefault();
+  const b=nBlock(el.dataset.b); if(!b) return; const k=b.items.findIndex(x=>x.id===el.dataset.i), cur=b.items[k];
+  const P=txt.split(/\r?\n/).map(z=>z.trim()).filter(Boolean).map(z=>{ const m=/^(?:\[( |x|X)?\]\s*|[-*•–]\s+|\d+[.)]\s+)?(.*)$/.exec(z); return {t:m[2],ok:/x/i.test(m[1]||"")}; });
+  const vor=el.value.slice(0,el.selectionStart), nach=el.value.slice(el.selectionEnd);
+  cur.t=vor+P[0].t; const neu=P.slice(1).map(z=>({id:uid(),t:z.t,ok:b.typ==="check"&&z.ok})); (neu[neu.length-1]||cur).t+=nach;
+  b.items.splice(k+1,0,...neu); nAuto(); nRender(`input[data-i="${(neu[neu.length-1]||cur).id}"]`); });
 function notizKlick(a,el){
   switch(a){
   case "neueNotiz": notizNeu(); return true;
@@ -2241,17 +2375,22 @@ function notizKlick(a,el){
   case "nFilter": META.nfilter=el.dataset.v; metaSave(); render(); return true;
   case "nAdd": { const t=el.dataset.v; if(t==="foto"){ $("#fotoFile").click(); return true; } const b=nNeuBlock(t); nEntw.bloecke.push(b); nAuto();
     if(t==="zeichnung"){ nRender(); zeichnenOeffnen(b); return true; } nRender(t==="text"?`.n-ta[data-b="${b.id}"]`:`input[data-b="${b.id}"]`); return true; }
-  case "nBlockDel": { const b=nBlock(el.dataset.b); if(!b) return true; nEntw.bloecke=nEntw.bloecke.filter(x=>x!==b); if(b.typ==="foto") fotoDel([b.foto]); nAuto(); nRender(); return true; }
+  case "nBlockDel": { const b=nBlock(el.dataset.b); if(!b) return true; nEntw.bloecke=nEntw.bloecke.filter(x=>x!==b); if(!nEntw.bloecke.length) nEntw.bloecke.push(nNeuBlock("text")); if(b.typ==="foto") fotoDel([b.foto]); nAuto(); nRender(); return true; }
+  case "nBlockMenu": { const L=nEntw.bloecke, i=L.findIndex(x=>x.id===el.dataset.b); if(i<0) return true; const d={b:el.dataset.b};
+    menuAn(el,[...(i>0?[["nBlockHoch","Nach oben","hoch","",d]]:[]),...(i<L.length-1?[["nBlockRunter","Nach unten","runter","",d]]:[]),["nBlockDel","Block löschen","del","danger",d]]); return true; }
+  case "nBlockHoch": case "nBlockRunter": { const L=nEntw.bloecke, i=L.findIndex(x=>x.id===el.dataset.b), j=a==="nBlockHoch"?i-1:i+1; if(i<0||j<0||j>=L.length) return true; [L[i],L[j]]=[L[j],L[i]]; nAuto(); nRender(); return true; }
+  case "nErlTog": { const b=nBlock(el.dataset.b); if(b){ b.zu=!b.zu; nAuto(); nRender(); } return true; }
+  case "nSichtAuf": sichtDialog(); return true;
   case "nCheck": { const b=nBlock(el.dataset.b), i=b&&b.items.find(x=>x.id===el.dataset.i); if(i){ i.ok=!i.ok; nAuto(); nRender(); } return true; }
   case "nItemAdd": { const b=nBlock(el.dataset.b); if(!b) return true; const n={id:uid(),t:"",ok:false}; b.items.push(n); nAuto(); nRender(`input[data-i="${n.id}"]`); return true; }
   case "nItemDel": { const b=nBlock(el.dataset.b); if(!b) return true; b.items=b.items.filter(x=>x.id!==el.dataset.i); if(!b.items.length) nEntw.bloecke=nEntw.bloecke.filter(x=>x!==b); nAuto(); nRender(); return true; }
   case "nZeichnen": { const b=nBlock(el.dataset.b); if(b) zeichnenOeffnen(b); return true; }
   case "nFotoShow": { const b=nBlock(el.dataset.b); if(b) dialog("Foto",`<img class="dimg" src="${fotoCache.get(b.foto)||""}" alt="">`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return true; }
-  case "nSpeichern": if(nEntw&&istMeine(nEntw)) sichtDialog(); else notizVerlassen(); return true;
+  case "nSpeichern": if(nEntw&&istMeine(nEntw)) notizFertig(); else notizVerlassen(); return true;
   case "nSicht": { nEntw.sicht=el.dataset.v; document.querySelectorAll('#dlg [data-act="nSicht"]').forEach(x=>x.setAttribute("aria-checked",String(x===el))); const p=$(".n-pers"); if(p) p.hidden=nEntw.sicht!=="personen"; return true; }
   case "nSichtOk": nSichtOk(); return true;
-  case "nDelAsk": confirmDlg("Notiz löschen?","Die Notiz wird für alle entfernt, mit denen sie geteilt ist.","Löschen","nDel"); return true;
-  case "nDel": { closeOverlays(); const r=DB.notizen.get(nEntw&&nEntw.id); if(r&&istMeine(r)){ r.deleted=true; fotoDel((r.bloecke||[]).filter(b=>b.typ==="foto").map(b=>b.foto)); r.bloecke=[]; saveRec("notizen",r); } nEntw=null; const z=nZurueck; nZurueck=null; go(z&&z.v!=="notiz"?z:{v:"notizen"}); toast("Notiz gelöscht"); return true; }
+  case "nDelAsk": if(nEntw&&!DB.notizen.has(nEntw.id)){ notizKlick("nDel",el); return true; } confirmDlg("Notiz löschen?","Die Notiz wird für alle entfernt, mit denen sie geteilt ist.","Löschen","nDel"); return true;
+  case "nDel": { clearTimeout(nTimer); closeOverlays(); const r=DB.notizen.get(nEntw&&nEntw.id); if(r&&istMeine(r)){ r.deleted=true; fotoDel((r.bloecke||[]).filter(b=>b.typ==="foto").map(b=>b.foto)); r.bloecke=[]; saveRec("notizen",r); } else if(nEntw) fotoDel(nEntw.bloecke.filter(b=>b.typ==="foto").map(b=>b.foto)); nEntw=null; const z=nZurueck; nZurueck=null; go(z&&z.v!=="notiz"?z:{v:"notizen"}); toast(r?"Notiz gelöscht":"Notiz verworfen"); return true; }
   }
   return false;
 }
@@ -2322,7 +2461,7 @@ async function testAnmelden(){
 document.addEventListener("submit",ev=>{ if(ev.target.id==="tlForm"){ ev.preventDefault(); testAnmelden(); } });
 
 function openMenu(){
-  const it=[];
+  const it=[]; $("#menu").removeAttribute("style");
   if(nav.v==="baustelle"){ const b=DB.baustellen.get(nav.id);
     it.push(["bEdit","Baustelle bearbeiten","edit"]);
     if(canEdit(b)) it.push(["bDelAsk","Baustelle löschen","del","danger"]); }
@@ -2334,9 +2473,7 @@ function openMenu(){
 }
 function zurueck(){
   if(nav.v==="notiz"){ notizVerlassen(); return; }
-  if(nav.v==="eintrag"){ entwLesen(); const e=entw, orig=e&&e.id?DB.eintraege.get(e.id):null;
-    const geaendert=e&&(e._neueFotos.length||(["stand","offen"].some(k=>String(e[k]||"").trim()!==String(orig?orig[k]||"":"").trim())||matText(e.mat)!==matText(orig?matListe(orig):[])));
-    if(geaendert){ confirmDlg("Übergabe verwerfen?","Die Eingaben gehen verloren.","Verwerfen","entwVerwerfen"); return; } entwVerwerfen(); return; }
+  if(nav.v==="eintrag"){ entwFertig(); return; }
   if(nav.v==="baustelle"){ go(nav.von||{v:"start"}); return; }
   if(nav.v==="standort"){ const s=standortOf(nav.id); go(s?{v:"kunde",id:s.kundeId}:{v:"kunden"}); return; }
   if(nav.v==="kunde"){ go({v:"kunden"}); return; }
@@ -2363,12 +2500,14 @@ async function importBackup(el){
 document.addEventListener("input",ev=>{
   if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():nav.v==="kunden"?kundenListe():nav.v==="notizen"?notizenListe():nav.v==="material"?materialListe():baustellenListe(); return; }
   if(nav.v==="notiz"&&notizEingabe(ev.target)) return;
+  if(nav.v==="eintrag"&&entw&&ev.target.closest&&ev.target.closest("#app")&&ev.target.id!=="matNeu") eAuto();
 });
 document.addEventListener("change",ev=>{
   const el=ev.target;
   if(el.id==="importFile"){ importBackup(el); return; }
   if(el.id==="fotoFile"){ if(nav.v==="notiz") notizFotoAufnehmen(el); else entwFotoAufnehmen(el); return; }
-  if(el.id==="f_nBaustelle"&&nEntw){ nEntw.baustelleId=el.value; nAuto(); return; }
+  if(el.id==="f_nBaustelle"&&nEntw){ nEntw.baustelleId=el.value; nAuto(); nRender(); return; }
+  if(nav.v==="eintrag"&&entw&&el.closest&&el.closest("#app")&&el.id!=="matNeu"){ setTimeout(()=>eAuto(),0); }
   if(el.id==="f_tlWer"){ const pw=($("#f_tlPw")||{}).value||""; tlSel=el.value||null; render(); const e=$("#f_tlPw"); if(e){ e.value=pw; } (tlSel==="__andere"?$("#f_tlMail"):e)?.focus(); return; }
   if(el.matches("#dlg select[data-f]")&&nb){ bLesen(); if(el.dataset.f==="k") nb.s=""; bDialog(); return; }
 });
@@ -2383,7 +2522,7 @@ document.addEventListener("click",ev=>{
   case "skZurueck": zurueck(); return;
   case "menu": openMenu(); return;
   case "cancel": closeOverlays(); nb=null; locForm=null; return;
-  case "nav": { const v=b.dataset.v; if(v!==nav.v) query=""; if(nav.v==="eintrag"){ zurueck(); return; } if(nav.v==="notiz"){ notizSpeichernStill(); nEntw=null; } go(b.dataset.id?{v,id:b.dataset.id,von:v==="baustelle"?{...nav}:undefined}:{v}); return; }
+  case "nav": { const v=b.dataset.v; if(v!==nav.v) query=""; if(nav.v==="eintrag"){ entwFertig(null,true); } if(nav.v==="notiz"){ nAufraeumen(); notizSpeichernStill(); nEntw=null; } go(b.dataset.id?{v,id:b.dataset.id,von:v==="baustelle"?{...nav}:undefined}:{v}); return; }
   case "railToggle": railOpen=!railOpen; $("#railBtn").innerHTML=icon(railOpen?"menuOpen":"menu"); try{ localStorage.setItem("evse_rail",railOpen?"1":"0"); }catch(e){} document.body.classList.toggle("rail-open",railOpen); render(); return;
   case "login": Auth.login(); return;
   case "relogin": Auth.relogin(); return;
@@ -2424,12 +2563,15 @@ document.addEventListener("click",ev=>{
   case "neuerEintrag": entwNeu(DB.baustellen.get(nav.id)); return;
   case "eintragEdit": { const e=DB.eintraege.get(b.dataset.id); if(e&&canEdit(e)) entwNeu(DB.baustellen.get(e.baustelleId),e); return; }
   case "eintragDelAsk": confirmDlg("Übergabe löschen?","Diese Übergabe mit ihren Fotos löschen?","Löschen","eintragDel"); return;
-  case "eintragDel": { const e=DB.eintraege.get(entw&&entw.id); closeOverlays(); if(!e||!canEdit(e)) return; fotoDel([...(e.fotos||[]),...(entw._neueFotos||[])]); e.deleted=true; e.fotos=[]; saveRec("eintraege",e); entw=null; const z=entwZurueck; entwZurueck=null; go(z||{v:"start"}); toast("Übergabe gelöscht"); return; }
-  case "entwSave": entwSpeichern(); return;
+  case "eintragDel": { clearTimeout(eTimer); const e=DB.eintraege.get(entw&&entw.id); closeOverlays(); if(!e||!canEdit(e)) return; fotoDel([...(e.fotos||[]),...(entw._neueFotos||[])]); e.deleted=true; e.fotos=[]; saveRec("eintraege",e); entw=null; const z=entwZurueck; entwZurueck=null; go(z||{v:"start"}); toast("Übergabe gelöscht"); return; }
+  case "entwSave": case "edFertig": if(nav.v==="notiz") notizFertig(); else entwFertig(); return;
+  case "edMehr": edMehr(b); return;
   case "entwVerwerfen": closeOverlays(); entwVerwerfen(); return;
+  case "entwVerwerfenAsk": confirmDlg("Übergabe verwerfen?","Alles, was du hier eingetragen hast, wird entfernt.","Verwerfen","entwVerwerfen"); return;
+  case "entwTeilen": { eSpeichernStill(); const e=entw&&DB.eintraege.get(entw.id); if(e) teilen(e); return; }
   case "entwFoto": entwLesen(); $("#fotoFile").click(); return;
   case "entwFotoShow": { const id=b.dataset.id; entwLesen(); dialog("Foto",`<img class="dimg" src="${fotoCache.get(id)}" alt="">`,`<button class="btn-text danger" data-act="entwFotoDel" data-id="${id}">Entfernen</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`); return; }
-  case "entwFotoDel": { const id=b.dataset.id; closeOverlays(); entw.fotos=entw.fotos.filter(x=>x!==id); if(entw._neueFotos.includes(id)){ fotoDel([id]); entw._neueFotos=entw._neueFotos.filter(x=>x!==id); } render(); return; }
+  case "entwFotoDel": { const id=b.dataset.id; closeOverlays(); entw.fotos=entw.fotos.filter(x=>x!==id); if(entw._neueFotos.includes(id)){ entw._neueFotos=entw._neueFotos.filter(x=>x!==id); } render(); eAuto(); return; }
   case "fotoShow": dialog("Foto",`<img class="dimg" src="${fotoCache.get(b.dataset.id)}" alt="">`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return;
   case "teilen": { const e=DB.eintraege.get(b.dataset.id); if(e) teilen(e); return; }
   case "newKunde": locDialog("kunden"); return;
@@ -2464,8 +2606,8 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   render(); fotoInit(); protLaden().then(()=>{ if(nav.v==="bibliothek"||nav.v==="baustelle") softRender(); });
   if(SYNC_ON&&ME.signedIn){ syncNow(); setInterval(()=>{ if(document.visibilityState==="visible") syncNow(); },120000); }
 })();
-document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") syncSoon(); else notizSpeichernStill(); });
-window.addEventListener("pagehide",()=>notizSpeichernStill());
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") syncSoon(); else { notizSpeichernStill(); eSpeichernStill(); } });
+window.addEventListener("pagehide",()=>{ notizSpeichernStill(); eSpeichernStill(); });
 document.addEventListener("keydown",notizTaste);
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") einstLaden().then(()=>{ const w=loginSync(); if(w&&nav.v==="login"&&META.angemeldet) nav={v:"start"}; setMe(); if(w||(testGesperrt()&&nav.v!=="login")) render(); }); });
 window.addEventListener("online",()=>syncSoon()); window.addEventListener("offline",()=>setSync("offline"));

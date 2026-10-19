@@ -165,7 +165,9 @@ const MAT_GRUND_ZU={"Wago 221-413":"WAGO Hebelklemme 3-polig","Wago 221-415":"WA
 function matNr(m){ if(!m) return ""; return m.sonepar||((m.weitere||[]).find(w=>w&&w.bei==="Kürzel"&&w.nr)||{}).nr||""; }
 const matNrChip=nr=>nr?`<span class="mat-nr" role="button" tabindex="0" data-act="matKopier" data-nr="${esc(nr)}" aria-label="Nummer ${esc(nr)} kopieren">${esc(nr)}${icon("copy")}</span>`:"";
 const matGet=id=>matAlle().find(m=>m.id===id)||null;
-function matStamm(t){ const k=matNorm(t); if(!k||!DB.material) return null; return matAlle().find(m=>matNorm(m.name)===k)||null; }
+/* Vergleich ohne „mm²“ und mit x→×, damit „NYM-J 3x1,5“ und „NYM-J 3×1,5 mm²“ dasselbe Teil sind */
+const matKey=t=>matNorm(String(t||"").replace(/mm2\b/gi,"mm²")).replace(/(\d)\s*×\s*(?=\d)/g,"$1×").replace(/\s*mm²/g,"").trim();
+function matStamm(t){ const k=matNorm(t); if(!k||!DB.material) return null; const A=matAlle(); return A.find(m=>matNorm(m.name)===k)||(()=>{ const kk=matKey(t); return A.find(m=>matKey(m.name)===kk)||null; })(); }
 function matStammSeed(){ if(!DB.material||(META.matSeed||0)>=1) return;
   MAT_GRUND.forEach(n=>{ const id=matSlug(n); if(DB.material.has(id)) return; saveRec("material",{id,name:n,kategorie:matKatRaten(n),einheit:matStdEinheitRegel(n),grund:true},true); });
   META.matSeed=1; metaSave(); }
