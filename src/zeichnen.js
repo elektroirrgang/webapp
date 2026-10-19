@@ -147,19 +147,20 @@ function zBox(b){ let y0=Infinity,y1=-Infinity; for(const s of (b.striche||[])){
 const zgDash=s=>s.d==="strich"?[s.w*3,s.w*2.2]:s.d==="punkt"?[0.01,s.w*2.2]:[];
 
 /* --- Raster: gleiche Linien für Zeichenfläche und Vorschau --- */
-function zgRasterTeile(r,y0,y1){ const t=r.raster; if(!t) return null;
+function zgRasterTeile(r,y0,y1,xa=0,xb=1000){ const t=r.raster; if(!t) return null;
   const g=r.rmm?r.rmm*ZG_MM:40, dunkel=r.papier==="dunkel", rs=r.rs==null?1:r.rs;
   const farbe=r.rf==="blau"?(dunkel?"#5A7AA8":rs===2?"#7FA3D6":"#A3C0E6"):(dunkel?"#5A5E66":rs===2?"#A9B0BA":"#C7CCD4");
   const wm=[.85,1.15,1.7][rs]||1.15, am=[.55,.85,1][rs]||.85;
-  let fein="",mittel="",stark="",punkte=""; const H=y=>`M0 ${zgR(y)}H1000`, V=x=>`M${zgR(x)} ${zgR(y0)}V${zgR(y1)}`;
-  if(t==="kaestchen"||t==="linien"){ for(let y=Math.max(g,Math.ceil(y0/g)*g);y<=y1;y+=g) mittel+=H(y); if(t==="kaestchen") for(let x=g;x<1000;x+=g) mittel+=V(x); }
-  else if(t==="punkte"){ const rad=zgR(1.3+wm); for(let y=Math.floor(y0/g)*g+g/2;y<=y1;y+=g) if(y>0) for(let x=g/2;x<1000;x+=g) punkte+=`M${zgR(x-rad)} ${zgR(y)}a${rad} ${rad} 0 1 0 ${2*rad} 0a${rad} ${rad} 0 1 0 ${-2*rad} 0`; }
+  let fein="",mittel="",stark="",punkte=""; const H=y=>`M${xa} ${zgR(y)}H${xb}`, V=x=>`M${zgR(x)} ${zgR(y0)}V${zgR(y1)}`, ab=(a,s)=>Math.ceil(a/s)*s;
+  if(t==="kaestchen"||t==="linien"){ for(let y=Math.max(g,ab(y0,g));y<=y1;y+=g) mittel+=H(y); if(t==="kaestchen") for(let x=ab(xa,g);x<=xb;x+=g) if(x) mittel+=V(x); }
+  else if(t==="punkte"){ const rad=zgR(1.3+wm); for(let y=Math.floor(y0/g)*g+g/2;y<=y1;y+=g) if(y>0) for(let x=Math.floor(xa/g)*g+g/2;x<xb;x+=g) punkte+=`M${zgR(x-rad)} ${zgR(y)}a${rad} ${rad} 0 1 0 ${2*rad} 0a${rad} ${rad} 0 1 0 ${-2*rad} 0`; }
   else if(t==="mm"){ for(let k=Math.max(1,Math.ceil(y0/ZG_MM));k*ZG_MM<=y1;k++){ const l=H(k*ZG_MM); if(k%10===0) stark+=l; else if(k%5===0) mittel+=l; else fein+=l; }
-    for(let k=1;k*ZG_MM<1000;k++){ const l=V(k*ZG_MM); if(k%10===0) stark+=l; else if(k%5===0) mittel+=l; else fein+=l; } }
-  else if(t==="iso"){ const dx=g*Math.sqrt(3)/2, sp=1000/Math.sqrt(3); for(let x=dx;x<1000;x+=dx) mittel+=V(x);
-    for(let c=Math.floor((y0-sp)/g)*g;c<=y1+g;c+=g){ mittel+=`M0 ${zgR(c)}L1000 ${zgR(c+sp)}M0 ${zgR(c+sp)}L1000 ${zgR(c)}`; } }
+    for(let k=Math.ceil(xa/ZG_MM);k*ZG_MM<=xb;k++){ if(!k) continue; const l=V(k*ZG_MM), a=Math.abs(k); if(a%10===0) stark+=l; else if(a%5===0) mittel+=l; else fein+=l; } }
+  else if(t==="iso"){ const dx=g*Math.sqrt(3)/2, s=1/Math.sqrt(3); for(let x=ab(xa,dx);x<=xb;x+=dx) if(Math.abs(x)>.01) mittel+=V(x);
+    for(let c=Math.floor((y0-xb*s)/g)*g;c<=y1-xa*s+g;c+=g) mittel+=`M${xa} ${zgR(c+xa*s)}L${xb} ${zgR(c+xb*s)}`;
+    for(let c=Math.floor((y0+xa*s)/g)*g;c<=y1+xb*s+g;c+=g) mittel+=`M${xa} ${zgR(c-xa*s)}L${xb} ${zgR(c-xb*s)}`; }
   return {farbe,teile:[{d:fein,w:.6*wm,a:.5*am},{d:mittel,w:1*wm,a:am},{d:stark,w:1.5*wm,a:Math.min(1,am*1.15)},{d:punkte,f:1,a:am}].filter(x=>x.d)}; }
-function zgRasterSvg(b,y0,y1){ const r=zgRasterTeile(b,y0,y1); if(!r) return "";
+function zgRasterSvg(b,y0,y1){ const r=zgRasterTeile(b,y0,y1,-2000,3000); if(!r) return "";
   return r.teile.map(x=>x.f?`<path d="${x.d}" fill="${r.farbe}" fill-opacity="${zgR(x.a)}"/>`:`<path d="${x.d}" fill="none" stroke="${r.farbe}" stroke-width="${zgR(x.w)}" stroke-opacity="${zgR(x.a)}"/>`).join(""); }
 
 /* --- Vorschau (SVG) --- */
@@ -171,8 +172,10 @@ function zgSvgEl(s,dunkel){ s=zgNorm(s);
   if(s.t==="fueller") return `<path d="${c.d}" fill="${s.c}"/>`;
   const da=s.d?` stroke-dasharray="${zgDash(s).map(zgR).join(" ")}"`:"", mul=s.t==="marker"&&!dunkel?` style="mix-blend-mode:multiply"`:"";
   return `<path d="${c.d}" stroke="${s.c}" stroke-width="${s.w}" fill="${s.fill&&ZG_GESCHLOSSEN.includes(s.t)?s.c:"none"}"${s.fill?` fill-opacity=".18"`:""} stroke-linecap="round" stroke-linejoin="round"${s.o?` stroke-opacity="${s.o}"`:""}${da}${mul}/>`+(c.k?`<path d="${c.k}" stroke="${s.c}" stroke-width="${s.w}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`:""); }
-const zeichnungSvg=b=>{ const [y0,h]=zBox(b), pap=(ZG_PAPIER[b.papier]||ZG_PAPIER[""])[1];
-  return `<svg class="n-svg" viewBox="0 ${y0} 1000 ${h}" preserveAspectRatio="xMidYMid meet"><rect x="0" y="${y0}" width="1000" height="${h}" fill="${pap}"/>${zgRasterSvg(b,y0,y0+h)}${(b.striche||[]).map(s=>zgSvgEl(s,b.papier==="dunkel")).join("")}</svg>`; };
+/* Vorschau: Papier und Raster laufen seitlich weiter, damit bei schmalen Ausschnitten kein Rand entsteht */
+const zgPapierFarbe=b=>(ZG_PAPIER[b.papier]||ZG_PAPIER[""])[1];
+const zeichnungSvg=b=>{ const [y0,h]=zBox(b), pap=zgPapierFarbe(b);
+  return `<svg class="n-svg" viewBox="0 ${y0} 1000 ${h}" preserveAspectRatio="xMidYMid meet" style="overflow:visible"><rect x="-2000" y="${y0}" width="5000" height="${h}" fill="${pap}"/>${zgRasterSvg(b,y0,y0+h)}${(b.striche||[]).map(s=>zgSvgEl(s,b.papier==="dunkel")).join("")}</svg>`; };
 
 /* ===== Editor ===== */
 let ZG=null;
