@@ -131,6 +131,10 @@ function demoDaten(){
     ausTafel("demo-b-v-praxis","demo-v-praxis","demo-k-praxis","demo-s-praxis","Netzwerkdose im Behandlungsraum 2","2610-141",{datum:tag(-1),zeit:"10:00",mit:"Monteur (Beispiel)"},"aktiv"),
     ausTafel("demo-b-v-rauch","demo-v-rauch","demo-k-haus","demo-s-haus","Rauchmelder im Altbau-Teil tauschen","2610-139",{datum:tag(-5),zeit:"13:00",mit:"Monteur (Beispiel)"},"fertig",{updated:std(110),updatedBy:MON}),
     ausTafel("demo-b-v-notlicht","demo-v-notlicht","demo-k-werk","demo-s-werk","Notbeleuchtung jährlich prüfen","2610-120",{datum:tag(-10),zeit:"8:00",mit:"Max Pevec"},"fertig",{updated:std(230),updatedBy:MAX}));
+  /* Material als Liste (neue Übergaben) – teils schon abgehakt */
+  const matDemo={"demo-e-haus-6":[{t:"Potentialausgleichsschiene",q:1,u:"Stück",ok:true,okVon:MAX},{t:"Erdungsschelle",q:4,u:"Stück",ok:false},{t:"NYM-J 3×2,5 mm²",q:50,u:"m",ok:false},{t:"Wago 221-413",q:1,u:"Packung",ok:false}],
+    "demo-e-fuhr-2":[{t:"LS B16 3-polig",q:2,u:"Stück",ok:false},{t:"FI 40 A 30 mA Typ A",q:2,u:"Stück",ok:true,okVon:MON}]};
+  D.eintraege.forEach(e=>{ if(matDemo[e.id]){ e.mat=matDemo[e.id]; e.material=e.mat.filter(x=>!x.ok).map(x=>`${String(x.q).replace(".",",")} ${x.u} ${x.t}`).join("\n"); } });
   D.eintraege.forEach(e=>{ e.created=e.updated=zeit(e.datum); });
   return D;
 }

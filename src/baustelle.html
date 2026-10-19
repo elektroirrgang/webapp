@@ -1050,6 +1050,33 @@ html.scroll-sperre,html.scroll-sperre body{overflow:hidden!important;overscroll-
 input[type=date],input[type=time]{text-align:left}
 input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and-time-value{text-align:left;margin:0}
 @supports (-webkit-touch-callout:none){ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;display:block;min-height:1.5em} }
+/* Material als Liste */
+.mat-ed{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+.mat-kopf{display:flex;align-items:baseline;justify-content:space-between;padding:0 4px;font-weight:700;font-size:16px} .mat-kopf small{font-weight:600;color:var(--on-sv);font-size:13px}
+.mat-list{display:flex;flex-direction:column;gap:8px}
+.mat-leer{margin:0;padding:12px 14px;border-radius:14px;background:var(--feld);color:var(--on-sv);font-size:14px}
+.mat-row{display:grid;grid-template-columns:auto 112px minmax(0,1fr) 44px;gap:8px;align-items:center;background:var(--sc);border-radius:18px;padding:8px}
+.mat-q{display:flex;align-items:center;background:var(--feld);border-radius:14px;height:48px}
+.mat-q button{width:40px;height:48px;border:0;background:none;color:var(--primary);display:grid;place-items:center;border-radius:14px}
+.mat-q input{width:52px;height:48px;border:0;background:none;text-align:center;font:inherit;font-size:17px;font-weight:700;color:var(--on-surface);padding:0}
+.mat-q input:focus{outline:none}
+.mat-u{margin:0} .mat-u select{height:48px!important;padding:0 32px 0 14px!important;font-weight:600}
+.mat-u .arr{right:8px}
+.mat-t{height:48px;border:0;border-radius:14px;background:var(--feld);padding:0 14px;font:inherit;font-size:16px;color:var(--on-surface);min-width:0}
+.mat-t:focus,.mat-add input:focus{outline:none;box-shadow:inset 0 0 0 2px var(--primary)}
+.mat-del{width:44px;height:44px;border:0;border-radius:12px;background:none;color:var(--on-sv);display:grid;place-items:center}
+.mat-add{display:flex;gap:8px}
+.mat-add input{flex:1;min-width:0;height:52px;border:0;border-radius:16px;background:var(--feld);padding:0 16px;font:inherit;font-size:16px;color:var(--on-surface)}
+.mat-plus{width:52px;height:52px;border:0;border-radius:16px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center;flex:none}
+@media (max-width:560px){ .mat-row{grid-template-columns:auto minmax(0,1fr) 44px;grid-template-areas:"t t t" "q u d"} .mat-t{grid-area:t} .mat-q{grid-area:q} .mat-u{grid-area:u} .mat-del{grid-area:d} }
+.eb.mat-k{background:var(--wip-c);color:var(--on-wip-c);border-radius:16px;padding:10px 12px}
+.mat-kk{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px} .mat-kk small{opacity:.85} .mat-kk span{font-size:12px;font-weight:700;opacity:.85}
+.mat-kl{display:flex;flex-direction:column;gap:6px}
+.mat-ck{display:grid;grid-template-columns:28px auto minmax(0,1fr);align-items:center;gap:10px;width:100%;text-align:left;border:0;border-radius:12px;background:color-mix(in srgb,var(--surface) 55%,transparent);color:inherit;font:inherit;font-size:15px;padding:10px 12px;min-height:48px}
+.mat-ck b{white-space:nowrap} .mat-ck .mat-tt{min-width:0;overflow-wrap:break-word} .mat-ck small{grid-column:2/-1;margin-top:-6px;font-size:12px;opacity:.75;text-transform:none;letter-spacing:0;font-weight:600}
+.mat-ck.alt{grid-template-columns:auto minmax(0,1fr)}
+.mat-box{width:24px;height:24px;border-radius:7px;background:var(--surface);display:grid;place-items:center} .mat-box .ic{width:18px;height:18px}
+.mat-ck.ok{opacity:.6} .mat-ck.ok .mat-tt,.mat-ck.ok b{text-decoration:line-through} .mat-ck.ok .mat-box{background:var(--ok);color:#fff}
 </style>
 </head>
 <body class="is-list">
@@ -1285,6 +1312,7 @@ const IC={cal:"M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1
   liste:"M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z",
   undo:"M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z",
   radierer:"M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4.008 4.008 0 0 1-5.66 0L2.81 17c-.78-.79-.78-2.05 0-2.84l10.6-10.6c.79-.78 2.05-.78 2.83 0zM4.22 15.58l3.54 3.53c.78.79 2.04.79 2.83 0l3.53-3.53-4.95-4.95-4.95 4.95z",
+  minus:"M19 13H5v-2h14v2z",
   close:"M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
   baustelle:"M2 18h20v2.5H2zM4 16.5c0-3.9 2.6-7.1 6-8.1V5.6c0-.6.4-1.1 1-1.1h2c.6 0 1 .5 1 1.1v2.8c3.4 1 6 4.2 6 8.1z",
   share:"M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z",
@@ -1775,6 +1803,7 @@ document.addEventListener("click",e=>{
 })();
 /*DEMO*/
 /*AUFNAHME*/
+/*MATERIAL*/
 document.addEventListener("toggle",e=>{ if(e.target.classList&&e.target.classList.contains("ik-klapp")) try{ localStorage.setItem("bau_info",e.target.open?"auf":"zu"); }catch(x){} },true);
 function render(){
   const app=$("#app");
@@ -1851,7 +1880,7 @@ function eintragKarte(e,erster){
   const block=(l,t,cls="")=>String(t||"").trim()?`<div class="eb ${cls}"><small>${l}</small><p>${esc(t)}</p></div>`:"";
   return `<div class="ekarte${erster?" neu":""}"><div class="ek-k">${erster?`<span class="ek-tag">Aktueller Stand</span><i class="ek-br"></i>`:""}<b>${esc(tagText(e.datum))}</b><span>${icon("person")}${esc(vonText(e)||"–")}</span>
       <span class="ek-a">${erster?`<button class="icon-btn sm" data-act="teilen" data-id="${e.id}" aria-label="Teilen">${icon("share")}</button>`:""}${ok?`<button class="icon-btn sm" data-act="eintragEdit" data-id="${e.id}" aria-label="Bearbeiten">${icon("edit")}</button>`:""}</span></div>
-    ${block("Stand",e.stand)}${block("Offen / nächste Schritte",e.offen)}${block("Material",e.material,"mat")}
+    ${block("Stand",e.stand)}${block("Offen / nächste Schritte",e.offen)}${matBlock(e)}
     ${fs.length?`<div class="ek-f">${fs.map(id=>{ const src=fotoCache.get(id); return src?`<button class="foto" data-act="fotoShow" data-id="${id}" aria-label="Foto ansehen"><img src="${src}" alt=""></button>`:`<div class="foto leer">${icon("sync")}</div>`; }).join("")}</div>`:""}
     ${e.updated&&e.created&&e.updated-e.created>60000?`<div class="by">geändert ${esc(wann(e.updated))}${e.updatedBy&&e.updatedBy.name&&e.updatedBy.name!==vonText(e)?` von ${esc(e.updatedBy.name)}`:""}</div>`:""}</div>`;
 }
@@ -1879,8 +1908,7 @@ function eintragView(){
       ${tf("datum","Datum",e.datum,{type:"date",form:true})}
       ${ta("stand","Stand – was ist heute passiert?",e.stand,{form:true,ph:"z. B. Unterverteilung OG gesetzt, Leitungen Bad gezogen"})}
       ${ta("offen","Offen / nächste Schritte",e.offen,{form:true,ph:"z. B. Bad anschließen, FI-Prüfung UV OG"})}
-      ${ta("material","Material für morgen",e.material,{form:true,ph:"z. B. 2× LS B16, 50 m NYM-J 3×1,5"})}
-    </div>
+    </div>${matEditor()}
     <div class="lbl" style="margin:16px 4px 8px">Fotos</div>
     <div class="fotos e-fotos">${fs.map(id=>{ const src=fotoCache.get(id); return src?`<button class="foto" data-act="entwFotoShow" data-id="${id}"><img src="${src}" alt=""></button>`:""; }).join("")}
       ${fs.length<8?`<button class="foto leer" data-act="entwFoto">${icon("cam")}<span class="fl">Foto</span></button>`:""}</div></section>
@@ -1888,20 +1916,24 @@ function eintragView(){
     ${e.id&&DB.eintraege.has(e.id)&&canEdit(DB.eintraege.get(e.id))?`<button class="btn-text danger" data-act="eintragDelAsk" style="margin-top:16px">${icon("del")}Übergabe löschen</button>`:""}
   </div>`;
 }
-function entwLesen(){ if(!entw) return; $("#app").querySelectorAll("[data-f]").forEach(el=>entw[el.dataset.f]=el.value); }
+function entwLesen(){ if(!entw) return; $("#app").querySelectorAll("[data-f]").forEach(el=>entw[el.dataset.f]=el.value); matLesen(); }
 function entwNeu(b,e){
   entwZurueck=nav;
   entw=e?JSON.parse(JSON.stringify(e)):{id:null,baustelleId:b.id,datum:today(),stand:"",offen:"",material:"",fotos:[]};
+  entw.mat=matListe(entw).map(x=>({t:x.t,q:x.q,u:x.u,ok:!!x.ok,okVon:x.okVon||null}));
   entw._neueFotos=[]; go({v:"eintrag"});
 }
 function entwVerwerfen(){ if(entw) fotoDel(entw._neueFotos||[]); entw=null; const z=entwZurueck; entwZurueck=null; go(z||{v:"start"}); }
 function entwSpeichern(){
   entwLesen(); const e=entw;
-  if(!String(e.stand||"").trim()&&!String(e.offen||"").trim()&&!String(e.material||"").trim()&&!e.fotos.length){ toast("Bitte mindestens den Stand eintragen"); return; }
+  const nf=document.getElementById("matNeu"); if(nf&&nf.value.trim()){ const x=matZeile(nf.value); if(x) e.mat.push(Object.assign(x,{ok:false})); }
+  e.mat=(e.mat||[]).filter(x=>String(x.t||"").trim()).map(x=>({t:String(x.t).trim(),q:x.q,u:x.u,ok:!!x.ok,okVon:x.okVon||null}));
+  e.material=matText(e.mat.filter(x=>!x.ok));
+  if(!String(e.stand||"").trim()&&!String(e.offen||"").trim()&&!e.mat.length&&!e.fotos.length){ toast("Bitte mindestens den Stand eintragen"); return; }
   const neu=!e.id||!DB.eintraege.has(e.id), rec=neu?{id:uid()}:DB.eintraege.get(e.id);
   const alt=neu?[]:(rec.fotos||[]); fotoDel(alt.filter(x=>!e.fotos.includes(x)));
   if((DB.baustellen.get(e.baustelleId)||{}).demo) rec.demo=true;
-  Object.assign(rec,{baustelleId:e.baustelleId,datum:e.datum||today(),stand:e.stand.trim(),offen:e.offen.trim(),material:e.material.trim(),fotos:[...e.fotos]});
+  Object.assign(rec,{baustelleId:e.baustelleId,datum:e.datum||today(),stand:e.stand.trim(),offen:e.offen.trim(),material:e.material,mat:e.mat,fotos:[...e.fotos]});
   saveRec("eintraege",rec,neu); e.fotos.filter(x=>!alt.includes(x)).forEach(fotoQueue);
   const b=DB.baustellen.get(e.baustelleId); if(b&&b.status==="pausiert"&&neu){ b.status="aktiv"; saveRec("baustellen",b); }
   entw=null; const z=entwZurueck; entwZurueck=null; go(z||{v:"baustelle",id:e.baustelleId}); toast(neu?"Übergabe gespeichert":"Änderung gespeichert");
@@ -1915,7 +1947,7 @@ async function entwFotoAufnehmen(el){
 function teilenText(e){
   const b=DB.baustellen.get(e.baustelleId)||{}, s=standortOf(b.standortId);
   return [`Baustellenübergabe – ${b.name||""}`,[pfadText(b),s&&s.ort].filter(Boolean).join(", "),`${tagText(e.datum)} · ${vonText(e)}`,"",
-    e.stand&&`Stand:\n${e.stand}`,e.offen&&`Offen / nächste Schritte:\n${e.offen}`,e.material&&`Material:\n${e.material}`].filter(x=>x!==undefined&&x!=="").join("\n\n").replace(/\n\n\n+/g,"\n\n");
+    e.stand&&`Stand:\n${e.stand}`,e.offen&&`Offen / nächste Schritte:\n${e.offen}`,matListe(e).length&&`Material:\n${matListe(e).map(x=>`– ${matFmt(x.q)} ${x.u} ${x.t}${x.ok?" (besorgt)":""}`).join("\n")}`].filter(x=>x!==undefined&&x!=="").join("\n\n").replace(/\n\n\n+/g,"\n\n");
 }
 async function teilen(e){
   const text=teilenText(e);
@@ -2253,7 +2285,7 @@ function openMenu(){
 function zurueck(){
   if(nav.v==="notiz"){ notizVerlassen(); return; }
   if(nav.v==="eintrag"){ entwLesen(); const e=entw, orig=e&&e.id?DB.eintraege.get(e.id):null;
-    const geaendert=e&&(e._neueFotos.length||["stand","offen","material"].some(k=>String(e[k]||"").trim()!==String(orig?orig[k]||"":"").trim()));
+    const geaendert=e&&(e._neueFotos.length||(["stand","offen"].some(k=>String(e[k]||"").trim()!==String(orig?orig[k]||"":"").trim())||matText(e.mat)!==matText(orig?matListe(orig):[])));
     if(geaendert){ confirmDlg("Übergabe verwerfen?","Die Eingaben gehen verloren.","Verwerfen","entwVerwerfen"); return; } entwVerwerfen(); return; }
   if(nav.v==="baustelle"){ go(nav.von||{v:"start"}); return; }
   if(nav.v==="standort"){ const s=standortOf(nav.id); go(s?{v:"kunde",id:s.kundeId}:{v:"kunden"}); return; }

@@ -17,6 +17,7 @@ def baue(quelle, ziel, icon):
     html = html.replace("<!--VERSION-->", version)
     html = html.replace("/*DEMO*/", (root / "src/demo.js").read_text(encoding="utf-8"))
     html = html.replace("/*VORGAENGE*/", (root / "src/vorgaenge.js").read_text(encoding="utf-8"))
+    html = html.replace("/*MATERIAL*/", (root / "src/material.js").read_text(encoding="utf-8"))
     html = html.replace("/*AUFNAHME*/", (root / "src/aufnahme.js").read_text(encoding="utf-8"))
     html = html.replace('href="manifest.webmanifest"', f'href="manifest.webmanifest?v={n}"')
     html = html.replace("<!--ICON-->", "data:image/png;base64," + b64(icon))
