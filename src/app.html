@@ -968,6 +968,9 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 /* Speicherpunkt am Profilbild (gleich wie in der Baustellen-App): leuchtet, solange noch gespeichert wird */
 body[data-speichert="1"] .avatar::after{display:block!important;background:var(--wip,#E8A317)!important;animation:edPuls 1s ease-in-out infinite}
 @keyframes edPuls{50%{opacity:.3}}
+
+/* Tastatur auf dem iPad: feste Leisten um den Versatz der sichtbaren Fläche nach unten schieben */
+@media (min-width:744px){ .topbar,body .navbar,.edk{translate:0 var(--vvt,0px)} html::after{translate:0 var(--vvt,0px)} }
 </style>
 </head>
 <body class="is-list">
@@ -3544,7 +3547,7 @@ function buildPDF(P){
 }
 
 
-try{ const kopf=()=>{ const t=$("#topbar"), r=t&&t.querySelector(".tb-row"); if(!t||!r) return; const s=document.documentElement.style; s.setProperty("--tbh",Math.ceil(t.getBoundingClientRect().height)+"px"); s.setProperty("--kopf",(r.offsetTop+r.offsetHeight)+"px"); }; kopf(); if(window.ResizeObserver) new ResizeObserver(kopf).observe($("#topbar"),{box:"border-box"}); ["resize","orientationchange","pageshow"].forEach(ev=>addEventListener(ev,kopf)); document.addEventListener("visibilitychange",kopf); if(window.visualViewport) visualViewport.addEventListener("resize",kopf); [150,500,1500].forEach(ms=>setTimeout(kopf,ms)); }catch(e){}
+try{ const kopf=()=>{ const t=$("#topbar"), r=t&&t.querySelector(".tb-row"); if(!t||!r) return; const s=document.documentElement.style; s.setProperty("--tbh",Math.ceil(t.getBoundingClientRect().height)+"px"); s.setProperty("--kopf",(r.offsetTop+r.offsetHeight)+"px"); }; kopf(); if(window.ResizeObserver) new ResizeObserver(kopf).observe($("#topbar"),{box:"border-box"}); ["resize","orientationchange","pageshow"].forEach(ev=>addEventListener(ev,kopf)); document.addEventListener("visibilitychange",kopf); if(window.visualViewport) visualViewport.addEventListener("resize",kopf); [150,500,1500].forEach(ms=>setTimeout(kopf,ms)); /* iPad mit Tastatur: iOS schiebt die Seite hoch, feste Leisten wandern sonst unter die Statusleiste */ if(window.visualViewport){ const vv=()=>document.documentElement.style.setProperty("--vvt",Math.max(0,Math.round(visualViewport.offsetTop))+"px"); visualViewport.addEventListener("resize",vv); visualViewport.addEventListener("scroll",vv); addEventListener("scroll",vv,{passive:true}); } }catch(e){}
 $("#railBtn").innerHTML=icon(railOpen?"menuOpen":"menu"); backSetzen(); $("#menuBtn").innerHTML=icon("more");
 if("serviceWorker" in navigator && location.protocol==="https:"){
   const hatteSW=!!navigator.serviceWorker.controller;

@@ -539,12 +539,25 @@ body.is-login .topbar{display:none}
 .n-p input{width:20px;height:20px;accent-color:var(--primary)}
 body.zg-offen{overflow:hidden}
 .zg{position:fixed;inset:0;z-index:60;background:var(--sc);display:flex;flex-direction:column;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
-.zg-bar{display:flex;align-items:center;gap:4px;padding:6px 8px;background:var(--surface);border-bottom:1px solid var(--outline-v);flex-wrap:wrap}
-.zg-f{width:30px;height:30px;border-radius:50%;border:3px solid var(--surface);background:var(--c);box-shadow:0 0 0 1px var(--outline-v);padding:0;margin:0 2px}
-.zg-f[aria-pressed="true"]{box-shadow:0 0 0 2px var(--primary)}
-.zg-d{display:block;width:22px;height:4px;border-radius:4px;background:var(--on-surface)}
-.zg .icon-btn[aria-pressed="true"]{background:var(--sec-c);color:var(--on-sec-c)}
-.btn-filled.sm{min-height:36px;padding:0 16px;font-size:14px}
+.zg-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);flex-wrap:nowrap}
+.zg-mitte{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.zg-grp{display:flex;align-items:center;gap:2px;padding:4px;border-radius:24px;background:var(--sc-high)}
+.zg-b{width:40px;height:40px;border:0;border-radius:20px;background:transparent;color:var(--on-surface);display:grid;place-items:center;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent;flex:none}
+.zg-b[aria-pressed="true"]{background:var(--surface);color:var(--primary);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.zg-ic{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.zg-f{width:30px;height:30px;border-radius:50%;border:0;background:var(--c);padding:0;margin:0 3px;cursor:pointer;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.zg-f[aria-pressed="true"]{box-shadow:0 0 0 3px var(--sc-high),0 0 0 5px var(--on-surface)}
+.zg-f.eigen{border-radius:9px}
+.zg-d{display:block;width:22px;border-radius:7px;background:var(--on-surface)}
+.zg-txt{height:44px;padding:0 10px;border:0;background:transparent;color:var(--primary);font:inherit;font-size:16px;font-weight:700;cursor:pointer;flex:none}
+.zg-ok{height:44px;padding:0 22px;border:0;border-radius:22px;background:var(--fab);color:var(--on-fab);font:inherit;font-size:16px;font-weight:700;cursor:pointer;flex:none}
+.zg-pop{position:fixed;z-index:62;background:var(--sc-high);border-radius:20px;padding:6px;box-shadow:0 12px 32px rgba(0,0,0,.28)}
+.zg-pop-r{display:flex;gap:4px;align-items:center}
+.zg-pt{display:block;border-radius:50%;background:var(--on-surface)}
+.zg-rb{height:40px;padding:0 16px;border:0;border-radius:20px;background:transparent;color:var(--on-surface);font:inherit;font-size:15px;font-weight:650;cursor:pointer}
+.zg-rb[aria-pressed="true"]{background:var(--surface);color:var(--primary)}
+.zg-farbwahl{position:fixed;left:50%;top:60px;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
+.zg-text{position:fixed;z-index:61;min-width:120px;border:0;outline:none;background:rgba(255,255,255,.85);border-radius:6px;padding:0 4px;font-weight:600;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.1;box-shadow:0 0 0 2px var(--primary)}
 .zg-flaeche{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:12px}
 .zg canvas{background:#fff;border-radius:12px;box-shadow:var(--e1);touch-action:none}
 
@@ -1199,6 +1212,18 @@ body[data-speichert="1"] .avatar::after{display:block!important;background:var(-
   .nedit .n-add button:active,.nedit .n-add button:hover{background:color-mix(in srgb,var(--on-surface) 9%,transparent)!important}
   .nedit .n-add .ic{width:22px;height:22px}
 }
+
+/* Notiz: Anzeige statt Eingabe, damit Antippen (Cursor an der Stelle) und Gedrückthalten (Menü) funktionieren */
+.nedit .nb{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.nedit .nb input,.nedit .nb textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+.nedit .n-tx{padding:16px 20px;font-size:17px;line-height:1.55;min-height:58px;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--on-surface);cursor:text}
+.nedit .n-tx.leer,.nedit .n-it.leer{color:var(--on-sv);opacity:.7}
+.nedit .ni .n-tap{flex:1;min-width:0;font-size:17px;line-height:1.35;padding:13px 2px;overflow-wrap:anywhere;cursor:text}
+.nedit .ni.ok .n-tap{text-decoration:line-through;color:var(--on-sv)}
+body.zg-offen .snackbar{z-index:70}
+
+/* Tastatur auf dem iPad: feste Leisten um den Versatz der sichtbaren Fläche nach unten schieben */
+@media (min-width:744px){ .topbar,body .navbar,.edk{translate:0 var(--vvt,0px)} html::after{translate:0 var(--vvt,0px)} }
 </style>
 </head>
 <body class="is-list">
@@ -2189,15 +2214,6 @@ const notizenAlle=()=>live("notizen").filter(sichtbar).sort((a,b)=>(b.updated||0
 const notizFotos=()=>[...live("notizen"),...(nEntw?[nEntw]:[])].flatMap(n=>(n.bloecke||[]).filter(b=>b.typ==="foto").map(b=>b.foto));
 const leer=n=>!String(n.titel||"").trim()&&!(n.bloecke||[]).some(b=>b.typ==="foto"||b.typ==="zeichnung"&&(b.striche||[]).length||String(b.text||"").trim()||(b.items||[]).some(i=>String(i.t||"").trim()));
 const sichtText=n=>n.sicht==="personen"?`${(n.personen||[]).length} Person${(n.personen||[]).length===1?"":"en"}`:SICHT_TXT[n.sicht||"privat"];
-const ZFARBEN=["#1F1F22","#C8102E","#1565C0","#2E7D32"];
-
-function strichPfad(p){ if(p.length<4) return p.length?`M${p[0]} ${p[1]}l0.1 0`:"";
-  let d=`M${p[0]} ${p[1]}`; for(let i=2;i<p.length-2;i+=2){ const mx=(p[i]+p[i+2])/2, my=(p[i+1]+p[i+3])/2; d+=`Q${p[i]} ${p[i+1]} ${mx} ${my}`; }
-  return d+`L${p[p.length-2]} ${p[p.length-1]}`; }
-function zBox(b){ let y0=Infinity,y1=-Infinity; for(const s of (b.striche||[])) for(let i=1;i<s.p.length;i+=2){ y0=Math.min(y0,s.p[i]-s.w); y1=Math.max(y1,s.p[i]+s.w); }
-  if(!isFinite(y0)) return [0,b.h||600]; y0=Math.max(0,y0-40); y1=Math.min(b.h||y1+40,y1+40); if(y1-y0<240){ const m=(y0+y1)/2; y0=Math.max(0,m-120); y1=y0+240; } return [Math.round(y0),Math.round(y1-y0)]; }
-const zeichnungSvg=b=>`<svg class="n-svg" viewBox="0 ${zBox(b).join(" 1000 ")}" preserveAspectRatio="xMidYMid meet">${(b.striche||[]).map(s=>`<path d="${strichPfad(s.p)}" stroke="${s.c}" stroke-width="${s.w}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`).join("")}</svg>`;
-
 function nKarte(n){
   const teile=[]; let fotoDa=false;
   for(const b of (n.bloecke||[])){ if(teile.length>=4) break;
@@ -2229,8 +2245,8 @@ function notizenView(){
 
 let nEntw=null, nZurueck=null, nTimer=null;
 const nNeuBlock=typ=>typ==="check"||typ==="liste"?{id:uid(),typ,items:[{id:uid(),t:"",ok:false}]}:typ==="zeichnung"?{id:uid(),typ,striche:[],h:600}:{id:uid(),typ,text:""};
-function notizNeu(o={}){ nZurueck=nav; ED.st="leer"; nEntw={id:uid(),neu:true,titel:"",sicht:"privat",personen:[],baustelleId:o.baustelleId||"",bloecke:[nNeuBlock(o.typ||"text")]}; go({v:"notiz"}); setTimeout(()=>{ const e=$(o.typ==="check"?".ni input":".n-ta"); if(e) e.focus(); },50); }
-function notizOeffnen(id){ const n=DB.notizen.get(id); if(!n) return; nZurueck=nav; ED.st="ok"; nEntw=JSON.parse(JSON.stringify(n)); go({v:"notiz"}); }
+function notizNeu(o={}){ nZurueck=nav; ED.st="leer"; nEdit=null; nEntw={id:uid(),neu:true,titel:"",sicht:"privat",personen:[],baustelleId:o.baustelleId||"",bloecke:[nNeuBlock(o.typ||"text")]}; go({v:"notiz"}); setTimeout(()=>{ const e=$(o.typ==="check"?".ni input":".n-ta"); if(e) e.focus(); },50); }
+function notizOeffnen(id){ const n=DB.notizen.get(id); if(!n) return; nZurueck=nav; ED.st="ok"; nEdit=null; nEntw=JSON.parse(JSON.stringify(n)); go({v:"notiz"}); }
 function notizSpeichernStill(){
   clearTimeout(nTimer); const e=nEntw; if(!e||!istMeine(e)) return false;
   if(leer(e)){ if(!e.neu){ const r=DB.notizen.get(e.id); if(r){ r.deleted=true; saveRec("notizen",r); } } return false; }
@@ -2255,16 +2271,17 @@ function nNrChip(t){ try{ const x=String(t||"").trim(); if(!x||typeof matStamm!=
 const nLinks=t=>esc(t).replace(/(\+?\d[\d \/-]{6,}\d)/g,m=>`<a href="tel:${m.replace(/[^\d+]/g,"")}">${m}</a>`);
 
 function nBlockHtml(b,ro,i=0,n=1){
-  const k=(act,ic,l)=>`<button type="button" data-act="${act}" data-b="${b.id}" aria-label="${l}" title="${l}">${icon(ic)}</button>`;
-  const menu=ro?"":`<span class="nb-ctl">${i>0?k("nBlockHoch","hoch","Nach oben"):""}${i<n-1?k("nBlockRunter","runter","Nach unten"):""}${k("nBlockDel","close","Block entfernen")}</span>`;
-  if(b.typ==="text") return `<div class="nb nt" data-b="${b.id}">${ro?`<p class="n-ro">${nLinks(b.text)}</p>`:`<textarea class="n-ta" data-b="${b.id}" data-bf="text" rows="1" placeholder="Schreiben …">${esc(b.text)}</textarea>`}${menu}</div>`;
+  const menu="", ed=!ro&&nEdit&&nEdit.b===b.id;
+  if(b.typ==="text"){ const leer=!String(b.text||"").trim();
+    return `<div class="nb nt" data-b="${b.id}">${ro?`<p class="n-ro">${nLinks(b.text)}</p>`:ed?`<textarea class="n-ta" data-b="${b.id}" data-bf="text" rows="1" placeholder="Schreiben …">${esc(b.text)}</textarea>`
+      :`<div class="n-tx${leer?" leer":""}" data-tap="1" data-b="${b.id}" ${leer?'data-leer="1"':""}>${leer?"Schreiben …":esc(b.text)}</div>`}</div>`; }
   if(b.typ==="check"||b.typ==="liste"){ const ck=b.typ==="check", items=b.items||[], offen=ck?items.filter(i=>!i.ok):items, erl=ck?items.filter(i=>i.ok):[];
     const ph=ck?"Neue Aufgabe":"Neuer Punkt", voll=items.filter(i=>String(i.t||"").trim()).length;
     const zeile=i=>`<div class="ni${i.ok?" ok":""}" data-i="${i.id}">
       ${ck?`<button class="n-cb" data-act="nCheck" data-b="${b.id}" data-i="${i.id}" aria-pressed="${!!i.ok}" ${ro?"disabled":""} aria-label="${i.ok?"Wieder offen":"Erledigt"}">${icon("check")}</button>`:`<span class="pt"></span>`}
-      ${ro?`<span class="n-it">${esc(i.t)}</span>`:`<input data-b="${b.id}" data-i="${i.id}" value="${esc(i.t)}" placeholder="${ph}" enterkeyhint="next" autocomplete="off">`}
-      <span class="ni-nr">${nNrChip(i.t)}</span>
-      ${ro?"":`<button class="icon-btn sm ni-x" data-act="nItemDel" data-b="${b.id}" data-i="${i.id}" aria-label="Entfernen">${icon("close")}</button>`}</div>`;
+      ${ro?`<span class="n-it">${esc(i.t)}</span>`:ed&&nEdit.i===i.id?`<input data-b="${b.id}" data-i="${i.id}" value="${esc(i.t)}" placeholder="${ph}" enterkeyhint="next" autocomplete="off">`
+        :`<span class="n-it n-tap${String(i.t||"").trim()?"":" leer"}" data-tap="1" data-b="${b.id}" data-i="${i.id}" ${String(i.t||"").trim()?"":'data-leer="1"'}>${String(i.t||"").trim()?esc(i.t):ph}</span>`}
+      <span class="ni-nr">${nNrChip(i.t)}</span></div>`;
     const letzte=offen[offen.length-1], hatLeer=!!letzte&&!String(letzte.t||"").trim();
     const kopf=`<div class="nb-kopf"><span class="nb-art">${icon(ck?"checkliste":"liste")}${ck?"Checkliste":"Liste"}</span>${ck&&voll?`<span class="nb-fort"><span class="nb-bar"><i style="width:${Math.round(erl.length/Math.max(1,items.length)*100)}%"></i></span>${erl.length} von ${items.length}</span>`:""}</div>`;
     const neu=ro?"":`<button class="ni ni-neu" data-act="nItemAdd" data-b="${b.id}"><span class="ni-plus">${icon("add")}</span><span>${ph}</span></button>`;
@@ -2293,13 +2310,56 @@ function notizView(){
     ${DB.notizen.has(e.id)?`<button class="btn-del nur-schmal" data-act="nDelAsk">${icon("del")}Notiz löschen</button>`:""}</div>`;
 }
 function nBlock(id){ return nEntw&&nEntw.bloecke.find(b=>b.id===id); }
-function nRender(fokus){ const y=scrollY; render(); scrollTo(0,y); if(fokus){ const e=$(fokus); if(e){ e.focus(); if(e.setSelectionRange) try{ e.setSelectionRange(e.value.length,e.value.length); }catch(x){} } } nGrow(); }
+function nRender(fokus){ nEditAus(fokus); const y=scrollY; render(); scrollTo(0,y); if(fokus){ const e=$(fokus); if(e){ e.focus(); if(e.setSelectionRange) try{ e.setSelectionRange(e.value.length,e.value.length); }catch(x){} } } nGrow(); }
+/* Welches Feld gerade bearbeitet wird ({b,i}); alle anderen Texte sind reine Anzeige – so klappt Antippen und Gedrückthalten */
+let nEdit=null;
+function nEditAus(sel){ if(!sel||!nEntw||/\.nb\[data-b/.test(sel)) return; let m=/data-i="([^"]+)"/.exec(sel);
+  if(m){ const b=nEntw.bloecke.find(x=>(x.items||[]).some(i=>i.id===m[1])); if(b) nEdit={b:b.id,i:m[1]}; return; }
+  m=/data-b="([^"]+)"/.exec(sel); if(m){ const b=nBlock(m[1]); if(b) nEdit={b:b.id,i:b.items?((b.typ==="check"?b.items.filter(x=>!x.ok):b.items)[0]||b.items[0]||{}).id:null}; } }
+/* Zeichenposition an der Tippstelle bestimmen (für den Cursor) */
+function nCaret(el,x,y){ const len=el.dataset.leer?0:el.textContent.length;
+  try{ let node=null, off=0;
+    if(document.caretPositionFromPoint){ const p=document.caretPositionFromPoint(x,y); if(p){ node=p.offsetNode; off=p.offset; } }
+    else if(document.caretRangeFromPoint){ const r=document.caretRangeFromPoint(x,y); if(r){ node=r.startContainer; off=r.startOffset; } }
+    if(el.dataset.leer) return 0;
+    if(node&&el.contains(node)&&node.nodeType===3){ let n=0; const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT); while(w.nextNode()){ if(w.currentNode===node) return Math.min(len,n+off); n+=w.currentNode.length; } } }catch(e){}
+  return len; }
+document.addEventListener("click",ev=>{ if(nLang){ ev.preventDefault(); ev.stopPropagation(); nLang=false; return; }
+  const t=ev.target.closest&&ev.target.closest(".nedit [data-tap]"); if(!t||!nEntw||nav.v!=="notiz") return; ev.preventDefault(); ev.stopPropagation();
+  const pos=nCaret(t,ev.clientX,ev.clientY), alt=nEdit; nEdit={b:t.dataset.b,i:t.dataset.i||null};
+  if(alt&&alt.b!==nEdit.b){ const ob=nBlock(alt.b); if(ob) nBlockNeu(ob); }
+  const b=nBlock(t.dataset.b); if(b) nBlockNeu(b,t.dataset.i?`input[data-i="${t.dataset.i}"]`:`.n-ta[data-b="${b.id}"]`,pos); },true);
+/* Feld verlassen ⇒ wieder Anzeige (kurz warten, falls direkt das nächste Feld angetippt wird) */
+document.addEventListener("focusout",ev=>{ if(nav.v!=="notiz"||!nEdit||!ev.target.closest||!ev.target.closest(".nedit .nb")) return;
+  const vor=nEdit; setTimeout(()=>{ if(!nEntw||nav.v!=="notiz"||nEdit!==vor) return; const a=document.activeElement; if(a&&a.closest&&a.closest(".nedit .nb")&&a.matches("input,textarea")) return;
+    nEdit=null; const b=nBlock(vor.b); if(b) nBlockNeu(b); },180); });
+/* Gedrückthalten: auf einem Punkt ⇒ Erledigt/Löschen, auf dem Rest des Blocks ⇒ Verschieben/Löschen */
+let nLP=null, nLang=false;
+function nLPStop(){ if(nLP){ clearTimeout(nLP.t); nLP=null; } }
+document.addEventListener("pointerdown",e=>{ nLPStop(); if(nav.v!=="notiz"||!nEntw||!istMeine(nEntw)) return; const nb=e.target.closest&&e.target.closest(".nedit .nb"); if(!nb) return;
+  if(e.target.closest("input:focus,textarea:focus,.mat-nr")||(e.pointerType==="mouse"&&e.button!==0)) return;
+  const x=e.clientX, y=e.clientY, ni=e.target.closest(".ni[data-i]");
+  nLP={x,y,t:setTimeout(()=>{ nLP=null; nLang=true; setTimeout(()=>{ nLang=false; },900); nLangMenu(nb.dataset.b,ni?ni.dataset.i:null,x,y); },480)}; },true);
+["pointerup","pointercancel"].forEach(t=>document.addEventListener(t,nLPStop,true));
+document.addEventListener("pointermove",e=>{ if(nLP&&Math.hypot(e.clientX-nLP.x,e.clientY-nLP.y)>8) nLPStop(); },true);
+addEventListener("scroll",nLPStop,{passive:true});
+document.addEventListener("contextmenu",e=>{ if(e.target.closest&&e.target.closest(".nedit .nb")) e.preventDefault(); });
+function menuAt(x,y,items){ const m=$("#menu"); if(!m||!items.length) return;
+  m.innerHTML=items.map(x=>x==="-"?`<hr>`:`<button class="mi ${x[3]||""}" role="menuitem" data-act="${x[0]}" ${Object.entries(x[4]||{}).map(([k,v])=>`data-${k}="${esc(v)}"`).join(" ")}>${icon(x[2])}<span>${esc(x[1])}</span></button>`).join("");
+  m.style.right="auto"; m.hidden=false; $("#scrim").hidden=false; const w=m.offsetWidth, h=m.offsetHeight;
+  m.style.left=Math.max(8,Math.min(innerWidth-w-8,x-24))+"px"; m.style.top=(y+12+h<innerHeight-8?y+12:Math.max(8,y-h-12))+"px"; }
+function nLangMenu(bid,iid,x,y){ const b=nBlock(bid); if(!b) return; const L=nEntw.bloecke, k=L.indexOf(b), d={b:bid};
+  const art={text:"Text",check:"Checkliste",liste:"Liste",zeichnung:"Zeichnung",foto:"Foto"}[b.typ]||"Block";
+  const blockIt=[...(k>0?[["nBlockHoch",`${art} nach oben`,"hoch","",d]]:[]),...(k<L.length-1?[["nBlockRunter",`${art} nach unten`,"runter","",d]]:[]),["nBlockDel",`${art} löschen`,"del","danger",d]];
+  const it=iid&&(b.items||[]).find(z=>z.id===iid);
+  if(it){ const di={b:bid,i:iid}; menuAt(x,y,[...(b.typ==="check"?[["nCheck",it.ok?"Wieder offen":"Erledigt","check","",di]]:[]),["nItemDel",b.typ==="check"?"Aufgabe löschen":"Punkt löschen","del","danger",di],"-",...blockIt]); }
+  else menuAt(x,y,blockIt); }
 /* Nur einen Block neu zeichnen – die Seite (und der feste Kopf) bleibt stehen, nichts springt oder blitzt */
-function nBlockNeu(b,fokus){ const el=b&&document.querySelector(`.nedit .nb[data-b="${b.id}"]`); if(!el||!nEntw){ nRender(fokus); return; }
+function nBlockNeu(b,fokus,pos){ nEditAus(fokus); const el=b&&document.querySelector(`.nedit .nb[data-b="${b.id}"]`); if(!el||!nEntw){ nRender(fokus); return; }
   /* Seite darf beim Einklappen nicht kürzer werden – sonst muss iOS die Scrollposition zurücksetzen und die Seite springt */
   const ed=document.querySelector(".nedit"); if(ed){ const h=ed.offsetHeight; if(h>(parseFloat(ed.style.minHeight)||0)) ed.style.minHeight=h+"px"; }
   const y=scrollY, L=nEntw.bloecke; el.outerHTML=nBlockHtml(b,false,L.indexOf(b),L.length); if(scrollY!==y) scrollTo(0,y);
-  if(fokus){ const f=document.querySelector(fokus); if(f){ f.focus(); if(f.setSelectionRange) try{ f.setSelectionRange(f.value.length,f.value.length); }catch(x){} } } }
+  nGrow(); if(fokus){ const f=document.querySelector(fokus); if(f){ f.focus({preventScroll:true}); const p=pos==null?f.value.length:pos; if(f.setSelectionRange) try{ f.setSelectionRange(p,p); }catch(x){} } } }
 function nGrow(){ document.querySelectorAll(".n-ta").forEach(t=>{ t.style.height="auto"; t.style.height=t.scrollHeight+"px"; }); }
 function sichtDialog(){
   const e=nEntw, andere=team().filter(m=>m.mail!==ichMail());
@@ -2319,44 +2379,7 @@ async function notizFotoAufnehmen(el){
   const id=uid(); await fotoPut(id,data); nEntw.bloecke.push({id:uid(),typ:"foto",foto:id}); nAuto(); nRender();
 }
 
-let ZG=null;
-function zeichnenOeffnen(b){
-  const ov=document.createElement("div"); ov.className="zg"; ov.id="zg";
-  ov.innerHTML=`<div class="zg-bar"><button class="btn-text" data-z="abbr">Abbrechen</button><span style="flex:1"></span>
-    ${ZFARBEN.map((c,i)=>`<button class="zg-f" data-z="farbe" data-v="${c}" style="--c:${c}" aria-pressed="${i===0}" aria-label="Farbe"></button>`).join("")}
-    <button class="icon-btn zg-w" data-z="dicke" aria-label="Strichstärke"><span class="zg-d"></span></button>
-    <button class="icon-btn" data-z="radier" aria-pressed="false" aria-label="Radierer">${icon("radierer")}</button>
-    <button class="icon-btn" data-z="undo" aria-label="Rückgängig">${icon("undo")}</button>
-    <span style="flex:1"></span><button class="btn-filled sm" data-z="ok">Fertig</button></div>
-    <div class="zg-flaeche"><canvas></canvas></div>`;
-  document.body.appendChild(ov); document.body.classList.add("zg-offen");
-  const fl=ov.querySelector(".zg-flaeche"), cv=ov.querySelector("canvas"), ctx=cv.getContext("2d");
-  const r=fl.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
-  const h=b.striche.length?b.h:Math.round(1000*r.height/r.width);
-  const sk=Math.min(r.width/1000,r.height/h), cw=1000*sk, ch=h*sk;
-  cv.style.width=cw+"px"; cv.style.height=ch+"px"; cv.width=cw*dpr; cv.height=ch*dpr;
-  ZG={b,h,sk,dpr,ctx,cv,striche:JSON.parse(JSON.stringify(b.striche||[])),farbe:ZFARBEN[0],w:4,radier:false,akt:null,stift:false};
-  zgMalen();
-  cv.addEventListener("pointerdown",zgDown); cv.addEventListener("pointermove",zgMove); cv.addEventListener("pointerup",zgUp); cv.addEventListener("pointercancel",zgUp);
-  ov.addEventListener("click",zgKlick);
-}
-function zgPunkt(ev){ const r=ZG.cv.getBoundingClientRect(); return [Math.round((ev.clientX-r.left)/ZG.sk),Math.round((ev.clientY-r.top)/ZG.sk)]; }
-function zgMalen(){ const {ctx,dpr,sk}=ZG; ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,ZG.cv.width,ZG.cv.height); ctx.setTransform(dpr*sk,0,0,dpr*sk,0,0);
-  for(const s of [...ZG.striche,...(ZG.akt?[ZG.akt]:[])]){ ctx.strokeStyle=s.c; ctx.lineWidth=s.w; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.stroke(new Path2D(strichPfad(s.p))); } }
-function zgRadier(x,y){ const n=ZG.striche.length; ZG.striche=ZG.striche.filter(s=>{ for(let i=0;i<s.p.length;i+=2) if(Math.hypot(s.p[i]-x,s.p[i+1]-y)<14+s.w) return false; return true; }); if(ZG.striche.length!==n) zgMalen(); }
-function zgDown(ev){ if(ev.pointerType==="pen") ZG.stift=true; if(ZG.stift&&ev.pointerType==="touch") return; ev.preventDefault(); ZG.cv.setPointerCapture(ev.pointerId);
-  const [x,y]=zgPunkt(ev); if(ZG.radier){ ZG.radiert=true; zgRadier(x,y); return; } ZG.akt={c:ZG.farbe,w:ZG.w,p:[x,y]}; zgMalen(); }
-function zgMove(ev){ if(ZG.stift&&ev.pointerType==="touch") return; const evs=ev.getCoalescedEvents?ev.getCoalescedEvents():[ev];
-  for(const e of evs){ const [x,y]=zgPunkt(e); if(ZG.radier&&ZG.radiert) zgRadier(x,y); else if(ZG.akt){ const p=ZG.akt.p; if(Math.hypot(p[p.length-2]-x,p[p.length-1]-y)>=2) p.push(x,y); } }
-  if(ZG.akt) zgMalen(); }
-function zgUp(){ if(ZG.akt){ ZG.striche.push(ZG.akt); ZG.akt=null; zgMalen(); } ZG.radiert=false; }
-function zgZu(ok){ if(ok&&nEntw){ const b=nBlock(ZG.b.id); if(b){ b.striche=ZG.striche; b.h=ZG.h; nAuto(); } } $("#zg").remove(); document.body.classList.remove("zg-offen"); ZG=null; nRender(); }
-function zgKlick(ev){ const t=ev.target.closest("[data-z]"); if(!t) return; const z=t.dataset.z;
-  if(z==="abbr") zgZu(false); else if(z==="ok") zgZu(true);
-  else if(z==="undo"){ ZG.striche.pop(); zgMalen(); }
-  else if(z==="farbe"){ ZG.farbe=t.dataset.v; ZG.radier=false; document.querySelectorAll('#zg [data-z="farbe"]').forEach(x=>x.setAttribute("aria-pressed",String(x===t))); $('#zg [data-z="radier"]').setAttribute("aria-pressed","false"); }
-  else if(z==="radier"){ ZG.radier=!ZG.radier; t.setAttribute("aria-pressed",String(ZG.radier)); }
-  else if(z==="dicke"){ ZG.w=ZG.w===4?9:ZG.w===9?2:4; t.querySelector(".zg-d").style.height=ZG.w+"px"; } }
+/*ZEICHNEN*/
 
 function notizEingabe(el){
   if(!nEntw) return false;
@@ -2372,7 +2395,7 @@ function notizEingabe(el){
 }
 function notizTaste(ev){
   const el=ev.target; if(!nEntw||!el||!el.dataset) return;
-  if(el.classList&&el.classList.contains("n-titel")&&ev.key==="Enter"){ ev.preventDefault(); const f=$(".nedit .n-ta, .nedit .ni input"); if(f) f.focus(); return; }
+  if(el.classList&&el.classList.contains("n-titel")&&ev.key==="Enter"){ ev.preventDefault(); const b=nEntw.bloecke.find(x=>x.typ==="text"||x.items); if(b) nBlockNeu(b,b.items?`input[data-b="${b.id}"]`:`.n-ta[data-b="${b.id}"]`); return; }
   if(!el.dataset.i||el.tagName!=="INPUT") return;
   const b=nBlock(el.dataset.b); if(!b) return; const k=b.items.findIndex(x=>x.id===el.dataset.i);
   if(ev.key==="Enter"){ ev.preventDefault();
@@ -2401,7 +2424,7 @@ function notizKlick(a,el){
   case "nFilter": META.nfilter=el.dataset.v; metaSave(); render(); return true;
   case "nAdd": { const t=el.dataset.v; if(t==="foto"){ $("#fotoFile").click(); return true; } const b=nNeuBlock(t); nEntw.bloecke.push(b); nAuto();
     if(t==="zeichnung"){ nRender(); zeichnenOeffnen(b); return true; } nRender(t==="text"?`.n-ta[data-b="${b.id}"]`:`input[data-b="${b.id}"]`); return true; }
-  case "nBlockDel": { const b=nBlock(el.dataset.b); if(!b) return true; nEntw.bloecke=nEntw.bloecke.filter(x=>x!==b); if(!nEntw.bloecke.length) nEntw.bloecke.push(nNeuBlock("text")); if(b.typ==="foto") fotoDel([b.foto]); nAuto(); nRender(); return true; }
+  case "nBlockDel": { const b=nBlock(el.dataset.b); if(!b) return true; const vorher=nEntw.bloecke.slice(); if(b.typ!=="foto") setTimeout(()=>toast("Gelöscht","Rückgängig",()=>{ if(nEntw){ nEntw.bloecke=vorher; nAuto(); nRender(); } }),0); nEntw.bloecke=nEntw.bloecke.filter(x=>x!==b); if(!nEntw.bloecke.length) nEntw.bloecke.push(nNeuBlock("text")); if(b.typ==="foto") fotoDel([b.foto]); nAuto(); nRender(); return true; }
   case "nBlockMenu": { const L=nEntw.bloecke, i=L.findIndex(x=>x.id===el.dataset.b); if(i<0) return true; const d={b:el.dataset.b};
     menuAn(el,[...(i>0?[["nBlockHoch","Nach oben","hoch","",d]]:[]),...(i<L.length-1?[["nBlockRunter","Nach unten","runter","",d]]:[]),["nBlockDel","Block löschen","del","danger",d]]); return true; }
   case "nBlockHoch": case "nBlockRunter": { const L=nEntw.bloecke, i=L.findIndex(x=>x.id===el.dataset.b), j=a==="nBlockHoch"?i-1:i+1; if(i<0||j<0||j>=L.length) return true; [L[i],L[j]]=[L[j],L[i]]; nAuto(); const id=el.dataset.b; nRender(`.nb[data-b="${id}"] textarea, .nb[data-b="${id}"] input`); return true; }
@@ -2409,7 +2432,7 @@ function notizKlick(a,el){
   case "nSichtAuf": sichtDialog(); return true;
   case "nCheck": { const b=nBlock(el.dataset.b), i=b&&b.items.find(x=>x.id===el.dataset.i); if(i){ i.ok=!i.ok; nAuto(); nBlockNeu(b); } return true; }
   case "nItemAdd": { const b=nBlock(el.dataset.b); if(!b) return true; const n={id:uid(),t:"",ok:false}; b.items.push(n); nAuto(); nBlockNeu(b,`input[data-i="${n.id}"]`); return true; }
-  case "nItemDel": { const b=nBlock(el.dataset.b); if(!b) return true; b.items=b.items.filter(x=>x.id!==el.dataset.i); if(!b.items.length){ nEntw.bloecke=nEntw.bloecke.filter(x=>x!==b); nAuto(); nRender(); return true; } nAuto(); nBlockNeu(b); return true; }
+  case "nItemDel": { const b=nBlock(el.dataset.b); if(!b) return true; const vI=b.items.slice(), vB=nEntw.bloecke.slice(); setTimeout(()=>toast("Gelöscht","Rückgängig",()=>{ if(nEntw){ b.items=vI; nEntw.bloecke=vB; nAuto(); nRender(); } }),0); b.items=b.items.filter(x=>x.id!==el.dataset.i); if(!b.items.length){ nEntw.bloecke=nEntw.bloecke.filter(x=>x!==b); nAuto(); nRender(); return true; } nAuto(); nBlockNeu(b); return true; }
   case "nZeichnen": { const b=nBlock(el.dataset.b); if(b) zeichnenOeffnen(b); return true; }
   case "nFotoShow": { const b=nBlock(el.dataset.b); if(b) dialog("Foto",`<img class="dimg" src="${fotoCache.get(b.foto)||""}" alt="">`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return true; }
   case "nSpeichern": if(nEntw&&istMeine(nEntw)) notizFertig(); else notizVerlassen(); return true;
@@ -2615,7 +2638,7 @@ $("#backBtn").addEventListener("click",zurueck);
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeOverlays(); if(e.key==="Enter"&&e.target.matches(".li[role=button]")) e.target.click(); });
 window.addEventListener("scroll",()=>{ $("#topbar").classList.toggle("scrolled",scrollY>4); document.body.classList.toggle("fab-klein",scrollY>60); },{passive:true});
 
-try{ const kopf=()=>{ const t=$("#topbar"), r=t&&t.querySelector(".tb-row"); if(!t||!r) return; const s=document.documentElement.style; s.setProperty("--tbh",Math.ceil(t.getBoundingClientRect().height)+"px"); s.setProperty("--kopf",(r.offsetTop+r.offsetHeight)+"px"); }; kopf(); if(window.ResizeObserver) new ResizeObserver(kopf).observe($("#topbar"),{box:"border-box"}); ["resize","orientationchange","pageshow"].forEach(ev=>addEventListener(ev,kopf)); document.addEventListener("visibilitychange",kopf); if(window.visualViewport) visualViewport.addEventListener("resize",kopf); [150,500,1500].forEach(ms=>setTimeout(kopf,ms)); }catch(e){}
+try{ const kopf=()=>{ const t=$("#topbar"), r=t&&t.querySelector(".tb-row"); if(!t||!r) return; const s=document.documentElement.style; s.setProperty("--tbh",Math.ceil(t.getBoundingClientRect().height)+"px"); s.setProperty("--kopf",(r.offsetTop+r.offsetHeight)+"px"); }; kopf(); if(window.ResizeObserver) new ResizeObserver(kopf).observe($("#topbar"),{box:"border-box"}); ["resize","orientationchange","pageshow"].forEach(ev=>addEventListener(ev,kopf)); document.addEventListener("visibilitychange",kopf); if(window.visualViewport) visualViewport.addEventListener("resize",kopf); [150,500,1500].forEach(ms=>setTimeout(kopf,ms)); /* iPad mit Tastatur: iOS schiebt die Seite hoch, feste Leisten wandern sonst unter die Statusleiste */ if(window.visualViewport){ const vv=()=>document.documentElement.style.setProperty("--vvt",Math.max(0,Math.round(visualViewport.offsetTop))+"px"); visualViewport.addEventListener("resize",vv); visualViewport.addEventListener("scroll",vv); addEventListener("scroll",vv,{passive:true}); } }catch(e){}
 $("#railBtn").innerHTML=icon(railOpen?"menuOpen":"menu"); backSetzen(); $("#menuBtn").innerHTML=icon("more");
 if("serviceWorker" in navigator && location.protocol==="https:"){
   const hatteSW=!!navigator.serviceWorker.controller;
@@ -2634,7 +2657,6 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") syncSoon(); else { notizSpeichernStill(); eSpeichernStill(); } });
 window.addEventListener("pagehide",()=>{ notizSpeichernStill(); eSpeichernStill(); });
 document.addEventListener("keydown",notizTaste);
-document.addEventListener("pointerdown",e=>{ if(e.target.closest&&e.target.closest(".nb-ctl")) e.preventDefault(); },true);
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") einstLaden().then(()=>{ const w=loginSync(); if(w&&nav.v==="login"&&META.angemeldet) nav={v:"start"}; setMe(); if(w||(testGesperrt()&&nav.v!=="login")) render(); }); });
 window.addEventListener("online",()=>syncSoon()); window.addEventListener("offline",()=>setSync("offline"));
 try{ navigator.storage&&navigator.storage.persist&&navigator.storage.persist(); }catch(e){}
