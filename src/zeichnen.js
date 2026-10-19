@@ -52,6 +52,9 @@ const ZG_IC={
   stil:'<path d="M4 7h16"/><path d="M4 12h3.5M10.2 12h3.6M16.5 12H20"/><path d="M4 17h.01M8 17h.01M12 17h.01M16 17h.01M20 17h.01" stroke-width="2.6"/>',
   gerade:'<path d="M4 18L20 6"/><path d="M4 21h16" stroke-opacity=".4"/>',
   chev:'<path d="M7 10l5 5 5-5"/>',
+  schere:'<circle cx="6" cy="7" r="2.6"/><circle cx="6" cy="17" r="2.6"/><path d="M8.3 8.5L20 17.5M8.3 15.5L20 6.5"/>',
+  kopie:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+  dupl:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M14 11v6M11 14h6"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
   bild:'<rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.7"/><path d="M20.5 16.5l-5-5-8.5 7.5"/>',
   unter:'<path d="M7 4v7a5 5 0 0 0 10 0V4"/><path d="M5 20h14"/>',
   pinsel:'<path d="M14.5 4.5l5 5"/><path d="M20.4 3.6a2 2 0 0 0-2.8 0L9.5 11.7l2.8 2.8 8.1-8.1a2 2 0 0 0 0-2.8z"/><path d="M9.5 11.7c-2.4-.4-4.6 1.3-4.9 3.7-.2 1.8-.9 3.1-2.1 3.9 3.6 1.4 7.6.6 9.2-2.2.6-1 .8-1.9.6-2.6"/>',
@@ -264,7 +267,7 @@ function zgMalen(){ if(!ZG||!ZG.sk) return; const {ctx,dpr,sk,px,pw}=ZG, oy=ZG.t
   const dunkel=ZG.seite.papier==="dunkel", ed=ZG.edit?ZG.edit.i:null;
   ZG.striche.forEach((s,i)=>{ if(i===ed) return; const b=zgBox(s); if(b[3]<y0-30||b[1]>y1+30) return; zgZeichne(ctx,s,dunkel); });
   if(ZG.akt) zgZeichne(ctx,ZG.akt,dunkel);
-  if(ZG.lasso&&ZG.lasso.length>2){ ctx.save(); ctx.strokeStyle="#C8102E"; ctx.lineWidth=1.6/sk; ctx.setLineDash([6/sk,5/sk]); ctx.fillStyle="rgba(200,16,46,.06)"; const L=ZG.lasso, p=new Path2D(ZG.lassoBox?`M${L[0]} ${L[1]}L${L[2]} ${L[3]}L${L[4]} ${L[5]}L${L[6]} ${L[7]}Z`:strichPfad(L)+"Z"); ctx.fill(p); ctx.stroke(p); ctx.restore(); }
+  if(ZG.lasso&&ZG.lasso.length>2){ ctx.save(); ctx.strokeStyle=ZG_BLAU; ctx.lineWidth=1.6/sk; ctx.setLineDash([5/sk,4/sk]); ctx.fillStyle="rgba(30,123,242,.05)"; const L=ZG.lasso, p=new Path2D(ZG.lassoBox?`M${L[0]} ${L[1]}L${L[2]} ${L[3]}L${L[4]} ${L[5]}L${L[6]} ${L[7]}Z`:strichPfad(L)+"Z"); ctx.fill(p); ctx.stroke(p); ctx.restore(); }
   if(ZG.rad&&ZG.rad.pos){ const [x,y]=ZG.rad.pos; ctx.save(); ctx.strokeStyle="rgba(0,0,0,.45)"; ctx.fillStyle="rgba(255,255,255,.35)"; ctx.lineWidth=1.2/sk; ctx.beginPath(); ctx.arc(x,y,zgRadR(),0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.restore(); }
   ctx.restore();
   ctx.save(); ctx.translate(px,oy); ctx.scale(sk,sk); zgAuswahlRahmen(ctx); ctx.restore();
@@ -308,52 +311,66 @@ function zgLassoWahl(L){ const out=[]; ZG.striche.forEach((s,i)=>{ if(s.t==="tex
 function zgSelBox(){ let a=Infinity,b=Infinity,c=-Infinity,d=-Infinity; for(const i of ZG.sel){ const s=ZG.striche[i]; if(!s) continue; const x=zgBox(s); a=Math.min(a,x[0]); b=Math.min(b,x[1]); c=Math.max(c,x[2]); d=Math.max(d,x[3]); }
   return isFinite(a)?[a,b,c,d]:null; }
 const zgPad=()=>10/ZG.sk;
-/* Griffe: Linien und Polygone bekommen Punkte an den Ecken (verlängern, verschieben);
-   alles andere 8 Griffe am Rahmen (Seiten ziehen = nur in eine Richtung, Ecken = beide). Text: Seiten = Breite, Ecken = Schriftgröße. */
-function zgGriffe(){ const B=zgSelBox(); if(!B) return null; const p=zgPad(), [a,b,c,d]=B, eins=ZG.sel.length===1?ZG.striche[ZG.sel[0]]:null, out={box:B,punkte:false,g:[]};
-  if(eins&&ZG_LINIENART.includes(eins.t)){ out.punkte=true; for(let k=0;k<eins.p.length;k+=2) out.g.push({art:"pkt",k:k/2,x:eins.p[k],y:eins.p[k+1]}); zgDrehGriff(out); return out; }
-  const alle=eins&&eins.t==="text"&&!eins.rot?["nw","ne","sw","se","w","e"]:eins&&eins.t==="bild"?["nw","ne","sw","se","n","s","w","e"]:["nw","n","ne","e","se","s","sw","w"];
-  for(const h of alle) out.g.push({art:h,x:h.includes("w")?a-p:h.includes("e")?c+p:(a+c)/2,y:h.includes("n")?b-p:h.includes("s")?d+p:(b+d)/2});
-  zgDrehGriff(out); return out; }
-/* Drehgriff unten mittig – oben sitzt die Leiste mit Kopieren/Löschen */
-function zgDrehGriff(out){ if(ZG.selWz) return; const [a,b,c,d]=out.box, ab=zgPad()+38/ZG.sk; let y=d+ab, oben=false;
-  /* passt unten nicht mehr auf den Bildschirm ⇒ nach oben, die Leiste rutscht dann nach unten */
-  if(ZG.top-ZG.sy+y*ZG.sk>ZG.vh-28&&ZG.top-ZG.sy+(b-ab)*ZG.sk>ZG.top){ y=b-ab; oben=true; }
-  out.dreh={x:(a+c)/2,y,oben}; out.g.push({art:"rot",x:out.dreh.x,y}); }
-function zgGriffTreffer(x,y){ const G=zgGriffe(), tol=20/ZG.sk; if(!G) return null; let best=null, bd=tol; for(const g of G.g){ const d=Math.hypot(x-g.x,y-g.y); if(d<bd){ bd=d; best=g; } } return best; }
+/* Auswahl wie GoodNotes: dünner blauer Rahmen, runde Eckgriffe, kleine Punkte an den Seiten, Drehgriff als Kreis mit Pfeil.
+   Der Rahmen dreht sich bei einem einzelnen gedrehten Objekt mit; der Drehgriff wandert beim Drehen um die Auswahl herum. */
+const ZG_BLAU="#1E7BF2";
+function zgRahmen(){ const eins=ZG.sel.length===1?ZG.striche[ZG.sel[0]]:null;
+  if(eins&&eins.rot&&!ZG_PUNKTART.includes(eins.t)){ const [a,b,c,d]=zgBoxRoh(eins); return {lok:true,a,b,c,d,cx:(a+c)/2,cy:(b+d)/2,rot:eins.rot}; }
+  const B=zgSelBox(); if(!B) return null; const [a,b,c,d]=B; return {lok:false,a,b,c,d,cx:(a+c)/2,cy:(b+d)/2,rot:0}; }
+function zgGriffe(){ if(!ZG.sel.length) return null; const key=ZG.sel.join(","); if(ZG.selKey!==key){ ZG.selKey=key; ZG.selDreh=0; }
+  const F=zgRahmen(); if(!F) return null; const p=zgPad(), aus=12/ZG.sk, eins=ZG.sel.length===1?ZG.striche[ZG.sel[0]]:null, out={f:F,box:zgSelBox(),punkte:false,g:[]};
+  const W=(x,y)=>F.rot?zgDreh([x,y],F.cx,F.cy,F.rot):[x,y];
+  if(eins&&ZG_LINIENART.includes(eins.t)){ out.punkte=true; for(let k=0;k<eins.p.length;k+=2) out.g.push({art:"pkt",k:k/2,x:eins.p[k],y:eins.p[k+1]}); }
+  else { const alle=eins&&eins.t==="text"?["nw","ne","sw","se","w","e"]:["nw","n","ne","e","se","s","sw","w"];
+    for(const h of alle){ let lx=h.includes("w")?F.a-p:h.includes("e")?F.c+p:F.cx, ly=h.includes("n")?F.b-p:h.includes("s")?F.d+p:F.cy;
+      if(h==="n") ly-=aus; else if(h==="s") ly+=aus; else if(h==="w") lx-=aus; else if(h==="e") lx+=aus;
+      const [x,y]=W(lx,ly); out.g.push({art:h,x,y}); } }
+  /* Drehgriff: Richtung „unten“, mitgedreht; passt er nicht auf den Bildschirm, kommt er auf die andere Seite */
+  const phi=F.lok?F.rot:(ZG.selDreh||0), ux=-Math.sin(phi), uy=Math.cos(phi), hw=(F.c-F.a)/2+p, hh=(F.d-F.b)/2+p, ab=44/ZG.sk;
+  const dist=F.lok?hh+ab:Math.min(Math.abs(ux)>1e-6?hw/Math.abs(ux):Infinity,Math.abs(uy)>1e-6?hh/Math.abs(uy):Infinity)+ab;
+  let x=F.cx+ux*dist, y=F.cy+uy*dist; const sx=ZG.px+x*ZG.sk, sy=ZG.top-ZG.sy+y*ZG.sk;
+  if(!(ZG.zug&&ZG.zug.art==="griff")&&(sy>ZG.vh-30||sy<ZG.top-10||sx<24||sx>ZG.vw-24)){ x=F.cx-ux*dist; y=F.cy-uy*dist; }
+  out.dreh={x,y}; out.g.push({art:"rot",x,y}); return out; }
+function zgGriffTreffer(x,y){ const G=zgGriffe(), tol=20/ZG.sk; if(!G) return null; let best=null, bd=tol; for(const g of G.g){ const d=Math.hypot(x-g.x,y-g.y)-(g.art==="rot"?6/ZG.sk:0); if(d<bd){ bd=d; best=g; } } return best; }
 function zgSelInnen(x,y,ev){ const G=zgGriffe(); if(!G) return false;
   if(G.punkte||ZG.selWz) return ZG.sel.some(i=>zgTrifft(ZG.striche[i],x,y,zgToleranz(ev)));
-  const [a,b,c,d]=G.box, p=zgPad(); return x>=a-p&&x<=c+p&&y>=b-p&&y<=d+p; }
-function zgAuswahlRahmen(ctx){ if(!ZG.sel.length||ZG.edit) return; const G=zgGriffe(); if(!G) return; const [a,b,c,d]=G.box, p=zgPad(), sk=ZG.sk;
-  ctx.save(); ctx.strokeStyle="#C8102E"; ctx.lineWidth=1.6/sk;
-  if(!G.punkte){ ctx.setLineDash([6/sk,5/sk]); ctx.strokeRect(a-p,b-p,c-a+2*p,d-b+2*p); ctx.setLineDash([]); }
-  if(G.dreh){ ctx.beginPath(); ctx.moveTo(G.dreh.x,G.dreh.oben?b-(G.punkte?0:p):d+(G.punkte?0:p)); ctx.lineTo(G.dreh.x,G.dreh.y); ctx.lineWidth=1.4/sk; ctx.stroke(); }
-  for(const g of G.g){ if(g.art==="rot") continue; ctx.beginPath(); ctx.arc(g.x,g.y,(G.punkte?9:7)/sk,0,Math.PI*2); ctx.fillStyle=G.punkte?"#C8102E":"#fff"; ctx.fill(); ctx.lineWidth=2.2/sk; ctx.strokeStyle=G.punkte?"#fff":"#C8102E"; ctx.stroke(); }
-  if(G.dreh){ const {x,y}=G.dreh, R=13/sk; ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2); ctx.fillStyle="#C8102E"; ctx.fill();
-    ctx.strokeStyle="#fff"; ctx.lineWidth=1.8/sk; ctx.beginPath(); ctx.arc(x,y,R*.48,-Math.PI*.15,Math.PI*1.35); ctx.stroke();
-    const ex=x+R*.48*Math.cos(-Math.PI*.15), ey=y+R*.48*Math.sin(-Math.PI*.15); ctx.beginPath(); ctx.moveTo(ex-R*.28,ey-R*.12); ctx.lineTo(ex,ey); ctx.lineTo(ex+R*.05,ey-R*.32); ctx.stroke();
-    const z=ZG.zug; if(z&&z.art==="griff"&&z.g.art==="rot"&&z.anzeige!=null){ const t=z.anzeige+"°"; ctx.font=`700 ${13/sk}px system-ui,-apple-system,sans-serif`; const w=ctx.measureText(t).width+14/sk, hx=x-w/2, hy=G.dreh.oben?y-R-30/sk:y+R+8/sk;
+  const F=G.f, p=zgPad(); if(F.rot) [x,y]=zgDreh([x,y],F.cx,F.cy,-F.rot); return x>=F.a-p&&x<=F.c+p&&y>=F.b-p&&y<=F.d+p; }
+function zgAuswahlRahmen(ctx){ if(!ZG.sel.length||ZG.edit) return; const G=zgGriffe(); if(!G) return; const F=G.f, p=zgPad(), sk=ZG.sk;
+  ctx.save(); ctx.strokeStyle=ZG_BLAU; ctx.lineWidth=1.5/sk;
+  if(!G.punkte){ const E=F.rot?zgDreh([F.a-p,F.b-p,F.c+p,F.b-p,F.c+p,F.d+p,F.a-p,F.d+p],F.cx,F.cy,F.rot):[F.a-p,F.b-p,F.c+p,F.b-p,F.c+p,F.d+p,F.a-p,F.d+p];
+    ctx.beginPath(); ctx.moveTo(E[0],E[1]); for(let i=2;i<8;i+=2) ctx.lineTo(E[i],E[i+1]); ctx.closePath(); ctx.stroke(); }
+  for(const g of G.g){ if(g.art==="rot") continue; const gross=g.art==="pkt"||g.art.length===2;
+    ctx.beginPath(); ctx.arc(g.x,g.y,(g.art==="pkt"?8:gross?7:4.5)/sk,0,Math.PI*2);
+    if(gross){ ctx.fillStyle="#fff"; ctx.fill(); ctx.lineWidth=1.8/sk; ctx.stroke(); } else { ctx.fillStyle=ZG_BLAU; ctx.fill(); } }
+  if(G.dreh){ const {x,y}=G.dreh, R=15/sk, r=R*.5; ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2); ctx.fillStyle="#fff"; ctx.fill(); ctx.lineWidth=1.6/sk; ctx.stroke();
+    ctx.lineWidth=1.7/sk; ctx.lineCap="round"; ctx.lineJoin="round";
+    for(const st of [0,Math.PI]){ ctx.beginPath(); ctx.arc(x,y,r,st+.35,st+2.55); ctx.stroke(); const ea=st+2.55, ex=x+r*Math.cos(ea), ey=y+r*Math.sin(ea), tx=-Math.sin(ea), ty=Math.cos(ea);
+      ctx.beginPath(); ctx.moveTo(ex+(tx*.0-Math.cos(ea)*.45)*r*.9,ey+(ty*.0-Math.sin(ea)*.45)*r*.9); ctx.lineTo(ex+tx*r*.55,ey+ty*r*.55); ctx.lineTo(ex+Math.cos(ea)*.45*r*.9,ey+Math.sin(ea)*.45*r*.9); ctx.stroke(); }
+    const z=ZG.zug; if(z&&z.art==="griff"&&z.g.art==="rot"&&z.anzeige!=null){ const t=z.anzeige+"°"; ctx.font=`700 ${13/sk}px system-ui,-apple-system,sans-serif`; const w=ctx.measureText(t).width+14/sk, hx=x-w/2, hy=y-R-30/sk;
       ctx.fillStyle="rgba(31,31,34,.88)"; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(hx,hy,w,22/sk,11/sk); else ctx.rect(hx,hy,w,22/sk); ctx.fill(); ctx.fillStyle="#fff"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(t,x,hy+11/sk); } }
   ctx.restore(); }
 const zgPageZuClient=(x,y)=>{ const r=ZG.cv.getBoundingClientRect(); return [r.left+ZG.px+x*ZG.sk,r.top+ZG.top-ZG.sy+y*ZG.sk]; };
 const zgRel=(cx,cy)=>{ const r=ZG.ov.getBoundingClientRect(); return [cx-r.left,cy-r.top]; };
-function zgSelLeiste(){ const bar=ZG.ov.querySelector("#zgSel"); if(!ZG.sel.length||ZG.selWz||ZG.edit||ZG.zug){ bar.hidden=true; return; }
-  const B=zgSelBox(); if(!B){ bar.hidden=true; return; } const einText=ZG.sel.length===1&&ZG.striche[ZG.sel[0]].t==="text";
-  const k=(z,l,rot)=>`<button class="zg-chip${rot?" zg-rot":""}" data-z="${z}">${l}</button>`;
-  const html=(einText?k("selEdit","Bearbeiten"):"")+k("selKopie","Kopieren")+k("selAus","Ausschneiden")+k("selDup","Duplizieren")+k("selDel","Löschen",1);
+/* Leiste Ausschneiden/Kopieren/Duplizieren/Löschen: auf der Seite gegenüber dem Drehgriff */
+function zgSelLeiste(){ const bar=ZG.ov.querySelector("#zgSel"); if(!ZG.sel.length||ZG.edit||ZG.zug){ bar.hidden=true; return; }
+  const G=zgGriffe(); if(!G){ bar.hidden=true; return; } const einText=ZG.sel.length===1&&ZG.striche[ZG.sel[0]].t==="text";
+  const k=(z,ic,l,rot)=>`<button class="zg-b${rot?" zg-rot":""}" data-z="${z}" aria-label="${l}" title="${l}">${zgIc(ic)}</button>`;
+  const html=(einText?k("selEdit","edit","Text bearbeiten"):"")+k("selAus","schere","Ausschneiden")+k("selKopie","kopie","Kopieren")+k("selDup","dupl","Duplizieren")+k("selDel","leeren","Löschen",1);
   if(bar.dataset.h!==html){ bar.innerHTML=html; bar.dataset.h=html; }
-  bar.hidden=false; const p=zgPad()+12/ZG.sk, [l,t]=zgPageZuClient(B[0]-p,B[1]-p), [rr,u]=zgPageZuClient(B[2]+p,B[3]+p), [L,T]=zgRel((l+rr)/2,t), [,U]=zgRel(0,u);
-  const fr=ZG.fl.getBoundingClientRect(), [,flTop]=zgRel(0,fr.top), bw=bar.offsetWidth, bh=bar.offsetHeight;
-  const G=zgGriffe(), oben=G&&G.dreh&&G.dreh.oben;
-  let top=oben?U+8:T-bh-8; if(!oben&&top<flTop+ZG.top-20) top=U+58; if(oben&&top+bh>ZG.ov.clientHeight-12) top=T-bh-58; top=Math.min(top,ZG.ov.clientHeight-bh-12);
-  bar.style.left=Math.max(8,Math.min(ZG.ov.clientWidth-bw-8,L-bw/2))+"px"; bar.style.top=Math.max(flTop+8,top)+"px"; }
+  bar.hidden=false; const F=G.f, p=zgPad(), pts=G.punkte?ZG.striche[ZG.sel[0]].p.reduce((o,v,i)=>(i%2?o[o.length-1].push(v):o.push([v]),o),[]):G.g.filter(g=>g.art!=="rot").map(g=>[g.x,g.y]);
+  if(!pts.length){ bar.hidden=true; return; }
+  const sc=pts.map(([x,y])=>zgRel(...zgPageZuClient(x,y))), T=Math.min(...sc.map(q=>q[1]))-14, U=Math.max(...sc.map(q=>q[1]))+14, [Lx]=zgRel(...zgPageZuClient(F.cx,F.cy)), [,Hy]=zgRel(...zgPageZuClient(G.dreh.x,G.dreh.y)), [,Cy]=zgRel(...zgPageZuClient(F.cx,F.cy));
+  const fr=ZG.fl.getBoundingClientRect(), [,flTop]=zgRel(0,fr.top), bw=bar.offsetWidth, bh=bar.offsetHeight, H=ZG.ov.clientHeight, griffUnten=Hy>Cy;
+  let top=griffUnten?T-bh:U; if(griffUnten&&top<flTop+ZG.top-20) top=Math.max(U,Hy+24); if(!griffUnten&&top+bh>H-12) top=Math.min(T,Hy-24)-bh;
+  top=Math.max(flTop+8,Math.min(top,H-bh-12));
+  bar.style.left=Math.max(8,Math.min(ZG.ov.clientWidth-bw-8,Lx-bw/2))+"px"; bar.style.top=top+"px"; }
 /* Griff ziehen */
-function zgGriffZiehen(z,x,y){ const g=z.g, [a,b,c,d]=z.box, MIN=8, p=zgPad();
-  if(g.art==="rot"){ const cx=(a+c)/2, cy=(b+d)/2; if(z.a0==null) z.a0=Math.atan2(ZG.start.y-cy,ZG.start.x-cx);
-    let dw=Math.atan2(y-cy,x-cx)-z.a0; const eins=z.orig.length===1?z.orig[0]:null, basis=eins&&!ZG_PUNKTART.includes(eins.t)?(eins.rot||0):0;
+function zgGriffZiehen(z,x,y){ const g=z.g, [a,b,c,d]=z.box, MIN=8, p=zgPad(), F=z.f;
+  if(g.art==="rot"){ const cx=F.cx, cy=F.cy; if(z.a0==null) z.a0=Math.atan2(ZG.start.y-cy,ZG.start.x-cx);
+    let dw=Math.atan2(y-cy,x-cx)-z.a0; const eins=z.orig.length===1?z.orig[0]:null, basis=F.lok?(eins.rot||0):(z.d0||0);
     /* leichtes Einrasten bei 0°, 45°, 90° … (±4°) */
     const ges=basis+dw, st=Math.round(ges/(Math.PI/4))*(Math.PI/4); if(Math.abs(ges-st)<.07) dw=st-basis;
-    let grad=Math.round((basis+dw)*180/Math.PI)%360; if(grad<0) grad+=360; z.anzeige=grad;
+    let grad=Math.round((basis+dw)*180/Math.PI)%360; if(grad<0) grad+=360; z.anzeige=grad; if(!F.lok) ZG.selDreh=(z.d0||0)+dw;
     ZG.sel.forEach((i,k)=>{ const o=z.orig[k];
       if(ZG_PUNKTART.includes(o.t)){ ZG.striche[i]={...o,p:zgDreh(o.p,cx,cy,dw).map(zgR)}; return; }
       const [ox,oy]=zgZentrum(o), [nx,ny]=zgDreh([ox,oy],cx,cy,dw), dx=nx-ox, dy=ny-oy; let rw=((o.rot||0)+dw)%(2*Math.PI); if(Math.abs(rw)<1e-4||Math.abs(Math.abs(rw)-2*Math.PI)<1e-4) rw=0;
@@ -362,8 +379,20 @@ function zgGriffZiehen(z,x,y){ const g=z.g, [a,b,c,d]=z.box, MIN=8, p=zgPad();
   if(g.art==="pkt"){ const i=ZG.sel[0], o=z.orig[0], P=o.p.slice(); let nx=x, ny=y;
     if(P.length===4){ const k=g.k?0:2; [nx,ny]=zgWinkelFang(P[k],P[k+1],nx,ny); }
     P[2*g.k]=zgR(nx); P[2*g.k+1]=zgR(ny); ZG.striche[i]={...o,p:P}; return; }
-  const h=g.art, px=h.includes("w")?x+p:h.includes("e")?x-p:x, py=h.includes("n")?y+p:h.includes("s")?y-p:y, eins=z.orig.length===1?z.orig[0]:null;
-  if(eins&&eins.t==="text"&&!eins.rot){ const i=ZG.sel[0], o=eins, m=zgTextMass(o), fs=o.fs||28;
+  const h=g.art, eins=z.orig.length===1?z.orig[0]:null, aus=12/ZG.sk;
+  /* Griff liegt außerhalb des Rahmens: Zeigerposition auf die Rahmenkante zurückrechnen */
+  const kante=(lx,ly)=>[h.includes("w")?lx+p+(h==="w"?aus:0):h.includes("e")?lx-p-(h==="e"?aus:0):lx, h.includes("n")?ly+p+(h==="n"?aus:0):h.includes("s")?ly-p-(h==="s"?aus:0):ly];
+  if(F.lok){ /* einzelnes gedrehtes Objekt: im eigenen (ungedrehten) Rahmen rechnen */
+    const o=eins, i=ZG.sel[0], [lx,ly]=zgDreh([x,y],F.cx,F.cy,-F.rot), [qx,qy]=kante(lx,ly), fa=F.a, fb=F.b, fc=F.c, fd=F.d;
+    let A=fa,B=fb,C=fc,D=fd; if(h.includes("w")) A=Math.min(qx,fc-MIN); if(h.includes("e")) C=Math.max(qx,fa+MIN); if(h.includes("n")) B=Math.min(qy,fd-MIN); if(h.includes("s")) D=Math.max(qy,fb+MIN);
+    if((o.t==="bild"||o.t==="text")&&h.length===2){ const f=Math.max((C-A)/(fc-fa),(D-B)/(fd-fb)); if(h.includes("w")) A=fc-(fc-fa)*f; else C=fa+(fc-fa)*f; if(h.includes("n")) B=fd-(fd-fb)*f; else D=fb+(fd-fb)*f; }
+    const [wx,wy]=zgDreh([(A+C)/2,(B+D)/2],F.cx,F.cy,F.rot), n={...o};
+    if(o.t==="text"){ const fs=o.fs||28; if(h==="w"||h==="e") n.bw=zgR(Math.max(fs*1.5,C-A-(o.bg?16:0))); else { const f=(C-A)/(fc-fa); n.fs=Math.max(6,zgR(fs*f)); if(o.bw) n.bw=zgR(o.bw*f); }
+      const m=zgTextMass(n); n.p=[zgR(wx-m.w/2),zgR(wy-m.h/2)]; }
+    else { const r=o.t==="bild"?0:(o.w||4)/2, hw=Math.max(1,(C-A)/2-r), hh=Math.max(1,(D-B)/2-r); n.p=[zgR(wx-hw),zgR(wy-hh),zgR(wx+hw),zgR(wy+hh)]; }
+    ZG.striche[i]=n; return; }
+  const [px,py]=kante(x,y);
+  if(eins&&eins.t==="text"){ const i=ZG.sel[0], o=eins, m=zgTextMass(o), fs=o.fs||28;
     if(h==="e"){ ZG.striche[i]={...o,bw:zgR(Math.max(fs*1.5,px-o.p[0]))}; return; }
     if(h==="w"){ const re=o.p[0]+m.w, l=Math.min(px,re-fs*1.5); ZG.striche[i]={...o,p:[zgR(l),o.p[1]],bw:zgR(re-l)}; return; }
     const ax=h.includes("w")?c:a, ay=h.includes("n")?d:b, f=Math.max(.2,Math.abs(px-ax)/Math.max(1,c-a));
@@ -373,7 +402,7 @@ function zgGriffZiehen(z,x,y){ const g=z.g, [a,b,c,d]=z.box, MIN=8, p=zgPad();
   /* Bild an der Ecke: Seitenverhältnis bleibt */
   if(eins&&eins.t==="bild"&&h.length===2){ const f=Math.max(fx,fy); fx=fy=f; if(h.includes("w")) A=c-(c-a)*f; else C=a+(c-a)*f; if(h.includes("n")) B=d-(d-b)*f; else D=b+(d-b)*f; }
   ZG.sel.forEach((i,k)=>{ const o=z.orig[k];
-    if(o.rot&&!ZG_PUNKTART.includes(o.t)){ /* gedreht: Mitte mitnehmen, Größe gleichmäßig */
+    if(o.rot&&!ZG_PUNKTART.includes(o.t)){ /* gedreht (in Gruppe): Mitte mitnehmen, Größe gleichmäßig */
       const [ox,oy]=zgZentrum(o), nx=A+(ox-a)*fx, ny=B+(oy-b)*fy, f=Math.sqrt(Math.abs(fx*fy)), n={...o};
       if(o.t==="text"){ n.fs=Math.max(6,zgR((o.fs||28)*f)); if(o.bw) n.bw=zgR(o.bw*f); const m=zgTextMass(n); n.p=[zgR(nx-m.w/2),zgR(ny-m.h/2)]; }
       else { const [ra,rb,rc,rd]=zgBoxRoh(o), hw=(rc-ra)/2*f, hh=(rd-rb)/2*f; n.p=[zgR(nx-hw),zgR(ny-hh),zgR(nx+hw),zgR(ny+hh)]; }
@@ -438,7 +467,7 @@ function zgDown(ev){ if(!ZG) return; zgPopZu();
   const [x,y]=zgPunkt(ev), wz=ZG.cfg.wz; ZG.start={x,y,cx:ev.clientX,cy:ev.clientY,typ,bewegt:false};
   /* Auswahl bearbeiten: Griff ziehen oder Auswahl verschieben */
   if(ZG.sel.length&&(wz==="lasso"||ZG.selWz)){ const g=zgGriffTreffer(x,y), orig=ZG.sel.map(i=>ZG.striche[i]);
-    if(g){ zgSnap(); ZG.zug={art:"griff",g,orig,box:zgSelBox()}; zgMalen(); return; }
+    if(g){ zgSnap(); const G=zgGriffe(); ZG.zug={art:"griff",g,orig,box:zgSelBox(),f:G.f,d0:ZG.selDreh||0}; zgMalen(); return; }
     if(zgSelInnen(x,y,ev)){ zgSnap(); ZG.zug={art:"ziehen",orig,x,y}; return; } }
   if(ZG.selWz){ ZG.sel=[]; ZG.selWz=false; }
   if(wz==="lasso"){ ZG.lasso=[x,y]; ZG.lassoBox=ZG.cfg.lasso.art==="box"; return; }
@@ -570,7 +599,7 @@ function zgOptBauen(){ if(!ZG) return; const o=ZG.ov.querySelector("#zgOpt"), c=
   if(!ZG.sel.length) ZG.selWz=false; const selO=ZG.sel.map(i=>ZG.striche[i]).filter(Boolean);
   if(ZG.edit) h=zgTextOpt(ZG.edit.s);
   else if(selO.length&&!ZG.selWz){ const txt=selO.filter(s=>s.t==="text"), str=selO.filter(s=>s.t!=="text"&&s.t!=="bild");
-    if(!txt.length&&!str.length) h=`<span class="zg-hint">Bild verschieben, an den Ecken vergrößern, unten drehen</span>`;
+    if(!txt.length&&!str.length) h=`<span class="zg-hint">Bild verschieben, an den Ecken vergrößern, am Pfeil drehen</span>`;
     else if(txt.length===selO.length) h=zgTextOpt(txt[0]);
     else { h=txt.length?zgPunktKnopf(selO[0].c):zgKarussell(zgFarbListe(""),selO[0].c);
       if(txt.length) h+=zgTr+`<button class="zg-b" data-z="fsStufe" data-v="-1" aria-label="Schrift kleiner">${zgIc("minus")}</button><button class="zg-b" data-z="fsStufe" data-v="1" aria-label="Schrift größer">${zgIc("plus")}</button>`;
