@@ -1561,7 +1561,7 @@ document.addEventListener("click",e=>{
 })();
 /*DEMO*/
 /*PROFIL*/
-function render(){
+function render(){ profilAnwenden();
   const app=$("#app");
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
   const top=TOP.includes(nav.v), login=nav.v==="login";

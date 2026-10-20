@@ -1911,7 +1911,7 @@ function weiterKnopf(s,st){ const li=st==="geraet"?-1:+st.slice(2), k=(v,t)=>`<d
 })();
 /*DEMO*/
 /*PROFIL*/
-function render(){
+function render(){ profilAnwenden();
   const app=$("#app"), ed=EDITOR.includes(nav.v);
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
   if(ed&&!cur) nav={v:"start"};

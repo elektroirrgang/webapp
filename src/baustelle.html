@@ -2214,7 +2214,7 @@ document.addEventListener("click",e=>{
 /*AUFNAHME*/
 /*MATERIAL*/
 document.addEventListener("toggle",e=>{ if(e.target.classList&&e.target.classList.contains("ik-klapp")) try{ localStorage.setItem("bau_info",e.target.open?"auf":"zu"); }catch(x){} },true);
-function render(){
+function render(){ profilAnwenden();
   const app=$("#app");
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
   if(nav.v==="eintrag"&&!entw) nav=entwZurueck||{v:"start"};

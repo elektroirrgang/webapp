@@ -8,20 +8,24 @@ function meineRollen(){ const a=typeof Auth!=="undefined"&&Auth.account; return 
 function meineRolle(){ const R=meineRollen(); const k=["Admin","Entwickler","Buero","Mitarbeiter"].find(x=>R.includes(x)); return k?ROLLE_TXT[k]:ME.admin?ROLLE_TXT.Admin:ROLLE_TXT.Mitarbeiter; }
 const profilVon=mail=>mail&&DB.profile?DB.profile.get(String(mail).toLowerCase()):null;
 let msName=null;
+/* Microsoft-Anzeigename bereinigen: „Maximilian Pevec / Elektro Irrgang“, „Joachim Irrgang | Elektro Irrgang“, „Pevec, Max“ → Vor- und Nachname */
+const nameSauber=n=>String(n||"").split(/\s+[|/–]\s+|\s*[|/]\s*/)[0].replace(/\s+/g," ").trim();
+function nameTeile(n){ n=nameSauber(n); if(n.includes("@")) return {vor:"",nach:""}; if(n.includes(",")){ const [nach,vor]=n.split(",").map(x=>x.trim()); return {vor:vor||"",nach:nach||""}; }
+  const t=n.split(" ").filter(Boolean); return t.length>1?{vor:t.slice(0,-1).join(" "),nach:t[t.length-1]}:{vor:t[0]||"",nach:""}; }
+const pfKaputt=p=>!!(p&&/[|/]/.test(`${p.vorname||""}${p.nachname||""}`));
 /* Profil auf ME anwenden: Name für „erstellt von“, Prüfer usw.; ruf für die Begrüßung */
 function profilAnwenden(){
-  if(!ME||!ME.mail) return; if(msName==null||!ME._pf) msName=ME.name;
-  const p=profilVon(ME.mail), voll=p?[p.vorname,p.nachname].filter(Boolean).join(" ").trim():"";
-  ME.name=voll||msName||ME.name; ME.ruf=(p&&(p.ruf||p.vorname))||ME.name; ME.bild=p&&p.bild||""; ME._pf=true;
+  if(!ME||!ME.mail) return; if(msName==null||!ME._pf){ const t=nameTeile(ME.name); msName=[t.vor,t.nach].filter(Boolean).join(" ")||ME.name; }
+  const p0=profilVon(ME.mail), p=pfKaputt(p0)?null:p0, voll=p?[p.vorname,p.nachname].filter(Boolean).join(" ").trim():"";
+  ME.name=voll||msName||ME.name; ME.ruf=(p&&(p.ruf||p.vorname))||nameTeile(msName).vor||ME.name; ME.bild=p&&p.bild||""; ME._pf=true;
 }
 function profilAvatar(){ profilAnwenden(); const b=document.getElementById("avBtn"), t=document.getElementById("avTxt"); if(!b) return;
   if(ME.bild){ b.style.backgroundImage=`url("${ME.bild}")`; b.classList.add("mit-bild"); if(t) t.textContent=""; }
   else { b.style.backgroundImage=""; b.classList.remove("mit-bild"); } }
 let pfBild=null;
 function kontoDialog(){
-  profilAnwenden(); const p=profilVon(ME.mail)||{}, r=meineRolle(); pfBild=p.bild||"";
-  const mn=String(msName||ME.name||"").trim(), teile=mn.includes(",")?mn.split(",").map(s=>s.trim()).reverse():mn.split(/\s+/);
-  const vn=p.vorname!=null?p.vorname:(teile.length>1?teile.slice(0,-1).join(" "):""), nn=p.nachname!=null?p.nachname:(teile.length>1?teile[teile.length-1]:mn);
+  profilAnwenden(); const p0=profilVon(ME.mail)||{}, kaputt=pfKaputt(p0), p=kaputt?Object.assign({},p0,{vorname:null,nachname:null}):p0, r=meineRolle(); pfBild=p.bild||"";
+  const t=nameTeile(msName||ME.name), vn=p.vorname!=null&&p.vorname!==""?p.vorname:t.vor, nn=p.nachname!=null&&p.nachname!==""?p.nachname:t.nach;
   dialog("Mein Profil",`<div class="pf-kopf"><button type="button" class="pf-bild" data-act="pfBildWahl" aria-label="Profilbild ändern" style="${pfBild?`background-image:url('${pfBild}')`:""}">${pfBild?"":esc(initials(ME.name))}<span class="pf-cam">${icon("cam")}</span></button>
       <div class="pf-info"><b>${esc(ME.mail)}</b><span class="pf-rolle">${esc(r[0])}</span><small>${esc(r[1])}</small></div></div>
     ${pfBild?`<button type="button" class="btn-text pf-weg" data-act="pfBildWeg">Bild entfernen</button>`:""}

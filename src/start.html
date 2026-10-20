@@ -1916,7 +1916,7 @@ document.addEventListener("click",e=>{
 /*PROFIL*/
 /*ANFORDERUNG*/
 /*VORGAENGE*/
-function render(){
+function render(){ profilAnwenden();
   const app=$("#app");
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
   if(nav.v==="uebersicht"&&!ME.admin) nav={v:"start"};
