@@ -52,3 +52,12 @@
   :root body nav.navbar .nav-head{height:64px!important;margin:-18px 0 24px!important}
   .tb-kopf.pc{padding-right:0!important}
 }
+/* PC: überall gleicher Abstand zwischen Seitenleiste und Inhalt/Titel – eine Inhaltsbreite für alle Bereiche,
+   Platz für die Scrollleiste immer reserviert (sonst springt der Inhalt je nach Seitenlänge um ein paar Pixel) */
+@media (min-width:1024px) and (hover:hover) and (pointer:fine){
+  html{scrollbar-gutter:stable}
+  /* mindestens 64 px Rand links und rechts – dort sitzt bei Unterseiten der Zurück-Pfeil, Titel und Inhalt bleiben bündig */
+  main > #app{max-width:min(1160px,calc(100% - 128px))!important;margin-left:auto!important;margin-right:auto!important}
+  #app > .narrow,#app > .wrap,.narrow.vg,.wide-n{max-width:none!important}
+  #app > .narrow.lesen{max-width:960px!important;margin-left:0!important;margin-right:auto!important}
+}
