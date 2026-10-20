@@ -1245,7 +1245,7 @@ body.kopf-oben .edk-platz{display:none!important}
 .w-kopf{display:inline-flex;align-items:center;gap:4px;margin-left:4px;font-weight:600}.w-kopf::before{content:"·";margin-right:4px;color:var(--on-sv);font-weight:400}
 .w-kopf .w-ic{width:16px;height:16px}
 /* Startseite: festes Raster wie Handy-Widgets (S 1×1, M 2×1, L 2×2) */
-.wg-raster{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:168px;grid-auto-flow:row dense;gap:16px;margin-top:4px}
+.wg-raster{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:188px;grid-auto-flow:row dense;gap:16px;margin-top:4px}
 @media (min-width:1024px){.wg-raster{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .wg{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;background:var(--sc-low);border-radius:24px;padding:14px 16px}
 .wg-s{grid-column:span 1;grid-row:span 1}.wg-m{grid-column:span 2;grid-row:span 1}.wg-l{grid-column:span 2;grid-row:span 2}
@@ -1260,7 +1260,7 @@ body.kopf-oben .edk-platz{display:none!important}
 .wg-plus{width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--primary);display:grid;place-items:center;flex:none;cursor:pointer;margin-right:-6px;padding:0}
 .wg-plus:hover{background:color-mix(in srgb,var(--primary) 10%,transparent)}
 .wg-b{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;margin-top:10px;overflow:hidden}
-.wg-z{display:flex;flex-direction:column;min-width:0;padding:7px 12px;border-radius:12px;background:var(--sc);flex:none}
+.wg-z{display:flex;flex-direction:column;min-width:0;padding:6px 12px;border-radius:12px;background:var(--sc);flex:none}
 .wg-z span{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wg-z small{font-size:12px;color:var(--on-sv);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wg-leer{margin:auto 0;font-size:14px;color:var(--on-sv)}
@@ -1314,8 +1314,9 @@ body.kopf-oben .edk-platz{display:none!important}
 .bib-kt b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bib-kt small{font-size:12px;color:var(--on-sv);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .bib-kt .st{margin-top:6px}
-.ans-um{display:flex;gap:2px;padding:3px;border-radius:22px;background:var(--sc)}
-.ans-um button{width:38px;height:38px;border:0;border-radius:19px;background:transparent;color:var(--on-sv);display:grid;place-items:center;cursor:pointer;padding:0}
+.bib-kopf{display:flex;align-items:center;gap:12px;margin:0 0 16px}.bib-kopf .search{flex:1;min-width:0;margin:0!important}
+.ans-um{flex:none;display:flex;gap:2px;padding:4px;border-radius:26px;background:var(--sc-high)}
+.ans-um button{width:44px;height:44px;border:0;border-radius:22px;background:transparent;color:var(--on-sv);display:grid;place-items:center;cursor:pointer;padding:0}
 .ans-um button .ic{width:20px;height:20px}
 .ans-um button[aria-pressed="true"]{background:var(--surface);color:var(--on-surface);box-shadow:0 1px 3px rgba(0,0,0,.15)}
 /*FELDER*/
@@ -1958,7 +1959,10 @@ function bibListe(){
   return chips+fInfo(n,L.length,"Eintrag","Einträge")+inhalt;
 }
 function bibliothekView(){
-  return `<div class="narrow">${searchBar("Name, Kunde, Auftrag oder Prüfer",fKnopf("bib"))}<div id="res">${bibListe()}</div></div>`;
+  const k=bibAnsicht()==="kacheln";
+  return `<div class="narrow"><div class="bib-kopf">${searchBar("Name, Kunde, Auftrag oder Prüfer",fKnopf("bib"))}
+    <div class="ans-um" role="group" aria-label="Ansicht"><button data-act="bibAnsicht" data-v="liste" aria-pressed="${!k}" title="Liste">${icon("liste")}</button><button data-act="bibAnsicht" data-v="kacheln" aria-pressed="${k}" title="Kacheln">${icon("kacheln")}</button></div></div>
+    <div id="res">${bibListe()}</div></div>`;
 }
 function bibOpen(id){ const x=PROT.find(y=>y.id===id); if(!x) return;
   dialog(x.titel,`<div class="bib-dlg"><p>${esc([deDate(x.datum),x.art].filter(Boolean).join(" · "))}${x.auftragsnr?` · Auftrag ${esc(x.auftragsnr)}`:""}</p><p class="sup">${esc(x.name)}.pdf · erstellt ${esc(protZeit(x.created))}${x.von&&x.von.name?` von ${esc(x.von.name)}`:""}</p></div>`,
@@ -2208,7 +2212,6 @@ const startTitel=()=>`${gruss()}${ME.ruf||ME.name?`, ${ME.ruf||ME.name}`:""}`;
 const startUnter=()=>new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"});
 /* Kopf rechts: auf der Startseite „Anpassen“ für Chef und Büro */
 function skRechts(){
-  if(nav.v==="bibliothek"){ const k=bibAnsicht()==="kacheln"; return `<div class="ans-um" role="group" aria-label="Ansicht"><button data-act="bibAnsicht" data-v="liste" aria-pressed="${!k}" title="Liste">${icon("liste")}</button><button data-act="bibAnsicht" data-v="kacheln" aria-pressed="${k}" title="Kacheln">${icon("kacheln")}</button></div>`; }
   if(nav.v!=="start"||!anfVerw()||!ME.mail) return "";
   return DB_ANP?`<button class="sk-anp an" data-act="dbFertig">Fertig</button>`:`<button class="sk-stift" data-act="dbAnpassen" aria-label="Startseite anpassen" title="Startseite anpassen">${icon("edit")}</button>`; }
 
@@ -2657,7 +2660,8 @@ function mehrView(){
     <div class="sec-lbl">Konto und Darstellung</div><div class="list">
       ${SYNC_ON?row("konto","person","Konto",esc(ME.name)):""}
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}${ME.admin?" · Admin":""}`)):""}
-      ${row("theme","theme","Darstellung",TH_LABEL[theme])}</div>
+      ${row("theme","theme","Darstellung",TH_LABEL[theme])}
+      <div class="li" role="button" tabindex="0" data-act="demoUm"><span class="av">${icon("bulb")}</span><span class="lt"><span class="h">Demo-Vorschau</span><span class="s">Beispielkunden, Aufträge, Baustellen und Prüfungen zum Ausprobieren – nur auf diesem Gerät, wird nie synchronisiert</span></span><span class="schalter${demoAn()?" an":""}" aria-hidden="true"><i></i></span></div></div>
     ${ME.admin?`<div class="sec-lbl">Verwaltung</div><div class="list">
       ${row("nav:team","person","Mitarbeiter und Rechte",`${team().length} aktiv · Protokolle an ${esc(mailAn())}`)}</div>`:""}
     <div class="app-weiter"><div class="sec-lbl">Apps</div>${listOf(APPS.filter(a=>!a.geplant).map(a=>`<a class="li" href="${a.href}" style="text-decoration:none;color:inherit"><img class="app-mini" src="${a.ic}" alt=""><span class="lt"><span class="h">${a.name}</span><span class="s">${a.text}</span></span>${icon("chev")}</a>`))}</div>
@@ -2737,6 +2741,7 @@ document.addEventListener("click",async ev=>{
   case "skZurueck": zurueck(); return;
   case "bfilter": BIB_F=b.dataset.v; render(); return;
   case "bibArt": fSet("bib","art",b.dataset.v); return;
+  case "demoUm": demoUmschalten(!demoAn()); return;
   case "bibAnsicht": META.bibAnsicht=b.dataset.v; metaSave(); render(); return;
   case "fPop": filterPop(b,b.dataset.n); return;
   case "fWeg": fWeg(b.dataset.n,false); return;

@@ -6,6 +6,7 @@ function kopfEinhaengen(){
   const tb=document.getElementById("topbar"), row=tb&&tb.querySelector(".tb-row"); if(!row) return;
   let slot=document.getElementById("tbKopf");
   if(!slot){ slot=document.createElement("div"); slot.id="tbKopf"; slot.className="tb-kopf"; }
+  if(typeof demoNachfuellen==="function"){ demoMarke(); if(demoNachfuellen()){ setTimeout(()=>render(),0); } }
   kuerzelMarken(); const sk=document.querySelector("#app > .sk, #app > .edk");
   slot.textContent="";
   if(!KOPF_BREIT.matches||!sk){ slot.hidden=true; document.body.classList.remove("kopf-oben"); return; }

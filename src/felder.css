@@ -77,3 +77,8 @@
 @keyframes schwebenEin{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
 .menu:not([hidden]),.fpop{animation:schwebenEin .14s ease-out}
 @media (prefers-reduced-motion:reduce){.menu:not([hidden]),.fpop,.ml-pop{animation:none!important}}
+/* Demo-Vorschau */
+.demo-marke{flex:none;height:28px;padding:0 12px;border-radius:14px;background:color-mix(in srgb,#E0A100 22%,var(--surface));color:var(--on-surface);font-size:13px;font-weight:700;display:inline-flex;align-items:center;margin-right:6px;cursor:default}
+.schalter{flex:none;width:52px;height:32px;border-radius:16px;background:var(--sc-highest);position:relative;transition:background .15s}
+.schalter i{position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:var(--on-sv);transition:transform .18s,background .15s}
+.schalter.an{background:var(--primary)}.schalter.an i{transform:translateX(20px);background:var(--on-primary)}
