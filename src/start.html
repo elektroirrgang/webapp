@@ -1220,10 +1220,30 @@ body.kopf-oben .edk-platz{display:none!important}
 .db-ab .ic{width:22px;height:22px}
 .db-weg{display:flex;flex-wrap:wrap;gap:8px}
 .db-weg .chip{display:inline-flex;align-items:center;gap:6px;padding:0 14px 0 10px;height:40px}
+.sk-stift{width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--on-surface);display:grid;place-items:center;flex:none;cursor:pointer;padding:0}
+.sk-stift:hover{background:color-mix(in srgb,var(--on-surface) 8%,transparent)}
+.sk-stift .ic{width:22px;height:22px}
 .sk-anp{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px 0 12px;border:0;border-radius:20px;background:var(--sc);color:var(--on-surface);font:inherit;font-size:14px;font-weight:650;cursor:pointer;flex:none}
 .sk-anp:hover{background:var(--sc-high)}
 .sk-anp .ic{width:20px;height:20px}
 .sk-anp.an{background:var(--primary);color:var(--on-primary);padding:0 20px}
+/* Wetter */
+.w-ic{fill:currentColor}.w-sonne{color:#E0A100}.w-mond{color:#8C95B5}.w-regen,.w-schnee{color:#3D7FD6}.w-gewitter{color:#C77700}.w-wolke,.w-teil,.w-nebel{color:var(--on-sv)}
+.db-ic .w-ic{color:inherit}
+.w-ort{font-size:13px;color:var(--on-sv)}
+.w-jetzt{display:flex;align-items:center;gap:14px;margin:6px 0 12px}
+.w-jetzt .w-ic.gross{width:52px;height:52px;flex:none}
+.w-jetzt b{display:block;font-size:30px;line-height:1.1;font-weight:800}
+.w-jetzt span{font-size:13px;color:var(--on-sv)}
+.w-tage{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.w-tag{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border-radius:14px;background:var(--sc);font-size:13px}
+.w-tag.nass{background:color-mix(in srgb,#3D7FD6 12%,var(--sc))}
+.w-tag > span{color:var(--on-sv);font-weight:600}
+.w-tag .w-ic{width:26px;height:26px;margin:2px 0}
+.w-tag b{font-size:15px}.w-tag small{color:var(--on-sv)}.w-tag em{font-style:normal;font-size:12px;color:#3D7FD6;font-weight:600}
+.w-quelle{margin:10px 2px 0;font-size:11px;color:var(--on-sv)}
+.w-kopf{display:inline-flex;align-items:center;gap:4px;margin-left:4px;font-weight:600}.w-kopf::before{content:"·";margin-right:4px;color:var(--on-sv);font-weight:400}
+.w-kopf .w-ic{width:16px;height:16px}
 /*FELDER*/
 </style>
 </head>
@@ -2085,14 +2105,56 @@ const startTitel=()=>`${gruss()}${ME.ruf||ME.name?`, ${ME.ruf||ME.name}`:""}`;
 const startUnter=()=>new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"});
 /* Kopf rechts: auf der Startseite „Anpassen“ für Chef und Büro */
 function skRechts(){ if(nav.v!=="start"||!anfVerw()||!ME.mail) return "";
-  return DB_ANP?`<button class="sk-anp an" data-act="dbFertig">Fertig</button>`:`<button class="sk-anp" data-act="dbAnpassen" title="Startseite anpassen">${icon("tune")}<span>Anpassen</span></button>`; }
+  return DB_ANP?`<button class="sk-anp an" data-act="dbFertig">Fertig</button>`:`<button class="sk-stift" data-act="dbAnpassen" aria-label="Startseite anpassen" title="Startseite anpassen">${icon("edit")}</button>`; }
 
 /* ===== Startseite zum Zusammenklicken =====
    Jeder legt fest, welche Kacheln er sieht, in welcher Reihenfolge und wie breit (halb/ganz).
    Gespeichert im eigenen Profil („profile“) ⇒ gleich auf iPad und PC. Halbe Kacheln werden automatisch
    auf zwei Spalten verteilt, sodass keine Löcher entstehen. */
-const DB_W={material:"Material",auftraege:"Aufträge",pruefungen:"Prüfungen & Fristen",baustellen:"Baustellen",zahlen:"Kennzahlen",apps:"Apps"};
-const DB_STD={o:["material","auftraege","pruefungen","baustellen","zahlen","apps"],aus:["zahlen"],gr:{apps:"l"}};
+const DB_W={wetter:"Wetter",material:"Material",auftraege:"Aufträge",pruefungen:"Prüfungen & Fristen",baustellen:"Baustellen",zahlen:"Kennzahlen",apps:"Apps"};
+const DB_STD={o:["wetter","material","auftraege","pruefungen","baustellen","zahlen","apps"],aus:["zahlen"],gr:{apps:"l"}};
+
+/* ===== Wetter für den Betrieb (Waldbröl) =====
+   Bright Sky – kostenlos, ohne Schlüssel, auch gewerblich erlaubt; Daten vom Deutschen Wetterdienst.
+   Abruf höchstens alle 30 Minuten, letzter Stand bleibt auf dem Gerät (META.wetter). */
+const W_ORT={lat:50.8786,lon:7.6149,name:"Waldbröl"};
+const W_P={sonne:"M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z",
+  mond:"M9.37 5.51A7.35 7.35 0 0 0 9.1 7.5c0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27A7.014 7.014 0 0 1 12 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49zM12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z",
+  wolke:"M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z",
+  teil:"M12.74 5.47A5.6 5.6 0 0 0 8 3a5.5 5.5 0 0 0-5.39 6.6A4 4 0 0 0 4 17.5h.5A4.5 4.5 0 0 0 9 22h10a4 4 0 0 0 .65-7.95A6 6 0 0 0 12.74 5.47zM4.6 9.2A3.5 3.5 0 0 1 8 5c1.33 0 2.5.75 3.08 1.85A6 6 0 0 0 6.1 11.5 4 4 0 0 0 4.6 9.2z",
+  regen:"M19.35 8.04A7.49 7.49 0 0 0 12 2C9.11 2 6.6 3.64 5.35 6.04A5.994 5.994 0 0 0 0 12c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM7 19.5l-1.2 3h1.6l1.2-3H7zm4.5 0l-1.2 3h1.6l1.2-3h-1.6zm4.5 0l-1.2 3h1.6l1.2-3H16z",
+  schnee:"M22 11h-4.17l3.24-3.24-1.41-1.42L15 11h-2V9l4.66-4.66-1.42-1.41L13 6.17V2h-2v4.17L7.76 2.93 6.34 4.34 11 9v2H9L4.34 6.34 2.93 7.76 6.17 11H2v2h4.17l-3.24 3.24 1.41 1.42L9 13h2v2l-4.66 4.66 1.42 1.41L11 17.83V22h2v-4.17l3.24 3.24 1.42-1.41L13 15v-2h2l4.66 4.66 1.41-1.42L17.83 13H22z",
+  gewitter:"M7 2v11h3v9l7-12h-4l4-8z",nebel:"M2 15.5v2h20v-2H2zm0-5v2h20v-2H2zm0-7v2h20v-2H2z"};
+const W_ART={"clear-day":["sonne","Sonnig"],"clear-night":["mond","Klar"],"partly-cloudy-day":["teil","Teils bewölkt"],"partly-cloudy-night":["teil","Teils bewölkt"],cloudy:["wolke","Bewölkt"],fog:["nebel","Nebel"],wind:["wolke","Windig"],rain:["regen","Regen"],sleet:["regen","Schneeregen"],hail:["regen","Hagel"],snow:["schnee","Schnee"],thunderstorm:["gewitter","Gewitter"]};
+const W_RANG=["thunderstorm","snow","hail","sleet","rain"];
+const wIc=(k,cls="")=>{ const a=W_ART[k]||W_ART.cloudy; return `<svg class="ic w-ic w-${a[0]} ${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${W_P[a[0]]}"/></svg>`; };
+let wLaedt=false;
+async function wetterHolen(){
+  META.wetter=META.wetter||null; if(wLaedt||(META.wetter&&Date.now()-META.wetter.t<30*60e3)) return; wLaedt=true;
+  try{ const q=`lat=${W_ORT.lat}&lon=${W_ORT.lon}&tz=Europe/Berlin`, heute=today(), bis=new Date(Date.now()+5*864e5).toISOString().slice(0,10);
+    const [c,w]=await Promise.all([fetch(`https://api.brightsky.dev/current_weather?${q}`).then(r=>r.json()),fetch(`https://api.brightsky.dev/weather?${q}&date=${heute}&last_date=${bis}`).then(r=>r.json())]);
+    const T={}; (w.weather||[]).forEach(h=>{ const d=String(h.timestamp).slice(0,10), st=+String(h.timestamp).slice(11,13); (T[d]=T[d]||[]).push(Object.assign({st},h)); });
+    const tage=Object.keys(T).sort().slice(0,5).map(d=>{ const H=T[d], tagH=H.filter(x=>x.st>=7&&x.st<=19), B=tagH.length?tagH:H, temps=H.map(x=>x.temperature).filter(x=>x!=null);
+      const zahl={}; B.forEach(x=>{ if(x.icon) zahl[x.icon]=(zahl[x.icon]||0)+1; });
+      let ic=W_RANG.find(r=>(zahl[r]||0)>=2)||Object.keys(zahl).sort((a,b)=>zahl[b]-zahl[a])[0]||"cloudy"; ic=ic.replace("-night","-day").replace("clear-day","clear-day");
+      const pp=H.map(x=>x.precipitation_probability).filter(x=>x!=null);
+      return {d,ic,max:temps.length?Math.round(Math.max(...temps)):null,min:temps.length?Math.round(Math.min(...temps)):null,mm:Math.round(H.reduce((a,x)=>a+(x.precipitation||0),0)*10)/10,pp:pp.length?Math.max(...pp):null}; });
+    const cw=c.weather||{}; META.wetter={t:Date.now(),jetzt:{temp:cw.temperature!=null?Math.round(cw.temperature):null,ic:cw.icon||"cloudy"},tage}; metaSave();
+    if(nav.v==="start"&&!DB_ANP&&!document.querySelector("#app input:focus")) render();
+  }catch(e){ /* offline oder Dienst nicht erreichbar – letzter Stand bleibt */ }
+  wLaedt=false;
+}
+function wetterKopf(){ const W=META.wetter, p=document.querySelector("#tbKopf .sk-t p, #app .sk .sk-t p"); if(!W||!W.jetzt||W.jetzt.temp==null||!p||p.querySelector(".w-kopf")) return;
+  p.insertAdjacentHTML("beforeend",`<span class="w-kopf">${wIc(W.jetzt.ic)}${W.jetzt.temp} °C · ${esc((W_ART[W.jetzt.ic]||W_ART.cloudy)[1])}</span>`); }
+function wetterKachel(){
+  const W=META.wetter; if(!W||!W.tage||!W.tage.length) return `<div class="db-k"><span class="db-ic">${wIc("partly-cloudy-day")}</span><h3>Wetter</h3></div><p class="meta">Wetter wird geladen …</p>`;
+  const h=W.tage[0], j=W.jetzt||{}, tag=d=>d===today()?"Heute":new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short"}).replace(".","");
+  const regen=x=>x.pp!=null?`${x.pp} %`:x.mm?`${String(x.mm).replace(".",",")} mm`:"";
+  return `<div class="db-k"><span class="db-ic">${wIc(j.ic||h.ic)}</span><h3>Wetter</h3><span class="w-ort">${W_ORT.name}</span></div>
+    <div class="w-jetzt">${wIc(j.ic||h.ic,"gross")}<div><b>${j.temp!=null?j.temp:h.max} °C</b><span>${esc((W_ART[j.ic||h.ic]||W_ART.cloudy)[1])} · heute ${h.max}° / ${h.min}°${regen(h)?` · Regen ${regen(h)}`:""}</span></div></div>
+    <div class="w-tage">${W.tage.slice(1,5).map(x=>`<div class="w-tag${W_RANG.includes(x.ic)?" nass":""}"><span>${tag(x.d)}</span>${wIc(x.ic)}<b>${x.max}°</b><small>${x.min}°</small>${regen(x)?`<em>${regen(x)}</em>`:""}</div>`).join("")}</div>
+    <p class="w-quelle">Daten: Deutscher Wetterdienst</p>`;
+}
 let DB_ANP=false;
 function dbLayout(){ const p=profilVon(ME.mail), L=p&&p.start||{}, o=(L.o||[]).filter(k=>DB_W[k]);
   DB_STD.o.forEach(k=>{ if(!o.includes(k)) o.push(k); }); return {o,aus:L.o?(L.aus||[]):DB_STD.aus.slice(),gr:Object.assign({},DB_STD.gr,L.gr||{})}; }
@@ -2110,7 +2172,7 @@ function dashboard(kacheln){
   /* Baustellen */
   const aktiv=echt("baustellen").filter(b=>(b.status||"aktiv")==="aktiv"), E=echt("eintraege").sort((a,b)=>(b.created||0)-(a.created||0)).slice(0,4);
   const still=aktiv.filter(b=>{ const e=eintraegeVon(b.id)[0]; return !e||(e.created||0)<woche; }).length;
-  const bau=box("baustelle","Baustellen",aktiv.length,`<p class="db-sub">${aktiv.length} aktiv${still?` · ${still} ohne Übergabe seit 7 Tagen`:""}</p>${E.length?listOf(E.map(e=>{ const b=DB.baustellen.get(e.baustelleId);
+  const bau=box("baustelle","Baustellen",aktiv.length||null,`<p class="db-sub">${aktiv.length} aktiv${still?` · ${still} ohne Übergabe seit 7 Tagen`:""}</p>${E.length?listOf(E.map(e=>{ const b=DB.baustellen.get(e.baustelleId);
       return `<div class="li ruhig"><span class="lt"><span class="h">${esc(b?b.name:"Baustelle")}</span><span class="s">${esc([(e.createdBy||{}).name,wann(e.created)].filter(Boolean).join(" · "))}</span>${e.offen?`<span class="s db-offen">Offen: ${esc(String(e.offen).slice(0,90))}</span>`:""}</span></div>`; })):`<p class="meta">Noch keine Übergaben.</p>`}`,
     `<div class="db-fuss">${alle("uebersicht","Statistik")}</div>`);
   /* Prüfungen & Fristen */
@@ -2129,7 +2191,8 @@ function dashboard(kacheln){
   const inArbeit=echt("pruefungen").filter(p=>["wip","open"].includes(pStand(p))).length;
   const zahlen=box("chart","Kennzahlen",null,`<div class="db-kpis vier">${kpi(aktiv.length,"aktive Baustellen")}${kpi(inArbeit,"Prüfungen in Arbeit")}${kpi(F.filter(p=>p.a.naechste<=bald).length,"fällig in 3 Monaten",ueber.length?"warn":"")}${kpi(echt("kunden").length,"Kunden")}</div>`,`<div class="db-fuss">${alle("uebersicht","Statistik")}</div>`);
   const apps=`<div class="db-k"><span class="db-ic">${icon("home")}</span><h3>Apps</h3></div><div class="apps app-weiter db-apps">${kacheln||""}</div>`;
-  const W={material:mat,auftraege:auf,pruefungen:pr,baustellen:bau,zahlen,apps}, L=dbLayout();
+  const L=dbLayout(); if(!L.aus.includes("wetter")) wetterHolen();
+  const W={wetter:wetterKachel(),material:mat,auftraege:auf,pruefungen:pr,baustellen:bau,zahlen,apps};
   const kachel=k=>{ const gr=L.gr[k]==="l"?"l":"m", i=L.o.filter(x=>!L.aus.includes(x)).indexOf(k), n=L.o.filter(x=>!L.aus.includes(x)).length;
     return `<section class="db-box db-${gr}${k==="apps"?" db-appsbox":""}" data-w="${k}">${DB_ANP?`<div class="db-anp">
       <button class="db-ab" data-act="dbZug" data-w="${k}" data-d="-1" ${i===0?"disabled":""} aria-label="Nach vorne" title="Nach vorne">${icon("hoch")}</button>
@@ -2141,7 +2204,7 @@ function dashboard(kacheln){
   const zu=()=>{ if(lauf.length){ h+=`<div class="db-lauf">${lauf.map(kachel).join("")}</div>`; lauf=[]; } };
   sicht.forEach(k=>{ if(L.gr[k]==="l"){ zu(); h+=kachel(k); } else lauf.push(k); }); zu();
   const versteckt=L.o.filter(k=>L.aus.includes(k));
-  setTimeout(dbVerteilen,0);
+  setTimeout(()=>{ dbVerteilen(); if(!L.aus.includes("wetter")) wetterKopf(); },0);
   return `${DB_ANP?`<p class="db-hinweis">Pfeile verschieben eine Kachel, „½“ und „Ganz“ ändern die Breite, das Auge blendet sie aus. Gilt nur für dich – auf all deinen Geräten.</p>`:""}<div class="db-grid${DB_ANP?" anp":""}">${h||`<p class="meta">Alle Kacheln sind ausgeblendet.</p>`}</div>
     ${DB_ANP&&versteckt.length?`<div class="sec-lbl" style="margin-top:20px">Ausgeblendet – antippen zum Hinzufügen</div><div class="db-weg">${versteckt.map(k=>`<button class="chip" data-act="dbEin" data-w="${k}">${icon("add")}${esc(DB_W[k])}</button>`).join("")}</div>`:""}`;
 }

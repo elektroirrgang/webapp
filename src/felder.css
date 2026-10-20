@@ -47,3 +47,8 @@
 /* Tastatur-Fokus in Listen: gefüllt statt Rahmen */
 #app .li:focus-visible,#app a.li:focus-visible,#app .vg-k:focus-visible,#app .kt-haupt:focus-visible,.mi:focus-visible{outline:none;background:color-mix(in srgb,var(--primary) 12%,var(--sc-low))!important}
 @media (hover:none),(pointer:coarse){.mi kbd{display:none}}
+/* PC: Logo in der Seitenleiste auf derselben Höhe wie der Seitentitel oben; Knöpfe oben rechts mit gleichem Abstand */
+@media (min-width:1024px) and (hover:hover) and (pointer:fine){
+  :root body nav.navbar .nav-head{height:64px!important;margin:-18px 0 24px!important}
+  .tb-kopf.pc{padding-right:0!important}
+}
