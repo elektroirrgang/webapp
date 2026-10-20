@@ -100,3 +100,28 @@ document.addEventListener("keydown",e=>{
 });
 /* Kürzel auch in den Hinweis-Blasen zeigen */
 function kuerzelMarken(){ const f=document.getElementById("fab"); if(f){ f.dataset.kurz="N"; f.dataset.tipFab="1"; } document.querySelectorAll(".sk-zt").forEach(b=>b.dataset.kurz="Alt ←"); const q=document.getElementById("q"); if(q){ q.dataset.kurz="/"; } }
+
+/* ===== Selbst aktualisieren =====
+   Neue Version da (Service Worker hat übernommen) ⇒ die App lädt sich von allein neu, sobald gerade nichts bearbeitet wird:
+   kein Fenster offen, kein Eingabefeld aktiv, kein Editor (Prüfung, Übergabe, Notiz, Zeichnen), 8 Sekunden ohne Eingabe.
+   Nach dem Neuladen erscheint kurz „Auf Version … aktualisiert“. */
+let updWartet=false, updLetzteEingabe=Date.now();
+["pointerdown","keydown","input"].forEach(t=>document.addEventListener(t,()=>{ updLetzteEingabe=Date.now(); },true));
+function updSicher(){
+  const dlg=document.getElementById("dlg"); if(dlg&&!dlg.hidden) return false;
+  if(document.getElementById("pv")||document.getElementById("mlPop")||document.getElementById("fpop")) return false;
+  const m=document.getElementById("menu"); if(m&&!m.hidden) return false;
+  const a=document.activeElement; if(a&&(a.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return false;
+  if(typeof ZG!=="undefined"&&ZG) return false;
+  if(typeof cur!=="undefined"&&cur) return false;              /* EVSE: Prüfung offen */
+  if(typeof entw!=="undefined"&&entw) return false;            /* Baustelle: Übergabe im Editor */
+  if(typeof nEntw!=="undefined"&&nEntw&&typeof nav!=="undefined"&&nav.v==="notiz") return false;
+  return document.visibilityState!=="visible"||Date.now()-updLetzteEingabe>8000;
+}
+function updVersuch(){ if(!updWartet) return; if(!updSicher()){ setTimeout(updVersuch,4000); return; }
+  try{ if(typeof saveNow==="function") saveNow(); }catch(e){}
+  try{ sessionStorage.setItem("irrgang_upd","1"); }catch(e){} location.reload(); }
+function updNeu(){ if(updWartet) return; updWartet=true; updVersuch(); }
+document.addEventListener("visibilitychange",()=>{ if(updWartet) updVersuch(); });
+addEventListener("load",()=>{ try{ if(sessionStorage.getItem("irrgang_upd")){ sessionStorage.removeItem("irrgang_upd"); const v=typeof APP_VERSION!=="undefined"?String(APP_VERSION).split(" ")[0]:""; setTimeout(()=>toast(`Auf Version ${v} aktualisiert`),900); } }catch(e){} });
+window.__updTest=updNeu; /* nur für automatische Tests */

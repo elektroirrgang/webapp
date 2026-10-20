@@ -1741,9 +1741,9 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   const hatteSW=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(reg=>{
     const pruefe=()=>{ if(document.visibilityState==="visible"&&navigator.onLine) reg.update().catch(()=>{}); };
-    document.addEventListener("visibilitychange",pruefe); setInterval(pruefe,30*60*1000);
+    document.addEventListener("visibilitychange",pruefe); setInterval(pruefe,2*60*1000); addEventListener("focus",pruefe);
   }).catch(()=>{});
-  navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(!hatteSW) return; toast("Neue Version verfügbar","Jetzt laden",()=>location.reload()); });
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(!hatteSW) return; updNeu(); });
 }
 (async()=>{
   await dataLoad(); await einstLaden(); loginSync(); await Auth.init(); setMe();

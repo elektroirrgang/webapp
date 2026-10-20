@@ -2180,17 +2180,17 @@ function dashboard(kacheln){
   const inArbeit=echt("pruefungen").filter(p=>["wip","open"].includes(pStand(p))).length;
   /* Inhalt je Kachel: s = nur die wichtigste Zahl, m/l = Liste (2 bzw. 5 Einträge) */
   const W={
-    material:{ic:"lager",v:"materialanf",z:an||null,plus:["afNeu","Material anfordern"],
+    material:{ic:"lager",v:"materialanf",sub:A.length?`${an} angefordert · ${A.length-an} bestellt`:"Nichts offen",plus:["afNeu","Material anfordern"],
       s:()=>gross(an,"angefordert"),
       m:g=>A.length?A.slice(0,anz(g)).map(a=>zeile(anfPosText(a),`${anfOrt(a)} · ${a.status==="angefordert"?"angefordert":"bestellt"}`)).join(""):leer("Nichts offen.")},
-    auftraege:{ic:"board",v:"auftraege",z:V.length||null,plus:["vgNeu","Vorgang anlegen"],
+    auftraege:{ic:"board",v:"auftraege",sub:V.length?`${V.length} offen${vb?` · ${vb} beim Büro`:""}`:"Keine offenen Vorgänge",plus:["vgNeu","Vorgang anlegen"],
       s:()=>gross(V.length,vb?`offen · ${vb} beim Büro`:"offen"),
       m:g=>V.length?V.slice(0,anz(g)).map(v=>zeile(vgKunde(v),vgKurz(v.anliegen||"",60))).join(""):leer("Keine offenen Vorgänge.")},
-    pruefungen:{ic:"doc",v:"geraete",z:(ueber.length+G.filter(x=>x.k.s==="ab").length)||null,
+    pruefungen:{ic:"doc",v:"geraete",sub:ueber.length?`${ueber.length} überfällig`:fb.length?`${fb.length} fällig in 3 Monaten`:"Keine Fristen offen",warn:ueber.length>0||G.some(x=>x.k.s==="ab"),
       s:()=>gross(ueber.length,"überfällig",ueber.length>0),
       m:g=>`<div class="wg-kpis">${kpi(neu.length,"neue Protokolle")}${kpi(ueber.length,"überfällig",ueber.length?"warn":"")}${kpi(fb.length,"fällig in 3 Mon.")}</div>`
         +(g==="l"?([...G.slice(0,3).map(({g:x,k})=>zeile(gerName(x),k.t)),...ueber.slice(0,3).map(p=>zeile(pPfad(p),`fällig seit ${deDate(p.a.naechste)}`))].join("")||leer("Keine Fristen in Gefahr.")):"")},
-    baustellen:{ic:"baustelle",v:"uebersicht",z:aktiv.length||null,
+    baustellen:{ic:"baustelle",v:"uebersicht",sub:`${aktiv.length} aktiv`,
       s:()=>gross(aktiv.length,"aktiv"),
       m:g=>E.length?E.slice(0,anz(g)).map(e=>{ const b=DB.baustellen.get(e.baustelleId); return zeile(b?b.name:"Baustelle",[(e.createdBy||{}).name,wann(e.created)].filter(Boolean).join(" · ")); }).join(""):leer("Noch keine Übergaben.")},
     zahlen:{ic:"chart",v:"uebersicht",
@@ -2201,7 +2201,7 @@ function dashboard(kacheln){
   const kachel=(k,i)=>{ const w=W[k], g=L.gr[k], inhalt=g==="s"&&w.s?w.s():w.m(g), ganzKlick=!DB_ANP&&!w.app&&w.v;
     const grN=DB_GR[k][(DB_GR[k].indexOf(g)+1)%DB_GR[k].length];
     return `<section class="wg wg-${g}${ganzKlick?" klick":""}" data-w="${k}" ${ganzKlick?`data-act="nav" data-v="${w.v}" role="button" tabindex="0"`:""}>
-      <div class="wg-k"><span class="wg-ic">${icon(w.ic)}</span><b>${esc(DB_W[k])}</b>${w.z!=null&&g!=="s"?`<span class="wg-zahl">${w.z}</span>`:""}${w.plus&&!DB_ANP&&g!=="s"?`<button class="wg-plus" data-act="${w.plus[0]}" aria-label="${w.plus[1]}" title="${w.plus[1]}">${icon("add")}</button>`:""}</div>
+      <div class="wg-k"><span class="wg-ic">${icon(w.ic)}</span><span class="wg-t"><b>${esc(DB_W[k])}</b>${w.sub&&g!=="s"?`<small class="${w.warn?"warn":""}">${esc(w.sub)}</small>`:""}</span>${w.plus&&!DB_ANP&&g!=="s"?`<button class="wg-plus" data-act="${w.plus[0]}" aria-label="${w.plus[1]}" title="${w.plus[1]}">${icon("add")}</button>`:""}</div>
       <div class="wg-b">${inhalt}</div>
       ${DB_ANP?`<button class="wg-weg" data-act="dbAus" data-w="${k}" aria-label="${esc(DB_W[k])} ausblenden" title="Ausblenden">−</button>
         <div class="wg-anp"><button class="db-ab" data-act="dbZug" data-w="${k}" data-d="-1" ${i===0?"disabled":""} aria-label="Nach vorne" title="Nach vorne">${icon("hoch")}</button><button class="db-ab wg-gr" data-act="dbBreite" data-w="${k}" title="Größe ändern – als Nächstes: ${DB_GR_TXT[grN]}">${DB_GR_TXT[g]}</button><button class="db-ab" data-act="dbZug" data-w="${k}" data-d="1" ${i===sicht.length-1?"disabled":""} aria-label="Nach hinten" title="Nach hinten">${icon("runter")}</button></div>`:""}
@@ -2749,9 +2749,9 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   const hatteSW=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(reg=>{
     const pruefe=()=>{ if(document.visibilityState==="visible"&&navigator.onLine) reg.update().catch(()=>{}); };
-    document.addEventListener("visibilitychange",pruefe); setInterval(pruefe,30*60*1000);
+    document.addEventListener("visibilitychange",pruefe); setInterval(pruefe,2*60*1000); addEventListener("focus",pruefe);
   }).catch(()=>{});
-  navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(!hatteSW) return; toast("Neue Version verfügbar","Jetzt laden",()=>location.reload()); });
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(!hatteSW) return; updNeu(); });
 }
 (async()=>{
   await dataLoad(); await dateiInit(); loginSync(); await Auth.init(); setMe();
