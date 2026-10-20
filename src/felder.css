@@ -128,3 +128,51 @@
 .fp-c{border:0;background:var(--sc-highest);color:var(--on-surface);font:inherit;font-size:14px;font-weight:600;height:36px;padding:0 14px;border-radius:18px;cursor:pointer}
 .fp-c.an{background:var(--sec-c);color:var(--on-sec-c)}
 .fp-f{display:flex;justify-content:flex-end;margin-top:10px}
+.bib-kb.pdf img{display:block;width:100%;height:auto;min-height:100%;object-fit:cover;object-position:top;background:#fff}
+.bib-kb.pdf:has(img){display:block;overflow:hidden;background:color-mix(in srgb,var(--on-surface) 6%,var(--sc));padding:12px 18px 0}
+.bib-kb.pdf:has(img) img{border-radius:6px 6px 0 0;box-shadow:0 1px 4px rgba(0,0,0,.16)}
+.bib-kb{height:150px;overflow:hidden}
+
+/* ===== Benachrichtigungen an der Glocke: jede Meldung als eigene runde Karte ===== */
+.ml-pop{position:fixed;z-index:60;width:400px;max-width:calc(100vw - 16px);max-height:min(600px,calc(100vh - 90px));display:flex;flex-direction:column;background:var(--dlg-bg);color:var(--on-surface);border-radius:28px;box-shadow:var(--schweben-dlg)!important;overflow:hidden;animation:schwebenEin .16s ease-out}
+.ml-kopf{display:flex;align-items:center;gap:8px;padding:18px 16px 10px 20px}
+.ml-kopf b{flex:1;font-size:18px;font-weight:800}
+.ml-alle{height:32px;padding:0 14px;border:0;border-radius:16px;background:var(--feld);color:var(--on-surface);font:inherit;font-size:13px;font-weight:650;cursor:pointer}
+.ml-alle:hover{background:var(--sc-highest)}
+.ml-liste{overflow:auto;padding:0 10px 10px;display:flex;flex-direction:column;gap:6px}
+.ml-gr{font-size:12px;font-weight:700;color:var(--on-sv);padding:8px 10px 2px}
+.ml-it{position:relative;display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:20px;background:var(--feld);cursor:pointer;transition:background .15s}
+.ml-it.neu{background:var(--feld)}
+@media (hover:hover){.ml-it:hover{background:color-mix(in srgb,var(--on-surface) 6%,var(--feld))}}
+.ml-it:not(.neu) .ml-h{color:var(--on-sv)}
+.ml-av{flex:none;width:40px;height:40px;border-radius:50%;background:var(--sec-c) center/cover no-repeat;color:var(--on-sec-c);display:grid;place-items:center;font-size:13px;font-weight:700}
+.ml-av.sys{background:var(--sc-highest);color:var(--on-sv)}
+.ml-av.sys .ic{width:22px;height:22px}
+.ml-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ml-k{display:flex;gap:6px;align-items:center;min-width:0}
+.ml-k b{flex:1;min-width:0;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ml-zeit{flex:none;font-size:12px;color:var(--on-sv)}
+.ml-punkt{flex:none;width:8px;height:8px;border-radius:50%;background:var(--primary)}
+.ml-pinz{flex:none;color:var(--primary);display:grid}.ml-pinz .ic{width:14px;height:14px}
+.ml-h{font-size:14px;line-height:1.35}
+.ml-s{font-size:13px;color:var(--on-sv);line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+/* Anpinnen/Entfernen: kleine runde Knöpfe, die am PC beim Drüberfahren oben rechts auf der Karte erscheinen */
+.ml-ak{position:absolute;top:8px;right:10px;display:flex;gap:4px;opacity:0;transform:scale(.9);transition:opacity .12s,transform .12s;pointer-events:none}
+@media (hover:hover){.ml-it:hover .ml-zeit,.ml-it:hover .ml-punkt,.ml-it:hover .ml-pinz{visibility:hidden}}
+.ml-it:hover .ml-ak,.ml-ak:focus-within{opacity:1;transform:none;pointer-events:auto}
+@media (hover:none){.ml-ak{position:static;opacity:1;transform:none;pointer-events:auto;flex-direction:column;margin:-4px -6px 0 0}}
+.ml-b{width:28px;height:28px;border:0;border-radius:50%;background:var(--dlg-bg);color:var(--on-sv);display:grid;place-items:center;cursor:pointer;padding:0}
+.ml-b:hover{color:var(--on-surface)}
+.ml-b.an{color:var(--primary)}
+.ml-b .ic{width:16px;height:16px}
+@media (hover:none){.ml-b{box-shadow:none;background:transparent}}
+.ml-leer{display:flex;flex-direction:column;align-items:center;gap:10px;padding:36px 16px 44px;color:var(--on-sv);font-size:14px}
+.ml-leer .ic{width:34px;height:34px;opacity:.55}
+.ml-fuss{padding:2px 10px 12px;display:flex;justify-content:center}
+@media (max-width:599px){.ml-pop{left:8px;right:8px!important;width:auto}}
+/* Kacheln der Startseite: Zahl direkt am Titel, rechts nur das Plus */
+.wg-k .wg-zahl{order:0;margin-left:-2px}
+.wg-k b{flex:0 1 auto!important}
+.wg-k .wg-plus{margin-left:auto}
+.wg-k::after{content:"";flex:1;order:5}
+.wg-k .wg-plus{order:6}

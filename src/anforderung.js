@@ -115,13 +115,14 @@ function mlName(m){ if(!m.von) return "System"; const p=typeof profilVon==="func
 function mlFuellen(){
   const pop=document.getElementById("mlPop"); if(!pop) return; const S=mlSt(), L=meldungen(), neu=L.filter(m=>!S.gel[m.id]).length;
   const zeile=m=>`<div class="ml-it${S.gel[m.id]?"":" neu"}${S.pin[m.id]?" ml-gepinnt":""}" data-act="mlKlick" data-id="${esc(m.id)}" role="button" tabindex="0">${mlAv(m)}
-    <span class="ml-tx"><span class="ml-k"><b>${esc(mlName(m))}</b><span class="ml-zeit">${esc(wann(m.t))}</span></span><span class="ml-h">${esc(m.h)}</span>${m.s?`<span class="ml-s">${esc(m.s)}</span>`:""}</span>
+    <span class="ml-tx"><span class="ml-k"><b>${esc(mlName(m))}</b>${S.pin[m.id]?`<span class="ml-pinz" title="Angepinnt">${mlSvg("pin")}</span>`:""}<span class="ml-zeit">${esc(wann(m.t))}</span>${S.gel[m.id]?"":`<i class="ml-punkt" aria-label="ungelesen"></i>`}</span>
+      <span class="ml-h">${esc(m.h)}</span>${m.s?`<span class="ml-s">${esc(m.s)}</span>`:""}</span>
     <span class="ml-ak"><button class="ml-b${S.pin[m.id]?" an":""}" data-act="mlPin" data-id="${esc(m.id)}" aria-label="${S.pin[m.id]?"Nicht mehr anpinnen":"Anpinnen"}" title="${S.pin[m.id]?"Nicht mehr anpinnen":"Anpinnen"}">${mlSvg("pin")}</button>
     <button class="ml-b" data-act="mlWeg" data-id="${esc(m.id)}" aria-label="Entfernen" title="Entfernen">${mlSvg("weg")}</button></span></div>`;
   const pin=L.filter(m=>S.pin[m.id]), rest=L.filter(m=>!S.pin[m.id]);
-  pop.innerHTML=`<div class="ml-kopf"><b>Benachrichtigungen</b>${neu?`<button class="btn-text" data-act="mlAlleGel">Alle gelesen</button>`:""}</div>
+  pop.innerHTML=`<div class="ml-kopf"><b>Benachrichtigungen</b>${neu?`<button class="ml-alle" data-act="mlAlleGel">Alle gelesen</button>`:""}</div>
     <div class="ml-liste">${L.length?`${pin.length?`<div class="ml-gr">Angepinnt</div>${pin.map(zeile).join("")}${rest.length?`<div class="ml-gr">Neueste</div>`:""}`:""}${rest.map(zeile).join("")}`
-      :`<p class="ml-leer">Aktuell keine Benachrichtigungen</p>`}</div>
+      :`<div class="ml-leer"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span>Aktuell keine Benachrichtigungen</span></div>`}</div>
     ${Object.keys(S.weg).length?`<div class="ml-fuss"><button class="btn-text" data-act="mlWiederher">Entfernte wieder anzeigen</button></div>`:""}`;
 }
 function mlAuf(){

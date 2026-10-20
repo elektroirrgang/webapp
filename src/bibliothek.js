@@ -29,7 +29,7 @@ function bbEintraege(){
     const s=p.standortId&&DB.standorte?DB.standorte.get(p.standortId):null;
     L.push({art:"prot",titel:[kn(p.kundeId),s&&s.name].filter(Boolean).join(" › ")||"Prüfung",kundeId:p.kundeId||"",kunde:kn(p.kundeId),t:p.updated||0,
       info:["EVSE",p.p&&p.p.art,p.p&&bbDatum(p.p.datum),"PDF in der Share"].filter(Boolean).join(" · "),pill:"",
-      ziel:typeof pMenu==="function"?`data-act="open" data-id="${esc(p.id)}"`:`data-href="../evse/"`}); });
+      ziel:`data-act="bbShare" data-id="${esc(p.id)}"`}); });
   if(DB.dateien) [...DB.dateien.values()].filter(d=>!d.deleted).forEach(d=>{ const st=d.bezugKind==="standorte"&&DB.standorte?DB.standorte.get(d.bezugId):null, k=bbKunde(d.bezugKind==="kunden"?d.bezugId:st&&st.kundeId), bild=/^image\//.test(d.typ||"");
     L.push({art:bild?"foto":"dok",titel:d.name||"Datei",kundeId:k?k.id:"",kunde:k?k.name:"",t:d.created||0,bild:bild?d.id:"",
       info:[k&&k.name,st&&st.name,d.created&&new Date(d.created).toLocaleDateString("de-DE")].filter(Boolean).join(" · "),pill:"",ziel:`data-act="dateiOeffnen" data-id="${esc(d.id)}"`}); });
@@ -53,9 +53,10 @@ function bibListe(){
   const tag=x=>x.ziel.startsWith("data-href")?"a":"div", attr=x=>x.ziel.startsWith("data-href")?`href="${x.ziel.slice(11,-1)}" style="text-decoration:none;color:inherit"`:`role="button" tabindex="0" ${x.ziel}`;
   const zeile=x=>`<${tag(x)} class="li" ${attr(x)}>${x.bild?`<span class="av bib-thumb"><img data-datei="${esc(x.bild)}" alt=""></span>`:`<span class="av">${icon(BB_IC[x.art])}</span>`}
     <span class="lt"><span class="h">${esc(x.titel)}</span><span class="s">${esc(x.info)}</span>${x.pill?`<span class="st">${x.pill}</span>`:""}</span>${icon("chev")}</${tag(x)}>`;
-  const kachel=x=>`<${tag(x)} class="bib-k" ${attr(x)}><span class="bib-kb${x.bild?" foto":""}">${x.bild?`<img data-datei="${esc(x.bild)}" alt="">`:icon(BB_IC[x.art])}</span>
+  const pid=x=>{ const m=/data-act="bbOeffnen" data-id="([^"]+)"/.exec(x.ziel); return m?m[1]:""; };
+  const kachel=x=>`<${tag(x)} class="bib-k" ${attr(x)}><span class="bib-kb${x.bild?" foto":""}${pid(x)?" pdf":""}" ${pid(x)?`data-pdf="${esc(pid(x))}"`:""}>${x.bild?`<img data-datei="${esc(x.bild)}" alt="">`:BB_VORSCHAU.get(pid(x))?`<img src="${BB_VORSCHAU.get(pid(x))}" alt="">`:icon(BB_IC[x.art])}</span>
     <span class="bib-kt"><b>${esc(x.titel)}</b><small>${esc(x.info)}</small>${x.pill?`<span class="st">${x.pill}</span>`:""}</span></${tag(x)}>`;
-  setTimeout(()=>{ if(typeof bilderFuellen==="function") bilderFuellen(); },0);
+  setTimeout(()=>{ if(typeof bilderFuellen==="function") bilderFuellen(); bbVorschauen(); },0);
   const inhalt=bbAnsicht()==="kacheln"?`<div class="bib-raster">${L.map(kachel).join("")}</div>`
     :so==="name"?bbGruppe(L,x=>x.titel,zeile):so==="kunde"?bbGruppe(L,x=>x.kunde||"#",zeile):bbMonate(L,zeile);
   return chips+info+inhalt;
@@ -78,7 +79,42 @@ function bbFilterFenster(btn){
   m.addEventListener("click",e=>{ const a=e.target.closest("[data-bk]"); if(a){ bbSet(a.dataset.bk,a.dataset.bv); male(); return; } if(e.target.closest("[data-breset]")){ bbSet("sort","neu"); bbSet("kunde","alle"); male(); } });
   const zu=()=>{ m.remove(); bg.remove(); removeEventListener("resize",zu); }; bg.addEventListener("click",zu); addEventListener("resize",zu);
 }
+/* ===== Vorschaubilder: erste Seite der PDFs, klein gerendert (pdf.js) und für die Sitzung gemerkt ===== */
+const BB_VORSCHAU=new Map(); let bbVorLaeuft=false;
+async function bbBlob(id){ const d=await new Promise((res,rej)=>{ const r=indexedDB.open("evse_protokolle"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
+  const b=await new Promise(res=>{ const q=d.transaction("blob").objectStore("blob").get(id); q.onsuccess=()=>res(q.result); q.onerror=()=>res(null); }); d.close(); return b; }
+async function bbVorschauen(){
+  if(bbVorLaeuft||typeof pdfjsLaden!=="function") return; bbVorLaeuft=true;
+  try{ for(const el of [...document.querySelectorAll(".bib-kb.pdf[data-pdf]")]){ const id=el.dataset.pdf; if(BB_VORSCHAU.has(id)){ if(!el.querySelector("img")) el.innerHTML=`<img src="${BB_VORSCHAU.get(id)}" alt="">`; continue; }
+      try{ const [lib,b]=await Promise.all([pdfjsLaden(),bbBlob(id)]); if(!b) { BB_VORSCHAU.set(id,""); continue; }
+        const doc=await lib.getDocument({data:new Uint8Array(await b.arrayBuffer())}).promise, pg=await doc.getPage(1), v0=pg.getViewport({scale:1}), sc=Math.min(2,420/v0.width), v=pg.getViewport({scale:sc});
+        const c=document.createElement("canvas"); c.width=Math.round(v.width); c.height=Math.round(v.height); const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height);
+        await pg.render({canvasContext:x,viewport:v}).promise; const u=c.toDataURL("image/jpeg",.78); BB_VORSCHAU.set(id,u); try{ doc.destroy(); }catch(_){}
+        document.querySelectorAll(`.bib-kb[data-pdf="${CSS.escape(id)}"]`).forEach(k=>k.innerHTML=`<img src="${u}" alt="">`); }
+      catch(e){ BB_VORSCHAU.set(id,""); } } }
+  finally{ bbVorLaeuft=false; }
+}
+/* ===== PDF aus der Share holen (Prüfung von einem anderen Gerät) – danach liegt es auch hier und öffnet sofort ===== */
+async function bbShare(pid){
+  const p=DB.pruefungen&&DB.pruefungen.get(pid); if(!p) return;
+  if(p.demo){ toast("Beispiel aus der Demo-Vorschau – dazu gibt es kein echtes PDF"); return; }
+  const da=BB_PROT.find(x=>x.pruefungId===pid); if(da) return bbOeffnen(da.id);
+  if(!(typeof SYNC_ON!=="undefined"&&SYNC_ON&&typeof folderId==="function"&&typeof BIB!=="undefined"&&BIB.pdf)){ toast("PDF liegt in der Share – dafür bitte anmelden"); return; }
+  toast("PDF wird geladen …");
+  try{ const pa=String(p.pdfAblage), i=pa.lastIndexOf("/"), dir=i>0?pa.slice(0,i):"", file=pa.slice(i+1);
+    await syncRoot(); const fid=await folderId(dir,BIB.pdf); const it=await gj(`/drives/${fid}:/${encodeURIComponent(file)}`); const blob=await (await readItem(it)).blob();
+    const k=bbKunde(p.kundeId), s=p.standortId&&DB.standorte?DB.standorte.get(p.standortId):null;
+    const x={id:"share-"+p.id,pruefungId:p.id,kundeId:p.kundeId||"",standortId:p.standortId||"",name:file.replace(/\.pdf$/i,""),titel:[k&&k.name,s&&s.name].filter(Boolean).join(" · ")||file,
+      datum:(p.p&&p.p.datum)||"",art:(p.p&&p.p.art)||"",auftragsnr:(p.p&&p.p.auftragsnr)||"",pruefer:(p.p&&p.p.pruefer)||"",created:p.updated||Date.now(),von:p.updatedBy||null,fassung:1,size:blob.size,ausShare:true};
+    const d=await new Promise((res,rej)=>{ const r=indexedDB.open("evse_protokolle"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
+    const tx=d.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").put(x); tx.objectStore("blob").put(blob,x.id); await new Promise(r=>{ tx.oncomplete=r; tx.onerror=r; }); d.close();
+    BB_PROT.push(x); if(typeof PROT!=="undefined"&&!PROT.some(y=>y.id===x.id)) PROT.push(x);
+    const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); bbOeffnen(x.id);
+  }catch(e){ toast(navigator.onLine?"PDF in der Share nicht gefunden":"Kein Internet – PDF liegt in der Share"); }
+}
 async function bbOeffnen(id){
+  if(typeof pvOeffnen==="function"&&typeof PROT!=="undefined"&&PROT.some(x=>x.id===id)) return pvOeffnen(id);
+  if(typeof PROT!=="undefined"&&!PROT.some(x=>x.id===id)){ const x=BB_PROT.find(y=>y.id===id); if(x) PROT.push(x); }
   if(typeof pvOeffnen==="function"&&typeof PROT!=="undefined"&&PROT.some(x=>x.id===id)) return pvOeffnen(id);
   if(typeof bibOpen==="function"&&typeof PROT!=="undefined"&&PROT.some(x=>x.id===id)) return bibOpen(id);
   try{ const d=await new Promise((res,rej)=>{ const r=indexedDB.open("evse_protokolle"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
@@ -91,6 +127,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="bbFilter") bbFilterFenster(b);
   else if(a==="bbReset"){ bbSet("sort","neu"); bbSet("kunde","alle"); }
   else if(a==="bbOeffnen") bbOeffnen(b.dataset.id);
+  else if(a==="bbShare") bbShare(b.dataset.id);
 },true);
 document.addEventListener("keydown",e=>{ if(e.key==="Enter"&&e.target.matches&&e.target.matches('#app [data-act="bbOeffnen"]')){ e.preventDefault(); bbOeffnen(e.target.dataset.id); } });
 document.addEventListener("input",e=>{ if(e.target&&e.target.id==="q"&&typeof nav!=="undefined"&&nav.v==="bibliothek"){ query=e.target.value; const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); } });
