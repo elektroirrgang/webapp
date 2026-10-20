@@ -844,7 +844,7 @@ html,body{overscroll-behavior-y:none}
 
 /* PC (Maus/Trackpad, ab 1024 px): Seitenleiste statt Tab-Leiste oben */
 @media (min-width:1024px) and (hover:hover) and (pointer:fine){
-  :root body nav.navbar,:root body.rail-open nav.navbar{position:fixed!important;top:0!important;left:0!important;bottom:0!important;right:auto!important;transform:none!important;width:260px!important;height:auto!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:4px!important;padding:18px 12px 20px!important;border-radius:0!important;background:var(--sc-low)!important;box-shadow:none!important;z-index:30;scale:1!important}
+  :root body nav.navbar,:root body.rail-open nav.navbar{position:fixed!important;top:0!important;left:0!important;bottom:0!important;right:auto!important;transform:none!important;width:204px!important;height:auto!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:4px!important;padding:18px 12px 20px!important;border-radius:0!important;background:var(--sc-low)!important;box-shadow:none!important;z-index:30;scale:1!important}
   :root body nav.navbar .nav-head{display:flex!important;align-items:center;height:56px;margin:0 0 14px;padding:0 14px;justify-content:flex-start}
   :root body nav.navbar .nav-tog{display:none!important}
   :root body nav.navbar .nav-head .nav-logo{height:26px;width:auto}
@@ -856,13 +856,13 @@ html,body{overscroll-behavior-y:none}
   :root body nav.navbar .nav-item[aria-current="page"]{background:var(--sec-c)!important;color:var(--on-sec-c)!important}
   :root body nav.navbar .nav-item > span:last-child{white-space:nowrap}
   .nav-ind{display:none!important}
-  .topbar{left:260px!important;margin-left:0!important}
+  .topbar{left:204px!important;margin-left:0!important}
   .topbar .logo{display:none!important}
   .tb-row{height:64px!important}
-  main,body.has-nav main,body.rail-open.has-nav main{margin-left:260px!important}
+  main,body.has-nav main,body.rail-open.has-nav main{margin-left:204px!important}
   body.is-login main{margin-left:0!important}
-  .wrap,.narrow,.narrow.lesen{max-width:960px}
-  .snackbar,body.has-fab .snackbar{left:calc(50% + 130px)!important}
+  .wrap,.narrow{max-width:1160px}.narrow.lesen{max-width:960px}
+  .snackbar,body.has-fab .snackbar{left:calc(50% + 102px)!important}
   .pv{left:0}
 }
 @media (min-width:1024px) and (hover:hover) and (pointer:fine) and (prefers-color-scheme: dark){:root:not([data-theme="light"]) body nav.navbar .nav-head .nav-logo.l-hell{display:none!important}:root:not([data-theme="light"]) body nav.navbar .nav-head .nav-logo.l-dunkel{display:block!important}:root:not([data-theme="light"]) body nav.navbar .nav-item[aria-current="page"]{background:var(--sec-c)!important;color:var(--on-sec-c)!important}}
