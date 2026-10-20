@@ -1464,9 +1464,6 @@ function navIndSetzen(){
   addEventListener("resize",()=>navIndSetzen());
 })();
 
-function bibliothekView(){
-  return `<div class="empty">${icon("folder")}<h2>Noch keine Protokolle</h2><p>Hier erscheinen die E-Check-Protokolle für Hausinstallation und Geräte, sobald die Prüfabläufe fertig sind.</p></div>`;
-}
 
 (()=>{ let w=null; const app=()=>$("#app");
   const darf=e=>WIDE.matches&&typeof pfadTeile==="function"&&pfadTeile().length&&$("#dlg").hidden&&$("#menu").hidden&&!$("#pv")&&!e.target.closest("canvas,.sigfull,input,textarea,select");
@@ -1484,7 +1481,7 @@ function segInd(){ const zahl={};
     let ind=sg.querySelector(".seg-ind"); const neu=!ind; if(neu){ ind=document.createElement("span"); ind.className="seg-ind"; sg.prepend(ind); sg.classList.add("hat-ind"); }
     const b=sg.querySelector('button[aria-pressed="true"]'); if(!b){ ind.style.opacity=0; SEG_ALT.delete(k); return; }
     const pos=[b.offsetLeft,b.offsetWidth], alt=SEG_ALT.get(k);
-    const gleiten=neu&&alt&&alt[2]!==b.dataset.v;
+    const gleiten=neu&&alt&&alt[2]!==b.dataset.v&&!(Date.now()-(window.__segGezogen||0)<800); /* nach dem Ziehen steht der Knopf schon am Ziel – nicht nochmal gleiten */
     if(neu){ ind.style.transition="none"; const st=gleiten?alt:[pos[0],pos[1],b.dataset.v]; ind.style.opacity=1; ind.style.translate=st[0]+"px 0"; ind.style.width=st[1]+"px"; ind.dataset.v=st[2]||""; ind.offsetWidth; ind.style.transition=""; }
     ind.style.opacity=1; ind.style.translate=pos[0]+"px 0"; ind.style.width=pos[1]+"px"; ind.dataset.v=b.dataset.v||""; SEG_ALT.set(k,[pos[0],pos[1],b.dataset.v]); });
 }
@@ -1496,7 +1493,7 @@ document.addEventListener("click",()=>setTimeout(segInd,0));
     let ziel=bs[0], best=1e9; bs.forEach(b=>{ const d=Math.abs(b.offsetLeft+b.offsetWidth/2-x); if(d<best){ best=d; ziel=b; } });
     const w=ziel.offsetWidth, min=bs[0].offsetLeft, max=bs[bs.length-1].offsetLeft+bs[bs.length-1].offsetWidth-w;
     ind.style.translate=Math.max(min,Math.min(max,x-w/2))+"px 0"; ind.style.width=w+"px"; ind.dataset.v=ziel.dataset.v||""; z.ziel=ziel; });
-  const ende=e=>{ if(!z||e.pointerId!==z.id) return; const d=z; z=null; if(!d.an) return; d.sg.classList.remove("zieht"); sperre=Date.now()+400;
+  const ende=e=>{ if(!z||e.pointerId!==z.id) return; const d=z; z=null; if(!d.an) return; d.sg.classList.remove("zieht"); sperre=Date.now()+400; window.__segGezogen=Date.now();
     if(d.ziel&&d.ziel.getAttribute("aria-pressed")!=="true") d.ziel.click(); else segInd(); };
   document.addEventListener("pointerup",ende); document.addEventListener("pointercancel",ende);
   document.addEventListener("click",e=>{ if(e.isTrusted&&Date.now()<sperre&&e.target.closest(".seg")){ sperre=0; e.stopPropagation(); e.preventDefault(); } },true);
@@ -1574,6 +1571,7 @@ document.addEventListener("click",e=>{
   document.addEventListener("transitionend",bald,true); bald();
 })();
 /*DEMO*/
+/*BIBLIOTHEK*/
 /*PROFIL*/
 /*KOPF*/
 function render(){ profilAnwenden();
@@ -1699,7 +1697,7 @@ function zurueck(){
   if(MEHR_SUB[nav.v]){ go({v:"mehr"}); return; }
   go({v:"start"});
 }
-document.addEventListener("input",ev=>{ if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=kundenListe(); } });
+document.addEventListener("input",ev=>{ if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():kundenListe(); } });
 document.addEventListener("change",ev=>{ const el=ev.target;
   if(el.id==="f_tlWer"){ const pw=($("#f_tlPw")||{}).value||""; tlSel=el.value||null; render(); const e=$("#f_tlPw"); if(e){ e.value=pw; } (tlSel==="__andere"?$("#f_tlMail"):e)?.focus(); } });
 document.addEventListener("click",ev=>{

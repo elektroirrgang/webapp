@@ -2051,7 +2051,6 @@ function nachMonat(L,datum,item){ let h="", m=null, g=[]; const fl=()=>{ if(g.le
   for(const x of L){ const mm=monatVon(datum(x)); if(mm!==m){ fl(); m=mm; } g.push(item(x)); } fl(); return h; }
 let BIB_F="alle";
 const bibChips=F=>`<div class="chips" style="margin:4px 0 12px">${F.map(([v,t])=>`<button class="chip" data-act="bfilter" data-v="${v}" aria-pressed="${BIB_F===v}">${icon("check")}${t}</button>`).join("")}</div>`;
-function bibListe(){ return ""; }
 
 /* Bibliothek der Baustellen-App: fertige Protokolle (gemeinsamer Gerätespeicher evse_protokolle, app:"baustelle") */
 const PROT_DB="evse_protokolle"; let protDB=null, PROT=[];
@@ -2138,12 +2137,6 @@ addEventListener("resize",()=>{ if(PV){ clearTimeout(PV.rt); PV.rt=setTimeout(pv
 const PROT_B=()=>PROT.filter(x=>x.app==="baustelle");
 async function protAblegenB(meta,blob){ const d=await protOpen(), x=Object.assign({id:uid(),app:"baustelle",created:Date.now(),von:who(),size:blob.size},meta);
   const tx=d.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").put(x); tx.objectStore("blob").put(blob,x.id); await new Promise(r=>{ tx.oncomplete=r; tx.onerror=r; }); PROT.push(x); return x; }
-function bibliothekView(){ const L=PROT_B().sort((a,b)=>b.created-a.created);
-  if(!L.length) return `<div class="empty">${icon("folder")}<h2>Noch keine Protokolle</h2><p>Hier landen die gespeicherten Aufnahmeprotokolle und später die Baustellenberichte – genau so, wie sie erstellt wurden.</p></div>`;
-  return `<div class="narrow"><div class="list">${L.map(x=>`<div class="li" role="button" tabindex="0" data-act="bibOpen" data-id="${esc(x.id)}"><span class="av">${icon("doc")}</span><span class="lt"><span class="h">${esc(x.titel)}</span>
-    <span class="s">${esc([x.art,deDate(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`].filter(Boolean).join(" · "))}</span><span class="s">${esc(`Gespeichert ${protZeit(x.created)}${x.von&&x.von.name?` · ${x.von.name}`:""}`)}</span>
-    <span class="st">${x.fassung>1?pill("open",`Fassung ${x.fassung}`):""}${x.unterschrift?"":pill("open","ohne Unterschrift")}${x.demo?pill("open","Beispiel"):""}</span></span>${icon("chev")}</div>`).join("")}</div>
-    <p class="hint">Jedes Speichern legt eine neue Fassung ab. Ältere Fassungen bleiben erhalten.</p></div>`; }
 (()=>{ let w=null; const app=()=>$("#app");
   const darf=e=>WIDE.matches&&typeof pfadTeile==="function"&&pfadTeile().length&&$("#dlg").hidden&&$("#menu").hidden&&!$("#pv")&&!e.target.closest("canvas,.sigfull,input,textarea,select");
   document.addEventListener("touchstart",e=>{ if(e.touches.length!==1) return; const t=e.touches[0]; if(t.clientX>22||!darf(e)) return; w={x:t.clientX,y:t.clientY,dx:0,an:false}; },{passive:true});
@@ -2160,7 +2153,7 @@ function segInd(){ const zahl={};
     let ind=sg.querySelector(".seg-ind"); const neu=!ind; if(neu){ ind=document.createElement("span"); ind.className="seg-ind"; sg.prepend(ind); sg.classList.add("hat-ind"); }
     const b=sg.querySelector('button[aria-pressed="true"]'); if(!b){ ind.style.opacity=0; SEG_ALT.delete(k); return; }
     const pos=[b.offsetLeft,b.offsetWidth], alt=SEG_ALT.get(k);
-    const gleiten=neu&&alt&&alt[2]!==b.dataset.v;
+    const gleiten=neu&&alt&&alt[2]!==b.dataset.v&&!(Date.now()-(window.__segGezogen||0)<800); /* nach dem Ziehen steht der Knopf schon am Ziel – nicht nochmal gleiten */
     if(neu){ ind.style.transition="none"; const st=gleiten?alt:[pos[0],pos[1],b.dataset.v]; ind.style.opacity=1; ind.style.translate=st[0]+"px 0"; ind.style.width=st[1]+"px"; ind.dataset.v=st[2]||""; ind.offsetWidth; ind.style.transition=""; }
     ind.style.opacity=1; ind.style.translate=pos[0]+"px 0"; ind.style.width=pos[1]+"px"; ind.dataset.v=b.dataset.v||""; SEG_ALT.set(k,[pos[0],pos[1],b.dataset.v]); });
 }
@@ -2172,7 +2165,7 @@ document.addEventListener("click",()=>setTimeout(segInd,0));
     let ziel=bs[0], best=1e9; bs.forEach(b=>{ const d=Math.abs(b.offsetLeft+b.offsetWidth/2-x); if(d<best){ best=d; ziel=b; } });
     const w=ziel.offsetWidth, min=bs[0].offsetLeft, max=bs[bs.length-1].offsetLeft+bs[bs.length-1].offsetWidth-w;
     ind.style.translate=Math.max(min,Math.min(max,x-w/2))+"px 0"; ind.style.width=w+"px"; ind.dataset.v=ziel.dataset.v||""; z.ziel=ziel; });
-  const ende=e=>{ if(!z||e.pointerId!==z.id) return; const d=z; z=null; if(!d.an) return; d.sg.classList.remove("zieht"); sperre=Date.now()+400;
+  const ende=e=>{ if(!z||e.pointerId!==z.id) return; const d=z; z=null; if(!d.an) return; d.sg.classList.remove("zieht"); sperre=Date.now()+400; window.__segGezogen=Date.now();
     if(d.ziel&&d.ziel.getAttribute("aria-pressed")!=="true") d.ziel.click(); else segInd(); };
   document.addEventListener("pointerup",ende); document.addEventListener("pointercancel",ende);
   document.addEventListener("click",e=>{ if(e.isTrusted&&Date.now()<sperre&&e.target.closest(".seg")){ sperre=0; e.stopPropagation(); e.preventDefault(); } },true);
@@ -2252,6 +2245,7 @@ document.addEventListener("click",e=>{
   document.addEventListener("transitionend",bald,true); bald();
 })();
 /*DEMO*/
+/*BIBLIOTHEK*/
 /*PROFIL*/
 /*KOPF*/
 /*ANFORDERUNG*/
