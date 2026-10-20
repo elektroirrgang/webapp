@@ -21,7 +21,7 @@ function kopfAusrichten(){
   const n=document.querySelector("#app > .narrow, #app > .wrap, #app > div:not(.edk-platz)"); sk.style.removeProperty("margin-left"); sk.style.removeProperty("width");
   if(!n) return; const a=n.getBoundingClientRect(), s=slot.getBoundingClientRect(); if(!a.width) return;
   /* am PC sitzt der Zurück-Pfeil am linken Rand der Inhaltsfläche – Titel hält Abstand dazu */
-  const zp=KOPF_PC.matches&&sk.querySelector(".sk-zt"), min=zp?Math.max(0,zp.getBoundingClientRect().right-s.left+4):0, links=Math.max(min,a.left-s.left); sk.style.setProperty("margin-left",links+"px","important"); sk.style.setProperty("width",Math.max(0,Math.min(a.width,s.width-links))+"px","important");
+  const zp=KOPF_PC.matches&&sk.querySelector(".sk-zt"), min=zp?Math.max(0,zp.getBoundingClientRect().right-s.left+12):0, links=Math.max(min,a.left-s.left); sk.style.setProperty("margin-left",links+"px","important"); sk.style.setProperty("width",Math.max(0,Math.min(a.width,s.width-links))+"px","important");
 }
 addEventListener("resize",()=>{ clearTimeout(kopfAusrichten._t); kopfAusrichten._t=setTimeout(()=>{ if(KOPF_BREIT.matches&&!document.getElementById("tbKopf")?.hidden) kopfAusrichten(); },80); });
 [KOPF_PC,KOPF_BREIT].forEach(m=>m.addEventListener&&m.addEventListener("change",()=>setTimeout(kopfEinhaengen,0)));
