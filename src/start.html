@@ -2366,7 +2366,7 @@ function kzAusfuehren(zid,wegIds){
 }
 function kundenView(){
   if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden aus den Apps EVSE, Baustelle und E-Check erscheinen hier automatisch.</p></div>`;
-  return `<div class="narrow">${searchBar("Kunde, Ort, Ansprechpartner suchen",fKnopf("kunden"))}${query?"":kDoppeltKarte()}<div id="res">${kundenListe()}</div><p class="hint">Eine Kundendatenbank für alle Apps.${ME.admin?"":" Ändern können Admins."}</p></div>`;
+  return `<div class="narrow">${searchBar("Kunde, Ort, Ansprechpartner suchen",fKnopf("kunden"))}${query?"":kDoppeltKarte()}<div id="res">${kundenListe()}</div></div>`;
 }
 function bezugListen(kind,id,opt){
   const bs=live("baustellen").filter(b=>kind==="kunden"?b.kundeId===id:b.standortId===id).sort((a,b)=>bAktiv(b)-bAktiv(a));

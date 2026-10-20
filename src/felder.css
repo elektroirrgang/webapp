@@ -63,3 +63,7 @@
   #app > .narrow,#app > .wrap,.narrow.vg,.wide-n{max-width:none!important;margin-left:0!important;margin-right:0!important}
   #app > .narrow.lesen{max-width:960px!important;margin-left:0!important;margin-right:auto!important}
 }
+/* Schwebender Knopf: deutlicher Schatten, damit er über Listen sichtbar „schwebt“; am PC hebt er sich beim Drüberfahren leicht an */
+.fab{box-shadow:0 6px 16px rgba(0,0,0,.18),0 2px 5px rgba(0,0,0,.12)!important;transition:transform .16s ease,box-shadow .16s ease,filter .16s ease}
+@media (hover:hover) and (pointer:fine){.fab:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.22),0 3px 8px rgba(0,0,0,.14)!important;filter:brightness(1.05)}}
+.fab:active{transform:translateY(0) scale(.97);box-shadow:0 3px 8px rgba(0,0,0,.18)!important}
