@@ -97,6 +97,12 @@ function meldungenRoh(){
       P("fae:"+p.id+":"+p.a.naechste,new Date(p.a.naechste+"T08:00:00").getTime(),null,"Wiederholungsprüfung überfällig",`${k?k.name:"Prüfung"} – fällig seit ${p.a.naechste.split("-").reverse().join(".")}`,p.standortId?{v:"standort",id:p.standortId}:null); }); }
   }
   anfAlle().filter(a=>anfMeine(a)&&a.status!=="angefordert"&&(a.statusAm||0)>=ab&&!mlIch(a.statusVon)).forEach(a=>P("anfst:"+a.id+":"+a.status,a.statusAm,a.statusVon,a.status==="da"?"hat dein Material als da markiert":"hat dein Material bestellt",`${anfOrt(a)}: ${anfPosText(a)}`,{v:"materialanf"}));
+  /* Aufträge: mir zugewiesen, neue Notizen an meinen Aufträgen, fürs Büro neue Anfragen */
+  alle("vorgaenge").forEach(v=>{ const kd=(v.kundeId&&typeof kundeOf==="function"&&kundeOf(v.kundeId)||{}).name||v.kundeName||"Auftrag", go={v:"auftraege",sel:v.id};
+    if(v.zust&&mlIch(v.zust)&&v.zust.von&&!mlIch(v.zust.von)&&(v.zust.at||0)>=ab) P("vz:"+v.id+":"+v.zust.at,v.zust.at,v.zust.von,"hat dir einen Auftrag zugewiesen",`${kd}${v.anliegen?": "+v.anliegen:""}`,go);
+    const meins=(v.zust&&mlIch(v.zust))||mlIch(v.createdBy);
+    (v.notizen||[]).filter(n=>!mlIch(n.wer)&&(n.at||0)>=ab&&(meins||v.zust==null&&v&&anfVerw())).forEach(n=>P("vn:"+n.id,n.at,n.wer,`Notiz zu ${kd}`,n.text,go));
+    if(v&&anfVerw()&&v.s&&v.s.anfrage&&!v.s.auftrag&&!v.abgelehnt&&!mlIch(v.s.anfrage.wer)&&(v.s.anfrage.at||0)>=ab) P("va:"+v.id,v.s.anfrage.at,v.s.anfrage.wer,"Neue Anfrage ans Büro",`${kd}${v.anliegen?": "+v.anliegen:""}`,go); });
   alle("notizen").filter(n=>!mlIch(n.createdBy)&&(n.sicht==="firma"||(n.sicht==="personen"&&(n.personen||[]).map(x=>String(x).toLowerCase()).includes(String(ME.mail).toLowerCase())))&&(n.updated||0)>=ab)
     .forEach(n=>P("no:"+n.id,n.updated,n.createdBy,"hat eine Notiz geteilt",n.titel||"Notiz",{v:"notizen"}));
   return L;

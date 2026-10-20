@@ -39,9 +39,10 @@ function demoDaten(){
   const vorgaenge=[
     r({id:"demo-v1",kundeId:"demo-k1",anliegen:"Notbeleuchtung im Lager prüfen, eine Leuchte defekt",tel:"02294 900100",dringend:true,s:{anruf:{wer:P.bu,at:vor(0,2)}}},P.bu,vor(0,2)),
     r({id:"demo-v2",kundeId:"demo-k3",anliegen:"Angebot für zwei Drehstromsteckdosen in der Halle",s:{anruf:{wer:P.ab,at:vor(2)},anfrage:{wer:P.ab,at:vor(2)}}},P.ab,vor(2)),
+    r({id:"demo-v6",kundeId:"demo-k4",anliegen:"Außensteckdose Terrasse setzen",s:{anruf:{wer:P.bu,at:vor(9)},anfrage:{wer:P.bu,at:vor(9)},auftrag:{wer:P.bu,at:vor(7),nr:"A-24127"},termin:{wer:P.bu,at:vor(5),datum:tag(2),zeit:"7:30",mit:"A. Brandl"}},zust:{mail:P.ab.mail,name:P.ab.name,at:vor(5),von:P.bu},notizen:[{id:"demo-n1",wer:P.bu,at:vor(5),text:"Schlüssel liegt beim Nachbarn (Nr. 9)."}]},P.bu,vor(9)),
     r({id:"demo-v3",kundeId:"demo-k2",anliegen:"Zwei weitere Wallboxen an der Ausstellung",s:{anruf:{wer:P.bu,at:vor(6)},anfrage:{wer:P.bu,at:vor(6)},auftrag:{wer:P.bu,at:vor(4),nr:"A-24130"}}},P.bu,vor(6)),
     r({id:"demo-v4",kundeName:"Herr Schulz (Neukunde)",anliegen:"Wohnung renovieren – Steckdosen und Licht neu",tel:"0171 0000010",s:{anruf:{wer:P.bu,at:vor(1)}}},P.bu,vor(1)),
-    r({id:"demo-v5",kundeId:"demo-k5",anliegen:"E-Check Haus B",s:{anruf:{wer:P.bu,at:vor(30)},anfrage:{wer:P.bu,at:vor(30)},auftrag:{wer:P.bu,at:vor(28),nr:"A-24062"},termin:{wer:P.bu,at:vor(20)},ausgefuehrt:{wer:P.ms,at:vor(15)}}},P.bu,vor(30))];
+    r({id:"demo-v5",kundeId:"demo-k5",anliegen:"E-Check Haus B",s:{anruf:{wer:P.bu,at:vor(12)},anfrage:{wer:P.bu,at:vor(12)},auftrag:{wer:P.bu,at:vor(10),nr:"A-24062"},termin:{wer:P.bu,at:vor(8),datum:tag(-4),zeit:"8:00",mit:"M. Seipp"},ausgefuehrt:{wer:P.ms,at:vor(4)}},zust:{mail:P.ms.mail,name:P.ms.name,at:vor(10),von:P.bu}},P.bu,vor(12))];
   const anforderungen=[
     r({id:"demo-a1",baustelleId:"demo-b1",eintragId:"",pos:[{t:"NYM-J 3×1,5",q:100,u:"m"},{t:"Wago 221-413",q:2,u:"Pck"}],notiz:"",status:"angefordert",statusAm:vor(0,3),statusVon:P.ab},P.ab,vor(0,3)),
     r({id:"demo-a2",baustelleId:"demo-b2",eintragId:"",pos:[{t:"Kabelbinder 300 mm",q:1,u:"Pck"},{t:"Hager LS B16",q:6,u:"Stück"}],notiz:"",status:"bestellt",statusAm:vor(0,20),statusVon:P.bu},P.ms,vor(1)),

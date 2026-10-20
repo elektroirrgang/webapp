@@ -70,7 +70,7 @@ const KUERZEL=[["N","Neu anlegen (wie der rote Knopf unten rechts)"],["/ oder St
   ["Entf","Menü zum Eintrag (z. B. Löschen)"],["Alt ←","Zurück"],["Alt 1 … 9","Bereich in der Seitenleiste"],["Strg Enter oder Strg S","Im Fenster speichern"],["Esc","Fenster oder Menü schließen"],["?","Diese Übersicht"]];
 const kzImFeld=t=>!!(t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)));
 const kzSichtbar=el=>!!(el&&!el.hidden&&el.getClientRects().length);
-const LISTE_SEL="#app .li[role=button],#app a.li,#app button.li,#app .vg-k,#app .kt-haupt:not(:disabled),#app .wg.klick";
+const LISTE_SEL="#app .li[role=button],#app a.li,#app button.li,#app .vg-k,#app .kt-haupt:not(:disabled),#app .wg.klick,#app .vk";
 function kuerzelHilfe(){ dialog("Tastenkürzel",`<div class="kz-liste">${KUERZEL.map(([k,t])=>`<div class="kz-z"><span>${esc(t)}</span><span class="kz-k">${k.split(" oder ").map(x=>`<kbd>${esc(x)}</kbd>`).join(" ")}</span></div>`).join("")}</div>
   <p class="sup" style="margin:14px 4px 0">Rechtsklick auf Einträge öffnet das gleiche Menü wie Gedrückthalten am iPad.</p>`,`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`); }
 document.addEventListener("keydown",e=>{
@@ -88,7 +88,7 @@ document.addEventListener("keydown",e=>{
   if(e.altKey&&/^[1-9]$/.test(e.code.replace("Digit",""))&&e.code.startsWith("Digit")){ const L=[...document.querySelectorAll("#navbar .nav-item")].filter(kzSichtbar), it=L[+e.code.slice(5)-1]; if(it){ e.preventDefault(); it.click(); } return; }
   if(cmd||e.altKey) return;
   if(k==="?"){ e.preventDefault(); kuerzelHilfe(); return; }
-  if(k==="Enter"&&document.activeElement&&document.activeElement.matches&&document.activeElement.matches("#app .wg.klick")){ e.preventDefault(); document.activeElement.click(); return; }
+  if(k==="Enter"&&document.activeElement&&document.activeElement.matches&&document.activeElement.matches("#app .wg.klick,#app .vk")){ e.preventDefault(); document.activeElement.click(); return; }
   if(k==="/"){ const q=document.getElementById("q"); if(q){ e.preventDefault(); q.focus(); } return; }
   if(k==="n"||k==="N"){ const f=document.getElementById("fab"); if(f&&!f.hidden&&kzSichtbar(f)){ e.preventDefault(); f.click(); } return; }
   if(k==="ArrowDown"||k==="ArrowUp"){ const L=[...document.querySelectorAll(LISTE_SEL)].filter(kzSichtbar); if(!L.length) return; e.preventDefault();
