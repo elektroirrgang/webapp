@@ -1114,6 +1114,20 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 .pf-rolle{align-self:flex-start;margin-top:4px;padding:2px 10px;border-radius:10px;background:var(--sec-c);color:var(--on-sec-c);font-size:13px;font-weight:700}
 .pf-info small{font-size:12px;color:var(--on-sv)}
 .pf-weg{margin-top:4px}
+
+/* Seitenkopf in der festen Kopfleiste (kopf.js) */
+.tb-kopf[hidden]{display:none!important}
+.tb-kopf{box-sizing:border-box;min-width:0}
+.tb-kopf .sk,.tb-kopf .edk{display:flex!important;align-items:center!important;gap:12px;margin:0!important;padding:0!important;position:static!important;background:none!important;box-shadow:none!important;height:auto!important;min-height:0;top:auto!important}
+.tb-kopf .sk-t,.tb-kopf .edk-t{flex:1;min-width:0}
+.tb-kopf .sk h1,.tb-kopf .edk-t h1{font-size:22px!important;line-height:28px!important;margin:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-kopf .sk p,.tb-kopf .edk-t p{margin:0!important;font-size:13px!important;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-kopf .sk-zur{width:40px!important;height:40px!important;margin:0!important;flex:none}
+.tb-kopf .spick,.tb-kopf .sk-neu,.tb-kopf .stabs{margin:0!important}
+.tb-row:has(.tb-kopf.pc:not([hidden])) .tb-title{display:none!important}
+.tb-kopf.pc{flex:1;align-self:stretch;display:flex;align-items:center;padding-right:12px}
+.tb-kopf:not(.pc){padding:2px 0 10px}
+body.kopf-oben .edk-platz{display:none!important}
 </style>
 </head>
 <body class="is-list">
@@ -1914,6 +1928,7 @@ document.addEventListener("click",e=>{
 })();
 /*DEMO*/
 /*PROFIL*/
+/*KOPF*/
 /*ANFORDERUNG*/
 /*VORGAENGE*/
 function render(){ profilAnwenden();
@@ -1950,7 +1965,7 @@ function render(){ profilAnwenden();
     title=r.name; sub=kind==="kunden"?"Kunde":(kundeOf(r.kundeId)||{}).name||""; body=kind==="kunden"?kundeView(r):standortView(r);
     fab=kind==="kunden"&&ME.admin?["newStandort","Standort","add"]:null; }
   if(SY.state==="anmelden"&&!login) body=`<div class="robanner warn">${icon("sync")}<span>Anmeldung abgelaufen – Änderungen werden nur auf dem Gerät gespeichert.</span><button class="btn-text" data-act="relogin">Anmelden</button></div>`+body;
-  app.innerHTML=(WIDE.matches&&!login?seitenKopf(title,sub,fab):"")+body; backSetzen(); navIndSetzen(); segInd();
+  app.innerHTML=(WIDE.matches&&!login?seitenKopf(title,sub,fab):"")+body; backSetzen(); navIndSetzen(); segInd(); kopfEinhaengen();
   $("#topTitle").innerHTML=title?`<span>${esc(title)}</span>${sub?`<small>${esc(String(sub).split(/\s*›\s*/).pop())}</small>`:""}`:"";
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
   if(fab){ f.dataset.act=fab[0]; f.setAttribute("aria-label",fab[1]); f.innerHTML=`${icon(fab[2])}<span>${fab[1]}</span>`; }

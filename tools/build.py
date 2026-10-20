@@ -16,6 +16,7 @@ def baue(quelle, ziel, icon):
     html = html.replace("<!--EHANDWERK-->", "data:image/jpeg;base64," + b64("brand/e-handwerk.jpg"))
     html = html.replace("<!--VERSION-->", version)
     html = html.replace("/*DEMO*/", (root / "src/demo.js").read_text(encoding="utf-8"))
+    html = html.replace("/*KOPF*/", (root / "src/kopf.js").read_text(encoding="utf-8"))
     html = html.replace("/*PROFIL*/", (root / "src/profil.js").read_text(encoding="utf-8"))
     html = html.replace("/*ANFORDERUNG*/", (root / "src/anforderung.js").read_text(encoding="utf-8"))
     html = html.replace("/*VORGAENGE*/", (root / "src/vorgaenge.js").read_text(encoding="utf-8"))
