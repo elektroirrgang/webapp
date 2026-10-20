@@ -1947,7 +1947,7 @@ function uebersichtView(){
       ${!fUeber.length&&!fBald.length?`<p class="meta">In den nächsten 3 Monaten ist keine Wiederholungsprüfung fällig.</p>`:""}</section>
     <section class="card ue"><h3>${icon("firma")}Kunden</h3>
       <div class="kpis">${kpi(echt("kunden").length,"Kunden")}${kpi(echt("standorte").length,"Standorte")}${kpi(echt("ladeparks").length,"Ladeparks")}${kpi(echt("dateien").length,"abgelegte Dateien")}</div></section>
-    <p class="hint">${SYNC_ON?`Stand: ${esc(syncText())}.`:"Die Zahlen stammen von diesem Gerät. Firmenweite Zahlen gibt es, sobald die Microsoft-Anbindung läuft."} ${demoDa()?"Beispieldaten sind mitgezählt, solange sie eingeblendet sind.":"Beispieldaten sind nicht mitgezählt."}</p></div>`;
+    <p class="hint">${SYNC_ON?`Stand: ${esc(syncText())}.`:"Die Zahlen stammen von diesem Gerät. Firmenweite Zahlen gibt es, sobald die Microsoft-Anbindung läuft."}</p></div>`;
 }
 
 function locItem(kind,r){
@@ -2055,7 +2055,7 @@ function mehrView(){
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}${ME.admin?" · Admin":""}`)):""}
       ${row("theme","theme","Darstellung",TH_LABEL[theme])}</div>
     <div class="sec-lbl">Vorführen</div><div class="list">
-      ${demoDa()?row("demoHide","bulb","Beispieldaten ausblenden","In allen vier Apps entfernen"):row("demo","bulb","Beispieldaten einblenden","Drei Beispielkunden in allen vier Apps zum Vorführen")}</div>
+      </div>
     ${ME.admin?`<div class="sec-lbl">Verwaltung</div><div class="list">
       ${row("nav:team","person","Mitarbeiter und Rechte",`${team().length} aktiv · Protokolle an ${esc(mailAn())}`)}</div>`:""}
     <div class="app-weiter"><div class="sec-lbl">Apps</div>${listOf(APPS.filter(a=>!a.geplant).map(a=>`<a class="li" href="${a.href}" style="text-decoration:none;color:inherit"><img class="app-mini" src="${a.ic}" alt=""><span class="lt"><span class="h">${a.name}</span><span class="s">${a.text}</span></span>${icon("chev")}</a>`))}</div>
@@ -2155,7 +2155,6 @@ document.addEventListener("click",async ev=>{
   case "logout": Auth.logout(); return;
   case "testLogout": confirmDlg("Abmelden?","Die Daten bleiben auf diesem Gerät.","Abmelden","testLogoutOk"); return;
   case "testLogoutOk": loginMerken(null); delete META.angemeldet; tlSel=null; metaSave(); setMe(); closeOverlays(); go({v:"login"}); return;
-  case "demo": closeOverlays(); demoSchalten(true); return;
   case "demoHide": closeOverlays(); demoSchalten(false); return;
   case "theme": dialog("Darstellung",THEMES.map(t=>`<button class="radio" role="radio" data-act="setTheme" data-v="${t}" aria-checked="${t===theme}"><span class="rb"></span>${TH_LABEL[t]}</button>`).join(""),`<button class="btn-text" data-act="cancel">Schließen</button>`); return;
   case "setTheme": theme=b.dataset.v; applyTheme(theme); closeOverlays(); render(); return;

@@ -1592,7 +1592,7 @@ async function syncNow(manual){
   if(!navigator.onLine){ setSync("offline"); return; }
   SY.running=true; setSync("läuft"); konflikte=[];
   try{
-    await syncRoot(); const c1=await push(); const c2=await pull(); await pushFotos();
+    await syncRoot(); const c1=await push(); const c2=await pull(); fotoNachholen(); await pushFotos();
     META.sync.last=Date.now(); metaSave(); setSync("ok");
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
     if(c1||c2) softRender();
@@ -1846,11 +1846,16 @@ async function fotoFetch(ids){
   if(got&&nav.v==="baustelle") softRender();
 }
 function idbOpen(){ return new Promise((res,rej)=>{ if(!window.indexedDB) return rej(0); const r=indexedDB.open("baustelle_fotos",1); r.onupgradeneeded=()=>r.result.createObjectStore("f"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+/* Fotos, die vor der Microsoft-Anmeldung entstanden sind, standen nie in der Warteschlange – einmal alle nachreichen. */
+let fotoBereit=false;
+function fotoNachholen(){ if(!fotoBereit||META.sync.fotoAlle===CONFIG.shareUrl) return;
+  META.sync.fotoQueue=[...new Set([...(META.sync.fotoQueue||[]),...fotoCache.keys()])].filter(id=>!String(id).startsWith("demo-")); META.sync.fotoAlle=CONFIG.shareUrl; metaSave(); }
 async function fotoInit(){
   try{ fotoDB=await idbOpen(); const all=await idbAll(fotoDB);
     const used=new Set([...live("eintraege").flatMap(e=>e.fotos||[]),...live("baustellen").flatMap(b=>afFotoIds(b)),...(entw?entw.fotos:[]),...notizFotos(),...(META.sync.fotoQueue||[])]);
     const orphan=[]; for(const [k,v] of all){ if(used.has(k)) fotoCache.set(k,v); else orphan.push(k); } fotoDel(orphan);
   }catch(e){ fotoDB=null; }
+  fotoBereit=true; if(SYNC_ON&&ME.signedIn&&META.sync.fotoAlle!==CONFIG.shareUrl) syncSoon();
   if(["baustelle","eintrag","notizen","notiz"].includes(nav.v)) softRender();
 }
 
@@ -2728,7 +2733,7 @@ function mehrView(){
       ${row("nav:team","person","Mitarbeiter",esc(META.profil.name||""))}
       ${row("theme","theme","Darstellung",TH_LABEL[theme])}</div>
     <div class="sec-lbl">Vorführen</div><div class="list">
-      ${demoDa()?row("demoHide","bulb","Beispieldaten ausblenden","In allen vier Apps entfernen"):row("demo","bulb","Beispieldaten einblenden","Drei Beispielkunden in allen vier Apps zum Vorführen")}</div>
+      </div>
     <div class="sec-lbl">Daten</div><div class="list">
       ${SYNC_ON?row("syncNow","sync","Jetzt abgleichen",esc(syncText())):""}
       ${row("export","backup","Alle sichern","Baustellen, Übergaben, Fotos und Kunden")}
@@ -2854,7 +2859,6 @@ document.addEventListener("click",ev=>{
   case "logout": Auth.logout(); return;
   case "testLogout": confirmDlg("Abmelden?","Die Daten bleiben auf diesem Gerät. Zum Weiterarbeiten wieder mit Name und Passwort anmelden.","Abmelden","testLogoutOk"); return;
   case "testLogoutOk": loginMerken(null); delete META.angemeldet; tlSel=null; metaSave(); closeOverlays(); go({v:"login"}); return;
-  case "demo": closeOverlays(); demoSchalten(true); return;
   case "demoHide": closeOverlays(); demoSchalten(false); return;
   case "theme": dialog("Darstellung",THEMES.map(t=>`<button class="radio" role="radio" data-act="setTheme" data-v="${t}" aria-checked="${t===theme}"><span class="rb"></span>${TH_LABEL[t]}</button>`).join(""),`<button class="btn-text" data-act="cancel">Schließen</button>`); return;
   case "setTheme": theme=b.dataset.v; applyTheme(theme); closeOverlays(); render(); return;

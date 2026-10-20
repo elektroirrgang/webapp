@@ -1443,7 +1443,7 @@ async function syncNow(manual){
   if(!navigator.onLine){ setSync("offline"); return; }
   SY.running=true; setSync("läuft"); konflikte=[];
   try{
-    await syncRoot(); const c1=await push(); const c2=await pull(); await pushFotos();
+    await syncRoot(); const c1=await push(); const c2=await pull(); fotoNachholen(); await pushFotos();
     META.sync.last=Date.now(); metaSave(); setSync("ok");
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
     if(c1||c2) softRender();
@@ -1465,12 +1465,17 @@ function idbAll(db){ return new Promise((res,rej)=>{ const out=[], rq=db.transac
 function fotoPut(id,data){ fotoCache.set(id,data); if(!fotoDB) return Promise.resolve(false);
   return new Promise(res=>{ try{ const t=fotoDB.transaction("f","readwrite"); t.objectStore("f").put(data,id); t.oncomplete=()=>res(true); t.onerror=t.onabort=()=>res(false); }catch(e){ res(false); } }); }
 function fotoDel(ids){ ids=ids.filter(Boolean); ids.forEach(i=>fotoCache.delete(i)); if(!fotoDB||!ids.length) return; try{ const t=fotoDB.transaction("f","readwrite"); ids.forEach(i=>t.objectStore("f").delete(i)); }catch(e){} }
+/* Fotos, die vor der Microsoft-Anmeldung entstanden sind, standen nie in der Warteschlange – einmal alle nachreichen. */
+let fotoBereit=false;
+function fotoNachholen(){ if(!fotoBereit||META.sync.fotoAlle===CONFIG.shareUrl) return;
+  META.sync.fotoQueue=[...new Set([...(META.sync.fotoQueue||[]),...fotoCache.keys()])].filter(id=>!String(id).startsWith("demo-")); META.sync.fotoAlle=CONFIG.shareUrl; metaSave(); }
 async function fotoInit(){
   try{ fotoDB=await idbOpen(); const all=await idbAll(fotoDB);
     const used=new Set([...live("pruefungen").flatMap(p=>p.s.flatMap(fotoIds)),...live("katalog").flatMap(katFotoIds)]); if(cur) cur.s.flatMap(fotoIds).forEach(i=>used.add(i));
     (META.sync.fotoQueue||[]).forEach(i=>used.add(i));
     const orphan=[]; for(const [k,v] of all){ if(used.has(k)) fotoCache.set(k,v); else orphan.push(k); } fotoDel(orphan);
   }catch(e){ fotoDB=null; }
+  fotoBereit=true; if(SYNC_ON&&ME.signedIn&&META.sync.fotoAlle!==CONFIG.shareUrl) syncSoon();
   if(nav.v==="saeule"||nav.v==="katmodell"){ const y=scrollY; render(); scrollTo(0,y); }
 }
 function fotoVerkleinern(file){ return new Promise((res,rej)=>{ const url=URL.createObjectURL(file), img=new Image();
@@ -1988,7 +1993,7 @@ function suche(q){
 }
 function startView(){
   const all=live("pruefungen"), empty=!all.length&&!live("kunden").length;
-  if(empty) return `<div class="empty">${icon("doc")}<h2>Noch keine Prüfungen</h2><p>Lege mit „Neue Prüfung“ die erste an – Kunde und Standort werden dabei gleich mit angelegt. Zum Ausprobieren gibt es Beispieldaten.</p><button class="btn-tonal" data-act="demo">Beispieldaten einblenden</button></div>`;
+  if(empty) return `<div class="empty">${icon("doc")}<h2>Noch keine Prüfungen</h2><p>Lege mit „Neue Prüfung“ die erste an – Kunde und Standort werden dabei gleich mit angelegt.</p></div>`;
   let h=`<div class="narrow">${searchBar("Kunde, Ort, Auftrag oder SN suchen")}<div id="res">`;
   h+=query?suche(query):startListen();
   return h+`</div></div>`;
@@ -2139,7 +2144,7 @@ function mehrView(){
       ${SYNC_ON?row("syncNow","sync","Jetzt abgleichen",esc(syncText())):""}
       ${row("export","backup","Alle sichern","Sicherungsdatei mit allen Daten und Fotos")}
       ${row("import","upload","Sicherung laden","Daten aus einer Sicherungsdatei übernehmen")}
-      ${demoDa()?row("demoHide","bulb","Beispieldaten ausblenden","In allen vier Apps entfernen"):row("demo","bulb","Beispieldaten einblenden","Drei Beispielkunden in allen vier Apps zum Vorführen")}</div>
+      </div>
     <div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list"><a class="li" href="../uebersicht/" style="text-decoration:none;color:inherit"><span class="av">${icon("home")}</span><span class="lt"><span class="h">Übersicht</span><span class="s">Startseite mit Statistik und Kunden</span></span>${icon("chev")}</a><a class="li" href="../baustelle/" style="text-decoration:none;color:inherit"><span class="av">${icon("baustelle")}</span><span class="lt"><span class="h">Baustelle</span><span class="s">Tagesstand, offene Punkte und Material pro Baustelle</span></span>${icon("chev")}</a><a class="li" href="../echeck/" style="text-decoration:none;color:inherit"><span class="av">${icon("home")}</span><span class="lt"><span class="h">E-Check</span><span class="s">Hausinstallation und Geräte · in Vorbereitung</span></span>${icon("chev")}</a></div></div>
     <div class="sec-lbl">Rechtliches und Info</div><div class="list">
       ${row("nav:impressum","doc","Impressum","")}
@@ -2630,7 +2635,6 @@ function openMenu(){
     if(nav.v!=="archiv") it.push(["nav:archiv",`Archiv${META.archiv.length?` (${live("pruefungen").filter(p=>META.archiv.includes(p.id)).length})`:""}`,"archive"]);
     if(SYNC_ON) it.push(["syncNow","Jetzt abgleichen","sync"]);
     it.push(["export","Alle sichern","backup"],["import","Sicherung laden","upload"]);
-    it.push(demoDa()?["demoHide","Beispieldaten ausblenden","bulb"]:["demo","Beispieldaten einblenden","bulb"]);
   } else if(nav.v==="katmodell"){
     const r=DB.katalog.get(nav.id);
     it.push(["katEdit","Steckbrief bearbeiten","edit"],["katHNeu","Hinweis hinzufügen","add"]);
@@ -3071,7 +3075,6 @@ document.addEventListener("click",ev=>{
   case "setTheme": theme=b.dataset.v; applyTheme(theme); closeOverlays(); render(); return;
   case "export": exportBackup(); return;
   case "import": $("#importFile").click(); return;
-  case "demo": closeOverlays(); saveNow(); demoSchalten(true); return;
   case "demoHide": closeOverlays(); saveNow(); demoSchalten(false); return;
   case "newAny": if(nameFehlt("newAny")) return; pick={mode:"new"}; pickDialog(); return;
   case "pickOk": { const r=pickResolve(); if(!r) return; const mode=pick.mode; pick=null; closeOverlays();

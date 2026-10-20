@@ -1615,7 +1615,7 @@ function mehrView(){
       ${row("nav:team","person","Mitarbeiter",esc(META.profil.name||""))}
       ${row("theme","theme","Darstellung",TH_LABEL[theme])}</div>
     <div class="sec-lbl">Vorführen</div><div class="list">
-      ${demoDa()?row("demoHide","bulb","Beispieldaten ausblenden","In allen vier Apps entfernen"):row("demo","bulb","Beispieldaten einblenden","Drei Beispielkunden in allen vier Apps zum Vorführen")}</div>
+      </div>
     <div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../evse/","ev","EVSE","Prüfung von Wallboxen und Ladesäulen")}${link("../baustelle/","baustelle","Baustelle","Tagesstand, offene Punkte und Material")}</div></div>
     <div class="sec-lbl">Rechtliches und Info</div><div class="list">
       ${row("nav:impressum","paragraph","Impressum","")}
@@ -1687,7 +1687,6 @@ document.addEventListener("click",ev=>{
   case "logout": Auth.logout(); return;
   case "testLogout": confirmDlg("Abmelden?","Die Daten bleiben auf diesem Gerät.","Abmelden","testLogoutOk"); return;
   case "testLogoutOk": loginMerken(null); delete META.angemeldet; tlSel=null; metaSave(); closeOverlays(); go({v:"login"}); return;
-  case "demo": closeOverlays(); demoSchalten(true); return;
   case "demoHide": closeOverlays(); demoSchalten(false); return;
   case "theme": dialog("Darstellung",THEMES.map(t=>`<button class="radio" role="radio" data-act="setTheme" data-v="${t}" aria-checked="${t===theme}"><span class="rb"></span>${TH_LABEL[t]}</button>`).join(""),`<button class="btn-text" data-act="cancel">Schließen</button>`); return;
   case "setTheme": theme=b.dataset.v; applyTheme(theme); closeOverlays(); render(); return;
