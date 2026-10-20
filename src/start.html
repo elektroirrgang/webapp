@@ -1403,7 +1403,7 @@ function dialog(title,body,actions){
 }
 const confirmDlg=(title,text,label,act)=>dialog(title,esc(text),`<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text danger" data-act="${act}">${esc(label)}</button>`);
 const formVals=()=>{ const o={}; $("#dlg").querySelectorAll("[data-f]").forEach(e=>o[e.dataset.f]=e.value.trim()); return o; };
-const MITARBEITER=[{name:"J. Irrgang",mail:"info@elektro-irrgang.de",rolle:"Chef · Firmenmail"},{name:"M. Pevec",mail:"m.pevec@elektro-irrgang.de"},{name:"M. Seipp",mail:"m.seipp@elektro-irrgang.de"},{name:"A. Brandl",mail:"a.brandl@elektro-irrgang.de"}];
+const MITARBEITER=[{name:"J. Irrgang",mail:"info@elektro-irrgang.de",rolle:"Chef · Firmenmail"},{name:"M. Pevec",mail:"m.pevec@elektro-irrgang.de"},{name:"M. Seipp",mail:"m.seipp@elektro-irrgang.de"},{name:"A. Brandl",mail:"a.brandl@elektro-irrgang.de"},{name:"A. Irrgang",mail:"a.irrgang@elektro-irrgang.de"}];
 const MAIL_BUERO="info@elektro-irrgang.de";
 const mailAn=()=>EINST.mail||META.mailAn||MAIL_BUERO;
 const TEAM_STD=MITARBEITER.map(m=>({...m,admin:m.mail==="info@elektro-irrgang.de"||m.mail==="m.pevec@elektro-irrgang.de",status:"aktiv"}));

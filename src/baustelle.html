@@ -457,6 +457,9 @@ body.is-login .topbar{display:none}
 .ek-tag{background:var(--pc);color:var(--on-pc);font-size:12px;font-weight:700;border-radius:8px;padding:2px 8px}
 .ek-a{margin-left:auto;display:flex;gap:2px}
 .eb{margin-top:10px}
+.chips.dabei{margin:0 0 4px}.chips.dabei .chip{padding:4px 14px}.chips.dabei .chip[aria-pressed="true"]{padding-left:14px}
+.chips.dabei .dabei-plus{padding:4px 10px}.chips.dabei .dabei-plus .ic{display:block!important;width:20px;height:20px}
+.eb-dabei p{font-weight:600}
 .eb small{display:block;font-size:12px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--on-sv)}
 .eb p{margin:2px 0 0;white-space:pre-line;overflow-wrap:anywhere}
 .eb.mat{background:var(--wip-c);color:var(--on-wip-c);border-radius:12px;padding:8px 12px}
@@ -1719,7 +1722,7 @@ function dialog(title,body,actions){
 }
 const confirmDlg=(title,text,label,act)=>dialog(title,esc(text),`<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text danger" data-act="${act}">${esc(label)}</button>`);
 const formVals=()=>{ const o={}; $("#dlg").querySelectorAll("[data-f]").forEach(e=>o[e.dataset.f]=e.value.trim()); return o; };
-const MITARBEITER=[{name:"J. Irrgang",mail:"info@elektro-irrgang.de",rolle:"Chef · Firmenmail"},{name:"M. Pevec",mail:"m.pevec@elektro-irrgang.de"},{name:"M. Seipp",mail:"m.seipp@elektro-irrgang.de"},{name:"A. Brandl",mail:"a.brandl@elektro-irrgang.de"}];
+const MITARBEITER=[{name:"J. Irrgang",mail:"info@elektro-irrgang.de",rolle:"Chef · Firmenmail"},{name:"M. Pevec",mail:"m.pevec@elektro-irrgang.de"},{name:"M. Seipp",mail:"m.seipp@elektro-irrgang.de"},{name:"A. Brandl",mail:"a.brandl@elektro-irrgang.de"},{name:"A. Irrgang",mail:"a.irrgang@elektro-irrgang.de"}];
 const MAIL_BUERO="info@elektro-irrgang.de";
 const mailAn=()=>EINST.mail||META.mailAn||MAIL_BUERO;
 const TEAM_STD=MITARBEITER.map(m=>({...m,admin:m.mail==="info@elektro-irrgang.de"||m.mail==="m.pevec@elektro-irrgang.de",status:"aktiv"}));
@@ -2220,7 +2223,7 @@ function eintragKarte(e,erster){
   const block=(l,t,cls="")=>String(t||"").trim()?`<div class="eb ${cls}"><small>${l}</small><p>${esc(t)}</p></div>`:"";
   return `<div class="ekarte${erster?" neu":""}"><div class="ek-k">${erster?`<span class="ek-tag">Aktueller Stand</span><i class="ek-br"></i>`:""}<b>${esc(tagText(e.datum))}</b><span>${icon("person")}${esc(vonText(e)||"–")}</span>
       <span class="ek-a">${erster?`<button class="icon-btn sm" data-act="teilen" data-id="${e.id}" aria-label="Teilen">${icon("share")}</button>`:""}${ok?`<button class="icon-btn sm" data-act="eintragEdit" data-id="${e.id}" aria-label="Bearbeiten">${icon("edit")}</button>`:""}</span></div>
-    ${block("Stand",e.stand)}${block("Offen / nächste Schritte",e.offen)}${matBlock(e)}
+    ${block("Dabei",dabeiNamen(e).join(", "),"eb-dabei")}${block("Stand",e.stand)}${block("Offen / nächste Schritte",e.offen)}${matBlock(e)}
     ${fs.length?`<div class="ek-f">${fs.map(id=>{ const src=fotoCache.get(id); return src?`<button class="foto" data-act="fotoShow" data-id="${id}" aria-label="Foto ansehen"><img src="${src}" alt=""></button>`:`<div class="foto leer">${icon("sync")}</div>`; }).join("")}</div>`:""}
     ${e.updated&&e.created&&e.updated-e.created>60000?`<div class="by">geändert ${esc(wann(e.updated))}${e.updatedBy&&e.updatedBy.name&&e.updatedBy.name!==vonText(e)?` von ${esc(e.updatedBy.name)}`:""}</div>`:""}</div>`;
 }
@@ -2243,11 +2246,25 @@ function baustelleView(b){
   return h+`</div>`;
 }
 let entw=null, entwZurueck=null;
+/* Wer war dabei: Mitarbeiter aus dem Team (mit Mail, später fürs Büro auswertbar) plus freie Namen (z. B. Fremdfirma). */
+const dabeiNamen=e=>(e&&e.dabei||[]).map(p=>p.name).filter(Boolean);
+const dabeiGleich=(p,q)=>p.mail&&q.mail?p.mail.toLowerCase()===q.mail.toLowerCase():!p.mail&&!q.mail&&String(p.name).trim().toLowerCase()===String(q.name).trim().toLowerCase();
+function dabeiStart(b){ const me=who(), L=[]; const add=p=>{ if(p&&p.name&&!L.some(q=>dabeiGleich(p,q))) L.push({name:p.name,mail:(p.mail||"").toLowerCase()}); };
+  const tm=team().find(m=>me.mail&&m.mail===me.mail.toLowerCase()); add(tm?{name:tm.name,mail:tm.mail}:(me.name?{name:me.name,mail:me.mail}:null));
+  const vor=b&&eintraegeVon(b.id)[0]; (vor&&vor.dabei||[]).forEach(add); return L; }
+function dabeiEditor(){
+  const D=entw.dabei||[], T=team().filter(m=>m.name), frei=D.filter(p=>!T.some(m=>dabeiGleich(p,{name:m.name,mail:m.mail})));
+  return `<div class="lbl" style="margin:16px 4px 8px">Dabei</div><div class="chips dabei">
+    ${T.map(m=>`<button class="chip" data-act="dabeiTog" data-mail="${esc(m.mail)}" data-name="${esc(m.name)}" aria-pressed="${D.some(p=>dabeiGleich(p,{name:m.name,mail:m.mail}))}">${esc(m.name)}</button>`).join("")}
+    ${frei.map(p=>`<button class="chip" data-act="dabeiTog" data-mail="" data-name="${esc(p.name)}" aria-pressed="true">${esc(p.name)}</button>`).join("")}
+    <button class="chip dabei-plus" data-act="dabeiPlus" aria-label="Weitere Person" title="Weitere Person">${icon("add")}</button></div>`;
+}
 function eintragView(){
   const e=entw, b=DB.baustellen.get(e.baustelleId), vor=b&&eintraegeVon(b.id).find(x=>x.id!==e.id);
   const fs=e.fotos||[];
   return `<div class="narrow"><section class="card"><div class="fg1">
       ${tf("datum","Datum",e.datum,{type:"date",form:true})}
+    </div>${dabeiEditor()}<div class="fg1">
       ${ta("stand","Stand – was ist heute passiert?",e.stand,{form:true,ph:"z. B. Unterverteilung OG gesetzt, Leitungen Bad gezogen"})}
       ${ta("offen","Offen / nächste Schritte",e.offen,{form:true,ph:"z. B. Bad anschließen, FI-Prüfung UV OG"})}
     </div>${matEditor()}
@@ -2261,7 +2278,8 @@ function eintragView(){
 function entwLesen(){ if(!entw) return; $("#app").querySelectorAll("[data-f]").forEach(el=>entw[el.dataset.f]=el.value); matLesen(); }
 function entwNeu(b,e){
   entwZurueck=nav;
-  entw=e?JSON.parse(JSON.stringify(e)):{id:null,baustelleId:b.id,datum:today(),stand:"",offen:"",material:"",fotos:[]};
+  entw=e?JSON.parse(JSON.stringify(e)):{id:null,baustelleId:b.id,datum:today(),stand:"",offen:"",material:"",fotos:[],dabei:dabeiStart(b)};
+  if(!Array.isArray(entw.dabei)) entw.dabei=[];
   entw.mat=matListe(entw).map(x=>({t:x.t,q:x.q,u:x.u,ok:!!x.ok,okVon:x.okVon||null}));
   entw._neueFotos=[]; ED.st=e?"ok":"leer"; go({v:"eintrag"});
 }
@@ -2280,9 +2298,9 @@ function eSpeichernStill(fertig){
   if(neu){ e.id=rec.id; e._neu=true; }
   const alt=neu?[]:(rec.fotos||[]); fotoDel(alt.filter(x=>!e.fotos.includes(x)));
   if((DB.baustellen.get(e.baustelleId)||{}).demo) rec.demo=true;
-  const vorher=JSON.stringify([rec.datum,rec.stand,rec.offen,rec.mat,rec.fotos]);
-  Object.assign(rec,{baustelleId:e.baustelleId,datum:e.datum||today(),stand:String(e.stand||"").trim(),offen:String(e.offen||"").trim(),material:matText(mat.filter(x=>!x.ok)),mat,fotos:[...e.fotos]});
-  if(neu||vorher!==JSON.stringify([rec.datum,rec.stand,rec.offen,rec.mat,rec.fotos])){ saveRec("eintraege",rec,neu); e.fotos.filter(x=>!alt.includes(x)).forEach(fotoQueue); }
+  const vorher=JSON.stringify([rec.datum,rec.stand,rec.offen,rec.mat,rec.fotos,rec.dabei||[]]);
+  Object.assign(rec,{baustelleId:e.baustelleId,datum:e.datum||today(),stand:String(e.stand||"").trim(),offen:String(e.offen||"").trim(),material:matText(mat.filter(x=>!x.ok)),mat,fotos:[...e.fotos],dabei:(e.dabei||[]).map(p=>({name:p.name,mail:p.mail||""}))});
+  if(neu||vorher!==JSON.stringify([rec.datum,rec.stand,rec.offen,rec.mat,rec.fotos,rec.dabei])){ saveRec("eintraege",rec,neu); e.fotos.filter(x=>!alt.includes(x)).forEach(fotoQueue); }
   edStand("ok"); return true;
 }
 function entwFertig(ziel,ohneGo){ if(!entw) return; const e=entw, ok=eSpeichernStill(true);
@@ -2299,7 +2317,7 @@ async function entwFotoAufnehmen(el){
 }
 function teilenText(e){
   const b=DB.baustellen.get(e.baustelleId)||{}, s=ortVon(b);
-  return [`Baustellenübergabe – ${b.name||""}`,[pfadText(b),s&&s.ort].filter(Boolean).join(", "),`${tagText(e.datum)} · ${vonText(e)}`,"",
+  return [`Baustellenübergabe – ${b.name||""}`,[pfadText(b),s&&s.ort].filter(Boolean).join(", "),`${tagText(e.datum)} · ${vonText(e)}`,dabeiNamen(e).length?`Dabei: ${dabeiNamen(e).join(", ")}`:"","",
     e.stand&&`Stand:\n${e.stand}`,e.offen&&`Offen / nächste Schritte:\n${e.offen}`,matListe(e).length&&`Material:\n${matListe(e).map(x=>{ const nr=matNr(matStamm(x.t)); return `– ${matFmt(x.q)} ${x.u} ${x.t}${nr?` · Nr. ${nr}`:""}${x.ok?" (besorgt)":""}`; }).join("\n")}`].filter(x=>x!==undefined&&x!=="").join("\n\n").replace(/\n\n\n+/g,"\n\n");
 }
 async function teilen(e){
@@ -2865,6 +2883,11 @@ document.addEventListener("click",ev=>{
   case "entwVerwerfenAsk": confirmDlg("Übergabe verwerfen?","Alles, was du hier eingetragen hast, wird entfernt.","Verwerfen","entwVerwerfen"); return;
   case "entwTeilen": { eSpeichernStill(); const e=entw&&DB.eintraege.get(entw.id); if(e) teilen(e); return; }
   case "entwFoto": entwLesen(); $("#fotoFile").click(); return;
+  case "dabeiTog": { if(!entw) return; entwLesen(); const p={name:b.dataset.name,mail:b.dataset.mail||""}, i=entw.dabei.findIndex(q=>dabeiGleich(p,q));
+    if(i>=0) entw.dabei.splice(i,1); else entw.dabei.push(p); render(); eAuto(); return; }
+  case "dabeiPlus": if(!entw) return; entwLesen(); dialog("Weitere Person",`<div class="fg1">${tf("name","Name","",{form:true,ph:"z. B. Fa. Müller (Trockenbau)"})}</div>`,`<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="dabeiPlusOk">Hinzufügen</button>`); return;
+  case "dabeiPlusOk": { const v=String(formVals().name||"").trim(); closeOverlays(); if(!entw||!v) return; const T=team().find(m=>m.name.toLowerCase()===v.toLowerCase());
+    const p=T?{name:T.name,mail:T.mail}:{name:v,mail:""}; if(!entw.dabei.some(q=>dabeiGleich(p,q))) entw.dabei.push(p); render(); eAuto(); return; }
   case "entwFotoShow": { const id=b.dataset.id; entwLesen(); dialog("Foto",`<img class="dimg" src="${fotoCache.get(id)}" alt="">`,`<button class="btn-text danger" data-act="entwFotoDel" data-id="${id}">Entfernen</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`); return; }
   case "entwFotoDel": { const id=b.dataset.id; closeOverlays(); entw.fotos=entw.fotos.filter(x=>x!==id); if(entw._neueFotos.includes(id)){ entw._neueFotos=entw._neueFotos.filter(x=>x!==id); } render(); eAuto(); return; }
   case "fotoShow": dialog("Foto",`<img class="dimg" src="${fotoCache.get(b.dataset.id)}" alt="">`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return;
