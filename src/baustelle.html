@@ -2686,7 +2686,10 @@ document.addEventListener("pointerdown",e=>{ nLPStop(); if(nav.v!=="notiz"||!nEn
 ["pointerup","pointercancel"].forEach(t=>document.addEventListener(t,nLPStop,true));
 document.addEventListener("pointermove",e=>{ if(nLP&&Math.hypot(e.clientX-nLP.x,e.clientY-nLP.y)>8) nLPStop(); },true);
 addEventListener("scroll",nLPStop,{passive:true});
-document.addEventListener("contextmenu",e=>{ if(e.target.closest&&e.target.closest(".nedit .nb")) e.preventDefault(); });
+document.addEventListener("contextmenu",e=>{ const nb=e.target.closest&&e.target.closest(".nedit .nb"); if(!nb) return; e.preventDefault();
+  /* PC: Rechtsklick öffnet das Block-Menü wie Gedrückthalten am iPad (nicht in einem Feld, in dem gerade geschrieben wird) */
+  if(nLang||e.target.closest("input:focus,textarea:focus")||nav.v!=="notiz"||!nEntw||!istMeine(nEntw)) return; nLPStop();
+  const ni=e.target.closest(".ni[data-i]"); nLangMenu(nb.dataset.b,ni?ni.dataset.i:null,e.clientX,e.clientY); });
 /* Wischen wie bei iOS: nach links ⇒ löschen (mit Rückgängig), nach rechts auf einer Aufgabe ⇒ erledigt / wieder offen */
 let nSw=null;
 document.addEventListener("pointerdown",e=>{ nSw=null; if(nav.v!=="notiz"||!nEntw||!istMeine(nEntw)||(e.pointerType==="mouse"&&e.button!==0)) return;

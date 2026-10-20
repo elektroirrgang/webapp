@@ -3017,6 +3017,16 @@ let lpSup=0;
 ["pointerup","pointercancel"].forEach(t=>document.addEventListener(t,()=>{ if(lpress){ clearTimeout(lpress.t); lpress=null; } if(lpFired){ lpFired=0; lpSup=Date.now()+450; } }));
 document.addEventListener("click",e=>{ if(lpSup&&Date.now()<lpSup){ lpSup=0; e.stopPropagation(); e.preventDefault(); } },true);
 document.addEventListener("contextmenu",e=>{ const sw=e.target.closest(".sw[data-id]"); if(!sw||sw.dataset.kind||sw.dataset.si!==undefined) return; e.preventDefault(); if(!lpFired&&$("#dlg").hidden) pMenu(sw.dataset.id); });
+/* PC: Rechtsklick statt Wischen – Kunden/Standorte (anpinnen, löschen), Ladestationen (entfernen), Geräte (außer Betrieb) */
+document.addEventListener("contextmenu",e=>{ const sw=e.target.closest&&e.target.closest(".sw"); if(!sw||!$("#dlg").hidden) return;
+  const li=sw.querySelector(".li"), auf={t:"Öffnen",ic:"chev",kurz:"Enter",fn:()=>li&&li.click()};
+  if(sw.dataset.kind&&sw.dataset.id){ e.preventDefault(); const id=sw.dataset.id, pin=META.pins.includes(id);
+    kontextMenu(e.clientX,e.clientY,[auf,{t:pin?"Nicht mehr anpinnen":"Anpinnen",ic:pin?"pinOff":"pin",fn:()=>{ const i=META.pins.indexOf(id); if(i>=0) META.pins.splice(i,1); else META.pins.push(id); metaSave(); softRender(); toast(i<0?"Angepinnt – steht jetzt auf der Startseite":"Nicht mehr angepinnt"); }},
+      "-",{t:"Löschen",ic:"del",gefahr:true,fn:()=>locLoeschenFragen(sw.dataset.kind,id)}]); return; }
+  if(sw.dataset.gid!==undefined){ e.preventDefault(); const o=ortRec(sw.dataset.sid,sw.dataset.lid||null), g=((o&&o.geraete)||geraeteOrt(sw.dataset.sid,sw.dataset.lid||null)).find(x=>x.gid===sw.dataset.gid);
+    kontextMenu(e.clientX,e.clientY,[auf,{t:g&&g.aus?"Wieder in Betrieb":"Außer Betrieb",ic:"wallbox",fn:()=>geraetAusSetzen(sw.dataset.sid,sw.dataset.lid||null,sw.dataset.gid,!(g&&g.aus))}]); return; }
+  if(sw.dataset.si!==undefined&&canEdit(cur)){ e.preventDefault(); kontextMenu(e.clientX,e.clientY,[auf,"-",{t:"Ladestation entfernen",ic:"del",gefahr:true,fn:()=>saeuleEntfernen(+sw.dataset.si)}]); return; }
+});
 function pMenu(id){
   const p=DB.pruefungen.get(id); if(!p) return; const ok=canEdit(p), arch=META.archiv.includes(id), sns=p.s.filter(s=>snNorm(s.sn));
   const z=(act,ic,t,s,cls="")=>`<div class="li ${cls}" role="button" tabindex="0" data-act="${act}" data-id="${esc(id)}"><span class="av">${icon(ic)}</span><span class="lt"><span class="h">${t}</span>${s?`<span class="s">${s}</span>`:""}</span></div>`;

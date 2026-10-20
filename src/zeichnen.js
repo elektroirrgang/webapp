@@ -274,7 +274,7 @@ function zeichnenOeffnen(b,opt){ opt=opt||{};
   const cfg=zgCfgLaden(), neu=!(b.striche||[]).length&&b.raster==null&&!b.papier, board=!!opt.board||b.format==="board";
   let seite=neu?{...cfg.seite}:{raster:b.raster||"",rmm:b.rmm,rs:b.rs==null?1:b.rs,rf:b.rf||"grau",papier:b.papier||"",format:b.format||"hoch"};
   if(board) seite={...seite,format:"board",...(neu?{raster:"punkte"}:{})};
-  const ic=zgWzIc(cfg), wz=(k,l)=>`<button class="zg-b" data-z="wz" data-v="${k}" aria-pressed="${k===cfg.wz}" aria-label="${l}" title="${l}">${zgIc(ic[k])}</button>`;
+  const ic=zgWzIc(cfg), wz=(k,l)=>`<button class="zg-b" data-z="wz" data-v="${k}" aria-pressed="${k===cfg.wz}" aria-label="${l}" title="${l}" data-kurz="${(Object.entries(ZG_TASTEN).find(x=>x[1]===k)||[""])[0].toUpperCase()}">${zgIc(ic[k])}</button>`;
   const ov=document.createElement("div"); ov.className="zg"; ov.id="zg";
   ov.innerHTML=`<div class="zg-bar">
       ${board?`<div class="zg-links-k"><button class="zg-b" data-z="ok" aria-label="Zurück" title="Zurück (wird automatisch gespeichert)">${zgIc("zurueck")}</button><input class="zg-titel" id="zgTitel" value="${zgEsc(opt.titel||"")}" placeholder="Whiteboard" aria-label="Titel des Whiteboards" enterkeyhint="done" autocomplete="off"></div>`:`<button class="zg-b" data-z="abbr" aria-label="Abbrechen" title="Abbrechen">${zgIc("zu")}</button>`}
@@ -310,6 +310,7 @@ function zeichnenOeffnen(b,opt){ opt=opt||{};
   ["#zgOpt","#zgPop","#zgSel",".zg-undo",".zg-zoom"].forEach(s=>ov.querySelector(s).addEventListener("mousedown",e=>{ if(!e.target.closest("input")) e.preventDefault(); }));
   ov.querySelector("#zgFarbWahl").addEventListener("change",zgFarbeNeu);
   ov.querySelector("#zgBildWahl").addEventListener("change",zgBildNeu);
+  ov.addEventListener("contextmenu",ev=>{ const t=ev.target.closest&&ev.target.closest(".zg-f.eigen"); if(!t) return; ev.preventDefault(); const c=t.dataset.v.toUpperCase(); zgEigeneSetzen(zgEigene().filter(x=>x!==c)); t.remove(); toast("Farbe entfernt"); });
   ov.addEventListener("pointerdown",zgFarbDruck,true); ["pointerup","pointercancel","pointerleave"].forEach(t=>ov.addEventListener(t,()=>clearTimeout(zgFarbDruck.t),true));
   ZG.ro=window.ResizeObserver?new ResizeObserver(()=>{ if(ZG) zgLayout(); }):null; if(ZG.ro) ZG.ro.observe(fl); else addEventListener("resize",zgLayout);
   ZG.taste=zgTaste; document.addEventListener("keydown",ZG.taste);
@@ -1174,7 +1175,10 @@ function zgTaste(e){ if(!ZG||ZG.ta||(e.target&&/^(INPUT|TEXTAREA|SELECT)$/.test(
   else if((e.key==="Backspace"||e.key==="Delete")&&ZG.sel.length){ e.preventDefault(); zgSelLoeschen(); }
   else if(cmd&&k==="c"&&ZG.sel.length) zgKopieren();
   else if(cmd&&k==="v"&&ZG_CLIP){ e.preventDefault(); ZG.cfg.wz="lasso"; zgEinfuegen(); }
-  else if(e.key==="Escape"&&ZG.sel.length){ ZG.sel=[]; zgOptBauen(); zgMalen(); } }
+  else if(e.key==="Escape"&&ZG.sel.length){ ZG.sel=[]; zgOptBauen(); zgMalen(); }
+  /* Werkzeuge per Taste: S Stift, M Marker, R Radierer, L Lasso, T Text, F Form, Z Zettel */
+  else if(!cmd&&!e.altKey&&ZG_TASTEN[k]&&ZG.ov.querySelector(`[data-z="wz"][data-v="${ZG_TASTEN[k]}"]`)){ e.preventDefault(); zgWerkzeug(ZG_TASTEN[k]); } }
+const ZG_TASTEN={s:"stift",m:"marker",r:"radierer",l:"lasso",t:"text",f:"form",z:"zettel"};
 function zgZu(ok){ if(ZG.ta) ZG.ta.blur(); zgMomentStop(); zgCfgSichern(); const board=ZG.board;
   if((ok||board)&&nEntw){ zgInBlock(); if(!board) nAuto(); }
   clearInterval(ZG.autoT); clearTimeout(ZG.karteT);

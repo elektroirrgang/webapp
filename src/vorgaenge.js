@@ -236,11 +236,9 @@ function vgStartKarte(){ vgAbgleich(); const L=vgFilter("offen"); if(!L.length) 
 /* Gedrückt halten (iPad) oder Rechtsklick (PC) auf eine Vorgangskarte: kleines Menü – Öffnen, Bearbeiten, Löschen.
    Löschen dürfen Büro/Chef und wer den Vorgang angelegt hat. */
 const vgDarfLoeschen=v=>!!v&&(istBuero()||!!(v.createdBy&&String(v.createdBy.mail||"").toLowerCase()===String(ME.mail||"").toLowerCase()));
-function vgMenu(v,x,y){ const m=document.getElementById("menu"), sc=document.getElementById("scrim"); if(!m||!sc||!v) return;
-  const it=[["vgOpen","Öffnen","chev",""],["vgEdit","Bearbeiten","edit",""],...(vgDarfLoeschen(v)?["-",["vgDelFrage","Löschen","del","danger"]]:[])];
-  m.innerHTML=it.map(x=>x==="-"?"<hr>":`<button class="mi ${x[3]}" role="menuitem" data-act="${x[0]}" data-id="${esc(v.id)}">${icon(x[2])}<span>${x[1]}</span></button>`).join("");
-  m.style.right="auto"; m.hidden=false; sc.hidden=false; const w=m.offsetWidth, h=m.offsetHeight;
-  m.style.left=Math.max(8,Math.min(innerWidth-w-8,x-24))+"px"; m.style.top=(y+12+h<innerHeight-8?y+12:Math.max(8,y-h-12))+"px"; }
+function vgMenu(v,x,y){ if(!v) return;
+  kontextMenu(x,y,[{t:"Öffnen",ic:"chev",kurz:"Enter",fn:()=>vgOpen(v)},{t:"Bearbeiten",ic:"edit",fn:()=>vgDialog(v)},
+    ...(vgDarfLoeschen(v)?["-",{t:"Löschen",ic:"del",gefahr:true,fn:()=>{ const b=document.createElement("button"); b.dataset.act="vgDelFrage"; b.dataset.id=v.id; document.body.appendChild(b); b.click(); b.remove(); }}]:[])]); }
 let vgLp=null, vgLpZeit=0;
 document.addEventListener("pointerdown",e=>{ const k=e.target.closest&&e.target.closest(".vg-k[data-id]"); if(!k||e.pointerType==="mouse") return;
   const x=e.clientX, y=e.clientY; clearTimeout(vgLp&&vgLp.t);
