@@ -68,36 +68,85 @@ function anfSpeichern(){
 /* Status-Pill in der Übergabe-Karte */
 function anfChip(e){ const a=e&&anfAlle().find(x=>x.eintragId===e.id); return a?anfPill(a):""; }
 
-/* ===== Meldungen (Glocke) =====
-   Werden aus den Daten berechnet, nichts Zusätzliches wird gespeichert. „Gelesen bis“ merkt sich jedes Gerät.
-   Chef/Büro: neue Anforderungen, neue Übergaben, abgeschlossene Prüfungen anderer.
+/* ===== Benachrichtigungen (Glocke) =====
+   Kleines Fenster an der Glocke wie am Laptop: wer, was, wann; anpinnen, entfernen, als gelesen markieren.
+   Berechnet aus den Daten (nichts zusätzlich gespeichert); gelesen/entfernt/angepinnt merkt sich jedes Gerät (META.ml).
+   Chef/Büro: neue Anforderungen, Übergaben, fertige Prüfprotokolle anderer + Systemhinweise (Kalibrierung, fällige Prüfungen).
    Jeder: Statusänderung der eigenen Anforderungen, mit mir geteilte Notizen. */
 const ML_TAGE=14;
+const ML_IC={pin:"M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z",
+  weg:"M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
+  sys:"M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"};
+const mlSvg=k=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${ML_IC[k]}"/></svg>`;
 const mlIch=r=>!!(r&&r.mail&&String(r.mail).toLowerCase()===String(ME.mail||"").toLowerCase());
-function meldungen(){
+const mlSt=()=>{ META.ml=META.ml||{gel:{},weg:{},pin:{}}; return META.ml; };
+function meldungenRoh(){
   if(!ME.mail) return [];
   const ab=Date.now()-ML_TAGE*864e5, L=[], v=anfVerw(), alle=k=>DB[k]?[...DB[k].values()].filter(r=>!r.deleted&&!r.demo):[];
+  const P=(id,t,von,h,s,go)=>L.push({id,t,von,h,s,go});
   if(v){
-    anfAlle().filter(a=>(a.created||0)>=ab&&!mlIch(a.createdBy)).forEach(a=>L.push({t:a.created,ic:"lager",h:`${(a.createdBy||{}).name||"Jemand"} fordert Material an`,s:`${anfOrt(a)}: ${anfPosText(a)}`,go:{v:"materialanf"}}));
+    anfAlle().filter(a=>(a.created||0)>=ab&&!mlIch(a.createdBy)).forEach(a=>P("anf:"+a.id,a.created,a.createdBy,"fordert Material an",`${anfOrt(a)}: ${anfPosText(a)}`,{v:"materialanf"}));
     alle("eintraege").filter(e=>(e.created||0)>=ab&&!mlIch(e.createdBy)).forEach(e=>{ const b=DB.baustellen&&DB.baustellen.get(e.baustelleId);
-      L.push({t:e.created,ic:"baustelle",h:`Neue Übergabe: ${b?b.name:"Baustelle"}`,s:`${(e.createdBy||{}).name||""}${e.stand?" · "+String(e.stand).slice(0,80):""}`,go:{v:"baustelle",id:e.baustelleId}}); });
+      P("ue:"+e.id,e.created,e.createdBy,`Übergabe: ${b?b.name:"Baustelle"}`,e.stand?String(e.stand).slice(0,90):"",{v:"baustelle",id:e.baustelleId}); });
     alle("pruefungen").filter(p=>p.pdfAblage&&(p.updated||0)>=ab&&!mlIch(p.updatedBy)).forEach(p=>{ const k=DB.kunden&&DB.kunden.get(p.kundeId);
-      L.push({t:p.updated,ic:"doc",h:`Prüfprotokoll fertig: ${k?k.name:"Prüfung"}`,s:`${(p.updatedBy||{}).name||""} · ${p.p&&p.p.art||""}`,go:null}); });
+      P("pr:"+p.id+":"+p.pdfAblage,p.updated,p.updatedBy,`Prüfprotokoll fertig: ${k?k.name:"Prüfung"}`,p.p&&p.p.art||"",p.standortId?{v:"standort",id:p.standortId}:null); });
+    /* Systemhinweise */
+    if(DB.geraete&&typeof gerKal==="function") [...DB.geraete.values()].filter(g=>!g.deleted&&!g.aus).forEach(g=>{ const k=gerKal(g); if(k&&(k.s==="ab"||k.s==="bald"))
+      P("kal:"+g.id+":"+k.s+":"+(g.kal||""),Date.now()-1,null,k.s==="ab"?"Kalibrierung abgelaufen":"Kalibrierung läuft bald ab",`${gerName(g)}${g.sn?" · "+g.sn:""} – ${k.t}`,{v:"geraete"}); });
+    if(typeof faellig==="function"){ const t=today(); faellig().filter(p=>p.a&&p.a.naechste&&p.a.naechste<t).slice(0,10).forEach(p=>{ const k=DB.kunden&&DB.kunden.get(p.kundeId);
+      P("fae:"+p.id+":"+p.a.naechste,new Date(p.a.naechste+"T08:00:00").getTime(),null,"Wiederholungsprüfung überfällig",`${k?k.name:"Prüfung"} – fällig seit ${p.a.naechste.split("-").reverse().join(".")}`,p.standortId?{v:"standort",id:p.standortId}:null); }); }
   }
-  anfAlle().filter(a=>anfMeine(a)&&a.status!=="angefordert"&&(a.statusAm||0)>=ab&&!mlIch(a.statusVon)).forEach(a=>L.push({t:a.statusAm,ic:"lager",h:a.status==="da"?"Dein Material ist da":"Dein Material ist bestellt",s:`${anfOrt(a)}: ${anfPosText(a)}`,go:{v:"materialanf"}}));
+  anfAlle().filter(a=>anfMeine(a)&&a.status!=="angefordert"&&(a.statusAm||0)>=ab&&!mlIch(a.statusVon)).forEach(a=>P("anfst:"+a.id+":"+a.status,a.statusAm,a.statusVon,a.status==="da"?"hat dein Material als da markiert":"hat dein Material bestellt",`${anfOrt(a)}: ${anfPosText(a)}`,{v:"materialanf"}));
   alle("notizen").filter(n=>!mlIch(n.createdBy)&&(n.sicht==="firma"||(n.sicht==="personen"&&(n.personen||[]).map(x=>String(x).toLowerCase()).includes(String(ME.mail).toLowerCase())))&&(n.updated||0)>=ab)
-    .forEach(n=>L.push({t:n.updated,ic:"notes",h:`${(n.createdBy||{}).name||"Jemand"} hat eine Notiz geteilt`,s:n.titel||"Notiz",go:{v:"notizen"}}));
-  return L.sort((a,b)=>b.t-a.t);
+    .forEach(n=>P("no:"+n.id,n.updated,n.createdBy,"hat eine Notiz geteilt",n.titel||"Notiz",{v:"notizen"}));
+  return L;
 }
-const mlNeu=()=>{ const g=META.mlGelesen||0; return meldungen().filter(m=>m.t>g).length; };
+function meldungen(){ const S=mlSt(); return meldungenRoh().filter(m=>!S.weg[m.id]).sort((a,b)=>(S.pin[b.id]?1:0)-(S.pin[a.id]?1:0)||b.t-a.t); }
+const mlNeu=()=>{ const S=mlSt(); return meldungen().filter(m=>!S.gel[m.id]).length; };
 function mlGlocke(){ const b=document.getElementById("glBtn"); if(!b) return; const n=ME.mail?mlNeu():0;
-  b.hidden=!ME.mail||nav.v==="login"; const z=document.getElementById("glN"); if(z){ z.textContent=n>9?"9+":String(n); z.hidden=!n; } b.setAttribute("aria-label",n?`${n} neue Meldungen`:"Meldungen"); }
-function meldungenView(){
-  const L=meldungen(), g=META.mlGelesen||0;
-  setTimeout(()=>{ META.mlGelesen=Date.now(); metaSave(); mlGlocke(); },1500);
-  if(!L.length) return `<div class="empty">${icon("glocke")}<h2>Aktuell keine Meldungen</h2><p>Hier erscheint, was andere für dich Neues gemacht haben – z. B. Materialanforderungen, Übergaben oder geteilte Notizen.</p></div>`;
-  return `<div class="narrow">${listOf(L.map((m,i)=>`<div class="li${m.go?"":" ruhig"}${m.t>g?" ml-neu":""}" ${m.go?`role="button" tabindex="0" data-act="mlGo" data-i="${i}"`:""}><span class="av">${icon(m.ic)}</span>
-    <span class="lt"><span class="h">${esc(m.h)}</span><span class="s">${esc(m.s)}</span><span class="st"><span class="af-m">${esc(wann(m.t))}</span></span></span>${m.go?icon("chev"):""}</div>`))}
-    <p class="hint">Meldungen der letzten ${ML_TAGE} Tage.</p></div>`;
+  b.dataset.act="mlAuf"; b.removeAttribute("data-v");
+  b.hidden=!ME.mail||nav.v==="login"; const z=document.getElementById("glN"); if(z){ z.textContent=n>9?"9+":String(n); z.hidden=!n; } b.setAttribute("aria-label",n?`${n} neue Benachrichtigungen`:"Benachrichtigungen");
+  if(document.getElementById("mlPop")) mlFuellen(); }
+function mlAv(m){
+  if(!m.von) return `<span class="ml-av sys">${mlSvg("sys")}</span>`;
+  const p=typeof profilVon==="function"&&profilVon(m.von.mail);
+  return p&&p.bild?`<span class="ml-av" style="background-image:url('${p.bild}')"></span>`:`<span class="ml-av">${esc(initials(m.von.name||"?"))}</span>`; }
+function mlName(m){ if(!m.von) return "System"; const p=typeof profilVon==="function"&&profilVon(m.von.mail), v=p&&[p.vorname,p.nachname].filter(Boolean).join(" "); return v||m.von.name||"Jemand"; }
+function mlFuellen(){
+  const pop=document.getElementById("mlPop"); if(!pop) return; const S=mlSt(), L=meldungen(), neu=L.filter(m=>!S.gel[m.id]).length;
+  const zeile=m=>`<div class="ml-it${S.gel[m.id]?"":" neu"}${S.pin[m.id]?" ml-gepinnt":""}" data-act="mlKlick" data-id="${esc(m.id)}" role="button" tabindex="0">${mlAv(m)}
+    <span class="ml-tx"><span class="ml-k"><b>${esc(mlName(m))}</b><span class="ml-zeit">${esc(wann(m.t))}</span></span><span class="ml-h">${esc(m.h)}</span>${m.s?`<span class="ml-s">${esc(m.s)}</span>`:""}</span>
+    <span class="ml-ak"><button class="ml-b${S.pin[m.id]?" an":""}" data-act="mlPin" data-id="${esc(m.id)}" aria-label="${S.pin[m.id]?"Nicht mehr anpinnen":"Anpinnen"}" title="${S.pin[m.id]?"Nicht mehr anpinnen":"Anpinnen"}">${mlSvg("pin")}</button>
+    <button class="ml-b" data-act="mlWeg" data-id="${esc(m.id)}" aria-label="Entfernen" title="Entfernen">${mlSvg("weg")}</button></span></div>`;
+  const pin=L.filter(m=>S.pin[m.id]), rest=L.filter(m=>!S.pin[m.id]);
+  pop.innerHTML=`<div class="ml-kopf"><b>Benachrichtigungen</b>${neu?`<button class="btn-text" data-act="mlAlleGel">Alle gelesen</button>`:""}</div>
+    <div class="ml-liste">${L.length?`${pin.length?`<div class="ml-gr">Angepinnt</div>${pin.map(zeile).join("")}${rest.length?`<div class="ml-gr">Neueste</div>`:""}`:""}${rest.map(zeile).join("")}`
+      :`<p class="ml-leer">Aktuell keine Benachrichtigungen</p>`}</div>
+    ${Object.keys(S.weg).length?`<div class="ml-fuss"><button class="btn-text" data-act="mlWiederher">Entfernte wieder anzeigen</button></div>`:""}`;
 }
-function mlGo(i){ const m=meldungen()[i]; if(!m||!m.go) return; go(m.go); }
+function mlAuf(){
+  let pop=document.getElementById("mlPop"); if(pop){ mlZu(); return; }
+  pop=document.createElement("div"); pop.id="mlPop"; pop.className="ml-pop"; pop.setAttribute("role","dialog"); pop.setAttribute("aria-label","Benachrichtigungen");
+  document.body.appendChild(pop); mlFuellen(); mlPlatz();
+}
+function mlPlatz(){ const pop=document.getElementById("mlPop"), b=document.getElementById("glBtn"); if(!pop||!b) return; const r=b.getBoundingClientRect();
+  pop.style.top=Math.round(r.bottom+8)+"px"; pop.style.right=Math.max(8,Math.round(innerWidth-r.right-8))+"px"; }
+function mlZu(){ const p=document.getElementById("mlPop"); if(p) p.remove(); }
+function mlStSpeichern(){ /* nur IDs behalten, die es noch gibt */ const S=mlSt(), da=new Set(meldungenRoh().map(m=>m.id)); ["gel","weg","pin"].forEach(k=>Object.keys(S[k]).forEach(id=>{ if(!da.has(id)) delete S[k][id]; })); metaSave(); }
+document.addEventListener("click",e=>{
+  const b=e.target.closest&&e.target.closest('[data-act="mlAuf"],[data-act="mlKlick"],[data-act="mlPin"],[data-act="mlWeg"],[data-act="mlAlleGel"],[data-act="mlWiederher"]');
+  if(!b){ const p=document.getElementById("mlPop"); if(p&&!p.contains(e.target)) mlZu(); return; }
+  e.stopPropagation(); e.preventDefault(); const a=b.dataset.act, id=b.dataset.id, S=mlSt();
+  if(a==="mlAuf") return mlAuf();
+  if(a==="mlPin"){ if(S.pin[id]) delete S.pin[id]; else S.pin[id]=1; }
+  else if(a==="mlWeg"){ S.weg[id]=1; delete S.pin[id]; S.gel[id]=1; }
+  else if(a==="mlAlleGel"){ meldungen().forEach(m=>S.gel[m.id]=1); }
+  else if(a==="mlWiederher"){ S.weg={}; }
+  else if(a==="mlKlick"){ S.gel[id]=1; mlStSpeichern(); const m=meldungen().find(x=>x.id===id); mlZu(); mlGlocke(); if(m&&m.go) mlGo(m.go); return; }
+  mlStSpeichern(); mlFuellen(); mlGlocke();
+},true);
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") mlZu(); });
+addEventListener("resize",mlPlatz);
+/* Ziel öffnen: in der Übersicht gibt es Baustellen/Notizen nicht als Ansicht ⇒ Baustelle-App */
+function mlGo(z){ if(["baustelle","notizen"].includes(z.v)&&typeof notizenView!=="function"){ location.href="../baustelle/"; return; } go(z); }
+function meldungenView(){ setTimeout(mlAuf,0); return ""; }

@@ -236,7 +236,7 @@ canvas.pad{width:100%;height:168px;border-radius:12px;background:var(--surface);
 .fabm-list{position:absolute;right:max(16px,calc(env(safe-area-inset-right,0px) + 16px));bottom:calc(88px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:flex-end;gap:8px}
 .fabm-it{height:56px;border:0;border-radius:28px;background:var(--pri-c,var(--sec-c));color:var(--on-pri-c,var(--on-sec-c));display:flex;align-items:center;gap:12px;padding:0 20px 0 16px;font-size:15px;font-weight:700;box-shadow:var(--e2,var(--e3))}
 body.has-nav .fab{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
-@media (min-width:744px){.fab{right:24px;bottom:24px!important}}
+@media (min-width:744px){.fab{right:24px;bottom:24px!important}body.has-fab #app{padding-bottom:104px}}
 .scrim{position:fixed;inset:0;z-index:40;background:transparent}
 .scrim.dim{background:var(--scrim)}
 .menu{position:fixed;z-index:41;top:calc(env(safe-area-inset-top,0px) + 56px);right:max(8px,env(safe-area-inset-right,0px));min-width:224px;max-width:300px;background:var(--sc);border-radius:4px;box-shadow:var(--e3);padding:8px 0}
@@ -618,8 +618,7 @@ html.standalone .app-weiter{display:none!important}html.standalone a.li.weiter{p
   .tabs{margin-left:0!important;justify-content:center}
   .tab{flex:0 1 auto}
   .wrap,.narrow,.narrow.lesen{max-width:880px}
-  .fab{display:none!important}
-  .snackbar,body.has-fab .snackbar{bottom:24px!important}
+  .snackbar{bottom:24px!important}body.has-fab .snackbar{bottom:96px!important}
   .sk{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:12px 0 20px}
   .sk-t{min-width:0}
   .sk h1{margin:0;font-size:30px;font-weight:800;letter-spacing:-.01em;line-height:1.15;overflow-wrap:anywhere}
@@ -1418,7 +1417,7 @@ const KOPF_START="E-Check";
 function seitenKopf(t,s,f){ t=t||(f?KOPF_START:""); if(!t&&!f) return "";
   const T=pfadTeile(); if(!t&&!f&&typeof skRechts==="function"&&skRechts()) t=KOPF_START; if(s&&s.includes("›")) s=s.split(/\s*›\s*/).pop(); 
   const pf="";
-  return `<div class="sk">${T.length?`<button class="sk-zur" data-act="skZurueck" aria-label="Zurück" title="Zurück">${icon("back")}</button>`:""}<div class="sk-t">${t?`<h1>${esc(t)}</h1>`:""}${s?`<p>${esc(s)}</p>`:""}</div>${typeof skRechts==="function"?skRechts():""}${f?(f[2]==="add"&&!T.length?`<button class="sk-neu sk-plus" data-act="${f[0]}" aria-label="${esc(f[1]?`${f[1]} anlegen`:"Neu anlegen")}" title="${esc(f[1]?`${f[1]} anlegen`:"Neu anlegen")}">${icon("add")}</button>`:`<button class="sk-neu" data-act="${f[0]}">${icon(f[2])}<span>${esc(f[1]||"Neu")}</span></button>`):""}</div>`; }
+  return `<div class="sk">${T.length?`<button class="sk-zur" data-act="skZurueck" aria-label="Zurück" title="Zurück">${icon("back")}</button>`:""}<div class="sk-t">${t?`<h1>${esc(t)}</h1>`:""}${s?`<p>${esc(s)}</p>`:""}</div>${typeof skRechts==="function"?skRechts():""}</div>`; }
 function backSetzen(){ const b=$("#backBtn"); if(!b) return; b.innerHTML=icon("back"); }
 function crumbGo(i){ const T=pfadTeile(); if(i>=T.length-1||!T[i][1]) return zurueck(); pfadVerlassen(); go(T[i][1]); }
 const kette=(kid,sid,lid)=>{ const r=[["Kunden",{v:"kunden"}]], k=kid&&kundeOf(kid), s=sid&&standortOf(sid), l=lid&&ladeparkOf(lid);

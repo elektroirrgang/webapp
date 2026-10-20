@@ -236,7 +236,7 @@ canvas.pad{width:100%;height:168px;border-radius:12px;background:var(--surface);
 .fabm-list{position:absolute;right:max(16px,calc(env(safe-area-inset-right,0px) + 16px));bottom:calc(88px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:flex-end;gap:8px}
 .fabm-it{height:56px;border:0;border-radius:28px;background:var(--pri-c,var(--sec-c));color:var(--on-pri-c,var(--on-sec-c));display:flex;align-items:center;gap:12px;padding:0 20px 0 16px;font-size:15px;font-weight:700;box-shadow:var(--e2,var(--e3))}
 body.has-nav .fab{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
-@media (min-width:744px){.fab{right:24px;bottom:24px!important}}
+@media (min-width:744px){.fab{right:24px;bottom:24px!important}body.has-fab #app{padding-bottom:104px}}
 .scrim{position:fixed;inset:0;z-index:40;background:transparent}
 .scrim.dim{background:var(--scrim)}
 .menu{position:fixed;z-index:41;top:calc(env(safe-area-inset-top,0px) + 56px);right:max(8px,env(safe-area-inset-right,0px));min-width:224px;max-width:300px;background:var(--sc);border-radius:4px;box-shadow:var(--e3);padding:8px 0}
@@ -762,8 +762,7 @@ html.standalone .app-weiter{display:none!important}html.standalone a.li.weiter{p
   .tabs{margin-left:0!important;justify-content:center}
   .tab{flex:0 1 auto}
   .wrap,.narrow,.narrow.lesen{max-width:880px}
-  .fab{display:none!important}
-  .snackbar,body.has-fab .snackbar{bottom:24px!important}
+  .snackbar{bottom:24px!important}body.has-fab .snackbar{bottom:96px!important}
   .sk{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:12px 0 20px}
   .sk-t{min-width:0}
   .sk h1{margin:0;font-size:30px;font-weight:800;letter-spacing:-.01em;line-height:1.15;overflow-wrap:anywhere}
@@ -1391,6 +1390,35 @@ body.n-modus input,body.n-modus textarea{-webkit-user-select:text;user-select:te
 .glocke{position:relative;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--on-surface);display:grid;place-items:center;flex:none;cursor:pointer}
 .glocke .ic{width:24px;height:24px}
 .glocke .gl-n{position:absolute;top:4px;right:2px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--fab);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;box-sizing:border-box}
+/* Benachrichtigungen: kleines Fenster an der Glocke */
+.ml-pop{position:fixed;z-index:60;width:380px;max-width:calc(100vw - 16px);max-height:min(560px,calc(100vh - 90px));display:flex;flex-direction:column;background:var(--sc);color:var(--on-surface);border-radius:20px;box-shadow:var(--e3);overflow:hidden;animation:mlIn .14s ease-out}
+@keyframes mlIn{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
+.ml-kopf{display:flex;align-items:center;gap:8px;padding:14px 12px 8px 18px}
+.ml-kopf b{flex:1;font-size:16px}
+.ml-liste{overflow:auto;padding:0 8px 8px;-webkit-overflow-scrolling:touch}
+.ml-gr{font-size:12px;font-weight:700;color:var(--on-sv);padding:10px 10px 4px;text-transform:uppercase;letter-spacing:.04em}
+.ml-it{position:relative;display:flex;gap:12px;align-items:flex-start;padding:10px 8px 10px 10px;border-radius:14px;cursor:pointer}
+.ml-it+.ml-it{margin-top:2px}
+.ml-it.neu{background:var(--sc-high)}
+.ml-it.neu::before{content:"";position:absolute;left:3px;top:24px;width:6px;height:6px;border-radius:50%;background:var(--primary)}
+@media (hover:hover){.ml-it:hover{background:var(--sc-highest)}}
+.ml-av{flex:none;width:36px;height:36px;border-radius:50%;background:var(--sec-c) center/cover no-repeat;color:var(--on-sec-c);display:grid;place-items:center;font-size:13px;font-weight:700}
+.ml-av.sys{background:var(--sc-highest);color:var(--on-sv)}
+.ml-av.sys .ic{width:20px;height:20px}
+.ml-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.ml-k{display:flex;gap:8px;align-items:baseline}
+.ml-k b{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ml-zeit{flex:none;font-size:12px;color:var(--on-sv)}
+.ml-h{font-size:14px}
+.ml-s{font-size:13px;color:var(--on-sv);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ml-ak{flex:none;display:flex;flex-direction:column;gap:2px;margin:-4px -2px 0 0}
+.ml-b{width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--on-sv);display:grid;place-items:center;cursor:pointer;padding:0}
+.ml-b .ic{width:18px;height:18px}
+.ml-b.an{color:var(--primary);background:var(--pc)}
+@media (hover:hover){.ml-b:hover{background:var(--sc-highest)}.ml-ak{opacity:0;transition:opacity .12s}.ml-it:hover .ml-ak,.ml-it.ml-gepinnt .ml-ak,.ml-ak:focus-within{opacity:1}}
+.ml-leer{margin:0;padding:28px 16px 32px;text-align:center;color:var(--on-sv);font-size:14px}
+.ml-fuss{padding:4px 10px 10px;display:flex;justify-content:center}
+@media (max-width:599px){.ml-pop{left:8px;right:8px!important;width:auto}}
 .btn-tonal.sm{height:36px;padding:0 16px;font-size:13px;flex:none;align-self:center}
 .af-z .lt{min-width:0}.af-m{font-size:12px;color:var(--on-sv);margin-left:8px}
 .li.ml-neu{background:color-mix(in srgb,var(--fab) 9%,var(--sc-low,var(--sc)))}
@@ -1433,7 +1461,7 @@ body.kopf-oben .edk-platz{display:none!important}
     <img class="logo l-hell" src="<!--LOGO_HELL-->" alt="Elektro Irrgang">
     <img class="logo l-dunkel" src="<!--LOGO_DUNKEL-->" alt="Elektro Irrgang">
     <h1 class="tb-title" id="topTitle"></h1>
-    <button class="glocke" id="glBtn" data-act="nav" data-v="meldungen" aria-label="Meldungen" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span class="gl-n" id="glN" hidden></span></button>
+    <button class="glocke" id="glBtn" data-act="mlAuf" aria-label="Benachrichtigungen" aria-haspopup="dialog" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span class="gl-n" id="glN" hidden></span></button>
     <button class="avatar" id="avBtn" data-act="nav" data-v="mehr" aria-label="Konto und Einstellungen" hidden><span id="avTxt"></span></button>
     <button class="icon-btn" id="menuBtn" data-act="menu" aria-label="Weitere Optionen" aria-haspopup="menu" aria-expanded="false"></button>
   </div>
@@ -1968,7 +1996,7 @@ const skRechts=()=>{ if(VIEW_KIND[nav.v]){ const r=DB[VIEW_KIND[nav.v]].get(nav.
 function seitenKopf(t,s,f){ t=t||(f?KOPF_START:""); if(!t&&!f) return "";
   const T=pfadTeile(); if(!t&&!f&&typeof skRechts==="function"&&skRechts()) t=KOPF_START; if(s&&s.includes("›")) s=s.split(/\s*›\s*/).pop(); 
   const pf="";
-  return `<div class="sk">${T.length?`<button class="sk-zur" data-act="skZurueck" aria-label="Zurück" title="Zurück">${icon("back")}</button>`:""}<div class="sk-t">${t?`<h1>${esc(t)}</h1>`:""}${s?`<p>${esc(s)}</p>`:""}</div>${typeof skRechts==="function"?skRechts():""}${f?(f[2]==="add"&&!T.length?`<button class="sk-neu sk-plus" data-act="${f[0]}" aria-label="${esc(f[1]?`${f[1]} anlegen`:"Neu anlegen")}" title="${esc(f[1]?`${f[1]} anlegen`:"Neu anlegen")}">${icon("add")}</button>`:`<button class="sk-neu" data-act="${f[0]}">${icon(f[2])}<span>${esc(f[1]||"Neu")}</span></button>`):""}</div>`; }
+  return `<div class="sk">${T.length?`<button class="sk-zur" data-act="skZurueck" aria-label="Zurück" title="Zurück">${icon("back")}</button>`:""}<div class="sk-t">${t?`<h1>${esc(t)}</h1>`:""}${s?`<p>${esc(s)}</p>`:""}</div>${typeof skRechts==="function"?skRechts():""}</div>`; }
 function backSetzen(){ const b=$("#backBtn"); if(!b) return; b.innerHTML=icon("back"); }
 function crumbGo(i){ const T=pfadTeile(); if(i>=T.length-1||!T[i][1]) return zurueck(); pfadVerlassen(); go(T[i][1]); }
 const kette=(kid,sid,lid)=>{ const r=[["Kunden",{v:"kunden"}]], k=kid&&kundeOf(kid), s=sid&&standortOf(sid), l=lid&&ladeparkOf(lid);
@@ -2252,7 +2280,6 @@ function render(){ profilAnwenden();
   else if(nav.v==="notiz"){ fotoFetch(nFotoIds(nEntw)); const ro=!istMeine(nEntw); title=ro||DB.notizen.has(nEntw.id)?"Notiz":"Neue Notiz"; sub=ro?`Von ${vonText(nEntw)}`:""; body=notizView(); fab=ro?null:["edFertig","Fertig","check"]; }
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
   else if(nav.v==="material"){ title="Material"; body=materialView(); fab=["matStammNeu","Material","add"]; }
-  else if(nav.v==="meldungen"){ title="Meldungen"; body=meldungenView(); }
   else if(nav.v==="materialanf"){ title="Materialanforderungen"; body=`<div class="narrow">${anfListeView()}</div>`; fab=["afNeu","Anfordern","add"]; }
   else if(nav.v==="mehr"){ title="Mehr"; body=mehrView(); }
   else if(nav.v==="team"){ title="Mitarbeiter"; body=teamView(); }
@@ -2984,7 +3011,6 @@ document.addEventListener("click",ev=>{
   case "afSt": anfStatus(DB.anforderungen.get(b.dataset.id),b.dataset.v); render(); return;
   case "afNeu": anfDialog(nav.v==="baustelle"?nav.id:""); return;
   case "afOk": anfSpeichern(); return;
-  case "mlGo": mlGo(+b.dataset.i); return;
   case "neuerEintrag": entwNeu(DB.baustellen.get(nav.id)); return;
   case "eintragEdit": { const e=DB.eintraege.get(b.dataset.id); if(e&&canEdit(e)) entwNeu(DB.baustellen.get(e.baustelleId),e); return; }
   case "eintragDelAsk": confirmDlg("Übergabe löschen?","Diese Übergabe mit ihren Fotos löschen?","Löschen","eintragDel"); return;

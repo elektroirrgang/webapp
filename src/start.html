@@ -236,7 +236,7 @@ canvas.pad{width:100%;height:168px;border-radius:12px;background:var(--surface);
 .fabm-list{position:absolute;right:max(16px,calc(env(safe-area-inset-right,0px) + 16px));bottom:calc(88px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:flex-end;gap:8px}
 .fabm-it{height:56px;border:0;border-radius:28px;background:var(--pri-c,var(--sec-c));color:var(--on-pri-c,var(--on-sec-c));display:flex;align-items:center;gap:12px;padding:0 20px 0 16px;font-size:15px;font-weight:700;box-shadow:var(--e2,var(--e3))}
 body.has-nav .fab{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
-@media (min-width:744px){.fab{right:24px;bottom:24px!important}}
+@media (min-width:744px){.fab{right:24px;bottom:24px!important}body.has-fab #app{padding-bottom:104px}}
 .scrim{position:fixed;inset:0;z-index:40;background:transparent}
 .scrim.dim{background:var(--scrim)}
 .menu{position:fixed;z-index:41;top:calc(env(safe-area-inset-top,0px) + 56px);right:max(8px,env(safe-area-inset-right,0px));min-width:224px;max-width:300px;background:var(--sc);border-radius:4px;box-shadow:var(--e3);padding:8px 0}
@@ -349,7 +349,8 @@ details.optrows .mrow:first-of-type{border-top:0}
 .iz a{color:var(--primary);font-weight:600;text-decoration:none;word-break:break-word}
 .infok .iz + .by{margin-top:8px}
 .av-img{overflow:hidden;background:var(--sc-high)}.av-img img{width:100%;height:100%;object-fit:cover}
-.ger-av{width:56px;height:56px;border-radius:14px;background:#fff}.ger-av img{object-fit:contain;padding:4px;box-sizing:border-box}
+.ger-av{position:relative;width:56px;height:56px;border-radius:14px;background:#fff;color:#8a9099}.ger-av .ic{width:26px;height:26px}.ger-av img{position:absolute;inset:0;object-fit:contain;padding:4px;box-sizing:border-box;background:#fff}
+.ger-foto{display:flex;align-items:center;gap:14px;margin:0 0 4px}.ger-foto .ger-av{width:72px;height:72px;flex:none}.ger-foto .ger-av img{padding:6px}.ger-foto-k{display:flex;flex-wrap:wrap;align-items:center;gap:4px}.ger-foto-k .btn-tonal{display:inline-flex;align-items:center;gap:8px;padding:0 18px 0 14px}.ger-foto-k .btn-tonal .ic{width:20px;height:20px}
 .kat-kopf{display:grid;grid-template-columns:140px 1fr;gap:16px;align-items:start}
 .kat-bild .foto{aspect-ratio:1;width:100%}.kat-bild .foto img{object-fit:contain;background:#fff}
 @media (max-width:520px){.kat-kopf{grid-template-columns:1fr}.kat-bild{max-width:200px}}
@@ -588,8 +589,7 @@ html.standalone .app-weiter{display:none!important}html.standalone a.li.weiter{p
   .tabs{margin-left:0!important;justify-content:center}
   .tab{flex:0 1 auto}
   .wrap,.narrow,.narrow.lesen{max-width:880px}
-  .fab{display:none!important}
-  .snackbar,body.has-fab .snackbar{bottom:24px!important}
+  .snackbar{bottom:24px!important}body.has-fab .snackbar{bottom:96px!important}
   .sk{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:12px 0 20px}
   .sk-t{min-width:0}
   .sk h1{margin:0;font-size:30px;font-weight:800;letter-spacing:-.01em;line-height:1.15;overflow-wrap:anywhere}
@@ -996,7 +996,7 @@ html::after{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-
 .vg-kf>span:not(.pill){display:inline-flex;align-items:center;gap:4px}
 .vg-kf .ic{width:16px;height:16px}
 .vg-kf .pill{white-space:normal;height:auto;min-height:24px;padding:3px 8px;line-height:1.3;max-width:100%;overflow-wrap:anywhere}
-.vg-k{overflow:hidden}
+.vg-k{overflow:hidden;-webkit-touch-callout:none}
 .vg-dr{font-style:normal;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;background:var(--primary);color:var(--on-primary);border-radius:6px;padding:2px 6px}
 .vg-z{display:flex;flex-direction:column;gap:2px;min-width:0;border-radius:12px;padding:8px;font-size:12px;line-height:1.3;background:var(--sc);color:var(--on-sv);border:0;text-align:left;font:inherit;font-size:12px}
 .vg-z em{font-style:normal;font-weight:600;color:var(--on-surface);overflow-wrap:anywhere}
@@ -1086,6 +1086,35 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 .glocke{position:relative;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--on-surface);display:grid;place-items:center;flex:none;cursor:pointer}
 .glocke .ic{width:24px;height:24px}
 .glocke .gl-n{position:absolute;top:4px;right:2px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--fab);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;box-sizing:border-box}
+/* Benachrichtigungen: kleines Fenster an der Glocke */
+.ml-pop{position:fixed;z-index:60;width:380px;max-width:calc(100vw - 16px);max-height:min(560px,calc(100vh - 90px));display:flex;flex-direction:column;background:var(--sc);color:var(--on-surface);border-radius:20px;box-shadow:var(--e3);overflow:hidden;animation:mlIn .14s ease-out}
+@keyframes mlIn{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
+.ml-kopf{display:flex;align-items:center;gap:8px;padding:14px 12px 8px 18px}
+.ml-kopf b{flex:1;font-size:16px}
+.ml-liste{overflow:auto;padding:0 8px 8px;-webkit-overflow-scrolling:touch}
+.ml-gr{font-size:12px;font-weight:700;color:var(--on-sv);padding:10px 10px 4px;text-transform:uppercase;letter-spacing:.04em}
+.ml-it{position:relative;display:flex;gap:12px;align-items:flex-start;padding:10px 8px 10px 10px;border-radius:14px;cursor:pointer}
+.ml-it+.ml-it{margin-top:2px}
+.ml-it.neu{background:var(--sc-high)}
+.ml-it.neu::before{content:"";position:absolute;left:3px;top:24px;width:6px;height:6px;border-radius:50%;background:var(--primary)}
+@media (hover:hover){.ml-it:hover{background:var(--sc-highest)}}
+.ml-av{flex:none;width:36px;height:36px;border-radius:50%;background:var(--sec-c) center/cover no-repeat;color:var(--on-sec-c);display:grid;place-items:center;font-size:13px;font-weight:700}
+.ml-av.sys{background:var(--sc-highest);color:var(--on-sv)}
+.ml-av.sys .ic{width:20px;height:20px}
+.ml-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.ml-k{display:flex;gap:8px;align-items:baseline}
+.ml-k b{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ml-zeit{flex:none;font-size:12px;color:var(--on-sv)}
+.ml-h{font-size:14px}
+.ml-s{font-size:13px;color:var(--on-sv);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ml-ak{flex:none;display:flex;flex-direction:column;gap:2px;margin:-4px -2px 0 0}
+.ml-b{width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--on-sv);display:grid;place-items:center;cursor:pointer;padding:0}
+.ml-b .ic{width:18px;height:18px}
+.ml-b.an{color:var(--primary);background:var(--pc)}
+@media (hover:hover){.ml-b:hover{background:var(--sc-highest)}.ml-ak{opacity:0;transition:opacity .12s}.ml-it:hover .ml-ak,.ml-it.ml-gepinnt .ml-ak,.ml-ak:focus-within{opacity:1}}
+.ml-leer{margin:0;padding:28px 16px 32px;text-align:center;color:var(--on-sv);font-size:14px}
+.ml-fuss{padding:4px 10px 10px;display:flex;justify-content:center}
+@media (max-width:599px){.ml-pop{left:8px;right:8px!important;width:auto}}
 .btn-tonal.sm{height:36px;padding:0 16px;font-size:13px;flex:none;align-self:center}
 .af-z .lt{min-width:0}.af-m{font-size:12px;color:var(--on-sv);margin-left:8px}
 .li.ml-neu{background:color-mix(in srgb,var(--fab) 9%,var(--sc-low,var(--sc)))}
@@ -1138,7 +1167,7 @@ body.kopf-oben .edk-platz{display:none!important}
     <img class="logo l-hell" src="<!--LOGO_HELL-->" alt="Elektro Irrgang">
     <img class="logo l-dunkel" src="<!--LOGO_DUNKEL-->" alt="Elektro Irrgang">
     <h1 class="tb-title" id="topTitle"></h1>
-    <button class="glocke" id="glBtn" data-act="nav" data-v="meldungen" aria-label="Meldungen" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span class="gl-n" id="glN" hidden></span></button>
+    <button class="glocke" id="glBtn" data-act="mlAuf" aria-label="Benachrichtigungen" aria-haspopup="dialog" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span class="gl-n" id="glN" hidden></span></button>
     <button class="avatar" id="avBtn" data-act="nav" data-v="mehr" aria-label="Konto und Einstellungen" hidden><span id="avTxt"></span></button>
     <button class="icon-btn" id="menuBtn" data-act="menu" aria-label="Weitere Optionen" aria-haspopup="menu" aria-expanded="false"></button>
   </div>
@@ -1666,7 +1695,7 @@ const KOPF_START="Übersicht";
 function seitenKopf(t,s,f){ t=t||(f?KOPF_START:""); if(!t&&!f) return "";
   const T=pfadTeile(); if(!t&&!f&&typeof skRechts==="function"&&skRechts()) t=KOPF_START; if(s&&s.includes("›")) s=s.split(/\s*›\s*/).pop(); 
   const pf="";
-  return `<div class="sk">${T.length?`<button class="sk-zur" data-act="skZurueck" aria-label="Zurück" title="Zurück">${icon("back")}</button>`:""}<div class="sk-t">${t?`<h1>${esc(t)}</h1>`:""}${s?`<p>${esc(s)}</p>`:""}</div>${typeof skRechts==="function"?skRechts():""}${f?(f[2]==="add"&&!T.length?`<button class="sk-neu sk-plus" data-act="${f[0]}" aria-label="${esc(f[1]?`${f[1]} anlegen`:"Neu anlegen")}" title="${esc(f[1]?`${f[1]} anlegen`:"Neu anlegen")}">${icon("add")}</button>`:`<button class="sk-neu" data-act="${f[0]}">${icon(f[2])}<span>${esc(f[1]||"Neu")}</span></button>`):""}</div>`; }
+  return `<div class="sk">${T.length?`<button class="sk-zur" data-act="skZurueck" aria-label="Zurück" title="Zurück">${icon("back")}</button>`:""}<div class="sk-t">${t?`<h1>${esc(t)}</h1>`:""}${s?`<p>${esc(s)}</p>`:""}</div>${typeof skRechts==="function"?skRechts():""}</div>`; }
 function backSetzen(){ const b=$("#backBtn"); if(!b) return; b.innerHTML=icon("back"); }
 function crumbGo(i){ const T=pfadTeile(); if(i>=T.length-1||!T[i][1]) return zurueck(); pfadVerlassen(); go(T[i][1]); }
 const kette=(kid,sid,lid)=>{ const r=[["Kunden",{v:"kunden"}]], k=kid&&kundeOf(kid), s=sid&&standortOf(sid), l=lid&&ladeparkOf(lid);
@@ -1954,7 +1983,6 @@ function render(){ profilAnwenden();
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=ME.admin?["newKunde","Kunde","add"]:null; }
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
   else if(nav.v==="auftraege"){ title="Aufträge"; body=vorgaengeView(); fab=["vgNeu","Vorgang","add"]; }
-  else if(nav.v==="meldungen"){ title="Meldungen"; body=meldungenView(); }
   else if(nav.v==="materialanf"){ title="Materialanforderungen"; body=`<div class="narrow">${anfListeView()}</div>`; fab=["afNeu","Anfordern","add"]; }
   else if(nav.v==="mehr"){ title="Mehr"; body=mehrView(); }
   else if(nav.v==="team"){ title="Mitarbeiter"; body=teamView(); fab=["teamNeu","Mitarbeiter","add"]; }
@@ -2175,16 +2203,22 @@ const gerName=g=>[g.hersteller,g.modell].filter(Boolean).join(" ")||"Gerät";
 /* Firmengeräte (20.10.2026), einmalig angelegt – Seriennr. und Kalibrierung trägt der Admin nach. Feste IDs: legt ein zweites Gerät
    sie auch an, gewinnt beim Abgleich die Fassung in SharePoint (updated=1). */
 const GER_MFT="https://wiha.com/media/87/89/b9/1770026915/47216-47217_Installation_tester_set_MFT_one_top.webp",
-  GER_PAT="https://wiha.com/media/6e/b7/6f/1772786021/47220-47221-47222-47223_PAT_02_side.webp",
-  GER_FEV="https://media.fluke.com/60d0e9ea-10d8-4871-801e-b108002e6ece_original__size.jpg";
+  GER_PAT="https://wiha.com/media/71/0b/47/1772786031/47220-47222_EU_PAT_Class01.webp",
+  GER_FEV="https://media.fluke.com/0c33077e-fddd-4190-a648-b307013064e3_product_slideshow_main.jpg";
+/* frühere, falsche Herstellerbilder (PAT one: Seitenansicht, FEV300: falsches Motiv) → einmalig ersetzen */
+const GER_BILD_ALT={"https://wiha.com/media/6e/b7/6f/1772786021/47220-47221-47222-47223_PAT_02_side.webp":GER_PAT,
+  "https://media.fluke.com/60d0e9ea-10d8-4871-801e-b108002e6ece_original__size.jpg":GER_FEV};
 const GER_VORLAGE=[{id:"ger-wiha-mft-one-1",art:"mess",hersteller:"Wiha",modell:"MFT one",bildUrl:GER_MFT,notiz:"Installationstester"},
   {id:"ger-wiha-mft-one-2",art:"mess",hersteller:"Wiha",modell:"MFT one",bildUrl:GER_MFT,notiz:"Installationstester"},
   {id:"ger-wiha-pat-one-1",art:"mess",hersteller:"Wiha",modell:"PAT one",bildUrl:GER_PAT,notiz:"Gerätetester (ortsveränderliche Geräte)"},
   {id:"ger-fluke-fev300-1",art:"adapter",hersteller:"Fluke",modell:"FEV300",bildUrl:GER_FEV,notiz:"Prüfadapter für Ladestationen"}];
-function gerVorlagen(){ if(!ME.admin||META.gerVorlage) return;
+function gerVorlagen(){ if(!ME.admin) return;
+  if(!META.gerBild2){ for(const g of DB.geraete.values()){ const n=GER_BILD_ALT[g.bildUrl]; if(n){ g.bildUrl=n; saveRec("geraete",g); } } META.gerBild2=1; metaSave(); }
+  if(META.gerVorlage) return;
   for(const v of GER_VORLAGE){ if(DB.geraete.has(v.id)) continue; const r=saveRec("geraete",Object.assign({sn:"",kal:"",bei:""},v),true); r.created=r.updated=1; dbPut("geraete",r); }
   META.gerVorlage=1; metaSave(); }
-const gerAv=g=>g.bildUrl?`<span class="av av-img ger-av"><img src="${esc(g.bildUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>`:`<span class="av">${icon("geraet")}</span>`;
+/* eigenes Foto (bild, klein im Datensatz) vor Herstellerbild (bildUrl); lädt das Herstellerbild nicht, bleibt das Symbol sichtbar */
+const gerAv=g=>{ const u=g.bild||GER_BILD_ALT[g.bildUrl]||g.bildUrl; return u?`<span class="av av-img ger-av">${icon("geraet")}<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></span>`:`<span class="av">${icon("geraet")}</span>`; };
 function geraeteView(){
   const L=live("geraete").filter(g=>!g.aus).sort((a,b)=>gerName(a).localeCompare(gerName(b),"de")), A=live("geraete").filter(g=>g.aus);
   if(!L.length&&!A.length) return `<div class="empty">${icon("geraet")}<h2>Noch keine Geräte</h2><p>${ME.admin?"Lege mit „Gerät“ die Messgeräte und Prüfadapter an – mit Seriennummer und Kalibrierdatum. In EVSE werden sie dann nur noch ausgewählt.":"Messgeräte pflegt der Chef oder das Büro."}</p></div>`;
@@ -2196,17 +2230,26 @@ function geraeteView(){
     <p class="hint">In EVSE wählt jeder das Gerät nur noch aus – Seriennummer und Kalibrierdatum kommen von hier.${ME.admin?"":" Ändern können Admins."}</p></div>`;
 }
 let gerForm=null;
+function gerFotoHtml(r){ const x=Object.assign({},r,{bild:gerForm&&gerForm.bild}); return `${gerAv(x)}<div class="ger-foto-k"><button type="button" class="btn-tonal" data-act="gerFoto">${icon("cam")}${x.bild?"Anderes Foto":"Eigenes Foto"}</button>${x.bild?`<button type="button" class="btn-text" data-act="gerFotoWeg">Foto entfernen</button>`:""}</div>`; }
+async function gerFotoLaden(f){
+  try{ const url=URL.createObjectURL(f), img=new Image(); await new Promise((ok,no)=>{ img.onload=ok; img.onerror=no; img.src=url; });
+    const k=Math.min(1,400/Math.max(img.width,img.height)), c=document.createElement("canvas"); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+    const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url);
+    gerForm.bild=c.toDataURL("image/jpeg",0.8); gerFotoNeu();
+  }catch(e){ toast("Das Bild konnte nicht gelesen werden"); } }
+function gerFotoNeu(){ const el=document.getElementById("gerFoto"); if(!el||!gerForm) return; const r=gerForm.id?DB.geraete.get(gerForm.id):{}; const u=document.querySelector('#dlg [data-f="bildUrl"]'); el.innerHTML=gerFotoHtml(Object.assign({},r,{bildUrl:u?u.value.trim():r.bildUrl})); }
 function gerDialog(g){
-  gerForm={id:g&&g.id}; const r=g||{art:"mess"}, T=team().filter(m=>m.mail);
+  gerForm={id:g&&g.id,bild:g&&g.bild||""}; const r=g||{art:"mess"}, T=team().filter(m=>m.mail);
   if(!ME.admin){ const k=gerKal(r); dialog(gerName(r),`<p>${esc([GER_ART.find(x=>x[0]===r.art)?.[1],r.sn&&`Seriennr. ${r.sn}`,k&&k.t].filter(Boolean).join(" · "))}</p>${r.notiz?`<p class="meta">${esc(r.notiz)}</p>`:""}`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return; }
-  dialog(g?"Gerät bearbeiten":"Neues Gerät",`<div class="fg1">${sf("art","Art",r.art||"mess",GER_ART,{form:true})}
+  dialog(g?"Gerät bearbeiten":"Neues Gerät",`<div class="ger-foto" id="gerFoto">${gerFotoHtml(r)}</div><input type="file" id="gerDatei" accept="image/*" hidden>
+    <div class="fg1">${sf("art","Art",r.art||"mess",GER_ART,{form:true})}
     <div class="row2">${tf("hersteller","Hersteller",r.hersteller,{form:true,ph:"z. B. Wiha"})}${tf("modell","Modell",r.modell,{form:true,ph:"z. B. MFT one"})}</div>
     ${tf("sn","Seriennummer",r.sn,{form:true})}
     ${tf("kal","Kalibrierung gültig bis",r.kal,{form:true,ph:"MM.JJJJ"})}
     ${sf("bei","Zugeteilt an",r.bei||"",[["","niemand / Firma"],...T.map(m=>[m.mail,m.name])],{form:true})}
     ${ta("notiz","Notiz",r.notiz,{form:true,ph:"z. B. liegt im Sprinter, Kalibrierung bei …"})}
-    ${tf("bildUrl","Bild (Internetadresse, optional)",r.bildUrl,{form:true,type:"url"})}</div>`,
-    `${g?`<button class="btn-text danger" data-act="gerAus">${r.aus?"Wieder aktiv":"Ausmustern"}</button>`:""}<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gerSave">Speichern</button>`);
+    ${tf("bildUrl","Herstellerbild (Internetadresse, optional)",GER_BILD_ALT[r.bildUrl]||r.bildUrl,{form:true,type:"url"})}</div>`,
+    `${g?`<button class="btn-text danger" data-act="gerAus">${r.aus?"Wieder aktiv":"Ausmustern"}</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gerSave">Speichern</button>`);
 }
 function teamView(){
   const T=teamAlle(), a=T.filter(m=>m.status!=="weg"), w=T.filter(m=>m.status==="weg");
@@ -2303,6 +2346,7 @@ function zurueck(){
 
 document.addEventListener("input",ev=>{ if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():nav.v==="auftraege"?vgListe():kundenListe(); } });
 document.addEventListener("change",ev=>{
+  if(ev.target&&ev.target.id==="gerDatei"){ if(ev.target.files[0]&&gerForm) gerFotoLaden(ev.target.files[0]); return; }
   const el=ev.target;
   if(el.id==="ablageFile"){ dateiAufnehmen(el); return; }
   if(el.id==="f_tlWer"){ const pw=($("#f_tlPw")||{}).value||""; tlSel=el.value||null; render(); const e=$("#f_tlPw"); if(e){ e.value=pw; } (tlSel==="__andere"?$("#f_tlMail"):e)?.focus(); return; }
@@ -2373,11 +2417,12 @@ document.addEventListener("click",async ev=>{
   case "afSt": anfStatus(DB.anforderungen.get(b.dataset.id),b.dataset.v); render(); return;
   case "afNeu": anfDialog(nav.v==="baustelle"?nav.id:""); return;
   case "afOk": anfSpeichern(); return;
-  case "mlGo": { const m=meldungen()[+b.dataset.i]; if(!m||!m.go) return; if(["baustelle","notizen"].includes(m.go.v)){ location.href="../baustelle/"; return; } go(m.go); return; }
   case "gerNeu": if(ME.admin) gerDialog(null); return;
+  case "gerFoto": { const i=document.getElementById("gerDatei"); if(i){ i.value=""; i.click(); } return; }
+  case "gerFotoWeg": if(gerForm){ gerForm.bild=""; gerFotoNeu(); } return;
   case "gerEdit": gerDialog(DB.geraete.get(b.dataset.id)); return;
   case "gerSave": { if(!ME.admin||!gerForm) return; const F=formVals(); if(!F.modell&&!F.hersteller&&!F.sn){ toast("Bitte mindestens Modell oder Seriennummer eintragen"); return; }
-    const r=gerForm.id?DB.geraete.get(gerForm.id):{id:uid()}; Object.assign(r,{art:F.art,hersteller:F.hersteller,modell:F.modell,sn:F.sn,kal:F.kal,bei:F.bei,notiz:F.notiz,bildUrl:F.bildUrl}); saveRec("geraete",r,!gerForm.id); gerForm=null; closeOverlays(); render(); return; }
+    const r=gerForm.id?DB.geraete.get(gerForm.id):{id:uid()}; Object.assign(r,{art:F.art,hersteller:F.hersteller,modell:F.modell,sn:F.sn,kal:F.kal,bei:F.bei,notiz:F.notiz,bildUrl:F.bildUrl,bild:gerForm.bild||""}); saveRec("geraete",r,!gerForm.id); gerForm=null; closeOverlays(); render(); return; }
   case "gerAus": { const r=gerForm&&DB.geraete.get(gerForm.id); if(!r||!ME.admin) return; r.aus=!r.aus; saveRec("geraete",r); gerForm=null; closeOverlays(); render(); toast(r.aus?"Ausgemustert – in EVSE nicht mehr auswählbar":"Wieder aktiv"); return; }
   case "teamEdit": teamDialog(teamAlle().find(m=>m.mail===b.dataset.mail)); return;
   case "teamStatus": if(teamForm){ if(teamForm.alt===ME.mail&&b.dataset.v==="weg"){ toast("Dich selbst kannst du nicht austragen"); return; } teamForm.status=b.dataset.v; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;

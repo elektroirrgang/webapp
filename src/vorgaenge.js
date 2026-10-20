@@ -160,7 +160,11 @@ function vgOpen(v){ const n=vgNaechster(v);
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="vg"]'); if(!b) return; const a=b.dataset.act, id=b.dataset.id, v=id&&DB.vorgaenge.get(id);
   if(a==="vgDring"){ e.stopPropagation(); if(vgE) vgE.dringend=b.dataset.v==="ja"; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)); if(typeof segInd==="function") segInd(); return; }
   e.stopPropagation(); e.preventDefault();
+  if(b.closest("#menu")) closeOverlays();
   if(a==="vgNeu") vgDialog(null);
+  else if(a==="vgDelFrage"&&v){ if(!vgDarfLoeschen(v)) return; closeOverlays();
+    dialog("Vorgang löschen?",`<p>„${esc(vgKunde(v))}“ wird für alle gelöscht. Direkt danach kannst du es noch rückgängig machen.</p>`,
+      `<button class="btn-text danger" data-act="vgDel" data-id="${esc(v.id)}">Löschen</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button>`); }
   else if(a==="vgMitT"){ b.setAttribute("aria-pressed",b.getAttribute("aria-pressed")!=="true"); }
   else if(a==="vgMitPlus"){ const i=document.getElementById("f_vgMitNeu"), n=String(i&&i.value||"").trim(); if(!n) return; const w=document.querySelector("#dlg .vg-mit");
     if(![...w.querySelectorAll("[data-act=vgMitT]")].some(x=>x.dataset.v===n)) w.querySelector(".vg-mitp").insertAdjacentHTML("beforebegin",`<button type="button" class="vg-mitc" data-act="vgMitT" data-v="${esc(n)}" aria-pressed="true">${esc(n)}</button>`);
@@ -198,7 +202,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="vgAblehnen"&&v){ dialog("Anfrage ablehnen",`<div class="fg1">${tf("vgGrund","Grund (optional)","",{form:true,ph:"z. B. machen wir nicht, an Kollegen verwiesen"})}</div>`,
       `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text danger" data-act="vgAblehnenOk" data-id="${esc(id)}">Ablehnen</button>`); }
   else if(a==="vgAblehnenOk"&&v){ v.abgelehnt={wer:who(),at:Date.now(),grund:formVals().vgGrund||""}; saveRec("vorgaenge",v); closeOverlays(); render(); toast("Anfrage abgelehnt"); }
-  else if(a==="vgDel"&&v){ v.deleted=true; saveRec("vorgaenge",v); closeOverlays(); render(); toast("Vorgang gelöscht","Rückgängig",()=>{ delete v.deleted; saveRec("vorgaenge",v); render(); }); }
+  else if(a==="vgDel"&&v){ if(!vgDarfLoeschen(v)) return; v.deleted=true; saveRec("vorgaenge",v); closeOverlays(); render(); toast("Vorgang gelöscht","Rückgängig",()=>{ delete v.deleted; saveRec("vorgaenge",v); render(); }); }
 },true);
 /* „Wer fährt hin?“ – Mehrfachauswahl aus dem Team, gespeichert als „A, B“ (so steht es auch an der Baustelle) */
 function vgMitWahl(mit){ const ist=String(mit||"").split(/\s*,\s*/).filter(Boolean), namen=[...new Set([...team().map(m=>m.name),...ist])];
@@ -228,3 +232,23 @@ function vgStartKarte(){ vgAbgleich(); const L=vgFilter("offen"); if(!L.length) 
   const buero=L.filter(v=>vgStufe(v)===1).length, ohne=L.filter(v=>vgStufe(v)===0).length, alt=L.filter(v=>vgAlter(v)).length;
   return `<button class="vg-start" data-act="nav" data-v="auftraege"><span class="vg-si">${icon("board")}</span><span class="vg-st"><b>${L.length} ${L.length===1?"offener Vorgang":"offene Vorgänge"}</b>
     <span>${[buero&&`${buero} warte${buero===1?"t":"n"} aufs Büro`,ohne&&`${ohne} Anruf${ohne===1?"":"e"} ohne Anfrage`,alt&&`${alt} liegen länger`].filter(Boolean).join(" · ")||"alles im Fluss"}</span></span>${icon("chev")}</button>`; }
+
+/* Gedrückt halten (iPad) oder Rechtsklick (PC) auf eine Vorgangskarte: kleines Menü – Öffnen, Bearbeiten, Löschen.
+   Löschen dürfen Büro/Chef und wer den Vorgang angelegt hat. */
+const vgDarfLoeschen=v=>!!v&&(istBuero()||!!(v.createdBy&&String(v.createdBy.mail||"").toLowerCase()===String(ME.mail||"").toLowerCase()));
+function vgMenu(v,x,y){ const m=document.getElementById("menu"), sc=document.getElementById("scrim"); if(!m||!sc||!v) return;
+  const it=[["vgOpen","Öffnen","chev",""],["vgEdit","Bearbeiten","edit",""],...(vgDarfLoeschen(v)?["-",["vgDelFrage","Löschen","del","danger"]]:[])];
+  m.innerHTML=it.map(x=>x==="-"?"<hr>":`<button class="mi ${x[3]}" role="menuitem" data-act="${x[0]}" data-id="${esc(v.id)}">${icon(x[2])}<span>${x[1]}</span></button>`).join("");
+  m.style.right="auto"; m.hidden=false; sc.hidden=false; const w=m.offsetWidth, h=m.offsetHeight;
+  m.style.left=Math.max(8,Math.min(innerWidth-w-8,x-24))+"px"; m.style.top=(y+12+h<innerHeight-8?y+12:Math.max(8,y-h-12))+"px"; }
+let vgLp=null, vgLpZeit=0;
+document.addEventListener("pointerdown",e=>{ const k=e.target.closest&&e.target.closest(".vg-k[data-id]"); if(!k||e.pointerType==="mouse") return;
+  const x=e.clientX, y=e.clientY; clearTimeout(vgLp&&vgLp.t);
+  vgLp={x,y,t:setTimeout(()=>{ vgLpZeit=Date.now(); if(navigator.vibrate) try{ navigator.vibrate(10); }catch(_){} vgMenu(DB.vorgaenge.get(k.dataset.id),x,y); },480)}; });
+const vgLpStop=()=>{ if(vgLp){ clearTimeout(vgLp.t); vgLp=null; } };
+document.addEventListener("pointermove",e=>{ if(vgLp&&Math.hypot(e.clientX-vgLp.x,e.clientY-vgLp.y)>10) vgLpStop(); });
+["pointerup","pointercancel","scroll"].forEach(t=>document.addEventListener(t,vgLpStop,true));
+/* der Klick beim Loslassen soll weder die Karte öffnen noch das Menü gleich wieder schließen */
+document.addEventListener("click",e=>{ if(Date.now()-vgLpZeit<700&&!(e.target.closest&&e.target.closest("#menu"))){ e.stopPropagation(); e.preventDefault(); } },true);
+document.addEventListener("contextmenu",e=>{ const k=e.target.closest&&e.target.closest(".vg-k[data-id]"); if(!k) return; e.preventDefault();
+  if(Date.now()-vgLpZeit<1000||(vgLp&&e.pointerType&&e.pointerType!=="mouse")) return; vgLpStop(); vgMenu(DB.vorgaenge.get(k.dataset.id),e.clientX,e.clientY); });
