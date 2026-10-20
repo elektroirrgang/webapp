@@ -1448,7 +1448,7 @@ function adrText(r){ if(!r) return ""; const z=[r.strasse,[r.plz,r.ort].filter(B
 function adrSplit(r){ if(r.strasse||r.plz||r.ort||!r.adresse) return; const m=r.adresse.match(/^(.*?),\s*(\d{5})\s+(.+)$/); if(m){ r.strasse=m[1]; r.plz=m[2]; r.ort=m[3]; } else r.strasse=r.adresse; }
 /* Rechte: SharePoint-Website-Adresse ⇒ nur Sites.Selected (Zugriff nur auf diese eine Website), sonst Freigabe-Link ⇒ Files.ReadWrite.All */
 const SITE_MODUS=/^https:\/\/[^/]+\.sharepoint\.com\/sites\/[^/?#]+/i.test(CONFIG.shareUrl||"")&&!/\/:[a-z]:\//i.test(CONFIG.shareUrl||"");
-const SCOPES=SITE_MODUS?["User.Read","Sites.Selected"]:["User.Read","Files.ReadWrite.All"];
+const SCOPES=SITE_MODUS?["User.Read","Sites.Selected","Files.ReadWrite.AppFolder"]:["User.Read","Files.ReadWrite.All"];
 const Auth={pca:null,account:null,test:null,
   async init(){
     if(window.__EVSE_TEST_AUTH__){ this.test=window.__EVSE_TEST_AUTH__; this.account=this.test.account; return; }
@@ -1521,7 +1521,7 @@ async function syncRoot(){
 async function folderId(rel,bib){
   const drive=bib&&SY.bibs&&SY.bibs[bib]||SY.drive, vor=drive===SY.drive?"":bib+"|", key=vor+rel;
   if(SY.folders[key]) return `${drive}/items/${SY.folders[key]}`;
-  let parent=drive===SY.drive?SY.rootId:"root", acc="";
+  let parent=drive===SY.drive?SY.rootId:((SY.bibRoot&&SY.bibRoot[bib])||"root"), acc="";
   const pfad=(p,n)=>`/drives/${drive}/items/${p}:/${encodeURIComponent(n)}`;
   for(const part of rel.split("/")){
     acc=acc?acc+"/"+part:part;
@@ -1540,7 +1540,7 @@ async function folderId(rel,bib){
 async function listAll(fid){ let url=`/drives/${fid}/children?$top=200`, out=[];
   while(url){ const j=await gj(url); out.push(...j.value); url=j["@odata.nextLink"]||null; } return out; }
 async function readItem(it){ const u=it["@microsoft.graph.downloadUrl"]; const r=u?await fetch(u):await g(`/drives/${(it.parentReference&&it.parentReference.driveId)||SY.drive}/items/${it.id}/content`); if(!r.ok) throw new Error("Download "+r.status); return r; }
-const strip=r=>{ const o={...r}; delete o._dirty; delete o._etag; delete o._itemId; return o; };
+const strip=r=>{ const o={...r}; delete o._dirty; delete o._etag; delete o._itemId; delete o._ort; return o; };
 let konflikte=[];
 async function pull(){
   let changed=false;
@@ -1555,6 +1555,50 @@ async function pull(){
   }
   return changed;
 }
+/* Notizen: geteilte (Firma/Personen) in der Bibliothek „Baustellen“, private im eigenen OneDrive-App-Ordner des Mitarbeiters.
+   Wird eine geteilte Notiz privat, bleibt am geteilten Ort nur ein Grabstein (tomb) – so verschwindet sie bei den anderen.
+   Geht der App-Ordner nicht, landen private Notizen in „Baustellen/_App-Daten/notizen-privat/<mail>“ (App blendet sie für andere aus). */
+const nOrt=r=>r.sicht==="privat"?"app":"site";
+async function appRoot(){
+  if(SY.app!==undefined) return SY.app;
+  try{ const ar=await gj("/me/drive/special/approot"); SY.bibs["__app"]=ar.parentReference.driveId; SY.bibRoot=Object.assign(SY.bibRoot||{},{__app:ar.id}); SY.app=true; }
+  catch(e){ if(e.auth) throw e; SY.app=false; }
+  return SY.app;
+}
+async function nFid(ort,was="notizen"){
+  if(ort==="app") return (await appRoot())?folderId(was,"__app"):folderId(`${CONFIG.dataFolder}/${was}-privat/${ichMail()||"ohne"}`,BIB.notizen);
+  return folderId(`${CONFIG.dataFolder}/${was}`,BIB.notizen);
+}
+async function pushNotizen(){
+  let changed=false;
+  for(const rec of [...DB.notizen.values()].filter(r=>r._dirty&&!r.demo&&istMeine(r))){
+    const ort=nOrt(rec);
+    if(rec._ort&&rec._ort!==ort){
+      if(rec._ort==="site"){ const t={id:rec.id,deleted:true,tomb:true,updated:rec.updated,createdBy:rec.createdBy};
+        const r=await g(`/drives/${await nFid("site")}:/${rec.id}.json:/content`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(t)}); if(!r.ok) throw new Error(`Notiz umziehen fehlgeschlagen (${r.status})`); }
+      else await g(`/drives/${await nFid("app")}:/${rec.id}.json`,{method:"DELETE"});
+      delete rec._etag;
+    }
+    rec._ort=ort; if(await pushOne("notizen",rec,await nFid(ort))) changed=true;
+  }
+  return changed;
+}
+async function pullNotizen(){
+  let changed=false;
+  for(const ort of ["site","app"]){
+    const items=await listAll(await nFid(ort));
+    for(const it of items){
+      if(!it.file||!it.name.endsWith(".json")) continue;
+      const id=it.name.slice(0,-5), loc=DB.notizen.get(id);
+      if(loc&&loc._etag===it.eTag&&loc._ort===ort) continue;
+      if(ort==="site"&&loc&&loc._ort==="app"&&istMeine(loc)) continue;
+      try{ const rec=await (await readItem(it)).json(); if(!rec||rec.id!==id) continue;
+        rec._ort=ort; if(takeServer("notizen",rec,it)) changed=true; }catch(e){}
+    }
+  }
+  return changed;
+}
+const nFotoIds=n=>(n.bloecke||[]).flatMap(b=>b.typ==="foto"?[b.foto]:b.typ==="zeichnung"?(b.striche||[]).filter(s=>s.t==="bild").map(s=>s.foto):[]);
 async function pushOne(k,rec,fid,force){
   const ver=rec.updated, headers={"Content-Type":"application/json"}; if(rec._etag&&!force) headers["If-Match"]=rec._etag;
   const r=await g(`/drives/${fid}:/${rec.id}.json:/content`,{method:"PUT",headers,body:JSON.stringify(strip(rec))});
@@ -1592,10 +1636,10 @@ async function syncNow(manual){
   if(!navigator.onLine){ setSync("offline"); return; }
   SY.running=true; setSync("läuft"); konflikte=[];
   try{
-    await syncRoot(); const c1=await push(); const c2=await pull(); fotoNachholen(); await pushFotos();
+    await syncRoot(); const c1=await push(); const n1=await pushNotizen(); const c2=await pull(); const n2=await pullNotizen(); fotoNachholen(); await pushFotos();
     META.sync.last=Date.now(); metaSave(); setSync("ok");
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
-    if(c1||c2) softRender();
+    if(c1||c2||n1||n2) softRender();
   }catch(e){
     if(e.auth){ setSync("anmelden"); softRender(); } else { SY.err=e.message||String(e); setSync(navigator.onLine?"fehler":"offline"); if(manual) toast("Abgleich fehlgeschlagen: "+SY.err); }
   }finally{ SY.running=false; if(SY.again){ SY.again=false; syncSoon(); } }
@@ -1831,9 +1875,9 @@ function takeServer(k,rec,it){
 }
 async function pushFotos(){
   const q=META.sync.fotoQueue||[]; if(!q.length) return;
-  const fid=await folderId(`${CONFIG.dataFolder}/fotos`,BIB.fotos);
+  const fidS=await folderId(`${CONFIG.dataFolder}/fotos`,BIB.fotos), priv=new Set(live("notizen").filter(n=>istMeine(n)&&n.sicht==="privat").flatMap(nFotoIds));
   for(const id of [...q]){
-    const d=fotoCache.get(id);
+    const d=fotoCache.get(id), fid=priv.has(id)?await nFid("app","fotos"):fidS;
     if(d){ const r=await g(`/drives/${fid}:/${id}.jpg:/content`,{method:"PUT",headers:{"Content-Type":"image/jpeg"},body:dataUrlToBlob(d)}); if(!r.ok) throw new Error(`Foto hochladen fehlgeschlagen (${r.status})`); }
     META.sync.fotoQueue=(META.sync.fotoQueue||[]).filter(x=>x!==id); metaSave();
   }
@@ -1843,9 +1887,9 @@ async function fotoFetch(ids){
   ids=ids.filter(id=>id&&!fotoCache.has(id)&&!SY.fotoBusy.has(id)); if(!ids.length) return;
   ids.forEach(id=>SY.fotoBusy.add(id)); let got=0;
   try{ await syncRoot(); const fid=await folderId(`${CONFIG.dataFolder}/fotos`,BIB.fotos);
-    for(const id of ids){ try{ const meta=await gj(`/drives/${fid}:/${id}.jpg`); const d=await blobToDataUrl(await (await readItem(meta)).blob()); await fotoPut(id,d); got++; }catch(e){} }
+    for(const id of ids){ try{ let meta; try{ meta=await gj(`/drives/${fid}:/${id}.jpg`); }catch(x){ if(x.auth) throw x; meta=await gj(`/drives/${await nFid("app","fotos")}:/${id}.jpg`); } const d=await blobToDataUrl(await (await readItem(meta)).blob()); await fotoPut(id,d); got++; }catch(e){} }
   }catch(e){} finally{ ids.forEach(id=>SY.fotoBusy.delete(id)); }
-  if(got&&nav.v==="baustelle") softRender();
+  if(got&&["baustelle","notizen","notiz"].includes(nav.v)) softRender();
 }
 function idbOpen(){ return new Promise((res,rej)=>{ if(!window.indexedDB) return rej(0); const r=indexedDB.open("baustelle_fotos",1); r.onupgradeneeded=()=>r.result.createObjectStore("f"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
 /* Fotos, die vor der Microsoft-Anmeldung entstanden sind, standen nie in der Warteschlange – einmal alle nachreichen. */
@@ -2156,8 +2200,8 @@ function render(){
   if(login) body=loginView();
   else if(nav.v==="start"){ body=startView(); fab=["neueBaustelle","Baustelle","add"]; }
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=["newKunde","Kunde","add"]; }
-  else if(nav.v==="notizen"){ title="Notizen"; body=notizenView(); fab=["neueNotiz","Notiz","add"]; }
-  else if(nav.v==="notiz"){ const ro=!istMeine(nEntw); title=ro||DB.notizen.has(nEntw.id)?"Notiz":"Neue Notiz"; sub=ro?`Von ${vonText(nEntw)}`:""; body=notizView(); fab=ro?null:["edFertig","Fertig","check"]; }
+  else if(nav.v==="notizen"){ title="Notizen"; body=notizenView(); fab=["neueNotiz","Notiz","add"]; fotoFetch(notizFotos()); }
+  else if(nav.v==="notiz"){ fotoFetch(nFotoIds(nEntw)); const ro=!istMeine(nEntw); title=ro||DB.notizen.has(nEntw.id)?"Notiz":"Neue Notiz"; sub=ro?`Von ${vonText(nEntw)}`:""; body=notizView(); fab=ro?null:["edFertig","Fertig","check"]; }
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
   else if(nav.v==="material"){ title="Material"; body=materialView(); fab=["matStammNeu","Material","add"]; }
   else if(nav.v==="mehr"){ title="Mehr"; body=mehrView(); }

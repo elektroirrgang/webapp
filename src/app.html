@@ -1445,7 +1445,7 @@ async function syncNow(manual){
   if(!navigator.onLine){ setSync("offline"); return; }
   SY.running=true; setSync("läuft"); konflikte=[];
   try{
-    await syncRoot(); const c1=await push(); const c2=await pull(); fotoNachholen(); await pushFotos();
+    await syncRoot(); const c1=await push(); const c2=await pull(); fotoNachholen(); await pushFotos(); await pdfNachholen();
     META.sync.last=Date.now(); metaSave(); setSync("ok");
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
     if(c1||c2) softRender();
@@ -1631,7 +1631,8 @@ const PROT_DB="evse_protokolle"; let protDB=null, PROT=[], protLoesch=null;
 function protOpen(){ if(protDB) return Promise.resolve(protDB); return new Promise((res,rej)=>{ const r=indexedDB.open(PROT_DB,1);
   r.onupgradeneeded=()=>{ const d=r.result; if(!d.objectStoreNames.contains("meta")) d.createObjectStore("meta",{keyPath:"id"}); if(!d.objectStoreNames.contains("blob")) d.createObjectStore("blob"); };
   r.onsuccess=()=>{ protDB=r.result; res(protDB); }; r.onerror=()=>rej(r.error); }); }
-async function protLaden(){ try{ const d=await protOpen(); PROT=(await idbReq(d.transaction("meta").objectStore("meta").getAll()))||[]; }catch(e){ PROT=[]; } }
+let protGeladen=false;
+async function protLaden(){ try{ const d=await protOpen(); PROT=(await idbReq(d.transaction("meta").objectStore("meta").getAll()))||[]; }catch(e){ PROT=[]; } protGeladen=true; }
 async function protBlob(id){ const d=await protOpen(); return idbReq(d.transaction("blob").objectStore("blob").get(id)); }
 async function protWeg(id){ const d=await protOpen(); const tx=d.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").delete(id); tx.objectStore("blob").delete(id); await new Promise(r=>{ tx.oncomplete=r; tx.onerror=r; }); PROT=PROT.filter(x=>x.id!==id); }
 const BFILTER=[["alle","Alle"],["ok","Bestanden"],["bad","Mit Mängeln"]];
@@ -1651,6 +1652,15 @@ function bibListe(){
 function bibliothekView(){
   return `<div class="narrow">${PROT.length?searchBar("Kunde, Ort, Auftrag oder Prüfer",fKnopf("bib")):""}<div id="res">${bibListe()}</div>
     ${PROT.length?`<p class="hint">Fertige Protokolle so, wie sie erstellt wurden. Spätere Änderungen an der Prüfung ändern sie nicht – ein neues PDF wird als neue Fassung abgelegt.</p>`:""}</div>`;
+}
+/* PDFs, die vor der Microsoft-Anmeldung erstellt wurden, einmal in die Bibliothek „Prüfprotokolle“ nachreichen. */
+async function pdfNachholen(){
+  if(!protGeladen||META.sync.pdfAlle===CONFIG.shareUrl) return; let ok=true;
+  for(const x of [...PROT].filter(x=>!x.demo).sort((a,b)=>(a.created||0)-(b.created||0))){
+    const p=DB.pruefungen.get(x.pruefungId); if(!p) continue;
+    try{ const blob=await protBlob(x.id); if(blob) await pdfHochladen(p,blob,x.name); }catch(e){ if(e.auth) throw e; ok=false; }
+  }
+  if(ok){ META.sync.pdfAlle=CONFIG.shareUrl; metaSave(); }
 }
 async function protAblegen(p,blob,name){
   try{ const {k,s,l}=pfad(p), d=await protOpen();
