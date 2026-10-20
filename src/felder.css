@@ -31,7 +31,7 @@
 /* PC: Zurück-Pfeil am linken Rand der hellen Inhaltsfläche, leicht unterlegt */
 @media (min-width:1024px) and (hover:hover) and (pointer:fine){
   .topbar .tb-row{position:relative}
-  .tb-kopf.pc .sk-zur.sk-zt{position:absolute!important;left:16px;top:10px;margin:0!important;background:var(--sc)!important}
+  .tb-kopf.pc .sk-zur.sk-zt{position:absolute!important;left:4px;top:12px;width:40px!important;height:40px!important;margin:0!important;background:var(--sc)!important}
   .tb-kopf.pc .sk-zur.sk-zt:hover{background:var(--sc-high)!important}
 }
 /* Hinweis-Blase (PC) – dunkel wie die Hinweisleiste unten, runde Ecken */
@@ -57,7 +57,9 @@
 @media (min-width:1024px) and (hover:hover) and (pointer:fine){
   html{scrollbar-gutter:stable}
   /* mindestens 64 px Rand links und rechts – dort sitzt bei Unterseiten der Zurück-Pfeil, Titel und Inhalt bleiben bündig */
-  main > #app{max-width:min(1160px,calc(100% - 128px))!important;margin-left:auto!important;margin-right:auto!important}
-  #app > .narrow,#app > .wrap,.narrow.vg,.wide-n{max-width:none!important}
+  /* Inhalt links bündig mit festem Abstand zur Seitenleiste (wie früher bei Statistik), nutzt die Breite nach rechts */
+  main{padding-left:0!important;padding-right:0!important}
+  main > #app{max-width:none!important;margin-left:48px!important;margin-right:48px!important}
+  #app > .narrow,#app > .wrap,.narrow.vg,.wide-n{max-width:none!important;margin-left:0!important;margin-right:0!important}
   #app > .narrow.lesen{max-width:960px!important;margin-left:0!important;margin-right:auto!important}
 }
