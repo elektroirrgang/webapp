@@ -22,3 +22,26 @@
   ::-webkit-scrollbar-button{display:none;width:0;height:0}
 }
 @supports not selector(::-webkit-scrollbar){html,.dlg{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--on-surface) 25%,transparent) transparent}}
+/* Zurück: wie bei Apple „‹ Kunden“ – Pfeil und Name der Seite, zu der es zurückgeht, ohne Kreis */
+.sk-zur.sk-zt{width:auto!important;height:40px!important;border-radius:20px!important;padding:0 14px 0 4px!important;gap:0;display:inline-flex!important;align-items:center;background:transparent!important;color:var(--primary)!important;font:inherit;font-size:15px;font-weight:650;max-width:220px;margin:0 6px 0 -8px!important;flex:none;cursor:pointer}
+.sk-zur.sk-zt .ic{width:28px!important;height:28px!important;transform:scaleX(-1);flex:none}
+.sk-zur.sk-zt span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.sk-zur.sk-zt:hover{background:color-mix(in srgb,var(--primary) 8%,transparent)!important}
+.sk-zur.sk-zt:active{transform:none;background:color-mix(in srgb,var(--primary) 14%,transparent)!important}
+.sk:has(.sk-zt){align-items:center}
+/* Seitenleiste ein-/ausblenden (nur PC) */
+.sl-auf,.nav-head .sl-zu-btn{display:none}
+@media (min-width:1024px) and (hover:hover) and (pointer:fine){
+  .nav-head .sl-zu-btn{display:grid!important;place-items:center;margin-left:auto;width:40px;height:40px;border:0;border-radius:50%;background:transparent;color:var(--on-sv);cursor:pointer}
+  .nav-head .sl-zu-btn:hover{background:color-mix(in srgb,var(--on-surface) 8%,transparent)}
+  body.sl-zu .sl-auf{display:grid!important;place-items:center;flex:none;width:44px;height:44px;margin:0 6px 0 -6px;border:0;border-radius:50%;background:transparent;color:var(--on-surface);cursor:pointer}
+  body.sl-zu .sl-auf:hover{background:color-mix(in srgb,var(--on-surface) 8%,transparent)}
+  :root body nav.navbar{transition:transform .22s ease,visibility .22s}
+  :root body.sl-zu nav.navbar{transform:translateX(-100%)!important;visibility:hidden}
+  .topbar{transition:left .22s ease}
+  main{transition:margin-left .22s ease}
+  body.sl-zu .topbar{left:0!important}
+  :root body.sl-zu.sl-zu main{margin-left:0!important}
+  body.sl-zu .snackbar,body.sl-zu.has-fab .snackbar{left:50%!important}
+  body.sl-zu .wrap,body.sl-zu .narrow{max-width:1120px}
+}
