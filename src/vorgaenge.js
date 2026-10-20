@@ -6,7 +6,7 @@
 const VG_S=[["anruf","Anruf"],["anfrage","Anfrage"],["auftrag","Auftrag"],["termin","Termin"],["ausgefuehrt","Ausgeführt","Fertig"]];
 const VG_F=[["offen","Offen"],["buero","Wartet aufs Büro"],["termin","Ohne Termin"],["erledigt","Ausgeführt"],["abgelehnt","Abgelehnt"]];
 const VG_BUERO=["info@elektro-irrgang.de"];
-const istBuero=()=>VG_BUERO.includes(String(ME.mail||"").toLowerCase());
+const istBuero=()=>VG_BUERO.includes(String(ME.mail||"").toLowerCase())||!!ME.buero||!!ME.admin;
 const vgStufe=v=>{ let n=-1; VG_S.forEach(([k],i)=>{ if(v.s&&v.s[k]) n=i; }); return n; };
 const vgZu=v=>!!((v.s&&v.s.ausgefuehrt)||v.erledigt||v.abgelehnt);
 const vgBau=v=>{ const b=v.baustelleId&&DB.baustellen&&DB.baustellen.get(v.baustelleId); return b&&!b.deleted?b:null; };

@@ -1081,6 +1081,28 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 
 /* Tastatur auf dem iPad: feste Leisten um den Versatz der sichtbaren Fläche nach unten schieben */
 @media (min-width:744px){ .topbar,body .navbar,.edk{translate:0 var(--vvt,0px)} html::after{translate:0 var(--vvt,0px)} }
+
+/* Glocke, Anforderungen, Meldungen */
+.glocke{position:relative;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--on-surface);display:grid;place-items:center;flex:none;cursor:pointer}
+.glocke .ic{width:24px;height:24px}
+.glocke .gl-n{position:absolute;top:4px;right:2px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--fab);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;box-sizing:border-box}
+.btn-tonal.sm{height:36px;padding:0 16px;font-size:13px;flex:none;align-self:center}
+.af-z .lt{min-width:0}.af-m{font-size:12px;color:var(--on-sv);margin-left:8px}
+.li.ml-neu{background:color-mix(in srgb,var(--fab) 9%,var(--sc-low,var(--sc)))}
+.af-kopf{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 4px}
+.db-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:8px}
+@media (max-width:720px){.db-grid{grid-template-columns:1fr}}
+.db-box{background:var(--sc-low,var(--sc));border-radius:24px;padding:16px;display:flex;flex-direction:column;min-width:0}
+.db-k{display:flex;align-items:center;gap:12px;margin-bottom:4px}.db-k h3{margin:0;font-size:17px;flex:1}
+.db-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--pc);color:var(--on-pc);flex:none}
+.db-z{min-width:28px;height:28px;padding:0 8px;border-radius:14px;background:var(--fab);color:#fff;font-size:14px;display:grid;place-items:center;box-sizing:border-box}
+.db-sub{margin:4px 0 8px;font-size:13px;color:var(--on-sv)}
+.db-box .list{margin:4px 0}.db-box .li{padding:10px 12px}
+.db-offen{color:var(--on-sv)}
+.db-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+.db-fuss{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:8px}
+.db-fuss .btn-text{display:inline-flex;align-items:center;gap:4px}.db-fuss .btn-text .ic{width:20px;height:20px}
+.db-kpis .kpi span{font-size:12px;line-height:1.25}
 </style>
 </head>
 <body class="is-list">
@@ -1091,6 +1113,7 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
     <img class="logo l-hell" src="<!--LOGO_HELL-->" alt="Elektro Irrgang">
     <img class="logo l-dunkel" src="<!--LOGO_DUNKEL-->" alt="Elektro Irrgang">
     <h1 class="tb-title" id="topTitle"></h1>
+    <button class="glocke" id="glBtn" data-act="nav" data-v="meldungen" aria-label="Meldungen" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span class="gl-n" id="glN" hidden></span></button>
     <button class="avatar" id="avBtn" data-act="nav" data-v="mehr" aria-label="Konto und Einstellungen" hidden><span id="avTxt"></span></button>
     <button class="icon-btn" id="menuBtn" data-act="menu" aria-label="Weitere Optionen" aria-haspopup="menu" aria-expanded="false"></button>
   </div>
@@ -1170,7 +1193,7 @@ function setMe(){
   const a=Auth.account;
   if(!a){ ME={name:META.profil.name||"",mail:(META.profil.mail||"").toLowerCase(),admin:istAdmin(META.profil.mail),signedIn:false}; return; }
   const roles=(a.idTokenClaims&&a.idTokenClaims.roles)||[], mail=(a.username||"").toLowerCase();
-  ME={name:a.name||mail,mail,admin:(roles.includes("Admin")||roles.includes("Entwickler"))||istAdmin(mail)||CONFIG.admins.map(x=>x.toLowerCase()).includes(mail),signedIn:true};
+  ME={name:a.name||mail,mail,buero:roles.includes("Buero"),admin:(roles.includes("Admin")||roles.includes("Entwickler"))||istAdmin(mail)||CONFIG.admins.map(x=>x.toLowerCase()).includes(mail),signedIn:true};
   for(const k of KINDS) for(const r of DB[k].values()) if(!r.demo&&!r._etag&&(!r.createdBy||!r.createdBy.mail)){ r.createdBy={name:ME.name,mail:ME.mail}; r._dirty=true; dbPut(k,r); }
 }
 const GRAPH="https://graph.microsoft.com/v1.0";
@@ -1190,7 +1213,7 @@ async function gj(path,opt){ const r=await g(path,opt); if(!r.ok) throw Object.a
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
 const BIB={kunden:"Kundendaten",standorte:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",
   ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
-  baustellen:"Baustellen",eintraege:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Kundendaten"};
+  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Kundendaten"};
 async function syncRoot(){
   if(SY.drive) return;
   const c=META.sync.root;
@@ -1375,6 +1398,8 @@ const IC={board:"M3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H5c-1.1
   notes:"M3 18h12v-2H3v2zM3 6v2h18V6H3zm0 7h18v-2H3v2z",
   tag:"M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z",
   geraet:"M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z",
+  glocke:"M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z",
+  lager:"M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.69V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.7c.57-.35 1-.97 1-1.69V4c0-1.1-1-2-2-2zm-5 12H9v-2h6v2zm5-7H4V4l16-.02V7z",
   book:"M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z",
   person:"M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z",
 };
@@ -1464,8 +1489,8 @@ const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
 
 const TH_KEY="evse_theme";
 const RES_TXT={ok:"fertig",bad:"Mängel",open:"offen",wip:"in Arbeit"};
-const KINDS=["kunden","standorte","ladeparks","pruefungen","baustellen","eintraege","einstellungen","dateien","vorgaenge","geraete"];
-const EVSE_KINDS=["kunden","standorte","ladeparks","pruefungen"], BAU_KINDS=["baustellen","eintraege"];
+const KINDS=["kunden","standorte","ladeparks","pruefungen","baustellen","eintraege","einstellungen","dateien","vorgaenge","geraete","anforderungen"];
+const EVSE_KINDS=["kunden","standorte","ladeparks","pruefungen"], BAU_KINDS=["baustellen","eintraege","anforderungen"];
 const DB=Object.fromEntries(KINDS.map(k=>[k,new Map()]));
 let META={profil:{name:""},sync:{}};
 let nav={v:"start"}, query="", kDB=null, bDB=null, aDB=null, warned=false, syncT=null;
@@ -1877,6 +1902,7 @@ document.addEventListener("click",e=>{
   document.addEventListener("transitionend",bald,true); bald();
 })();
 /*DEMO*/
+/*ANFORDERUNG*/
 /*VORGAENGE*/
 function render(){
   const app=$("#app");
@@ -1901,6 +1927,8 @@ function render(){
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=ME.admin?["newKunde","Kunde","add"]:null; }
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
   else if(nav.v==="auftraege"){ title="Aufträge"; body=vorgaengeView(); fab=["vgNeu","Vorgang","add"]; }
+  else if(nav.v==="meldungen"){ title="Meldungen"; body=meldungenView(); }
+  else if(nav.v==="materialanf"){ title="Materialanforderungen"; body=`<div class="narrow">${anfListeView()}</div>`; fab=["afNeu","Anfordern","add"]; }
   else if(nav.v==="mehr"){ title="Mehr"; body=mehrView(); }
   else if(nav.v==="team"){ title="Mitarbeiter"; body=teamView(); fab=["teamNeu","Mitarbeiter","add"]; }
   else if(nav.v==="entwicklung"){ title="Entwicklung der Apps"; body=entwicklungView(); }
@@ -1914,7 +1942,7 @@ function render(){
   $("#topTitle").innerHTML=title?`<span>${esc(title)}</span>${sub?`<small>${esc(String(sub).split(/\s*›\s*/).pop())}</small>`:""}`:"";
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
   if(fab){ f.dataset.act=fab[0]; f.setAttribute("aria-label",fab[1]); f.innerHTML=`${icon(fab[2])}<span>${fab[1]}</span>`; }
-  $("#avTxt").textContent=initials(ME.name||META.profil.name); $("#avBtn").dataset.sync=SY.state;
+  $("#avTxt").textContent=initials(ME.name||META.profil.name); $("#avBtn").dataset.sync=SY.state; mlGlocke();
   bilderFuellen();
 }
 
@@ -1924,6 +1952,7 @@ function startView(){
   const kacheln=APPS.map(a=>a.geplant?`<div class="app-k geplant"><span class="app-ph">${icon("bulb")}</span><span class="app-t"><b>${a.name}</b><span>${a.text}</span></span>${pill("open","in Planung")}</div>`
     :`<a class="app-k" href="${a.href}"><img src="${a.ic}" alt=""><span class="app-t"><b>${a.name}</b><span>${a.text}</span></span>${icon("chev")}</a>`).join("");
   let h=`<div class="narrow"><h2 class="gruss">${gruss()}${ME.name?`, ${esc(ME.name)}`:""}</h2>${vgStartKarte()}<div class="apps app-weiter">${kacheln}</div>`;
+  if(anfVerw()) return `<div class="narrow"><h2 class="gruss">${gruss()}${ME.name?`, ${esc(ME.name)}`:""}</h2>${dashboard()}<div class="sec-lbl" style="margin-top:24px">Apps</div><div class="apps app-weiter">${kacheln}</div></div>`;
   if(ME.admin){
     const bs=echt("baustellen"), F=faellig(), t=today(), bald=new Date(Date.now()+90*864e5).toISOString().slice(0,10);
     const inArbeit=echt("pruefungen").filter(p=>["wip","open"].includes(pStand(p))).length;
@@ -1932,6 +1961,35 @@ function startView(){
       ${kpi(F.filter(p=>p.a.naechste<=bald).length,"Prüfungen fällig in 3 Monaten",F.some(p=>p.a.naechste<t)?"warn":"")}${kpi(echt("kunden").length,"Kunden")}</div>`;
   }
   return h+`<p class="hint app-weiter">Jede App lässt sich einzeln auf den Home-Bildschirm legen: App öffnen, dann „Teilen“ → „Zum Home-Bildschirm“.</p></div>`;
+}
+/* Dashboard für Chef und Büro: vier Boxen. Jede zeigt nur, was zu tun ist – Details über „Alle“. */
+function dashboard(){
+  const t=today(), bald=new Date(Date.now()+90*864e5).toISOString().slice(0,10), woche=Date.now()-7*864e5;
+  const box=(ic,titel,zahl,inhalt,link)=>`<section class="db-box"><div class="db-k"><span class="db-ic">${icon(ic)}</span><h3>${titel}</h3>${zahl!=null?`<b class="db-z">${zahl}</b>`:""}</div>${inhalt}${link||""}</section>`;
+  const alle=(v,txt="Alle")=>`<button class="btn-text db-alle" data-act="nav" data-v="${v}">${txt}${icon("chev")}</button>`;
+  /* Material */
+  const A=anfOffen().sort((a,b)=>(a.status==="angefordert"?0:1)-(b.status==="angefordert"?0:1)||(b.created||0)-(a.created||0)), an=A.filter(a=>a.status==="angefordert").length;
+  const mat=box("lager","Material",an||null,A.length?`<p class="db-sub">${an} angefordert · ${A.length-an} bestellt</p>${listOf(A.slice(0,5).map(a=>anfZeile(a,true)))}`:`<p class="meta">Nichts offen.</p>`,
+    `<div class="db-fuss">${alle("materialanf")}<button class="btn-text" data-act="afNeu">${icon("add")}Anfordern</button></div>`);
+  /* Baustellen */
+  const aktiv=echt("baustellen").filter(b=>(b.status||"aktiv")==="aktiv"), E=echt("eintraege").sort((a,b)=>(b.created||0)-(a.created||0)).slice(0,4);
+  const still=aktiv.filter(b=>{ const e=eintraegeVon(b.id)[0]; return !e||(e.created||0)<woche; }).length;
+  const bau=box("baustelle","Baustellen",aktiv.length,`<p class="db-sub">${aktiv.length} aktiv${still?` · ${still} ohne Übergabe seit 7 Tagen`:""}</p>${E.length?listOf(E.map(e=>{ const b=DB.baustellen.get(e.baustelleId);
+      return `<div class="li ruhig"><span class="lt"><span class="h">${esc(b?b.name:"Baustelle")}</span><span class="s">${esc([(e.createdBy||{}).name,wann(e.created)].filter(Boolean).join(" · "))}</span>${e.offen?`<span class="s db-offen">Offen: ${esc(String(e.offen).slice(0,90))}</span>`:""}</span></div>`; })):`<p class="meta">Noch keine Übergaben.</p>`}`,
+    `<div class="db-fuss">${alle("uebersicht","Statistik")}</div>`);
+  /* Prüfungen & Fristen */
+  const F=faellig(), ueber=F.filter(p=>p.a.naechste<t), fb=F.filter(p=>p.a.naechste>=t&&p.a.naechste<=bald), neu=echt("pruefungen").filter(p=>p.pdfAblage&&(p.updated||0)>=woche);
+  const G=live("geraete").filter(g=>!g.aus).map(g=>({g,k:gerKal(g)})).filter(x=>x.k&&x.k.s!=="ok");
+  const pr=box("doc","Prüfungen & Fristen",ueber.length+G.filter(x=>x.k.s==="ab"||x.k.s==="leer").length||null,
+    `<div class="db-kpis">${kpi(neu.length,"neue Protokolle")}${kpi(ueber.length,"überfällig",ueber.length?"warn":"")}${kpi(fb.length,"fällig in 3 Monaten")}</div>
+    ${G.length?listOf(G.slice(0,4).map(({g,k})=>`<div class="li ruhig" role="button" tabindex="0" data-act="nav" data-v="geraete"><span class="lt"><span class="h">${esc(gerName(g))}${g.sn?` · ${esc(g.sn)}`:""}</span><span class="st">${pill(k.s==="bald"?"wip":"bad",k.t)}</span></span></div>`)):""}
+    ${ueber.length?listOf(ueber.slice(0,3).map(p=>`<div class="li ruhig"><span class="lt"><span class="h">${esc(pPfad(p))}</span><span class="s">fällig seit ${esc(deDate(p.a.naechste))}</span></span></div>`)):""}`,
+    `<div class="db-fuss">${alle("geraete","Geräte")}</div>`);
+  /* Aufträge */
+  const V=typeof vgFilter==="function"?vgFilter("offen"):[], vb=V.filter(v=>vgStufe(v)===1).length;
+  const auf=box("board","Aufträge",V.length||null,V.length?`<p class="db-sub">${V.length} offen${vb?` · ${vb} warten aufs Büro`:""}</p>${listOf(V.slice(0,4).map(v=>`<div class="li ruhig"><span class="lt"><span class="h">${esc(vgKunde(v))}</span><span class="s">${esc(vgKurz(v.anliegen||"",70))}</span></span></div>`))}`:`<p class="meta">Keine offenen Vorgänge.</p>`,
+    `<div class="db-fuss">${alle("auftraege")}</div>`);
+  return `<div class="db-grid">${mat}${bau}${pr}${auf}</div>`;
 }
 function balken(werte){ const max=Math.max(1,...werte.map(w=>w[1]));
   return `<div class="balken">${werte.map(([l,v])=>`<div class="bk"><span class="bk-v">${v||""}</span><span class="bk-b" style="height:${Math.round(v/max*100)}%"></span><span class="bk-l">${l}</span></div>`).join("")}</div>`; }
@@ -2287,6 +2345,10 @@ document.addEventListener("click",async ev=>{
     if(!istBild(d)){ const u=await dateiUrl(d.id); const w=window.open(u,"_blank"); if(w) return; } saveFile(bl,d.name); return; }
   case "dateiDelAsk": confirmDlg("Datei löschen?","Die Datei wird für alle entfernt.","Löschen",`dateiDel:${b.dataset.id}`); return;
   case "teamNeu": teamDialog(null); return;
+  case "afSt": anfStatus(DB.anforderungen.get(b.dataset.id),b.dataset.v); render(); return;
+  case "afNeu": anfDialog(nav.v==="baustelle"?nav.id:""); return;
+  case "afOk": anfSpeichern(); return;
+  case "mlGo": { const m=meldungen()[+b.dataset.i]; if(!m||!m.go) return; if(["baustelle","notizen"].includes(m.go.v)){ location.href="../baustelle/"; return; } go(m.go); return; }
   case "gerNeu": if(ME.admin) gerDialog(null); return;
   case "gerEdit": gerDialog(DB.geraete.get(b.dataset.id)); return;
   case "gerSave": { if(!ME.admin||!gerForm) return; const F=formVals(); if(!F.modell&&!F.hersteller&&!F.sn){ toast("Bitte mindestens Modell oder Seriennummer eintragen"); return; }

@@ -94,7 +94,7 @@ document.addEventListener("change",e=>{ const t=e.target; if(!t||!entw||matBusy)
 function matBlock(e){
   const L=matListe(e); if(!L.length) return "";
   const neu=Array.isArray(e.mat), ok=L.filter(x=>x.ok).length;
-  return `<div class="eb mat-k"><div class="mat-kk"><small>Material</small>${neu&&L.length?`<span>${ok} von ${L.length} besorgt</span>`:""}</div>
+  return `<div class="eb mat-k"><div class="mat-kk"><small>Material</small>${typeof anfChip==="function"?anfChip(e):""}${neu&&L.length?`<span>${ok} von ${L.length} besorgt</span>`:""}</div>
     <div class="mat-kl">${L.map((x,i)=>neu?`<button type="button" class="mat-ck${x.ok?" ok":""}" data-act="matHaken" data-id="${esc(e.id)}" data-i="${i}" aria-pressed="${!!x.ok}"><span class="mat-box">${x.ok?icon("check"):""}</span><b>${esc(matFmt(x.q))} ${esc(x.u)}</b><span class="mat-tt">${esc(x.t)}</span>${matNrChip(matNr(matStamm(x.t)))}${x.ok&&x.okVon&&x.okVon.name?`<small>besorgt von ${esc(x.okVon.name)}</small>`:""}</button>`
       :`<div class="mat-ck alt"><b>${esc(matFmt(x.q))} ${esc(x.u)}</b><span class="mat-tt">${esc(x.t)}</span>${matNrChip(matNr(matStamm(x.t)))}</div>`).join("")}</div></div>`;
 }
@@ -208,7 +208,10 @@ function materialListe(){
 function materialView(){ matStammSeed();
   const f=MAT_F(), {z}=matNutzung(), A=matAlle(), anz=k=>A.filter(m=>k==="neu"?m.neu:k==="haeufig"?z[matNorm(m.name)]:m.kategorie===k).length;
   const chips=[["alle","Alle"],["haeufig","Häufig benutzt"],["neu","Neu"],...MAT_KAT].map(([k,t])=>{ const n=k==="alle"?0:anz(k); return k!=="alle"&&!n&&f!==k?"":`<button class="chip${MAT_KAT_TXT[k]?" mat-kc":""}" data-act="matF" data-v="${k}" aria-pressed="${f===k}">${MAT_KAT_TXT[k]?matKatIc(k):""}${esc(t)}${k==="alle"?"":`<small>${n}</small>`}</button>`; }).join("");
-  return `<div class="narrow mat-st">${searchBar("Teil oder Nummer suchen")}
+  const AO=typeof anfOffen==="function"?anfOffen():[], an=AO.filter(a=>a.status==="angefordert").length, be=AO.filter(a=>a.status==="bestellt").length;
+  return `<div class="narrow mat-st"><button class="vg-start af-start" data-act="nav" data-v="materialanf"><span class="vg-si">${icon("lager")}</span><span class="vg-st"><b>Materialanforderungen</b>
+    <span>${AO.length?[an&&`${an} angefordert`,be&&`${be} bestellt`].filter(Boolean).join(" · "):"Material anfordern oder Stand ansehen"}</span></span>${icon("chev")}</button>
+    ${searchBar("Teil oder Nummer suchen")}
     <div class="chips filt mat-chips">${chips}</div>
     <div class="mat-opt"><div class="mat-sortw">${f==="haeufig"?"":seg("matSort",MAT_SORT(),[["kat","Kategorie"],["az","A–Z"],["haeufig","Häufig"]])}</div><div class="seg mat-ans" role="group">${[["liste","ansListe","Liste"],["kacheln","ansKachel","Kacheln"]].map(([v,ic,l])=>`<button type="button" data-act="matAns" data-v="${v}" aria-pressed="${MAT_ANS()===v}" aria-label="${l}" title="${l}">${icon(ic)}</button>`).join("")}</div></div>
     <div id="res">${materialListe()}</div>
