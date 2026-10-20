@@ -975,6 +975,17 @@ body[data-speichert="1"] .avatar::after{display:block!important;background:var(-
 
 /* Tastatur auf dem iPad: feste Leisten um den Versatz der sichtbaren Fläche nach unten schieben */
 @media (min-width:744px){ .topbar,body .navbar,.edk{translate:0 var(--vvt,0px)} html::after{translate:0 var(--vvt,0px)} }
+
+/* Profil */
+.avatar.mit-bild{background-size:cover;background-position:center}
+.pf-kopf{display:flex;gap:16px;align-items:center}
+.pf-bild{position:relative;width:88px;height:88px;border-radius:50%;border:0;background:var(--pc) center/cover no-repeat;color:var(--on-pc);font-size:28px;font-weight:800;display:grid;place-items:center;flex:none;cursor:pointer;padding:0}
+.pf-cam{position:absolute;right:-2px;bottom:-2px;width:32px;height:32px;border-radius:50%;background:var(--fab);color:#fff;display:grid;place-items:center}
+.pf-cam .ic{width:18px;height:18px}
+.pf-info{display:flex;flex-direction:column;gap:2px;min-width:0}.pf-info b{font-size:15px;overflow:hidden;text-overflow:ellipsis}
+.pf-rolle{align-self:flex-start;margin-top:4px;padding:2px 10px;border-radius:10px;background:var(--sec-c);color:var(--on-sec-c);font-size:13px;font-weight:700}
+.pf-info small{font-size:12px;color:var(--on-sv)}
+.pf-weg{margin-top:4px}
 </style>
 </head>
 <body class="is-list">
@@ -1162,8 +1173,8 @@ const CONFIG=Object.assign({
 const SYNC_ON=!!(CONFIG.tenantId&&CONFIG.clientId&&CONFIG.shareUrl);
 
 const TH_KEY="evse_theme", OLD_KEY="evse_protos_v1";
-const KINDS=["kunden","standorte","ladeparks","pruefungen","katalog","geraete"];
-const DB={kunden:new Map(),standorte:new Map(),ladeparks:new Map(),pruefungen:new Map(),katalog:new Map(),geraete:new Map()};
+const KINDS=["kunden","standorte","ladeparks","pruefungen","katalog","geraete","profile"];
+const DB={kunden:new Map(),standorte:new Map(),ladeparks:new Map(),pruefungen:new Map(),katalog:new Map(),geraete:new Map(),profile:new Map()};
 let META={profil:{name:""},pins:[],archiv:[],filter:"alle",sync:{}};
 let cur=null, nav={v:"start"}, saveTimer=null, dirtyCur=false, dataDB=null, query="";
 let ME={name:"",mail:"",admin:false,signedIn:false};
@@ -1301,7 +1312,7 @@ async function gj(path,opt){ const r=await g(path,opt); if(!r.ok) throw Object.a
 const b64u=s=>btoa(unescape(encodeURIComponent(s))).replace(/=+$/,"").replace(/\//g,"_").replace(/\+/g,"-");
 /* Ablage: eine SharePoint-Website mit drei Bibliotheken. Welche Daten in welche Bibliothek gehören, steht in BIB.
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
-const BIB={kunden:"Kundendaten",standorte:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",
+const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",
   ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
   baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Prüfprotokolle"};
 async function syncRoot(){
@@ -1899,6 +1910,7 @@ function weiterKnopf(s,st){ const li=st==="geraet"?-1:+st.slice(2), k=(v,t)=>`<d
   document.addEventListener("transitionend",bald,true); bald();
 })();
 /*DEMO*/
+/*PROFIL*/
 function render(){
   const app=$("#app"), ed=EDITOR.includes(nav.v);
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
@@ -1949,7 +1961,7 @@ function render(){
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
   f.classList.toggle("fab-rund",!!fab&&!fab[1]); $("#fabm")?.remove();
   if(fab){ f.dataset.act=fab[0]; f.setAttribute("aria-label",fab[1]||"Neu anlegen"); f.innerHTML=`${icon(fab[2])}${fab[1]?`<span>${fab[1]}</span>`:""}`; }
-  $("#avTxt").textContent=initials(ME.name||META.profil.name); $("#avBtn").dataset.sync=SY.state;
+  profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); $("#avBtn").dataset.sync=SY.state; profilAvatar();
   if(E&&!canEdit(cur)) applyRO();
 }
 function applyRO(){
@@ -3102,13 +3114,7 @@ document.addEventListener("click",ev=>{
   case "filter": META.filter=b.dataset.v; metaSave(); softRender(); return;
   case "fPop": filterPop(b,b.dataset.n); return;
   case "fWeg": fWeg(b.dataset.n,false); return;
-  case "konto": {
-    if(!SYNC_ON){ go({v:"team"}); return; }
-    if(false){ dialog("Mein Name",`<div class="fg1">${tf("name","Name (erscheint als Prüfer und Ersteller)",META.profil.name,{form:true})}</div><p class="sup" style="margin:12px 0 0">Die Anmeldung mit dem Microsoft-Konto wird freigeschaltet, sobald die IT die App eingerichtet hat. Bis dahin bleibt alles auf diesem Gerät.</p>`,`<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="saveName">Speichern</button>`); return; }
-    dialog("Konto",`<div class="konto"><span class="avatar-big">${esc(initials(ME.name))}</span><div><b>${esc(ME.name)}</b><span>${esc(ME.mail)}</span><span>${ME.admin?"Rolle: Admin – darf alle Prüfungen bearbeiten":"Rolle: Prüfer – bearbeitet eigene Prüfungen"}</span></div></div><p class="sup" id="syncState" style="margin:16px 0 0">${esc(syncText())}</p>`,
-      `<button class="btn-text danger" data-act="logout">Abmelden</button><span style="flex:1"></span><button class="btn-text" data-act="syncNow">Jetzt abgleichen</button><button class="btn-text" data-act="cancel">Schließen</button>`); return; }
-  case "saveName": { const v=formVals().name; META.profil.name=v; metaSave(); setMe(); closeOverlays(); render(); toast("Name gespeichert");
-    if(nachName&&v){ const n=nachName; nachName=null; if($("#fab").dataset.act===n) $("#fab").click(); else if(n==="newAny"){ pick={mode:"new"}; pickDialog(); } } return; }
+  case "konto": if(!SYNC_ON){ go({v:"team"}); return; } kontoDialog(); return;
   case "logout": confirmDlg("Abmelden?","Nicht abgeglichene Änderungen bleiben auf dem Gerät und werden nach der nächsten Anmeldung hochgeladen.","Abmelden","logoutOk"); return;
   case "logoutOk": Auth.logout(); return;
   case "railToggle": railOpen=!railOpen; $("#railBtn").innerHTML=icon(railOpen?"menuOpen":"menu"); try{localStorage.setItem("evse_rail",railOpen?"1":"0");}catch(e){} document.body.classList.toggle("rail-open",railOpen); render(); return;

@@ -1103,6 +1103,17 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 .db-fuss{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:8px}
 .db-fuss .btn-text{display:inline-flex;align-items:center;gap:4px}.db-fuss .btn-text .ic{width:20px;height:20px}
 .db-kpis .kpi span{font-size:12px;line-height:1.25}
+
+/* Profil */
+.avatar.mit-bild{background-size:cover;background-position:center}
+.pf-kopf{display:flex;gap:16px;align-items:center}
+.pf-bild{position:relative;width:88px;height:88px;border-radius:50%;border:0;background:var(--pc) center/cover no-repeat;color:var(--on-pc);font-size:28px;font-weight:800;display:grid;place-items:center;flex:none;cursor:pointer;padding:0}
+.pf-cam{position:absolute;right:-2px;bottom:-2px;width:32px;height:32px;border-radius:50%;background:var(--fab);color:#fff;display:grid;place-items:center}
+.pf-cam .ic{width:18px;height:18px}
+.pf-info{display:flex;flex-direction:column;gap:2px;min-width:0}.pf-info b{font-size:15px;overflow:hidden;text-overflow:ellipsis}
+.pf-rolle{align-self:flex-start;margin-top:4px;padding:2px 10px;border-radius:10px;background:var(--sec-c);color:var(--on-sec-c);font-size:13px;font-weight:700}
+.pf-info small{font-size:12px;color:var(--on-sv)}
+.pf-weg{margin-top:4px}
 </style>
 </head>
 <body class="is-list">
@@ -1211,7 +1222,7 @@ async function g(path,opt={}){
 async function gj(path,opt){ const r=await g(path,opt); if(!r.ok) throw Object.assign(new Error(`Microsoft meldet Fehler ${r.status}`),{status:r.status}); return r.status===204?null:r.json(); }
 /* Ablage: eine SharePoint-Website mit drei Bibliotheken. Welche Daten in welche Bibliothek gehören, steht in BIB.
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
-const BIB={kunden:"Kundendaten",standorte:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",
+const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",
   ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
   baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Kundendaten"};
 async function syncRoot(){
@@ -1489,7 +1500,7 @@ const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
 
 const TH_KEY="evse_theme";
 const RES_TXT={ok:"fertig",bad:"Mängel",open:"offen",wip:"in Arbeit"};
-const KINDS=["kunden","standorte","ladeparks","pruefungen","baustellen","eintraege","einstellungen","dateien","vorgaenge","geraete","anforderungen"];
+const KINDS=["kunden","standorte","ladeparks","pruefungen","baustellen","eintraege","einstellungen","dateien","vorgaenge","geraete","anforderungen","profile"];
 const EVSE_KINDS=["kunden","standorte","ladeparks","pruefungen"], BAU_KINDS=["baustellen","eintraege","anforderungen"];
 const DB=Object.fromEntries(KINDS.map(k=>[k,new Map()]));
 let META={profil:{name:""},sync:{}};
@@ -1512,7 +1523,7 @@ function dbPut(kind,rec){ DB[kind].set(rec.id,rec); const db=dbOf(kind); if(!db)
   if(kind==="einstellungen") einstSetzen(live("einstellungen")); }
 function metaSave(){ if(aDB) try{ aDB.transaction("meta","readwrite").objectStore("meta").put(META,"meta"); }catch(e){} }
 async function dataLoad(){
-  try{ kDB=await openStores("evse_daten",[...EVSE_KINDS,"katalog"],true); bDB=await openStores("baustelle_daten",BAU_KINDS,true); aDB=await openStores("irrgang_apps",["einstellungen","dateien","vorgaenge","geraete"],true);
+  try{ kDB=await openStores("evse_daten",[...EVSE_KINDS,"katalog"],true); bDB=await openStores("baustelle_daten",BAU_KINDS,true); aDB=await openStores("irrgang_apps",["einstellungen","dateien","vorgaenge","geraete","profile"],true);
     for(const k of KINDS){ (await idbReq(dbOf(k).transaction(k).objectStore(k).getAll())).forEach(r=>DB[k].set(r.id,r)); }
     const m=await idbReq(aDB.transaction("meta").objectStore("meta").get("meta")); if(m) META=Object.assign(META,m);
   }catch(e){ kDB=bDB=aDB=null; toast("Gerätespeicher nicht verfügbar – Daten nur bis zum Schließen"); }
@@ -1902,6 +1913,7 @@ document.addEventListener("click",e=>{
   document.addEventListener("transitionend",bald,true); bald();
 })();
 /*DEMO*/
+/*PROFIL*/
 /*ANFORDERUNG*/
 /*VORGAENGE*/
 function render(){
@@ -1942,7 +1954,7 @@ function render(){
   $("#topTitle").innerHTML=title?`<span>${esc(title)}</span>${sub?`<small>${esc(String(sub).split(/\s*›\s*/).pop())}</small>`:""}`:"";
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
   if(fab){ f.dataset.act=fab[0]; f.setAttribute("aria-label",fab[1]); f.innerHTML=`${icon(fab[2])}<span>${fab[1]}</span>`; }
-  $("#avTxt").textContent=initials(ME.name||META.profil.name); $("#avBtn").dataset.sync=SY.state; mlGlocke();
+  profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); $("#avBtn").dataset.sync=SY.state; profilAvatar(); mlGlocke();
   bilderFuellen();
 }
 
@@ -1951,8 +1963,8 @@ function gruss(){ const h=new Date().getHours(); return h<11?"Guten Morgen":h<18
 function startView(){
   const kacheln=APPS.map(a=>a.geplant?`<div class="app-k geplant"><span class="app-ph">${icon("bulb")}</span><span class="app-t"><b>${a.name}</b><span>${a.text}</span></span>${pill("open","in Planung")}</div>`
     :`<a class="app-k" href="${a.href}"><img src="${a.ic}" alt=""><span class="app-t"><b>${a.name}</b><span>${a.text}</span></span>${icon("chev")}</a>`).join("");
-  let h=`<div class="narrow"><h2 class="gruss">${gruss()}${ME.name?`, ${esc(ME.name)}`:""}</h2>${vgStartKarte()}<div class="apps app-weiter">${kacheln}</div>`;
-  if(anfVerw()) return `<div class="narrow"><h2 class="gruss">${gruss()}${ME.name?`, ${esc(ME.name)}`:""}</h2>${dashboard()}<div class="sec-lbl" style="margin-top:24px">Apps</div><div class="apps app-weiter">${kacheln}</div></div>`;
+  let h=`<div class="narrow"><h2 class="gruss">${gruss()}${ME.ruf||ME.name?`, ${esc(ME.ruf||ME.name)}`:""}</h2>${vgStartKarte()}<div class="apps app-weiter">${kacheln}</div>`;
+  if(anfVerw()) return `<div class="narrow"><h2 class="gruss">${gruss()}${ME.ruf||ME.name?`, ${esc(ME.ruf||ME.name)}`:""}</h2>${dashboard()}<div class="sec-lbl" style="margin-top:24px">Apps</div><div class="apps app-weiter">${kacheln}</div></div>`;
   if(ME.admin){
     const bs=echt("baustellen"), F=faellig(), t=today(), bald=new Date(Date.now()+90*864e5).toISOString().slice(0,10);
     const inArbeit=echt("pruefungen").filter(p=>["wip","open"].includes(pStand(p))).length;
@@ -2212,8 +2224,6 @@ function mehrView(){
       ${SYNC_ON?row("konto","person","Konto",esc(ME.name)):""}
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}${ME.admin?" · Admin":""}`)):""}
       ${row("theme","theme","Darstellung",TH_LABEL[theme])}</div>
-    <div class="sec-lbl">Vorführen</div><div class="list">
-      </div>
     ${ME.admin?`<div class="sec-lbl">Verwaltung</div><div class="list">
       ${row("nav:team","person","Mitarbeiter und Rechte",`${team().length} aktiv · Protokolle an ${esc(mailAn())}`)}</div>`:""}
     <div class="app-weiter"><div class="sec-lbl">Apps</div>${listOf(APPS.filter(a=>!a.geplant).map(a=>`<a class="li" href="${a.href}" style="text-decoration:none;color:inherit"><img class="app-mini" src="${a.ic}" alt=""><span class="lt"><span class="h">${a.name}</span><span class="s">${a.text}</span></span>${icon("chev")}</a>`))}</div>
@@ -2309,7 +2319,7 @@ document.addEventListener("click",async ev=>{
   case "railToggle": railOpen=!railOpen; $("#railBtn").innerHTML=icon(railOpen?"menuOpen":"menu"); try{ localStorage.setItem("evse_rail",railOpen?"1":"0"); }catch(e){} document.body.classList.toggle("rail-open",railOpen); render(); return;
   case "login": Auth.login(); return;
   case "relogin": Auth.relogin(); return;
-  case "konto": if(!SYNC_ON){ go({v:"mehr"}); return; } dialog("Konto",`<div class="konto"><span class="avatar-big">${esc(initials(ME.name))}</span><div><b>${esc(ME.name)}</b><span>${esc(ME.mail)}</span><span>${ME.admin?"Rolle: Admin":"Rolle: Mitarbeiter"}</span></div></div>`,`<button class="btn-text danger" data-act="logout">Abmelden</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`); return;
+  case "konto": if(!SYNC_ON){ go({v:"mehr"}); return; } kontoDialog(); return;
   case "logout": Auth.logout(); return;
   case "testLogout": confirmDlg("Abmelden?","Die Daten bleiben auf diesem Gerät.","Abmelden","testLogoutOk"); return;
   case "testLogoutOk": loginMerken(null); delete META.angemeldet; tlSel=null; metaSave(); setMe(); closeOverlays(); go({v:"login"}); return;
