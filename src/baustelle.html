@@ -476,6 +476,12 @@ body.is-login .topbar{display:none}
 @media (min-width:700px){.ngrid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}}
 .nk{display:flex;flex-direction:column;gap:6px;width:100%;text-align:left;border:1px solid var(--outline-v);background:var(--surface);color:var(--on-surface);border-radius:16px;padding:12px 14px;min-width:0;overflow:hidden}
 .nk:hover{background:var(--sc-low)}
+.nk{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:transform .18s cubic-bezier(.2,.8,.2,1)}
+.nk.n-druck{transform:scale(.97)}
+.chips.filt .n-sortk{margin-left:auto;padding:4px 8px 4px 14px!important;display:inline-flex;align-items:center;gap:2px}
+.chips.filt .n-sortk .ic{display:block!important;width:20px;height:20px}
+.mi.an{background:color-mix(in srgb,var(--fab) 14%,transparent)}
+.mi.an .ic{color:var(--fab)}
 .nk-h{font-size:16px;line-height:1.3;overflow-wrap:anywhere}
 .nk-t{margin:0;font-size:14px;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .nk-t.leer{color:var(--on-sv);font-style:italic}
@@ -2170,7 +2176,7 @@ function edKopf(t,s){
   <button class="edk-fertig" data-act="edFertig">Fertig</button></div>`; }
 /* Menü an einem Knopf aufklappen: [act,Text,Symbol,Klasse,{data-…}] */
 function menuAn(btn,items){ const m=$("#menu"); if(!m||!items.length) return;
-  m.innerHTML=items.map(x=>`<button class="mi ${x[3]||""}" role="menuitem" data-act="${x[0]}" ${Object.entries(x[4]||{}).map(([k,v])=>`data-${k}="${esc(v)}"`).join(" ")}>${icon(x[2])}<span>${esc(x[1])}</span></button>`).join("");
+  m.innerHTML=items.map(x=>x==="-"?"<hr>":`<button class="mi ${x[3]||""}" role="menuitem" data-act="${x[0]}" ${Object.entries(x[4]||{}).map(([k,v])=>`data-${k}="${esc(v)}"`).join(" ")}>${icon(x[2])}<span>${esc(x[1])}</span></button>`).join("");
   const r=btn.getBoundingClientRect(); m.style.top=Math.round(r.bottom+6)+"px"; m.style.right=Math.max(8,Math.round(innerWidth-r.right))+"px"; m.style.left="auto";
   m.hidden=false; $("#scrim").hidden=false;
   /* passt das Menü unten nicht mehr hin (z. B. am schwebenden Knopf), klappt es nach oben auf */
@@ -2226,7 +2232,7 @@ function baustelleView(b){
   const [an,am]=afGesamt(b);
   h+=`<div class="b-tabs">${seg("bTab",nav.tab||"uebergaben",[["aufnahme",`Aufnahme${an?` · ${Math.round(an/am*100)} %`:""}`],["uebergaben",`Übergaben${E.length?` · ${E.length}`:""}`]])}</div>`;
   if(nav.tab==="aufnahme") return h+aufnahmeView(b)+`</div>`;
-  const NZ=notizenAlle().filter(n=>n.baustelleId===b.id);
+  const NZ=notizenAlle().filter(n=>n.baustelleId===b.id&&!n.archiv);
   h+=`<div class="sec-row"><div class="sec-lbl">Notizen</div><button class="plus-k" data-act="neueNotizHier" aria-label="Notiz anlegen" title="Notiz anlegen">${icon("add")}</button></div>${NZ.length?nGrid(NZ):`<p class="meta">Eigene Notizen zur Baustelle – z. B. Tagesablauf, Checkliste oder Skizze.</p>`}`;
   h+=`<div class="sec-row"><div class="sec-lbl">Übergaben</div><button class="plus-k" data-act="neuerEintrag" aria-label="Übergabe schreiben" title="Übergabe schreiben">${icon("add")}</button></div>`;
   h+=E.length?E.map((e,i)=>eintragKarte(e,i===0)).join(""):`<p class="meta">Noch keine Übergabe. Am Ende des Tages kurz festhalten: Stand, was offen ist und welches Material morgen gebraucht wird.</p>`;
@@ -2381,25 +2387,38 @@ function nKarte(n){
   const bs=n.baustelleId&&DB.baustellen.get(n.baustelleId), meine=istMeine(n);
   if(n.board&&!teile.length) teile.push(`<p class="nk-t leer">Leeres Whiteboard</p>`);
   return `<button class="nk${n.board?" nk-board":""}" data-act="nOeffnen" data-id="${esc(n.id)}">${n.titel?`<b class="nk-h">${esc(n.titel)}</b>`:""}${teile.join("")||(!n.titel?`<p class="nk-t leer">Leere Notiz</p>`:"")}
-    <span class="nk-fuss"><span class="nk-s" title="${esc(SICHT_TXT[n.sicht||"privat"])}">${icon(SICHT_IC[n.sicht||"privat"])}${esc(meine?sichtText(n):vonText(n))}</span>${n.board?`<span class="nk-b">${icon("board")}Whiteboard</span>`:""}${bs?`<span class="nk-b">${icon("baustelle")}${esc(bs.name)}</span>`:""}<span class="nk-w">${esc(wann(n.updated))}</span></span></button>`;
+    <span class="nk-fuss"><span class="nk-s" title="${esc(SICHT_TXT[n.sicht||"privat"])}">${icon(SICHT_IC[n.sicht||"privat"])}${esc(meine?sichtText(n):vonText(n))}</span>${nPins().includes(n.id)?`<span class="nk-b">${icon("pin")}Angepinnt</span>`:""}${n.board?`<span class="nk-b">${icon("board")}Whiteboard</span>`:""}${bs?`<span class="nk-b">${icon("baustelle")}${esc(bs.name)}</span>`:""}<span class="nk-w">${esc(wann(n.updated))}</span></span></button>`;
 }
 const nGrid=L=>`<div class="ngrid">${L.map(nKarte).join("")}</div>`;
+/* Sortierung und Anzeige der Notizenliste (merkt sich das Gerät) */
+const N_SORT=[["geaendert","Zuletzt geändert","cal"],["erstellt","Zuletzt erstellt","add"],["titel","Titel A–Z","swapV"],["baustelle","Nach Baustelle","baustelle"]];
+const N_TYP=[["","Alles anzeigen","notes"],["notiz","Nur Notizen","notiz"],["board","Nur Whiteboards","board"]];
+const nPins=()=>Array.isArray(META.npins)?META.npins:(META.npins=[]);
+const nTitel=n=>String(n.titel||"").trim()||(n.board?"Whiteboard":((n.bloecke||[]).map(b=>String(b.text||"").trim()||((b.items||[]).find(i=>String(i.t||"").trim())||{}).t).find(Boolean)||"Notiz"));
+function nSortiert(L){ const s=META.nsort||"geaendert", t=META.ntyp||"";
+  L=L.filter(n=>!t||(t==="board"?!!n.board:!n.board));
+  const bn=n=>((n.baustelleId&&DB.baustellen.get(n.baustelleId))||{}).name||"\uffff";
+  const cmp=s==="titel"?(a,b)=>nTitel(a).localeCompare(nTitel(b),"de"):s==="erstellt"?(a,b)=>(b.created||0)-(a.created||0):s==="baustelle"?(a,b)=>bn(a).localeCompare(bn(b),"de")||(b.updated||0)-(a.updated||0):(a,b)=>(b.updated||0)-(a.updated||0);
+  return L.slice().sort(cmp); }
 function notizenListe(){
   const q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
   const f=META.nfilter||"meine";
-  const L=notizenAlle().filter(n=>q?(H(n.titel)||(n.bloecke||[]).some(b=>H(b.text)||(b.items||[]).some(i=>H(i.t))||(b.striche||[]).some(x=>x.s&&H(x.s)))):(f==="meine"?istMeine(n):!istMeine(n)));
-  if(!L.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:f==="meine"?"Noch keine eigenen Notizen.":"Noch hat niemand eine Notiz mit dir geteilt."}</p>`;
-  return nGrid(L);
+  let L=notizenAlle().filter(n=>q?(H(n.titel)||(n.bloecke||[]).some(b=>H(b.text)||(b.items||[]).some(i=>H(i.t))||(b.striche||[]).some(x=>x.s&&H(x.s)))):f==="archiv"?istMeine(n)&&n.archiv:!n.archiv&&(f==="meine"?istMeine(n):!istMeine(n)));
+  L=nSortiert(L);
+  if(!L.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:META.ntyp?"Keine passenden Einträge.":f==="meine"?"Noch keine eigenen Notizen.":f==="archiv"?"Keine archivierten Notizen.":"Noch hat niemand eine Notiz mit dir geteilt."}</p>`;
+  const P=nPins(), oben=q?[]:L.filter(n=>P.includes(n.id)), rest=L.filter(n=>!oben.includes(n));
+  return oben.length?`<div class="sec-lbl">Angepinnt</div>${nGrid(oben)}${rest.length?`<div class="sec-lbl">Weitere</div>${nGrid(rest)}`:""}`:nGrid(L);
 }
 function notizenView(){
-  const alle=notizenAlle(), nM=alle.filter(istMeine).length, nG=alle.length-nM, f=META.nfilter||"meine";
+  const alle=notizenAlle(), akt=alle.filter(n=>!n.archiv), nM=akt.filter(istMeine).length, nG=akt.length-nM, nA=alle.filter(n=>istMeine(n)&&n.archiv).length, f=META.nfilter||"meine", so=N_SORT.find(x=>x[0]===(META.nsort||"geaendert"))||N_SORT[0], ty=N_TYP.find(x=>x[0]===(META.ntyp||""));
   if(!alle.length) return `<div class="empty">${icon("notiz")}<h2>Noch keine Notizen</h2><p>Für Tagesablauf, Checklisten, Skizzen und Fotos – wie ein Notizblock. Für größere Planungen gibt es Whiteboards mit Haftnotizen. Beim Speichern legst du fest, wer die Notiz sehen darf.</p></div>`;
   return `<div class="wide-n">${searchBar("Notizen durchsuchen")}
-    <div class="chips filt"><button class="chip" data-act="nFilter" data-v="meine" aria-pressed="${f==="meine"}">${icon("check")}Meine (${nM})</button><button class="chip" data-act="nFilter" data-v="geteilt" aria-pressed="${f==="geteilt"}">${icon("check")}Mit mir geteilt (${nG})</button></div>
+    <div class="chips filt"><button class="chip" data-act="nFilter" data-v="meine" aria-pressed="${f==="meine"}">${icon("check")}Meine (${nM})</button><button class="chip" data-act="nFilter" data-v="geteilt" aria-pressed="${f==="geteilt"}">${icon("check")}Mit mir geteilt (${nG})</button>${nA||f==="archiv"?`<button class="chip" data-act="nFilter" data-v="archiv" aria-pressed="${f==="archiv"}">${icon("check")}Archiv (${nA})</button>`:""}
+      <button class="chip n-sortk" data-act="nSortMenu" aria-label="Sortieren und filtern">${esc(so[1])}${META.ntyp?` · ${esc(ty[1].replace("Nur ",""))}`:""}${icon("drop")}</button></div>
     <div id="res">${notizenListe()}</div></div>`;
 }
 
-let nEntw=null, nZurueck=null, nTimer=null;
+let nEntw=null, nZurueck=null, nTimer=null, nkNameId=null;
 const nNeuBlock=typ=>typ==="check"||typ==="liste"?{id:uid(),typ,items:[{id:uid(),t:"",ok:false}]}:typ==="zeichnung"?{id:uid(),typ,striche:[],h:600}:{id:uid(),typ,text:""};
 function notizNeu(o={}){ nZurueck=nav; ED.st="leer"; nEdit=null; nEntw={id:uid(),neu:true,titel:"",sicht:"privat",personen:[],baustelleId:o.baustelleId||"",bloecke:[nNeuBlock(o.typ||"text")]}; go({v:"notiz"}); setTimeout(()=>{ const e=$(o.typ==="check"?".ni input":".n-ta"); if(e) e.focus(); },50); }
 function notizOeffnen(id){ const n=DB.notizen.get(id); if(!n) return; nZurueck=nav; ED.st="ok"; nEdit=null; nEntw=JSON.parse(JSON.stringify(n));
@@ -2534,6 +2553,19 @@ function nWischEnde(e){ const w=nSw; nSw=null; if(!w||!w.an||(e&&e.pointerId!==w
   if(w.dx>grenze&&w.ni&&b&&b.typ==="check"){ weg(); notizKlick("nCheck",fake); return; }
   w.el.style.transition="transform .2s cubic-bezier(.2,.8,.2,1)"; w.el.style.transform="translateX(0)"; setTimeout(weg,210); }
 document.addEventListener("pointerup",nWischEnde,true); document.addEventListener("pointercancel",e=>{ const w=nSw; if(w&&w.an){ nWischEnde(e); } else nSw=null; },true);
+/* Notiz-Karten in Listen: gedrückt halten (oder Rechtsklick) ⇒ Anpinnen, Umbenennen, Teilen, Archivieren, Löschen */
+let nkLP=null;
+document.addEventListener("pointerdown",e=>{ if(nkLP){ clearTimeout(nkLP.t); nkLP=null; } const k=e.target.closest&&e.target.closest(".nk[data-id]"); if(!k||(e.pointerType==="mouse"&&e.button!==0)) return;
+  const x=e.clientX, y=e.clientY; k.classList.add("n-druck");
+  nkLP={k,x,y,t:setTimeout(()=>{ nkLP=null; k.classList.remove("n-druck"); nLang=true; setTimeout(()=>{ nLang=false; },900); try{ navigator.vibrate&&navigator.vibrate(10); }catch(z){} nkMenu(k.dataset.id,x,y); },450)}; },true);
+const nkStop=()=>{ if(nkLP){ clearTimeout(nkLP.t); nkLP.k.classList.remove("n-druck"); nkLP=null; } };
+["pointerup","pointercancel"].forEach(t=>document.addEventListener(t,nkStop,true));
+document.addEventListener("pointermove",e=>{ if(nkLP&&Math.hypot(e.clientX-nkLP.x,e.clientY-nkLP.y)>8) nkStop(); },true);
+addEventListener("scroll",nkStop,{passive:true});
+document.addEventListener("contextmenu",e=>{ const k=e.target.closest&&e.target.closest(".nk[data-id]"); if(!k) return; e.preventDefault(); nkStop(); if(e.pointerType==="touch"||e.button!==2) return; nkMenu(k.dataset.id,e.clientX,e.clientY); });
+function nkMenu(id,x,y){ const n=DB.notizen.get(id); if(!n||n.deleted) return; const d={id}, pin=nPins().includes(id), meine=istMeine(n);
+  menuAt(x,y,[["nkPin",pin?"Nicht mehr anpinnen":"Anpinnen",pin?"pinOff":"pin","",d],
+    ...(meine?[["nkName","Umbenennen","edit","",d],["nkTeilen",`Teilen · ${n.sicht==="personen"?sichtText(n):SICHT_TXT[n.sicht||"privat"]}`,SICHT_IC[n.sicht||"privat"],"",d],["nkArch",n.archiv?"Aus dem Archiv holen":"Archivieren",n.archiv?"unarchive":"archive","",d],"-",["nkDel","Löschen","del","danger",d]]:[])]); }
 /* iOS soll beim Gedrückthalten keinen Text markieren (außer in einem offenen Eingabefeld) */
 document.addEventListener("selectstart",e=>{ if(nav.v!=="notiz") return; const t=e.target&&(e.target.nodeType===3?e.target.parentElement:e.target); if(!t||!t.closest||!t.closest("input,textarea")) e.preventDefault(); });
 function menuAt(x,y,items){ const m=$("#menu"); if(!m||!items.length) return;
@@ -2553,16 +2585,19 @@ function nBlockNeu(b,fokus,pos){ nEditAus(fokus); const el=b&&document.querySele
   const y=scrollY, L=nEntw.bloecke; el.outerHTML=nBlockHtml(b,false,L.indexOf(b),L.length); if(scrollY!==y) scrollTo(0,y);
   nGrow(); if(fokus){ const f=document.querySelector(fokus); if(f){ f.focus({preventScroll:true}); const p=pos==null?f.value.length:pos; if(f.setSelectionRange) try{ f.setSelectionRange(p,p); }catch(x){} } } }
 function nGrow(){ document.querySelectorAll(".n-ta").forEach(t=>{ t.style.height="auto"; t.style.height=t.scrollHeight+"px"; }); }
-function sichtDialog(){
-  const e=nEntw, andere=team().filter(m=>m.mail!==ichMail());
+let nSichtRec=null;
+function sichtDialog(rec){
+  nSichtRec=rec||null; if(rec) nSichtRec._sw={sicht:rec.sicht||"privat",personen:[...(rec.personen||[])]};
+  const e=rec?rec._sw:nEntw, andere=team().filter(m=>m.mail!==ichMail());
   dialog("Wer soll die Notiz sehen?",`<div class="sicht">${SICHT.map(([v,t,ic])=>`<button class="radio" role="radio" data-act="nSicht" data-v="${v}" aria-checked="${e.sicht===v}"><span class="rb"></span>${icon(ic)}${t}</button>`).join("")}</div>
     <div class="n-pers" ${e.sicht==="personen"?"":"hidden"}>${andere.length?andere.map(m=>`<label class="n-p"><input type="checkbox" value="${esc(m.mail)}" ${(e.personen||[]).includes(m.mail)?"checked":""}><span>${esc(m.name)}</span></label>`).join(""):`<p class="meta">Keine weiteren Mitarbeiter eingetragen.</p>`}</div>
     <p class="sup" style="margin:12px 0 0">${SYNC_ON?"Andere sehen die Notiz nach dem nächsten Abgleich.":"Hinweis: Solange die Microsoft-Anbindung fehlt, bleibt jede Notiz auf diesem Gerät."}</p>`,
     `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="nSichtOk">Übernehmen</button>`);
 }
 function nSichtOk(){
-  const e=nEntw; if(!e) return;
+  const r=nSichtRec, e=r?r._sw:nEntw; if(!e) return;
   if(e.sicht==="personen"){ e.personen=[...document.querySelectorAll(".n-pers input:checked")].map(x=>x.value); if(!e.personen.length){ toast("Bitte mindestens eine Person auswählen"); return; } } else e.personen=[];
+  if(r){ r.sicht=e.sicht; r.personen=e.personen; delete r._sw; nSichtRec=null; saveRec("notizen",r); closeOverlays(); render(); toast(r.sicht==="privat"?"Nur für dich sichtbar":`Sichtbar für ${sichtText(r)}`); return; }
   closeOverlays(); nAuto(); nRender(); toast(e.sicht==="privat"?"Nur für dich sichtbar":`Sichtbar für ${sichtText(e)}`);
 }
 async function notizFotoAufnehmen(el){
@@ -2616,6 +2651,20 @@ function notizKlick(a,el){
   case "neuesBoard": boardNeu({baustelleId:el.dataset.bs||""}); return true;
   case "nOeffnen": notizOeffnen(el.dataset.id); return true;
   case "nFilter": META.nfilter=el.dataset.v; metaSave(); render(); return true;
+  case "nSortMenu": { const s=META.nsort||"geaendert", t=META.ntyp||"";
+    menuAn(el,[...N_SORT.map(([v,l,ic])=>["nSort",l,ic,v===s?"an":"",{v}]),"-",...N_TYP.map(([v,l,ic])=>["nTyp",l,ic,v===t?"an":"",{v}])]); return true; }
+  case "nSort": META.nsort=el.dataset.v; metaSave(); closeOverlays(); render(); return true;
+  case "nTyp": META.ntyp=el.dataset.v; metaSave(); closeOverlays(); render(); return true;
+  case "nkPin": { closeOverlays(); const P=nPins(), id=el.dataset.id, i=P.indexOf(id); if(i>=0) P.splice(i,1); else P.unshift(id); metaSave(); render(); toast(i<0?"Angepinnt – steht jetzt oben":"Nicht mehr angepinnt"); return true; }
+  case "nkName": { const n=DB.notizen.get(el.dataset.id); if(!n) return true; closeOverlays(); nkNameId=n.id;
+    dialog("Umbenennen",`<div class="fg1">${tf("titel","Titel",n.titel||"",{form:true,ph:n.board?"Whiteboard":"Titel"})}</div>`,`<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="nkNameOk">Speichern</button>`);
+    setTimeout(()=>{ const f=$("#f_titel"); if(f){ f.focus(); f.select(); } },60); return true; }
+  case "nkNameOk": { const n=DB.notizen.get(nkNameId); const v=String(formVals().titel||"").trim(); if(n&&istMeine(n)){ n.titel=v; saveRec("notizen",n); } nkNameId=null; closeOverlays(); render(); return true; }
+  case "nkTeilen": { const n=DB.notizen.get(el.dataset.id); closeOverlays(); if(n&&istMeine(n)) sichtDialog(n); return true; }
+  case "nkArch": { const n=DB.notizen.get(el.dataset.id); closeOverlays(); if(!n||!istMeine(n)) return true; const an=!n.archiv; if(an) n.archiv=true; else delete n.archiv; saveRec("notizen",n); render();
+    toast(an?"Archiviert":"Aus dem Archiv geholt","Rückgängig",()=>{ if(an) delete n.archiv; else n.archiv=true; saveRec("notizen",n); render(); }); return true; }
+  case "nkDel": { const n=DB.notizen.get(el.dataset.id); closeOverlays(); if(!n||!istMeine(n)) return true; n.deleted=true; saveRec("notizen",n); render();
+    toast(`„${nTitel(n)}“ gelöscht`,"Rückgängig",()=>{ n.deleted=false; saveRec("notizen",n); render(); }); return true; }
   case "nAdd": { const t=el.dataset.v; if(t==="foto"){ $("#fotoFile").click(); return true; } const b=nNeuBlock(t); nEntw.bloecke.push(b); nAuto();
     if(t==="zeichnung"){ nRender(); zeichnenOeffnen(b); return true; } nRender(t==="text"?`.n-ta[data-b="${b.id}"]`:`input[data-b="${b.id}"]`); return true; }
   case "nBlockDel": { const b=nBlock(el.dataset.b); if(!b) return true; const vorher=nEntw.bloecke.slice(); if(b.typ!=="foto") setTimeout(()=>toast("Gelöscht","Rückgängig",()=>{ if(nEntw){ nEntw.bloecke=vorher; nAuto(); nRender(); } }),0); nEntw.bloecke=nEntw.bloecke.filter(x=>x!==b); if(!nEntw.bloecke.length) nEntw.bloecke.push(nNeuBlock("text")); if(b.typ==="foto") fotoDel([b.foto]); nAuto(); nRender(); return true; }
@@ -2630,7 +2679,7 @@ function notizKlick(a,el){
   case "nZeichnen": { const b=nBlock(el.dataset.b); if(b) zeichnenOeffnen(b); return true; }
   case "nFotoShow": { const b=nBlock(el.dataset.b); if(b) dialog("Foto",`<img class="dimg" src="${fotoCache.get(b.foto)||""}" alt="">`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return true; }
   case "nSpeichern": if(nEntw&&istMeine(nEntw)) notizFertig(); else notizVerlassen(); return true;
-  case "nSicht": { nEntw.sicht=el.dataset.v; document.querySelectorAll('#dlg [data-act="nSicht"]').forEach(x=>x.setAttribute("aria-checked",String(x===el))); const p=$(".n-pers"); if(p) p.hidden=nEntw.sicht!=="personen"; return true; }
+  case "nSicht": { (nSichtRec?nSichtRec._sw:nEntw).sicht=el.dataset.v; document.querySelectorAll('#dlg [data-act="nSicht"]').forEach(x=>x.setAttribute("aria-checked",String(x===el))); const p=$(".n-pers"); if(p) p.hidden=(nSichtRec?nSichtRec._sw:nEntw).sicht!=="personen"; return true; }
   case "nSichtOk": nSichtOk(); return true;
   case "nDelAsk": if(nEntw&&!DB.notizen.has(nEntw.id)){ notizKlick("nDel",el); return true; } confirmDlg("Notiz löschen?","Die Notiz wird für alle entfernt, mit denen sie geteilt ist.","Löschen","nDel"); return true;
   case "nDel": { clearTimeout(nTimer); closeOverlays(); const r=DB.notizen.get(nEntw&&nEntw.id); if(r&&istMeine(r)){ r.deleted=true; fotoDel((r.bloecke||[]).filter(b=>b.typ==="foto").map(b=>b.foto)); r.bloecke=[]; saveRec("notizen",r); } else if(nEntw) fotoDel(nEntw.bloecke.filter(b=>b.typ==="foto").map(b=>b.foto)); nEntw=null; const z=nZurueck; nZurueck=null; go(z&&z.v!=="notiz"?z:{v:"notizen"}); toast(r?"Notiz gelöscht":"Notiz verworfen"); return true; }
