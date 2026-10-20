@@ -32,6 +32,8 @@ const TIP_PC=matchMedia("(hover:hover) and (pointer:fine)");
 let tipEl=null, tipT=null, tipZiel=null;
 function tipWeg(){ clearTimeout(tipT); tipT=null; tipZiel=null; if(tipEl) tipEl.classList.remove("an"); }
 function tipZeigen(t){
+  /* der rote Knopf wechselt je Seite – Text erst beim Zeigen aus seiner aktuellen Beschriftung bilden */
+  if(t.dataset.tipFab){ const l=(t.getAttribute("aria-label")||"").trim(); t.dataset.tip=!l?"Neu anlegen":/\s/.test(l)||/anlegen|erstellen/i.test(l)?l:`${l} anlegen`; }
   if(!t.isConnected||!t.dataset.tip) return;
   if(!tipEl){ tipEl=document.createElement("div"); tipEl.className="tip"; tipEl.setAttribute("role","tooltip"); document.body.appendChild(tipEl); }
   tipEl.innerHTML=`<span>${esc(t.dataset.tip)}</span>${t.dataset.kurz?`<kbd>${esc(t.dataset.kurz)}</kbd>`:""}`;
@@ -41,10 +43,10 @@ function tipZeigen(t){
   tipEl.style.left=Math.round(x)+"px"; tipEl.style.top=Math.round(unten?r.bottom+8:r.top-h-8)+"px";
 }
 document.addEventListener("mouseover",e=>{
-  if(!TIP_PC.matches) return; const t=e.target.closest&&e.target.closest("[title]:not(iframe):not(svg *),[data-tip]");
+  if(!TIP_PC.matches) return; const t=e.target.closest&&e.target.closest("[title]:not(iframe):not(svg *),[data-tip],[data-tip-fab]");
   if(!t||t===tipZiel) return;
   if(t.hasAttribute("title")){ const v=t.getAttribute("title"); t.removeAttribute("title"); if(v){ t.dataset.tip=v; if(!t.getAttribute("aria-label")) t.setAttribute("aria-label",v); } }
-  if(!t.dataset.tip) return; tipWeg(); tipZiel=t; tipT=setTimeout(()=>tipZeigen(t),420);
+  if(!t.dataset.tip&&!t.dataset.tipFab) return; tipWeg(); tipZiel=t; tipT=setTimeout(()=>tipZeigen(t),420);
 });
 document.addEventListener("mouseout",e=>{ if(tipZiel&&!(e.relatedTarget&&tipZiel.contains(e.relatedTarget))) tipWeg(); });
 ["mousedown","keydown","wheel"].forEach(t=>document.addEventListener(t,tipWeg,true)); addEventListener("scroll",tipWeg,true);
@@ -95,4 +97,4 @@ document.addEventListener("keydown",e=>{
     el.dispatchEvent(new MouseEvent("contextmenu",{bubbles:true,cancelable:true,clientX:Math.round(r.left+40),clientY:Math.round(r.top+r.height/2)})); return; }
 });
 /* Kürzel auch in den Hinweis-Blasen zeigen */
-function kuerzelMarken(){ const f=document.getElementById("fab"); if(f){ f.dataset.kurz="N"; f.dataset.tip=f.getAttribute("aria-label")||"Neu anlegen"; } document.querySelectorAll(".sk-zt").forEach(b=>b.dataset.kurz="Alt ←"); const q=document.getElementById("q"); if(q){ q.dataset.kurz="/"; } }
+function kuerzelMarken(){ const f=document.getElementById("fab"); if(f){ f.dataset.kurz="N"; f.dataset.tipFab="1"; } document.querySelectorAll(".sk-zt").forEach(b=>b.dataset.kurz="Alt ←"); const q=document.getElementById("q"); if(q){ q.dataset.kurz="/"; } }
