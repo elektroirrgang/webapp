@@ -349,8 +349,11 @@ details.optrows .mrow:first-of-type{border-top:0}
 .iz a{color:var(--primary);font-weight:600;text-decoration:none;word-break:break-word}
 .infok .iz + .by{margin-top:8px}
 .av-img{overflow:hidden;background:var(--sc-high)}.av-img img{width:100%;height:100%;object-fit:cover}
-.ger-av{position:relative;width:56px;height:56px;border-radius:14px;background:#fff;color:#8a9099}.ger-av .ic{width:26px;height:26px}.ger-av img{position:absolute;inset:0;object-fit:contain;padding:4px;box-sizing:border-box;background:#fff}
-.ger-foto{display:flex;align-items:center;gap:14px;margin:0 0 4px}.ger-foto .ger-av{width:72px;height:72px;flex:none}.ger-foto .ger-av img{padding:6px}.ger-foto-k{display:flex;flex-wrap:wrap;align-items:center;gap:4px}.ger-foto-k .btn-tonal{display:inline-flex;align-items:center;gap:8px;padding:0 18px 0 14px}.ger-foto-k .btn-tonal .ic{width:20px;height:20px}
+.ger-av{position:relative;width:56px;height:56px;border-radius:14px;background:var(--feld);color:var(--on-sv)}.ger-av .ic{width:26px;height:26px}.ger-av img{position:absolute;inset:0;object-fit:contain;padding:4px;box-sizing:border-box;background:#fff}
+.ger-bildzeile{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center}
+@media (max-width:599px){.ger-bildzeile{grid-template-columns:minmax(0,1fr)}}
+.ger-notiz .tf textarea{min-height:80px;height:80px}
+.ger-foto{display:flex;align-items:center;gap:14px}.ger-foto .ger-av{width:72px;height:72px;flex:none}.ger-foto .ger-av img{padding:6px}.ger-foto-k{display:flex;flex-wrap:wrap;align-items:center;gap:4px}.ger-foto-k .btn-tonal{display:inline-flex;align-items:center;gap:8px;padding:0 18px 0 14px}.ger-foto-k .btn-tonal .ic{width:20px;height:20px}
 .kat-kopf{display:grid;grid-template-columns:140px 1fr;gap:16px;align-items:start}
 .kat-bild .foto{aspect-ratio:1;width:100%}.kat-bild .foto img{object-fit:contain;background:#fff}
 @media (max-width:520px){.kat-kopf{grid-template-columns:1fr}.kat-bild{max-width:200px}}
@@ -1157,6 +1160,7 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 .tb-kopf.pc{flex:1;align-self:stretch;display:flex;align-items:center;padding-right:12px}
 .tb-kopf:not(.pc){padding:2px 0 10px}
 body.kopf-oben .edk-platz{display:none!important}
+/*FELDER*/
 </style>
 </head>
 <body class="is-list">
@@ -1494,8 +1498,8 @@ function infoKarte(r,kind){
   return `<div class="infok2">${aktionen.length?`<div class="qa-row">${aktionen.join("")}</div>`:""}${zeilen?`<div class="dz-list">${zeilen}</div>`:""}</div>`;
 }
 function closeOverlays(){ ["#menu","#dlg","#scrim"].forEach(s=>$(s).hidden=true); $("#scrim").classList.remove("dim"); $("#menuBtn").setAttribute("aria-expanded","false"); }
-function dialog(title,body,actions){
-  $("#dlg").innerHTML=`<h2>${esc(title)}</h2><div class="db">${body}</div>${actions?`<div class="da">${actions}</div>`:""}`;
+function dialog(title,body,actions,opt){
+  $("#dlg").classList.toggle("breit",!!(opt&&opt.breit)); $("#dlg").innerHTML=`<h2>${esc(title)}</h2><div class="db">${body}</div>${actions?`<div class="da">${actions}</div>`:""}`;
   $("#menu").hidden=true; $("#dlg").hidden=false; $("#scrim").hidden=false; $("#scrim").classList.add("dim");
   const f=$("#dlg").querySelector("input:not([type=hidden])"); if(f&&!f.value) setTimeout(()=>f.focus(),50);
 }
@@ -2241,15 +2245,12 @@ function gerFotoNeu(){ const el=document.getElementById("gerFoto"); if(!el||!ger
 function gerDialog(g){
   gerForm={id:g&&g.id,bild:g&&g.bild||""}; const r=g||{art:"mess"}, T=team().filter(m=>m.mail);
   if(!ME.admin){ const k=gerKal(r); dialog(gerName(r),`<p>${esc([GER_ART.find(x=>x[0]===r.art)?.[1],r.sn&&`Seriennr. ${r.sn}`,k&&k.t].filter(Boolean).join(" · "))}</p>${r.notiz?`<p class="meta">${esc(r.notiz)}</p>`:""}`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return; }
-  dialog(g?"Gerät bearbeiten":"Neues Gerät",`<div class="ger-foto" id="gerFoto">${gerFotoHtml(r)}</div><input type="file" id="gerDatei" accept="image/*" hidden>
-    <div class="fg1">${sf("art","Art",r.art||"mess",GER_ART,{form:true})}
-    <div class="row2">${tf("hersteller","Hersteller",r.hersteller,{form:true,ph:"z. B. Wiha"})}${tf("modell","Modell",r.modell,{form:true,ph:"z. B. MFT one"})}</div>
-    ${tf("sn","Seriennummer",r.sn,{form:true})}
-    ${tf("kal","Kalibrierung gültig bis",r.kal,{form:true,ph:"MM.JJJJ"})}
-    ${sf("bei","Zugeteilt an",r.bei||"",[["","niemand / Firma"],...T.map(m=>[m.mail,m.name])],{form:true})}
-    ${ta("notiz","Notiz",r.notiz,{form:true,ph:"z. B. liegt im Sprinter, Kalibrierung bei …"})}
-    ${tf("bildUrl","Herstellerbild (Internetadresse, optional)",GER_BILD_ALT[r.bildUrl]||r.bildUrl,{form:true,type:"url"})}</div>`,
-    `${g?`<button class="btn-text danger" data-act="gerAus">${r.aus?"Wieder aktiv":"Ausmustern"}</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gerSave">Speichern</button>`);
+  dialog(g?"Gerät bearbeiten":"Neues Gerät",`<div class="fg1">
+    <div class="ger-bildzeile"><div class="ger-foto" id="gerFoto">${gerFotoHtml(r)}</div>${tf("bildUrl","Herstellerbild (Internetadresse, optional)",GER_BILD_ALT[r.bildUrl]||r.bildUrl,{form:true,type:"url"})}</div>
+    <div class="reihe3">${sf("art","Art",r.art||"mess",GER_ART,{form:true})}${tf("hersteller","Hersteller",r.hersteller,{form:true,ph:"z. B. Wiha"})}${tf("modell","Modell",r.modell,{form:true,ph:"z. B. MFT one"})}</div>
+    <div class="reihe3">${tf("sn","Seriennummer",r.sn,{form:true})}${tf("kal","Kalibrierung gültig bis",r.kal,{form:true,ph:"MM.JJJJ"})}${sf("bei","Zugeteilt an",r.bei||"",[["","niemand / Firma"],...T.map(m=>[m.mail,m.name])],{form:true})}</div>
+    <div class="ger-notiz">${ta("notiz","Notiz",r.notiz,{form:true,ph:"z. B. liegt im Sprinter, Kalibrierung bei …"})}</div></div><input type="file" id="gerDatei" accept="image/*" hidden>`,
+    `${g?`<button class="btn-text danger" data-act="gerAus">${r.aus?"Wieder aktiv":"Ausmustern"}</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gerSave">Speichern</button>`,{breit:true});
 }
 function teamView(){
   const T=teamAlle(), a=T.filter(m=>m.status!=="weg"), w=T.filter(m=>m.status==="weg");

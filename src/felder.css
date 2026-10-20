@@ -1,0 +1,24 @@
+/* Gemeinsam für alle Apps (tools/build.py setzt es ans Ende der Styles):
+   Eingabefelder sind immer deutlich unterlegt – etwas dunkler als die Fläche darunter (hell) bzw. heller (dunkel).
+   Dialoge bekommen dafür eine eigene, ruhige Fläche. Dazu eigene, schmale Scrollleisten am PC. */
+:root{--feld:#DFE2E8;--dlg-bg:#FFFFFF;--feld-dlg:#DFE2E8;--feld-karte:#FFFFFF}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--feld:#2E2E31;--dlg-bg:#222225;--feld-dlg:#37373B;--feld-karte:#36363A}}
+:root[data-theme="dark"]{--feld:#2E2E31;--dlg-bg:#222225;--feld-dlg:#37373B;--feld-karte:#36363A}
+/* auf grauen Karten: helle Felder (hell) bzw. angehobene Felder (dunkel) */
+.card{--feld:var(--feld-karte)}
+.dlg{background:var(--dlg-bg)!important;--feld:var(--feld-dlg)!important;--fbg:var(--dlg-bg)!important}
+.tf input:hover:not(:focus):not(:disabled),.tf select:hover:not(:focus):not(:disabled),.tf textarea:hover:not(:focus):not(:disabled){background:color-mix(in srgb,var(--on-surface) 5%,var(--feld))!important}
+/* breiter Dialog mit Feldern nebeneinander (z. B. Gerät) */
+.dlg.breit{width:min(780px,calc(100% - 32px))}
+.dlg .reihe3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.dlg .reihe2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:599px){.dlg .reihe3,.dlg .reihe2{grid-template-columns:minmax(0,1fr)}}
+/* Scrollleisten: schmal, abgerundet, nur sichtbar wo gescrollt wird */
+@media (hover:hover) and (pointer:fine){
+  ::-webkit-scrollbar{width:12px;height:12px}
+  ::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:transparent}
+  ::-webkit-scrollbar-thumb{background-color:color-mix(in srgb,var(--on-surface) 22%,transparent);border:3px solid transparent;border-radius:12px;background-clip:padding-box;min-height:40px}
+  ::-webkit-scrollbar-thumb:hover{background-color:color-mix(in srgb,var(--on-surface) 40%,transparent)}
+  ::-webkit-scrollbar-button{display:none;width:0;height:0}
+}
+@supports not selector(::-webkit-scrollbar){html,.dlg{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--on-surface) 25%,transparent) transparent}}
