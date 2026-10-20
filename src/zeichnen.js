@@ -184,7 +184,8 @@ function zBox(b){ let y0=Infinity,y1=-Infinity; for(const s of (b.striche||[])){
 /* Karteikarte: s = Vorderseite, rs = Rückseite, um = zeigt gerade die Rückseite */
 const zgZF=s=>s.um?"rs":"s";
 const zgZettelText=s=>{ const [a,,c]=zgBoxRoh(s); return {t:"text",v:2,s:s[zgZF(s)]||"",fs:s.fs||26,fam:s.fam,b:s.b,i:s.i,u:s.u,al:s.al,c:"#1F1F22",bw:Math.max(20,c-a-2*ZG_ZPAD),p:[a+ZG_ZPAD,0]}; };
-function zgKKLinien(s){ const [a,b,c,d]=zgBoxRoh(s), fs=s.fs||26, lh=fs*1.25, rot=b+ZG_ZPAD+fs*1.12, out={rot,blau:[]}; for(let y=rot+lh;y<d-8;y+=lh) out.blau.push(y); return {a,c,...out}; }
+/* rote Linie unter der ersten Zeile – bei umbrochener Überschrift unter deren letzter Zeile */
+function zgKKLinien(s){ const [a,b,c,d]=zgBoxRoh(s), fs=s.fs||26, lh=fs*1.25, tt=zgZettelText(s), erst=String(tt.s||"").split("\n")[0], n=erst?zgTextMass({...tt,s:erst}).L.length:1, rot=b+ZG_ZPAD+(n-1)*lh+fs*1.12, out={rot,blau:[]}; for(let y=rot+lh;y<d-8;y+=lh) out.blau.push(y); return {a,c,...out}; }
 /* Objekte auf der jeweils verdeckten Seite einer umgedrehten Karteikarte sind unsichtbar */
 function zgVersteckt(L){ const H=new Set(); if(!L.some(s=>s.aufR||(s.t==="zettel"&&s.um))) return H; const Z=[];
   L.forEach((s,j)=>{ if(s.t==="zettel"){ Z.push(j); return; } if(s.t==="verb") return; const q=zgBox(s), mx=(q[0]+q[2])/2, my=(q[1]+q[3])/2;
@@ -223,12 +224,12 @@ function zgRasterSvg(b,y0,y1,o){ o=o||{}; const r=zgRasterTeile(b,y0,y1,o.xa==nu
 function zgSvgEl(s,dunkel,info){ s=zgNorm(s); const inn=zgSvgElRoh(s,dunkel,info); if(!s.rot) return inn; const [cx,cy]=zgZentrum(s); return `<g transform="rotate(${zgR(s.rot*180/Math.PI)} ${zgR(cx)} ${zgR(cy)})">${inn}</g>`; }
 function zgSvgElRoh(s,dunkel,info){
   if(s.t==="zettel"){ const [a,b,c,d]=zgBoxRoh(s), tt=zgZettelText(s), m=zgTextMass(tt), lh=zgLH(tt), fs=tt.fs;
-    const kanten=info&&info.unten?[2,1].slice(0,Math.min(2,info.zahl-1)).map(k=>`<rect x="${zgR(a+k*6)}" y="${zgR(b+k*6)}" width="${zgR(c-a)}" height="${zgR(d-b)}" rx="5" fill="${s.c}"/><rect x="${zgR(a+k*6)}" y="${zgR(b+k*6)}" width="${zgR(c-a)}" height="${zgR(d-b)}" rx="5" fill="#000" fill-opacity="${.06+.04*k}"/>`).join(""):"";
-    const kk=s.kk?(()=>{ const K=zgKKLinien(s); return `<path d="M${zgR(K.a)} ${zgR(K.rot)}H${zgR(K.c)}" stroke="#E0525A" stroke-width="1.6" stroke-opacity=".75"/>`+(K.blau.length?`<path d="${K.blau.map(y=>`M${zgR(K.a)} ${zgR(y)}H${zgR(K.c)}`).join("")}" stroke="#7FA8D8" stroke-width="1.1" stroke-opacity=".6"/>`:"")
-      +(s.um?`<text x="${zgR(K.a+ZG_ZPAD)}" y="${zgR(d-10)}" fill="#1F1F22" fill-opacity=".45" font-size="13" font-weight="600" font-family="system-ui,sans-serif">Rückseite</text>`:""); })():"";
-    const zahl=info&&info.oben?`<circle cx="${zgR(c-4)}" cy="${zgR(b+4)}" r="15" fill="#1F1F22"/><text x="${zgR(c-4)}" y="${zgR(b+9.5)}" fill="#fff" font-size="15" font-weight="700" text-anchor="middle" font-family="system-ui,sans-serif">${info.zahl}</text>`:"";
-    return kanten+`<rect x="${zgR(a+1)}" y="${zgR(b+3)}" width="${zgR(c-a)}" height="${zgR(d-b)}" rx="5" fill="#000" fill-opacity=".08"/><rect x="${zgR(a)}" y="${zgR(b)}" width="${zgR(c-a)}" height="${zgR(d-b)}" rx="5" fill="${s.c}"/>`+kk
-      +(tt.s?`<text fill="#1F1F22" font-size="${fs}" font-weight="${tt.b?700:500}"${tt.i?` font-style="italic"`:""} font-family="${zgEsc(zgFam(tt))}">${m.L.map((z,i)=>`<tspan x="${zgR(a+ZG_ZPAD+zgAlX(tt,m,i))}" y="${zgR(b+ZG_ZPAD+i*lh+fs*.95)}">${zgEsc(z)||" "}</tspan>`).join("")}</text>`:"")+zahl; }
+    const txt=tt.s?`<text fill="#1F1F22" font-size="${fs}" font-weight="${tt.b?700:500}"${tt.i?` font-style="italic"`:""} font-family="${zgEsc(zgFam(tt))}">${m.L.map((z,i)=>`<tspan x="${zgR(a+ZG_ZPAD+zgAlX(tt,m,i))}" y="${zgR(b+ZG_ZPAD+i*lh+fs*.95)}">${zgEsc(z)||" "}</tspan>`).join("")}</text>`:"";
+    if(s._nackt) return txt;
+    const kk=s.kk?(()=>{ const K=zgKKLinien(s); return `<path d="M${zgR(a)} ${zgR(K.rot)}H${zgR(c)}" stroke="#E0525A" stroke-width="1.5" stroke-opacity=".7"/><path d="M${zgR(c-30)} ${zgR(d)}L${zgR(c)} ${zgR(d-30)}V${zgR(d)}Z" fill="#E3E5EA"/>`
+      +`<text x="${zgR(a+ZG_ZPAD)}" y="${zgR(d-12)}" fill="#1F1F22" fill-opacity=".4" font-size="12" font-weight="700" letter-spacing=".5" font-family="system-ui,sans-serif">${s.um?"RÜCKSEITE":"KARTEIKARTE"}</text>`; })():"";
+    const zahl=info&&info.oben?`<text x="${zgR(c-(s.kk?40:12))}" y="${zgR(d-11)}" text-anchor="end" fill="#1F1F22" fill-opacity=".45" font-size="13" font-weight="700" font-family="system-ui,sans-serif">1 / ${info.zahl}</text>`:"";
+    return `<rect x="${zgR(a)}" y="${zgR(b+2)}" width="${zgR(c-a)}" height="${zgR(d-b)}" rx="4" fill="#000" fill-opacity=".09"/><rect x="${zgR(a)}" y="${zgR(b)}" width="${zgR(c-a)}" height="${zgR(d-b)}" rx="4" fill="${s.c}"/>`+kk+txt+zahl; }
   if(s.t==="bild"){ const [a,b,c,d]=zgBoxRoh(s), src=typeof fotoCache!=="undefined"&&fotoCache.get(s.foto); return src?`<image href="${src}" x="${zgR(a)}" y="${zgR(b)}" width="${zgR(c-a)}" height="${zgR(d-b)}" preserveAspectRatio="none"/>`:`<rect x="${zgR(a)}" y="${zgR(b)}" width="${zgR(c-a)}" height="${zgR(d-b)}" fill="#E3E5E9"/>`; }
   if(s.t==="text"){ const m=zgTextMass(s), lh=zgLH(s), fs=s.fs||28; let bg="";
     if(s.bg){ const [a,b,c,d]=zgBoxRoh(s); bg=`<rect x="${zgR(a)}" y="${zgR(b)}" width="${zgR(c-a)}" height="${zgR(d-b)}" rx="8" fill="${s.bg==="notiz"?"#FFF1A8":s.c}"${s.bg==="notiz"?"":` fill-opacity=".14"`}/>`; }
@@ -240,7 +241,8 @@ function zgSvgElRoh(s,dunkel,info){
   return `<path d="${c.d}" stroke="${s.c}" stroke-width="${s.w}" fill="${zgGefuellt(s)?s.c:"none"}"${zgGefuellt(s)?` fill-opacity=".18"`:""} stroke-linecap="round" stroke-linejoin="round"${s.o?` stroke-opacity="${s.o}"`:""}${da}${mul}/>`+(c.k?`<path d="${c.k}" stroke="${s.c}" stroke-width="${s.w}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`:""); }
 /* Vorschau: Papier und Raster laufen seitlich weiter, damit bei schmalen Ausschnitten kein Rand entsteht */
 const zgPapierFarbe=b=>(ZG_PAPIER[b.papier]||ZG_PAPIER[""])[1];
-const zeichnungSvg=b=>{ const pap=zgPapierFarbe(b), L=zgVerbAktualisieren((b.striche||[]).map(zgNorm),false), SI=zgStapelInfo(L), HV=zgVersteckt(L), inh=L.map((s,i)=>HV.has(i)?"":zgSvgEl(s,b.papier==="dunkel",SI.get(i))).join("");
+const zeichnungSvg=b=>{ const pap=zgPapierFarbe(b), L=zgVerbAktualisieren((b.striche||[]).map(zgNorm),false), SI=zgStapelInfo(L), HV=zgVersteckt(L), DK=zgStapelDeko(L), inh=L.map((s,i)=>{ if(HV.has(i)) return ""; const e=zgSvgEl(s,b.papier==="dunkel",SI.get(i)), v=DK.get(i);
+    return v?`<g transform="translate(${zgR(v[3]+v[0])} ${zgR(v[4]+v[1])}) rotate(${zgR(v[2]*180/Math.PI)}) translate(${zgR(-v[3])} ${zgR(-v[4])})">${e}</g>`:e; }).join("");
   if(b.format==="board"){ let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity; L.forEach(s=>{ const q=zgBox(s); x0=Math.min(x0,q[0]); y0=Math.min(y0,q[1]); x1=Math.max(x1,q[2]); y1=Math.max(y1,q[3]); });
     if(!isFinite(x0)){ x0=0; y0=0; x1=1000; y1=600; } x0-=40; y0-=40; x1+=40; y1+=40; const w=Math.max(x1-x0,(y1-y0)*1.6), h=Math.max(y1-y0,w/2.4), mx=(x0+x1)/2, my=(y0+y1)/2; x0=mx-w/2; y0=my-h/2;
     return `<svg class="n-svg" viewBox="${zgR(x0)} ${zgR(y0)} ${zgR(w)} ${zgR(h)}" preserveAspectRatio="xMidYMid meet" style="overflow:visible"><rect x="${zgR(x0-w)}" y="${zgR(y0)}" width="${zgR(w*3)}" height="${zgR(h)}" fill="${pap}"/>${zgRasterSvg(b,y0,y0+h,{xa:x0-w,xb:x0+2*w})}${inh}</svg>`; }
@@ -335,7 +337,8 @@ function zgMalen(){ if(!ZG||!ZG.sk) return; const {ctx,dpr,sk,px,pw}=ZG, oy=ZG.t
   const r=zgRasterTeile(S,y0,y1,bd?x0:0,bd?x1:1000,rk,bd); if(r){ for(const t of r.teile){ ctx.globalAlpha=t.a; if(t.f){ ctx.fillStyle=r.farbe; ctx.fill(new Path2D(t.d)); } else { ctx.strokeStyle=r.farbe; ctx.lineWidth=bd?t.w/ZG.z:t.w/Math.max(1,ZG.z); ctx.stroke(new Path2D(t.d)); } } ctx.globalAlpha=1; }
   const dunkel=ZG.seite.papier==="dunkel", ed=ZG.edit?ZG.edit.i:null, SI=zgStapelInfo(ZG.striche), H=zgVersteckt(ZG.striche), kn=!ZG.versatz, rr=13/sk; ZG.versteckt=H;
   const inf=i=>ZG.striche[i].t==="zettel"?{...(SI.get(i)||{}),r:rr,knopf:kn}:undefined;
-  ZG.striche.forEach((s,i)=>{ if(H.has(i)) return; const v=ZG.versatz&&ZG.versatz.get(i);
+  const DK=zgStapelDeko(ZG.striche);
+  ZG.striche.forEach((s,i)=>{ if(H.has(i)) return; const v=(ZG.versatz&&ZG.versatz.get(i))||DK.get(i);
     if(v){ ctx.save(); ctx.translate(v[3]+v[0],v[4]+v[1]); ctx.rotate(v[2]); if(v[5]!==1){ ctx.rotate(v[6]); ctx.scale(Math.max(.001,v[5]),1); ctx.rotate(-v[6]); } ctx.translate(-v[3],-v[4]); zgZeichne(ctx,s,dunkel,inf(i)); ctx.restore(); return; }
     const b=zgBox(s); if(b[3]<y0-30||b[1]>y1+30||b[2]<x0-30||b[0]>x1+30) return;
     if(i===ed){ if(ZG.edit.zettel) zgZeichne(ctx,{...ZG.edit.s,[zgZF(ZG.edit.s)]:""},dunkel,inf(i)); return; } zgZeichne(ctx,s,dunkel,inf(i)); });
@@ -381,18 +384,15 @@ const zgBilder=new Map();
 function zgBildEl(id){ let im=zgBilder.get(id); if(!im){ const src=typeof fotoCache!=="undefined"&&fotoCache.get(id); if(!src) return null; im=new Image(); im.onload=()=>{ if(ZG) zgMalen(); }; im.src=src; zgBilder.set(id,im); } return im.complete&&im.naturalWidth?im:null; }
 function zgZeichne(ctx,s,dunkel,info){ ctx.save();
   if(s.rot){ const [cx,cy]=zgZentrum(s); ctx.translate(cx,cy); ctx.rotate(s.rot); ctx.translate(-cx,-cy); }
-  if(s.t==="zettel"){ const [a,b,c,d]=zgBoxRoh(s), rr=(x,y)=>{ ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(x,y,c-a,d-b,5); else ctx.rect(x,y,c-a,d-b); };
-    if(info&&info.unten) for(let k=Math.min(2,info.zahl-1);k>=1;k--){ ctx.save(); ctx.shadowColor="rgba(0,0,0,.18)"; ctx.shadowBlur=6; ctx.shadowOffsetY=2; ctx.fillStyle=s.c; rr(a+k*6,b+k*6); ctx.fill(); ctx.restore(); ctx.fillStyle=`rgba(0,0,0,${.06+.04*k})`; rr(a+k*6,b+k*6); ctx.fill(); }
-    ctx.save(); ctx.shadowColor="rgba(0,0,0,.2)"; ctx.shadowBlur=10; ctx.shadowOffsetY=3; ctx.fillStyle=s.c; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(a,b,c-a,d-b,5); else ctx.rect(a,b,c-a,d-b); ctx.fill(); ctx.restore();
-    if(s.kk){ const K=zgKKLinien(s); ctx.save(); ctx.strokeStyle="rgba(224,82,90,.75)"; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(K.a,K.rot); ctx.lineTo(K.c,K.rot); ctx.stroke();
-      ctx.strokeStyle="rgba(127,168,216,.6)"; ctx.lineWidth=1.1; ctx.beginPath(); K.blau.forEach(y=>{ ctx.moveTo(K.a,y); ctx.lineTo(K.c,y); }); ctx.stroke();
-      if(s.um){ ctx.fillStyle="rgba(31,31,34,.45)"; ctx.font="600 13px system-ui,-apple-system,sans-serif"; ctx.fillText("Rückseite",a+ZG_ZPAD,d-10); } ctx.restore(); }
-    if(s.s){ const tt=zgZettelText(s), m=zgTextMass(tt), lh=zgLH(tt), fs=tt.fs; ctx.save(); ctx.beginPath(); ctx.rect(a,b,c-a,d-b); ctx.clip(); ctx.fillStyle="#1F1F22"; ctx.font=zgFont(tt); ctx.textBaseline="alphabetic";
+  if(s.t==="zettel"){ const [a,b,c,d]=zgBoxRoh(s);
+    if(!s._nackt){ ctx.save(); ctx.fillStyle=s.c; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(a,b,c-a,d-b,4); else ctx.rect(a,b,c-a,d-b);
+      ctx.shadowColor="rgba(0,0,0,.08)"; ctx.shadowBlur=22; ctx.shadowOffsetY=10; ctx.fill(); ctx.shadowColor="rgba(0,0,0,.12)"; ctx.shadowBlur=6; ctx.shadowOffsetY=2; ctx.fill(); ctx.restore();
+      if(s.kk){ const K=zgKKLinien(s); ctx.save(); ctx.strokeStyle="rgba(224,82,90,.7)"; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(a,K.rot); ctx.lineTo(c,K.rot); ctx.stroke();
+        ctx.fillStyle="#E3E5EA"; ctx.beginPath(); ctx.moveTo(c-30,d); ctx.lineTo(c,d-30); ctx.lineTo(c,d); ctx.closePath(); ctx.fill();
+        ctx.fillStyle="rgba(31,31,34,.4)"; ctx.font="700 12px system-ui,-apple-system,sans-serif"; ctx.fillText(s.um?"RÜCKSEITE":"KARTEIKARTE",a+ZG_ZPAD,d-12); ctx.restore(); } }
+    if(s.s||s.rs){ const tt=zgZettelText(s), m=zgTextMass(tt), lh=zgLH(tt), fs=tt.fs; ctx.save(); ctx.beginPath(); ctx.rect(a,b,c-a,d-b); ctx.clip(); ctx.fillStyle="#1F1F22"; ctx.font=zgFont(tt); ctx.textBaseline="alphabetic";
       m.L.forEach((z,i)=>{ const x=a+ZG_ZPAD+zgAlX(tt,m,i), y=b+ZG_ZPAD+i*lh+fs*.95; ctx.fillText(z,x,y); if(tt.u&&m.lw[i]) ctx.fillRect(x,y+fs*.12,m.lw[i],Math.max(1,fs*.065)); }); ctx.restore(); }
-    const R=info&&info.r||15;
-    if(info&&info.oben&&info.knopf!==false){ ctx.fillStyle="#1F1F22"; ctx.beginPath(); ctx.arc(c-4,b+4,R,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#fff"; ctx.font=`700 ${zgR(R)}px system-ui,-apple-system,sans-serif`; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(String(info.zahl),c-4,b+4+R*.04); ctx.textAlign="start"; ctx.textBaseline="alphabetic"; }
-    if(s.kk&&info&&info.knopf){ const x=c-4, y=d-4; ctx.save(); ctx.fillStyle="#fff"; ctx.strokeStyle="rgba(0,0,0,.18)"; ctx.lineWidth=R*.08; ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2); ctx.fill(); ctx.stroke();
-      ctx.translate(x-R*.55,y-R*.55); ctx.scale(R*1.1/24,R*1.1/24); ctx.strokeStyle="#1F1F22"; ctx.lineWidth=2.2; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.stroke(new Path2D("M4.5 11a7.5 7.5 0 0 1 13-4.6L19.5 8.5M19.5 4v4.5H15M19.5 13a7.5 7.5 0 0 1-13 4.6L4.5 15.5M4.5 20v-4.5H9")); ctx.restore(); } }
+    if(info&&info.oben&&info.knopf!==false){ ctx.save(); ctx.fillStyle="rgba(31,31,34,.45)"; ctx.font="700 13px system-ui,-apple-system,sans-serif"; ctx.textAlign="right"; ctx.fillText(`1 / ${info.zahl}`,c-(s.kk?40:12),d-11); ctx.restore(); } }
   else if(s.t==="bild"){ const [a,b,c,d]=zgBoxRoh(s), im=zgBildEl(s.foto); if(im) ctx.drawImage(im,a,b,c-a,d-b); else { ctx.fillStyle="#E3E5E9"; ctx.fillRect(a,b,c-a,d-b); } }
   else if(s.t==="text"){ const m=zgTextMass(s), lh=zgLH(s), fs=s.fs||28;
     if(s.bg){ const [a,b,c,d]=zgBoxRoh(s); ctx.fillStyle=s.bg==="notiz"?"#FFF1A8":s.c; ctx.globalAlpha=s.bg==="notiz"?1:.14; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(a,b,c-a,d-b,8); else ctx.rect(a,b,c-a,d-b); ctx.fill(); ctx.globalAlpha=1; }
@@ -466,15 +466,16 @@ function zgAuswahlRahmen(ctx){ if(!ZG.sel.length||ZG.edit||ZG.versatz) return; c
 const zgPageZuClient=(x,y)=>{ const r=ZG.cv.getBoundingClientRect(); return [r.left+ZG.px+x*ZG.sk,r.top+ZG.top-ZG.sy+y*ZG.sk]; };
 const zgRel=(cx,cy)=>{ const r=ZG.ov.getBoundingClientRect(); return [cx-r.left,cy-r.top]; };
 /* Leiste Ausschneiden/Kopieren/Duplizieren/Löschen: auf der Seite gegenüber dem Drehgriff */
-function zgSelLeiste(){ const bar=ZG.ov.querySelector("#zgSel"); if(!ZG.sel.length||ZG.edit||ZG.zug||ZG.versatz){ bar.hidden=true; return; }
+function zgSelLeiste(){ const bar=ZG.ov.querySelector("#zgSel"); if(!ZG.sel.length||ZG.edit||ZG.zug||ZG.versatz||ZG.stp){ bar.hidden=true; return; }
   const G=zgGriffe(); if(!G){ bar.hidden=true; return; } const einText=ZG.sel.length===1&&["text","zettel"].includes(ZG.striche[ZG.sel[0]].t);
   const k=(z,ic,l,rot)=>`<button class="zg-b${rot?" zg-rot":""}" data-z="${z}" aria-label="${l}" title="${l}">${zgIc(ic)}</button>`;
   const s0=ZG.sel.length===1?ZG.striche[ZG.sel[0]]:null, istZ=!!s0&&s0.t==="zettel", gest=istZ&&!!s0.st&&zgStapel(s0.st).length>1, zN=ZG.sel.filter(i=>ZG.striche[i]&&ZG.striche[i].t==="zettel").length;
+  const nurZ=zN>0&&zN===ZG.sel.length;
   const vorn=(zN>=2?k("stapeln","stapel","Stapeln"):"")
-    +(gest?k("blaettern","blaettern","Durchblättern – nächste nach oben")+k("stapelAnsicht","ansehen","Stapel ansehen")+(zgStapel(s0.st).some(i=>ZG.striche[i].kk)?k("stapelLernen","lernen","Karteikarten lernen"):"")+k("faechern","faechern","Stapel auffächern")+k("stapelWahl","stapel","Ganzen Stapel auswählen"):"")
+    +(gest?k("stapelAnsicht","ansehen","Stapel öffnen")+k("blaettern","blaettern","Durchblättern")+k("faechern","faechern","Auffächern")+k("stapelLernen","lernen","Lernen"):"")
     +(istZ&&s0.kk?k("umdrehen","umdrehen",s0.um?"Zur Vorderseite umdrehen":"Zur Rückseite umdrehen"):"");
-  const html=vorn+(vorn?`<i class="zg-tr"></i>`:"")+(einText?k("selEdit","edit",istZ?"Haftnotiz bearbeiten":"Text bearbeiten"):"")+(istZ&&!gest?k("vorne","vorne","Nach vorne holen – über alles andere legen"):"")
-    +k("selAus","schere","Ausschneiden")+k("selKopie","kopie","Kopieren")+k("selDup","dupl","Duplizieren")+k("selDel","leeren","Löschen",1);
+  const html=vorn+(vorn?`<i class="zg-tr"></i>`:"")+(einText?k("selEdit","edit","Bearbeiten"):"")+(nurZ?"":k("selAus","schere","Ausschneiden"))
+    +k("selKopie","kopie","Kopieren")+k("selDup","dupl","Duplizieren")+k("selDel","leeren","Löschen",1);
   if(bar.dataset.h!==html){ bar.innerHTML=html; bar.dataset.h=html; }
   bar.hidden=false; const F=G.f, p=zgPad(), pts=G.punkte?ZG.striche[ZG.sel[0]].p.reduce((o,v,i)=>(i%2?o[o.length-1].push(v):o.push([v]),o),[]):G.g.filter(g=>g.art!=="rot").map(g=>[g.x,g.y]);
   if(!pts.length){ bar.hidden=true; return; }
@@ -541,6 +542,13 @@ function zgAngeheftet(idx){ const inSel=new Set(idx), own=zgBesitzer(), out=[];
 const zgStapel=st=>ZG.striche.map((s,i)=>s.t==="zettel"&&s.st===st?i:-1).filter(i=>i>=0);
 function zgStapelInfo(L){ const g=new Map(), m=new Map(); L.forEach((s,i)=>{ if(s.t==="zettel"&&s.st){ if(!g.has(s.st)) g.set(s.st,[]); g.get(s.st).push(i); } });
   g.forEach(a=>{ if(a.length<2) return; m.set(a[0],{unten:true,zahl:a.length}); const o=a[a.length-1]; m.set(o,{...(m.get(o)||{}),oben:true,zahl:a.length}); }); return m; }
+function zgBesitzerL(L){ const Z=[], own=new Map(); L.forEach((s,j)=>{ if(s.t==="zettel"){ Z.push(j); return; } if(s.t==="verb"||!Z.length) return;
+    const q=zgBox(s), mx=(q[0]+q[2])/2, my=(q[1]+q[3])/2; for(let k=Z.length-1;k>=0;k--) if(zgAufZettel(L[Z[k]],mx,my)){ own.set(j,Z[k]); break; } }); return own; }
+const ZG_DEKO=[null,[5,4,.061],[-6,6,-.087]];
+function zgStapelDeko(L){ const g=new Map(), D=new Map(); L.forEach((s,i)=>{ if(s.t==="zettel"&&s.st){ if(!g.has(s.st)) g.set(s.st,[]); g.get(s.st).push(i); } }); let own=null;
+  g.forEach(A=>{ if(A.length<2) return; const [cx,cy]=zgZentrum(L[A[A.length-1]]);
+    for(let k=1;k<Math.min(3,A.length);k++){ const i=A[A.length-1-k], T=ZG_DEKO[k], v=[T[0],T[1],T[2],cx,cy,1,0]; D.set(i,v); if(!own) own=zgBesitzerL(L); own.forEach((z,j)=>{ if(z===i) D.set(j,v); }); } });
+  return D; }
 function zgStapelPflegen(){ const n=new Map(); ZG.striche.forEach(s=>{ if(s.t==="zettel"&&s.st) n.set(s.st,(n.get(s.st)||0)+1); });
   ZG.striche.forEach((s,i)=>{ if(s.t==="zettel"&&s.st&&n.get(s.st)<2){ const c={...s}; delete c.st; ZG.striche[i]=c; } }); }
 /* Objekte (Zettel samt Inhalt) in der Reihenfolge verschieben: vor Index „vor“ oder ganz nach oben; liefert den neuen Index von zi */
@@ -552,7 +560,7 @@ function zgAufLegen(i,T,st){ const Z=ZG.striche[i], mit=zgAngeheftet([i]), [tx,t
 /* Nach dem Ziehen: einen einzelnen Zettel auf einen anderen fallen lassen ⇒ Stapel; vom Stapel weggezogen ⇒ wieder einzeln */
 function zgStapelNachZiehen(){ if(ZG.sel.length!==1) return; const zi=ZG.sel[0], Z=ZG.striche[zi]; if(!Z||Z.t!=="zettel") return; const [cx,cy]=zgZentrum(Z);
   let ti=null; for(let i=ZG.striche.length-1;i>=0;i--){ const s=ZG.striche[i]; if(i!==zi&&s.t==="zettel"&&zgAufZettel(s,cx,cy)){ ti=i; break; } }
-  if(ti==null){ if(Z.st){ const n={...Z}; delete n.st; ZG.striche[zi]=n; zgStapelPflegen(); } return; }
+  if(ti==null){ if(Z.st){ const n={...Z}; delete n.st; ZG.striche[zi]=n; zgStapelPflegen(); } ZG.sel=[zgBlockVerschieben(zgMitIdx([zi]),zi,null)]; return; }
   const T=ZG.striche[ti], st=T.st||zgId(), neu=Z.st!==st; if(!T.st) ZG.striche[ti]={...T,st};
   const block=zgMitIdx([zi]); zgAufLegen(zi,ZG.striche[ti],st); const ni=zgBlockVerschieben(block,zi,null); ZG.sel=[ni]; zgStapelPflegen();
   zgAnim(zgGleiten(block.map((_,k)=>ni-block.indexOf(zi)+k),ni,cx,cy,Z.rot||0),170);
@@ -610,75 +618,79 @@ function zgUmdrehen(zi,anim,fertig){ zgAnimFertig(); const Z=ZG.striche[zi]; if(
   const B=zgMitIdx([zi]), [cx,cy]=zgZentrum(Z), nr=Z.rot||0, E=(von,nach)=>B.map(i=>({i,von:[0,0,0,von],nach:[0,0,0,nach],px:cx,py:cy,nr}));
   zgAnim(E(1,0),120,()=>{ tausch(); zgAnim(E(0,1),150,fertig); }); }
 /* Knöpfe auf Haftnotizen in fester Bildschirmgröße: Zahl oben rechts (Stapel), Umdrehen unten rechts (Karteikarte) */
-function zgKnopfBei(x,y){ const R=13/ZG.sk+8/ZG.sk, SI=zgStapelInfo(ZG.striche);
-  for(let i=ZG.striche.length-1;i>=0;i--){ const Z=ZG.striche[i]; if(Z.t!=="zettel"||(ZG.versteckt&&ZG.versteckt.has(i))) continue; const [a,b,c,d]=zgBoxRoh(Z), [cx,cy]=zgZentrum(Z);
-    const W=(px,py)=>Z.rot?zgDreh([px,py],cx,cy,Z.rot):[px,py], nah=(px,py)=>{ const [qx,qy]=W(px,py); return Math.hypot(x-qx,y-qy)<R; };
-    const inf=SI.get(i); if(inf&&inf.oben&&nah(c-4,b+4)) return {art:"stapel",i}; if(Z.kk&&nah(c-4,d-4)) return {art:"um",i};
-    if(zgAufZettel(Z,x,y)) return null; } return null; }
-/* --- Stapel ansehen: Karten zum Durchwischen; Lernen: Karteikarten abfragen --- */
+function zgKnopfBei(x,y){ const SI=zgStapelInfo(ZG.striche);
+  for(let i=ZG.striche.length-1;i>=0;i--){ const Z=ZG.striche[i]; if(Z.t!=="zettel"||(ZG.versteckt&&ZG.versteckt.has(i))) continue; if(!zgAufZettel(Z,x,y)) continue;
+    const inf=SI.get(i); if(!inf||!inf.oben) return null; let [lx,ly]=[x,y]; if(Z.rot){ const [cx,cy]=zgZentrum(Z); [lx,ly]=zgDreh([x,y],cx,cy,-Z.rot); } const [,,c,d]=zgBoxRoh(Z);
+    return lx>c-(Z.kk?100:70)&&ly>d-34?{art:"stapel",i}:null; } return null; }
+/* --- Stapel als Blatt von unten: „Übersicht“ (alle Notizen als Raster, Reihenfolge per Ziehen) und „Lernen“ (Karteikarten mit Wiederholung) --- */
 const zgStpKarten=()=>zgStapel(ZG.stp.st).reverse();
-function zgKarteSvg(i,seite){ const Z0=ZG.striche[i], Z={...Z0}, um=seite==null?!!Z0.um:seite==="r", m=zgAngeheftet([i]), L=(m[0]?m[0].L.map(x=>x.o):[]).filter(o=>!!o.aufR===um), [a,b,c,d]=zgBoxRoh(Z), cx=(a+c)/2, cy=(b+d)/2, dk=ZG.seite.papier==="dunkel";
-  delete Z.rot; delete Z.st; if(um) Z.um=true; else delete Z.um;
+const ZG_LZ=[0,1,2,4,8,16], ZG_TAG=864e5;
+const zgHeute=()=>{ const d=new Date(); d.setHours(0,0,0,0); return d.getTime(); };
+const zgFaellig=s=>!s.lz||!s.lz.f||s.lz.f<=Date.now();
+/* Kartenbild: ganze Notiz (Übersicht) oder nur der Inhalt einer Seite (Lernen) */
+function zgKarteSvg(i,seite,nackt){ const Z0=ZG.striche[i], Z={...Z0}, um=seite==null?!!Z0.um:seite==="r", m=zgAngeheftet([i]), L=(m[0]?m[0].L.map(x=>x.o):[]).filter(o=>!!o.aufR===um), [a,b,c,d]=zgBoxRoh(Z), cx=(a+c)/2, cy=(b+d)/2, dk=ZG.seite.papier==="dunkel";
+  delete Z.rot; delete Z.st; if(um) Z.um=true; else delete Z.um; if(nackt) Z._nackt=true;
   return `<svg viewBox="${zgR(a)} ${zgR(b)} ${zgR(c-a)} ${zgR(d-b)}" aria-hidden="true">${zgSvgEl(Z,dk)}<g transform="rotate(${zgR(-(Z0.rot||0)*180/Math.PI)} ${zgR(cx)} ${zgR(cy)})">${L.map(o=>zgSvgEl(o,dk)).join("")}</g></svg>`; }
-function zgStpEl(){ let el=ZG.ov.querySelector("#zgStp"); if(!el){ el=document.createElement("div"); el.id="zgStp"; el.className="zg-stp"; ZG.ov.appendChild(el); el.addEventListener("click",ev=>{ if(ev.target===el||ev.target.classList.contains("zg-stp-mitte")) zgStpZu(); }); el.addEventListener("pointerdown",zgLernZeiger); } return el; }
-function zgStapelAnsicht(st,k,lernen){ zgAnimFertig(); if(ZG.ta) ZG.ta.blur(); zgPopZu(); ZG.stp={st,k:k||0}; const el=zgStpEl(); el.hidden=false; if(lernen) zgLernStart(); else zgStpBauen(); }
-function zgStpBauen(){ const el=zgStpEl(), K=zgStpKarten(); ZG.lern=null; if(K.length<2){ zgStpZu(); return; } const k=Math.min(ZG.stp.k,K.length-1); ZG.stp.k=k; el.classList.remove("lern");
-  const ik=(z,ic,l,rot)=>`<button class="zg-b${rot?" zg-rot":""}" data-z="${z}" aria-label="${l}" title="${l}">${zgIc(ic)}</button>`, kk=K.some(i=>ZG.striche[i].kk);
-  el.innerHTML=`<div class="zg-stp-kopf"><div class="zg-stp-titel"><b>Stapel</b><span>${K.length} ${kk?"Karten":"Haftnotizen"}</span></div>
-      <div class="zg-stp-r"><button class="zg-stp-knopf" data-z="stpLernen">${zgIc("lernen")}Lernen</button><button class="zg-b zg-stp-x" data-z="stpZu" aria-label="Schließen" title="Schließen">${zgIc("zu")}</button></div></div>
-    <div class="zg-stp-pos"><span id="zgStpZ">${k+1} / ${K.length}</span></div>
-    <div class="zg-stp-mitte"><button class="zg-stp-pfeil" data-z="stpPfeil" data-v="-1" aria-label="Vorherige">${zgIc("zurueck")}</button>
-      <div class="zg-stp-bahn" id="zgStpBahn"><i class="zg-stp-luft"></i>${K.map((i,n)=>{ const [a,b,c,d]=zgBoxRoh(ZG.striche[i]); return `<button class="zg-stp-karte" data-z="stpKarte" data-k="${n}" style="width:min(380px,58vw,calc(44vh * ${zgR((c-a)/(d-b))}))" aria-label="Karte ${n+1}">${zgKarteSvg(i)}</button>`; }).join("")}<i class="zg-stp-luft"></i></div>
-      <button class="zg-stp-pfeil" data-z="stpPfeil" data-v="1" aria-label="Nächste">${zgIc("weiter")}</button></div>
-    <div class="zg-stp-punkte" id="zgStpP">${K.map((_,n)=>`<i${n===k?' class="an"':""}></i>`).join("")}</div>
-    <div class="zg-stp-fuss"><div class="zg-stp-akt">${ik("stpEdit","edit","Bearbeiten")}${kk?ik("stpUm","umdrehen","Umdrehen"):""}${ik("stpRaus","faechern","Herausnehmen und daneben legen")}${ik("stpDel","leeren","Löschen",1)}<i class="zg-tr"></i>${ik("stpFaechern","faechern","Alle auffächern")}</div>
-      <button class="zg-stp-haupt" data-z="stpOben">${zgIc("vorne")}Nach oben legen</button></div>`;
-  const bahn=el.querySelector("#zgStpBahn"); bahn.addEventListener("scroll",zgStpScroll,{passive:true});
-  requestAnimationFrame(()=>{ const kt=bahn.querySelectorAll(".zg-stp-karte")[k]; if(kt) bahn.scrollLeft=kt.offsetLeft+kt.offsetWidth/2-bahn.clientWidth/2; zgStpScroll(); }); }
-/* Coverflow: mittlere Karte groß und gerade, die anderen kleiner, gedreht und etwas dunkler */
-function zgStpScroll(){ const el=ZG&&ZG.ov.querySelector("#zgStp"); if(!el||ZG.lern) return; const bahn=el.querySelector("#zgStpBahn"); if(!bahn) return; const mitte=bahn.scrollLeft+bahn.clientWidth/2; let best=0, bd=Infinity;
-  bahn.querySelectorAll(".zg-stp-karte").forEach((kt,n)=>{ const d=(kt.offsetLeft+kt.offsetWidth/2-mitte)/Math.max(1,kt.offsetWidth), a=Math.min(1.6,Math.abs(d)), c=Math.max(-1,Math.min(1,d));
-    kt.style.transform=`perspective(1200px) translateX(${zgR(-c*18)}%) rotateY(${zgR(c*-38)}deg) scale(${zgR(1-Math.min(1,a)*.18)})`; kt.style.filter=`brightness(${zgR(1-Math.min(1,a)*.28)})`; kt.style.zIndex=String(100-Math.round(a*10));
-    if(Math.abs(d)<bd){ bd=Math.abs(d); best=n; } });
-  ZG.stp.k=best; const z=el.querySelector("#zgStpZ"), n=zgStpKarten().length; if(z) z.textContent=`${best+1} / ${n}`; el.querySelectorAll("#zgStpP i").forEach((p,q)=>p.classList.toggle("an",q===best)); }
-function zgStpGehe(k){ const bahn=ZG.ov.querySelector("#zgStpBahn"); if(!bahn) return; const K=bahn.querySelectorAll(".zg-stp-karte"), kt=K[Math.max(0,Math.min(K.length-1,k))]; if(kt&&bahn.scrollTo) bahn.scrollTo({left:kt.offsetLeft+kt.offsetWidth/2-bahn.clientWidth/2,behavior:"smooth"}); }
-function zgStpZu(){ const el=ZG&&ZG.ov.querySelector("#zgStp"); if(el){ el.hidden=true; el.innerHTML=""; } if(ZG){ ZG.stp=null; ZG.lern=null; zgOptBauen(); zgMalen(); } }
-function zgStpAktion(z,kk){ const K=zgStpKarten(), k=kk!=null?kk:ZG.stp.k, i=K[k], st=ZG.stp.st; if(i==null) return;
-  if(z==="stpKarte"&&k!==ZG.stp.k){ zgStpGehe(k); return; }
-  if(z==="stpUm"){ zgUmdrehen(i,false); zgStpBauen(); return; }
-  if(z==="stpKarte"||z==="stpOben"||z==="stpEdit"){ let ni=i; if(k>0){ zgSnap(); const B=zgMitIdx([i]); ni=zgBlockVerschieben(B,i,null); } zgStpZu(); ZG.sel=[ni]; ZG.selWz=false;
-    if(k>0){ const [cx,cy]=zgZentrum(ZG.striche[ni]), [a,,c]=zgBoxRoh(ZG.striche[ni]), B=zgMitIdx([ni]); zgAnim(B.map(j=>({i:j,von:[(c-a)*1.15,-(c-a)*.06,.14],nach:[0,0,0],px:cx,py:cy})),280,z==="stpEdit"?()=>zgTextFeld(ni):null); }
-    else if(z==="stpEdit") zgTextFeld(ni); else { zgOptBauen(); zgMalen(); } return; }
-  if(z==="stpRaus"){ zgSnap(); const Z=ZG.striche[i], m=zgAngeheftet([i]), [a,,c]=zgBoxRoh(Z), dx=(c-a)+40, n={...Z,p:[Z.p[0]+dx,Z.p[1],Z.p[2]+dx,Z.p[3]].map(zgR)}; delete n.st; ZG.striche[i]=n; zgFolgen(m);
-    const ni=zgBlockVerschieben(zgMitIdx([i]),i,null); zgStapelPflegen(); zgWachsen(zgBox(ZG.striche[ni])[3]); ZG.stp.k=Math.min(k,K.length-2); if(zgStapel(st).length<2){ zgStpZu(); ZG.sel=[ni]; } else zgStpBauen(); return; }
-  if(z==="stpDel"){ ZG.sel=[i]; zgSelLoeschen(); if(zgStapel(st).length<2) zgStpZu(); else zgStpBauen(); return; }
-  if(z==="stpFaechern"){ zgStpZu(); zgFaechern(i); return; } }
-/* Lernen (Karteikartenmodus): Vorderseite zeigen, antippen dreht um, „Gewusst“ (oder nach rechts wischen) / „Nochmal“ (nach links) */
-function zgLernStart(nur){ const K=nur||zgStpKarten(); ZG.lern={q:K.slice(),ges:K.length,ja:0,falsch:new Set(),um:false}; zgLernBauen(); }
-function zgLernBauen(){ const el=zgStpEl(), L=ZG.lern; el.classList.add("lern"); const fertig=L.ges-L.q.length, pz=Math.round(fertig/L.ges*100);
-  const kopf=`<div class="zg-stp-kopf"><div class="zg-stp-titel"><b>Lernen</b><span>${L.ges} Karten</span></div>
-    <div class="zg-stp-r"><button class="zg-b" data-z="lernMischen" aria-label="Mischen" title="Mischen">${zgIc("mischen")}</button><button class="zg-b zg-stp-x" data-z="lernZu" aria-label="Zurück zum Stapel" title="Zurück zum Stapel">${zgIc("zu")}</button></div></div>
-    <div class="zg-lern-fort"><div class="zg-lern-balken"><i style="width:${pz}%"></i></div><span>${fertig} / ${L.ges}</span></div>`;
-  if(!L.q.length){ const auf=L.ges-L.falsch.size;
-    el.innerHTML=kopf+`<div class="zg-lern-ende"><b>Geschafft</b><p>${L.ges} Karten · ${auf} auf Anhieb gewusst${L.falsch.size?` · ${L.falsch.size} brauchten mehr Anläufe`:""}</p>
-      <div class="zg-lern-knoepfe">${L.falsch.size?`<button class="zg-lern-k" data-z="lernSchwer">Nur die schweren (${L.falsch.size})</button>`:""}<button class="zg-lern-k" data-z="lernNeu">Alle nochmal</button><button class="zg-lern-k ja" data-z="lernZu">Zum Stapel</button></div></div>`; return; }
-  const i=L.q[0], [a,b,c,d]=zgBoxRoh(ZG.striche[i]), hatR=!!(ZG.striche[i].rs||"").trim()||zgAngeheftet([i]).some(m=>m.L.some(x=>x.o.aufR));
-  el.innerHTML=kopf+`<div class="zg-lern-buehne"><div class="zg-lern-karte" id="zgLernK" style="width:min(520px,78vw,calc(50vh * ${zgR((c-a)/(d-b))}))"><div class="zg-lern-dreh${L.um?" um":""}">
-      <div class="zg-lern-seite v">${zgKarteSvg(i,"v")}</div><div class="zg-lern-seite r">${hatR?zgKarteSvg(i,"r"):`<div class="zg-lern-leer" style="background:${ZG.striche[i].c}">Keine Rückseite</div>`}</div></div>
-      <span class="zg-lern-stempel nein">Nochmal</span><span class="zg-lern-stempel ja">Gewusst</span></div></div>
-    <div class="zg-lern-tip">${L.um?"Gewusst? Nach rechts wischen – sonst nach links":"Antippen zum Umdrehen"}</div>
-    <div class="zg-lern-knoepfe"><button class="zg-lern-k" data-z="lernNein">${zgIc("undo")}Nochmal</button><button class="zg-lern-k ja" data-z="lernJa">Gewusst${zgIc("weiter")}</button></div>`; }
-function zgLernWeiter(ja,richtung){ const L=ZG.lern; if(!L||!L.q.length) return; const kt=ZG.ov.querySelector("#zgLernK");
-  const fort=()=>{ const i=L.q.shift(); if(ja){ L.ja++; } else { L.falsch.add(i); L.q.push(i); } L.um=false; zgLernBauen(); const n=ZG.ov.querySelector("#zgLernK"); if(n){ n.classList.add("rein"); requestAnimationFrame(()=>requestAnimationFrame(()=>n.classList.remove("rein"))); } };
-  if(kt){ kt.style.transition="transform .26s cubic-bezier(.3,.7,.4,1), opacity .26s"; kt.style.transform=`translateX(${(richtung||(ja?1:-1))*120}vw) rotate(${(ja?1:-1)*18}deg)`; kt.style.opacity="0"; setTimeout(fort,230); } else fort(); }
-function zgLernZeiger(ev){ const L=ZG&&ZG.lern, kt=ev.target.closest&&ev.target.closest("#zgLernK"); if(!L||!kt) return; ev.preventDefault(); const x0=ev.clientX, y0=ev.clientY, id=ev.pointerId; let dx=0;
-  try{ kt.setPointerCapture(id); }catch(e){} kt.style.transition="none";
-  const mv=e=>{ if(e.pointerId!==id) return; dx=e.clientX-x0; kt.style.transform=`translateX(${dx}px) rotate(${zgR(dx/18)}deg)`; kt.style.setProperty("--ja",String(Math.max(0,Math.min(1,dx/110)))); kt.style.setProperty("--nein",String(Math.max(0,Math.min(1,-dx/110)))); };
-  const up=e=>{ if(e.pointerId!==id) return; kt.removeEventListener("pointermove",mv); kt.removeEventListener("pointerup",up); kt.removeEventListener("pointercancel",up);
-    if(Math.abs(dx)>110) zgLernWeiter(dx>0,dx>0?1:-1);
-    else { kt.style.transition="transform .22s cubic-bezier(.3,.7,.4,1)"; kt.style.transform=""; kt.style.setProperty("--ja","0"); kt.style.setProperty("--nein","0");
-      if(Math.abs(dx)<6&&Math.hypot(e.clientX-x0,e.clientY-y0)<8){ L.um=!L.um; const d=kt.querySelector(".zg-lern-dreh"); if(d) d.classList.toggle("um",L.um); const t=ZG.ov.querySelector(".zg-lern-tip"); if(t) t.textContent=L.um?"Gewusst? Nach rechts wischen – sonst nach links":"Antippen zum Umdrehen"; } } };
-  kt.addEventListener("pointermove",mv); kt.addEventListener("pointerup",up); kt.addEventListener("pointercancel",up); }
+const zgHatSeite=(i,r)=>{ const s=ZG.striche[i]; return !!String((r?s.rs:s.s)||"").trim()||zgAngeheftet([i]).some(m=>m.L.some(x=>!!x.o.aufR===r)); };
+function zgStpEl(){ let el=ZG.ov.querySelector("#zgStp"); if(!el){ el=document.createElement("div"); el.id="zgStp"; el.className="zg-sh"; ZG.ov.appendChild(el);
+    el.addEventListener("click",ev=>{ if(ev.target===el) zgStpZu(); }); el.addEventListener("pointerdown",zgShZeiger); } return el; }
+function zgStapelAnsicht(st,k,lernen){ zgAnimFertig(); if(ZG.ta) ZG.ta.blur(); zgPopZu(); ZG.stp={st,k:k||0,tab:lernen?"lern":"ueb"}; ZG.lern=null;
+  const el=zgStpEl(); el.hidden=false; el.classList.remove("auf"); if(lernen) zgLernStart(); else zgShBauen(); requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add("auf"))); }
+function zgStpZu(){ const el=ZG&&ZG.ov.querySelector("#zgStp"); if(!el||el.hidden) return; el.classList.remove("auf"); setTimeout(()=>{ el.hidden=true; el.innerHTML=""; },220); if(ZG){ ZG.stp=null; ZG.lern=null; zgOptBauen(); zgMalen(); } }
+const zgIk=(z,ic,l,kl)=>`<button class="zg-b${kl?" "+kl:""}" data-z="${z}" aria-label="${l}" title="${l}">${zgIc(ic)}</button>`;
+function zgShKopf(rechts){ const K=zgStpKarten(), t=ZG.stp.tab;
+  return `<div class="zg-sh-griff" data-griff="1"><i></i></div><div class="zg-sh-kopf"><div class="zg-seg" role="tablist"><button data-z="shTab" data-v="ueb" aria-pressed="${t==="ueb"}">Übersicht · ${K.length}</button><button data-z="shTab" data-v="lern" aria-pressed="${t==="lern"}">Lernen</button></div>
+    <div class="zg-sh-r">${rechts||""}${zgIk("stpZu","zu","Schließen")}</div></div>`; }
+function zgShBauen(){ const el=zgStpEl(), K=zgStpKarten(); if(K.length<2){ zgStpZu(); return; } ZG.stp.tab="ueb"; ZG.lern=null; const k=Math.min(ZG.stp.k,K.length-1); ZG.stp.k=k; const sel=ZG.striche[K[k]];
+  el.innerHTML=`<div class="zg-sh-k">${zgShKopf()}
+    <div class="zg-sh-raster" id="zgShRaster">${K.map((i,n)=>{ const s=ZG.striche[i], [a,b,c,d]=zgBoxRoh(s); return `<button class="zg-sh-karte" data-z="shKarte" data-k="${n}" aria-pressed="${n===k}" style="aspect-ratio:${zgR(c-a)}/${zgR(d-b)};background:${s.c}" aria-label="Notiz ${n+1}">${zgKarteSvg(i)}<span class="zg-sh-chip">${n?n+1:"Oben"}</span></button>`; }).join("")}</div>
+    <div class="zg-sh-fuss"><span class="zg-sh-tip">Gedrückt halten und ziehen = Reihenfolge ändern</span><div class="zg-sh-akt">${zgIk("shEdit","edit","Bearbeiten")}${sel.kk?zgIk("shUm","umdrehen","Umdrehen"):""}${zgIk("shRaus","faechern","Herausnehmen und daneben legen")}${zgIk("shDel","leeren","Löschen","fehler")}
+      <button class="zg-sh-haupt" data-z="shOben"${k?"":" disabled"}>Nach oben legen</button></div></div></div>`; }
+/* Reihenfolge eines Stapels neu setzen (oben zuerst); der Stapel liegt danach über allem anderen */
+function zgStapelOrdnen(oben){ zgSnap(); const bl=oben.slice().reverse().map(i=>zgMitIdx([i])), alle=new Set(bl.flat()); ZG.striche=ZG.striche.filter((_,i)=>!alle.has(i)).concat(bl.flatMap(B=>B.map(i=>ZG.striche[i]))); }
+function zgShAktion(z,kk){ const K=zgStpKarten(), k=kk!=null?kk:ZG.stp.k, i=K[k], st=ZG.stp.st; if(i==null) return;
+  if(z==="shKarte"){ ZG.stp.k=k; zgShBauen(); return; }
+  if(z==="shUm"){ zgUmdrehen(i,false); zgShBauen(); return; }
+  if(z==="shOben"||z==="shEdit"){ if(k>0) zgStapelOrdnen([i,...K.filter(j=>j!==i)]); const K2=zgStapel(st), ni=K2[K2.length-1]; zgStpZu(); ZG.sel=[ni]; ZG.selWz=false; if(z==="shEdit") zgTextFeld(ni); else { zgOptBauen(); zgMalen(); } return; }
+  if(z==="shRaus"){ zgSnap(); const Z=ZG.striche[i], m=zgAngeheftet([i]), [a,,c]=zgBoxRoh(Z), dx=(c-a)+40, n={...Z,p:[Z.p[0]+dx,Z.p[1],Z.p[2]+dx,Z.p[3]].map(zgR)}; delete n.st; ZG.striche[i]=n; zgFolgen(m);
+    zgBlockVerschieben(zgMitIdx([i]),i,null); zgStapelPflegen(); ZG.stp.k=Math.max(0,Math.min(k,K.length-2)); if(zgStapel(st).length<2) zgStpZu(); else zgShBauen(); zgMalen(); return; }
+  if(z==="shDel"){ ZG.sel=[i]; zgSelLoeschen(); ZG.stp.k=Math.max(0,Math.min(k,K.length-2)); if(zgStapel(st).length<2) zgStpZu(); else zgShBauen(); return; } }
+/* Zeiger im Blatt: Griff nach unten ziehen schließt; Karte gedrückt halten und ziehen sortiert */
+function zgShZeiger(ev){ if(!ZG||!ZG.stp) return; const el=zgStpEl(), sh=el.querySelector(".zg-sh-k"); if(!sh) return;
+  if(ev.target.closest("[data-griff]")){ const y0=ev.clientY; let dy=0; sh.style.transition="none";
+    const mv=e=>{ dy=Math.max(0,e.clientY-y0); sh.style.transform=`translateY(${dy}px)`; }, up=()=>{ removeEventListener("pointermove",mv); removeEventListener("pointerup",up); sh.style.transition=""; sh.style.transform=""; if(dy>110) zgStpZu(); };
+    addEventListener("pointermove",mv); addEventListener("pointerup",up); return; }
+  const kt=ev.target.closest(".zg-sh-karte"); if(!kt||ZG.stp.tab!=="ueb") return; const x0=ev.clientX, y0=ev.clientY, von=+kt.dataset.k, ras=el.querySelector("#zgShRaster"), st0=ras?ras.scrollTop:0; let zieht=false, rollt=false, ziel=von, T=null;
+  const ende=()=>{ clearTimeout(T); removeEventListener("pointermove",mv); removeEventListener("pointerup",up); removeEventListener("pointercancel",up); };
+  const mv=e=>{ if(!zieht){ if(rollt||Math.hypot(e.clientX-x0,e.clientY-y0)>8){ clearTimeout(T); rollt=true; if(ras) ras.scrollTop=st0-(e.clientY-y0); } return; } e.preventDefault(); kt.style.transform=`translate(${e.clientX-x0}px,${e.clientY-y0}px) scale(1.05)`;
+    kt.style.pointerEvents="none"; const u=document.elementFromPoint(e.clientX,e.clientY), z=u&&u.closest&&u.closest(".zg-sh-karte"); kt.style.pointerEvents="";
+    el.querySelectorAll(".zg-sh-karte").forEach(b=>b.classList.toggle("ziel",b===z&&b!==kt)); if(z&&z!==kt) ziel=+z.dataset.k; };
+  const up=()=>{ ende(); if(rollt){ ZG.stp.zog=true; setTimeout(()=>{ if(ZG&&ZG.stp) ZG.stp.zog=false; },50); } if(!zieht) return; ZG.stp.zog=true; setTimeout(()=>{ if(ZG&&ZG.stp) ZG.stp.zog=false; },50);
+    if(ziel!==von){ const K=zgStpKarten(), o=K.slice(); const [m]=o.splice(von,1); o.splice(ziel,0,m); zgStapelOrdnen(o); ZG.stp.k=ziel; zgMalen(); } zgShBauen(); };
+  T=setTimeout(()=>{ zieht=true; kt.classList.add("zieht"); },320);
+  addEventListener("pointermove",mv,{passive:false}); addEventListener("pointerup",up); addEventListener("pointercancel",up); }
+/* Lernen: fällige Karten nach dem Karteikasten-Prinzip – Nochmal (gleich wieder), Schwer (später nochmal, morgen wieder), Gewusst (Abstand wächst: 1, 2, 4, 8, 16 Tage) */
+function zgLernStart(alle){ const K=zgStpKarten(), q=K.filter(i=>alle||zgFaellig(ZG.striche[i])); ZG.stp.tab="lern"; ZG.lern={q,ges:q.length,ja:0,wdh:new Set(),um:false,alle:!!alle}; zgLernBauen(); }
+function zgLernBauen(){ const el=zgStpEl(), L=ZG.lern, fertig=L.ges-L.q.length, pz=L.ges?Math.round(fertig/L.ges*100):100;
+  const kopf=zgShKopf(L.q.length?`<span class="zg-sh-zahl">${fertig+1} / ${L.ges}</span>`:"")+`<div class="zg-sh-fort"><i style="width:${pz}%"></i></div>`;
+  let inh;
+  if(!L.ges){ const K=zgStpKarten(), n=K.map(i=>(ZG.striche[i].lz||{}).f).filter(Boolean).sort((a,b)=>a-b)[0], wann=n?new Date(n).toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"}):"";
+    inh=`<div class="zg-sh-ende"><b>Für heute alles gelernt</b><p>${wann?`Die nächste Karte ist am ${wann} wieder dran.`:"Keine Karte ist gerade fällig."}</p><div class="zg-sh-endek"><button class="zg-sh-haupt" data-z="lernAlle">Trotzdem alle lernen</button></div></div>`; }
+  else if(!L.q.length) inh=`<div class="zg-sh-ende"><b>Geschafft</b><p>${L.ges} Karten · ${L.ges-L.wdh.size} auf Anhieb gewusst${L.wdh.size?` · ${L.wdh.size} mit Wiederholung`:""}</p>
+      <div class="zg-sh-endek"><button class="zg-sh-zweit" data-z="shTab" data-v="ueb">Zur Übersicht</button><button class="zg-sh-haupt" data-z="lernAlle">Alle nochmal</button></div></div>`;
+  else { const i=L.q[0], s=ZG.striche[i], [a,b,c,d]=zgBoxRoh(s), hatR=zgHatSeite(i,true), frage=String(s.s||"").trim(), w=`min(640px,86%,calc(52vh * ${zgR((c-a)/(d-b))}))`;
+    inh=`<div class="zg-sh-buehne"><button class="zg-lk" data-z="lernDreh" style="width:${w}" aria-label="Karte umdrehen"><div class="zg-lk-dreh${L.um?" um":""}">
+        <div class="zg-lk-s v"><div class="zg-lk-band">Vorderseite</div><div class="zg-lk-inh">${zgKarteSvg(i,"v",true)}</div></div>
+        <div class="zg-lk-s r"><div class="zg-lk-band gruen">Rückseite</div>${frage?`<div class="zg-lk-frage">${zgEsc(frage)}</div>`:""}<div class="zg-lk-inh">${hatR?zgKarteSvg(i,"r",true):`<p class="zg-lk-leer">Keine Rückseite</p>`}</div></div></div></button></div>
+      <div class="zg-sh-tip mitte">${L.um?"Wie gut wusstest du es?":"Antippen zum Umdrehen"}</div>
+      <div class="zg-sh-bew"><button class="nein" data-z="lernBew" data-v="0"><b>Nochmal</b><span>gleich wieder</span></button><button class="schwer" data-z="lernBew" data-v="1"><b>Schwer</b><span>später nochmal</span></button><button class="ja" data-z="lernBew" data-v="2"><b>Gewusst</b><span>fertig für heute</span></button></div>`; }
+  el.innerHTML=`<div class="zg-sh-k voll">${kopf}${inh}</div>`; }
+function zgLernBew(n){ const L=ZG.lern; if(!L||!L.q.length) return; const i=L.q[0], s=ZG.striche[i], lz={...(s.lz||{})}, st=lz.s||0;
+  if(n===2){ lz.s=Math.min(5,st+1); lz.f=zgHeute()+ZG_LZ[lz.s]*ZG_TAG; L.q.shift(); }
+  else if(n===1){ lz.s=Math.max(1,st); lz.f=zgHeute()+ZG_TAG; L.wdh.add(i); L.q.push(L.q.shift()); }
+  else { lz.s=0; lz.f=Date.now(); L.wdh.add(i); const x=L.q.shift(); L.q.splice(Math.min(2,L.q.length),0,x); }
+  ZG.striche[i]={...s,lz}; ZG.aend++; L.um=false; zgLernBauen(); const kt=ZG.ov.querySelector(".zg-lk"); if(kt){ kt.classList.add("rein"); requestAnimationFrame(()=>requestAnimationFrame(()=>kt.classList.remove("rein"))); } }
+function zgLernDreh(){ const L=ZG.lern; if(!L) return; L.um=!L.um; const d=ZG.ov.querySelector(".zg-lk-dreh"); if(d) d.classList.toggle("um",L.um); const t=ZG.ov.querySelector(".zg-sh-tip.mitte"); if(t) t.textContent=L.um?"Wie gut wusstest du es?":"Antippen zum Umdrehen"; }
 function zgNachVorne(zi){ zgSnap(); ZG.sel=[zgBlockVerschieben(zgMitIdx([zi]),zi,null)]; zgOptBauen(); zgMalen(); }
 const zgMitIdx=idx=>[...new Set([...idx,...zgAngeheftet(idx).flatMap(m=>m.L.map(x=>x.j))])].sort((a,b)=>a-b);
 function zgFolgen(mit){ for(const m of mit){ const N=ZG.striche[m.zi], O=m.Z; if(!N||N.t!=="zettel") continue;
@@ -838,7 +850,7 @@ function zgUp(ev){ if(!ZG) return; const id=ev.pointerId;
     if(z){ zgZettelNeu(x,y); return; }
     const ty=y-(ZG.cfg.text.fs||28)*.62; zgTextFeld(null,x,ZG.board?ty:Math.max(0,ty)); return; }
   if(ZG.zug){ const z=ZG.zug; ZG.zug=null;
-    if(!st.bewegt){ ZG.hist.pop(); ZG.aend--; if(z.art==="ziehen"&&!ZG.selWz&&ZG.sel.length===1&&["text","zettel"].includes(ZG.striche[ZG.sel[0]].t)){ zgTextFeld(ZG.sel[0]); return; } }
+    if(!st.bewegt){ ZG.hist.pop(); ZG.aend--; if(z.art==="ziehen"&&!ZG.selWz&&ZG.sel.length===1&&performance.now()-(st.t||0)<450&&["text","zettel"].includes(ZG.striche[ZG.sel[0]].t)){ zgTextFeld(ZG.sel[0]); return; } }
     else { /* schnell zur Seite gewischt auf einem Stapel ⇒ blättern statt verschieben */
       const dt=performance.now()-(st.t||0), dx=ev.clientX-st.cx, dy=ev.clientY-st.cy, s0=ZG.sel.length===1&&ZG.striche[ZG.sel[0]];
       if(z.art==="ziehen"&&s0&&s0.t==="zettel"&&s0.st&&zgStapel(s0.st).length>1&&dt<380&&Math.abs(dx)>50&&Math.abs(dx)>1.6*Math.abs(dy)){
@@ -1092,17 +1104,14 @@ function zgKlick(ev){ const t=ev.target.closest("[data-z]"); if(!t||!ZG||t.tagNa
     case "selAus": zgKopieren(); zgSelLoeschen(); return;
     case "stapeln": zgStapeln(); return;
     case "stapelAnsicht": if(ZG.sel.length===1&&ZG.striche[ZG.sel[0]].st) zgStapelAnsicht(ZG.striche[ZG.sel[0]].st); return;
-    case "stpZu": zgStpZu(); return;
-    case "stpKarte": case "stpOben": case "stpEdit": case "stpRaus": case "stpDel": case "stpFaechern": case "stpUm": zgStpAktion(z,t.dataset.k!=null?+t.dataset.k:null); return;
-    case "stpPfeil": zgStpGehe(ZG.stp.k+(+v)); return;
-    case "stpLernen": zgLernStart(); return;
     case "stapelLernen": if(ZG.sel.length===1&&ZG.striche[ZG.sel[0]].st) zgStapelAnsicht(ZG.striche[ZG.sel[0]].st,0,true); return;
-    case "lernJa": zgLernWeiter(true); return;
-    case "lernNein": zgLernWeiter(false); return;
-    case "lernZu": zgStpBauen(); return;
-    case "lernNeu": zgLernStart(); return;
-    case "lernSchwer": zgLernStart([...ZG.lern.falsch]); return;
-    case "lernMischen": { const L=ZG.lern; if(L&&L.q.length>1){ for(let n=L.q.length-1;n>0;n--){ const m=Math.floor(Math.random()*(n+1)); [L.q[n],L.q[m]]=[L.q[m],L.q[n]]; } L.um=false; zgLernBauen(); if(typeof toast==="function") toast("Gemischt"); } return; }
+    case "stpZu": zgStpZu(); return;
+    case "shTab": if(v==="lern") zgLernStart(); else zgShBauen(); return;
+    case "shKarte": if(ZG.stp&&ZG.stp.zog) return; zgShAktion(z,+t.dataset.k); return;
+    case "shOben": case "shEdit": case "shUm": case "shRaus": case "shDel": zgShAktion(z); return;
+    case "lernDreh": zgLernDreh(); return;
+    case "lernBew": zgLernBew(+v); return;
+    case "lernAlle": zgLernStart(true); return;
     case "umdrehen": if(ZG.sel.length===1){ const i=ZG.sel[0]; zgUmdrehen(i,true); ZG.sel=[i]; } return;
     case "zUm": { if(ZG.edit&&ZG.edit.zettel){ const i=ZG.edit.i; ZG.ta.blur(); zgUmdrehen(i,true,()=>zgTextFeld(i)); } else if(ZG.sel.length===1){ const i=ZG.sel[0]; zgUmdrehen(i,true); ZG.sel=[i]; } return; }
     case "zKK": { const C=ZG.cfg.zettel, an=ZG.edit&&ZG.edit.zettel?!ZG.edit.s.kk:ZG.sel.length?!ZG.sel.some(i=>ZG.striche[i].kk):!C.kk;
@@ -1136,8 +1145,8 @@ function zgEinfuegen(pos){ if(!ZG_CLIP||!ZG_CLIP.length) return; let a=Infinity,
   const mitte=(ZG.sy-ZG.top+ZG.vh/2)/ZG.sk; let dx=(ZG.vw/2-ZG.px)/ZG.sk-(a+c)/2, dy=(ZG.board?mitte-(d-b)/2:Math.max(10,mitte-(d-b)/2))-b; if(pos){ dx=pos[0]-(a+c)/2; dy=ZG.board?pos[1]-(b+d)/2:Math.max(10-b,pos[1]-(b+d)/2); } zgSnap(); const n0=ZG.striche.length;
   ZG.striche.push(...zgKlone(ZG_CLIP).map(s=>({...s,p:s.p.map((v,j)=>zgR(j%2?v+dy:v+dx))}))); ZG.sel=ZG_CLIP.map((s,k)=>n0+k); ZG.selWz=false; zgWachsen(d+dy); zgOptBauen(); zgMalen(); }
 function zgTaste(e){ if(!ZG||ZG.ta||(e.target&&/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))) return;
-  if(ZG.lern){ if(e.key==="Escape") zgStpBauen(); else if(e.key===" "){ const kt=ZG.ov.querySelector("#zgLernK .zg-lern-dreh"); if(kt){ ZG.lern.um=!ZG.lern.um; kt.classList.toggle("um",ZG.lern.um); } } else if(e.key==="ArrowRight") zgLernWeiter(true); else if(e.key==="ArrowLeft") zgLernWeiter(false); e.preventDefault(); return; }
-  if(ZG.stp){ if(e.key==="Escape") zgStpZu(); else if(e.key==="ArrowRight"||e.key==="ArrowLeft"){ const bahn=ZG.ov.querySelector("#zgStpBahn"), K=bahn.querySelectorAll(".zg-stp-karte"), kt=K[Math.max(0,Math.min(K.length-1,ZG.stp.k+(e.key==="ArrowRight"?1:-1)))]; if(kt) bahn.scrollTo({left:kt.offsetLeft+kt.offsetWidth/2-bahn.clientWidth/2,behavior:"smooth"}); } e.preventDefault(); return; } const cmd=e.metaKey||e.ctrlKey, k=(e.key||"").toLowerCase();
+  if(ZG.lern){ if(e.key==="Escape") zgShBauen(); else if(e.key===" ") zgLernDreh(); else if(e.key==="1"||e.key==="2"||e.key==="3") zgLernBew(+e.key-1); e.preventDefault(); return; }
+  if(ZG.stp){ if(e.key==="Escape") zgStpZu(); e.preventDefault(); return; } const cmd=e.metaKey||e.ctrlKey, k=(e.key||"").toLowerCase();
   if(cmd&&k==="z"){ e.preventDefault(); ZG.ov.querySelector(`[data-z="${e.shiftKey?"redo":"undo"}"]`).click(); }
   else if((e.key==="Backspace"||e.key==="Delete")&&ZG.sel.length){ e.preventDefault(); zgSelLoeschen(); }
   else if(cmd&&k==="c"&&ZG.sel.length) zgKopieren();
