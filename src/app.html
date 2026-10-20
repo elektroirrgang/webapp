@@ -1162,8 +1162,8 @@ const CONFIG=Object.assign({
 const SYNC_ON=!!(CONFIG.tenantId&&CONFIG.clientId&&CONFIG.shareUrl);
 
 const TH_KEY="evse_theme", OLD_KEY="evse_protos_v1";
-const KINDS=["kunden","standorte","ladeparks","pruefungen","katalog"];
-const DB={kunden:new Map(),standorte:new Map(),ladeparks:new Map(),pruefungen:new Map(),katalog:new Map()};
+const KINDS=["kunden","standorte","ladeparks","pruefungen","katalog","geraete"];
+const DB={kunden:new Map(),standorte:new Map(),ladeparks:new Map(),pruefungen:new Map(),katalog:new Map(),geraete:new Map()};
 let META={profil:{name:""},pins:[],archiv:[],filter:"alle",sync:{}};
 let cur=null, nav={v:"start"}, saveTimer=null, dirtyCur=false, dataDB=null, query="";
 let ME={name:"",mail:"",admin:false,signedIn:false};
@@ -1302,7 +1302,7 @@ const b64u=s=>btoa(unescape(encodeURIComponent(s))).replace(/=+$/,"").replace(/\
 /* Ablage: eine SharePoint-Website mit drei Bibliotheken. Welche Daten in welche Bibliothek gehören, steht in BIB.
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
 const BIB={kunden:"Kundendaten",standorte:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",
-  ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",
+  ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
   baustellen:"Baustellen",eintraege:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Prüfprotokolle"};
 async function syncRoot(){
   if(SY.drive) return;
@@ -2267,7 +2267,7 @@ function projektView(){
       ${tf("p.pruefer","Prüfer",p.pruefer)}
       ${tf("p.projekt","Bezeichnung (optional)",p.projekt,{full:true,ph:"z. B. Erweiterung Ladesäule 5 und 6"})}
     </div></section>
-    <section class="card"><h3>Messgeräte</h3><div class="fg">
+    <section class="card"><h3>Messgeräte</h3><div class="fg">${gerChips(p)}
       ${tf("p.geraet","Messgerät",p.geraet)}
       ${tf("p.geraetSn","Seriennummer",p.geraetSn)}
       <div>${tf("p.kal","Kalibrierung gültig bis",p.kal,{ph:"MM.JJJJ"})}<div id="kalWarn">${kalWarnHtml(cur)}</div><p class="sup" style="margin:4px 4px 0">Wiha MFT one: Hersteller empfiehlt Kalibrierung alle 12 Monate.</p></div>
@@ -2820,7 +2820,7 @@ function neuePruefung(kundeId,standortId,ladeparkId,st,vorlage){
   const p=newProto();
   if(st){ p.s=st.stationen; nummeriere(p.s); } p.kundeId=kundeId; p.standortId=standortId; p.ladeparkId=ladeparkId||null; p.p.pruefer=who().name;
   const meine=live("pruefungen").filter(x=>!SYNC_ON||sameUser(x.createdBy,ME)).sort((a,b)=>(b.created||0)-(a.created||0))[0];
-  if(meine) ["geraet","geraetSn","kal","adapter"].forEach(f=>p.p[f]=meine.p[f]);
+  if(meine) ["geraet","geraetSn","kal","adapter","adapterSn"].forEach(f=>p.p[f]=meine.p[f]); gerVorbelegen(p);
   const prev=vorlage||pruefAt(standortId,ladeparkId||null)[0];
   if(!st&&G0.length){ p.s=G0.map(stAusGeraet); nummeriere(p.s); }
   if(prev){
@@ -3231,6 +3231,7 @@ document.addEventListener("click",ev=>{
   case "frist": { const n=b.dataset.v; if(String(cur.a.fristJ)===n){ delete cur.a.fristJ; cur.a.naechste=""; } else { cur.a.fristJ=n; const d=new Date((cur.p.datum||today())+"T12:00:00"); d.setFullYear(d.getFullYear()+(+n)); cur.a.naechste=d.toISOString().slice(0,10); }
     scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "kAbw": cur.a.kAbwesend=!cur.a.kAbwesend; if(cur.a.kAbwesend){ cur.a.sigK=""; } scheduleSave(); { const y=scrollY; render(); scrollTo(0,y); } return;
+  case "gerWahl": { if(!canEdit(cur)) return; gerSetzen(cur,DB.geraete.get(b.dataset.id)); commit(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "norm": { const n=b.dataset.n, L=cur.p.normen, i=L.indexOf(n); if(i>=0) L.splice(i,1); else L.push(n); b.setAttribute("aria-pressed",i<0); scheduleSave(); return; }
   case "addS": stDialog({mode:"add",bauart:BAUART(cur.s[cur.s.length-1]||{})}); return;
   case "addS_": { const prev=cur.s[cur.s.length-1], s=newSaeule(cur.s.length+1);
@@ -3303,6 +3304,21 @@ async function importBackup(el){
 const snNorm=v=>String(v||"").replace(/[\s\-./]/g,"").toUpperCase();
 function snDoppelt(p,si){ const n=snNorm(p.s[si].sn); if(!n) return []; return p.s.map((x,i)=>i!==si&&snNorm(x.sn)===n?sName(x,i):null).filter(Boolean); }
 const snWarnHtml=(p,si)=>{ const d=snDoppelt(p,si); return d.length?`<p class="warnline">${icon("warn")}Seriennummer kommt auch bei ${esc(d.join(", "))} vor.</p>`:""; };
+/* Geräteliste aus der Übersicht: antippen übernimmt Name, Seriennummer und Kalibrierdatum. */
+const gerName=g=>[g.hersteller,g.modell].filter(Boolean).join(" ")||"Gerät";
+const gerListe=art=>live("geraete").filter(g=>!g.aus&&(g.art||"mess")===art).sort((a,b)=>gerName(a).localeCompare(gerName(b),"de"));
+function gerChips(p){
+  const M=gerListe("mess"), A=gerListe("adapter"); if(!M.length&&!A.length) return "";
+  const c=(g,an)=>`<button type="button" class="chip" data-act="gerWahl" data-id="${esc(g.id)}" aria-pressed="${an}" ${canEdit(cur)?"":"disabled"}>${esc(gerName(g))}${g.sn?` · ${esc(g.sn)}`:""}</button>`;
+  return `<div class="full"><div class="lbl">Aus der Geräteliste</div><div class="chips">${M.map(g=>c(g,!!g.sn&&g.sn===p.geraetSn)).join("")}${A.map(g=>c(g,!!g.sn&&g.sn===p.adapterSn)).join("")}</div></div>`;
+}
+function gerSetzen(p,g){ if(!g) return;
+  if((g.art||"mess")==="adapter"){ const alt=p.p.adapter; p.p.adapter=gerName(g); p.p.adapterSn=g.sn||""; if(p.a&&(p.a.funktion===defFunktion(alt)||!p.a.funktion)) p.a.funktion=defFunktion(p.p.adapter); }
+  else { p.p.geraet=gerName(g); p.p.geraetSn=g.sn||""; p.p.kal=g.kal||""; } }
+/* Neue Prüfung: zugeteiltes Gerät nehmen, sonst das übernommene anhand der Seriennummer aktualisieren (Kalibrierdatum). */
+function gerVorbelegen(p){
+  for(const art of ["mess","adapter"]){ const L=gerListe(art), sn=art==="mess"?p.p.geraetSn:p.p.adapterSn;
+    const g=L.find(x=>x.bei&&x.bei===ME.mail)||L.find(x=>x.sn&&x.sn===sn); if(g) gerSetzen(p,g); } }
 function kalBis(t){ t=String(t||"").trim(); let m;
   if((m=t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/))) return new Date(+m[3],+m[2]-1,+m[1]);
   if((m=t.match(/^(\d{1,2})[./](\d{4})$/))) return new Date(+m[2],+m[1],0);

@@ -1188,7 +1188,7 @@ async function gj(path,opt){ const r=await g(path,opt); if(!r.ok) throw Object.a
 /* Ablage: eine SharePoint-Website mit drei Bibliotheken. Welche Daten in welche Bibliothek gehören, steht in BIB.
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
 const BIB={kunden:"Kundendaten",standorte:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",
-  ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",
+  ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
   baustellen:"Baustellen",eintraege:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Kundendaten"};
 async function syncRoot(){
   if(SY.drive) return;
@@ -1373,6 +1373,7 @@ const IC={board:"M3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H5c-1.1
   globe:"M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z",
   notes:"M3 18h12v-2H3v2zM3 6v2h18V6H3zm0 7h18v-2H3v2z",
   tag:"M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z",
+  geraet:"M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z",
   book:"M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z",
   person:"M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z",
 };
@@ -1462,7 +1463,7 @@ const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
 
 const TH_KEY="evse_theme";
 const RES_TXT={ok:"fertig",bad:"Mängel",open:"offen",wip:"in Arbeit"};
-const KINDS=["kunden","standorte","ladeparks","pruefungen","baustellen","eintraege","einstellungen","dateien","vorgaenge"];
+const KINDS=["kunden","standorte","ladeparks","pruefungen","baustellen","eintraege","einstellungen","dateien","vorgaenge","geraete"];
 const EVSE_KINDS=["kunden","standorte","ladeparks","pruefungen"], BAU_KINDS=["baustellen","eintraege"];
 const DB=Object.fromEntries(KINDS.map(k=>[k,new Map()]));
 let META={profil:{name:""},sync:{}};
@@ -1485,7 +1486,7 @@ function dbPut(kind,rec){ DB[kind].set(rec.id,rec); const db=dbOf(kind); if(!db)
   if(kind==="einstellungen") einstSetzen(live("einstellungen")); }
 function metaSave(){ if(aDB) try{ aDB.transaction("meta","readwrite").objectStore("meta").put(META,"meta"); }catch(e){} }
 async function dataLoad(){
-  try{ kDB=await openStores("evse_daten",[...EVSE_KINDS,"katalog"],true); bDB=await openStores("baustelle_daten",BAU_KINDS,true); aDB=await openStores("irrgang_apps",["einstellungen","dateien","vorgaenge"],true);
+  try{ kDB=await openStores("evse_daten",[...EVSE_KINDS,"katalog"],true); bDB=await openStores("baustelle_daten",BAU_KINDS,true); aDB=await openStores("irrgang_apps",["einstellungen","dateien","vorgaenge","geraete"],true);
     for(const k of KINDS){ (await idbReq(dbOf(k).transaction(k).objectStore(k).getAll())).forEach(r=>DB[k].set(r.id,r)); }
     const m=await idbReq(aDB.transaction("meta").objectStore("meta").get("meta")); if(m) META=Object.assign(META,m);
   }catch(e){ kDB=bDB=aDB=null; toast("Gerätespeicher nicht verfügbar – Daten nur bis zum Schließen"); }
@@ -1603,7 +1604,7 @@ const ENTWICKLUNG=[
   {t:"Firmenadresse",st:"open",s:"Geplant",d:"Umzug auf ein Firmenkonto bei GitHub und ggf. eine eigene Adresse unter elektro-irrgang.de."},
   {t:"E-Check (Hausinstallation und Geräte)",st:"wip",s:"In Vorbereitung",d:"App angelegt mit Anmeldung und Kunden. Offen: Messgeräte, Protokollvorlagen, Datenübernahme aus dem Messgerät, Abgrenzung zu SCC Mobile."}];
 const ENTW_STAND="15.10.2026";
-const TOPDEST_ALLE=[["start","Start","home"],["auftraege","Aufträge","board"],["uebersicht","Statistik","chart"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
+const TOPDEST_ALLE=[["start","Start","home"],["auftraege","Aufträge","board"],["uebersicht","Statistik","chart"],["kunden","Kunden","firma"],["geraete","Geräte","geraet"],["bibliothek","Bibliothek","folder"]];
 const topdest=()=>TOPDEST_ALLE.filter(d=>d[0]!=="uebersicht"||ME.admin);
 const MEHR_SUB={team:"Mitarbeiter",impressum:"Impressum",about:"Über",entwicklung:"Entwicklung"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
@@ -1895,6 +1896,7 @@ function render(){
   if(login) body=loginView();
   else if(nav.v==="start") body=startView();
   else if(nav.v==="uebersicht"){ title="Statistik"; body=uebersichtView()+(SYNC_ON?"":`<p class="hint">Daten auf diesem Gerät – mit der Microsoft-Anbindung kommen die Daten aller Mitarbeiter dazu.</p>`); }
+  else if(nav.v==="geraete"){ title="Geräte"; body=geraeteView(); fab=ME.admin?["gerNeu","Gerät","add"]:null; }
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=ME.admin?["newKunde","Kunde","add"]:null; }
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
   else if(nav.v==="auftraege"){ title="Aufträge"; body=vorgaengeView(); fab=["vgNeu","Vorgang","add"]; }
@@ -2076,6 +2078,36 @@ function bezugZahl(kind,id){
 }
 
 const STATUS_MA=[["aktiv","Aktiv"],["weg","Ausgeschieden"]];
+/* Messgeräte und Prüfadapter der Firma – gepflegt in der Übersicht, ausgewählt in EVSE (Seriennr. und Kalibrierung kommen von hier). */
+const GER_ART=[["mess","Messgerät"],["adapter","Prüfadapter"],["sonst","Sonstiges"]];
+function gerKalBis(t){ t=String(t||"").trim(); let m;
+  if((m=t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/))) return new Date(+m[3],+m[2]-1,+m[1]);
+  if((m=t.match(/^(\d{1,2})[./](\d{4})$/))) return new Date(+m[2],+m[1],0); return null; }
+function gerKal(g){ if(!g.kal) return g.art==="mess"?{s:"leer",t:"Kalibrierung fehlt"}:null; const b=gerKalBis(g.kal); if(!b) return {s:"form",t:"Datum prüfen (MM.JJJJ)"};
+  const rest=Math.floor((b-new Date())/864e5); return rest<0?{s:"ab",t:`abgelaufen seit ${g.kal}`}:rest<=60?{s:"bald",t:`läuft ab ${g.kal}`}:{s:"ok",t:`kalibriert bis ${g.kal}`}; }
+const gerName=g=>[g.hersteller,g.modell].filter(Boolean).join(" ")||"Gerät";
+function geraeteView(){
+  const L=live("geraete").filter(g=>!g.aus).sort((a,b)=>gerName(a).localeCompare(gerName(b),"de")), A=live("geraete").filter(g=>g.aus);
+  if(!L.length&&!A.length) return `<div class="empty">${icon("geraet")}<h2>Noch keine Geräte</h2><p>${ME.admin?"Lege mit „Gerät“ die Messgeräte und Prüfadapter an – mit Seriennummer und Kalibrierdatum. In EVSE werden sie dann nur noch ausgewählt.":"Messgeräte pflegt der Chef oder das Büro."}</p></div>`;
+  const z=g=>{ const k=gerKal(g), wer=g.bei?(team().find(m=>m.mail===g.bei)||{name:g.bei}).name:"";
+    return `<div class="li" role="button" tabindex="0" data-act="gerEdit" data-id="${esc(g.id)}"><span class="av">${icon("geraet")}</span><span class="lt"><span class="h">${esc(gerName(g))}</span>
+      <span class="s">${esc([g.sn&&`SN ${g.sn}`,wer&&`bei ${wer}`].filter(Boolean).join(" · ")||"–")}</span>${k?`<span class="st">${pill(k.s==="ok"?"ok":k.s==="bald"?"wip":"bad",k.t)}</span>`:""}</span></div>`; };
+  return `<div class="narrow">${GER_ART.map(([v,t])=>{ const g=L.filter(x=>(x.art||"mess")===v); return g.length?`<div class="sec-lbl">${t} · ${g.length}</div>${listOf(g.map(z))}`:""; }).join("")}
+    ${A.length?`<div class="sec-lbl">Ausgemustert · ${A.length}</div>${listOf(A.map(z))}`:""}
+    <p class="hint">In EVSE wählt jeder das Gerät nur noch aus – Seriennummer und Kalibrierdatum kommen von hier.${ME.admin?"":" Ändern können Admins."}</p></div>`;
+}
+let gerForm=null;
+function gerDialog(g){
+  gerForm={id:g&&g.id}; const r=g||{art:"mess"}, T=team().filter(m=>m.mail);
+  if(!ME.admin){ const k=gerKal(r); dialog(gerName(r),`<p>${esc([GER_ART.find(x=>x[0]===r.art)?.[1],r.sn&&`Seriennr. ${r.sn}`,k&&k.t].filter(Boolean).join(" · "))}</p>${r.notiz?`<p class="meta">${esc(r.notiz)}</p>`:""}`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return; }
+  dialog(g?"Gerät bearbeiten":"Neues Gerät",`<div class="fg1">${sf("art","Art",r.art||"mess",GER_ART,{form:true})}
+    <div class="row2">${tf("hersteller","Hersteller",r.hersteller,{form:true,ph:"z. B. Wiha"})}${tf("modell","Modell",r.modell,{form:true,ph:"z. B. MFT one"})}</div>
+    ${tf("sn","Seriennummer",r.sn,{form:true})}
+    ${tf("kal","Kalibrierung gültig bis",r.kal,{form:true,ph:"MM.JJJJ"})}
+    ${sf("bei","Zugeteilt an",r.bei||"",[["","niemand / Firma"],...T.map(m=>[m.mail,m.name])],{form:true})}
+    ${ta("notiz","Notiz",r.notiz,{form:true,ph:"z. B. liegt im Sprinter, Kalibrierung bei …"})}</div>`,
+    `${g?`<button class="btn-text danger" data-act="gerAus">${r.aus?"Wieder aktiv":"Ausmustern"}</button>`:""}<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gerSave">Speichern</button>`);
+}
 function teamView(){
   const T=teamAlle(), a=T.filter(m=>m.status!=="weg"), w=T.filter(m=>m.status==="weg");
   const z=m=>`<div class="li" role="button" tabindex="0" data-act="teamEdit" data-mail="${esc(m.mail)}"><span class="av">${esc(initials(m.name))}</span><span class="lt"><span class="h">${esc(m.name)}</span><span class="s">${esc([m.mail,m.rolle].filter(Boolean).join(" · "))}</span>${m.admin||m.status==="weg"?`<span class="st">${m.admin?pill("ok","Admin"):""}${m.status==="weg"?pill("open","ausgeschieden"):""}</span>`:""}</span>${icon("edit")}</div>`;
@@ -2240,6 +2272,11 @@ document.addEventListener("click",async ev=>{
     if(!istBild(d)){ const u=await dateiUrl(d.id); const w=window.open(u,"_blank"); if(w) return; } saveFile(bl,d.name); return; }
   case "dateiDelAsk": confirmDlg("Datei löschen?","Die Datei wird für alle entfernt.","Löschen",`dateiDel:${b.dataset.id}`); return;
   case "teamNeu": teamDialog(null); return;
+  case "gerNeu": if(ME.admin) gerDialog(null); return;
+  case "gerEdit": gerDialog(DB.geraete.get(b.dataset.id)); return;
+  case "gerSave": { if(!ME.admin||!gerForm) return; const F=formVals(); if(!F.modell&&!F.hersteller&&!F.sn){ toast("Bitte mindestens Modell oder Seriennummer eintragen"); return; }
+    const r=gerForm.id?DB.geraete.get(gerForm.id):{id:uid()}; Object.assign(r,{art:F.art,hersteller:F.hersteller,modell:F.modell,sn:F.sn,kal:F.kal,bei:F.bei,notiz:F.notiz}); saveRec("geraete",r,!gerForm.id); gerForm=null; closeOverlays(); render(); return; }
+  case "gerAus": { const r=gerForm&&DB.geraete.get(gerForm.id); if(!r||!ME.admin) return; r.aus=!r.aus; saveRec("geraete",r); gerForm=null; closeOverlays(); render(); toast(r.aus?"Ausgemustert – in EVSE nicht mehr auswählbar":"Wieder aktiv"); return; }
   case "teamEdit": teamDialog(teamAlle().find(m=>m.mail===b.dataset.mail)); return;
   case "teamStatus": if(teamForm){ if(teamForm.alt===ME.mail&&b.dataset.v==="weg"){ toast("Dich selbst kannst du nicht austragen"); return; } teamForm.status=b.dataset.v; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;
   case "teamAdmin": if(teamForm){ if(teamForm.alt===ME.mail&&b.dataset.v==="0"){ toast("Dich selbst kannst du nicht herabstufen"); return; } teamForm.admin=b.dataset.v==="1"; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;
