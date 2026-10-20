@@ -1997,7 +1997,7 @@ const skRechts=()=>{ if(VIEW_KIND[nav.v]){ const r=DB[VIEW_KIND[nav.v]].get(nav.
 function seitenKopf(t,s,f){ t=t||(f?KOPF_START:""); if(!t&&!f) return "";
   const T=pfadTeile(); if(!t&&!f&&typeof skRechts==="function"&&skRechts()) t=KOPF_START; if(s&&s.includes("›")) s=s.split(/\s*›\s*/).pop(); 
   const pf="";
-  return `<div class="sk">${T.length?`<button class="sk-zur sk-zt" data-act="skZurueck" aria-label="Zurück zu ${esc(T[T.length-1][0])}" title="Zurück zu ${esc(T[T.length-1][0])}">${icon("chev")}<span>${esc(T[T.length-1][0])}</span></button>`:""}<div class="sk-t">${t?`<h1>${esc(t)}</h1>`:""}${s?`<p>${esc(s)}</p>`:""}</div>${typeof skRechts==="function"?skRechts():""}</div>`; }
+  return `<div class="sk">${T.length?`<button class="sk-zur sk-zt" data-act="skZurueck" aria-label="Zurück" title="Zurück">${icon("chev")}</button>`:""}<div class="sk-t">${t?`<h1>${esc(t)}</h1>`:""}${s?`<p>${esc(s)}</p>`:""}</div>${typeof skRechts==="function"?skRechts():""}</div>`; }
 function backSetzen(){ const b=$("#backBtn"); if(!b) return; b.innerHTML=icon("back"); }
 function crumbGo(i){ const T=pfadTeile(); if(i>=T.length-1||!T[i][1]) return zurueck(); pfadVerlassen(); go(T[i][1]); }
 const kette=(kid,sid,lid)=>{ const r=[["Kunden",{v:"kunden"}]], k=kid&&kundeOf(kid), s=sid&&standortOf(sid), l=lid&&ladeparkOf(lid);
@@ -2315,7 +2315,7 @@ function edKopf(t,s){
     del=`<button class="edk-del" data-act="nDelAsk" aria-label="Notiz löschen" title="Notiz löschen">${icon("del")}</button>`; }
   else if(nav.v==="eintrag"&&entw){ const da=entw.id&&DB.eintraege.has(entw.id), neu=entw._neu||!da; tools=tool("entwFoto","","cam","Foto aufnehmen");
     del=`<button class="edk-del" data-act="${neu?"entwVerwerfenAsk":"eintragDelAsk"}" aria-label="${neu?"Übergabe verwerfen":"Übergabe löschen"}" title="${neu?"Übergabe verwerfen":"Übergabe löschen"}">${icon("del")}</button>`; }
-  return `<div class="edk-platz" aria-hidden="true"></div><div class="edk"><button class="sk-zur sk-zt" data-act="skZurueck" aria-label="Zurück" title="Zurück">${icon("chev")}<span>Zurück</span></button>
+  return `<div class="edk-platz" aria-hidden="true"></div><div class="edk"><button class="sk-zur sk-zt" data-act="skZurueck" aria-label="Zurück" title="Zurück">${icon("chev")}</button>
   <div class="edk-t"><h1>${esc(t)}</h1>${s?`<p>${esc(s)}</p>`:""}</div>
   ${tools?`<div class="edk-tools" role="toolbar" aria-label="Hinzufügen">${tools}</div>`:""}${del}
   <button class="edk-fertig" data-act="edFertig">Fertig</button></div>`; }

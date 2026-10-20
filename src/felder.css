@@ -22,12 +22,11 @@
   ::-webkit-scrollbar-button{display:none;width:0;height:0}
 }
 @supports not selector(::-webkit-scrollbar){html,.dlg{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--on-surface) 25%,transparent) transparent}}
-/* Zurück: wie bei Apple „‹ Kunden“ – Pfeil und Name der Seite, zu der es zurückgeht, ohne Kreis */
-.sk-zur.sk-zt{width:auto!important;height:40px!important;border-radius:20px!important;padding:0 14px 0 4px!important;gap:0;display:inline-flex!important;align-items:center;background:transparent!important;color:var(--primary)!important;font:inherit;font-size:15px;font-weight:650;max-width:220px;margin:0 6px 0 -8px!important;flex:none;cursor:pointer}
-.sk-zur.sk-zt .ic{width:28px!important;height:28px!important;transform:scaleX(-1);flex:none}
-.sk-zur.sk-zt span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.sk-zur.sk-zt:hover{background:color-mix(in srgb,var(--primary) 8%,transparent)!important}
-.sk-zur.sk-zt:active{transform:none;background:color-mix(in srgb,var(--primary) 14%,transparent)!important}
+/* Zurück: nur ein Pfeil, ohne Text und ohne grauen Kreis – Fläche erst beim Drüberfahren/Antippen */
+.sk-zur.sk-zt{width:44px!important;height:44px!important;border-radius:50%!important;padding:0!important;display:grid!important;place-items:center;background:transparent!important;color:var(--on-surface)!important;margin:0 4px 0 -10px!important;flex:none;cursor:pointer;border:0}
+.sk-zur.sk-zt .ic{width:30px!important;height:30px!important;transform:scaleX(-1)}
+.sk-zur.sk-zt:hover{background:color-mix(in srgb,var(--on-surface) 7%,transparent)!important}
+.sk-zur.sk-zt:active{transform:scale(.92);background:color-mix(in srgb,var(--on-surface) 12%,transparent)!important}
 .sk:has(.sk-zt){align-items:center}
 /* Seitenleiste ein-/ausblenden (nur PC) */
 .sl-auf,.nav-head .sl-zu-btn{display:none}
