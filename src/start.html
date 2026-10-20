@@ -349,6 +349,7 @@ details.optrows .mrow:first-of-type{border-top:0}
 .iz a{color:var(--primary);font-weight:600;text-decoration:none;word-break:break-word}
 .infok .iz + .by{margin-top:8px}
 .av-img{overflow:hidden;background:var(--sc-high)}.av-img img{width:100%;height:100%;object-fit:cover}
+.ger-av{width:56px;height:56px;border-radius:14px;background:#fff}.ger-av img{object-fit:contain;padding:4px;box-sizing:border-box}
 .kat-kopf{display:grid;grid-template-columns:140px 1fr;gap:16px;align-items:start}
 .kat-bild .foto{aspect-ratio:1;width:100%}.kat-bild .foto img{object-fit:contain;background:#fff}
 @media (max-width:520px){.kat-kopf{grid-template-columns:1fr}.kat-bild{max-width:200px}}
@@ -1896,7 +1897,7 @@ function render(){
   if(login) body=loginView();
   else if(nav.v==="start") body=startView();
   else if(nav.v==="uebersicht"){ title="Statistik"; body=uebersichtView()+(SYNC_ON?"":`<p class="hint">Daten auf diesem Gerät – mit der Microsoft-Anbindung kommen die Daten aller Mitarbeiter dazu.</p>`); }
-  else if(nav.v==="geraete"){ title="Geräte"; body=geraeteView(); fab=ME.admin?["gerNeu","Gerät","add"]:null; }
+  else if(nav.v==="geraete"){ title="Geräte"; gerVorlagen(); body=geraeteView(); fab=ME.admin?["gerNeu","Gerät","add"]:null; }
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=ME.admin?["newKunde","Kunde","add"]:null; }
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
   else if(nav.v==="auftraege"){ title="Aufträge"; body=vorgaengeView(); fab=["vgNeu","Vorgang","add"]; }
@@ -2086,12 +2087,25 @@ function gerKalBis(t){ t=String(t||"").trim(); let m;
 function gerKal(g){ if(!g.kal) return g.art==="mess"?{s:"leer",t:"Kalibrierung fehlt"}:null; const b=gerKalBis(g.kal); if(!b) return {s:"form",t:"Datum prüfen (MM.JJJJ)"};
   const rest=Math.floor((b-new Date())/864e5); return rest<0?{s:"ab",t:`abgelaufen seit ${g.kal}`}:rest<=60?{s:"bald",t:`läuft ab ${g.kal}`}:{s:"ok",t:`kalibriert bis ${g.kal}`}; }
 const gerName=g=>[g.hersteller,g.modell].filter(Boolean).join(" ")||"Gerät";
+/* Firmengeräte (20.10.2026), einmalig angelegt – Seriennr. und Kalibrierung trägt der Admin nach. Feste IDs: legt ein zweites Gerät
+   sie auch an, gewinnt beim Abgleich die Fassung in SharePoint (updated=1). */
+const GER_MFT="https://wiha.com/media/87/89/b9/1770026915/47216-47217_Installation_tester_set_MFT_one_top.webp",
+  GER_PAT="https://wiha.com/media/6e/b7/6f/1772786021/47220-47221-47222-47223_PAT_02_side.webp",
+  GER_FEV="https://media.fluke.com/60d0e9ea-10d8-4871-801e-b108002e6ece_original__size.jpg";
+const GER_VORLAGE=[{id:"ger-wiha-mft-one-1",art:"mess",hersteller:"Wiha",modell:"MFT one",bildUrl:GER_MFT,notiz:"Installationstester"},
+  {id:"ger-wiha-mft-one-2",art:"mess",hersteller:"Wiha",modell:"MFT one",bildUrl:GER_MFT,notiz:"Installationstester"},
+  {id:"ger-wiha-pat-one-1",art:"mess",hersteller:"Wiha",modell:"PAT one",bildUrl:GER_PAT,notiz:"Gerätetester (ortsveränderliche Geräte)"},
+  {id:"ger-fluke-fev300-1",art:"adapter",hersteller:"Fluke",modell:"FEV300",bildUrl:GER_FEV,notiz:"Prüfadapter für Ladestationen"}];
+function gerVorlagen(){ if(!ME.admin||META.gerVorlage) return;
+  for(const v of GER_VORLAGE){ if(DB.geraete.has(v.id)) continue; const r=saveRec("geraete",Object.assign({sn:"",kal:"",bei:""},v),true); r.created=r.updated=1; dbPut("geraete",r); }
+  META.gerVorlage=1; metaSave(); }
+const gerAv=g=>g.bildUrl?`<span class="av av-img ger-av"><img src="${esc(g.bildUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>`:`<span class="av">${icon("geraet")}</span>`;
 function geraeteView(){
   const L=live("geraete").filter(g=>!g.aus).sort((a,b)=>gerName(a).localeCompare(gerName(b),"de")), A=live("geraete").filter(g=>g.aus);
   if(!L.length&&!A.length) return `<div class="empty">${icon("geraet")}<h2>Noch keine Geräte</h2><p>${ME.admin?"Lege mit „Gerät“ die Messgeräte und Prüfadapter an – mit Seriennummer und Kalibrierdatum. In EVSE werden sie dann nur noch ausgewählt.":"Messgeräte pflegt der Chef oder das Büro."}</p></div>`;
   const z=g=>{ const k=gerKal(g), wer=g.bei?(team().find(m=>m.mail===g.bei)||{name:g.bei}).name:"";
-    return `<div class="li" role="button" tabindex="0" data-act="gerEdit" data-id="${esc(g.id)}"><span class="av">${icon("geraet")}</span><span class="lt"><span class="h">${esc(gerName(g))}</span>
-      <span class="s">${esc([g.sn&&`SN ${g.sn}`,wer&&`bei ${wer}`].filter(Boolean).join(" · ")||"–")}</span>${k?`<span class="st">${pill(k.s==="ok"?"ok":k.s==="bald"?"wip":"bad",k.t)}</span>`:""}</span></div>`; };
+    return `<div class="li" role="button" tabindex="0" data-act="gerEdit" data-id="${esc(g.id)}">${gerAv(g)}<span class="lt"><span class="h">${esc(gerName(g))}</span>
+      <span class="s">${esc([g.sn?`SN ${g.sn}`:"Seriennummer fehlt",wer&&`bei ${wer}`,g.notiz].filter(Boolean).join(" · "))}</span>${k?`<span class="st">${pill(k.s==="ok"?"ok":k.s==="bald"?"wip":"bad",k.t)}</span>`:""}</span></div>`; };
   return `<div class="narrow">${GER_ART.map(([v,t])=>{ const g=L.filter(x=>(x.art||"mess")===v); return g.length?`<div class="sec-lbl">${t} · ${g.length}</div>${listOf(g.map(z))}`:""; }).join("")}
     ${A.length?`<div class="sec-lbl">Ausgemustert · ${A.length}</div>${listOf(A.map(z))}`:""}
     <p class="hint">In EVSE wählt jeder das Gerät nur noch aus – Seriennummer und Kalibrierdatum kommen von hier.${ME.admin?"":" Ändern können Admins."}</p></div>`;
@@ -2105,7 +2119,8 @@ function gerDialog(g){
     ${tf("sn","Seriennummer",r.sn,{form:true})}
     ${tf("kal","Kalibrierung gültig bis",r.kal,{form:true,ph:"MM.JJJJ"})}
     ${sf("bei","Zugeteilt an",r.bei||"",[["","niemand / Firma"],...T.map(m=>[m.mail,m.name])],{form:true})}
-    ${ta("notiz","Notiz",r.notiz,{form:true,ph:"z. B. liegt im Sprinter, Kalibrierung bei …"})}</div>`,
+    ${ta("notiz","Notiz",r.notiz,{form:true,ph:"z. B. liegt im Sprinter, Kalibrierung bei …"})}
+    ${tf("bildUrl","Bild (Internetadresse, optional)",r.bildUrl,{form:true,type:"url"})}</div>`,
     `${g?`<button class="btn-text danger" data-act="gerAus">${r.aus?"Wieder aktiv":"Ausmustern"}</button>`:""}<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gerSave">Speichern</button>`);
 }
 function teamView(){
@@ -2275,7 +2290,7 @@ document.addEventListener("click",async ev=>{
   case "gerNeu": if(ME.admin) gerDialog(null); return;
   case "gerEdit": gerDialog(DB.geraete.get(b.dataset.id)); return;
   case "gerSave": { if(!ME.admin||!gerForm) return; const F=formVals(); if(!F.modell&&!F.hersteller&&!F.sn){ toast("Bitte mindestens Modell oder Seriennummer eintragen"); return; }
-    const r=gerForm.id?DB.geraete.get(gerForm.id):{id:uid()}; Object.assign(r,{art:F.art,hersteller:F.hersteller,modell:F.modell,sn:F.sn,kal:F.kal,bei:F.bei,notiz:F.notiz}); saveRec("geraete",r,!gerForm.id); gerForm=null; closeOverlays(); render(); return; }
+    const r=gerForm.id?DB.geraete.get(gerForm.id):{id:uid()}; Object.assign(r,{art:F.art,hersteller:F.hersteller,modell:F.modell,sn:F.sn,kal:F.kal,bei:F.bei,notiz:F.notiz,bildUrl:F.bildUrl}); saveRec("geraete",r,!gerForm.id); gerForm=null; closeOverlays(); render(); return; }
   case "gerAus": { const r=gerForm&&DB.geraete.get(gerForm.id); if(!r||!ME.admin) return; r.aus=!r.aus; saveRec("geraete",r); gerForm=null; closeOverlays(); render(); toast(r.aus?"Ausgemustert – in EVSE nicht mehr auswählbar":"Wieder aktiv"); return; }
   case "teamEdit": teamDialog(teamAlle().find(m=>m.mail===b.dataset.mail)); return;
   case "teamStatus": if(teamForm){ if(teamForm.alt===ME.mail&&b.dataset.v==="weg"){ toast("Dich selbst kannst du nicht austragen"); return; } teamForm.status=b.dataset.v; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;
