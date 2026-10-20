@@ -1804,7 +1804,9 @@ async function dataLoad(){
   }catch(e){ kDB=bDB=null; toast("Gerätespeicher nicht verfügbar – Daten nur bis zum Schließen"); }
 }
 function saveNow(){}
-const kundeOf=id=>DB.kunden.get(id), standortOf=id=>DB.standorte.get(id);
+/* Zusammengeführte Kunden/Standorte zeigen auf den Eintrag, der bleibt (mergedInto). */
+const folgen=(M,id)=>{ let r=M.get(id), n=0; while(r&&r.mergedInto&&M.has(r.mergedInto)&&n++<5) r=M.get(r.mergedInto); return r; };
+const kundeOf=id=>folgen(DB.kunden,id), standortOf=id=>folgen(DB.standorte,id);
 const standorteVon=kid=>live("standorte").filter(s=>s.kundeId===kid).sort((a,b)=>a.name.localeCompare(b.name,"de"));
 const pfadText=b=>[(kundeOf(b.kundeId)||{}).name,(standortOf(b.standortId)||{}).name].filter(Boolean).join(" › ");
 /* Wo wird gearbeitet? Eigener Standort – oder, wenn keiner gewählt ist, die Adresse des Kunden (z. B. Privathaus) */

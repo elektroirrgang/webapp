@@ -1220,7 +1220,9 @@ const sameUser=(a,b)=>!!(a&&b&&a.mail&&b.mail&&a.mail.toLowerCase()===b.mail.toL
 function canEdit(rec){ if(!rec) return false; if(!SYNC_ON||rec.demo) return true; if(!ME.signedIn) return false;
   return ME.admin||!rec.createdBy||!rec.createdBy.mail||sameUser(rec.createdBy,ME); }
 
-const kundeOf=id=>DB.kunden.get(id), standortOf=id=>DB.standorte.get(id), ladeparkOf=id=>id?DB.ladeparks.get(id):null;
+/* Zusammengeführte Kunden/Standorte zeigen auf den Eintrag, der bleibt (mergedInto). */
+const folgen=(M,id)=>{ let r=M.get(id), n=0; while(r&&r.mergedInto&&M.has(r.mergedInto)&&n++<5) r=M.get(r.mergedInto); return r; };
+const kundeOf=id=>folgen(DB.kunden,id), standortOf=id=>folgen(DB.standorte,id), ladeparkOf=id=>id?DB.ladeparks.get(id):null;
 const kOrt=sid=>typeof sid==="string"&&sid.startsWith("k:");
 function pfad(p){ return {k:kundeOf(p.kundeId), s:standortOf(p.standortId), l:ladeparkOf(p.ladeparkId)}; }
 function pfadText(p,sep=" › "){ const {k,s,l}=pfad(p); return [k&&k.name,s&&s.name,l&&l.name].filter(Boolean).join(sep); }

@@ -1362,7 +1362,9 @@ function takeServer(k,rec,it){
   return true;
 }
 async function pushFotos(){}
-const kundeOf=id=>DB.kunden.get(id), standortOf=id=>DB.standorte.get(id);
+/* Zusammengeführte Kunden/Standorte zeigen auf den Eintrag, der bleibt (mergedInto). */
+const folgen=(M,id)=>{ let r=M.get(id), n=0; while(r&&r.mergedInto&&M.has(r.mergedInto)&&n++<5) r=M.get(r.mergedInto); return r; };
+const kundeOf=id=>folgen(DB.kunden,id), standortOf=id=>folgen(DB.standorte,id);
 const standorteVon=kid=>live("standorte").filter(s=>s.kundeId===kid).sort((a,b)=>a.name.localeCompare(b.name,"de"));
 
 let theme="auto"; try{ theme=localStorage.getItem(TH_KEY)||"auto"; }catch(e){}

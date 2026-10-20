@@ -302,6 +302,8 @@ body.has-fab.has-nav .snackbar{bottom:calc(168px + env(safe-area-inset-bottom,0p
 .infok .by,.by-line{font-size:12px;color:var(--on-sv)}
 .infok div + .by{margin-top:6px}
 .by-line{margin:16px 4px 0}
+.kz-wahl{flex-direction:column;align-items:stretch;margin-top:12px}.kz-wahl .chip{justify-content:flex-start;min-height:44px}
+.kz-liste{max-height:50vh;overflow:auto;margin-top:8px}.kz-manuell{margin:16px 0 0}
 .robanner{display:flex;align-items:center;gap:12px;background:var(--sc-high);color:var(--on-surface);border-radius:12px;padding:12px 16px;margin:0 0 16px;font-size:14px;font-weight:600}
 .robanner.warn{background:var(--err-c);color:var(--on-err-c)}
 .robanner span{flex:1}
@@ -1494,7 +1496,9 @@ function takeServer(k,rec,it){
   return true;
 }
 const echt=k=>live(k).filter(r=>!r.demo||demoDa());
-const kundeOf=id=>DB.kunden.get(id), standortOf=id=>DB.standorte.get(id), ladeparkOf=id=>id?DB.ladeparks.get(id):null;
+/* Zusammengeführte Kunden/Standorte zeigen auf den Eintrag, der bleibt (mergedInto). */
+const folgen=(M,id)=>{ let r=M.get(id), n=0; while(r&&r.mergedInto&&M.has(r.mergedInto)&&n++<5) r=M.get(r.mergedInto); return r; };
+const kundeOf=id=>folgen(DB.kunden,id), standortOf=id=>folgen(DB.standorte,id), ladeparkOf=id=>id?DB.ladeparks.get(id):null;
 const standorteVon=kid=>live("standorte").filter(s=>s.kundeId===kid).sort((a,b)=>a.name.localeCompare(b.name,"de"));
 const bPfad=b=>[(kundeOf(b.kundeId)||{}).name,(standortOf(b.standortId)||{}).name].filter(Boolean).join(" › ");
 const pPfad=p=>[(kundeOf(p.kundeId)||{}).name,(standortOf(p.standortId)||{}).name,(ladeparkOf(p.ladeparkId)||{}).name].filter(Boolean).join(" › ");
@@ -1989,9 +1993,51 @@ function kundenListe(){
   if(!ks.length) return `<p class="meta">Kein Kunde gefunden.</p>`;
   return so==="az"||so==="za"?abcListe(ks,k=>k.name,k=>locItem("kunden",k)):listOf(ks.map(k=>locItem("kunden",k)));
 }
+/* Doppelte Kunden: gleicher Name (ohne „Familie“, „GmbH“ usw., Groß-/Kleinschreibung, Satzzeichen). Zusammenführen nur für Admins. */
+const kNorm=s=>String(s||"").toLowerCase().replace(/\b(familie|fam|firma|fa|herrn?|frau|gmbh|ug|kg|ag|ohg|gbr|ek|e\.k)\b\.?/g,"").replace(/[^a-z0-9äöüß]/g,"");
+const kRefs=id=>live("baustellen").filter(b=>b.kundeId===id).length+live("pruefungen").filter(p=>p.kundeId===id).length+live("standorte").filter(x=>x.kundeId===id).length+live("vorgaenge").filter(v=>v.kundeId===id).length;
+const kBester=L=>[...L].sort((a,b)=>kRefs(b.id)-kRefs(a.id)||(a.created||0)-(b.created||0))[0];
+function kDoppelt(){ const m=new Map(); live("kunden").forEach(k=>{ const n=kNorm(k.name); if(!n) return; if(!m.has(n)) m.set(n,[]); m.get(n).push(k); }); return [...m.values()].filter(g=>g.length>1); }
+function kDoppeltKarte(){
+  if(!ME.admin) return ""; const G=kDoppelt(); if(!G.length) return "";
+  return `<div class="sec-lbl">Doppelte Kunden · ${G.length}</div>${listOf(G.map((g,i)=>`<div class="li" role="button" tabindex="0" data-act="kzGruppe" data-i="${i}"><span class="av">${icon("firma")}</span>
+    <span class="lt"><span class="h">${esc(g[0].name)}</span><span class="s">${g.length}× vorhanden · ${esc(g.map(k=>adrText(k)||k.ort||"ohne Adresse").join(" / "))}</span></span>${pill("open","Zusammenführen")}</div>`))}<div class="sec-lbl">Alle Kunden</div>`;
+}
+let kzSatz=null;
+function kzDialog(L,behalten){
+  kzSatz={ids:L.map(k=>k.id),behalten:behalten||kBester(L).id};
+  const z=DB.kunden.get(kzSatz.behalten), anz=k=>{ const n=kRefs(k.id); return n?`${n} verknüpft`:"nichts verknüpft"; };
+  dialog("Kunden zusammenführen",`<p>Welcher Eintrag bleibt? Baustellen, Prüfungen, Standorte und Aufträge der anderen werden dorthin verschoben, fehlende Angaben (Adresse, Telefon …) übernommen.</p>
+    <div class="chips kz-wahl">${L.map(k=>`<button class="chip" data-act="kzWahl" data-id="${esc(k.id)}" aria-pressed="${k.id===z.id}">${esc(k.name)} · ${esc(adrText(k)||"ohne Adresse")} · ${anz(k)}</button>`).join("")}</div>
+    <p class="meta" style="margin-top:12px">Standorte mit gleichem Namen und gleicher Straße werden dabei ebenfalls zusammengelegt.</p>`,
+    `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="kzOk">Zusammenführen</button>`);
+}
+function kzAusfuehren(zid,wegIds){
+  const z=DB.kunden.get(zid); if(!z) return 0; let n=0;
+  const umhaengen=(feld,alt,neu)=>{ for(const k of ["ladeparks","pruefungen","baustellen","vorgaenge"]) for(const r of DB[k].values()){ let ch=false;
+      if(r[feld]===alt){ r[feld]=neu; ch=true; } if(feld==="kundeId"&&r.standortId==="k:"+alt){ r.standortId="k:"+neu; ch=true; } if(ch){ saveRec(k,r); n++; } } };
+  for(const wid of wegIds){ const w=DB.kunden.get(wid); if(!w||w.deleted||wid===zid) continue;
+    for(const f of ["kdnr","strasse","plz","ort","adresse","ansprech","tel","mail","web"]) if(!z[f]&&w[f]) z[f]=w[f];
+    if(w.notiz&&!String(z.notiz||"").includes(w.notiz)) z.notiz=[z.notiz,w.notiz].filter(Boolean).join("\n");
+    for(const x of live("standorte").filter(x=>x.kundeId===wid)){ x.kundeId=zid; saveRec("standorte",x); n++; }
+    umhaengen("kundeId",wid,zid);
+    for(const d of DB.dateien.values()) if(d.bezugKind==="kunden"&&d.bezugId===wid){ d.bezugId=zid; saveRec("dateien",d); n++; }
+    w.deleted=true; w.mergedInto=zid; saveRec("kunden",w);
+  }
+  saveRec("kunden",z);
+  const sn=x=>kNorm(x.name)+"|"+kNorm(x.strasse||x.adresse||""), M=new Map();
+  standorteVon(zid).forEach(x=>{ const k=sn(x); if(!M.has(k)) M.set(k,[]); M.get(k).push(x); });
+  for(const g of M.values()) if(g.length>1){ const sRefs=x=>live("baustellen").filter(b=>b.standortId===x.id).length+live("pruefungen").filter(p=>p.standortId===x.id).length;
+    const [bleibt,...rest]=[...g].sort((a,b)=>sRefs(b)-sRefs(a)||(a.created||0)-(b.created||0));
+    for(const w of rest){ for(const f of ["strasse","plz","ort","adresse","ansprech","tel","notiz"]) if(!bleibt[f]&&w[f]) bleibt[f]=w[f];
+      umhaengen("standortId",w.id,bleibt.id); for(const d of DB.dateien.values()) if(d.bezugKind==="standorte"&&d.bezugId===w.id){ d.bezugId=bleibt.id; saveRec("dateien",d); }
+      w.deleted=true; w.mergedInto=bleibt.id; saveRec("standorte",w); }
+    saveRec("standorte",bleibt); }
+  return n;
+}
 function kundenView(){
   if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden aus den Apps EVSE, Baustelle und E-Check erscheinen hier automatisch.</p></div>`;
-  return `<div class="narrow">${searchBar("Kunde, Ort, Ansprechpartner suchen",fKnopf("kunden"))}<div id="res">${kundenListe()}</div><p class="hint">Eine Kundendatenbank für alle Apps.${ME.admin?"":" Ändern können Admins."}</p></div>`;
+  return `<div class="narrow">${searchBar("Kunde, Ort, Ansprechpartner suchen",fKnopf("kunden"))}${query?"":kDoppeltKarte()}<div id="res">${kundenListe()}</div><p class="hint">Eine Kundendatenbank für alle Apps.${ME.admin?"":" Ändern können Admins."}</p></div>`;
 }
 function bezugListen(kind,id){
   const bs=live("baustellen").filter(b=>kind==="kunden"?b.kundeId===id:b.standortId===id).sort((a,b)=>bAktiv(b)-bAktiv(a));
@@ -2004,7 +2050,8 @@ function kundeView(k){
   const ss=standorteVon(k.id);
   return `<div class="narrow">${infoKarte(k,"kunden")}${ablageView("kunden",k)}
     <div class="sec-lbl">Standorte</div>${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Noch kein Standort.</p>`}
-    ${bezugListen("kunden",k.id)}</div>`;
+    ${bezugListen("kunden",k.id)}
+    ${ME.admin&&live("kunden").length>1?`<button class="btn-text kz-manuell" data-act="kzManuell">${icon("firma")}Mit anderem Kunden zusammenführen</button>`:""}</div>`;
 }
 function standortView(s){ return `<div class="narrow">${infoKarte(s,"standorte")}${ablageView("standorte",s)}${bezugListen("standorte",s.id)}</div>`; }
 let locForm=null;
@@ -2168,6 +2215,13 @@ document.addEventListener("click",async ev=>{
   case "locDelAsk": { const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id), n=bezugZahl(kind,r.id);
     if(n){ dialog(`${KIND_NAME[kind]} löschen`,esc(`„${r.name}“ hängt noch an ${n} Eintrag/Einträgen (Standorte, Baustellen, Prüfungen oder Dateien). Erst diese löschen oder umhängen – sonst gehen Verknüpfungen verloren.`),`<button class="btn-text" data-act="cancel">Verstanden</button>`); return; }
     confirmDlg(`${KIND_NAME[kind]} löschen?`,`„${r.name}“ wird in allen Apps entfernt.`,"Löschen","locDel"); return; }
+  case "kzGruppe": { const g=kDoppelt()[+b.dataset.i]; if(g&&ME.admin) kzDialog(g); return; }
+  case "kzWahl": { if(!kzSatz) return; kzSatz.behalten=b.dataset.id; $("#dlg").querySelectorAll("[data-act=kzWahl]").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.id===kzSatz.behalten))); return; }
+  case "kzManuell": { const k=DB.kunden.get(nav.id); if(!k||!ME.admin) return;
+    dialog("Zusammenführen mit …",`<p>Welcher Kunde ist derselbe wie „${esc(k.name)}“?</p><div class="list kz-liste">${live("kunden").filter(x=>x.id!==k.id).sort((a,b)=>a.name.localeCompare(b.name,"de")).map(x=>`<div class="li" role="button" tabindex="0" data-act="kzPaar" data-id="${esc(x.id)}"><span class="lt"><span class="h">${esc(x.name)}</span><span class="s">${esc(adrText(x)||"ohne Adresse")}</span></span></div>`).join("")}</div>`,`<button class="btn-text" data-act="cancel">Abbrechen</button>`); return; }
+  case "kzPaar": { const a=DB.kunden.get(nav.id), c=DB.kunden.get(b.dataset.id); if(!a||!c) return; closeOverlays(); kzDialog([a,c],kBester([a,c]).id); return; }
+  case "kzOk": { if(!kzSatz||!ME.admin) return; const {ids,behalten}=kzSatz, z=DB.kunden.get(behalten); kzSatz=null; closeOverlays();
+    const n=kzAusfuehren(behalten,ids.filter(x=>x!==behalten)); if(nav.v==="kunde"&&nav.id!==behalten) nav={v:"kunde",id:behalten}; render(); toast(`Zusammengeführt zu „${z?z.name:""}“${n?` · ${n} Einträge umgehängt`:""}`); return; }
   case "locDel": { const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id); closeOverlays(); if(!r||!ME.admin) return; r.deleted=true; saveRec(kind,r); go(kind==="standorte"?{v:"kunde",id:r.kundeId}:{v:"kunden"}); toast(`${KIND_NAME[kind]} gelöscht`); return; }
   case "webSuchen": { const k=DB.kunden.get(nav.id); if(!k) return; window.open("https://www.google.com/search?q="+encodeURIComponent([k.name,k.ort].filter(Boolean).join(" ")),"_blank","noopener");
     if(!ME.admin) return;
