@@ -785,6 +785,10 @@ html.standalone .app-weiter{display:none!important}html.standalone a.li.weiter{p
 @media (min-width:744px) and (max-width:959.98px){body .navbar,body.rail-open .navbar{left:max(184px,calc(env(safe-area-inset-left,0px) + 184px));transform:none}}
 
 html,body{overscroll-behavior-y:none}
+/* Wie eine native App: Text nicht markierbar, damit langes Drücken keine Bildschirm-Markierung auslöst. Eingabefelder bleiben markierbar. */
+body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body input,body textarea,body select,body [contenteditable],body [contenteditable] *{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+
 @media (min-width:744px){
   .topbar,.topbar.scrolled{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none!important}
   body .navbar{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -2557,7 +2561,7 @@ document.addEventListener("pointerup",nWischEnde,true); document.addEventListene
 let nkLP=null;
 document.addEventListener("pointerdown",e=>{ if(nkLP){ clearTimeout(nkLP.t); nkLP=null; } const k=e.target.closest&&e.target.closest(".nk[data-id]"); if(!k||(e.pointerType==="mouse"&&e.button!==0)) return;
   const x=e.clientX, y=e.clientY; k.classList.add("n-druck");
-  nkLP={k,x,y,t:setTimeout(()=>{ nkLP=null; k.classList.remove("n-druck"); nLang=true; setTimeout(()=>{ nLang=false; },900); try{ navigator.vibrate&&navigator.vibrate(10); }catch(z){} nkMenu(k.dataset.id,x,y); },450)}; },true);
+  nkLP={k,x,y,t:setTimeout(()=>{ nkLP=null; k.classList.remove("n-druck"); nLang=true; setTimeout(()=>{ nLang=false; },900); try{ navigator.vibrate&&navigator.vibrate(10); }catch(z){} try{ const a=document.activeElement; if(!(a&&a.closest&&a.closest("input,textarea"))) getSelection().removeAllRanges(); }catch(z){} nkMenu(k.dataset.id,x,y); },450)}; },true);
 const nkStop=()=>{ if(nkLP){ clearTimeout(nkLP.t); nkLP.k.classList.remove("n-druck"); nkLP=null; } };
 ["pointerup","pointercancel"].forEach(t=>document.addEventListener(t,nkStop,true));
 document.addEventListener("pointermove",e=>{ if(nkLP&&Math.hypot(e.clientX-nkLP.x,e.clientY-nkLP.y)>8) nkStop(); },true);
@@ -2567,7 +2571,7 @@ function nkMenu(id,x,y){ const n=DB.notizen.get(id); if(!n||n.deleted) return; c
   menuAt(x,y,[["nkPin",pin?"Nicht mehr anpinnen":"Anpinnen",pin?"pinOff":"pin","",d],
     ...(meine?[["nkName","Umbenennen","edit","",d],["nkTeilen",`Teilen · ${n.sicht==="personen"?sichtText(n):SICHT_TXT[n.sicht||"privat"]}`,SICHT_IC[n.sicht||"privat"],"",d],["nkArch",n.archiv?"Aus dem Archiv holen":"Archivieren",n.archiv?"unarchive":"archive","",d],"-",["nkDel","Löschen","del","danger",d]]:[])]); }
 /* iOS soll beim Gedrückthalten keinen Text markieren (außer in einem offenen Eingabefeld) */
-document.addEventListener("selectstart",e=>{ if(nav.v!=="notiz") return; const t=e.target&&(e.target.nodeType===3?e.target.parentElement:e.target); if(!t||!t.closest||!t.closest("input,textarea")) e.preventDefault(); });
+document.addEventListener("selectstart",e=>{ const t=e.target&&(e.target.nodeType===3?e.target.parentElement:e.target); if(!t||!t.closest||!t.closest("input,textarea,[contenteditable]")) e.preventDefault(); });
 function menuAt(x,y,items){ const m=$("#menu"); if(!m||!items.length) return;
   m.innerHTML=items.map(x=>x==="-"?`<hr>`:`<button class="mi ${x[3]||""}" role="menuitem" data-act="${x[0]}" ${Object.entries(x[4]||{}).map(([k,v])=>`data-${k}="${esc(v)}"`).join(" ")}>${icon(x[2])}<span>${esc(x[1])}</span></button>`).join("");
   m.style.right="auto"; m.hidden=false; $("#scrim").hidden=false; const w=m.offsetWidth, h=m.offsetHeight;

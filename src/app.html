@@ -544,6 +544,10 @@ html.standalone .app-weiter{display:none!important}html.standalone a.li.weiter{p
 @media (min-width:744px) and (max-width:959.98px){body .navbar,body.rail-open .navbar{left:max(184px,calc(env(safe-area-inset-left,0px) + 184px));transform:none}}
 
 html,body{overscroll-behavior-y:none}
+/* Wie eine native App: Text nicht markierbar, damit langes Drücken keine Bildschirm-Markierung auslöst. Eingabefelder bleiben markierbar. */
+body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body input,body textarea,body select,body [contenteditable],body [contenteditable] *{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+
 @media (min-width:744px){
   .topbar,.topbar.scrolled{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none!important}
   body .navbar{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -3585,6 +3589,7 @@ window.__EVSE__={DB,get cur(){return cur},syncNow,get SY(){return SY},get ME(){r
   const offen=!!((d&&!d.hidden)||(s&&!s.hidden&&s.classList.contains("dim"))); document.documentElement.classList.toggle("scroll-sperre",offen); };
   const go=()=>{ ["dlg","scrim"].forEach(id=>{ const el=document.getElementById(id); if(el) new MutationObserver(pr).observe(el,{attributes:true,attributeFilter:["hidden","class"]}); }); pr(); };
   document.readyState==="loading"?document.addEventListener("DOMContentLoaded",go):go(); })();
+document.addEventListener("selectstart",e=>{ const t=e.target&&(e.target.nodeType===3?e.target.parentElement:e.target); if(!t||!t.closest||!t.closest("input,textarea,[contenteditable]")) e.preventDefault(); });
 </script>
 </body>
 </html>
