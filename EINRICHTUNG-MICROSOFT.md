@@ -61,18 +61,16 @@ In der App gilt: Jeder bearbeitet nur seine eigenen Prüfungen, sieht aber alle.
 - Eigene, geschützte SharePoint-Website, z. B. **„Prüfprotokolle“** (Mitglieder: nur die Mitarbeiter aus der Liste, Bearbeiten-Rechte).
 - Benötigt wird die **Adresse der Website**, z. B. `https://<firma>.sharepoint.com/sites/Pruefprotokolle`. Soll die App in einem Unterordner arbeiten, die Adresse bis dorthin, z. B. `…/sites/Pruefprotokolle/Freigegebene Dokumente/Apps`.
 
-Die App legt darin an:
+**Eingerichtet (20.10.2026):** Website `https://elektroirrgang.sharepoint.com/sites/ElektroIrrgangApps` mit drei Bibliotheken. Die App verteilt die Daten so:
 
 ```
-<freigegebener Ordner>/
-  <Kunde>/<Standort>/[<Ladepark>/]<Auftragsnr>_<Prüfart>_….pdf   ← lesbare PDFs aus EVSE
-  _App-Daten/                                                   ← Daten der Apps, bitte nicht von Hand ändern
-    kunden/ standorte/                ← gemeinsame Kundendatenbank aller Apps
-    ladeparks/ pruefungen/ katalog/   ← EVSE
-    baustellen/ eintraege/            ← Baustelle
-    einstellungen/                    ← Mitarbeiterliste, Protokoll-Empfänger
-    fotos/ dateien/                   ← Fotos, Kunden-Ablage
+Kundendaten/_App-Daten/        kunden/ standorte/ einstellungen/ dateien/ vorgaenge/
+Prüfprotokolle/<Kunde>/<Standort>/…pdf                    ← lesbare PDFs
+Prüfprotokolle/_App-Daten/     ladeparks/ pruefungen/ katalog/ fotos/ (EVSE, E-Check)
+Baustellen/_App-Daten/         baustellen/ eintraege/ material/ notizen/ fotos/ (Baustelle)
 ```
+
+Die Zuordnung steht in `BIB` in jeder App. Fehlt eine Bibliothek, landet die Art in der Standard-Bibliothek der Website.
 
 Persönliche Notizen („nur ich“) kommen **nicht** in diesen Ordner, sondern in den eigenen OneDrive des Mitarbeiters (App-Ordner). So kann sie auch niemand mit Ordnerrechten lesen.
 
