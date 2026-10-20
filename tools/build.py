@@ -21,6 +21,8 @@ def baue(quelle, ziel, icon):
     html = html.replace("/*KOPF*/", (root / "src/kopf.js").read_text(encoding="utf-8"))
     html = html.replace("/*PROFIL*/", (root / "src/profil.js").read_text(encoding="utf-8"))
     html = html.replace("/*ANFORDERUNG*/", (root / "src/anforderung.js").read_text(encoding="utf-8"))
+    html = html.replace("/*FILTER*/", (root / "src/filter.js").read_text(encoding="utf-8"))
+    html = html.replace("/*DATEIEN*/", (root / "src/dateien.js").read_text(encoding="utf-8"))
     html = html.replace("/*VORGAENGE*/", (root / "src/vorgaenge.js").read_text(encoding="utf-8"))
     html = html.replace("/*MATERIAL*/", (root / "src/material.js").read_text(encoding="utf-8"))
     html = html.replace("/*ZEICHNEN*/", (root / "src/zeichnen.js").read_text(encoding="utf-8"))

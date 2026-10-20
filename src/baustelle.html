@@ -79,6 +79,7 @@ body.is-list .tb-title{visibility:hidden}
 .nav-item{min-width:0}
 .nav-item>span:last-child{max-width:100%;padding:0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:380px){.nav-item .ind{width:52px}}
+/* sechs Ziele unten (mit Aufträgen): etwas enger, damit alle Beschriftungen ganz passen */
 .nav-item[aria-current="page"]{color:var(--on-surface)}
 .nav-item[aria-current="page"] .ind{background:var(--sec-c);color:var(--on-sec-c)}
 @media (min-width:744px){
@@ -725,6 +726,9 @@ html.standalone .app-weiter{display:none!important}html.standalone a.li.weiter{p
   .nav-item{letter-spacing:0;font-size:11.5px}
   .nav-item > span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
 }
+/* sechs Ziele unten (mit Aufträgen): etwas enger, damit alle Beschriftungen ganz passen */
+@media (max-width:599px){ .nav-item{font-size:11px;letter-spacing:-.01em;padding-left:0;padding-right:0} .nav-item .ind{width:48px} .nav-item > span:last-child{padding:0;max-width:none;overflow:visible} }
+@media (max-width:370px){ .nav-item{font-size:10.5px;letter-spacing:-.02em} .nav-item .ind{width:44px} }
 
 #railBtn{display:none}
 @media (min-width:744px){
@@ -1680,7 +1684,7 @@ async function syncNow(manual){
   if(!navigator.onLine){ setSync("offline"); return; }
   SY.running=true; setSync("läuft"); konflikte=[];
   try{
-    await syncRoot(); const c1=await push(); const n1=await pushNotizen(); const c2=await pull(); const n2=await pullNotizen(); fotoNachholen(); await pushFotos();
+    await syncRoot(); const c1=await push(); const n1=await pushNotizen(); const c2=await pull(); const n2=await pullNotizen(); fotoNachholen(); await pushFotos(); await pushDateien();
     META.sync.last=Date.now(); metaSave(); setSync("ok");
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
     if(c1||c2||n1||n2) softRender();
@@ -1777,6 +1781,7 @@ const IC={board:"M21 3H3c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1
   person:"M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z",
 };
 const icon=n=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]}"/></svg>`;
+/*FILTER*/
 const initials=n=>(n||"?").split(/[\s.@]+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("")||"?";
 function tf(path,label,val,o={}){
   const cls=["tf"]; if(o.full) cls.push("full"); if(o.ph||o.type==="date") cls.push("fl"); if(o.sfx) cls.push("has-sfx");
@@ -1794,7 +1799,7 @@ function sf(path,label,val,opts,o={}){
 const datalist=(id,vals)=>`<datalist id="${id}">${[...new Set(vals.map(v=>String(v||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"de",{numeric:true})).map(v=>`<option value="${esc(v)}">`).join("")}</datalist>`;
 const seg=(act,cur,opts,cls="")=>`<div class="seg ${cls}" role="group">${opts.map(([v,t])=>`<button type="button" data-act="${act}" data-v="${v}" aria-pressed="${String(cur)===String(v)}">${icon("check")}${esc(t)}</button>`).join("")}</div>`;
 const listOf=items=>items.length?`<div class="list">${items.join("")}</div>`:"";
-const searchBar=ph=>`<div class="search">${icon("search")}<input id="q" type="search" placeholder="${esc(ph)}" value="${esc(query)}" autocomplete="off" aria-label="Suchen"></div>`;
+const searchBar=(ph,f)=>`<div class="search${f?" mit-f":""}">${icon("search")}<input id="q" type="search" placeholder="${esc(ph)}" value="${esc(query)}" autocomplete="off" aria-label="Suchen">${f?`<button type="button" class="such-f${f.aktiv?" an":""}" data-act="${f.act}" data-n="${f.n||""}" aria-label="Filtern und sortieren">${icon("filt")}</button>`:""}</div>`;
 const FREEMAIL=/^(gmail|googlemail|web|gmx|t-online|outlook|hotmail|live|icloud|me|mac|yahoo|aol|freenet|arcor|posteo|mailbox|online|vodafone|1und1|ionos)\./i;
 const webHref=w=>!w?"":/^https?:\/\//i.test(w)?w:"https://"+w;
 const webText=w=>String(w||"").replace(/^https?:\/\//i,"").replace(/\/$/,"");
@@ -1862,11 +1867,11 @@ const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
 
 const TH_KEY="evse_theme";
 const RES_TXT={ok:"bestanden",bad:"nicht bestanden",open:"offen",wip:"in Arbeit"};
-const KINDS=["kunden","standorte","baustellen","eintraege","material","anforderungen","profile"];
-const KUNDEN_KINDS=["kunden","standorte","profile"];
-const DB={kunden:new Map(),standorte:new Map(),baustellen:new Map(),eintraege:new Map(),notizen:new Map(),material:new Map(),anforderungen:new Map(),profile:new Map()};
+const KINDS=["kunden","standorte","baustellen","eintraege","material","anforderungen","profile","vorgaenge","dateien"];
+const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["vorgaenge","dateien"];
+const DB={kunden:new Map(),standorte:new Map(),baustellen:new Map(),eintraege:new Map(),notizen:new Map(),material:new Map(),anforderungen:new Map(),profile:new Map(),vorgaenge:new Map(),dateien:new Map()};
 let META={profil:{name:""},filter:"aktiv",sync:{}};
-let nav={v:"start"}, query="", kDB=null, bDB=null, warned=false, syncT=null;
+let nav={v:"start"}, query="", kDB=null, bDB=null, aDB=null, warned=false, syncT=null;
 let ME={name:"",mail:"",admin:false,signedIn:false};
 let fotoDB=null, fotoTarget=null;
 
@@ -1880,17 +1885,17 @@ function openStores(name,stores,meta){ return new Promise((res,rej)=>{
     const v=db.version+1; db.close(); const r2=indexedDB.open(name,v);
     r2.onupgradeneeded=()=>anlegen(r2.result); r2.onsuccess=()=>{ r2.result.onversionchange=()=>r2.result.close(); res(r2.result); }; r2.onerror=()=>rej(r2.error); };
   r.onerror=()=>rej(r.error); }); }
-const dbOf=k=>KUNDEN_KINDS.includes(k)?kDB:bDB;
+const dbOf=k=>KUNDEN_KINDS.includes(k)?kDB:APP_KINDS.includes(k)?aDB:bDB;
 function dbPut(kind,rec){ DB[kind].set(rec.id,rec); const db=dbOf(kind); if(!db) return;
   try{ const t=db.transaction(kind,"readwrite"); t.objectStore(kind).put(rec); t.onerror=t.onabort=storageWarn; }catch(e){ storageWarn(); } }
 function dbDelHard(kind,id){ DB[kind].delete(id); const db=dbOf(kind); if(db) try{ db.transaction(kind,"readwrite").objectStore(kind).delete(id); }catch(e){} }
 function metaSave(){ if(bDB) try{ bDB.transaction("meta","readwrite").objectStore("meta").put(META,"meta"); }catch(e){} }
 async function dataLoad(){
-  try{ kDB=await openStores("evse_daten",KUNDEN_KINDS,false); bDB=await openStores("baustelle_daten",["baustellen","eintraege","notizen","material","anforderungen"],true);
+  try{ kDB=await openStores("evse_daten",KUNDEN_KINDS,false); bDB=await openStores("baustelle_daten",["baustellen","eintraege","notizen","material","anforderungen"],true); aDB=await openStores("irrgang_apps",["einstellungen",...APP_KINDS],true);
     for(const k of KINDS){ (await idbReq(dbOf(k).transaction(k).objectStore(k).getAll())).forEach(r=>DB[k].set(r.id,r)); }
     (await idbReq(bDB.transaction("notizen").objectStore("notizen").getAll())).forEach(r=>DB.notizen.set(r.id,r));
     const m=await idbReq(bDB.transaction("meta").objectStore("meta").get("meta")); if(m) META=Object.assign(META,m);
-  }catch(e){ kDB=bDB=null; toast("Gerätespeicher nicht verfügbar – Daten nur bis zum Schließen"); }
+  }catch(e){ kDB=bDB=aDB=null; toast("Gerätespeicher nicht verfügbar – Daten nur bis zum Schließen"); }
 }
 function saveNow(){}
 /* Zusammengeführte Kunden/Standorte zeigen auf den Eintrag, der bleibt (mergedInto). */
@@ -1955,7 +1960,7 @@ applyTheme(theme);
 WIDE.addEventListener?.("change",()=>{ if(typeof render==="function"&&nav) render(); });
 
 const APP_VERSION="<!--VERSION-->";
-const TOPDEST=[["start","Baustellen","baustelle"],["notizen","Notizen","notiz"],["material","Material","lager"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
+const TOPDEST=[["start","Baustellen","baustelle"],["auftraege","Aufträge","vgTafel"],["notizen","Notizen","notiz"],["material","Material","lager"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
 const TOP=TOPDEST.map(x=>x[0]), MEHR_SUB={team:"Mitarbeiter",impressum:"Impressum",about:"Über die App"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
 const KIND_NAME={kunden:"Kunde",standorte:"Standort"};
@@ -2220,6 +2225,8 @@ document.addEventListener("click",e=>{
 /*PROFIL*/
 /*KOPF*/
 /*ANFORDERUNG*/
+/*DATEIEN*/
+/*VORGAENGE*/
 /*AUFNAHME*/
 /*MATERIAL*/
 document.addEventListener("toggle",e=>{ if(e.target.classList&&e.target.classList.contains("ik-klapp")) try{ localStorage.setItem("bau_info",e.target.open?"auf":"zu"); }catch(x){} },true);
@@ -2241,6 +2248,7 @@ function render(){ profilAnwenden();
   let title="", sub="", fab=null, body="";
   if(login) body=loginView();
   else if(nav.v==="start"){ body=startView(); fab=["neueBaustelle","Baustelle","add"]; }
+  else if(nav.v==="auftraege"){ title="Aufträge"; body=vorgaengeView(); fab=["vgNeu","Vorgang","add"]; }
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=["newKunde","Kunde","add"]; }
   else if(nav.v==="notizen"){ title="Notizen"; body=notizenView(); fab=["neueNotiz","Notiz","add"]; fotoFetch(notizFotos()); }
   else if(nav.v==="notiz"){ fotoFetch(nFotoIds(nEntw)); const ro=!istMeine(nEntw); title=ro||DB.notizen.has(nEntw.id)?"Notiz":"Neue Notiz"; sub=ro?`Von ${vonText(nEntw)}`:""; body=notizView(); fab=ro?null:["edFertig","Fertig","check"]; }
@@ -2264,7 +2272,7 @@ function render(){ profilAnwenden();
   $("#topTitle").innerHTML=title?`<span>${esc(title)}</span>${sub?`<small>${esc(String(sub).split(/\s*›\s*/).pop())}</small>`:""}`:"";
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
   if(fab){ f.dataset.act=fab[0]; f.setAttribute("aria-label",fab[1]); f.innerHTML=`${icon(fab[2])}<span>${fab[1]}</span>`; }
-  profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); $("#avBtn").dataset.sync=SY.state; profilAvatar(); mlGlocke();
+  profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); $("#avBtn").dataset.sync=SY.state; profilAvatar(); mlGlocke(); bilderFuellen();
   if(nav.v==="eintrag"&&entw) eAuto(false);
 }
 /* ===== Editoren (ganze Seite): automatisch speichern, Kopf mit Status, Mehr-Menü und „Fertig“ =====
@@ -2317,7 +2325,7 @@ function baustellenListe(){
 function startView(){
   if(!live("baustellen").length) return `<div class="empty">${icon("baustelle")}<h2>Noch keine Baustellen</h2><p>Lege mit „Baustelle“ die erste an. Danach schreibt jeder am Ende des Tages kurz rein, was der Stand ist – der Nächste ist sofort im Bild.</p></div>`;
   const n=s=>live("baustellen").filter(b=>(b.status||"aktiv")===s).length;
-  return `<div class="narrow">${searchBar("Baustelle, Kunde, Ort oder Auftragsnr. suchen")}
+  return `<div class="narrow">${vgMeineKarte()}${searchBar("Baustelle, Kunde, Ort oder Auftragsnr. suchen")}
     <div class="chips filt"><button class="chip" data-act="filter" data-v="kunden" aria-pressed="${META.filter==="kunden"}">${icon("firma")}Kunden</button>${STATUS.map(([v,t])=>`<button class="chip" data-act="filter" data-v="${v}" aria-pressed="${META.filter===v}"><i class="bs-dot ${v}"></i>${t} (${n(v)})</button>`).join("")}</div>
     <div id="res">${baustellenListe()}</div></div>`;
 }
@@ -2344,6 +2352,7 @@ function baustelleView(b){
   if(nav.tab==="aufnahme") return h+aufnahmeView(b)+`</div>`;
   const NZ=notizenAlle().filter(n=>n.baustelleId===b.id&&!n.archiv);
   h+=`<div class="sec-row"><div class="sec-lbl">Notizen</div><button class="plus-k" data-act="neueNotizHier" aria-label="Notiz anlegen" title="Notiz anlegen">${icon("add")}</button></div>${NZ.length?nGrid(NZ):`<p class="meta">Eigene Notizen zur Baustelle – z. B. Tagesablauf, Checkliste oder Skizze.</p>`}`;
+  h+=vgBauAbschnitt(b);
   h+=`<div class="sec-row"><div class="sec-lbl">Übergaben</div><button class="plus-k" data-act="neuerEintrag" aria-label="Übergabe schreiben" title="Übergabe schreiben">${icon("add")}</button></div>`;
   h+=E.length?E.map((e,i)=>eintragKarte(e,i===0)).join(""):`<p class="meta">Noch keine Übergabe. Am Ende des Tages kurz festhalten: Stand, was offen ist und welches Material morgen gebraucht wird.</p>`;
   return h+`</div>`;
@@ -2916,7 +2925,7 @@ async function importBackup(el){
 }
 
 document.addEventListener("input",ev=>{
-  if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():nav.v==="kunden"?kundenListe():nav.v==="notizen"?notizenListe():nav.v==="material"?materialListe():baustellenListe(); return; }
+  if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():nav.v==="auftraege"?vgListe():nav.v==="kunden"?kundenListe():nav.v==="notizen"?notizenListe():nav.v==="material"?materialListe():baustellenListe(); return; }
   if(nav.v==="notiz"&&notizEingabe(ev.target)) return;
   if(nav.v==="eintrag"&&entw&&ev.target.closest&&ev.target.closest("#app")&&ev.target.id!=="matNeu") eAuto();
 });
@@ -2941,6 +2950,8 @@ document.addEventListener("click",ev=>{
   case "menu": openMenu(); return;
   case "cancel": closeOverlays(); nb=null; locForm=null; return;
   case "nav": { const v=b.dataset.v; if(v!==nav.v) query=""; if(nav.v==="eintrag"){ entwFertig(null,true); } if(nav.v==="notiz"){ nAufraeumen(); notizSpeichernStill(); nEntw=null; } go(b.dataset.id?{v,id:b.dataset.id,von:v==="baustelle"?{...nav}:undefined}:{v}); return; }
+  case "fPop": filterPop(b,b.dataset.n); return;
+  case "fWeg": fWeg(b.dataset.n,false); return;
   case "railToggle": railOpen=!railOpen; $("#railBtn").innerHTML=icon(railOpen?"menuOpen":"menu"); try{ localStorage.setItem("evse_rail",railOpen?"1":"0"); }catch(e){} document.body.classList.toggle("rail-open",railOpen); render(); return;
   case "login": Auth.login(); return;
   case "relogin": Auth.relogin(); return;
