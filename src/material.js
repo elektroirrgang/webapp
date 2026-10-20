@@ -169,7 +169,7 @@ const matGet=id=>matAlle().find(m=>m.id===id)||null;
 const matKey=t=>matNorm(String(t||"").replace(/mm2\b/gi,"mm²")).replace(/(\d)\s*×\s*(?=\d)/g,"$1×").replace(/\s*mm²/g,"").trim();
 function matStamm(t){ const k=matNorm(t); if(!k||!DB.material) return null; const A=matAlle(); return A.find(m=>matNorm(m.name)===k)||(()=>{ const kk=matKey(t); return A.find(m=>matKey(m.name)===kk)||null; })(); }
 function matStammSeed(){ if(!DB.material||(META.matSeed||0)>=1) return;
-  MAT_GRUND.forEach(n=>{ const id=matSlug(n); if(DB.material.has(id)) return; saveRec("material",{id,name:n,kategorie:matKatRaten(n),einheit:matStdEinheitRegel(n),grund:true},true); });
+  MAT_GRUND.forEach(n=>{ const id=matSlug(n); if(DB.material.has(id)) return; const r=saveRec("material",{id,name:n,kategorie:matKatRaten(n),einheit:matStdEinheitRegel(n),grund:true},true); r.created=r.updated=1; dbPut("material",r); });
   META.matSeed=1; metaSave(); }
 function matStdEinheitRegel(n){ const k=String(n).toLowerCase();
   if(/nym|nyy|h07|j-y|cat\.?\s?\d|kabel(?!binder|kanal|schell)|leitung|leerrohr|kanal|erdungsband(?!schell)|litze/i.test(k)) return "m";

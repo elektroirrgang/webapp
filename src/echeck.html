@@ -1114,6 +1114,12 @@ async function pull(){
   return changed;
 }
 async function pushOne(k,rec,fid,force){
+  /* Noch nie hochgeladen: erst nachsehen, ob es die Datei schon gibt (z. B. Grunddaten mit fester ID von einem anderen Gerät).
+     Ist die Fassung dort neuer, wird sie übernommen statt überschrieben. */
+  if(!rec._etag&&!force){ const r0=await g(`/drives/${fid}:/${rec.id}.json`);
+    if(r0.ok){ const meta=await r0.json(), srv=await (await readItem(meta)).json();
+      if(srv&&(srv.updated||0)>=(rec.updated||0)){ delete rec._dirty; takeServer(k,srv,meta); return true; }
+      rec._etag=meta.eTag; } }
   const ver=rec.updated, headers={"Content-Type":"application/json"}; if(rec._etag&&!force) headers["If-Match"]=rec._etag;
   const r=await g(`/drives/${fid}:/${rec.id}.json:/content`,{method:"PUT",headers,body:JSON.stringify(strip(rec))});
   if(r.status===412){

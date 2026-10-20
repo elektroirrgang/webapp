@@ -1370,12 +1370,18 @@ async function pull(){
   return changed;
 }
 async function pushOne(k,rec,fid,force){
+  /* Noch nie hochgeladen: erst nachsehen, ob es die Datei schon gibt (z. B. Grunddaten mit fester ID von einem anderen Gerät).
+     Ist die Fassung dort neuer, wird sie übernommen statt überschrieben. */
+  if(!rec._etag&&!force){ const r0=await g(`/drives/${fid}:/${rec.id}.json`);
+    if(r0.ok){ const meta=await r0.json(), srv=await (await readItem(meta)).json();
+      if(srv&&(srv.updated||0)>=(rec.updated||0)){ delete rec._dirty; takeServer(k,srv,meta); return true; }
+      if(k==="katalog") katMerge(rec,srv); rec._etag=meta.eTag; } }
   const ver=rec.updated, headers={"Content-Type":"application/json"}; if(rec._etag&&!force) headers["If-Match"]=rec._etag;
   const r=await g(`/drives/${fid}:/${rec.id}.json:/content`,{method:"PUT",headers,body:JSON.stringify(strip(rec))});
   if(r.status===412){
     const meta=await gj(`/drives/${fid}:/${rec.id}.json`); const srv=await (await readItem(meta)).json();
     if((srv.updated||0)>(rec.updated||0)){ takeServer(k,srv,meta); return true; }
-    return pushOne(k,rec,fid,true);
+    if(k==="katalog") katMerge(rec,srv); return pushOne(k,rec,fid,true);
   }
   if(r.status===404){ SY.folders={}; throw new Error("Ordner wurde verschoben – bitte erneut abgleichen"); }
   if(!r.ok) throw new Error(`Hochladen fehlgeschlagen (${r.status})`);
@@ -1412,7 +1418,7 @@ async function fotoFetch(ids){
   try{ await syncRoot(); const fid=await folderId(`${CONFIG.dataFolder}/fotos`,BIB.fotos);
     for(const id of ids){ try{ const meta=await gj(`/drives/${fid}:/${id}.jpg`); const d=await blobToDataUrl(await (await readItem(meta)).blob()); await fotoPut(id,d); got++; }catch(e){} }
   }catch(e){} finally{ ids.forEach(id=>SY.fotoBusy.delete(id)); }
-  if(got&&(nav.v==="saeule"||nav.v==="katmodell")){ const y=scrollY; render(); scrollTo(0,y); }
+  if(got&&(nav.v==="saeule"||nav.v==="katmodell"||nav.v==="katalog")){ const y=scrollY; render(); scrollTo(0,y); }
 }
 const fsName=s=>String(s||"").replace(/[\\/:*?"<>|#%\u0000-\u001f]/g,"-").replace(/\s+/g," ").trim().replace(/[. ]+$/,"").slice(0,80)||"Unbenannt";
 function pdfAblage(p){ const {k,s,l}=pfad(p);
@@ -1445,7 +1451,7 @@ async function syncNow(manual){
   if(!navigator.onLine){ setSync("offline"); return; }
   SY.running=true; setSync("läuft"); konflikte=[];
   try{
-    await syncRoot(); const c1=await push(); const c2=await pull(); fotoNachholen(); await pushFotos(); await pdfNachholen();
+    await syncRoot(); const c1=await push(); const c2=await pull(); fotoNachholen(); await pushFotos(); await pdfNachholen(); if(await katReparieren()) softRender();
     META.sync.last=Date.now(); metaSave(); setSync("ok");
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
     if(c1||c2) softRender();
@@ -2460,11 +2466,33 @@ function katSeed(){
   const F=["hersteller","modell","version","art","leistung","phasen","lps","dc6","anschluss","artnr","quelle","notiz","bildUrl"], neu=new Set();
   for(const z of KAT_SEED){ const o={}; F.forEach((k,i)=>o[k]=z[i]); o.quelle=`Hersteller-Datenblatt, geprüft ${KAT_GEPRUEFT}: ${o.quelle}`;
     const id="kat-"+katSlug([o.hersteller,o.modell,o.version].join(" ")); neu.add(id); const alt=DB.katalog.get(id);
-    if(!alt||alt.deleted) saveRec("katalog",Object.assign({id,hinweise:[]},o),true);
+    if(!alt||alt.deleted){ const r=saveRec("katalog",Object.assign({id,hinweise:[]},o),true); r.created=r.updated=1; dbPut("katalog",r); }
     else if(!alt.quelle||alt.vorlage){ Object.assign(alt,o); delete alt.vorlage; saveRec("katalog",alt); }
     else if(o.bildUrl&&!alt.bildUrl){ alt.bildUrl=o.bildUrl; saveRec("katalog",alt); } }
   for(const r of live("katalog")) if(r.vorlage&&!r.quelle&&!(r.hinweise||[]).length&&!neu.has(r.id)){ r.deleted=true; saveRec("katalog",r); }
 }
+/* Katalog wird von allen ergänzt: bei gleichzeitiger Änderung Hinweise beider Fassungen behalten, fehlendes Bild übernehmen. */
+/* Einmalige Reparatur (20.10.2026): Bis 0.23 konnten die mitgelieferten Grundmodelle eines neuen Geräts die Fassung in SharePoint
+   überschreiben. Holt Hinweise, Bild und Anhänge aus allen gespeicherten Versionen jeder Katalog-Datei zurück. */
+async function katReparieren(){
+  if(META.sync.katRep===CONFIG.shareUrl) return false; let n=0;
+  const fid=await folderId(`${CONFIG.dataFolder}/katalog`,BIB.katalog);
+  for(const it of await listAll(fid)){
+    if(!it.file||!it.name.endsWith(".json")) continue;
+    const d=(it.parentReference&&it.parentReference.driveId)||fid.split("/")[0];
+    let vs; try{ vs=(await gj(`/drives/${d}/items/${it.id}/versions`)).value||[]; }catch(e){ if(e.auth) throw e; continue; }
+    if(vs.length<2) continue;
+    vs.sort((a,b)=>String(b.lastModifiedDateTime).localeCompare(String(a.lastModifiedDateTime)));
+    const alle=[]; for(const v of vs){ try{ const r=await g(`/drives/${d}/items/${it.id}/versions/${v.id}/content`); if(r.ok) alle.push(await r.json()); }catch(e){ if(e.auth) throw e; } }
+    const id=it.name.slice(0,-5), loc=DB.katalog.get(id); if(!loc||!alle.length) continue;
+    const vorher=JSON.stringify([loc.hinweise,loc.bild,loc.anhaenge]); alle.forEach(x=>katMerge(loc,x));
+    if(JSON.stringify([loc.hinweise,loc.bild,loc.anhaenge])!==vorher){ saveRec("katalog",loc); n++; }
+  }
+  META.sync.katRep=CONFIG.shareUrl; metaSave(); if(n) toast(`Katalog repariert: ${n} Modell${n>1?"e":""} wiederhergestellt`); return n>0;
+}
+function katMerge(loc,srv){ if(!srv) return; const weg=new Set([...(loc.hWeg||[]),...(srv.hWeg||[])]); loc.hWeg=[...weg]; loc.hinweise=(loc.hinweise||[]).filter(h=>!weg.has(h.id));
+  const ids=new Set((loc.hinweise||[]).map(h=>h.id)); (srv.hinweise||[]).forEach(h=>{ if(h&&h.id&&!ids.has(h.id)&&!weg.has(h.id)) (loc.hinweise=loc.hinweise||[]).push(h); });
+  if(!loc.bild&&srv.bild) loc.bild=srv.bild; if(!(loc.anhaenge||[]).length&&(srv.anhaenge||[]).length) loc.anhaenge=srv.anhaenge; }
 const katName=r=>[r.modell,r.version].filter(Boolean).join(" ");
 const katFotoIds=r=>[r.bild,...(r.hinweise||[]).flatMap(h=>h.fotos||[])].filter(Boolean);
 const katNorm=t=>String(t||"").toLowerCase().replace(/\s+/g," ").trim();
@@ -2495,6 +2523,7 @@ function katKachel(r){
     ${!r.quelle||nh?`<span class="ktile-p">${!r.quelle?pill("wip","Angaben prüfen"):""}${nh?pill("open",`${nh} Hinweis${nh>1?"e":""}`):""}</span>`:""}</span></button>`;
 }
 function katalogView(){
+  fotoFetch(live("katalog").map(r=>r.bild).filter(Boolean));
   return `<div class="narrow">${searchBar("Hersteller, Modell, Art.-Nr.")}<div id="res">${katalogListe()}</div>
     <div class="kat-teilen"><button class="btn-tonal" data-act="katExport">${icon("backup")}Katalog als Datei sichern</button><button class="btn-tonal" data-act="katImport">${icon("upload")}Katalog-Datei laden</button></div>
     <p class="hint">Nur Modelle, Steckbriefe und Hinweise mit Fotos – keine Kunden oder Prüfungen. Immer erst laden, dann sichern – und im Share-Ordner die vorhandene Datei „EVSE-Katalog“ ersetzen. Beim Laden wird ergänzt, nichts geht verloren.</p></div>`;
@@ -3153,7 +3182,7 @@ document.addEventListener("click",ev=>{
   case "katHEdit": { const r=DB.katalog.get(nav.id); katHDialog(r,(r.hinweise||[]).find(h=>h.id===b.dataset.h)); return; }
   case "katHSave": katHSave(); return;
   case "katHDelAsk": katHDel=b.dataset.h; confirmDlg("Hinweis löschen?","Den Hinweis mit seinen Fotos löschen?","Löschen","katHDel"); return;
-  case "katHDel": { const r=DB.katalog.get(nav.id), i=(r.hinweise||[]).findIndex(h=>h.id===katHDel); closeOverlays(); if(i<0) return; fotoDel(r.hinweise[i].fotos||[]); r.hinweise.splice(i,1); saveRec("katalog",r); render(); toast("Hinweis gelöscht"); return; }
+  case "katHDel": { const r=DB.katalog.get(nav.id), i=(r.hinweise||[]).findIndex(h=>h.id===katHDel); closeOverlays(); if(i<0) return; fotoDel(r.hinweise[i].fotos||[]); r.hWeg=[...(r.hWeg||[]),r.hinweise[i].id]; r.hinweise.splice(i,1); saveRec("katalog",r); render(); toast("Hinweis gelöscht"); return; }
   case "katBildAdd": fotoTarget={kat:nav.id,bild:true}; closeOverlays(); $("#fotoFile").click(); return;
   case "katBildShow": { const r=DB.katalog.get(nav.id), eigen=r.bild&&fotoCache.get(r.bild); dialog(katVoll(r),`<img class="dimg" src="${esc(katBildSrc(r))}" alt="" referrerpolicy="no-referrer"><p class="sup" style="margin:8px 0 0">${eigen?"Eigenes Foto":"Herstellerbild – wird vom Server des Herstellers angezeigt."} Vor Ort gilt das Typschild.</p>`,`${eigen?`<button class="btn-text danger" data-act="katBildDel">Entfernen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="katBildAdd">${eigen?"Ersetzen":"Eigenes Foto"}</button><button class="btn-text" data-act="cancel">Schließen</button>`); return; }
   case "katBildDel": { const r=DB.katalog.get(nav.id); closeOverlays(); fotoDel([r.bild]); delete r.bild; saveRec("katalog",r); render(); return; }
