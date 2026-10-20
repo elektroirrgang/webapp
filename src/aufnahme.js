@@ -116,7 +116,7 @@ function afFotos(k,a,ro){ const ids=a.fotos[k]||[];
   return `<div class="af-fotos">${ids.map(id=>{ const src=fotoCache.get(id); return src?`<button class="foto" data-act="afFotoZeig" data-k="${k}" data-id="${id}" aria-label="Foto ansehen"><img src="${src}" alt=""></button>`:`<div class="foto leer">${icon("sync")}</div>`; }).join("")}
     ${!ro&&ids.length<AF_FOTO_MAX?`<button class="foto leer" data-act="afFoto" data-k="${k}" aria-label="Foto aufnehmen">${icon("cam")}</button>`:""}</div>`; }
 function aufnahmeView(b){
-  const a=afDaten(b), v=a.v, ro=!canEdit(b), [n,m]=afGesamt(b), k=kundeOf(b.kundeId), s=standortOf(b.standortId);
+  const a=afDaten(b), v=a.v, ro=!canEdit(b), [n,m]=afGesamt(b), k=kundeOf(b.kundeId), s=ortVon(b);
   if(!v.datum&&!ro){ v.datum=today(); v.von=v.von||who().name; if(s&&s.ansprech&&!v.ansprech) v.ansprech=s.ansprech; }
   let h=`<div class="af-kopf"><div class="af-bar"><i style="width:${m?Math.round(n/m*100):0}%"></i></div><span>${n} von ${m} Angaben</span>
     ${a.pdf&&a.pdf.length?`<span class="af-pdfinfo">${icon("folder")}Zuletzt gespeichert ${esc(new Date(a.pdf[a.pdf.length-1].at).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"}))}</span>`:""}</div>`;
@@ -188,7 +188,7 @@ async function afPdf(b){
   if(!window.jspdf){ toast("PDF-Erstellung nicht geladen"); return; }
   const a=afDaten(b), v=a.v, ids=afFotoIds(b), fehlt=ids.filter(id=>!fotoCache.has(id));
   if(fehlt.length){ fotoFetch(fehlt); toast("Fotos werden noch geladen – gleich noch einmal tippen"); return; }
-  const k=kundeOf(b.kundeId), s=standortOf(b.standortId);
+  const k=kundeOf(b.kundeId), s=ortVon(b);
   const {jsPDF}=window.jspdf, d=new jsPDF({unit:"mm",format:"a4"}), W=210,M=14,CW=W-2*M, SIG=[225,29,47],GR=[93,107,123],LINE=[211,218,227],SUNK=[238,241,245];
   let y=0;
   const head=()=>{ try{ d.addImage(LOGO_PDF,"PNG",M,6,57,10); }catch(e){}

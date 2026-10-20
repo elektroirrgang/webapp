@@ -1785,6 +1785,8 @@ function saveNow(){}
 const kundeOf=id=>DB.kunden.get(id), standortOf=id=>DB.standorte.get(id);
 const standorteVon=kid=>live("standorte").filter(s=>s.kundeId===kid).sort((a,b)=>a.name.localeCompare(b.name,"de"));
 const pfadText=b=>[(kundeOf(b.kundeId)||{}).name,(standortOf(b.standortId)||{}).name].filter(Boolean).join(" › ");
+/* Wo wird gearbeitet? Eigener Standort – oder, wenn keiner gewählt ist, die Adresse des Kunden (z. B. Privathaus) */
+const ortVon=b=>{ const s=standortOf(b&&b.standortId); if(s) return s; const k=kundeOf(b&&b.kundeId); return k?{name:"",strasse:k.strasse,plz:k.plz,ort:k.ort,adresse:k.adresse,ansprech:k.ansprech,tel:k.tel,mail:k.mail,_kunde:true}:null; };
 const eintraegeVon=bid=>live("eintraege").filter(e=>e.baustelleId===bid).sort((a,b)=>(b.datum||"").localeCompare(a.datum||"")||(b.created||0)-(a.created||0));
 const letzter=b=>eintraegeVon(b.id)[0];
 const aktiv=b=>Math.max(b.updated||0,...eintraegeVon(b.id).map(e=>e.updated||0));
@@ -2192,7 +2194,7 @@ function kundenKacheln(){ const q=query.toLowerCase(), H=v=>String(v||"").toLowe
 function baustellenListe(){
   if(META.filter==="kunden") return kundenKacheln();
   const q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
-  const L=live("baustellen").filter(b=>(q?true:(b.status||"aktiv")===META.filter)&&(!q||H(b.name)||H(b.auftragsnr)||H(pfadText(b))||H((standortOf(b.standortId)||{}).ort))).sort((a,b)=>aktiv(b)-aktiv(a));
+  const L=live("baustellen").filter(b=>(q?true:(b.status||"aktiv")===META.filter)&&(!q||H(b.name)||H(b.auftragsnr)||H(pfadText(b))||H((ortVon(b)||{}).ort))).sort((a,b)=>aktiv(b)-aktiv(a));
   if(!L.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:META.filter==="aktiv"?"Keine aktiven Baustellen.":`Keine Baustellen im Status „${STATUS_TXT[META.filter]}“.`}</p>`;
   return listOf(L.map(bItem));
 }
@@ -2213,12 +2215,14 @@ function eintragKarte(e,erster){
     ${e.updated&&e.created&&e.updated-e.created>60000?`<div class="by">geändert ${esc(wann(e.updated))}${e.updatedBy&&e.updatedBy.name&&e.updatedBy.name!==vonText(e)?` von ${esc(e.updatedBy.name)}`:""}</div>`:""}</div>`;
 }
 function baustelleView(b){
-  const s=standortOf(b.standortId), E=eintraegeVon(b.id);
+  const s=standortOf(b.standortId), kd=!s&&kundeOf(b.kundeId), E=eintraegeVon(b.id);
   let h=`<div class="narrow">`;
   h+=`<div class="b-kopf"><div class="b-meta">${b.termin&&b.termin.datum?`<span>${icon("cal")}Termin ${esc(deDate(b.termin.datum))}${b.termin.zeit?` · ${esc(b.termin.zeit)} Uhr`:""}${b.termin.mit?` · ${esc(b.termin.mit)}`:""}</span>`:""}${b.auftragsnr?`<span>${icon("tag")}Auftrag ${esc(b.auftragsnr)}</span>`:""}${b.notiz?`<span>${icon("notes")}${esc(b.notiz)}</span>`:""}</div>
     ${!WIDE.matches&&canEdit(b)?bStatusKnopf(b):""}</div>`;
   if(s){ let auf=true; try{ auf=localStorage.getItem("bau_info")!=="zu"; }catch(e){}
     h+=`<details class="ik-klapp" ${auf?"open":""}><summary><span class="ikk-ic">${icon("ort")}</span><span class="ikk-t"><b>${esc(s.name)}</b><small>${esc(adrText(s)||"")}</small></span><span class="ikk-p">${icon("drop")}</span></summary>${infoKarte(s,"standorte")}</details>`; }
+  else if(kd&&(adrText(kd)||kd.tel||kd.ansprech)){ let auf=true; try{ auf=localStorage.getItem("bau_info")!=="zu"; }catch(e){}
+    h+=`<details class="ik-klapp" ${auf?"open":""}><summary><span class="ikk-ic">${icon("ort")}</span><span class="ikk-t"><b>${esc(kd.name)}</b><small>${esc(adrText(kd)||"Adresse des Kunden")}</small></span><span class="ikk-p">${icon("drop")}</span></summary>${infoKarte(kd,"kunden")}</details>`; }
   const [an,am]=afGesamt(b);
   h+=`<div class="b-tabs">${seg("bTab",nav.tab||"uebergaben",[["aufnahme",`Aufnahme${an?` · ${Math.round(an/am*100)} %`:""}`],["uebergaben",`Übergaben${E.length?` · ${E.length}`:""}`]])}</div>`;
   if(nav.tab==="aufnahme") return h+aufnahmeView(b)+`</div>`;
@@ -2284,7 +2288,7 @@ async function entwFotoAufnehmen(el){
   if(!ok) toast("Foto nur bis zum Schließen der App gespeichert – Speicher nicht verfügbar");
 }
 function teilenText(e){
-  const b=DB.baustellen.get(e.baustelleId)||{}, s=standortOf(b.standortId);
+  const b=DB.baustellen.get(e.baustelleId)||{}, s=ortVon(b);
   return [`Baustellenübergabe – ${b.name||""}`,[pfadText(b),s&&s.ort].filter(Boolean).join(", "),`${tagText(e.datum)} · ${vonText(e)}`,"",
     e.stand&&`Stand:\n${e.stand}`,e.offen&&`Offen / nächste Schritte:\n${e.offen}`,matListe(e).length&&`Material:\n${matListe(e).map(x=>{ const nr=matNr(matStamm(x.t)); return `– ${matFmt(x.q)} ${x.u} ${x.t}${nr?` · Nr. ${nr}`:""}${x.ok?" (besorgt)":""}`; }).join("\n")}`].filter(x=>x!==undefined&&x!=="").join("\n\n").replace(/\n\n\n+/g,"\n\n");
 }
@@ -2296,7 +2300,7 @@ async function teilen(e){
 
 function locItem(kind,r){
   const n=live("baustellen").filter(b=>kind==="kunden"?b.kundeId===r.id:b.standortId===r.id).length;
-  const sub=kind==="kunden"?[r.kdnr&&`Kd.-Nr. ${r.kdnr}`,r.ort,`${standorteVon(r.id).length} Standort${standorteVon(r.id).length===1?"":"e"}`].filter(Boolean).join(" · "):(adrText(r)||"");
+  const sub=kind==="kunden"?[r.kdnr&&`Kd.-Nr. ${r.kdnr}`,r.ort,standorteVon(r.id).length&&`${standorteVon(r.id).length} Standort${standorteVon(r.id).length===1?"":"e"}`].filter(Boolean).join(" · "):(adrText(r)||"");
   return `<div class="li" role="button" tabindex="0" data-act="nav" data-v="${kind==="kunden"?"kunde":"standort"}" data-id="${esc(r.id)}"><span class="av">${icon(kind==="kunden"?"firma":"ort")}</span>
     <span class="lt"><span class="h">${esc(r.name)}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}${n?`<span class="st">${pill("open",`${n} Baustelle${n>1?"n":""}`)}</span>`:""}</span>${icon("chev")}</div>`;
 }
@@ -2312,7 +2316,7 @@ function kundenView(){
 function kundeView(k){
   const ss=standorteVon(k.id), bs=live("baustellen").filter(b=>b.kundeId===k.id).sort((a,b)=>aktiv(b)-aktiv(a)), ed=canEdit(k);
   return `<div class="narrow">${!WIDE.matches&&ed?`<div class="kopf-rechts">${stiftKnopf()}</div>`:""}${infoKarte(k,"kunden")}
-    <div class="sec-row"><div class="sec-lbl">Standorte</div>${ed?`<button class="plus-k" data-act="newStandort" aria-label="Standort anlegen" title="Standort anlegen">${icon("add")}</button>`:""}</div>${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Noch kein Standort.</p>`}
+    <div class="sec-row"><div class="sec-lbl">Standorte</div>${ed?`<button class="plus-k" data-act="newStandort" aria-label="Standort anlegen" title="Standort anlegen">${icon("add")}</button>`:""}</div>${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager) – sonst gilt die Adresse des Kunden.</p>`}
     <div class="sec-row"><div class="sec-lbl">Baustellen</div><button class="plus-k" data-act="neueBaustelleKunde" aria-label="Baustelle anlegen" title="Baustelle anlegen">${icon("add")}</button></div>${bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle bei diesem Kunden.</p>`}</div>`;
 }
 function standortView(s){
@@ -2336,7 +2340,7 @@ function bDialog(o){
   dialog(bearb?"Baustelle bearbeiten":"Neue Baustelle",`<div class="fg1">
     ${sf("k","Kunde",P.k||"",[["","Bitte wählen"],...ks.map(k=>[k.id,k.name]),["__neu","+ Neuer Kunde …"]],{form:true})}
     ${P.k==="__neu"?tf("kNeu","Name des neuen Kunden",P.kNeu,{form:true}):""}
-    ${P.k?sf("s","Standort / Adresse",P.s||"",[["","Bitte wählen"],...ss.map(s=>[s.id,[s.name,s.ort].filter(Boolean).join(", ")]),["__neu","+ Neuer Standort …"]],{form:true}):""}
+    ${P.k?sf("s","Standort / Adresse",P.s||"",[["",P.k==="__neu"?"Adresse des Kunden":`Adresse des Kunden${adrText(kundeOf(P.k)||{})?` (${adrText(kundeOf(P.k))})`:""}`],...ss.map(s=>[s.id,[s.name,s.ort].filter(Boolean).join(", ")]),["__neu","+ Neuer Standort …"]],{form:true}):""}
     ${P.s==="__neu"?tf("sNeu","Bezeichnung des Standorts",P.sNeu,{form:true,ph:"z. B. Neubau Waldbröl, Hauptstraße 5"}):""}
     ${tf("name","Baustelle",P.name,{form:true,ph:"z. B. Elektroinstallation EFH Müller"})}
     ${tf("auftragsnr","Auftragsnummer (optional)",P.auftragsnr,{form:true})}
@@ -2347,12 +2351,12 @@ function bLesen(){ Object.assign(nb,formVals()); }
 function bSpeichern(){
   bLesen(); const P=nb;
   if(!P.k||(P.k==="__neu"&&!P.kNeu)){ toast("Bitte einen Kunden wählen oder anlegen"); return; }
-  if(!P.s||(P.s==="__neu"&&!P.sNeu)){ toast("Bitte einen Standort wählen oder anlegen"); return; }
+  if(P.s==="__neu"&&!P.sNeu){ toast("Bitte eine Bezeichnung für den Standort eingeben"); return; }
   const k=P.k==="__neu"?saveRec("kunden",{id:uid(),name:P.kNeu},true):kundeOf(P.k);
-  const s=P.s==="__neu"?saveRec("standorte",{id:uid(),kundeId:k.id,name:P.sNeu},true):standortOf(P.s);
-  const name=P.name||s.name;
-  if(P.id){ const b=DB.baustellen.get(P.id); Object.assign(b,{kundeId:k.id,standortId:s.id,name,auftragsnr:P.auftragsnr,notiz:P.notiz}); saveRec("baustellen",b); nb=null; closeOverlays(); render(); return; }
-  const b=saveRec("baustellen",Object.assign({id:uid(),kundeId:k.id,standortId:s.id,name,auftragsnr:P.auftragsnr,notiz:P.notiz,status:"aktiv"},k.demo?{demo:true}:{}),true);
+  const s=P.s==="__neu"?saveRec("standorte",{id:uid(),kundeId:k.id,name:P.sNeu},true):P.s?standortOf(P.s):null;
+  const name=P.name||(s&&s.name)||k.name;
+  if(P.id){ const b=DB.baustellen.get(P.id); Object.assign(b,{kundeId:k.id,standortId:s?s.id:"",name,auftragsnr:P.auftragsnr,notiz:P.notiz}); saveRec("baustellen",b); nb=null; closeOverlays(); render(); return; }
+  const b=saveRec("baustellen",Object.assign({id:uid(),kundeId:k.id,standortId:s?s.id:"",name,auftragsnr:P.auftragsnr,notiz:P.notiz,status:"aktiv"},k.demo?{demo:true}:{}),true);
   nb=null; closeOverlays(); go({v:"baustelle",id:b.id}); toast("Baustelle angelegt");
 }
 

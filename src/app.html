@@ -1217,6 +1217,7 @@ function canEdit(rec){ if(!rec) return false; if(!SYNC_ON||rec.demo) return true
   return ME.admin||!rec.createdBy||!rec.createdBy.mail||sameUser(rec.createdBy,ME); }
 
 const kundeOf=id=>DB.kunden.get(id), standortOf=id=>DB.standorte.get(id), ladeparkOf=id=>id?DB.ladeparks.get(id):null;
+const kOrt=sid=>typeof sid==="string"&&sid.startsWith("k:");
 function pfad(p){ return {k:kundeOf(p.kundeId), s:standortOf(p.standortId), l:ladeparkOf(p.ladeparkId)}; }
 function pfadText(p,sep=" › "){ const {k,s,l}=pfad(p); return [k&&k.name,s&&s.name,l&&l.name].filter(Boolean).join(sep); }
 const byDate=(a,b)=>(b.p.datum||"").localeCompare(a.p.datum||"")||(b.updated||0)-(a.updated||0);
@@ -1898,7 +1899,7 @@ function render(){
     if(!r||r.deleted){ nav={v:"kunden"}; return render(); }
     title=r.name; sub=kind==="kunden"?"Kunde":kind==="standorte"?(kundeOf(r.kundeId)||{}).name:[ (kundeOf((standortOf(r.standortId)||{}).kundeId)||{}).name,(standortOf(r.standortId)||{}).name ].filter(Boolean).join(" › ");
     body=nav.v==="kunde"?kundeView(r):nav.v==="standort"?standortView(r):ladeparkView(r);
-    fab=nav.v==="kunde"?["newStandort","Standort","add"]:["newHere","Neue Prüfung","add"]; }
+    fab=["newHere","Neue Prüfung","add"]; }
   else { const {s,l}=pfad(cur); title=nav.v==="saeule"?sName(cur.s[nav.si],nav.si):(l?l.name:s?s.name:"Prüfung"); sub=nav.v==="saeule"?pfadText(cur):[deDate(cur.p.datum),cur.p.art].filter(Boolean).join(" · ");
     if(nav.v==="projekt") body=projektView();
     else if(nav.v==="saeulen"){ body=saeulenView(); }
@@ -1949,7 +1950,7 @@ function pItem(p,mitPfad){
 function locItem(kind,r){
   const pins=META.pins.includes(r.id), view={kunden:"kunde",standorte:"standort",ladeparks:"ladepark"}[kind];
   let sub="";
-  if(kind==="kunden"){ const n=standorteVon(r.id).length; sub=[r.kdnr&&`Kd.-Nr. ${r.kdnr}`,r.ort,`${n} Standort${n===1?"":"e"}`].filter(Boolean).join(" · "); }
+  if(kind==="kunden"){ const n=standorteVon(r.id).length; sub=[r.kdnr&&`Kd.-Nr. ${r.kdnr}`,r.ort,n&&`${n} Standort${n===1?"":"e"}`].filter(Boolean).join(" · "); }
   else if(kind==="standorte"){ sub=r.ort||adrText(r)||(kundeOf(r.kundeId)||{}).name||""; }
   else sub=nav.v==="standort"?(r.notiz||""):(standortOf(r.standortId)||{}).name||"";
   const last=pruefUnter(kind,r.id)[0];
@@ -2050,8 +2051,13 @@ function infoKarte(r,kind){
   return `<div class="infok2">${aktionen.length?`<div class="qa-row">${aktionen.join("")}</div>`:""}${zeilen?`<div class="dz-list">${zeilen}</div>`:""}</div>`;
 }
 function kundeView(k){
-  const ss=standorteVon(k.id);
-  return `<div class="narrow">${infoKarte(k,"kunden")}<div class="sec-lbl">Standorte</div>${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Noch kein Standort – über „Standort“ anlegen.</p>`}</div>`;
+  const ss=standorteVon(k.id), sid="k:"+k.id, ps=pruefAt(sid,null), ed=!SYNC_ON||canEdit(k)||k.demo;
+  let h=`<div class="narrow">${infoKarte(k,"kunden")}`;
+  /* ohne eigene Standorte: geprüft wird an der Adresse des Kunden – Verlauf und Geräte direkt hier */
+  if(!ss.length||ps.length) h+=`<div class="sec-lbl">Prüfverlauf${ss.length?" an der Kundenadresse":""}</div>${verlaufKopf(sid,null)}${ps.length?listOf(ps.map(p=>pItem(p,false))):`<p class="meta">Noch keine Prüfung – über „Neue Prüfung“ anlegen.</p>`}`+(ps.length||geraeteOrt(sid,null).length?geraeteSektion(sid,null):"");
+  h+=`<div class="sec-row"><div class="sec-lbl">Standorte</div>${ed?`<button class="btn-text" data-act="newStandort">${icon("add")}Standort</button>`:""}</div>`
+    +(ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager) – sonst wird an der Adresse des Kunden geprüft.</p>`);
+  return h+`</div>`;
 }
 function standortView(s){
   const _ak=geraeteSektion(s.id,null), _fz=verlaufKopf(s.id,null);
@@ -2096,8 +2102,9 @@ function faelligView(){
   const L=faelligListe(), t=today(), bald=new Date(Date.now()+90*864e5).toISOString().slice(0,10);
   if(!L.length) return `<div class="empty">${icon("pending")}<h2>Keine Termine</h2><p>Hier erscheinen die Wiederholungsprüfungen, sobald im Abschluss „Nächste Prüfung in … Jahren“ gewählt ist.</p></div>`;
   const item=(p,kl,txt)=>{ const {s,l}=pfad(p);
-    return `<div class="li" role="button" tabindex="0" data-act="nav" data-v="${l?"ladepark":"standort"}" data-id="${esc(l?l.id:s&&s.id)}"><span class="av">${icon(l?"ev":"ort")}</span>
-      <span class="lt"><span class="h">${esc((l||s||{}).name||pfadText(p))}</span><span class="s">${esc([(kundeOf(p.kundeId)||{}).name,l&&s&&s.name].filter(Boolean).join(" › "))}</span><span class="s">Fällig ${esc(deDate(p.a.naechste))} · letzte Prüfung ${esc(deDate(p.p.datum))}</span><span class="st">${pill(kl,txt)}</span></span>${icon("chev")}</div>`; };
+    const kd=!l&&!s&&kundeOf(p.kundeId);
+    return `<div class="li" role="button" tabindex="0" data-act="nav" data-v="${l?"ladepark":s?"standort":"kunde"}" data-id="${esc(l?l.id:s?s.id:p.kundeId)}"><span class="av">${icon(l?"ev":"ort")}</span>
+      <span class="lt"><span class="h">${esc((l||s||kd||{}).name||pfadText(p))}</span><span class="s">${esc([(kundeOf(p.kundeId)||{}).name,l&&s&&s.name].filter(Boolean).join(" › "))}</span><span class="s">Fällig ${esc(deDate(p.a.naechste))} · letzte Prüfung ${esc(deDate(p.p.datum))}</span><span class="st">${pill(kl,txt)}</span></span>${icon("chev")}</div>`; };
   const g1=L.filter(p=>p.a.naechste<t), g2=L.filter(p=>p.a.naechste>=t&&p.a.naechste<=bald), g3=L.filter(p=>p.a.naechste>bald);
   return `<div class="narrow">${g1.length?`<div class="sec-lbl">Überfällig</div>${listOf(g1.map(p=>item(p,"bad","überfällig")))}`:""}
     ${g2.length?`<div class="sec-lbl">In den nächsten 3 Monaten</div>${listOf(g2.map(p=>item(p,"wip","bald fällig")))}`:""}
@@ -2216,7 +2223,7 @@ function projektView(){
   return `<div class="cols">
     ${cur.s.length>1?`<section class="card wide"><h3>Umfang dieser Prüfung</h3><p class="sup" style="margin:-8px 0 12px">Heute geprüft werden ${umfangS(cur).length} von ${cur.s.length} Ladestationen. Nicht gewählte stehen im Protokoll als „nicht Bestandteil dieser Prüfung“.</p>${umfangChips()}</section>`:""}
     <section class="card"><h3>Auftrag</h3>
-      <div class="ort-zeile">${icon("ort")}<div><b>${esc(k?k.name:"Kein Kunde")}</b><span>${esc([s&&s.name,l&&l.name].filter(Boolean).join(" › ")||"Kein Standort")}</span></div><button class="btn-text" data-act="move">Ändern</button></div>
+      <div class="ort-zeile">${icon("ort")}<div><b>${esc(k?k.name:"Kein Kunde")}</b><span>${esc([s&&s.name,l&&l.name].filter(Boolean).join(" › ")||(kOrt(cur.standortId)?["Adresse des Kunden",k&&adrText(k)].filter(Boolean).join(": "):"Kein Standort"))}</span></div><button class="btn-text" data-act="move">Ändern</button></div>
       <div class="fg">
       ${tf("p.auftragsnr","Auftragsnr.",p.auftragsnr)}
       ${tf("p.datum","Prüfdatum",p.datum,{type:"date"})}
@@ -2661,7 +2668,7 @@ function pickDialog(){
   const body=`<div class="fg1">
     ${sf("k","Kunde",P.k||"",[["","Bitte wählen"],...ks.map(k=>[k.id,k.name]),["__neu","+ Neuer Kunde …"]],{form:true})}
     ${P.k==="__neu"?tf("kNeu","Name des neuen Kunden",P.kNeu||"",{form:true}):""}
-    ${P.k?sf("s","Standort",P.s||"",[["","Bitte wählen"],...ss.map(s=>[s.id,s.name]),["__neu","+ Neuer Standort …"]],{form:true}):""}
+    ${P.k?sf("s","Standort",P.s||"",[["",P.k==="__neu"?"Adresse des Kunden":`Adresse des Kunden${adrText(kundeOf(P.k)||{})?` (${adrText(kundeOf(P.k))})`:""}`],...ss.map(s=>[s.id,s.name]),["__neu","+ Neuer Standort …"]],{form:true}):""}
     ${P.s==="__neu"?tf("sNeu","Name des neuen Standorts",P.sNeu||"",{form:true,ph:"z. B. Rheinbach"}):""}
     ${P.s?sf("l","Ladepark (optional)",P.l||"",[["","– kein Ladepark –"],...ls.map(l=>[l.id,l.name]),["__neu","+ Neuer Ladepark …"]],{form:true}):""}
     ${P.l==="__neu"?tf("lNeu","Name des neuen Ladeparks",P.lNeu||"",{form:true,ph:"z. B. Parkplatz Nord"}):""}
@@ -2672,12 +2679,12 @@ function pickResolve(){
   Object.assign(pick,formVals());
   const P=pick;
   if(!P.k||(P.k==="__neu"&&!P.kNeu)){ toast("Bitte einen Kunden wählen oder anlegen"); return null; }
-  if(!P.s||(P.s==="__neu"&&!P.sNeu)){ toast("Bitte einen Standort wählen oder anlegen"); return null; }
-  if(P.l==="__neu"&&!P.lNeu){ toast("Bitte einen Namen für den Ladepark eingeben"); return null; }
+  if(P.s==="__neu"&&!P.sNeu){ toast("Bitte einen Namen für den Standort eingeben"); return null; }
+  if(P.s&&P.l==="__neu"&&!P.lNeu){ toast("Bitte einen Namen für den Ladepark eingeben"); return null; }
   let k=P.k==="__neu"?saveRec("kunden",{id:uid(),name:P.kNeu,adresse:"",notiz:""},true):kundeOf(P.k);
-  let s=P.s==="__neu"?saveRec("standorte",{id:uid(),kundeId:k.id,name:P.sNeu,adresse:""},true):standortOf(P.s);
-  let l=P.l==="__neu"?saveRec("ladeparks",{id:uid(),standortId:s.id,name:P.lNeu,notiz:""},true):P.l?ladeparkOf(P.l):null;
-  return {k,s,l};
+  let s=P.s==="__neu"?saveRec("standorte",{id:uid(),kundeId:k.id,name:P.sNeu,adresse:""},true):P.s?standortOf(P.s):null;
+  let l=!s?null:P.l==="__neu"?saveRec("ladeparks",{id:uid(),standortId:s.id,name:P.lNeu,notiz:""},true):P.l?ladeparkOf(P.l):null;
+  return {k,s,l,sid:s?s.id:"k:"+k.id};
 }
 
 let nachName=null;
@@ -2734,7 +2741,7 @@ function stAnlegen(){
   stLesen(); const D=stDlg; stDlg=null; closeOverlays();
   if(D.mode==="neu"){ const neu=stErzeugen([],D); if(!neu.length) neu.push(newSaeule(1)); neuePruefung(D.k,D.s,D.l,{stationen:neu}); return; }
   if(D.mode==="ort"){ const o=ortFest(D.s,D.l); if(!o) return; const neu=stErzeugen(o.geraete,D); if(!neu.length) return;
-    const G=neu.map(x=>Object.assign(stamm(x),{gid:x.id})); o.geraete.push(...G); nummeriere(o.geraete.filter(g=>!g.aus)); saveRec(ortKind(D.l),o,false); geraeteGeaendert(D.s,D.l); softRender();
+    const G=neu.map(x=>Object.assign(stamm(x),{gid:x.id})); o.geraete.push(...G); nummeriere(o.geraete.filter(g=>!g.aus)); saveRec(ortKind(D.l,D.s),o,false); geraeteGeaendert(D.s,D.l); softRender();
     toast(G.length===1?`${G[0].name} angelegt`:`${G.length} Geräte angelegt`); return; }
   const start=cur.s.length, neu=stErzeugen(cur.s,D); if(!neu.length) return;
   cur.s.push(...neu); nummeriere(); commit();
@@ -2771,7 +2778,7 @@ function oeffne(id){ const p=DB.pruefungen.get(id); if(!p||p.deleted) return; cu
 function zurueck(){
   saveNow();
   if(nav.v==="saeule"){ go({v:"saeulen"}); return; }
-  if(EDITOR.includes(nav.v)){ const back=cur.ladeparkId&&ladeparkOf(cur.ladeparkId)?{v:"ladepark",id:cur.ladeparkId}:standortOf(cur.standortId)?{v:"standort",id:cur.standortId}:{v:"start"}; cur=null; go(back); return; }
+  if(EDITOR.includes(nav.v)){ const back=cur.ladeparkId&&ladeparkOf(cur.ladeparkId)?{v:"ladepark",id:cur.ladeparkId}:standortOf(cur.standortId)?{v:"standort",id:cur.standortId}:kOrt(cur.standortId)&&kundeOf(cur.kundeId)?{v:"kunde",id:cur.kundeId}:{v:"start"}; cur=null; go(back); return; }
   if(nav.v==="ladepark"){ const l=ladeparkOf(nav.id); go(l?{v:"standort",id:l.standortId}:{v:"kunden"}); return; }
   if(nav.v==="standort"){ const s=standortOf(nav.id); go(s?{v:"kunde",id:s.kundeId}:{v:"kunden"}); return; }
   if(nav.v==="kunde"){ go({v:"kunden"}); return; }
@@ -2855,7 +2862,8 @@ function geraetItem(t){ const T=geraeteTreffer(t.s.sn), r=saeuleResult(t.s);
   return `<div class="li" role="button" tabindex="0" data-act="akte" data-sn="${esc(t.s.sn)}">${stAv(t.s)}<span class="lt"><span class="h">${esc(sName(t.s,t.i))}</span>
     <span class="s">${esc([t.s.typ,`SN ${t.s.sn}`].filter(Boolean).join(" · "))}</span><span class="st">${pill(r==="open"?"open":r,r==="ok"?"zuletzt i. O.":r==="bad"?"zuletzt Mängel":"zuletzt offen")}${pill("open",`${T.length} Prüfung${T.length===1?"":"en"}`)}</span></span>${icon("chev")}</div>`; }
 /* Geräte gehören zum Ort (Ladepark bzw. Standort ohne Ladepark); Prüfungen verweisen über gid darauf */
-const ortRec=(sid,lid)=>lid?ladeparkOf(lid):standortOf(sid), ortKind=lid=>lid?"ladeparks":"standorte";
+/* Ort ohne eigenen Standort = Adresse des Kunden; dann ist die Standort-Kennung „k:<Kunde>“ und Geräte/Prüfverlauf hängen am Kunden */
+const ortRec=(sid,lid)=>lid?ladeparkOf(lid):kOrt(sid)?kundeOf(sid.slice(2)):standortOf(sid), ortKind=(lid,sid)=>lid?"ladeparks":kOrt(sid)?"kunden":"standorte";
 const STAMM_AUS=["id","gid","lp","sicht","fotos","aus"];
 const stamm=s=>{ const o={}; for(const k in s) if(!STAMM_AUS.includes(k)) o[k]=JSON.parse(JSON.stringify(s[k])); return o; };
 const begonnen=s=>Object.keys(s.sicht||{}).length>0||Object.keys(s.fotos||{}).length>0||(s.lp||[]).some(l=>Object.values(l.v||{}).some(v=>v!==""&&v!=null)||(l.bem||"").trim());
@@ -2878,11 +2886,11 @@ function zurueckAnOrt(p){ if(!p||!istAktuell(p)) return; const o=ortRec(p.stando
   const vorher=JSON.stringify(o.geraete||null); ortFest(p.standortId,p.ladeparkId);
   p.s.forEach(x=>{ const gid=x.gid||x.id, i=o.geraete.findIndex(g=>g.gid===gid), neu=Object.assign(stamm(x),{gid});
     if(i<0) o.geraete.push(neu); else { if(o.geraete[i].aus) neu.aus=true; o.geraete[i]=neu; } });
-  if(JSON.stringify(o.geraete)!==vorher) saveRec(ortKind(p.ladeparkId),o,false); }
+  if(JSON.stringify(o.geraete)!==vorher) saveRec(ortKind(p.ladeparkId,p.standortId),o,false); }
 function geraeteGeaendert(sid,lid){ const p=pruefAt(sid,lid)[0]; if(!p||hatPdf(p)) return;
   const c=JSON.parse(JSON.stringify(p)); if(abgleich(c)){ saveRec("pruefungen",c,false); if(cur&&cur.id===c.id){ cur=JSON.parse(JSON.stringify(c)); dirtyCur=false; } } }
 function geraetAusSetzen(sid,lid,gid,aus){ const o=ortFest(sid,lid); if(!o) return; const g=o.geraete.find(x=>x.gid===gid); if(!g) return;
-  if(aus) g.aus=true; else delete g.aus; saveRec(ortKind(lid),o,false); geraeteGeaendert(sid,lid); softRender();
+  if(aus) g.aus=true; else delete g.aus; saveRec(ortKind(lid,sid),o,false); geraeteGeaendert(sid,lid); softRender();
   toast(aus?`${g.name||"Gerät"} außer Betrieb`:`${g.name||"Gerät"} wieder in Betrieb`,"Rückgängig",()=>geraetAusSetzen(sid,lid,gid,!aus)); }
 function geraetOrtItem(g,i,sid,lid){ const T=pruefAt(sid,lid).map(p=>({p,s:p.s.find(x=>(x.gid||x.id)===g.gid)})).filter(t=>t.s), L=T[0], r=L?saeuleResult(L.s):"open";
   const n=g.sn?geraeteTreffer(g.sn).length:T.length;
@@ -3054,9 +3062,9 @@ document.addEventListener("click",ev=>{
   case "demoHide": closeOverlays(); saveNow(); demoSchalten(false); return;
   case "newAny": if(nameFehlt("newAny")) return; pick={mode:"new"}; pickDialog(); return;
   case "pickOk": { const r=pickResolve(); if(!r) return; const mode=pick.mode; pick=null; closeOverlays();
-    if(mode==="new"){ neuePruefung(r.k.id,r.s.id,r.l&&r.l.id); return; }
-    cur.kundeId=r.k.id; cur.standortId=r.s.id; cur.ladeparkId=r.l?r.l.id:null; commit(); render(); toast(`Verschoben nach ${pfadText(cur)}`); return; }
-  case "move": if(!canEdit(cur)) return; pick={mode:"move",k:cur.kundeId,s:cur.standortId,l:cur.ladeparkId||""}; pickDialog(); return;
+    if(mode==="new"){ neuePruefung(r.k.id,r.sid,r.l&&r.l.id); return; }
+    cur.kundeId=r.k.id; cur.standortId=r.sid; cur.ladeparkId=r.l?r.l.id:null; commit(); render(); toast(`Verschoben nach ${pfadText(cur)}`); return; }
+  case "move": if(!canEdit(cur)) return; pick={mode:"move",k:cur.kundeId,s:kOrt(cur.standortId)?"":cur.standortId,l:cur.ladeparkId||""}; pickDialog(); return;
   case "newKunde": locDialog("kunden"); return;
   case "newStandort": locDialog("standorte",null,nav.id); return;
   case "newLadepark": locDialog("ladeparks",null,nav.id); return;
@@ -3072,6 +3080,7 @@ document.addEventListener("click",ev=>{
   case "delLocAsk": locLoeschenFragen(VIEW_KIND[nav.v],nav.id); return;
   case "delLoc": { const t=delZiel; delZiel=null; closeOverlays(); if(!t) return; if(VIEW_KIND[nav.v]&&nav.id===t.id) zurueck(); locLoeschen(t.kind,t.id); return; }
   case "newHere": { if(nameFehlt("newHere")) return; const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id);
+    if(kind==="kunden"){ if(standorteVon(r.id).length){ pick={mode:"new",k:r.id,s:"",l:""}; pickDialog(); } else neuePruefung(r.id,"k:"+r.id,null); return; }
     if(kind==="standorte") neuePruefung(r.kundeId,r.id,null); else { const s=standortOf(r.standortId); neuePruefung(s.kundeId,s.id,r.id); } return; }
   case "open": closeOverlays(); oeffne(b.dataset.id); return;
   case "akte": { closeOverlays(); if(cur&&EDITOR.includes(nav.v)) saveNow(); go({v:"geraet",sn:b.dataset.sn,von:{...nav}}); return; }
@@ -3459,7 +3468,7 @@ function buildPDF(P){
   sec("Auftragsdaten");
   const PF=pfad(P);
   kv([["Auftraggeber",PF.k?[PF.k.name,adrText(PF.k)].filter(Boolean).join(", "):P.p.auftraggeber],["Auftragsnr.",P.p.auftragsnr],["Kundennr.",PF.k&&PF.k.kdnr],["Ansprechpartner",PF.k&&PF.k.ansprech],
-      ["Standort",PF.s?[PF.s.name,adrText(PF.s)].filter(Boolean).join(", "):"-"],["Ladepark",PF.l?PF.l.name:"-"],
+      ["Standort",PF.s?[PF.s.name,adrText(PF.s)].filter(Boolean).join(", "):kOrt(P.standortId)?"wie Auftraggeber":"-"],["Ladepark",PF.l?PF.l.name:"-"],
       ["Verteiler / Anlage",P.p.standort],["Bezeichnung",P.p.projekt],["Prüfdatum",deDate(P.p.datum)],["Prüfer",P.p.pruefer],
       ["Messgerät",P.p.geraet],["Seriennr.",P.p.geraetSn],["Prüfadapter",P.p.adapter],["Seriennr. Adapter",P.p.adapterSn],["Kal. gültig bis",P.p.kal],["Art der Prüfung",P.p.art],["Netzform",`${P.p.netz} | 230/400 V`],["Protokoll-Nr.",P._nr]]);
   sec("Prüfumfang"); para(P.p.umfang+(P._ohne&&P._ohne.length?` Nicht Bestandteil dieser Prüfung: ${P._ohne.join(", ")}.`:""));
