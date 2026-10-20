@@ -67,3 +67,13 @@
 .fab{box-shadow:0 6px 16px rgba(0,0,0,.18),0 2px 5px rgba(0,0,0,.12)!important;transition:transform .16s ease,box-shadow .16s ease,filter .16s ease}
 @media (hover:hover) and (pointer:fine){.fab:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.22),0 3px 8px rgba(0,0,0,.14)!important;filter:brightness(1.05)}}
 .fab:active{transform:translateY(0) scale(.97);box-shadow:0 3px 8px rgba(0,0,0,.18)!important}
+/* Schweben (systemweit): alles, was über dem Inhalt liegt – Pop-ups, Menüs, Hinweise, Filter, schwebende Knöpfe – bekommt denselben weichen Schatten und blendet kurz ein */
+:root{--schweben:0 10px 28px rgba(0,0,0,.16),0 2px 6px rgba(0,0,0,.10);--schweben-dlg:0 22px 56px rgba(0,0,0,.24),0 4px 12px rgba(0,0,0,.12)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--schweben:0 10px 28px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4);--schweben-dlg:0 22px 56px rgba(0,0,0,.6),0 4px 12px rgba(0,0,0,.45)}}
+:root[data-theme="dark"]{--schweben:0 10px 28px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4);--schweben-dlg:0 22px 56px rgba(0,0,0,.6),0 4px 12px rgba(0,0,0,.45)}
+.ml-pop,.menu,.fpop,.snackbar,.fabm-it,.kd-ort,.wg-anp,.db-anp,#vlist{box-shadow:var(--schweben)!important}
+.dlg{box-shadow:var(--schweben-dlg)!important}
+.tip{box-shadow:var(--schweben)}
+@keyframes schwebenEin{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
+.menu:not([hidden]),.fpop{animation:schwebenEin .14s ease-out}
+@media (prefers-reduced-motion:reduce){.menu:not([hidden]),.fpop,.ml-pop{animation:none!important}}

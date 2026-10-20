@@ -1293,6 +1293,31 @@ body.kopf-oben .edk-platz{display:none!important}
 .wg-anp{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:2px;background:var(--surface);border-radius:20px;padding:3px;box-shadow:0 2px 8px rgba(0,0,0,.15);z-index:3}
 .wg-anp .db-ab .ic{transform:rotate(-90deg)}
 .wg-gr{min-width:64px!important}
+/* Bibliothek */
+.bib-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.bib-chips .chip{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px 0 14px}
+.bib-chips .chip[aria-pressed="true"]{background:var(--sec-c)!important;color:var(--on-sec-c)}
+.chip-n{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:color-mix(in srgb,currentColor 12%,transparent);font-size:12px;font-weight:700;display:grid;place-items:center;box-sizing:border-box}
+.bib-leer{min-height:calc(100vh - 300px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px}
+.bib-leer.klein{min-height:calc(100vh - 360px)}
+.bib-leer .ic{width:48px;height:48px;opacity:.7}
+.bib-leer h2{margin:12px 0 6px}
+.bib-leer p{max-width:440px;margin:0}
+.bib-thumb{overflow:hidden;padding:0!important;background:var(--sc-high)}.bib-thumb img{width:100%;height:100%;object-fit:cover}
+.bib-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.bib-k{display:flex;flex-direction:column;border-radius:20px;background:var(--sc-low);overflow:hidden;cursor:pointer;text-decoration:none;color:var(--on-surface);transition:background .15s}
+@media (hover:hover){.bib-k:hover{background:var(--sc)}}
+.bib-kb{height:120px;display:grid;place-items:center;background:color-mix(in srgb,var(--primary) 8%,var(--sc));color:var(--primary)}
+.bib-kb .ic{width:40px;height:40px}
+.bib-kb.foto{background:var(--sc-high)}.bib-kb.foto img{width:100%;height:100%;object-fit:cover}
+.bib-kt{display:flex;flex-direction:column;gap:2px;padding:12px 14px 14px;min-width:0}
+.bib-kt b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bib-kt small{font-size:12px;color:var(--on-sv);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.bib-kt .st{margin-top:6px}
+.ans-um{display:flex;gap:2px;padding:3px;border-radius:22px;background:var(--sc)}
+.ans-um button{width:38px;height:38px;border:0;border-radius:19px;background:transparent;color:var(--on-sv);display:grid;place-items:center;cursor:pointer;padding:0}
+.ans-um button .ic{width:20px;height:20px}
+.ans-um button[aria-pressed="true"]{background:var(--surface);color:var(--on-surface);box-shadow:0 1px 3px rgba(0,0,0,.15)}
 /*FELDER*/
 </style>
 </head>
@@ -1537,7 +1562,7 @@ function applyTheme(t){
   document.querySelector('meta[name="theme-color"]').setAttribute("content", dark?"#131314":"#FCFCFD"); if(window.sbFarbe) sbFarbe();
 }
 const FDEF={};
-const IC={hoch:"M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z",runter:"M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z",aug:"M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z",tune:"M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z",attach:"M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z",board:"M3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2zm2 0h4v14H5V5zm6 0h8v6h-8V5zm0 8h8v6h-8v-6z",filt:"M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z",
+const IC={liste:"M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z",kacheln:"M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z",hoch:"M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z",runter:"M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z",aug:"M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z",tune:"M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z",attach:"M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z",board:"M3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2zm2 0h4v14H5V5zm6 0h8v6h-8V5zm0 8h8v6h-8v-6z",filt:"M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z",
   chart:"M4 9h4v11H4zm12 4h4v7h-4zm-6-9h4v16h-4z",
   baustelle:"M2 18h20v2.5H2zM4 16.5c0-3.9 2.6-7.1 6-8.1V5.6c0-.6.4-1.1 1-1.1h2c.6 0 1 .5 1 1.1v2.8c3.4 1 6 4.2 6 8.1z",
   share:"M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z",
@@ -1892,19 +1917,48 @@ async function protLaden(){ try{ const d=await protOpen(); PROT=(await idbReq(d.
 async function protBlob(id){ const d=await protOpen(); return idbReq(d.transaction("blob").objectStore("blob").get(id)); }
 const BFILTER=[["alle","Alle"],["ok","Bestanden"],["bad","Mit Mängeln"]];
 const protZeit=t=>{ const d=new Date(t); return `${d.toLocaleDateString("de-DE")}, ${d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}`; };
-FDEF.bib={std:{sort:"neu",erg:"alle"},sort:[["neu","Neueste zuerst"],["alt","Älteste zuerst"],["kunde","Kunde A–Z"]],gruppen:[{k:"erg",t:"Ergebnis",opts:[["alle","Alle"],["ok","Bestanden"],["bad","Mit Mängeln"]]}],liste:()=>bibListe()};
+/* ===== Bibliothek: alles Abgelegte an einem Ort =====
+   Quellen: Prüfprotokolle (EVSE-PDFs auf diesem Gerät + fertige Prüfungen aus der Share), Baustellenberichte (PDFs aus Baustelle),
+   Dokumente und Fotos aus den Kunden-/Standortablagen. Suche, Art-Filter, Kunde, Sortierung, Liste oder Kacheln. */
+const BIB_ART=[["alle","Alle"],["prot","Prüfprotokolle"],["bericht","Baustellenberichte"],["dok","Dokumente"],["foto","Fotos"]];
+const BIB_IC={prot:"ev",bericht:"baustelle",dok:"doc",foto:"cam"};
+function bibEintraege(){
+  const L=[], kName=id=>{ const k=id&&kundeOf(id); return k?k.name:""; };
+  PROT.filter(x=>!x.demo).forEach(x=>L.push({id:"p:"+x.id,art:x.app==="baustelle"?"bericht":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kName(x.kundeId)||"",t:x.created||0,
+    info:[x.app==="baustelle"?"Baustelle":"EVSE",x.art,x.datum&&deDate(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`,x.von&&x.von.name].filter(Boolean).join(" · "),
+    pill:x.ergebnis?pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden"):"",act:`data-act="bibOpen" data-id="${esc(x.id)}"`}));
+  const lokal=new Set(PROT.map(x=>x.pruefungId).filter(Boolean));
+  echt("pruefungen").filter(p=>p.pdfAblage&&!lokal.has(p.id)).forEach(p=>L.push({id:"s:"+p.id,art:"prot",titel:pPfad(p),kundeId:p.kundeId||"",kunde:kName(p.kundeId),t:p.updated||0,
+    info:["EVSE",p.p&&p.p.art,p.p&&p.p.datum&&deDate(p.p.datum),"PDF in der Share"].filter(Boolean).join(" · "),pill:"",href:"../evse/"}));
+  live("dateien").forEach(d=>{ const k=d.bezugKind==="kunden"?kundeOf(d.bezugId):d.bezugKind==="standorte"?kundeOf((standortOf(d.bezugId)||{}).kundeId):null;
+    L.push({id:"d:"+d.id,art:istBild(d)?"foto":"dok",titel:d.name||"Datei",kundeId:k?k.id:"",kunde:k?k.name:"",t:d.created||0,bild:istBild(d)?d.id:"",
+      info:[k&&k.name,d.bezugKind==="standorte"&&(standortOf(d.bezugId)||{}).name,d.created&&new Date(d.created).toLocaleDateString("de-DE")].filter(Boolean).join(" · "),pill:"",act:`data-act="dateiOeffnen" data-id="${esc(d.id)}"`}); });
+  return L;
+}
+FDEF.bib={std:{sort:"neu",art:"alle",kunde:"alle"},sort:[["neu","Neueste zuerst"],["alt","Älteste zuerst"],["name","Name A–Z"],["kunde","Kunde A–Z"]],
+  get gruppen(){ const K=[...new Map(bibEintraege().filter(x=>x.kundeId).map(x=>[x.kundeId,x.kunde])).entries()].sort((a,b)=>a[1].localeCompare(b[1],"de"));
+    return [{k:"kunde",t:"Kunde",opts:[["alle","Alle Kunden"],...K]}]; },liste:()=>bibListe()};
+const bibAnsicht=()=>META.bibAnsicht==="kacheln"?"kacheln":"liste";
 function bibListe(){
-  const n="bib", erg=fW(n,"erg"), so=fW(n,"sort"), q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
-  const L=PROT.filter(x=>(erg==="alle"||x.ergebnis===erg)&&(!q||H(x.titel)||H(x.name)||H(x.auftragsnr)||H(x.pruefer))); L.sort(so==="alt"?(a,b)=>a.created-b.created:so==="kunde"?(a,b)=>String(a.titel||"").localeCompare(String(b.titel||""),"de")||b.created-a.created:(a,b)=>b.created-a.created);
-  if(!L.length) return PROT.length?fInfo(n,0,"Protokoll","Protokolle")+`<p class="meta">Keine Protokolle in dieser Auswahl.</p>`:`<div class="empty">${icon("folder")}<h2>Noch keine Protokolle</h2><p>Fertige Protokolle aus EVSE und später aus Baustelle und E-Check erscheinen hier, sobald dort ein PDF erstellt wurde.</p></div>`;
-  const item=x=>`<div class="li" role="button" tabindex="0" data-act="bibOpen" data-id="${esc(x.id)}"><span class="av">${icon("doc")}</span><span class="lt"><span class="h">${esc(x.titel)}</span>
-    <span class="s">${esc([x.app==="baustelle"?"Baustelle":"EVSE",deDate(x.datum),x.art,x.auftragsnr&&`Auftrag ${x.auftragsnr}`].filter(Boolean).join(" · "))}</span><span class="s">${esc(`PDF vom ${protZeit(x.created)}${x.von&&x.von.name?` · ${x.von.name}`:""}`)}</span>
-    <span class="st">${x.ergebnis?pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden"):""}${x.fassung>1?pill("open",`Fassung ${x.fassung}`):""}${x.unterschrift?"":pill("open","ohne Unterschrift")}${x.demo?pill("open","Beispiel"):""}</span></span>${icon("chev")}</div>`;
-  return fInfo(n,L.length,"Protokoll","Protokolle")+(so==="kunde"?abcListe(L,x=>x.titel,item):nachMonat(L,x=>new Date(x.created).toISOString().slice(0,10),item));
+  const n="bib", art=fW(n,"art"), ku=fW(n,"kunde"), so=fW(n,"sort"), q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
+  const A=bibEintraege(), zahl=a=>a==="alle"?A.length:A.filter(x=>x.art===a).length;
+  const chips=`<div class="chips bib-chips">${BIB_ART.filter(([a])=>a==="alle"||zahl(a)).map(([a,t])=>`<button class="chip" data-act="bibArt" data-v="${a}" aria-pressed="${art===a}">${esc(t)}<span class="chip-n">${zahl(a)}</span></button>`).join("")}</div>`;
+  const L=A.filter(x=>(art==="alle"||x.art===art)&&(ku==="alle"||x.kundeId===ku)&&(!q||H(x.titel)||H(x.kunde)||H(x.info)));
+  L.sort(so==="alt"?(a,b)=>a.t-b.t:so==="name"?(a,b)=>String(a.titel).localeCompare(String(b.titel),"de",{numeric:true}):so==="kunde"?(a,b)=>String(a.kunde||"~").localeCompare(String(b.kunde||"~"),"de")||b.t-a.t:(a,b)=>b.t-a.t);
+  if(!A.length) return `<div class="empty bib-leer">${icon("folder")}<h2>Noch nichts in der Bibliothek</h2><p>Hier landen fertige Prüfprotokolle aus EVSE, Berichte aus Baustelle sowie Dokumente und Fotos aus den Kundenablagen.</p></div>`;
+  if(!L.length) return chips+fInfo(n,0,"Eintrag","Einträge")+`<div class="empty bib-leer klein">${icon("search")}<h2>Nichts gefunden</h2><p>Andere Suche oder anderen Filter versuchen.</p></div>`;
+  const ziel=x=>x.href?`href="${x.href}"`:x.act;
+  const zeile=x=>`<${x.href?"a":"div"} class="li" ${x.href?"":'role="button" tabindex="0"'} ${ziel(x)} ${x.href?'style="text-decoration:none;color:inherit"':""}>${x.bild?`<span class="av bib-thumb"><img data-datei="${esc(x.bild)}" alt=""></span>`:`<span class="av">${icon(BIB_IC[x.art])}</span>`}
+    <span class="lt"><span class="h">${esc(x.titel)}</span><span class="s">${esc(x.info)}</span>${x.pill?`<span class="st">${x.pill}</span>`:""}</span>${icon("chev")}</${x.href?"a":"div"}>`;
+  const kachel=x=>`<${x.href?"a":"div"} class="bib-k" ${x.href?"":'role="button" tabindex="0"'} ${ziel(x)}><span class="bib-kb${x.bild?" foto":""}">${x.bild?`<img data-datei="${esc(x.bild)}" alt="">`:icon(BIB_IC[x.art])}</span>
+    <span class="bib-kt"><b>${esc(x.titel)}</b><small>${esc(x.info)}</small>${x.pill?`<span class="st">${x.pill}</span>`:""}</span></${x.href?"a":"div"}>`;
+  setTimeout(()=>{ if(typeof bilderFuellen==="function") bilderFuellen(); },0);
+  const inhalt=bibAnsicht()==="kacheln"?`<div class="bib-raster">${L.map(kachel).join("")}</div>`
+    :so==="name"?abcListe(L,x=>x.titel,zeile):so==="kunde"?abcListe(L,x=>x.kunde||"#",zeile):nachMonat(L,x=>new Date(x.t||0).toISOString().slice(0,10),zeile);
+  return chips+fInfo(n,L.length,"Eintrag","Einträge")+inhalt;
 }
 function bibliothekView(){
-  return `<div class="narrow">${PROT.length?searchBar("Kunde, Ort, Auftrag oder Prüfer",fKnopf("bib")):""}<div id="res">${bibListe()}</div>
-    ${PROT.length?`<p class="hint">Fertige Protokolle aller Apps. Auf diesem Gerät liegen die, die hier erstellt wurden – mit dem Abgleich kommen alle aus der Share dazu.</p>`:""}</div>`;
+  return `<div class="narrow">${searchBar("Name, Kunde, Auftrag oder Prüfer",fKnopf("bib"))}<div id="res">${bibListe()}</div></div>`;
 }
 function bibOpen(id){ const x=PROT.find(y=>y.id===id); if(!x) return;
   dialog(x.titel,`<div class="bib-dlg"><p>${esc([deDate(x.datum),x.art].filter(Boolean).join(" · "))}${x.auftragsnr?` · Auftrag ${esc(x.auftragsnr)}`:""}</p><p class="sup">${esc(x.name)}.pdf · erstellt ${esc(protZeit(x.created))}${x.von&&x.von.name?` von ${esc(x.von.name)}`:""}</p></div>`,
@@ -2153,7 +2207,9 @@ function startView(){
 const startTitel=()=>`${gruss()}${ME.ruf||ME.name?`, ${ME.ruf||ME.name}`:""}`;
 const startUnter=()=>new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"});
 /* Kopf rechts: auf der Startseite „Anpassen“ für Chef und Büro */
-function skRechts(){ if(nav.v!=="start"||!anfVerw()||!ME.mail) return "";
+function skRechts(){
+  if(nav.v==="bibliothek"){ const k=bibAnsicht()==="kacheln"; return `<div class="ans-um" role="group" aria-label="Ansicht"><button data-act="bibAnsicht" data-v="liste" aria-pressed="${!k}" title="Liste">${icon("liste")}</button><button data-act="bibAnsicht" data-v="kacheln" aria-pressed="${k}" title="Kacheln">${icon("kacheln")}</button></div>`; }
+  if(nav.v!=="start"||!anfVerw()||!ME.mail) return "";
   return DB_ANP?`<button class="sk-anp an" data-act="dbFertig">Fertig</button>`:`<button class="sk-stift" data-act="dbAnpassen" aria-label="Startseite anpassen" title="Startseite anpassen">${icon("edit")}</button>`; }
 
 /* ===== Startseite zum Zusammenklicken =====
@@ -2550,7 +2606,7 @@ function geraeteView(){
       <span class="s">${esc([g.sn?`SN ${g.sn}`:"Seriennummer fehlt",wer&&`bei ${wer}`,g.notiz].filter(Boolean).join(" · "))}</span>${k?`<span class="st">${pill(k.s==="ok"?"ok":k.s==="bald"?"wip":"bad",k.t)}</span>`:""}</span></div>`; };
   return `<div class="narrow">${GER_ART.map(([v,t])=>{ const g=L.filter(x=>(x.art||"mess")===v); return g.length?`<div class="sec-lbl">${t} · ${g.length}</div>${listOf(g.map(z))}`:""; }).join("")}
     ${A.length?`<div class="sec-lbl">Ausgemustert · ${A.length}</div>${listOf(A.map(z))}`:""}
-    <p class="hint">In EVSE wählt jeder das Gerät nur noch aus – Seriennummer und Kalibrierdatum kommen von hier.${ME.admin?"":" Ändern können Admins."}</p></div>`;
+</div>`;
 }
 let gerForm=null;
 function gerFotoHtml(r){ const x=Object.assign({},r,{bild:gerForm&&gerForm.bild}); return `${gerAv(x)}<div class="ger-foto-k"><button type="button" class="btn-tonal" data-act="gerFoto">${icon("cam")}${x.bild?"Anderes Foto":"Eigenes Foto"}</button>${x.bild?`<button type="button" class="btn-text" data-act="gerFotoWeg">Foto entfernen</button>`:""}</div>`; }
@@ -2680,6 +2736,8 @@ document.addEventListener("click",async ev=>{
   case "crumb": crumbGo(+b.dataset.i); return;
   case "skZurueck": zurueck(); return;
   case "bfilter": BIB_F=b.dataset.v; render(); return;
+  case "bibArt": fSet("bib","art",b.dataset.v); return;
+  case "bibAnsicht": META.bibAnsicht=b.dataset.v; metaSave(); render(); return;
   case "fPop": filterPop(b,b.dataset.n); return;
   case "fWeg": fWeg(b.dataset.n,false); return;
   case "bibOpen": pvOeffnen(b.dataset.id); return;
