@@ -443,7 +443,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   META.vgAnsicht="liste"; META.vgF="offen"; META.f=Object.assign({},META.f||{},{"vg.wer":"zust"}); metaSave(); go({v:"auftraege"}); },true);
 
 /* ===== Büro-Tabelle (PC): eine Zeile je Auftrag, eine Spalte je Schritt; Kennzahlen, Sortieren, direkt bearbeiten, mehrere markieren ===== */
-Object.assign(IC,{vgTabelle:"M21 8H3V4h18v4zm0 2H3v4h18v-4zm0 6H3v4h18v-4z",vgSort:"M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"});
+Object.assign(IC,{vgTabelle:"M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM8 20H4v-4h4v4zm0-6H4v-4h4v4zm0-6H4V4h4v4zm6 12h-4v-4h4v4zm0-6h-4v-4h4v4zm0-6h-4V4h4v4zm6 12h-4v-4h4v4zm0-6h-4v-4h4v4zm0-6h-4V4h4v4z",vgSort:"M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"});
 const VG_MARK=new Set();
 VG_PC.addEventListener?.("change",()=>{ if(typeof nav!=="undefined"&&nav.v==="auftraege") render(); });
 const vgSchrittAt=v=>{ const i=vgStufe(v); return i<0?vgAt(v):((v.s[VG_S[i][0]]||{}).at||vgAt(v)); };
