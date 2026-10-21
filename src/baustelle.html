@@ -451,11 +451,14 @@ body.is-login .topbar{display:none}
 .b-meta .ic{width:18px;height:18px}
 .ekarte{background:var(--sc-low);border-radius:20px;padding:10px 16px 14px;margin:0 0 10px}
 .ekarte.neu{background:var(--sc)}
-.ekarte.klapp{padding-bottom:10px} .ekarte.klapp .ek-in{padding-bottom:4px}
-.ekarte.klapp > .ek-k{cursor:pointer;-webkit-tap-highlight-color:transparent}
-.ek-pf{flex:none;display:grid;place-items:center;width:40px;height:40px;margin:0 -2px 0 -6px;border-radius:50%;background:var(--sc-high);color:var(--on-surface);transition:transform .22s}
-.ek-pf .ic{width:26px;height:26px} .ekarte.auf .ek-pf{transform:rotate(180deg)}
-.ekarte.klapp:not(.auf) .ek-in,.ekarte.klapp:not(.auf) .ek-auf-nur{display:none}
+/* Übergaben als Liste: Datum links, Beteiligte, rechts „Aktueller Stand“ und Pfeil */
+.li.ek-z{min-height:64px;gap:12px;cursor:pointer}
+.ek-zd{font-size:16px;font-weight:650;white-space:nowrap}
+.ek-z .avs{pointer-events:none} /* in der Zeile öffnet auch das Antippen der Bilder die Übergabe – Namen stehen dort */
+.ek-zr{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--on-sv)}
+.ek-z .avs-i{box-shadow:0 0 0 2px var(--sc-low)}
+.ek-dlg .ek-wer{display:flex;align-items:center;gap:8px;margin:0 0 4px;color:var(--on-sv);font-size:14px} .ek-dlg .ek-wer .ic{width:18px;height:18px;flex:none}
+.ek-dlg .eb:first-of-type{margin-top:6px} .ek-dlg .by{font-size:12px;color:var(--on-sv);margin-top:12px}
 .avs{display:inline-flex;align-items:center;padding-left:8px;cursor:pointer}
 .avs-i{width:30px;height:30px;border-radius:50%;margin-left:-8px;display:grid;place-items:center;font-size:11px;font-weight:700;background:var(--sec-c) center/cover no-repeat;color:var(--on-sec-c);box-shadow:0 0 0 2px var(--sc);position:relative}
 .ekarte:not(.neu) .avs-i{box-shadow:0 0 0 2px var(--sc-low)}
@@ -467,7 +470,7 @@ body.is-login .topbar{display:none}
 .ek-br{display:none}
 @media (max-width:599px){.ek-br{display:block;flex-basis:100%;height:0}}
 .ek-tag{background:var(--pc);color:var(--on-pc);font-size:12px;font-weight:700;border-radius:8px;padding:2px 8px}
-.ek-a{margin-left:auto;display:flex;gap:2px;margin-right:-14px} /* Teilen/Bearbeiten in einer Flucht mit dem Plus über den Karten */
+.ek-a{margin-left:auto;display:flex;gap:2px}
 .eb{margin-top:10px}
 .chips.dabei{margin:0 0 4px}.chips.dabei .chip{padding:4px 14px}.chips.dabei .chip[aria-pressed="true"]{padding-left:14px}
 .chips.dabei .dabei-plus{padding:4px 10px}.chips.dabei .dabei-plus .ic{display:block!important;width:20px;height:20px}
@@ -1727,7 +1730,7 @@ function applyTheme(t){
   const dark = t==="dark" || (t==="auto" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
   document.querySelector('meta[name="theme-color"]').setAttribute("content", dark?"#131314":"#FCFCFD"); if(window.sbFarbe) sbFarbe();
 }
-const IC={klapp:"M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z",board:"M21 3H3c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H3V5h18v11zM6 7h5v4H6zm7 0h5v2h-5zm0 3h4v2h-4z",hoch:"M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z",runter:"M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z",cal:"M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z",moreH:"M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",swapV:"M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z",swapH:"M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z",
+const IC={board:"M21 3H3c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H3V5h18v11zM6 7h5v4H6zm7 0h5v2h-5zm0 3h4v2h-4z",hoch:"M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z",runter:"M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z",cal:"M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z",moreH:"M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",swapV:"M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z",swapH:"M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z",
   notiz:"M19 3H4.99C3.89 3 3 3.9 3 5l.01 14c0 1.1.89 2 1.99 2h10l6-6V5c0-1.1-.9-2-2-2zM7 8h10v2H7V8zm5 6H7v-2h5v2zm2 5.5V14h5.5L14 19.5z",
   stift:"M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 0 0 0-1.41z",
   checkliste:"M22 7h-9v2h9V7zm0 8h-9v2h9v-2zM5.54 11L2 7.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 11zm0 8L2 15.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 19z",
@@ -2338,31 +2341,31 @@ function avStapel(e){ const L=ekLeute(e); if(!L.length) return "";
   const nm=x=>{ const p=typeof profilVon==="function"&&x.mail&&profilVon(x.mail), v=p&&[p.vorname,p.nachname].filter(Boolean).join(" "); return {n:v||x.name,b:p&&p.bild||""}; };
   return `<span class="avs" data-act="avListe" data-id="${esc(e.id)}" role="button" tabindex="0" aria-label="${esc(L.map(x=>nm(x).n).join(", "))}">${L.slice(0,5).map((x,i)=>{ const q=nm(x);
     return `<span class="avs-i" style="z-index:${10-i}${q.b?`;background-image:url('${q.b}')`:""}" title="${esc(q.n+" – "+x.rolle)}">${q.b?"":esc(initials(q.n))}</span>`; }).join("")}${L.length>5?`<span class="avs-i avs-mehr">+${L.length-5}</span>`:""}</span>`; }
-const EK_AUF=new Map();
-/* Einklappen direkt am Element (kein Neuzeichnen der Seite) und mit kurzer Höhen-Animation – so springt der Inhalt nicht */
-function ekKlappen(k,id){ const inn=k.querySelector(".ek-in"), auf=!k.classList.contains("auf"), kopf=k.querySelector(".ek-k"); EK_AUF.set(id,auf); if(kopf) kopf.setAttribute("aria-expanded",auf);
-  if(!inn||matchMedia("(prefers-reduced-motion: reduce)").matches){ k.classList.toggle("auf",auf); return; }
-  const ende=()=>{ inn.style.height=""; inn.style.opacity=""; inn.style.overflow=""; inn.style.transition=""; };
-  inn.style.overflow="hidden";
-  if(auf){ k.classList.add("auf"); const h=inn.scrollHeight; inn.style.height="0px"; inn.style.opacity="0"; inn.offsetHeight; inn.style.transition="height .24s cubic-bezier(.2,.8,.2,1),opacity .2s"; inn.style.height=h+"px"; inn.style.opacity="1"; }
-  else { inn.style.height=inn.scrollHeight+"px"; inn.offsetHeight; inn.style.transition="height .22s cubic-bezier(.4,0,.2,1),opacity .15s"; inn.style.height="0px"; inn.style.opacity="0"; }
-  setTimeout(()=>{ if(!auf) k.classList.remove("auf"); ende(); },260); }
 function avPop(el,L){ document.getElementById("avPop")?.remove(); const d=document.createElement("div"); d.id="avPop"; d.className="av-pop";
   d.innerHTML=L.map(x=>{ const p=typeof profilVon==="function"&&x.mail&&profilVon(x.mail), n=(p&&[p.vorname,p.nachname].filter(Boolean).join(" "))||x.name;
     return `<div class="avp-z"><span class="avs-i"${p&&p.bild?` style="background-image:url('${p.bild}')"`:""}>${p&&p.bild?"":esc(initials(n))}</span><span><b>${esc(n)}</b><small>${esc(x.rolle)}</small></span></div>`; }).join("");
   document.body.appendChild(d); const r=el.getBoundingClientRect(), w=d.offsetWidth; d.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left))+"px"; d.style.top=(r.bottom+8)+"px";
   const zu=ev=>{ if(!d.contains(ev.target)){ d.remove(); document.removeEventListener("pointerdown",zu,true); removeEventListener("scroll",weg,true); } }, weg=()=>{ d.remove(); document.removeEventListener("pointerdown",zu,true); removeEventListener("scroll",weg,true); };
   setTimeout(()=>{ document.addEventListener("pointerdown",zu,true); addEventListener("scroll",weg,true); },0); }
-function eintragKarte(e,erster,klappbar){
-  const ok=canEdit(e), fs=e.fotos||[], auf=!klappbar||(EK_AUF.has(e.id)?EK_AUF.get(e.id):!!erster);
-  const block=(l,t,cls="")=>String(t||"").trim()?`<div class="eb ${cls}"><small>${l}</small><p>${esc(t)}</p></div>`:"";
-  return `<div class="ekarte${erster?" neu":""}${klappbar?" klapp":""}${auf?" auf":""}">
-    <div class="ek-k"${klappbar?` data-act="ekKlapp" data-id="${e.id}" role="button" tabindex="0" aria-expanded="${auf}"`:""}>${klappbar?`<span class="ek-pf" aria-hidden="true">${icon("klapp")}</span>`:""}${erster?`<span class="ek-tag">Aktueller Stand</span>`:""}<b>${esc(tagText(e.datum))}</b>${avStapel(e)}
-      <span class="ek-a">${erster?`<button class="icon-btn sm ek-auf-nur" data-act="teilen" data-id="${e.id}" aria-label="Teilen">${icon("share")}</button>`:""}${ok?`<button class="icon-btn sm ek-auf-nur" data-act="eintragEdit" data-id="${e.id}" aria-label="Bearbeiten">${icon("edit")}</button>`:""}</span></div>
-    ${`<div class="ek-in">${block("Stand",e.stand)}${block("Offen / nächste Schritte",e.offen)}${matBlock(e)}
+function ekInhalt(e){
+  const fs=e.fotos||[], block=(l,t,cls="")=>String(t||"").trim()?`<div class="eb ${cls}"><small>${l}</small><p>${esc(t)}</p></div>`:"";
+  return `${block("Stand",e.stand)}${block("Offen / nächste Schritte",e.offen)}${matBlock(e)}
     ${fs.length?`<div class="ek-f">${fs.map(id=>{ const src=fotoCache.get(id); return src?`<button class="foto" data-act="fotoShow" data-id="${id}" aria-label="Foto ansehen"><img src="${src}" alt=""></button>`:`<div class="foto leer">${icon("sync")}</div>`; }).join("")}</div>`:""}
-    ${e.updated&&e.created&&e.updated-e.created>60000?`<div class="by">geändert ${esc(wann(e.updated))}${e.updatedBy&&e.updatedBy.name&&e.updatedBy.name!==vonText(e)?` von ${esc(e.updatedBy.name)}`:""}</div>`:""}</div>`}</div>`;
+    ${e.updated&&e.created&&e.updated-e.created>60000?`<div class="by">geändert ${esc(wann(e.updated))}${e.updatedBy&&e.updatedBy.name&&e.updatedBy.name!==vonText(e)?` von ${esc(e.updatedBy.name)}`:""}</div>`:""}`;
 }
+/* ganze Übergabe als Karte – nur noch im Editor („Letzte Übergabe“) */
+function eintragKarte(e){ return `<div class="ekarte"><div class="ek-k"><b>${esc(tagText(e.datum))}</b>${avStapel(e)}</div><div class="ek-in">${ekInhalt(e)}</div></div>`; }
+/* Übergaben auf der Baustelle: eine Zeile je Tag (Datum links, Beteiligte, rechts „Aktueller Stand“) – Antippen öffnet alles im Fenster */
+function ekZeile(e,erster){
+  return `<div class="li ek-z" role="button" tabindex="0" data-act="ekZeig" data-id="${e.id}"><b class="ek-zd">${esc(tagText(e.datum))}</b>${avStapel(e)}<span class="ek-zr">${erster?`<span class="ek-tag">Aktueller Stand</span>`:""}${icon("chev")}</span></div>`;
+}
+function ekZeigen(e){
+  const N=ekLeute(e).map(x=>{ const p=typeof profilVon==="function"&&x.mail&&profilVon(x.mail); return (p&&[p.vorname,p.nachname].filter(Boolean).join(" "))||x.name; });
+  dialog(tagText(e.datum),`<div class="ek-dlg">${N.length?`<p class="ek-wer">${icon("person")}<span>${esc(N.join(", "))}</span></p>`:""}${ekInhalt(e)}</div>`,
+    `<button class="btn-text" data-act="teilen" data-id="${e.id}">Teilen</button>${canEdit(e)?`<button class="btn-text" data-act="eintragEdit" data-id="${e.id}">Bearbeiten</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`,{breit:true});
+  EK_DLG=e.id;
+}
+let EK_DLG=null;
 function baustelleView(b){
   const s=standortOf(b.standortId), kd=!s&&kundeOf(b.kundeId), E=eintraegeVon(b.id);
   let h=`<div class="narrow">`;
@@ -2379,7 +2382,7 @@ function baustelleView(b){
   h+=`<div class="sec-row"><div class="sec-lbl">Notizen</div><button class="plus-k" data-act="neueNotizHier" aria-label="Notiz anlegen" title="Notiz anlegen">${icon("add")}</button></div>${NZ.length?nGrid(NZ):`<p class="meta">Eigene Notizen zur Baustelle – z. B. Tagesablauf, Checkliste oder Skizze.</p>`}`;
   h+=vgBauAbschnitt(b);
   h+=`<div class="sec-row"><div class="sec-lbl">Übergaben</div><button class="plus-k" data-act="neuerEintrag" aria-label="Übergabe schreiben" title="Übergabe schreiben">${icon("add")}</button></div>`;
-  h+=E.length?E.map((e,i)=>eintragKarte(e,i===0,true)).join(""):`<p class="meta">Noch keine Übergabe. Am Ende des Tages kurz festhalten: Stand, was offen ist und welches Material morgen gebraucht wird.</p>`;
+  h+=E.length?listOf(E.map((e,i)=>ekZeile(e,i===0))):`<p class="meta">Noch keine Übergabe. Am Ende des Tages kurz festhalten: Stand, was offen ist und welches Material morgen gebraucht wird.</p>`;
   return h+`</div>`;
 }
 let entw=null, entwZurueck=null;
@@ -2409,7 +2412,7 @@ function eintragView(){
     <div class="fotos e-fotos">${fs.map(id=>{ const src=fotoCache.get(id); return src?`<button class="foto" data-act="entwFotoShow" data-id="${id}"><img src="${src}" alt=""></button>`:""; }).join("")}
       ${fs.length<8?`<button class="foto leer" data-act="entwFoto">${icon("cam")}<span class="fl">Foto</span></button>`:""}</div></section>
     ${e.id&&DB.eintraege.has(e.id)?`<button class="btn-del nur-schmal" data-act="${e._neu?"entwVerwerfenAsk":"eintragDelAsk"}">${icon("del")}${e._neu?"Übergabe verwerfen":"Übergabe löschen"}</button>`:""}
-    ${vor?`<details class="vorher"><summary>${icon("doc")}<span>Letzte Übergabe: ${esc(tagText(vor.datum))} · ${esc(vonText(vor))}</span>${icon("drop")}</summary>${eintragKarte(vor,false)}</details>`:""}
+    ${vor?`<details class="vorher"><summary>${icon("doc")}<span>Letzte Übergabe: ${esc(tagText(vor.datum))} · ${esc(vonText(vor))}</span>${icon("drop")}</summary>${eintragKarte(vor)}</details>`:""}
   </div>`;
 }
 function entwLesen(){ if(!entw) return; $("#app").querySelectorAll("[data-f]").forEach(el=>entw[el.dataset.f]=el.value); matLesen(); }
@@ -2996,7 +2999,7 @@ document.addEventListener("click",ev=>{
   case "import": $("#importFile").click(); return;
   case "filter": META.filter=b.dataset.v; metaSave(); render(); return;
   case "bKunde": { const id=b.dataset.id||((standortOf(b.dataset.s)||{}).kundeId); if(id) go({v:"kunde",id,von:{...nav}}); else if(b.dataset.s) go({v:"standort",id:b.dataset.s,von:{...nav}}); return; }
-  case "ekKlapp": { const k=b.closest(".ekarte"); if(!k) return; ekKlappen(k,b.dataset.id); return; }
+  case "ekZeig": { const en=DB.eintraege.get(b.dataset.id); if(en) ekZeigen(en); return; }
   case "avListe": { ev.stopPropagation(); const en=DB.eintraege.get(b.dataset.id); if(!en) return; avPop(b,ekLeute(en)); return; }
   case "bInfo": { const bb=DB.baustellen.get(b.dataset.id); if(!bb) return; const st=standortOf(bb.standortId), kd=kundeOf(bb.kundeId);
     dialog(st?st.name:(kd?kd.name:"Infos"),`${st?infoKarte(st,"standorte"):""}${kd?`${st?`<div class="sec-lbl">Kunde · ${esc(kd.name)}</div>`:""}${infoKarte(kd,"kunden")}`:""}`,
@@ -3027,7 +3030,7 @@ document.addEventListener("click",ev=>{
   case "afNeu": anfDialog(nav.v==="baustelle"?nav.id:""); return;
   case "afOk": anfSpeichern(); return;
   case "neuerEintrag": entwNeu(DB.baustellen.get(nav.id)); return;
-  case "eintragEdit": { const e=DB.eintraege.get(b.dataset.id); if(e&&canEdit(e)) entwNeu(DB.baustellen.get(e.baustelleId),e); return; }
+  case "eintragEdit": { const e=DB.eintraege.get(b.dataset.id); if(e&&canEdit(e)){ closeOverlays(); EK_DLG=null; } if(e&&canEdit(e)) entwNeu(DB.baustellen.get(e.baustelleId),e); return; }
   case "eintragDelAsk": confirmDlg("Übergabe löschen?","Diese Übergabe mit ihren Fotos löschen?","Löschen","eintragDel"); return;
   case "eintragDel": { clearTimeout(eTimer); const e=DB.eintraege.get(entw&&entw.id); closeOverlays(); if(!e||!canEdit(e)) return; fotoDel([...(e.fotos||[]),...(entw._neueFotos||[])]); e.deleted=true; e.fotos=[]; saveRec("eintraege",e); entw=null; const z=entwZurueck; entwZurueck=null; go(z||{v:"start"}); toast("Übergabe gelöscht"); return; }
   case "entwSave": case "edFertig": if(nav.v==="notiz") notizFertig(); else entwFertig(); return;
@@ -3042,7 +3045,8 @@ document.addEventListener("click",ev=>{
     const p=T?{name:T.name,mail:T.mail}:{name:v,mail:""}; if(!entw.dabei.some(q=>dabeiGleich(p,q))) entw.dabei.push(p); render(); eAuto(); return; }
   case "entwFotoShow": { const id=b.dataset.id; entwLesen(); dialog("Foto",`<img class="dimg" src="${fotoCache.get(id)}" alt="">`,`<button class="btn-text danger" data-act="entwFotoDel" data-id="${id}">Entfernen</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`); return; }
   case "entwFotoDel": { const id=b.dataset.id; closeOverlays(); entw.fotos=entw.fotos.filter(x=>x!==id); if(entw._neueFotos.includes(id)){ entw._neueFotos=entw._neueFotos.filter(x=>x!==id); } render(); eAuto(); return; }
-  case "fotoShow": dialog("Foto",`<img class="dimg" src="${fotoCache.get(b.dataset.id)}" alt="">`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return;
+  case "fotoShow": { const zur=EK_DLG&&!$("#dlg").hidden&&$("#dlg").querySelector(".ek-dlg")?EK_DLG:null;
+    dialog("Foto",`<img class="dimg" src="${fotoCache.get(b.dataset.id)}" alt="">`,`${zur?`<button class="btn-text" data-act="ekZeig" data-id="${zur}">Zurück</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`); return; }
   case "teilen": { const e=DB.eintraege.get(b.dataset.id); if(e) teilen(e); return; }
   case "newKunde": locDialog("kunden"); return;
   case "newStandort": locDialog("standorte",null,nav.id); return;
