@@ -1078,7 +1078,7 @@ async function g(path,opt={}){
 async function gj(path,opt){ const r=await g(path,opt); if(!r.ok) throw Object.assign(new Error(`Microsoft meldet Fehler ${r.status}`),{status:r.status}); return r.status===204?null:r.json(); }
 /* Ablage: eine SharePoint-Website mit drei Bibliotheken. Welche Daten in welche Bibliothek gehören, steht in BIB.
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
-const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",
+const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",protokolle:"Kundendaten",
   ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
   baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Prüfprotokolle"};
 async function syncRoot(){
@@ -1169,7 +1169,7 @@ async function syncNow(manual){
   if(!navigator.onLine){ setSync("offline"); return; }
   SY.running=true; setSync("läuft"); konflikte=[];
   try{
-    await syncRoot(); const c1=await push(); const c2=await pull(); await pushFotos(); await pushDateien();
+    await syncRoot(); const c1=await push(); const c2=await pull(); await pushFotos(); await pushDateien(); await pushProtokolle();
     META.sync.last=Date.now(); metaSave(); setSync("ok");
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
     if(c1||c2) softRender();
@@ -1341,9 +1341,9 @@ const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
 
 const TH_KEY="evse_theme";
 const RES_TXT={ok:"fertig",bad:"Mängel",open:"offen",wip:"in Arbeit"};
-const KINDS=["kunden","standorte","profile","dateien"];
-const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["dateien"];
-const DB={kunden:new Map(),standorte:new Map(),profile:new Map(),dateien:new Map()};
+const KINDS=["kunden","standorte","profile","dateien","protokolle"];
+const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["dateien","protokolle"];
+const DB={kunden:new Map(),standorte:new Map(),profile:new Map(),dateien:new Map(),protokolle:new Map()};
 let META={profil:{name:""},sync:{}};
 let nav={v:"start"}, query="", kDB=null, eDB=null, aDB=null, warned=false, syncT=null;
 let ME={name:"",mail:"",admin:false,signedIn:false};

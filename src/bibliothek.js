@@ -10,6 +10,56 @@ const BB_P={liste:"M19 13H5c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-4
   kacheln:"M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z",filt:"M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"};
 const bbIc=k=>BB_P[k]?`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${BB_P[k]}"/></svg>`:icon(k);
 let BB_PROT=[], bbGeladen=false;
+/* ===== Bibliothek auf allen Geräten =====
+   Zu jedem abgelegten PDF gibt es einen kleinen Datensatz „protokolle“, der mit den anderen Daten abgeglichen wird.
+   Das PDF selbst liegt in SharePoint (EVSE: Prüfprotokolle/<Kunde>/<Standort>, Baustelle: Baustellen/Berichte/<Kunde>/<Baustelle>).
+   Andere Geräte zeigen den Eintrag sofort und holen das PDF beim ersten Öffnen (danach liegt es auch dort im Gerät). */
+const bbSync=()=>typeof DB!=="undefined"&&!!DB.protokolle&&typeof saveRec==="function";
+const BB_FELDER=["app","pruefungId","kundeId","standortId","ladeparkId","baustelleId","name","titel","datum","art","auftragsnr","pruefer","ergebnis","nr","unterschrift","fassung","size","von","created"];
+const bbFs=v=>String(v||"").replace(/[\\/:*?"<>|#%\u0000-\u001f]/g,"-").replace(/\s+/g," ").trim().replace(/[. ]+$/,"").slice(0,80)||"Unbenannt";
+function bbZiel(x){ const k=bbKunde(x.kundeId), nm=(M,id)=>id&&M&&M.get(id)?M.get(id).name:"";
+  if(x.app==="baustelle") return {bib:"baustellen",pfad:["Berichte",k?k.name:"Ohne Kunde",nm(DB.baustellen,x.baustelleId)||String(x.titel||"").split(" · ").pop()||"Baustelle"].map(bbFs).join("/")+"/"+bbFs(x.name)+".pdf"};
+  const dir=[k&&k.name,nm(DB.standorte,x.standortId),nm(DB.ladeparks,x.ladeparkId)].filter(Boolean).map(bbFs).join("/")||"Ohne Zuordnung";
+  return {bib:"pdf",pfad:dir+"/"+bbFs(x.name)+".pdf"}; }
+function bbProtMelden(x,opt){ if(!bbSync()||!x||x.demo||x.ausShare||DB.protokolle.has(x.id)) return; opt=opt||{};
+  const z=opt.pfad?{bib:opt.bib||"pdf",pfad:opt.pfad}:bbZiel(x), r={id:x.id,bib:z.bib,pfad:z.pfad};
+  BB_FELDER.forEach(f=>{ if(x[f]!==undefined&&x[f]!=="") r[f]=x[f]; });
+  saveRec("protokolle",r,true);
+  if(typeof SYNC_ON!=="undefined"&&SYNC_ON){ META.sync.protQueue=[...new Set([...(META.sync.protQueue||[]),x.id])]; metaSave(); }
+  if(nav&&nav.v==="bibliothek"){ const rs=document.getElementById("res"); if(rs) rs.innerHTML=bibListe(); } }
+function bbProtOben(id){ META.sync.protQueue=(META.sync.protQueue||[]).filter(x=>x!==id); metaSave(); }
+function bbProtWeg(id){ if(!bbSync()) return; const r=DB.protokolle.get(id); bbProtOben(id); if(r&&!r.deleted){ r.deleted=true; saveRec("protokolle",r); } }
+async function bbHoch(lib,pfad,blob){
+  const i=pfad.lastIndexOf("/"), dir=pfad.slice(0,i), file=pfad.slice(i+1), fid=await folderId(dir,lib);
+  if(blob.size<3.5*1048576){ const r=await g(`/drives/${fid}:/${encodeURIComponent(file)}:/content`,{method:"PUT",headers:{"Content-Type":"application/pdf"},body:blob}); if(!r.ok) throw new Error(`PDF hochladen fehlgeschlagen (${r.status})`); return; }
+  const s=await gj(`/drives/${fid}:/${encodeURIComponent(file)}:/createUploadSession`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({item:{"@microsoft.graph.conflictBehavior":"replace"}})}), CH=320*1024*10;
+  for(let o=0;o<blob.size;o+=CH){ const part=blob.slice(o,Math.min(o+CH,blob.size));
+    const r=await fetch(s.uploadUrl,{method:"PUT",headers:{"Content-Range":`bytes ${o}-${o+part.size-1}/${blob.size}`},body:part}); if(!r.ok&&r.status!==202) throw new Error(`PDF hochladen fehlgeschlagen (${r.status})`); } }
+/* beim Abgleich: ältere PDFs dieses Geräts einmalig melden, dann die Warteschlange hochladen */
+async function pushProtokolle(){
+  if(!bbSync()) return; if(!bbGeladen) await bbLaden();
+  const weg=new Set([...DB.protokolle.values()].filter(r=>r.deleted).map(r=>r.id));
+  BB_PROT.forEach(x=>{ if(!weg.has(x.id)&&!x.demo&&!x.ausShare&&!DB.protokolle.has(x.id)) bbProtMelden(x); });
+  for(const id of [...(META.sync.protQueue||[])]){
+    const r=DB.protokolle.get(id); if(!r||r.deleted){ bbProtOben(id); continue; }
+    const b=await bbBlob(id).catch(()=>null); if(!b){ bbProtOben(id); continue; }
+    await bbHoch(BIB[r.bib]||BIB.pdf,r.pfad,b); bbProtOben(id); }
+}
+/* PDF eines anderen Geräts holen, im Gerät ablegen und öffnen */
+async function bbFern(id){
+  const r=DB.protokolle&&DB.protokolle.get(id); if(!r) return;
+  if(!(typeof SYNC_ON!=="undefined"&&SYNC_ON&&ME.signedIn)){ toast("Das PDF liegt in der Share – dafür bitte anmelden"); return; }
+  if(!navigator.onLine){ toast("Kein Internet – das PDF liegt in der Share"); return; }
+  toast("PDF wird geladen …");
+  try{ await syncRoot(); const i=r.pfad.lastIndexOf("/"), fid=await folderId(r.pfad.slice(0,i),BIB[r.bib]||BIB.pdf);
+    const it=await gj(`/drives/${fid}:/${encodeURIComponent(r.pfad.slice(i+1))}`), blob=await (await readItem(it)).blob();
+    const x={id:r.id}; BB_FELDER.forEach(f=>{ if(r[f]!==undefined) x[f]=r[f]; }); x.size=blob.size; x.vonGeraet=true;
+    const d=await new Promise((res,rej)=>{ const q=indexedDB.open("evse_protokolle"); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); });
+    const tx=d.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").put(x); tx.objectStore("blob").put(blob,x.id); await new Promise(ok=>{ tx.oncomplete=ok; tx.onerror=ok; }); d.close();
+    BB_PROT.push(x); if(typeof PROT!=="undefined"&&!PROT.some(y=>y.id===x.id)) PROT.push(x);
+    const rs=document.getElementById("res"); if(rs) rs.innerHTML=bibListe(); bbOeffnen(x.id);
+  }catch(e){ toast(e&&e.status===404?"Das PDF ist noch nicht in der Share – das andere Gerät lädt es beim nächsten Abgleich hoch":"PDF konnte nicht geladen werden"); }
+}
 async function bbLaden(){
   try{ const d=await new Promise((res,rej)=>{ const r=indexedDB.open("evse_protokolle"); r.onupgradeneeded=()=>{ const x=r.result; if(!x.objectStoreNames.contains("meta")) x.createObjectStore("meta",{keyPath:"id"}); if(!x.objectStoreNames.contains("blob")) x.createObjectStore("blob"); }; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
     BB_PROT=d.objectStoreNames.contains("meta")?await new Promise(res=>{ const q=d.transaction("meta").objectStore("meta").getAll(); q.onsuccess=()=>res(q.result||[]); q.onerror=()=>res([]); }):[]; d.close(); }catch(e){ BB_PROT=[]; }
@@ -22,8 +72,13 @@ const bbAnsicht=()=>["kacheln","ordner"].includes(META.bibAnsicht)?META.bibAnsic
 const bbKunde=id=>{ const k=id&&typeof kundeOf==="function"?kundeOf(id):(id&&DB.kunden?DB.kunden.get(id):null); return k&&!k.deleted?k:null; };
 const bbDatum=d=>d?String(d).split("-").reverse().join("."):"";
 function bbEintraege(){
-  const L=[], kn=id=>(bbKunde(id)||{}).name||"", lokal=new Set(BB_PROT.map(x=>x.pruefungId).filter(Boolean));
-  BB_PROT.filter(x=>!x.demo).forEach(x=>L.push({art:x.app==="baustelle"?"bericht":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
+  const L=[], kn=id=>(bbKunde(id)||{}).name||"", P=bbSync()?[...DB.protokolle.values()]:[], weg=new Set(P.filter(r=>r.deleted).map(r=>r.id)), hier=new Set(BB_PROT.map(x=>x.id));
+  const lokal=new Set([...BB_PROT,...P.filter(r=>!r.deleted)].map(x=>x.pruefungId).filter(Boolean));
+  const protE=(x,ziel,fern)=>({art:x.app==="baustelle"?"bericht":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
+    info:[x.app==="baustelle"?"Baustelle":"EVSE",x.art,bbDatum(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`,x.von&&x.von.name,fern&&"auf einem anderen Gerät erstellt"].filter(Boolean).join(" · "),
+    pill:x.ergebnis?pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden"):"",ziel});
+  P.filter(r=>!r.deleted&&!hier.has(r.id)).forEach(r=>L.push(protE(r,`data-act="bbFern" data-id="${esc(r.id)}"`,true)));
+  BB_PROT.filter(x=>!x.demo&&!weg.has(x.id)).forEach(x=>L.push({art:x.app==="baustelle"?"bericht":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
     info:[x.app==="baustelle"?"Baustelle":"EVSE",x.art,bbDatum(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`,x.von&&x.von.name].filter(Boolean).join(" · "),
     pill:x.ergebnis?pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden"):"",ziel:`data-act="bbOeffnen" data-id="${esc(x.id)}"`}));
   if(DB.pruefungen) [...DB.pruefungen.values()].filter(p=>!p.deleted&&p.pdfAblage&&!lokal.has(p.id)&&(!p.demo||(typeof demoAn==="function"&&demoAn()))).forEach(p=>{
@@ -253,6 +308,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="bbMenue"){ const m=b.closest(".bb-m"), r=b.getBoundingClientRect(); if(m) bbOrdnerMenue(m,r.left,r.bottom); }
   else if(a==="bbOeffnen") bbOeffnen(b.dataset.id);
   else if(a==="bbShare") bbShare(b.dataset.id);
+  else if(a==="bbFern") bbFern(b.dataset.id);
 },true);
 document.addEventListener("keydown",e=>{ if(e.key==="Enter"&&e.target.matches&&e.target.matches('#app [data-act="bbOeffnen"]')){ e.preventDefault(); bbOeffnen(e.target.dataset.id); } });
 document.addEventListener("input",e=>{ if(e.target&&e.target.id==="q"&&typeof nav!=="undefined"&&nav.v==="bibliothek"){ query=e.target.value; const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); } });

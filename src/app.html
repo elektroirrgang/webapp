@@ -1187,9 +1187,9 @@ const CONFIG=Object.assign({
 const SYNC_ON=!!(CONFIG.tenantId&&CONFIG.clientId&&CONFIG.shareUrl);
 
 const TH_KEY="evse_theme", OLD_KEY="evse_protos_v1";
-const KINDS=["kunden","standorte","ladeparks","pruefungen","katalog","geraete","profile","dateien"];
-const APP_KINDS=["dateien"]; /* liegen im gemeinsamen Gerätespeicher „irrgang_apps“ (wie in Übersicht und Baustelle) */
-const DB={kunden:new Map(),standorte:new Map(),ladeparks:new Map(),pruefungen:new Map(),katalog:new Map(),geraete:new Map(),profile:new Map(),dateien:new Map()};
+const KINDS=["kunden","standorte","ladeparks","pruefungen","katalog","geraete","profile","dateien","protokolle"];
+const APP_KINDS=["dateien","protokolle"]; /* liegen im gemeinsamen Gerätespeicher „irrgang_apps“ (wie in Übersicht und Baustelle) */
+const DB={kunden:new Map(),standorte:new Map(),ladeparks:new Map(),pruefungen:new Map(),katalog:new Map(),geraete:new Map(),profile:new Map(),dateien:new Map(),protokolle:new Map()};
 let META={profil:{name:""},pins:[],archiv:[],filter:"alle",sync:{}};
 let cur=null, nav={v:"start"}, saveTimer=null, dirtyCur=false, dataDB=null, aDB=null, query="";
 let ME={name:"",mail:"",admin:false,signedIn:false};
@@ -1328,7 +1328,7 @@ async function gj(path,opt){ const r=await g(path,opt); if(!r.ok) throw Object.a
 const b64u=s=>btoa(unescape(encodeURIComponent(s))).replace(/=+$/,"").replace(/\//g,"_").replace(/\+/g,"-");
 /* Ablage: eine SharePoint-Website mit drei Bibliotheken. Welche Daten in welche Bibliothek gehören, steht in BIB.
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
-const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",
+const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",protokolle:"Kundendaten",
   ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
   baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Prüfprotokolle"};
 async function syncRoot(){
@@ -1466,7 +1466,7 @@ async function syncNow(manual){
   if(!navigator.onLine){ setSync("offline"); return; }
   SY.running=true; setSync("läuft"); konflikte=[];
   try{
-    await syncRoot(); const c1=await push(); const c2=await pull(); fotoNachholen(); await pushFotos(); await pushDateien(); await pdfNachholen(); if(await katReparieren()) softRender();
+    await syncRoot(); const c1=await push(); const c2=await pull(); fotoNachholen(); await pushFotos(); await pushDateien(); await pushProtokolle(); await pdfNachholen(); if(await katReparieren()) softRender();
     META.sync.last=Date.now(); metaSave(); setSync("ok");
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
     if(c1||c2) softRender();
@@ -1655,7 +1655,7 @@ function protOpen(){ if(protDB) return Promise.resolve(protDB); return new Promi
 let protGeladen=false;
 async function protLaden(){ try{ const d=await protOpen(); PROT=(await idbReq(d.transaction("meta").objectStore("meta").getAll()))||[]; }catch(e){ PROT=[]; } protGeladen=true; }
 async function protBlob(id){ const d=await protOpen(); return idbReq(d.transaction("blob").objectStore("blob").get(id)); }
-async function protWeg(id){ const d=await protOpen(); const tx=d.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").delete(id); tx.objectStore("blob").delete(id); await new Promise(r=>{ tx.oncomplete=r; tx.onerror=r; }); PROT=PROT.filter(x=>x.id!==id); }
+async function protWeg(id){ bbProtWeg(id); const d=await protOpen(); const tx=d.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").delete(id); tx.objectStore("blob").delete(id); await new Promise(r=>{ tx.oncomplete=r; tx.onerror=r; }); PROT=PROT.filter(x=>x.id!==id); }
 const BFILTER=[["alle","Alle"],["ok","Bestanden"],["bad","Mit Mängeln"]];
 const protZeit=t=>{ const d=new Date(t); return `${d.toLocaleDateString("de-DE")}, ${d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}`; };
 /* PDFs, die vor der Microsoft-Anmeldung erstellt wurden, einmal in die Bibliothek „Prüfprotokolle“ nachreichen. */
@@ -1673,7 +1673,7 @@ async function protAblegen(p,blob,name){
       titel:[k&&k.name,(l||s||{}).name].filter(Boolean).join(" · ")||pTitel(p),datum:p.p.datum||"",art:p.p.art||"",auftragsnr:p.p.auftragsnr||"",pruefer:p.p.pruefer||"",
       ergebnis:protoResult(p)==="bad"?"bad":"ok",nr:p._nr||"",unterschrift:!!(p.a&&p.a.sigP),created:Date.now(),von:who(),fassung:PROT.filter(y=>y.pruefungId===p.id).length+1,demo:!!p.demo,size:blob.size};
     const tx=d.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").put(x); tx.objectStore("blob").put(blob,x.id);
-    await new Promise((r,j)=>{ tx.oncomplete=r; tx.onerror=()=>j(tx.error); }); PROT.push(x); if(nav.v==="bibliothek") render(); return x;
+    await new Promise((r,j)=>{ tx.oncomplete=r; tx.onerror=()=>j(tx.error); }); PROT.push(x); bbProtMelden(x,{bib:"pdf",pfad:pdfAblage(p).dir+"/"+fsName(name)+".pdf"}); if(nav.v==="bibliothek") render(); return x;
   }catch(e){ toast("PDF konnte nicht in der Bibliothek abgelegt werden"); return null; }
 }
 function fertigZeigen(x,mail){ $("#fertig")?.remove(); if(!cur) return; const r=x?x.ergebnis:(protoResult(cur)==="bad"?"bad":"ok");
@@ -3509,7 +3509,7 @@ function makePDF(name,mail){
   ablage.then(x=>fertigZeigen(x,mail));
   if(SYNC_ON&&ME.signedIn&&!cur.demo){ const id=cur.id;
     toast("PDF erstellt – wird zusätzlich in der Share abgelegt …");
-    pdfHochladen(cur,blob,name).then(pfadTxt=>{ if(!pfadTxt) return; if(cur&&cur.id===id&&canEdit(cur)){ cur.pdfAblage=pfadTxt; commit(); if(nav.v==="abschluss") softRender(); } toast("PDF in der Share abgelegt: "+pfadTxt); })
+    pdfHochladen(cur,blob,name).then(pfadTxt=>{ if(!pfadTxt) return; ablage.then(x=>x&&bbProtOben(x.id)); if(cur&&cur.id===id&&canEdit(cur)){ cur.pdfAblage=pfadTxt; commit(); if(nav.v==="abschluss") softRender(); } toast("PDF in der Share abgelegt: "+pfadTxt); })
       .catch(e=>toast("PDF nicht in der Share abgelegt: "+(e.message||e)+" – bitte später erneut erstellen"));
   } else if(!mail) toast("PDF erstellt – über Teilen oder „In Dateien sichern“ ablegen");
 }

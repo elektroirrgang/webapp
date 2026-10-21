@@ -1584,7 +1584,7 @@ async function g(path,opt={}){
 async function gj(path,opt){ const r=await g(path,opt); if(!r.ok) throw Object.assign(new Error(`Microsoft meldet Fehler ${r.status}`),{status:r.status}); return r.status===204?null:r.json(); }
 /* Ablage: eine SharePoint-Website mit drei Bibliotheken. Welche Daten in welche Bibliothek gehören, steht in BIB.
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
-const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",
+const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",protokolle:"Kundendaten",
   ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
   baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Baustellen"};
 async function syncRoot(){
@@ -1716,7 +1716,7 @@ async function syncNow(manual){
   if(!navigator.onLine){ setSync("offline"); return; }
   SY.running=true; setSync("läuft"); konflikte=[];
   try{
-    await syncRoot(); const c1=await push(); const n1=await pushNotizen(); const [c2,n2]=await Promise.all([pull(),pullNotizen()]); fotoNachholen(); await pushFotos(); await pushDateien();
+    await syncRoot(); const c1=await push(); const n1=await pushNotizen(); const [c2,n2]=await Promise.all([pull(),pullNotizen()]); fotoNachholen(); await pushFotos(); await pushDateien(); await pushProtokolle();
     META.sync.last=Date.now(); metaSave(); setSync("ok");
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
     if(c1||c2||n1||n2) softRender();
@@ -1888,9 +1888,9 @@ const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
 
 const TH_KEY="evse_theme";
 const RES_TXT={ok:"bestanden",bad:"nicht bestanden",open:"offen",wip:"in Arbeit"};
-const KINDS=["kunden","standorte","baustellen","eintraege","material","anforderungen","profile","vorgaenge","dateien"];
-const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["vorgaenge","dateien"];
-const DB={kunden:new Map(),standorte:new Map(),baustellen:new Map(),eintraege:new Map(),notizen:new Map(),material:new Map(),anforderungen:new Map(),profile:new Map(),vorgaenge:new Map(),dateien:new Map()};
+const KINDS=["kunden","standorte","baustellen","eintraege","material","anforderungen","profile","vorgaenge","dateien","protokolle"];
+const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["vorgaenge","dateien","protokolle"];
+const DB={kunden:new Map(),standorte:new Map(),baustellen:new Map(),eintraege:new Map(),notizen:new Map(),material:new Map(),anforderungen:new Map(),profile:new Map(),vorgaenge:new Map(),dateien:new Map(),protokolle:new Map()};
 let META={profil:{name:""},filter:"aktiv",sync:{}};
 let nav={v:"start"}, query="", kDB=null, bDB=null, aDB=null, warned=false, syncT=null;
 let ME={name:"",mail:"",admin:false,signedIn:false};
@@ -2133,7 +2133,7 @@ addEventListener("keydown",e=>{ if(!PV||!$("#menu").hidden||!$("#dlg").hidden) r
 addEventListener("resize",()=>{ if(PV){ clearTimeout(PV.rt); PV.rt=setTimeout(pvNeuAufbau,200); } });
 const PROT_B=()=>PROT.filter(x=>x.app==="baustelle");
 async function protAblegenB(meta,blob){ const d=await protOpen(), x=Object.assign({id:uid(),app:"baustelle",created:Date.now(),von:who(),size:blob.size},meta);
-  const tx=d.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").put(x); tx.objectStore("blob").put(blob,x.id); await new Promise(r=>{ tx.oncomplete=r; tx.onerror=r; }); PROT.push(x); return x; }
+  const tx=d.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").put(x); tx.objectStore("blob").put(blob,x.id); await new Promise(r=>{ tx.oncomplete=r; tx.onerror=r; }); PROT.push(x); bbProtMelden(x,{hochladen:true}); return x; }
 (()=>{ let w=null; const app=()=>$("#app");
   const darf=e=>WIDE.matches&&typeof pfadTeile==="function"&&pfadTeile().length&&$("#dlg").hidden&&$("#menu").hidden&&!$("#pv")&&!e.target.closest("canvas,.sigfull,input,textarea,select");
   document.addEventListener("touchstart",e=>{ if(e.touches.length!==1) return; const t=e.touches[0]; if(t.clientX>22||!darf(e)) return; w={x:t.clientX,y:t.clientY,dx:0,an:false}; },{passive:true});
