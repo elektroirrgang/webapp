@@ -548,3 +548,67 @@ body:has(.vg-bar) .snackbar{bottom:96px!important}
 .st-dz b{font-size:13px;min-width:64px;text-align:right}
 .st-fuss{margin:14px 0 0;font-size:13px;color:var(--on-sv)} .st-fuss b{color:var(--on-surface)}
 .st .list{background:var(--sc-low)}
+
+/* Kundenansicht: oben Eckdaten und Karte gleich groß nebeneinander */
+.kd-oben{display:grid;gap:16px;align-items:stretch}
+@media (min-width:900px){.kd-oben{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.kd-oben .infok2{margin:0}
+.kd-oben .qa-row{justify-content:space-around;gap:8px}.kd-oben .qa{flex:1 1 0;width:auto;max-width:112px}
+/* Kartenknöpfe: matt, gefüllt (M3), alle in einer Flucht am rechten Rand – oben Zoom, unten Zurück-zum-Ort und ⓘ */
+.kd-karte{--kk:var(--sc-high);--kk-i:var(--on-surface)}
+.kd-karte .maplibregl-ctrl-top-right,.kd-karte .maplibregl-ctrl-bottom-right{right:12px;z-index:4}
+.kd-karte .maplibregl-marker{z-index:1} .kd-karte .kd-pin{z-index:2}
+.kd-karte .maplibregl-ctrl-top-right{top:12px} .kd-karte .maplibregl-ctrl-bottom-right{bottom:12px}
+.kd-karte .maplibregl-ctrl-top-right .maplibregl-ctrl,.kd-karte .maplibregl-ctrl-bottom-right .maplibregl-ctrl{margin:0}
+.kd-karte .maplibregl-ctrl-group{background:var(--kk);border-radius:20px;box-shadow:var(--e1);overflow:hidden}
+.kd-karte .maplibregl-ctrl-group button{width:40px;height:40px;border:0!important;background-color:transparent}
+.kd-karte .maplibregl-ctrl-group button:hover{background-color:color-mix(in srgb,var(--on-surface) 8%,transparent)}
+.kd-karte .maplibregl-ctrl-group button .maplibregl-ctrl-icon{background-image:none!important;background-color:var(--kk-i);-webkit-mask:var(--kk-m) center/22px no-repeat;mask:var(--kk-m) center/22px no-repeat}
+.kd-karte .maplibregl-ctrl-zoom-in{--kk-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z'/%3E%3C/svg%3E")}
+.kd-karte .maplibregl-ctrl-zoom-out{--kk-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M19 13H5v-2h14v2z'/%3E%3C/svg%3E")}
+.kd-karte .maplibregl-ctrl-attrib.maplibregl-compact{position:relative;min-height:40px;min-width:40px;box-sizing:border-box;margin:0;padding:0 40px 0 0;border-radius:20px;background:var(--kk);color:var(--on-sv);box-shadow:var(--e1);display:flex;align-items:center;font-size:11px}
+.kd-karte .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show){padding:0}
+.kd-karte .maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-inner{padding:0 4px 0 14px}
+.kd-karte .maplibregl-ctrl-attrib a{color:var(--on-sv)}
+.kd-karte .maplibregl-ctrl-attrib-button{position:absolute;right:0;top:0;width:40px;height:40px;border-radius:50%;background:none!important;display:block;cursor:pointer;list-style:none}
+.kd-karte .maplibregl-ctrl-attrib-button::-webkit-details-marker{display:none}
+.kd-karte .maplibregl-ctrl button:focus,.kd-karte .maplibregl-ctrl-attrib-button:focus{outline:none;box-shadow:none} .kd-karte .maplibregl-ctrl button:focus-visible,.kd-karte .maplibregl-ctrl-attrib-button:focus-visible{box-shadow:inset 0 0 0 2px var(--primary)}
+.kd-karte .maplibregl-ctrl-attrib-button::after{content:"";position:absolute;inset:0;background:var(--kk-i);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z'/%3E%3C/svg%3E") center/22px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z'/%3E%3C/svg%3E") center/22px no-repeat}
+.kd-karte .maplibregl-ctrl-attrib-button:hover{background:color-mix(in srgb,var(--on-surface) 8%,transparent)!important}
+.kd-karte .maplibregl-cooperative-gesture-screen{font:inherit;font-size:15px;font-weight:600;border-radius:24px}
+.kd-zentr{position:absolute;z-index:5;right:12px;bottom:60px;width:40px;height:40px;border:0;border-radius:50%;display:grid;place-items:center;background:var(--kk);color:var(--kk-i);box-shadow:var(--e1);cursor:pointer}
+.kd-zentr:hover{background:color-mix(in srgb,var(--on-surface) 8%,var(--kk))}
+.kd-zentr[hidden]{display:none} .kd-zentr .ic{width:22px;height:22px}
+/* Anhaltspunkte in der Nähe (Supermarkt, Kirche, Tankstelle …) */
+.kd-poi{display:flex;align-items:center;gap:5px;height:26px;padding:0 9px 0 3px;border-radius:13px;background:var(--kk);color:var(--on-surface);box-shadow:var(--e1);font-size:11.5px;font-weight:650;white-space:nowrap;pointer-events:auto;cursor:default}
+.kd-poi i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--poi,#5F6368);color:#fff;flex:none}
+.kd-poi i svg{width:13px;height:13px;fill:currentColor}
+.kd-karte.fern .kd-poi:not(.zeig){padding:0 3px} .kd-karte.fern .kd-poi:not(.zeig) span{display:none} .kd-poi.zeig{z-index:3}
+.kd-karte{position:relative;min-height:280px;height:100%;border-radius:24px;overflow:hidden;background:var(--sc-low);color:var(--on-sv);isolation:isolate}
+.kd-slot{position:absolute;inset:0}
+.kd-karte .kd-map{position:absolute!important;inset:0;width:100%;height:100%}
+.kd-lade{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:14px;text-align:center;padding:16px}
+.kd-lade[hidden]{display:none}
+.kd-lade .ic{width:28px;height:28px}
+.kd-pin{width:30px;height:38px;background:var(--primary);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 30'%3E%3Cpath d='M12 0C5.4 0 0 5.2 0 11.7 0 20.4 12 30 12 30s12-9.6 12-18.3C24 5.2 18.6 0 12 0zm0 16.5a4.8 4.8 0 1 1 0-9.6 4.8 4.8 0 0 1 0 9.6z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 30'%3E%3Cpath d='M12 0C5.4 0 0 5.2 0 11.7 0 20.4 12 30 12 30s12-9.6 12-18.3C24 5.2 18.6 0 12 0zm0 16.5a4.8 4.8 0 1 1 0-9.6 4.8 4.8 0 0 1 0 9.6z'/%3E%3C/svg%3E") center/contain no-repeat;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+/* schwebende Ortsauswahl auf der Karte */
+.kd-orte{position:absolute;left:12px;top:12px;right:64px;z-index:5;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.kd-ort{pointer-events:auto;height:36px;padding:0 14px;border:0;border-radius:18px;background:var(--surface);color:var(--on-surface);font:inherit;font-size:14px;font-weight:650;box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer}
+.kd-ort[aria-pressed="true"]{background:var(--primary);color:var(--on-primary)}
+/* Kartenhinweis (Pflicht-Quellenangabe) nur als kleines „i“ */
+.kd-karte .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show){padding:0}
+.kt-box .sec-row{margin-top:20px}
+@media (min-width:900px){.kt-liste{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.kt-liste{display:flex;flex-direction:column;gap:6px}
+.kt-z{display:flex;align-items:center;gap:4px;background:var(--sc-low);border-radius:18px;padding:4px 6px 4px 4px}
+.kt-haupt{flex:1;min-width:0;display:flex;align-items:center;gap:12px;border:0;background:transparent;color:var(--on-surface);text-align:left;padding:8px 8px 8px 10px;border-radius:14px;font:inherit;cursor:pointer}
+.kt-haupt:disabled{cursor:default;opacity:1}
+@media (hover:hover){.kt-haupt:not(:disabled):hover{background:color-mix(in srgb,var(--on-surface) 5%,transparent)}}
+.kt-av{width:38px;height:38px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--sec-c);color:var(--on-sec-c);font-size:13px;font-weight:700}
+.kt-t{display:flex;flex-direction:column;min-width:0}
+.kt-t b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kt-t small{font-size:13px;color:var(--on-sv);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kt-b{width:40px;height:40px;flex:none;border-radius:50%;display:grid;place-items:center;color:var(--primary);background:transparent;text-decoration:none}
+.kt-b:hover{background:color-mix(in srgb,var(--primary) 8%,transparent)}
+.kt-b .ic{width:20px;height:20px}
+.kt-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px}

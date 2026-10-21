@@ -1060,7 +1060,7 @@ function setMe(){
   const a=Auth.account;
   if(!a){ ME={name:META.profil.name||"",mail:(META.profil.mail||"").toLowerCase(),admin:istAdmin(META.profil.mail),signedIn:false}; return; }
   const roles=(a.idTokenClaims&&a.idTokenClaims.roles)||[], mail=(a.username||"").toLowerCase();
-  ME={name:a.name||mail,mail,admin:(roles.includes("Admin")||roles.includes("Entwickler"))||istAdmin(mail)||CONFIG.admins.map(x=>x.toLowerCase()).includes(mail),signedIn:true};
+  ME={name:a.name||mail,mail,buero:roles.includes("Buero"),admin:(roles.includes("Admin")||roles.includes("Entwickler"))||istAdmin(mail)||CONFIG.admins.map(x=>x.toLowerCase()).includes(mail),signedIn:true};
   for(const k of KINDS) for(const r of DB[k].values()) if(!r.demo&&!r._etag&&(!r.createdBy||!r.createdBy.mail)){ r.createdBy={name:ME.name,mail:ME.mail}; r._dirty=true; dbPut(k,r); }
 }
 const GRAPH="https://graph.microsoft.com/v1.0";
@@ -1169,7 +1169,7 @@ async function syncNow(manual){
   if(!navigator.onLine){ setSync("offline"); return; }
   SY.running=true; setSync("läuft"); konflikte=[];
   try{
-    await syncRoot(); const c1=await push(); const c2=await pull(); await pushFotos();
+    await syncRoot(); const c1=await push(); const c2=await pull(); await pushFotos(); await pushDateien();
     META.sync.last=Date.now(); metaSave(); setSync("ok");
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
     if(c1||c2) softRender();
@@ -1285,21 +1285,15 @@ const webHref=w=>!w?"":/^https?:\/\//i.test(w)?w:"https://"+w;
 const webText=w=>String(w||"").replace(/^https?:\/\//i,"").replace(/\/$/,"");
 function webVorschlag(r){ const d=String(r.mail||"").split("@")[1]; return d&&!FREEMAIL.test(d)?d.toLowerCase():""; }
 const mapsHref=a=>(/iPad|iPhone|Macintosh/.test(navigator.userAgent)?"https://maps.apple.com/?q=":"https://www.google.com/maps/search/?api=1&query=")+encodeURIComponent(a);
-function infoKarte(r,kind){
-  const adr=adrText(r), tel=r.tel&&r.tel.replace(/[^\d+]/g,""), vorschlag=kind==="kunden"&&!r.web?webVorschlag(r):"";
-  const qa=(href,ic,t,act)=>`<${href?`a href="${href}"${/^https/.test(href)?' target="_blank" rel="noopener"':""}`:`button type="button" data-act="${act}"`} class="qa"><span class="qa-ic">${icon(ic)}</span><span>${t}</span></${href?"a":"button"}>`;
-  const aktionen=[tel&&qa("tel:"+tel,"phone","Anrufen"),r.mail&&qa("mailto:"+r.mail,"mail","E-Mail"),adr&&qa(mapsHref(adr),"route","Route"),
-    kind==="kunden"&&(r.web?qa(webHref(r.web),"globe","Webseite"):vorschlag?qa(webHref(vorschlag),"globe","Webseite"):canEdit(r)?qa("","search","Webseite suchen","webSuchen"):"")].filter(Boolean);
-  const z=(ic,l,v,href)=>v?`<div class="dz"><span class="dz-ic">${icon(ic)}</span><span class="dz-t"><small>${l}</small>${href?`<a href="${href}"${/^https/.test(href)?' target="_blank" rel="noopener"':""}>${esc(v)}</a>`:`<span>${esc(v)}</span>`}</span></div>`:"";
-  const zeilen=[z("tag","Kundennummer",r.kdnr),z("ort","Adresse",adr,adr&&mapsHref(adr)),z("person",kind==="standorte"?"Ansprechpartner vor Ort":"Ansprechpartner",r.ansprech),
-    z("phone","Telefon",r.tel,tel&&"tel:"+tel),z("mail","E-Mail",r.mail,r.mail&&"mailto:"+r.mail),
-    z("globe",r.web?"Webseite":"Webseite (aus der E-Mail-Adresse)",r.web?webText(r.web):vorschlag,webHref(r.web||vorschlag)),z("notes","Notiz",r.notiz)].join("");
-  if(!aktionen.length&&!zeilen) return "";
-  return `<div class="infok2">${aktionen.length?`<div class="qa-row">${aktionen.join("")}</div>`:""}${zeilen?`<div class="dz-list">${zeilen}</div>`:""}</div>`;
-}
+function wann(ts){ if(!ts) return ""; const d=new Date(ts), h=new Date(); const tage=Math.round((new Date(h.toDateString())-new Date(d.toDateString()))/864e5);
+  const uhr=d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+  return tage===0?`heute, ${uhr}`:tage===1?`gestern, ${uhr}`:d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"}); }
+const vonText=r=>r&&r.createdBy&&r.createdBy.name?r.createdBy.name:"";
+/*DATEIEN*/
+/*KUNDE*/
 function closeOverlays(){ ["#menu","#dlg","#scrim"].forEach(s=>$(s).hidden=true); $("#scrim").classList.remove("dim"); $("#menuBtn").setAttribute("aria-expanded","false"); }
-function dialog(title,body,actions){
-  $("#dlg").innerHTML=`<h2>${esc(title)}</h2><div class="db">${body}</div>${actions?`<div class="da">${actions}</div>`:""}`;
+function dialog(title,body,actions,opt){
+  $("#dlg").classList.toggle("breit",!!(opt&&opt.breit)); $("#dlg").innerHTML=`<h2>${esc(title)}</h2><div class="db">${body}</div>${actions?`<div class="da">${actions}</div>`:""}`;
   $("#menu").hidden=true; $("#dlg").hidden=false; $("#scrim").hidden=false; $("#scrim").classList.add("dim");
   const f=$("#dlg").querySelector("input:not([type=hidden])"); if(f&&!f.value) setTimeout(()=>f.focus(),50);
 }
@@ -1347,10 +1341,11 @@ const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
 
 const TH_KEY="evse_theme";
 const RES_TXT={ok:"fertig",bad:"Mängel",open:"offen",wip:"in Arbeit"};
-const KINDS=["kunden","standorte","profile"];
-const DB={kunden:new Map(),standorte:new Map(),profile:new Map()};
+const KINDS=["kunden","standorte","profile","dateien"];
+const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["dateien"];
+const DB={kunden:new Map(),standorte:new Map(),profile:new Map(),dateien:new Map()};
 let META={profil:{name:""},sync:{}};
-let nav={v:"start"}, query="", kDB=null, eDB=null, warned=false, syncT=null;
+let nav={v:"start"}, query="", kDB=null, eDB=null, aDB=null, warned=false, syncT=null;
 let ME={name:"",mail:"",admin:false,signedIn:false};
 
 function openStores(name,stores,meta){ return new Promise((res,rej)=>{
@@ -1363,14 +1358,16 @@ function openStores(name,stores,meta){ return new Promise((res,rej)=>{
     const v=db.version+1; db.close(); const r2=indexedDB.open(name,v);
     r2.onupgradeneeded=()=>anlegen(r2.result); r2.onsuccess=()=>{ r2.result.onversionchange=()=>r2.result.close(); res(r2.result); }; r2.onerror=()=>rej(r2.error); };
   r.onerror=()=>rej(r.error); }); }
-function dbPut(kind,rec){ DB[kind].set(rec.id,rec); if(!kDB) return;
-  try{ const t=kDB.transaction(kind,"readwrite"); t.objectStore(kind).put(rec); t.onerror=t.onabort=storageWarn; }catch(e){ storageWarn(); } }
+const dbOf=k=>APP_KINDS.includes(k)?aDB:kDB;
+function dbPut(kind,rec){ DB[kind].set(rec.id,rec); const db=dbOf(kind); if(!db) return;
+  try{ const t=db.transaction(kind,"readwrite"); t.objectStore(kind).put(rec); t.onerror=t.onabort=storageWarn; }catch(e){ storageWarn(); } }
+function dbDelHard(kind,id){ DB[kind].delete(id); const db=dbOf(kind); if(db) try{ db.transaction(kind,"readwrite").objectStore(kind).delete(id); }catch(e){} }
 function metaSave(){ if(eDB) try{ eDB.transaction("meta","readwrite").objectStore("meta").put(META,"meta"); }catch(e){} }
 async function dataLoad(){
-  try{ kDB=await openStores("evse_daten",KINDS,false); eDB=await openStores("echeck_daten",["anlagen","geraete"],true);
-    for(const k of KINDS){ (await idbReq(kDB.transaction(k).objectStore(k).getAll())).forEach(r=>DB[k].set(r.id,r)); }
+  try{ kDB=await openStores("evse_daten",KUNDEN_KINDS,false); eDB=await openStores("echeck_daten",["anlagen","geraete"],true); aDB=await openStores("irrgang_apps",["einstellungen",...APP_KINDS],true);
+    for(const k of KINDS){ (await idbReq(dbOf(k).transaction(k).objectStore(k).getAll())).forEach(r=>DB[k].set(r.id,r)); }
     const m=await idbReq(eDB.transaction("meta").objectStore("meta").get("meta")); if(m) META=Object.assign(META,m);
-  }catch(e){ kDB=eDB=null; toast("Gerätespeicher nicht verfügbar – Daten nur bis zum Schließen"); }
+  }catch(e){ kDB=eDB=aDB=null; toast("Gerätespeicher nicht verfügbar – Daten nur bis zum Schließen"); }
 }
 function saveNow(){}
 function takeServer(k,rec,it){
@@ -1592,7 +1589,7 @@ function render(){ profilAnwenden();
   $("#topTitle").innerHTML=title?`<span>${esc(title)}</span>${sub?`<small>${esc(String(sub).split(/\s*›\s*/).pop())}</small>`:""}`:"";
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
   if(fab){ f.dataset.act=fab[0]; f.setAttribute("aria-label",fab[1]); f.innerHTML=`${icon(fab[2])}<span>${fab[1]}</span>`; }
-  profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); $("#avBtn").dataset.sync=SY.state; profilAvatar();
+  profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); $("#avBtn").dataset.sync=SY.state; profilAvatar(); bilderFuellen();
 }
 
 function startView(){
@@ -1615,8 +1612,11 @@ function kundenView(){
   if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden und Standorte sind dieselben wie in den Apps EVSE und Baustelle.</p></div>`;
   return `<div class="narrow">${searchBar("Kunde, Kundennr. oder Ort suchen")}<div id="res">${kundenListe()}</div></div>`;
 }
-function kundeView(k){ const ss=standorteVon(k.id); return `<div class="narrow">${infoKarte(k,"kunden")}<div class="sec-lbl">Standorte</div>${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Noch kein Standort – über „Standort“ anlegen.</p>`}</div>`; }
-function standortView(s){ return `<div class="narrow">${infoKarte(s,"standorte")}</div>`; }
+function kundeView(k){ const ss=standorteVon(k.id);
+  return `<div class="narrow kd-seite">${kdOben(k,"kunden",ss)}${kontakteView("kunden",k)}
+    ${kdKopf("Standorte",kdDarf(k)&&"newStandort","Standort hinzufügen")}${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager).</p>`}
+    ${ablageView("kunden",k)}</div>`; }
+function standortView(s){ return `<div class="narrow kd-seite">${kdOben(s,"standorte")}${kontakteView("standorte",s)}${ablageView("standorte",s)}</div>`; }
 let locForm=null;
 function locDialog(kind,rec,parentId){
   locForm={kind,id:rec&&rec.id,parentId}; const r=rec||{}; if(rec) adrSplit(r);

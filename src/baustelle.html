@@ -453,8 +453,8 @@ body.is-login .topbar{display:none}
 .ekarte.neu{background:var(--sc)}
 .ekarte.klapp{padding-bottom:10px} .ekarte.klapp .ek-in{padding-bottom:4px}
 .ekarte.klapp > .ek-k{cursor:pointer;-webkit-tap-highlight-color:transparent}
-.ek-pf{display:grid;place-items:center;width:44px;height:44px;margin-left:4px;border-radius:50%;background:var(--sc-high);color:var(--on-surface);transition:transform .22s}
-.ek-pf .ic{width:28px;height:28px} .ekarte.auf .ek-pf{transform:rotate(180deg)}
+.ek-pf{flex:none;display:grid;place-items:center;width:40px;height:40px;margin:0 -2px 0 -6px;border-radius:50%;background:var(--sc-high);color:var(--on-surface);transition:transform .22s}
+.ek-pf .ic{width:26px;height:26px} .ekarte.auf .ek-pf{transform:rotate(180deg)}
 .ekarte.klapp:not(.auf) .ek-in,.ekarte.klapp:not(.auf) .ek-auf-nur{display:none}
 .avs{display:inline-flex;align-items:center;padding-left:8px;cursor:pointer}
 .avs-i{width:30px;height:30px;border-radius:50%;margin-left:-8px;display:grid;place-items:center;font-size:11px;font-weight:700;background:var(--sec-c) center/cover no-repeat;color:var(--on-sec-c);box-shadow:0 0 0 2px var(--sc);position:relative}
@@ -467,7 +467,7 @@ body.is-login .topbar{display:none}
 .ek-br{display:none}
 @media (max-width:599px){.ek-br{display:block;flex-basis:100%;height:0}}
 .ek-tag{background:var(--pc);color:var(--on-pc);font-size:12px;font-weight:700;border-radius:8px;padding:2px 8px}
-.ek-a{margin-left:auto;display:flex;gap:2px}
+.ek-a{margin-left:auto;display:flex;gap:2px;margin-right:-14px} /* Teilen/Bearbeiten in einer Flucht mit dem Plus über den Karten */
 .eb{margin-top:10px}
 .chips.dabei{margin:0 0 4px}.chips.dabei .chip{padding:4px 14px}.chips.dabei .chip[aria-pressed="true"]{padding-left:14px}
 .chips.dabei .dabei-plus{padding:4px 10px}.chips.dabei .dabei-plus .ic{display:block!important;width:20px;height:20px}
@@ -1727,7 +1727,7 @@ function applyTheme(t){
   const dark = t==="dark" || (t==="auto" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
   document.querySelector('meta[name="theme-color"]').setAttribute("content", dark?"#131314":"#FCFCFD"); if(window.sbFarbe) sbFarbe();
 }
-const IC={board:"M21 3H3c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H3V5h18v11zM6 7h5v4H6zm7 0h5v2h-5zm0 3h4v2h-4z",hoch:"M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z",runter:"M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z",cal:"M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z",moreH:"M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",swapV:"M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z",swapH:"M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z",
+const IC={klapp:"M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z",board:"M21 3H3c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H3V5h18v11zM6 7h5v4H6zm7 0h5v2h-5zm0 3h4v2h-4z",hoch:"M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z",runter:"M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z",cal:"M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z",moreH:"M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",swapV:"M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z",swapH:"M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z",
   notiz:"M19 3H4.99C3.89 3 3 3.9 3 5l.01 14c0 1.1.89 2 1.99 2h10l6-6V5c0-1.1-.9-2-2-2zM7 8h10v2H7V8zm5 6H7v-2h5v2zm2 5.5V14h5.5L14 19.5z",
   stift:"M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 0 0 0-1.41z",
   checkliste:"M22 7h-9v2h9V7zm0 8h-9v2h9v-2zM5.54 11L2 7.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 11zm0 8L2 15.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 19z",
@@ -1817,21 +1817,10 @@ const webHref=w=>!w?"":/^https?:\/\//i.test(w)?w:"https://"+w;
 const webText=w=>String(w||"").replace(/^https?:\/\//i,"").replace(/\/$/,"");
 function webVorschlag(r){ const d=String(r.mail||"").split("@")[1]; return d&&!FREEMAIL.test(d)?d.toLowerCase():""; }
 const mapsHref=a=>(/iPad|iPhone|Macintosh/.test(navigator.userAgent)?"https://maps.apple.com/?q=":"https://www.google.com/maps/search/?api=1&query=")+encodeURIComponent(a);
-function infoKarte(r,kind){
-  const adr=adrText(r), tel=r.tel&&r.tel.replace(/[^\d+]/g,""), vorschlag=kind==="kunden"&&!r.web?webVorschlag(r):"";
-  const qa=(href,ic,t,act)=>`<${href?`a href="${href}"${/^https/.test(href)?' target="_blank" rel="noopener"':""}`:`button type="button" data-act="${act}"`} class="qa"><span class="qa-ic">${icon(ic)}</span><span>${t}</span></${href?"a":"button"}>`;
-  const aktionen=[tel&&qa("tel:"+tel,"phone","Anrufen"),r.mail&&qa("mailto:"+r.mail,"mail","E-Mail"),adr&&qa(mapsHref(adr),"route","Route"),
-    kind==="kunden"&&(r.web?qa(webHref(r.web),"globe","Webseite"):vorschlag?qa(webHref(vorschlag),"globe","Webseite"):canEdit(r)?qa("","search","Webseite suchen","webSuchen"):"")].filter(Boolean);
-  const z=(ic,l,v,href)=>v?`<div class="dz"><span class="dz-ic">${icon(ic)}</span><span class="dz-t"><small>${l}</small>${href?`<a href="${href}"${/^https/.test(href)?' target="_blank" rel="noopener"':""}>${esc(v)}</a>`:`<span>${esc(v)}</span>`}</span></div>`:"";
-  const zeilen=[z("tag","Kundennummer",r.kdnr),z("ort","Adresse",adr,adr&&mapsHref(adr)),z("person",kind==="standorte"?"Ansprechpartner vor Ort":"Ansprechpartner",r.ansprech),
-    z("phone","Telefon",r.tel,tel&&"tel:"+tel),z("mail","E-Mail",r.mail,r.mail&&"mailto:"+r.mail),
-    z("globe",r.web?"Webseite":"Webseite (aus der E-Mail-Adresse)",r.web?webText(r.web):vorschlag,webHref(r.web||vorschlag)),z("notes","Notiz",r.notiz)].join("");
-  if(!aktionen.length&&!zeilen) return "";
-  return `<div class="infok2">${aktionen.length?`<div class="qa-row">${aktionen.join("")}</div>`:""}${zeilen?`<div class="dz-list">${zeilen}</div>`:""}</div>`;
-}
+/*KUNDE*/
 function closeOverlays(){ ["#menu","#dlg","#scrim"].forEach(s=>$(s).hidden=true); $("#scrim").classList.remove("dim"); $("#menuBtn").setAttribute("aria-expanded","false"); }
-function dialog(title,body,actions){
-  $("#dlg").innerHTML=`<h2>${esc(title)}</h2><div class="db">${body}</div>${actions?`<div class="da">${actions}</div>`:""}`;
+function dialog(title,body,actions,opt){
+  $("#dlg").classList.toggle("breit",!!(opt&&opt.breit)); $("#dlg").innerHTML=`<h2>${esc(title)}</h2><div class="db">${body}</div>${actions?`<div class="da">${actions}</div>`:""}`;
   $("#menu").hidden=true; $("#dlg").hidden=false; $("#scrim").hidden=false; $("#scrim").classList.add("dim");
   const f=$("#dlg").querySelector("input:not([type=hidden])"); if(f&&!f.value) setTimeout(()=>f.focus(),50);
 }
@@ -2368,8 +2357,8 @@ function eintragKarte(e,erster,klappbar){
   const ok=canEdit(e), fs=e.fotos||[], auf=!klappbar||(EK_AUF.has(e.id)?EK_AUF.get(e.id):!!erster);
   const block=(l,t,cls="")=>String(t||"").trim()?`<div class="eb ${cls}"><small>${l}</small><p>${esc(t)}</p></div>`:"";
   return `<div class="ekarte${erster?" neu":""}${klappbar?" klapp":""}${auf?" auf":""}">
-    <div class="ek-k"${klappbar?` data-act="ekKlapp" data-id="${e.id}" role="button" tabindex="0" aria-expanded="${auf}"`:""}>${erster?`<span class="ek-tag">Aktueller Stand</span>`:""}<b>${esc(tagText(e.datum))}</b>${avStapel(e)}
-      <span class="ek-a">${erster?`<button class="icon-btn sm ek-auf-nur" data-act="teilen" data-id="${e.id}" aria-label="Teilen">${icon("share")}</button>`:""}${ok?`<button class="icon-btn sm ek-auf-nur" data-act="eintragEdit" data-id="${e.id}" aria-label="Bearbeiten">${icon("edit")}</button>`:""}${klappbar?`<span class="ek-pf" aria-hidden="true">${icon("drop")}</span>`:""}</span></div>
+    <div class="ek-k"${klappbar?` data-act="ekKlapp" data-id="${e.id}" role="button" tabindex="0" aria-expanded="${auf}"`:""}>${klappbar?`<span class="ek-pf" aria-hidden="true">${icon("klapp")}</span>`:""}${erster?`<span class="ek-tag">Aktueller Stand</span>`:""}<b>${esc(tagText(e.datum))}</b>${avStapel(e)}
+      <span class="ek-a">${erster?`<button class="icon-btn sm ek-auf-nur" data-act="teilen" data-id="${e.id}" aria-label="Teilen">${icon("share")}</button>`:""}${ok?`<button class="icon-btn sm ek-auf-nur" data-act="eintragEdit" data-id="${e.id}" aria-label="Bearbeiten">${icon("edit")}</button>`:""}</span></div>
     ${`<div class="ek-in">${block("Stand",e.stand)}${block("Offen / nächste Schritte",e.offen)}${matBlock(e)}
     ${fs.length?`<div class="ek-f">${fs.map(id=>{ const src=fotoCache.get(id); return src?`<button class="foto" data-act="fotoShow" data-id="${id}" aria-label="Foto ansehen"><img src="${src}" alt=""></button>`:`<div class="foto leer">${icon("sync")}</div>`; }).join("")}</div>`:""}
     ${e.updated&&e.created&&e.updated-e.created>60000?`<div class="by">geändert ${esc(wann(e.updated))}${e.updatedBy&&e.updatedBy.name&&e.updatedBy.name!==vonText(e)?` von ${esc(e.updatedBy.name)}`:""}</div>`:""}</div>`}</div>`;
@@ -2490,14 +2479,17 @@ function kundenView(){
   return `<div class="narrow">${searchBar("Kunde, Kundennr. oder Ort suchen")}<div id="res">${kundenListe()}</div></div>`;
 }
 function kundeView(k){
-  const ss=standorteVon(k.id), bs=live("baustellen").filter(b=>b.kundeId===k.id).sort((a,b)=>aktiv(b)-aktiv(a)), ed=canEdit(k);
-  return `<div class="narrow">${!WIDE.matches&&ed?`<div class="kopf-rechts">${stiftKnopf()}</div>`:""}${infoKarte(k,"kunden")}
-    <div class="sec-row"><div class="sec-lbl">Standorte</div>${ed?`<button class="plus-k" data-act="newStandort" aria-label="Standort anlegen" title="Standort anlegen">${icon("add")}</button>`:""}</div>${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager) – sonst gilt die Adresse des Kunden.</p>`}
-    <div class="sec-row"><div class="sec-lbl">Baustellen</div><button class="plus-k" data-act="neueBaustelleKunde" aria-label="Baustelle anlegen" title="Baustelle anlegen">${icon("add")}</button></div>${bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle bei diesem Kunden.</p>`}</div>`;
+  const ss=standorteVon(k.id), bs=live("baustellen").filter(b=>b.kundeId===k.id).sort((a,b)=>aktiv(b)-aktiv(a));
+  return `<div class="narrow kd-seite">${!WIDE.matches&&canEdit(k)?`<div class="kopf-rechts">${stiftKnopf()}</div>`:""}${kdOben(k,"kunden",ss)}${kontakteView("kunden",k)}
+    ${kdKopf("Baustellen","neueBaustelleKunde","Baustelle anlegen")}${bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle bei diesem Kunden.</p>`}
+    ${kdKopf("Standorte",kdDarf(k)&&"newStandort","Standort hinzufügen")}${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager) – sonst gilt die Adresse des Kunden.</p>`}
+    ${ablageView("kunden",k)}</div>`;
 }
 function standortView(s){
   const bs=live("baustellen").filter(b=>b.standortId===s.id).sort((a,b)=>aktiv(b)-aktiv(a));
-  return `<div class="narrow">${!WIDE.matches&&canEdit(s)?`<div class="kopf-rechts">${stiftKnopf()}</div>`:""}${infoKarte(s,"standorte")}<div class="sec-row"><div class="sec-lbl">Baustellen</div><button class="plus-k" data-act="neueBaustelleHier" aria-label="Baustelle anlegen" title="Baustelle anlegen">${icon("add")}</button></div>${bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle.</p>`}</div>`;
+  return `<div class="narrow kd-seite">${!WIDE.matches&&canEdit(s)?`<div class="kopf-rechts">${stiftKnopf()}</div>`:""}${kdOben(s,"standorte")}${kontakteView("standorte",s)}
+    ${kdKopf("Baustellen","neueBaustelleHier","Baustelle anlegen")}${bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle an diesem Standort.</p>`}
+    ${ablageView("standorte",s)}</div>`;
 }
 let locForm=null;
 function locDialog(kind,rec,parentId){

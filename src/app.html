@@ -1187,10 +1187,11 @@ const CONFIG=Object.assign({
 const SYNC_ON=!!(CONFIG.tenantId&&CONFIG.clientId&&CONFIG.shareUrl);
 
 const TH_KEY="evse_theme", OLD_KEY="evse_protos_v1";
-const KINDS=["kunden","standorte","ladeparks","pruefungen","katalog","geraete","profile"];
-const DB={kunden:new Map(),standorte:new Map(),ladeparks:new Map(),pruefungen:new Map(),katalog:new Map(),geraete:new Map(),profile:new Map()};
+const KINDS=["kunden","standorte","ladeparks","pruefungen","katalog","geraete","profile","dateien"];
+const APP_KINDS=["dateien"]; /* liegen im gemeinsamen Gerätespeicher „irrgang_apps“ (wie in Übersicht und Baustelle) */
+const DB={kunden:new Map(),standorte:new Map(),ladeparks:new Map(),pruefungen:new Map(),katalog:new Map(),geraete:new Map(),profile:new Map(),dateien:new Map()};
 let META={profil:{name:""},pins:[],archiv:[],filter:"alle",sync:{}};
-let cur=null, nav={v:"start"}, saveTimer=null, dirtyCur=false, dataDB=null, query="";
+let cur=null, nav={v:"start"}, saveTimer=null, dirtyCur=false, dataDB=null, aDB=null, query="";
 let ME={name:"",mail:"",admin:false,signedIn:false};
 
 function idbReq(rq){ return new Promise((res,rej)=>{ rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); }); }
@@ -1204,18 +1205,19 @@ function openStores(name,stores,meta){ return new Promise((res,rej)=>{
     const v=db.version+1; db.close(); const r2=indexedDB.open(name,v);
     r2.onupgradeneeded=()=>anlegen(r2.result); r2.onsuccess=()=>{ r2.result.onversionchange=()=>r2.result.close(); res(r2.result); }; r2.onerror=()=>rej(r2.error); };
   r.onerror=()=>rej(r.error); }); }
-function dataOpen(){ return openStores("evse_daten",KINDS,true); }
+function dataOpen(){ return openStores("evse_daten",KINDS.filter(k=>!APP_KINDS.includes(k)),true); }
+const dbOf=k=>APP_KINDS.includes(k)?aDB:dataDB;
 let warned=false;
-function dbPut(kind,rec){ if(kind==="pruefungen") try{ rec.zst=protoState(rec); }catch(e){} DB[kind].set(rec.id,rec); if(!dataDB) return;
-  try{ const t=dataDB.transaction(kind,"readwrite"); t.objectStore(kind).put(rec); t.onerror=t.onabort=storageWarn; }catch(e){ storageWarn(); } }
-function dbDelHard(kind,id){ DB[kind].delete(id); if(dataDB) try{ dataDB.transaction(kind,"readwrite").objectStore(kind).delete(id); }catch(e){} }
+function dbPut(kind,rec){ if(kind==="pruefungen") try{ rec.zst=protoState(rec); }catch(e){} DB[kind].set(rec.id,rec); const db=dbOf(kind); if(!db) return;
+  try{ const t=db.transaction(kind,"readwrite"); t.objectStore(kind).put(rec); t.onerror=t.onabort=storageWarn; }catch(e){ storageWarn(); } }
+function dbDelHard(kind,id){ DB[kind].delete(id); const db=dbOf(kind); if(db) try{ db.transaction(kind,"readwrite").objectStore(kind).delete(id); }catch(e){} }
 function metaSave(){ if(dataDB) try{ dataDB.transaction("meta","readwrite").objectStore("meta").put(META,"meta"); }catch(e){} }
 function storageWarn(){ if(!warned){ warned=true; toast("Speichern auf dem Gerät fehlgeschlagen – bitte „Alle sichern“"); } }
 async function dataLoad(){
-  try{ dataDB=await dataOpen();
-    for(const k of KINDS){ (await idbReq(dataDB.transaction(k).objectStore(k).getAll())).forEach(r=>DB[k].set(r.id,r)); }
+  try{ dataDB=await dataOpen(); aDB=await openStores("irrgang_apps",["einstellungen",...APP_KINDS],true);
+    for(const k of KINDS){ (await idbReq(dbOf(k).transaction(k).objectStore(k).getAll())).forEach(r=>DB[k].set(r.id,r)); }
     const m=await idbReq(dataDB.transaction("meta").objectStore("meta").get("meta")); if(m) META=Object.assign(META,m);
-  }catch(e){ dataDB=null; toast("Gerätespeicher nicht verfügbar – Daten nur bis zum Schließen"); }
+  }catch(e){ dataDB=aDB=null; toast("Gerätespeicher nicht verfügbar – Daten nur bis zum Schließen"); }
   if(!META.migriert){ let old=null; try{ old=JSON.parse(localStorage.getItem(OLD_KEY)||"null"); }catch(e){}
     if(Array.isArray(old)&&old.length) importLegacy(old); META.migriert=true; metaSave(); }
   for(const p of [...DB.pruefungen.values()]) if(!p.zst) dbPut("pruefungen",p);
@@ -1306,7 +1308,7 @@ function setMe(){
   const a=Auth.account;
   if(!a){ ME={name:META.profil.name||"",mail:(META.profil.mail||"").toLowerCase(),admin:istAdmin(META.profil.mail),signedIn:false}; return; }
   const roles=(a.idTokenClaims&&a.idTokenClaims.roles)||[], mail=(a.username||"").toLowerCase();
-  ME={name:a.name||mail,mail,admin:(roles.includes("Admin")||roles.includes("Entwickler"))||istAdmin(mail)||CONFIG.admins.map(x=>x.toLowerCase()).includes(mail),signedIn:true};
+  ME={name:a.name||mail,mail,buero:roles.includes("Buero"),admin:(roles.includes("Admin")||roles.includes("Entwickler"))||istAdmin(mail)||CONFIG.admins.map(x=>x.toLowerCase()).includes(mail),signedIn:true};
   for(const k of KINDS) for(const r of DB[k].values()) if(!r.demo&&!r._etag&&(!r.createdBy||!r.createdBy.mail)){ r.createdBy={name:ME.name,mail:ME.mail}; r._dirty=true; dbPut(k,r); }
 }
 
@@ -1464,7 +1466,7 @@ async function syncNow(manual){
   if(!navigator.onLine){ setSync("offline"); return; }
   SY.running=true; setSync("läuft"); konflikte=[];
   try{
-    await syncRoot(); const c1=await push(); const c2=await pull(); fotoNachholen(); await pushFotos(); await pdfNachholen(); if(await katReparieren()) softRender();
+    await syncRoot(); const c1=await push(); const c2=await pull(); fotoNachholen(); await pushFotos(); await pushDateien(); await pdfNachholen(); if(await katReparieren()) softRender();
     META.sync.last=Date.now(); metaSave(); setSync("ok");
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
     if(c1||c2) softRender();
@@ -1949,7 +1951,7 @@ function render(){ profilAnwenden();
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
   f.classList.toggle("fab-rund",!!fab&&!fab[1]); $("#fabm")?.remove();
   if(fab){ f.dataset.act=fab[0]; f.setAttribute("aria-label",fab[1]||"Neu anlegen"); f.innerHTML=`${icon(fab[2])}${fab[1]?`<span>${fab[1]}</span>`:""}`; }
-  profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); $("#avBtn").dataset.sync=SY.state; profilAvatar();
+  profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); $("#avBtn").dataset.sync=SY.state; profilAvatar(); bilderFuellen();
   if(E&&!canEdit(cur)) applyRO();
 }
 function applyRO(){
@@ -2074,35 +2076,28 @@ const webHref=w=>!w?"":/^https?:\/\//i.test(w)?w:"https://"+w;
 const webText=w=>String(w||"").replace(/^https?:\/\//i,"").replace(/\/$/,"");
 function webVorschlag(r){ const d=String(r.mail||"").split("@")[1]; return d&&!FREEMAIL.test(d)?d.toLowerCase():""; }
 const mapsHref=a=>(/iPad|iPhone|Macintosh/.test(navigator.userAgent)?"https://maps.apple.com/?q=":"https://www.google.com/maps/search/?api=1&query=")+encodeURIComponent(a);
-function infoKarte(r,kind){
-  const adr=adrText(r), tel=r.tel&&r.tel.replace(/[^\d+]/g,""), vorschlag=kind==="kunden"&&!r.web?webVorschlag(r):"";
-  const qa=(href,ic,t,act)=>`<${href?`a href="${href}"${/^https/.test(href)?' target="_blank" rel="noopener"':""}`:`button type="button" data-act="${act}"`} class="qa"><span class="qa-ic">${icon(ic)}</span><span>${t}</span></${href?"a":"button"}>`;
-  const aktionen=[tel&&qa("tel:"+tel,"phone","Anrufen"),r.mail&&qa("mailto:"+r.mail,"mail","E-Mail"),adr&&qa(mapsHref(adr),"route","Route"),
-    kind==="kunden"&&(r.web?qa(webHref(r.web),"globe","Webseite"):vorschlag?qa(webHref(vorschlag),"globe","Webseite"):canEdit(r)?qa("","search","Webseite suchen","webSuchen"):"")].filter(Boolean);
-  const z=(ic,l,v,href)=>v?`<div class="dz"><span class="dz-ic">${icon(ic)}</span><span class="dz-t"><small>${l}</small>${href?`<a href="${href}"${/^https/.test(href)?' target="_blank" rel="noopener"':""}>${esc(v)}</a>`:`<span>${esc(v)}</span>`}</span></div>`:"";
-  const zeilen=[z("tag","Kundennummer",r.kdnr),z("ort","Adresse",adr,adr&&mapsHref(adr)),z("person",kind==="standorte"?"Ansprechpartner vor Ort":"Ansprechpartner",r.ansprech),
-    z("phone","Telefon",r.tel,tel&&"tel:"+tel),z("mail","E-Mail",r.mail,r.mail&&"mailto:"+r.mail),
-    z("globe",r.web?"Webseite":"Webseite (aus der E-Mail-Adresse)",r.web?webText(r.web):vorschlag,webHref(r.web||vorschlag)),z("notes","Notiz",r.notiz)].join("");
-  if(!aktionen.length&&!zeilen) return "";
-  return `<div class="infok2">${aktionen.length?`<div class="qa-row">${aktionen.join("")}</div>`:""}${zeilen?`<div class="dz-list">${zeilen}</div>`:""}</div>`;
-}
+function wann(ts){ if(!ts) return ""; const d=new Date(ts), h=new Date(); const tage=Math.round((new Date(h.toDateString())-new Date(d.toDateString()))/864e5);
+  const uhr=d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+  return tage===0?`heute, ${uhr}`:tage===1?`gestern, ${uhr}`:d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"}); }
+/*DATEIEN*/
+/*KUNDE*/
 function kundeView(k){
-  const ss=standorteVon(k.id), sid="k:"+k.id, ps=pruefAt(sid,null), ed=!SYNC_ON||canEdit(k)||k.demo;
-  let h=`<div class="narrow">${infoKarte(k,"kunden")}`;
+  const ss=standorteVon(k.id), sid="k:"+k.id, ps=pruefAt(sid,null);
+  let h=`<div class="narrow kd-seite">${kdOben(k,"kunden",ss)}${kontakteView("kunden",k)}`;
   /* ohne eigene Standorte: geprüft wird an der Adresse des Kunden – Verlauf und Geräte direkt hier */
   if(!ss.length||ps.length) h+=`<div class="sec-lbl">Prüfverlauf${ss.length?" an der Kundenadresse":""}</div>${verlaufKopf(sid,null)}${ps.length?listOf(ps.map(p=>pItem(p,false))):`<p class="meta">Noch keine Prüfung – über „Neue Prüfung“ anlegen.</p>`}`+(ps.length||geraeteOrt(sid,null).length?geraeteSektion(sid,null):"");
-  h+=`<div class="sec-row"><div class="sec-lbl">Standorte</div>${ed?`<button class="btn-text" data-act="newStandort">${icon("add")}Standort</button>`:""}</div>`
+  h+=kdKopf("Standorte",kdDarf(k)&&"newStandort","Standort hinzufügen")
     +(ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager) – sonst wird an der Adresse des Kunden geprüft.</p>`);
-  return h+`</div>`;
+  return h+ablageView("kunden",k)+`</div>`;
 }
 function standortView(s){
   const _ak=geraeteSektion(s.id,null), _fz=verlaufKopf(s.id,null);
   const lps=ladeparksVon(s.id), ps=pruefAt(s.id,null);
-  let h=`<div class="narrow">${infoKarte(s,"standorte")}`;
-  h+=`<div class="sec-row"><div class="sec-lbl">Ladeparks</div><button class="btn-text" data-act="newLadepark">${icon("add")}Ladepark</button></div>`;
+  let h=`<div class="narrow kd-seite">${kdOben(s,"standorte")}${kontakteView("standorte",s)}`;
+  h+=kdKopf("Ladeparks","newLadepark","Ladepark hinzufügen");
   h+=lps.length?listOf(lps.map(l=>locItem("ladeparks",l))):`<p class="meta">Optional – nur nötig, wenn es am Standort mehrere Parkplätze mit Ladestationen gibt.</p>`;
   h+=`<div class="sec-lbl">Prüfverlauf${lps.length?" ohne Ladepark":""}</div>`+_fz+(ps.length?listOf(ps.map(p=>pItem(p,false))):`<p class="meta">Noch keine Prüfung – über „Neue Prüfung“ anlegen.</p>`);
-  return h+(lps.length&&!ps.length&&!geraeteOrt(s.id,null).length?"":_ak)+`</div>`;
+  return h+(lps.length&&!ps.length&&!geraeteOrt(s.id,null).length?"":_ak)+ablageView("standorte",s)+`</div>`;
 }
 function ladeparkView(l){
   const ps=pruefAt(l.standortId,l.id);
@@ -2567,7 +2562,7 @@ function katModellView(r){
   const an=r.anhaenge||[];
   if(KAT_DATEIEN){ h+=`<div class="sec-row"><div class="sec-lbl">Anleitungen und Datenblätter</div><button class="btn-text" data-act="katDateiAdd">${icon("add")}Anhang</button></div>`;
   h+=an.length?listOf(an.map(d=>`<div class="li" role="button" tabindex="0" data-act="katDateiOpen" data-d="${d.id}"><span class="av">${icon("doc")}</span>
-      <span class="lt"><span class="h">${esc(d.name)}</span><span class="s">${esc(groesse(d.size))}${d.by&&d.by.name?` · ${esc(d.by.name)}`:""} · ${new Date(d.at||Date.now()).toLocaleDateString("de-DE")}${DATEI_DA.has(d.id)?"":" · nicht auf diesem Gerät"}</span></span>
+      <span class="lt"><span class="h">${esc(d.name)}</span><span class="s">${esc(anhGroesse(d.size))}${d.by&&d.by.name?` · ${esc(d.by.name)}`:""} · ${new Date(d.at||Date.now()).toLocaleDateString("de-DE")}${ANH_DA.has(d.id)?"":" · nicht auf diesem Gerät"}</span></span>
       ${canEdit({createdBy:d.by})?`<button class="icon-btn sm" data-act="katDateiDelAsk" data-d="${d.id}" aria-label="Anhang entfernen">${icon("del")}</button>`:icon("chev")}</div>`))
     :`<p class="meta">Noch keine Anhänge. Die PDF des Herstellers einmal hier anhängen – danach ist sie auf diesem Gerät auch ohne Internet da.</p>`; }
   h+=`<div class="sec-row"><div class="sec-lbl">Hinweise</div><button class="btn-text" data-act="katHNeu">${icon("add")}Hinweis</button></div>`;
@@ -2583,23 +2578,23 @@ function katModellView(r){
   if(ps.length) h+=`<details class="kat-gepr"><summary>${icon("doc")}<span>Bei uns geprüft: ${ps.length}× · zuletzt ${esc(deDate(ps[0].p.datum))}</span>${icon("drop")}</summary>${listOf(ps.slice(0,30).map(p=>pItem(p,true)))}${ps.length>30?`<p class="meta">… und ${ps.length-30} weitere</p>`:""}</details>`;
   return h+`</div>`;
 }
-let dateiDB=null; const DATEI_DA=new Set();
-function dateiOpen(){ return new Promise((res,rej)=>{ if(!window.indexedDB) return rej(0); const r=indexedDB.open("evse_dateien",1); r.onupgradeneeded=()=>r.result.createObjectStore("d"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
-async function dateiInit(){ try{ dateiDB=await dateiOpen(); (await idbReq(dateiDB.transaction("d").objectStore("d").getAllKeys())).forEach(k=>DATEI_DA.add(k)); }catch(e){ dateiDB=null; } }
-function dateiPut(id,o){ return new Promise(res=>{ if(!dateiDB) return res(false); try{ const t=dateiDB.transaction("d","readwrite"); t.objectStore("d").put(o,id); t.oncomplete=()=>{ DATEI_DA.add(id); res(true); }; t.onerror=t.onabort=()=>res(false); }catch(e){ res(false); } }); }
-async function dateiGet(id){ if(!dateiDB) return null; try{ return await idbReq(dateiDB.transaction("d").objectStore("d").get(id)); }catch(e){ return null; } }
-function dateiDel(ids){ ids.filter(Boolean).forEach(i=>DATEI_DA.delete(i)); if(!dateiDB) return; try{ const t=dateiDB.transaction("d","readwrite"); ids.forEach(i=>t.objectStore("d").delete(i)); }catch(e){} }
-const groesse=b=>!b?"":b<1048576?`${Math.max(1,Math.round(b/1024))} KB`:`${(b/1048576).toFixed(1).replace(".",",")} MB`;
+let anhDB=null; const ANH_DA=new Set();
+function anhOpen(){ return new Promise((res,rej)=>{ if(!window.indexedDB) return rej(0); const r=indexedDB.open("evse_dateien",1); r.onupgradeneeded=()=>r.result.createObjectStore("d"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function anhInit(){ try{ anhDB=await anhOpen(); (await idbReq(anhDB.transaction("d").objectStore("d").getAllKeys())).forEach(k=>ANH_DA.add(k)); }catch(e){ anhDB=null; } }
+function anhPut(id,o){ return new Promise(res=>{ if(!anhDB) return res(false); try{ const t=anhDB.transaction("d","readwrite"); t.objectStore("d").put(o,id); t.oncomplete=()=>{ ANH_DA.add(id); res(true); }; t.onerror=t.onabort=()=>res(false); }catch(e){ res(false); } }); }
+async function anhGet(id){ if(!anhDB) return null; try{ return await idbReq(anhDB.transaction("d").objectStore("d").get(id)); }catch(e){ return null; } }
+function anhDel(ids){ ids.filter(Boolean).forEach(i=>ANH_DA.delete(i)); if(!anhDB) return; try{ const t=anhDB.transaction("d","readwrite"); ids.forEach(i=>t.objectStore("d").delete(i)); }catch(e){} }
+const anhGroesse=b=>!b?"":b<1048576?`${Math.max(1,Math.round(b/1024))} KB`:`${(b/1048576).toFixed(1).replace(".",",")} MB`;
 async function katDateiAufnehmen(el){
   const f=el.files[0]; el.value=""; const r=DB.katalog.get(nav.id); if(!f||!r) return;
   if(f.size>40*1048576){ toast("Datei ist größer als 40 MB"); return; }
-  const id=uid(), ok=await dateiPut(id,{name:f.name,type:f.type,blob:f});
+  const id=uid(), ok=await anhPut(id,{name:f.name,type:f.type,blob:f});
   if(!ok){ toast("Anhang konnte auf dem Gerät nicht gespeichert werden"); return; }
   r.anhaenge=[...(r.anhaenge||[]),{id,name:f.name,type:f.type,size:f.size,by:who(),at:Date.now()}]; saveRec("katalog",r); render();
   toast(SYNC_ON?"Angehängt – vorerst nur auf diesem Gerät":"Angehängt");
 }
 async function katDateiOeffnen(id){
-  const o=await dateiGet(id); if(!o||!o.blob){ toast("Anhang liegt nicht auf diesem Gerät"); return; }
+  const o=await anhGet(id); if(!o||!o.blob){ toast("Anhang liegt nicht auf diesem Gerät"); return; }
   const url=URL.createObjectURL(o.blob), w=window.open(url,"_blank"); if(!w) saveFile(o.blob,o.name); else setTimeout(()=>URL.revokeObjectURL(url),120000);
 }
 
@@ -2699,8 +2694,8 @@ function openMenu(){
   $("#menu").innerHTML=head+it.map(x=>x==="-"?"<hr>":`<button class="mi ${x[3]||""}" role="menuitem" data-act="${x[0]}">${icon(x[2])}<span>${x[1]}</span></button>`).join("");
   $("#menu").hidden=false; $("#scrim").hidden=false; $("#menuBtn").setAttribute("aria-expanded","true");
 }
-function dialog(title,body,actions){
-  $("#dlg").innerHTML=`<h2>${esc(title)}</h2><div class="db">${body}</div>${actions?`<div class="da">${actions}</div>`:""}`;
+function dialog(title,body,actions,opt){
+  $("#dlg").classList.toggle("breit",!!(opt&&opt.breit)); $("#dlg").innerHTML=`<h2>${esc(title)}</h2><div class="db">${body}</div>${actions?`<div class="da">${actions}</div>`:""}`;
   $("#menu").hidden=true; $("#dlg").hidden=false; $("#scrim").hidden=false; $("#scrim").classList.add("dim");
   $("#dlg").classList.remove("kp-dlg");
   const f=$("#dlg").querySelector("input:not([type=hidden])"); if(f&&!f.value&&!(f.type==="search"&&matchMedia("(pointer:coarse)").matches)) setTimeout(()=>f.focus(),50);
@@ -3181,7 +3176,7 @@ document.addEventListener("click",ev=>{
   case "katEdit": katDialog(DB.katalog.get(nav.id)); return;
   case "katSave": katSave(); return;
   case "katDelAsk": confirmDlg("Modell löschen?",`„${katName(DB.katalog.get(nav.id))}“ mit allen Hinweisen und Fotos aus dem Katalog entfernen?`,"Löschen","katDel"); return;
-  case "katDel": { const r=DB.katalog.get(nav.id); closeOverlays(); if(!r||!canEdit(r)) return; fotoDel(katFotoIds(r)); dateiDel((r.anhaenge||[]).map(x=>x.id)); r.deleted=true; r.hinweise=[]; r.anhaenge=[]; delete r.bild; saveRec("katalog",r); go({v:"katalog"}); toast("Modell gelöscht"); return; }
+  case "katDel": { const r=DB.katalog.get(nav.id); closeOverlays(); if(!r||!canEdit(r)) return; fotoDel(katFotoIds(r)); anhDel((r.anhaenge||[]).map(x=>x.id)); r.deleted=true; r.hinweise=[]; r.anhaenge=[]; delete r.bild; saveRec("katalog",r); go({v:"katalog"}); toast("Modell gelöscht"); return; }
   case "katHNeu": katHDialog(DB.katalog.get(nav.id),null); return;
   case "katHEdit": { const r=DB.katalog.get(nav.id); katHDialog(r,(r.hinweise||[]).find(h=>h.id===b.dataset.h)); return; }
   case "katHSave": katHSave(); return;
@@ -3193,7 +3188,7 @@ document.addEventListener("click",ev=>{
   case "katDateiAdd": $("#dateiFile").click(); return;
   case "katDateiOpen": katDateiOeffnen(b.dataset.d); return;
   case "katDateiDelAsk": { ev.stopPropagation(); katDDel=b.dataset.d; const d=(DB.katalog.get(nav.id).anhaenge||[]).find(x=>x.id===katDDel); confirmDlg("Anhang entfernen?",`„${d?d.name:""}“ aus dem Katalog entfernen?`,"Entfernen","katDateiDel"); return; }
-  case "katDateiDel": { const r=DB.katalog.get(nav.id); closeOverlays(); r.anhaenge=(r.anhaenge||[]).filter(x=>x.id!==katDDel); dateiDel([katDDel]); saveRec("katalog",r); render(); return; }
+  case "katDateiDel": { const r=DB.katalog.get(nav.id); closeOverlays(); r.anhaenge=(r.anhaenge||[]).filter(x=>x.id!==katDDel); anhDel([katDDel]); saveRec("katalog",r); render(); return; }
   case "katFotoAdd": fotoTarget={kat:nav.id,h:b.dataset.h}; closeOverlays(); $("#fotoFile").click(); return;
   case "katFotoShow": { const r=DB.katalog.get(nav.id), h=(r.hinweise||[]).find(x=>x.id===b.dataset.h), id=b.dataset.fid, src=fotoCache.get(id); if(!h||!src) return;
     dialog(h.titel,`<img class="dimg" src="${src}" alt="">`,`${katHOk(h)?`<button class="btn-text danger" data-act="katFotoDel" data-h="${h.id}" data-fid="${id}">Löschen</button><span style="flex:1"></span>`:""}<button class="btn-text" data-act="cancel">Schließen</button>`); return; }
@@ -3289,7 +3284,7 @@ async function fotoAufnehmen(el){
 async function exportBackup(){
   const daten={}; KINDS.forEach(k=>daten[k]=[...DB[k].values()].map(strip));
   const fotos={}; [...live("pruefungen").flatMap(p=>p.s.flatMap(fotoIds)),...live("katalog").flatMap(katFotoIds)].forEach(i=>{ const d=fotoCache.get(i); if(d) fotos[i]=d; });
-  const dateien={}; for(const d of live("katalog").flatMap(r=>r.anhaenge||[])){ const o=await dateiGet(d.id); if(o&&o.blob) dateien[d.id]={name:o.name,type:o.type,data:await blobToDataUrl(o.blob)}; }
+  const dateien={}; for(const d of live("katalog").flatMap(r=>r.anhaenge||[])){ const o=await anhGet(d.id); if(o&&o.blob) dateien[d.id]={name:o.name,type:o.type,data:await blobToDataUrl(o.blob)}; }
   saveFile(new Blob([JSON.stringify({app:"evse-pruefprotokoll",version:3,saved:Date.now(),daten,fotos,dateien})],{type:"application/json"}),`EVSE-Prüfprotokolle_Sicherung_${today()}.json`);
   toast(`${live("pruefungen").length} Prüfung(en) gesichert`);
 }
@@ -3300,7 +3295,7 @@ async function importBackup(el){
         if(!loc){ r._dirty=!r.demo; dbPut(k,r); neu++; } else if((r.updated||0)>(loc.updated||0)){ r._etag=loc._etag; r._itemId=loc._itemId; r._dirty=!r.demo; dbPut(k,r); akt++; } } }
     else { const list=Array.isArray(d)?d:d.protokolle; if(!Array.isArray(list)) throw 0; neu=importLegacy(list); }
     if(d&&d.fotos) for(const [k,v] of Object.entries(d.fotos)) if(!fotoCache.has(k)){ await fotoPut(k,v); fotoQueue(k); }
-    if(d&&d.dateien) for(const [k,v] of Object.entries(d.dateien)) if(!DATEI_DA.has(k)&&v&&v.data) await dateiPut(k,{name:v.name,type:v.type,blob:dataUrlToBlob(v.data)});
+    if(d&&d.dateien) for(const [k,v] of Object.entries(d.dateien)) if(!ANH_DA.has(k)&&v&&v.data) await anhPut(k,{name:v.name,type:v.type,blob:dataUrlToBlob(v.data)});
     syncSoon(); render(); toast(`${neu} neu, ${akt} aktualisiert`);
   }catch(e){ toast("Die Datei ist keine gültige Sicherung"); }
 }
@@ -3646,7 +3641,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
 (async()=>{
   await dataLoad(); await einstLaden(); loginSync(); await Auth.init(); setMe();
   if(SYNC_ON&&!ME.signedIn) nav={v:"login"};
-  render(); protLaden().then(()=>{ if(nav.v==="bibliothek") render(); }); fotoInit(); dateiInit().then(()=>{ if(nav.v==="katmodell") render(); });
+  render(); protLaden().then(()=>{ if(nav.v==="bibliothek") render(); }); fotoInit(); anhInit().then(()=>{ if(nav.v==="katmodell") render(); });
   if(SYNC_ON&&ME.signedIn){ syncNow(); setInterval(()=>{ if(document.visibilityState==="visible") syncNow(); },60000);
     document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&Date.now()-(META.sync.last||0)>15000) syncSoon(); }); }
 })();
