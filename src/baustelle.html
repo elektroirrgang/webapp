@@ -437,7 +437,7 @@ body.is-login .topbar{display:none}
 .bitem .av{margin-top:2px}
 .bitem > .ic{align-self:center}
 .lt .b-stand{font-size:14px;color:var(--on-surface);margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
-.lt .b-von{display:flex;align-items:center;gap:4px;margin-top:2px}
+.lt .b-von,.lt .s.b-von{display:flex!important;align-items:center;gap:4px;margin-top:2px;white-space:nowrap}
 .lt .b-von .ic,.ek-k .ic{width:16px;height:16px}
 .filt{margin:12px 0 8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
 .filt .chip{flex:none;padding:4px 12px}
@@ -2291,7 +2291,7 @@ function bItem(b){
   const tm=b.termin&&b.termin.datum&&b.status!=="fertig"?pill(b.termin.datum<today()?"wip":"open",`Termin ${b.termin.datum===today()?"heute":new Date(b.termin.datum+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}${b.termin.zeit?`, ${b.termin.zeit}`:""}`):"";
   return `<div class="li bitem" role="button" tabindex="0" data-act="nav" data-v="baustelle" data-id="${esc(b.id)}"><span class="av">${icon("baustelle")}</span>
     <span class="lt"><span class="h">${esc(b.name)}</span>${zeile?`<span class="s">${esc(zeile)}</span>`:""}
-      ${e?`<span class="b-stand">${esc(e.stand||"")}</span><span class="s b-von">${icon("person")}${esc(vonText(e)||"–")} · ${esc(e.datum===today()?"heute":tagText(e.datum))}</span>`:`<span class="s">Noch keine Übergabe</span>`}
+      ${e?`${String(e.stand||"").trim()?`<span class="b-stand">${esc(e.stand)}</span>`:""}<span class="s b-von">${icon("person")}${esc(vonText(e)||"–")} · ${esc(e.datum===today()?"heute":tagText(e.datum))}</span>`:`<span class="s">Noch keine Übergabe</span>`}
       <span class="st">${tm}${b.status&&b.status!=="aktiv"?pill(b.status==="fertig"?"ok":"open",STATUS_TXT[b.status]):""}${e&&String(e.material||"").trim()?pill("wip","Material offen"):""}</span></span>${icon("chev")}</div>`;
 }
 function kundenKacheln(){ const q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
@@ -2437,7 +2437,7 @@ function kundenListe(){
 }
 function kundenView(){
   if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden und Standorte sind dieselben wie in EVSE – was dort angelegt ist, erscheint hier automatisch.</p></div>`;
-  return `<div class="narrow">${searchBar("Kunde, Kundennr. oder Ort suchen")}<div id="res">${kundenListe()}</div><p class="hint">Gemeinsame Kundendatenbank mit EVSE.</p></div>`;
+  return `<div class="narrow">${searchBar("Kunde, Kundennr. oder Ort suchen")}<div id="res">${kundenListe()}</div></div>`;
 }
 function kundeView(k){
   const ss=standorteVon(k.id), bs=live("baustellen").filter(b=>b.kundeId===k.id).sort((a,b)=>aktiv(b)-aktiv(a)), ed=canEdit(k);

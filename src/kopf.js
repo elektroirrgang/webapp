@@ -10,6 +10,14 @@ function kopfEinhaengen(){
   kuerzelMarken(); const sk=document.querySelector("#app > .sk, #app > .edk");
   slot.textContent="";
   if(!KOPF_BREIT.matches||!sk){ slot.hidden=true; document.body.classList.remove("kopf-oben"); return; }
+  /* iPad (Reiter oben): Seitentitel, der nur den gewählten Reiter wiederholt („Baustellen“ unter dem Reiter „Baustellen“), weglassen.
+     Bleiben rechts Knöpfe oder ein Untertitel, bleibt der Kopf ohne Titel stehen; sonst entfällt er ganz. */
+  if(!KOPF_PC.matches&&sk.classList.contains("sk")&&!sk.querySelector(".sk-zt")){ const h=sk.querySelector(".sk-t h1"), a=document.querySelector('#navbar [aria-current="page"]');
+    const gleich=h&&a&&h.textContent.trim().toLowerCase()===a.textContent.trim().toLowerCase();
+    if(gleich){ const rest=sk.querySelector(".sk-t p")||[...sk.children].some(c=>!c.classList.contains("sk-t")&&c.children.length+c.textContent.trim().length>0);
+      if(!rest){ sk.remove(); slot.hidden=true; document.body.classList.remove("kopf-oben"); document.body.classList.add("kopf-weg"); return; }
+      h.remove(); } }
+  document.body.classList.remove("kopf-weg");
   slot.appendChild(sk); slot.hidden=false; document.body.classList.add("kopf-oben");
   if(KOPF_PC.matches){ slot.classList.add("pc"); if(slot.parentNode!==row) row.insertBefore(slot,row.firstChild); }
   else { slot.classList.remove("pc"); if(slot.parentNode!==tb||slot.previousElementSibling!==row) row.after(slot); }

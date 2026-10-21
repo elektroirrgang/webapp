@@ -1613,7 +1613,7 @@ function kundenListe(){
 }
 function kundenView(){
   if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden und Standorte sind dieselben wie in den Apps EVSE und Baustelle.</p></div>`;
-  return `<div class="narrow">${searchBar("Kunde, Kundennr. oder Ort suchen")}<div id="res">${kundenListe()}</div><p class="hint">Gemeinsame Kundendatenbank aller Apps.</p></div>`;
+  return `<div class="narrow">${searchBar("Kunde, Kundennr. oder Ort suchen")}<div id="res">${kundenListe()}</div></div>`;
 }
 function kundeView(k){ const ss=standorteVon(k.id); return `<div class="narrow">${infoKarte(k,"kunden")}<div class="sec-lbl">Standorte</div>${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Noch kein Standort – über „Standort“ anlegen.</p>`}</div>`; }
 function standortView(s){ return `<div class="narrow">${infoKarte(s,"standorte")}</div>`; }
