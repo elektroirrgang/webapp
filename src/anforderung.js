@@ -209,7 +209,7 @@ function mlGeraetZeile(){ const geht=mlKannSys(), verw=geht&&Notification.permis
     :verw?"Im Browser blockiert – über das Schloss neben der Adresse wieder erlauben"
     :"Neue Aufträge, Zuweisungen und Notizen auch melden, wenn die App im Hintergrund offen ist";
   return `<div class="li" role="button" tabindex="0" data-act="mlPushUm"><span class="av">${icon("glocke")}</span><span class="lt"><span class="h">Benachrichtigungen auf diesem Gerät</span><span class="s">${esc(sub)}</span></span><span class="schalter${an?" an":""}" aria-hidden="true"><i></i></span></div>
-    <div class="li" role="button" tabindex="0" data-act="mlTest"><span class="av">${icon("send")}</span><span class="lt"><span class="h">Test-Benachrichtigung</span><span class="s">Kommt nach 10 Sekunden – vorher die App in den Hintergrund legen oder das Fenster minimieren</span></span>${icon("chev")}</div>`; }
+    ${mlTestZeile()}`; }
 document.addEventListener("click",async e=>{ const b=e.target.closest&&e.target.closest('[data-act="mlPushUm"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
   if(mlPushAn()){ mlLs(ML_PUSH,"0"); render(); toast("Benachrichtigungen auf diesem Gerät aus"); return; }
   if(!mlKannSys()){ toast("Dieser Browser kann keine Benachrichtigungen zeigen"); return; }
@@ -217,9 +217,27 @@ document.addEventListener("click",async e=>{ const b=e.target.closest&&e.target.
   if(p==="granted"){ mlLs(ML_PUSH,"1"); render(); toast("Benachrichtigungen an – du bekommst Bescheid, auch wenn die App im Hintergrund ist"); }
   else { render(); toast("Nicht erlaubt – im Browser bei dieser Seite Benachrichtigungen erlauben"); } },true);
 
-/* Test: nach 10 Sekunden Banner + (wenn eingeschaltet) System-Benachrichtigung */
+/* Tests: in 10 Sekunden oder in 60 Minuten. Der lange Test merkt sich den Zeitpunkt im Gerät und prüft alle 15 Sekunden,
+   ob er fällig ist – so sieht man, ob die App im Hintergrund weiterläuft (Text sagt, wie verspätet sie kam bzw. dass die App zwischendurch beendet war). */
+const ML_TEST="irrgang_ml_test";
+const mlUhr=t=>new Date(t).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+function mlTestLesen(){ try{ return JSON.parse(mlLs(ML_TEST)||"null"); }catch(e){ return null; } }
+async function mlTestZeigen(h,txt){ const m={id:"test",von:null,h,s:txt,t:Date.now()}; let sys=false; if(mlPushAn()) sys=await mlSystem([m]); if(!sys) mlBanner([m]); }
+const mlLaeuftSeit=Date.now();
+function mlTestPruefen(){ const T=mlTestLesen(); if(!T||Date.now()<T.f) return; mlLs(ML_TEST,"");
+  const zu=Math.round((Date.now()-T.f)/60000), neu=T.start<mlLaeuftSeit-1000? false : true;
+  const wie=T.min>=60?`${T.min/60} Std.`:`${T.min} Min.`;
+  const txt=`Gestartet ${mlUhr(T.start)}, fällig ${mlUhr(T.f)}, gekommen ${mlUhr(Date.now())}`+(!neu?` – erst beim Öffnen der App gekommen (${zu} Min. später), die App war zwischendurch beendet`:zu>=2?` – ${zu} Min. verspätet, die App war so lange angehalten`:" – pünktlich");
+  mlTestZeigen(`Test nach ${wie}`,txt); }
+setInterval(mlTestPruefen,15000); setTimeout(mlTestPruefen,3000);
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") setTimeout(mlTestPruefen,500); });
+function mlTestZeile(){ const T=mlTestLesen(), lang=T&&T.min>=60;
+  return `<div class="li" role="button" tabindex="0" data-act="mlTest" data-min="0"><span class="av">${icon("send")}</span><span class="lt"><span class="h">Test-Benachrichtigung</span><span class="s">Kommt nach 10 Sekunden – vorher die App in den Hintergrund legen oder das Fenster minimieren</span></span>${icon("chev")}</div>
+    <div class="li" role="button" tabindex="0" data-act="mlTest" data-min="60"><span class="av">${icon("send")}</span><span class="lt"><span class="h">Langzeit-Test (60 Minuten)</span><span class="s">${lang?`Läuft – fällig um ${mlUhr(T.f)}. Antippen bricht ab.`:"Prüft, ob Meldungen auch nach langer Zeit im Hintergrund kommen – App danach einfach liegen lassen"}</span></span>${icon("chev")}</div>`; }
 let mlTestT=null;
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="mlTest"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
-  clearTimeout(mlTestT); toast(mlPushAn()?"Kommt in 10 Sekunden – jetzt App wechseln oder Fenster minimieren":"Kommt in 10 Sekunden als Banner – für Meldungen im Hintergrund oben „Benachrichtigungen auf diesem Gerät“ einschalten");
-  mlTestT=setTimeout(async()=>{ const m={id:"test",von:null,h:"Test-Benachrichtigung",s:"So sieht eine Meldung aus – bei echten Meldungen öffnet Antippen den Auftrag.",t:Date.now()};
-    let sys=false; if(mlPushAn()) sys=await mlSystem([m]); if(!sys) mlBanner([m]); if(mlPushAn()&&!sys) toast("Das System hat die Benachrichtigung nicht angenommen"); },10000); },true);
+  const min=+b.dataset.min||0, hin=mlPushAn()?"":" – für Meldungen im Hintergrund oben „Benachrichtigungen auf diesem Gerät“ einschalten";
+  if(min){ const T=mlTestLesen(); if(T&&T.min>=60){ mlLs(ML_TEST,""); render(); toast("Langzeit-Test abgebrochen"); return; }
+    const jetzt=Date.now(); mlLs(ML_TEST,JSON.stringify({start:jetzt,f:jetzt+min*60000,min})); render(); toast(`Langzeit-Test läuft – kommt um ${mlUhr(jetzt+min*60000)}${hin}`); return; }
+  clearTimeout(mlTestT); toast(mlPushAn()?"Kommt in 10 Sekunden – jetzt App wechseln oder Fenster minimieren":"Kommt in 10 Sekunden als Banner"+hin);
+  mlTestT=setTimeout(()=>mlTestZeigen("Test-Benachrichtigung","So sieht eine Meldung aus – bei echten Meldungen öffnet Antippen den Auftrag."),10000); },true);
