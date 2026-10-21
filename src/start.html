@@ -1020,6 +1020,17 @@ body.kopf-oben .edk-platz{display:none!important}
 .kd-oben{display:grid;gap:16px;align-items:stretch}
 @media (min-width:900px){.kd-oben{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 .kd-oben .infok2{margin:0}
+.kd-oben .qa-row{justify-content:space-around;gap:8px}.kd-oben .qa{flex:1 1 0;width:auto;max-width:112px}
+.kd-karte .maplibregl-ctrl-top-right{margin:10px 10px 0 0}
+.kd-karte .maplibregl-ctrl-group{background:color-mix(in srgb,var(--surface) 88%,transparent);border-radius:20px;box-shadow:var(--schweben);overflow:hidden;margin:0}
+.kd-karte .maplibregl-ctrl-group button{width:40px;height:40px;border:0!important;background-color:transparent}
+.kd-karte .maplibregl-ctrl-group button+button{border-top:0}
+.kd-karte .maplibregl-ctrl-group button:hover{background-color:color-mix(in srgb,var(--on-surface) 8%,transparent)}
+:root[data-theme="dark"] .kd-karte .maplibregl-ctrl-icon{filter:invert(1)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .kd-karte .maplibregl-ctrl-icon{filter:invert(1)}}
+.kd-karte .maplibregl-cooperative-gesture-screen{font:inherit;font-size:15px;font-weight:600;border-radius:24px}
+.kd-zentr{position:absolute;z-index:3;right:10px;bottom:44px;width:40px;height:40px;border:0;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--surface) 88%,transparent);color:var(--primary);box-shadow:var(--schweben);cursor:pointer}
+.kd-zentr[hidden]{display:none} .kd-zentr .ic{width:22px;height:22px}
 .kd-karte{position:relative;min-height:280px;height:100%;border-radius:24px;overflow:hidden;background:var(--sc-low);color:var(--on-sv);isolation:isolate}
 .kd-slot{position:absolute;inset:0}
 .kd-karte .kd-map{position:absolute!important;inset:0;width:100%;height:100%}
@@ -2208,7 +2219,7 @@ function karteView(r,ss){
   const O=karteOrte(r,ss); if(!O.length) return `<div class="kd-karte leer"><span class="kd-lade">${icon("ort")}<span>Keine Adresse hinterlegt</span></span></div>`;
   const w=O.find(x=>x.id===karteWahl[r.id])||O[0];
   setTimeout(()=>karteLaden(w.a),0);
-  return `<div class="kd-karte" id="kdKarte" data-a="${esc(w.a)}"><div class="kd-slot"></div><span class="kd-lade">${icon("ort")}</span>
+  return `<div class="kd-karte" id="kdKarte" data-a="${esc(w.a)}"><div class="kd-slot"></div><span class="kd-lade">${icon("ort")}</span><button class="kd-zentr" data-act="karteZentr" hidden title="Zurück zum Ort" aria-label="Zurück zum Ort">${icon("ort")}</button>
     ${O.length>1?`<div class="kd-orte">${O.map(x=>`<button class="kd-ort" data-act="karteOrt" data-r="${esc(r.id)}" data-id="${esc(x.id)}" aria-pressed="${x===w}">${esc(x.t)}</button>`).join("")}</div>`:""}</div>`;
 }
 function karteLib(){
@@ -2224,25 +2235,37 @@ async function karteGeo(a){
   const g=j&&j[0]?{lat:+j[0].lat,lon:+j[0].lon}:{nix:1}; META.geo[a]=g; metaSave(); return g;
 }
 const karteFehler=(el,t)=>{ const l=el.querySelector(".kd-lade"); if(l){ l.innerHTML=`${icon("ort")}<span>${esc(t)}</span>`; l.hidden=false; } };
+/* Kartenstile: hell = farbige Karte (OpenFreeMap „Liberty“), dunkel = Luftbild (Esri World Imagery) */
+const karteStil=st=>st==="satellit"?{version:8,sources:{sat:{type:"raster",tileSize:256,maxzoom:19,tiles:["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+  attribution:"Luftbild © Esri, Maxar, Earthstar Geographics"}},layers:[{id:"sat",type:"raster",source:"sat",paint:{"raster-brightness-max":.92}}]}:"https://tiles.openfreemap.org/styles/"+st;
+const karteGrenze=c=>[[c[0]-.022,c[1]-.014],[c[0]+.022,c[1]+.014]];
 async function karteLaden(a){
   const el=document.getElementById("kdKarte"); if(!el||el.dataset.a!==a) return;
   let g; try{ g=await karteGeo(a); }catch(e){ return karteFehler(el,"Karte gerade nicht erreichbar"); }
   if(g.nix) return karteFehler(el,"Adresse auf der Karte nicht gefunden");
   try{ await karteLib(); }catch(e){ return karteFehler(el,"Karte gerade nicht erreichbar"); }
   const el2=document.getElementById("kdKarte"); if(!el2||el2.dataset.a!==a) return;
-  const slot=el2.querySelector(".kd-slot"), stil="liberty", c=[g.lon,g.lat];
+  const slot=el2.querySelector(".kd-slot"), stil=kDunkel()?"satellit":"liberty", c=[g.lon,g.lat];
   if(!KARTE.map){
     KARTE.el=document.createElement("div"); KARTE.el.className="kd-map"; slot.appendChild(KARTE.el); KARTE.stil=stil;
-    KARTE.map=new maplibregl.Map({container:KARTE.el,style:"https://tiles.openfreemap.org/styles/"+stil,center:c,zoom:15.2,interactive:false,attributionControl:false,fadeDuration:0});
+    /* Umschauen erlaubt, aber nur in der Nähe: Zoom 13,5–18,5 und ca. 1,5 km um den Ort. Finger: mit zwei Fingern, PC: Strg/⌘ + Mausrad oder +/− */
+    KARTE.map=new maplibregl.Map({container:KARTE.el,style:karteStil(stil),center:c,zoom:15.2,minZoom:13.5,maxZoom:18.5,maxBounds:karteGrenze(c),
+      dragRotate:false,pitchWithRotate:false,touchPitch:false,keyboard:false,cooperativeGestures:true,attributionControl:false,fadeDuration:0,
+      locale:{"CooperativeGesturesHandler.WindowsHelpText":"Zum Zoomen Strg + Mausrad – oder + und −","CooperativeGesturesHandler.MacHelpText":"Zum Zoomen ⌘ + Mausrad – oder + und −","CooperativeGesturesHandler.MobileHelpText":"Mit zwei Fingern verschieben und zoomen",
+        "NavigationControl.ZoomIn":"Vergrößern","NavigationControl.ZoomOut":"Verkleinern"}});
+    KARTE.map.touchZoomRotate.disableRotation();
     KARTE.map.addControl(new maplibregl.AttributionControl({compact:true}),"bottom-right");
+    KARTE.map.addControl(new maplibregl.NavigationControl({showCompass:false}),"top-right");
+    KARTE.map.on("moveend",()=>{ const z=document.querySelector("#kdKarte .kd-zentr"); if(!z||!KARTE.mk) return; const m=KARTE.map.project(KARTE.mk.getLngLat()), cc=KARTE.map.project(KARTE.map.getCenter());
+      z.hidden=Math.hypot(m.x-cc.x,m.y-cc.y)<30&&Math.abs(KARTE.map.getZoom()-15.2)<.3; });
     /* falls der dunkle Kartenstil nicht lädt: hellen nehmen */
-    KARTE.map.on("error",ev=>{ if(KARTE.stil!=="positron"&&!KARTE.map.isStyleLoaded()&&!KARTE.ersatz){ KARTE.ersatz=1; KARTE.stil="positron"; KARTE.map.setStyle("https://tiles.openfreemap.org/styles/positron"); } });
+    KARTE.map.on("error",ev=>{ if(KARTE.stil==="liberty"&&!KARTE.map.isStyleLoaded()&&!KARTE.ersatz){ KARTE.ersatz=1; KARTE.stil="positron"; KARTE.map.setStyle(karteStil("positron")); } });
     if(window.ResizeObserver) new ResizeObserver(()=>{ if(KARTE.map&&KARTE.el.isConnected) KARTE.map.resize(); }).observe(KARTE.el);
     const m=document.createElement("div"); m.className="kd-pin"; KARTE.mk=new maplibregl.Marker({element:m,anchor:"bottom"}).setLngLat(c).addTo(KARTE.map);
   } else {
     slot.appendChild(KARTE.el); KARTE.map.resize();
-    if(KARTE.stil!==stil){ KARTE.stil=stil; KARTE.map.setStyle("https://tiles.openfreemap.org/styles/"+stil); }
-    const alt=KARTE.mk.getLngLat(); KARTE.mk.setLngLat(c);
+    if(KARTE.stil!==stil){ KARTE.stil=stil; KARTE.map.setStyle(karteStil(stil)); }
+    const alt=KARTE.mk.getLngLat(); KARTE.mk.setLngLat(c); KARTE.map.setMaxBounds(karteGrenze(c));
     if(Math.abs(alt.lng-c[0])+Math.abs(alt.lat-c[1])>1e-6) KARTE.map.easeTo({center:c,duration:500}); else KARTE.map.jumpTo({center:c});
   }
   const l=el2.querySelector(".kd-lade"); if(l) l.hidden=true;
@@ -2481,6 +2504,7 @@ document.addEventListener("click",async ev=>{
   case "ktRolleWahl": { const i=document.getElementById("f_ktRolle"); if(i){ i.value=b.dataset.v; i.dispatchEvent(new Event("input",{bubbles:true})); i.parentElement.classList.add("fl"); } return; }
   case "ktSave": ktSpeichern(false); return;
   case "ktDel": ktSpeichern(true); return;
+  case "karteZentr": if(KARTE.map&&KARTE.mk) KARTE.map.easeTo({center:KARTE.mk.getLngLat(),zoom:15.2,duration:500}); return;
   case "karteOrt": karteWahl[b.dataset.r]=b.dataset.id; render(); return;
   case "bauNeu": { if(!ME.admin) return; if(b.dataset.kind==="standorte"){ const st=standortOf(b.dataset.id); if(st) bauDialog(st.kundeId,st.id); } else bauDialog(b.dataset.id); return; }
   case "bauSave": bauSpeichern(); return;
