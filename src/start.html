@@ -1050,7 +1050,7 @@ body.kopf-oben .edk-platz{display:none!important}
 .kd-poi{display:flex;align-items:center;gap:5px;height:26px;padding:0 9px 0 3px;border-radius:13px;background:var(--kk);color:var(--on-surface);box-shadow:var(--e1);font-size:11.5px;font-weight:650;white-space:nowrap;pointer-events:auto;cursor:default}
 .kd-poi i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--poi,#5F6368);color:#fff;flex:none}
 .kd-poi i svg{width:13px;height:13px;fill:currentColor}
-.kd-karte.fern .kd-poi{padding:0 3px} .kd-karte.fern .kd-poi span{display:none}
+.kd-karte.fern .kd-poi:not(.zeig){padding:0 3px} .kd-karte.fern .kd-poi:not(.zeig) span{display:none} .kd-poi.zeig{z-index:3}
 .kd-karte{position:relative;min-height:280px;height:100%;border-radius:24px;overflow:hidden;background:var(--sc-low);color:var(--on-sv);isolation:isolate}
 .kd-slot{position:absolute;inset:0}
 .kd-karte .kd-map{position:absolute!important;inset:0;width:100%;height:100%}
@@ -2288,6 +2288,7 @@ async function kartePoi(g,a){ (KARTE.poi||[]).forEach(m=>m.remove()); KARTE.poi=
   let L=[]; try{ L=await kartePoiHolen(g); }catch(e){ console.warn("Anhaltspunkte:",e.message); KARTE.poiA=null; return; }
   const el=document.getElementById("kdKarte"); if(!el||el.dataset.a!==a||!KARTE.map) return;
   KARTE.poi=L.map(x=>{ const [t,f,pfad]=POI_ART[x.art], d=document.createElement("div"); d.className="kd-poi"; d.title=`${t}: ${x.n}`;
+    d.addEventListener("click",e=>{ e.stopPropagation(); const an=!d.classList.contains("zeig"); document.querySelectorAll(".kd-poi.zeig").forEach(x=>x.classList.remove("zeig")); d.classList.toggle("zeig",an); });
     d.innerHTML=`<i style="--poi:${f}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${pfad}"/></svg></i><span>${esc(x.n)}</span>`;
     return new maplibregl.Marker({element:d,anchor:"left",offset:[-13,0]}).setLngLat([x.lon,x.lat]).addTo(KARTE.map); });
   if(KARTE.mk){ const p=KARTE.mk.getElement(); p.parentNode&&p.parentNode.appendChild(p); } }
