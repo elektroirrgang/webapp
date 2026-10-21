@@ -2374,7 +2374,9 @@ function ekZeigen(e){
   const h=$("#dlg h2"); if(h) h.outerHTML=`<div class="ek-kopf"><h2>${esc(tagText(e.datum))}</h2><span class="ek-kns">${k("teilen","share","Teilen")}${canEdit(e)?k("eintragEdit","edit","Bearbeiten"):""}${k("cancel","close","Schließen")}</span></div>`;
   EK_DLG=e.id;
 }
-let EK_DLG=null;
+let EK_DLG=null, EK_BACK=null;
+/* nach dem Bearbeiten aus dem Übergabe-Fenster: zurück an dieselbe Stelle der Baustelle und das Fenster wieder öffnen */
+function ekWiederOeffnen(){ const z=EK_BACK; EK_BACK=null; if(!z) return; scrollTo(0,z.y); const r=DB.eintraege.get(z.id); if(r&&!r.deleted&&nav.v==="baustelle") ekZeigen(r); }
 function baustelleView(b){
   const s=standortOf(b.standortId), kd=!s&&kundeOf(b.kundeId), E=eintraegeVon(b.id);
   let h=`<div class="narrow">`;
@@ -2433,7 +2435,7 @@ function entwNeu(b,e){
   entw._neueFotos=[]; ED.st=e?"ok":"leer"; go({v:"eintrag"});
 }
 function entwVerwerfen(){ clearTimeout(eTimer); if(entw){ fotoDel(entw._neueFotos||[]); if(entw._neu&&entw.id){ const r=DB.eintraege.get(entw.id); if(r&&!r.deleted){ r.deleted=true; r.fotos=[]; saveRec("eintraege",r); } } }
-  entw=null; const z=entwZurueck; entwZurueck=null; go(z||{v:"start"}); }
+  entw=null; const z=entwZurueck; entwZurueck=null; go(z||{v:"start"}); ekWiederOeffnen(); }
 /* Übergabe speichert beim Tippen selbst (wie Notizen). Neu angelegt wird erst, wenn etwas drinsteht. */
 let eTimer=null;
 const eMatSauber=L=>(L||[]).filter(x=>String(x.t||"").trim()).map(x=>({t:String(x.t).trim(),q:x.q,u:x.u,ok:!!x.ok,okVon:x.okVon||null}));
@@ -2456,8 +2458,8 @@ function entwFertig(ziel,ohneGo){ if(!entw) return; const e=entw, ok=eSpeichernS
   if(ok){ const r=DB.eintraege.get(e.id); if(r){ matStammMerken(r.mat); anfAusUebergabe(r); }
     if(e._neu){ const b=DB.baustellen.get(e.baustelleId); if(b&&b.status==="pausiert"){ b.status="aktiv"; saveRec("baustellen",b); } } }
   else if(e._neu&&e.id){ const r=DB.eintraege.get(e.id); if(r&&!r.deleted){ r.deleted=true; saveRec("eintraege",r); } }
-  entw=null; const z=entwZurueck; entwZurueck=null; if(ohneGo) return;
-  go(ziel||z||{v:"baustelle",id:e.baustelleId}); if(ok&&e._neu) toast("Übergabe gespeichert"); }
+  entw=null; const z=entwZurueck; entwZurueck=null; if(ohneGo||ziel){ EK_BACK=null; if(ohneGo) return; }
+  go(ziel||z||{v:"baustelle",id:e.baustelleId}); if(ok&&e._neu) toast("Übergabe gespeichert"); ekWiederOeffnen(); }
 async function entwFotoAufnehmen(el){
   const f=el.files[0]; el.value=""; if(!f||!entw) return;
   let data; try{ data=await fotoVerkleinern(f); }catch(e){ toast("Das Bild konnte nicht gelesen werden"); return; }
@@ -3039,9 +3041,9 @@ document.addEventListener("click",ev=>{
   case "afNeu": anfDialog(nav.v==="baustelle"?nav.id:""); return;
   case "afOk": anfSpeichern(); return;
   case "neuerEintrag": entwNeu(DB.baustellen.get(nav.id)); return;
-  case "eintragEdit": { const e=DB.eintraege.get(b.dataset.id); if(e&&canEdit(e)){ closeOverlays(); EK_DLG=null; } if(e&&canEdit(e)) entwNeu(DB.baustellen.get(e.baustelleId),e); return; }
+  case "eintragEdit": { const e=DB.eintraege.get(b.dataset.id); if(e&&canEdit(e)){ EK_BACK=!$("#dlg").hidden&&$("#dlg").querySelector(".ek-dlg")?{id:e.id,y:scrollY}:null; closeOverlays(); EK_DLG=null; } if(e&&canEdit(e)) entwNeu(DB.baustellen.get(e.baustelleId),e); return; }
   case "eintragDelAsk": confirmDlg("Übergabe löschen?","Diese Übergabe mit ihren Fotos löschen?","Löschen","eintragDel"); return;
-  case "eintragDel": { clearTimeout(eTimer); const e=DB.eintraege.get(entw&&entw.id); closeOverlays(); if(!e||!canEdit(e)) return; fotoDel([...(e.fotos||[]),...(entw._neueFotos||[])]); e.deleted=true; e.fotos=[]; saveRec("eintraege",e); entw=null; const z=entwZurueck; entwZurueck=null; go(z||{v:"start"}); toast("Übergabe gelöscht"); return; }
+  case "eintragDel": { EK_BACK=null; clearTimeout(eTimer); const e=DB.eintraege.get(entw&&entw.id); closeOverlays(); if(!e||!canEdit(e)) return; fotoDel([...(e.fotos||[]),...(entw._neueFotos||[])]); e.deleted=true; e.fotos=[]; saveRec("eintraege",e); entw=null; const z=entwZurueck; entwZurueck=null; go(z||{v:"start"}); toast("Übergabe gelöscht"); return; }
   case "entwSave": case "edFertig": if(nav.v==="notiz") notizFertig(); else entwFertig(); return;
   case "entwVerwerfen": closeOverlays(); entwVerwerfen(); return;
   case "entwVerwerfenAsk": confirmDlg("Übergabe verwerfen?","Alles, was du hier eingetragen hast, wird entfernt.","Verwerfen","entwVerwerfen"); return;
