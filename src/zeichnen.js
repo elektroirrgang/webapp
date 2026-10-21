@@ -233,7 +233,15 @@ function zgRasterTeile(r,y0,y1,xa=0,xb=1000,rk=1,frei=false){ const t=r.raster; 
     for(let c=Math.floor((y0-xb*s)/g)*g;c<=y1-xa*s+g;c+=g) mittel+=`M${xa} ${zgR(c+xa*s)}L${xb} ${zgR(c+xb*s)}`;
     for(let c=Math.floor((y0+xa*s)/g)*g;c<=y1+xb*s+g;c+=g) mittel+=`M${xa} ${zgR(c-xa*s)}L${xb} ${zgR(c-xb*s)}`; }
   return {farbe,teile:[{d:fein,w:.6*wm,a:.5*am},{d:mittel,w:1*wm,a:am},{d:stark,w:1.5*wm,a:Math.min(1,am*1.15)},{d:punkte,f:1,a:am}].filter(x=>x.d)}; }
-function zgRasterSvg(b,y0,y1,o){ o=o||{}; const r=zgRasterTeile(b,y0,y1,o.xa==null?-2000:o.xa,o.xb==null?3000:o.xb); if(!r) return ""; const ns=o.fein?` vector-effect="non-scaling-stroke"`:"";
+/* Raster als SVG für Vorschauen. Große Whiteboards hatten sonst Hunderttausende Punkte/Linien im Bild – das legte Safari am iPad lahm
+   (Notizen-Liste lud ewig, Flächen blieben schwarz). Punkte daher als Muster (ein Punkt, gekachelt), andere Raster ab einer Grenze weglassen. */
+let ZG_PID=0;
+function zgRasterSvg(b,y0,y1,o){ o=o||{}; const xa=o.xa==null?-2000:o.xa, xb=o.xb==null?3000:o.xb, t=b.raster; if(!t) return "";
+  const g=b.rmm?b.rmm*ZG_MM:40, W=xb-xa, H=y1-y0;
+  if(t==="punkte"&&(W/g)*(H/g)>1500){ const r=zgRasterTeile(b,0,g,0,g); if(!r) return ""; const x=r.teile.find(z=>z.f), rs=b.rs==null?1:b.rs, wm=[.85,1.15,1.7][rs]||1.15, rad=zgR(1.3+wm), id="zgp"+(++ZG_PID), ya=Math.max(y0,0);
+    return y1<=ya?"":`<defs><pattern id="${id}" patternUnits="userSpaceOnUse" x="0" y="0" width="${zgR(g)}" height="${zgR(g)}"><circle cx="${zgR(g/2)}" cy="${zgR(g/2)}" r="${rad}" fill="${r.farbe}" fill-opacity="${zgR(x?x.a:.85)}"/></pattern></defs><rect x="${zgR(xa)}" y="${zgR(ya)}" width="${zgR(W)}" height="${zgR(y1-ya)}" fill="url(#${id})"/>`; }
+  if(t!=="punkte"&&(t==="mm"?(W+H)/ZG_MM:(W+H)/g*(t==="iso"?3:1))>1500) return "";
+  const r=zgRasterTeile(b,y0,y1,xa,xb); if(!r) return ""; const ns=o.fein?` vector-effect="non-scaling-stroke"`:"";
   return r.teile.map(x=>x.f?`<path d="${x.d}" fill="${r.farbe}" fill-opacity="${zgR(x.a)}"/>`:`<path d="${x.d}" fill="none" stroke="${r.farbe}" stroke-width="${o.fein?zgR(x.w*.9):zgR(x.w)}" stroke-opacity="${zgR(x.a)}"${ns}/>`).join(""); }
 
 /* --- Vorschau (SVG) --- */
