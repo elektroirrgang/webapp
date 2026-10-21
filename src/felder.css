@@ -117,7 +117,7 @@
 .bb-mappe .op{fill:#FBFBFA} .bb-mappe .op2{fill:#E9E9E6}
 .bb-mappe .of{fill:var(--o)}
 .bb-mappe .ol{stroke:#fff;opacity:.35}
-.bb-mappe .os{fill:#fff;opacity:.92} .bb-mappe.hell .os{fill:color-mix(in srgb,var(--o) 45%,#000);opacity:.8}
+.bb-mappe .os{fill:color-mix(in srgb,var(--o) 58%,#000);opacity:.8} .bb-mappe .osl{fill:#fff;opacity:.4}
 .bb-mn{display:flex;align-items:center;justify-content:center;max-width:100%;margin-top:6px}
 .bb-mt{border:0;background:none;padding:2px 0;font:inherit;font-size:15px;font-weight:650;color:var(--on-surface);cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bb-mm{flex:none;width:28px;height:28px;border:0;border-radius:50%;background:none;color:var(--on-sv);display:grid;place-items:center;cursor:pointer;margin-left:2px}

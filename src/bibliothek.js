@@ -62,7 +62,7 @@ const BB_SYM={stern:"M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8
   baustelle:"M13.78 15.3L19.78 21.3L21.89 19.14L15.89 13.14L13.78 15.3M17.5 10.1C17.11 10.1 16.69 10.05 16.36 9.91L4.97 21.25L2.86 19.14L10.27 11.74L8.5 9.96L7.78 10.66L6.33 9.25V12.11L5.63 12.81L2.11 9.25L2.81 8.55H5.62L4.22 7.14L7.78 3.58C8.95 2.41 10.83 2.41 12 3.58L9.89 5.74L11.3 7.14L10.59 7.85L12.38 9.63L14.2 7.75C14.06 7.42 14 7 14 6.63C14 4.66 15.56 3.11 17.5 3.11C18.09 3.11 18.61 3.25 19.08 3.53L16.41 6.2L17.91 7.7L20.58 5.03C20.86 5.5 21 6 21 6.63C21 8.55 19.45 10.1 17.5 10.1Z"};
 const BB_SYM_WAHL=["stern","blitz","wallbox","haus","firma","fabrik","laden","apotheke","schule","kirche","sonne","werkzeug","herz"];
 const bbFarbe=f=>(BB_FARBEN.find(x=>x[0]===f)||BB_FARBEN[0])[2];
-/* Ordner-Bild im GoodNotes-Stil: Rückwand mit weicher Lasche, ein Blatt Papier schaut heraus, Vorderseite mit sanftem Verlauf, Symbol hell eingeprägt */
+/* Ordner-Bild im GoodNotes-Stil: Rückwand mit weicher Lasche, ein Blatt Papier schaut heraus, Vorderseite mit sanftem Verlauf, Symbol eingeprägt (dunkel mit heller Unterkante) */
 let BB_GID=0;
 const BB_HELL=new Set(["papier","gelb"]);
 function bbOrdnerBild(farbe,sym){ const g="bbg"+(++BB_GID), f=BB_FARBEN.some(x=>x[0]===farbe)?farbe:"papier";
@@ -72,7 +72,7 @@ function bbOrdnerBild(farbe,sym){ const g="bbg"+(++BB_GID), f=BB_FARBEN.some(x=>
     <rect class="op2" x="15" y="20" width="90" height="46" rx="5" transform="rotate(-3 60 43)"/><rect class="op" x="13" y="22" width="94" height="46" rx="5"/>
     <rect class="of" x="2" y="32" width="116" height="64" rx="12"/><rect x="2" y="32" width="116" height="64" rx="12" fill="url(#${g})"/>
     <path class="ol" d="M14 32.6h92a11.4 11.4 0 0 1 11.4 11.4" fill="none" stroke-width="1.2"/>
-    ${sym&&BB_SYM[sym]?`<svg x="45" y="49" width="30" height="30" viewBox="0 0 24 24"><path class="os" d="${BB_SYM[sym]}"/></svg>`:""}</svg>`; }
+    ${sym&&BB_SYM[sym]?`<svg x="45" y="49.8" width="30" height="30" viewBox="0 0 24 24"><path class="osl" d="${BB_SYM[sym]}"/></svg><svg x="45" y="49" width="30" height="30" viewBox="0 0 24 24"><path class="os" d="${BB_SYM[sym]}"/></svg>`:""}</svg>`; }
 function bbStilFenster(btn,kid){
   document.getElementById("fpop")?.remove(); document.getElementById("fpopBg")?.remove();
   const k=DB.kunden&&DB.kunden.get(kid); if(!k) return;
@@ -97,7 +97,9 @@ function bbOrdner(L,zeile){
       <div class="bb-mn"><button class="bb-mt" data-act="bbOrdner" ${attrs}>${esc(name)}</button>${menuK?`<button class="bb-mm" data-act="bbStil" data-k="${esc(menuK)}" aria-label="Ordner gestalten" title="Farbe und Symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>`:""}</div>
       <small>${esc([art,`${G.length} ${G.length===1?"Datei":"Dateien"}`,t&&tag(t)].filter(Boolean).join(" · "))}</small></div>`; };
   const kStil=k=>{ const r=k!==BB_OHNE&&bbKunde(k); return {stil:(r&&r.ordner)||{},darf:!!(r&&(typeof kdDarf==="function"?kdDarf(r):typeof canEdit==="function"&&canEdit(r)))}; };
-  const nach=(a,b)=>a[2].localeCompare(b[2],"de",{numeric:true});
+  /* gleich heißende Kunden bleiben getrennte Ordner (Schlüssel ist der Kunde selbst); Reihenfolge dann nach Kundennummer */
+  const kdnr=id=>String((bbKunde(id)||{}).kdnr||"");
+  const nach=(a,b)=>a[2].localeCompare(b[2],"de",{numeric:true})||kdnr(a[0]).localeCompare(kdnr(b[0]),"de",{numeric:true})||String(a[0]).localeCompare(String(b[0]));
   if(!BB_ORT.k||!L.some(x=>kk(x)===BB_ORT.k)){ BB_ORT={k:null,u:null};
     const M=new Map(); L.forEach(x=>{ const k=kk(x); if(!M.has(k)) M.set(k,[]); M.get(k).push(x); });
     const O=[...M].map(([k,G])=>[k,G,kn(k)]).sort((a,b)=>(a[0]===BB_OHNE)-(b[0]===BB_OHNE)||nach(a,b));
@@ -120,7 +122,7 @@ function bibListe(){
   const A=bbEintraege(), zahl=a=>a==="alle"?A.length:A.filter(x=>x.art===a).length;
   if(!A.length) return `<div class="empty bib-leer">${icon("folder")}<h2>Noch nichts in der Bibliothek</h2><p>Hier landen fertige Prüfprotokolle aus EVSE, Berichte aus Baustelle sowie Dokumente und Fotos aus den Kundenablagen.</p></div>`;
   const chips=`<div class="chips bib-chips">${BB_ART.filter(([a])=>a==="alle"||zahl(a)).map(([a,t])=>`<button class="chip" data-act="bbArt" data-v="${a}" aria-pressed="${art===a}">${esc(t)}<span class="chip-n">${zahl(a)}</span></button>`).join("")}</div>`;
-  const L=A.filter(x=>(art==="alle"||x.art===art)&&(ku==="alle"||x.kundeId===ku)&&(!q||H(x.titel)||H(x.kunde)||H(x.info)));
+  const L=A.filter(x=>(art==="alle"||x.art===art)&&(ku==="alle"||x.kundeId===ku)&&(!q||H(x.titel)||H(x.kunde)||H(x.info)||H((bbKunde(x.kundeId)||{}).kdnr)));
   L.sort(so==="alt"?(a,b)=>a.t-b.t:so==="name"?(a,b)=>String(a.titel).localeCompare(String(b.titel),"de",{numeric:true}):so==="kunde"?(a,b)=>String(a.kunde||"~").localeCompare(String(b.kunde||"~"),"de")||b.t-a.t:(a,b)=>b.t-a.t);
   const info=bbAktiv()?`<p class="meta f-info">${L.length} ${L.length===1?"Eintrag":"Einträge"}${ku!=="alle"?` · ${esc((bbKunde(ku)||{}).name||"")}`:""} <button class="btn-text inl" data-act="bbReset">Filter aufheben</button></p>`:"";
   if(!L.length) return chips+info+`<div class="empty bib-leer klein">${icon("search")}<h2>Nichts gefunden</h2><p>Andere Suche oder anderen Filter versuchen.</p></div>`;
