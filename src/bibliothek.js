@@ -62,8 +62,17 @@ const BB_SYM={stern:"M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8
   baustelle:"M13.78 15.3L19.78 21.3L21.89 19.14L15.89 13.14L13.78 15.3M17.5 10.1C17.11 10.1 16.69 10.05 16.36 9.91L4.97 21.25L2.86 19.14L10.27 11.74L8.5 9.96L7.78 10.66L6.33 9.25V12.11L5.63 12.81L2.11 9.25L2.81 8.55H5.62L4.22 7.14L7.78 3.58C8.95 2.41 10.83 2.41 12 3.58L9.89 5.74L11.3 7.14L10.59 7.85L12.38 9.63L14.2 7.75C14.06 7.42 14 7 14 6.63C14 4.66 15.56 3.11 17.5 3.11C18.09 3.11 18.61 3.25 19.08 3.53L16.41 6.2L17.91 7.7L20.58 5.03C20.86 5.5 21 6 21 6.63C21 8.55 19.45 10.1 17.5 10.1Z"};
 const BB_SYM_WAHL=["stern","blitz","wallbox","haus","firma","fabrik","laden","apotheke","schule","kirche","sonne","werkzeug","herz"];
 const bbFarbe=f=>(BB_FARBEN.find(x=>x[0]===f)||BB_FARBEN[0])[2];
-/* Ordner-Bild: hinten mit Lasche, vorne heller, Symbol eingeprägt */
-const bbOrdnerBild=(farbe,sym)=>`<svg class="bb-mappe" viewBox="0 0 120 92" style="--o:${bbFarbe(farbe)}" aria-hidden="true"><path class="ob" d="M4 14a9 9 0 0 1 9-9h27.5a9 9 0 0 1 6.8 3.1L52 13h55a9 9 0 0 1 9 9v57a9 9 0 0 1-9 9H13a9 9 0 0 1-9-9z"/><rect class="of" x="4" y="24" width="112" height="64" rx="10"/><rect class="ol" x="6" y="25" width="108" height="2" rx="1"/>${sym&&BB_SYM[sym]?`<svg x="44" y="40" width="32" height="32" viewBox="0 0 24 24"><path class="os" d="${BB_SYM[sym]}"/></svg>`:""}</svg>`;
+/* Ordner-Bild im GoodNotes-Stil: Rückwand mit weicher Lasche, ein Blatt Papier schaut heraus, Vorderseite mit sanftem Verlauf, Symbol hell eingeprägt */
+let BB_GID=0;
+const BB_HELL=new Set(["papier","gelb"]);
+function bbOrdnerBild(farbe,sym){ const g="bbg"+(++BB_GID), f=BB_FARBEN.some(x=>x[0]===farbe)?farbe:"papier";
+  return `<svg class="bb-mappe${BB_HELL.has(f)?" hell":""}" viewBox="0 0 120 96" style="--o:${bbFarbe(f)}" aria-hidden="true">
+    <defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".45" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#000" stop-opacity=".06"/></linearGradient></defs>
+    <path class="ob" d="M2 20a12 12 0 0 1 12-12h25c3.6 0 5.8 1.3 8 3.7l2.6 2.8c1.9 2 3.9 3.5 7.4 3.5H106a12 12 0 0 1 12 12v54a12 12 0 0 1-12 12H14A12 12 0 0 1 2 84z"/>
+    <rect class="op2" x="15" y="20" width="90" height="46" rx="5" transform="rotate(-3 60 43)"/><rect class="op" x="13" y="22" width="94" height="46" rx="5"/>
+    <rect class="of" x="2" y="32" width="116" height="64" rx="12"/><rect x="2" y="32" width="116" height="64" rx="12" fill="url(#${g})"/>
+    <path class="ol" d="M14 32.6h92a11.4 11.4 0 0 1 11.4 11.4" fill="none" stroke-width="1.2"/>
+    ${sym&&BB_SYM[sym]?`<svg x="45" y="49" width="30" height="30" viewBox="0 0 24 24"><path class="os" d="${BB_SYM[sym]}"/></svg>`:""}</svg>`; }
 function bbStilFenster(btn,kid){
   document.getElementById("fpop")?.remove(); document.getElementById("fpopBg")?.remove();
   const k=DB.kunden&&DB.kunden.get(kid); if(!k) return;
