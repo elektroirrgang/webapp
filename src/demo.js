@@ -60,14 +60,38 @@ function demoDaten(){
   const protokolle=pruefungen.filter(x=>x.pdfAblage).map(x=>{ const k=kunden.find(y=>y.id===x.kundeId), s=standorte.find(y=>y.id===x.standortId);
     return r({id:"demo-pa-"+x.id,app:"evse",bib:"pdf",pfad:"demo.pdf",pruefungId:x.id,kundeId:x.kundeId,standortId:x.standortId||"",name:"Prüfprotokoll "+x.p.datum,titel:[k&&k.name,s&&s.name].filter(Boolean).join(" · "),
       datum:x.p.datum,art:x.p.art,pruefer:x.p.pruefer,ergebnis:"ok",von:x.createdBy},x.createdBy,x.created); });
-  return {kunden,standorte,baustellen,eintraege,vorgaenge,anforderungen,pruefungen,protokolle};
+  /* Baustellen-Berichte und ein Prüfprotokoll mit Mängeln (PDF wird beim Öffnen erzeugt) */
+  protokolle.forEach(x=>{ if(x.pruefungId==="demo-p2"){ x.ergebnis="bad"; x.maengel=true; } });
+  protokolle.push(
+    r({id:"demo-pa-b1",app:"baustelle",bib:"baustellen",pfad:"demo.pdf",kundeId:"demo-k4",baustelleId:"demo-b1",name:"Aufnahme Familie Hoffmann Neubau EFH",titel:"Familie Hoffmann · Elektroinstallation Neubau EFH",datum:tag(-19),art:"Aufnahmeprotokoll",auftragsnr:"A-24117",von:P.ai},P.ai,vor(19)),
+    r({id:"demo-pa-b2",app:"baustelle",bib:"baustellen",pfad:"demo.pdf",kundeId:"demo-k2",standortId:"demo-s1",baustelleId:"demo-b2",name:"Aufnahme Autohaus Bergland Ladeinfrastruktur",titel:"Autohaus Bergland GmbH · Ladeinfrastruktur Werkstatt",datum:tag(-13),art:"Aufnahmeprotokoll",auftragsnr:"A-24121",von:P.ms},P.ms,vor(13)));
+  /* Notizen: für die ganze Firma, für bestimmte Personen, ein Whiteboard */
+  const nid=(()=>{ let i=0; return ()=>"demo-nb"+(++i); })();
+  const notizen=[
+    r({id:"demo-n-firma1",titel:"Wichtig für alle",sicht:"firma",personen:[],baustelleId:"",bloecke:[{id:nid(),typ:"text",text:"Lagerschlüssel hängt ab sofort im Büro am Brett. Fahrzeuge bitte abends volltanken."},
+      {id:nid(),typ:"check",items:[{id:nid(),t:"Fahrzeugcheck Montag",ok:true},{id:nid(),t:"Prüfgeräte zur Kalibrierung (Wiha MFT one)",ok:false},{id:nid(),t:"Leiter Sprinter 2 tauschen",ok:false}]}]},P.bu,vor(1,4)),
+    r({id:"demo-n-firma2",titel:"Ablauf Wallbox-Prüfung",sicht:"firma",personen:[],baustelleId:"",bloecke:[{id:nid(),typ:"liste",items:[{id:nid(),t:"Sichtprüfung und Typenschild"},{id:nid(),t:"Isolationswiderstand"},{id:nid(),t:"Schutzleiterwiderstand"},{id:nid(),t:"RCD Typ A + DC 6 mA"},{id:nid(),t:"Funktionstest mit FEV300"}]}]},P.mp,vor(6)),
+    r({id:"demo-n-pers1",titel:"Hoffmann – Schlüssel",sicht:"personen",personen:[P.mp.mail,P.ab.mail],baustelleId:"demo-b1",bloecke:[{id:nid(),typ:"text",text:"Schlüssel liegt beim Nachbarn (Nr. 9). Bauherr ist ab 16 Uhr vor Ort."}]},P.ai,vor(2)),
+    r({id:"demo-n-board",titel:"Planung KW 44",sicht:"firma",personen:[],board:true,baustelleId:"",bloecke:[{id:nid(),typ:"zeichnung",format:"board",raster:"punkte",striche:[
+      {t:"zettel",c:"#FFE58A",p:[0,0,240,170],s:"Mo/Di\nHoffmann\nZählerschrank",fs:26},
+      {t:"zettel",c:"#F8BBD0",p:[280,0,520,170],s:"Mi\nBergland\nWallboxen setzen",fs:26},
+      {t:"zettel",c:"#B3E5FC",p:[560,0,800,170],s:"Do/Fr\nE-Check\nWohnbau Haus B",fs:26},
+      {t:"zettel",c:"#C8E6C9",p:[280,220,520,390],s:"Material\nbis Di bestellen",fs:26}]}]},P.ai,vor(0,6))];
+  /* Dokumente und Fotos in den Kundenablagen (Inhalt wird beim Öffnen erzeugt) */
+  const dateien=[
+    r({id:"demo-d1",bezugKind:"kunden",bezugId:"demo-k2",name:"Angebot Wallboxen Ausstellung.pdf",typ:"application/pdf",groesse:48200,demoArt:"angebot"},P.bu,vor(5)),
+    r({id:"demo-d2",bezugKind:"standorte",bezugId:"demo-s1",name:"Zählerschrank Werkstatt.jpg",typ:"image/jpeg",groesse:182000,demoArt:"zaehler"},P.ms,vor(13)),
+    r({id:"demo-d3",bezugKind:"kunden",bezugId:"demo-k1",name:"Notleuchte Lager.jpg",typ:"image/jpeg",groesse:121000,demoArt:"leuchte"},P.ab,vor(1)),
+    r({id:"demo-d4",bezugKind:"kunden",bezugId:"demo-k5",name:"Schaltplan Haus B.pdf",typ:"application/pdf",groesse:63000,demoArt:"schaltplan"},P.bu,vor(30)),
+    r({id:"demo-d5",bezugKind:"standorte",bezugId:"demo-s3",name:"Unterverteilung Haus A.jpg",typ:"image/jpeg",groesse:150000,demoArt:"uv"},P.ms,vor(20))];
+  return {kunden,standorte,baustellen,eintraege,vorgaenge,anforderungen,pruefungen,protokolle,notizen,dateien};
 }
 let demoCache=null;
 /* Beispieldaten in den Speicher dieser App legen (nicht in die Datenbank) – true, wenn etwas dazugekommen ist */
 function demoNachfuellen(){
   if(!demoAn()||typeof DB==="undefined"||typeof KINDS==="undefined") return false;
   demoCache=demoCache||demoDaten(); let neu=false; const uebersicht=KINDS.includes("vorgaenge");
-  for(const [k,L] of Object.entries(demoCache)){ if(!DB[k]||!KINDS.includes(k)||(k==="pruefungen"&&!uebersicht)) continue;
+  for(const [k,L] of Object.entries(demoCache)){ if(!DB[k]||!(KINDS.includes(k)||k==="notizen")||(k==="pruefungen"&&!uebersicht)) continue;
     for(const x of L) if(!DB[k].has(x.id)){ DB[k].set(x.id,JSON.parse(JSON.stringify(x))); neu=true; } }
   return neu;
 }
@@ -82,6 +106,9 @@ async function demoSchalten(){
   }
   try{ const rq=indexedDB.open("baustelle_fotos",1); rq.onupgradeneeded=()=>rq.result.createObjectStore("f"); const db=await demoIdb(rq);
     if(db.objectStoreNames.contains("f")){ const tx=db.transaction("f","readwrite"); Object.keys(DEMO_FOTOS).forEach(id=>tx.objectStore("f").delete(id)); await demoTx(tx); } db.close(); }catch(e){}
+  try{ const db=await demoIdb(indexedDB.open("irrgang_dateien"));
+    if(db.objectStoreNames.contains("d")){ const ks=(await demoIdb(db.transaction("d").objectStore("d").getAllKeys())).filter(k=>String(k).startsWith("demo-")); if(ks.length){ const tx=db.transaction("d","readwrite"); ks.forEach(k=>tx.objectStore("d").delete(k)); await demoTx(tx); } }
+    db.close(); }catch(e){}
   try{ const db=await demoIdb(indexedDB.open("evse_protokolle"));
     if(db.objectStoreNames.contains("meta")){ const m=await demoIdb(db.transaction("meta").objectStore("meta").getAll()), weg=m.filter(x=>x.demo).map(x=>x.id);
       if(weg.length){ const tx=db.transaction(["meta","blob"],"readwrite"); weg.forEach(id=>{ tx.objectStore("meta").delete(id); tx.objectStore("blob").delete(id); }); await demoTx(tx); } }
@@ -115,3 +142,66 @@ function demoMarke(){ const row=document.querySelector("#topbar .tb-row"); if(!r
   if(!demoAn()){ if(m) m.remove(); return; }
   if(!m){ m=document.createElement("span"); m.id="demoMarke"; m.className="demo-marke"; m.textContent="Demo"; m.title="Demo-Vorschau: Beispieldaten in allen Apps. Ausschalten unter Mehr → Demo-Vorschau."; }
   const vor=document.getElementById("glBtn")||document.getElementById("avBtn"); if(vor&&m.nextSibling!==vor) row.insertBefore(m,vor); }
+
+/* ===== Beispiel-PDFs und -Bilder für die Demo (ohne Bibliothek, läuft in allen Apps) ===== */
+const DEMO_WIN={"–":"\x96","—":"\x97","„":"\x84","“":"\x93","”":"\x94","‚":"\x82","‘":"\x91","’":"\x92","€":"\x80","…":"\x85","•":"\x95","Ω":"Ohm","≥":">=","≤":"<=","→":"->","›":">"};
+const demoWin=t=>[...String(t)].map(c=>DEMO_WIN[c]!==undefined?DEMO_WIN[c]:c.charCodeAt(0)<256?c:"?").join("");
+/* kleines PDF (A4) aus Textzeilen, Flächen und Linien – Koordinaten in pt von oben links */
+function demoPdfBauen(male){
+  const W=595,H=842; let c="";
+  const pe=x=>demoWin(x).replace(/[\\()]/g,m=>"\\"+m);
+  const P={ text:(x,y,t,o={})=>{ const f=o.fett?"F2":"F1", z=o.gr||10, col=o.farbe||[.12,.12,.13]; c+=`${col.join(" ")} rg BT /${f} ${z} Tf ${x} ${H-y} Td (${pe(t)}) Tj ET\n`; },
+    flaeche:(x,y,w,h,col)=>{ c+=`${col.join(" ")} rg ${x} ${H-y-h} ${w} ${h} re f\n`; },
+    linie:(x1,y1,x2,y2,col=[.82,.83,.85],d=.6)=>{ c+=`${col.join(" ")} RG ${d} w ${x1} ${H-y1} m ${x2} ${H-y2} l S\n`; },
+    schraeg:(t)=>{ c+=`q 0.94 0.94 0.95 rg 0.766 0.643 -0.643 0.766 150 260 cm BT /F2 96 Tf 0 0 Td (${pe(t)}) Tj ET Q\n`; } };
+  male(P,W,H);
+  const obj=["<< /Type /Catalog /Pages 2 0 R >>","<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>`,
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>","<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
+    `<< /Length ${c.length} >>\nstream\n${c}endstream`];
+  let out="%PDF-1.4\n%\xE2\xE3\xCF\xD3\n"; const off=[];
+  obj.forEach((o,i)=>{ off.push(out.length); out+=`${i+1} 0 obj\n${o}\nendobj\n`; });
+  const x=out.length; out+=`xref\n0 ${obj.length+1}\n0000000000 65535 f \n`+off.map(n=>String(n).padStart(10,"0")+" 00000 n \n").join("")+`trailer\n<< /Size ${obj.length+1} /Root 1 0 R >>\nstartxref\n${x}\n%%EOF`;
+  const u=new Uint8Array(out.length); for(let i=0;i<out.length;i++) u[i]=out.charCodeAt(i)&255; return new Blob([u],{type:"application/pdf"}); }
+/* Briefkopf, Felderblock, Tabelle */
+function demoPdfVorlage(titel,unter,felder,tab,schluss){ return demoPdfBauen((P,W)=>{
+  const R=[.784,.063,.18], G=[.42,.43,.46];
+  P.schraeg("BEISPIEL");
+  P.flaeche(0,0,W,64,R); P.text(40,40,"Elektro Irrgang",{fett:1,gr:20,farbe:[1,1,1]}); P.text(W-230,34,"Hahner Weg 2 · 51545 Waldbröl",{gr:9,farbe:[1,1,1]}); P.text(W-230,48,"02291 4878 · info@elektro-irrgang.de",{gr:9,farbe:[1,1,1]});
+  P.text(40,104,titel,{fett:1,gr:18}); if(unter) P.text(40,122,unter,{gr:10,farbe:G});
+  let y=150; felder.forEach(([l,v],i)=>{ const x=i%2?310:40; if(i%2===0&&i) y+=36; P.text(x,y,l,{gr:8,farbe:G}); P.text(x,y+14,v||"–",{gr:11}); });
+  y+=44; P.linie(40,y,W-40,y);
+  if(tab){ y+=24; P.text(40,y,tab.t,{fett:1,gr:12}); y+=16; const sp=tab.sp;
+    P.flaeche(40,y,W-80,20,[.95,.95,.96]); let x=46; tab.kopf.forEach((k,i)=>{ P.text(x,y+13,k,{fett:1,gr:8.5}); x+=sp[i]; }); y+=20;
+    tab.zeilen.forEach(z=>{ let x=46; z.forEach((v,i)=>{ const schlecht=/nicht bestanden|Mangel/.test(v); P.text(x,y+14,v,{gr:9.5,farbe:schlecht?[.75,.1,.1]:undefined,fett:schlecht}); x+=sp[i]; }); y+=22; P.linie(40,y,W-40,y,[.9,.9,.92]); }); }
+  (schluss||[]).forEach(([t,o])=>{ y+=o&&o.abstand?o.abstand:20; P.text(40,y,t,o||{}); });
+  P.linie(40,780,W-40,780); P.text(40,796,"Erstellt mit der Demo-Vorschau der Irrgang-Apps – Beispieldaten, kein echtes Protokoll.",{gr:8,farbe:G}); }); }
+function demoProtBlob(r){
+  const k=DB.kunden&&DB.kunden.get(r.kundeId), st=r.standortId&&DB.standorte&&DB.standorte.get(r.standortId), b=r.baustelleId&&DB.baustellen&&DB.baustellen.get(r.baustelleId);
+  const datum=String(r.datum||"").split("-").reverse().join(".");
+  if(r.app==="baustelle") return demoPdfVorlage("Aufnahmeprotokoll",(b&&b.name)||String(r.titel||"").split(" · ").pop(),
+    [["Kunde",k&&k.name],["Auftrag",r.auftragsnr],["Adresse",k&&[k.strasse,[k.plz,k.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ")],["Datum",datum],["Aufgenommen von",r.von&&r.von.name],["Ansprechpartner",k&&k.ansprech]],
+    {t:"Bestand und Wünsche",kopf:["Bereich","Befund","Wunsch / Hinweis"],sp:[120,180,220],zeilen:[["Hausanschluss","TN-C-S, 63 A","–"],["Zählerschrank","Platz für 1 Zählerfeld","neuer Zählerschrank nach TAB"],["Unterverteilung OG","nicht vorhanden","UV 3-reihig mit FI/LS"],["Außenbereich","1 Steckdose","Außensteckdose Terrasse"],["Netzwerk","keins","Cat 7 in jedes Zimmer"]]},
+    [["Unterschrift Kunde: liegt vor",{gr:10}]]);
+  const bad=r.ergebnis==="bad", art=r.art||"Prüfung";
+  return demoPdfVorlage("Prüfprotokoll Ladeeinrichtung",`${art} nach DIN VDE 0100-600 / 0105-100`,
+    [["Kunde",k&&k.name],["Standort",(st&&st.name)||"–"],["Datum",datum],["Prüfer",r.pruefer||(r.von&&r.von.name)],["Prüfgeräte","Wiha MFT one, Fluke FEV300"],["Ergebnis",bad?"nicht bestanden":"bestanden"]],
+    {t:"Messwerte",kopf:["Ladepunkt","R iso","R PE","Z s","RCD","Ergebnis"],sp:[90,80,70,70,110,100],zeilen:[["LP 1 · 22 kW",">500 MOhm","0,21 Ohm","0,38 Ohm","24 ms · DC ok","bestanden"],["LP 2 · 22 kW",">500 MOhm",bad?"1,84 Ohm":"0,24 Ohm","0,41 Ohm","26 ms · DC ok",bad?"nicht bestanden":"bestanden"]]},
+    bad?[["Mangel: Schutzleiterwiderstand LP 2 zu hoch – Anschluss PE am Ladepunkt nachziehen, danach erneut messen.",{fett:1,farbe:[.75,.1,.1],abstand:28}]]:[["Die Ladeeinrichtung entspricht den anerkannten Regeln der Technik.",{abstand:28}]]); }
+async function demoBild(art){
+  const c=document.createElement("canvas"); c.width=800; c.height=600; const x=c.getContext("2d");
+  const g=x.createLinearGradient(0,0,0,600); g.addColorStop(0,"#D9D6CF"); g.addColorStop(1,"#B9B4AA"); x.fillStyle=g; x.fillRect(0,0,800,600);
+  if(art==="leuchte"){ x.fillStyle="#EDEBE6"; x.fillRect(250,180,300,120); x.fillStyle="#2E7D32"; x.fillRect(300,205,200,70); x.fillStyle="#fff"; x.font="bold 40px sans-serif"; x.fillText("NOTAUSGANG",300,252); x.fillStyle="rgba(0,0,0,.25)"; x.fillRect(250,300,300,10); }
+  else { x.fillStyle="#E9E7E2"; x.fillRect(180,60,440,480); x.fillStyle="#9C9890"; x.fillRect(180,60,440,10);
+    for(let rw=0;rw<(art==="zaehler"?2:4);rw++){ const y=110+rw*(art==="zaehler"?200:105); x.fillStyle="#C7C3BB"; x.fillRect(210,y,380,art==="zaehler"?160:80);
+      if(art==="zaehler"&&rw===0){ x.fillStyle="#2B2B2E"; x.fillRect(320,y+20,160,120); x.fillStyle="#7BD88F"; x.fillRect(340,y+40,120,30); }
+      else for(let i=0;i<(art==="zaehler"?12:12);i++){ x.fillStyle=i%4===0?"#3A6FB0":"#F4F2EE"; x.fillRect(222+i*30,y+12,24,art==="zaehler"?130:56); x.fillStyle="#2B2B2E"; x.fillRect(230+i*30,y+28,8,14); } } }
+  x.fillStyle="rgba(200,16,46,.85)"; x.fillRect(0,540,800,60); x.fillStyle="#fff"; x.font="bold 26px sans-serif"; x.fillText("Beispielfoto (Demo)",24,580);
+  return await new Promise(ok=>c.toBlob(b=>ok(b),"image/jpeg",.82)); }
+async function demoDateiBlob(d){ if(!d||!d.demo) return null; const a=d.demoArt;
+  if(a==="angebot") return demoPdfVorlage("Angebot A-24130","Zwei weitere Wallboxen an der Ausstellung",[["Kunde","Autohaus Bergland GmbH"],["Datum",new Date().toLocaleDateString("de-DE")],["Gültig bis","30 Tage"],["Ansprechpartner","Thomas Berg"]],
+    {t:"Positionen",kopf:["Pos.","Leistung","Menge","Preis"],sp:[40,300,70,100],zeilen:[["1","Wallbox Mennekes AMTRON 4Business 22 kW","2 Stück","3.980,00 €"],["2","NYY-J 5×16 mm², verlegt","45 m","1.215,00 €"],["3","LS/RCD Typ B in UV","2 Stück","1.140,00 €"],["4","Erstprüfung mit Protokoll","1","290,00 €"]]},
+    [["Summe netto: 6.625,00 €",{fett:1,gr:12,abstand:28}]]);
+  if(a==="schaltplan") return demoPdfVorlage("Übersichtsschaltplan Haus B","Kaiserstraße 34, Waldbröl",[["Kunde","Wohnbau Waldbröl eG"],["Stand",new Date().toLocaleDateString("de-DE")]],
+    {t:"Stromkreise UV Haus B",kopf:["Nr.","Schutz","Stromkreis"],sp:[50,140,300],zeilen:[["F1","B16 / RCD 30 mA","Treppenhaus Licht"],["F2","B16 / RCD 30 mA","Keller Steckdosen"],["F3","B16","Außenbeleuchtung"],["F4","B10","Klingelanlage"]]});
+  return await demoBild(a); }

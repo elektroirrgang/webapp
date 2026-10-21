@@ -42,6 +42,7 @@ async function pushDateien(){
   }
 }
 async function dateiHolen(d){
+  if(d&&d.demo&&typeof demoDateiBlob==="function"){ const b=await demoDateiBlob(d); if(b){ await dateiPut(d.id,b); return b; } return null; }
   if(!SYNC_ON||!ME.signedIn||!navigator.onLine) return null;
   try{ await syncRoot(); const fid=await folderId(`${CONFIG.dataFolder}/dateien`,BIB.dateien); const meta=await gj(`/drives/${fid}:/${d.id}.${endung(d)}`);
     const b=await (await readItem(meta)).blob(); await dateiPut(d.id,b); return b; }catch(e){ return null; } }
