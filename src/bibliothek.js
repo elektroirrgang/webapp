@@ -45,7 +45,7 @@ function bbMonate(L,item){ let h="", m=null, g=[]; const fl=()=>{ if(g.length) h
 let BB_ORT={k:null,u:null};
 /* Ordner wie in der Dateien-App/GoodNotes: Farbe und Symbol je Kunde (steht am Kunden, gilt also für alle Geräte und alle im Team) */
 const BB_FARBEN=[["papier","Papier","#E2C68C"],["rot","Rot","#E06A60"],["orange","Orange","#EE9F4C"],["gelb","Gelb","#E9C64A"],["gruen","Grün","#6DBB7B"],["tuerkis","Türkis","#4DB6AC"],["blau","Blau","#4FA6D8"],["violett","Violett","#9A80D2"],["rosa","Rosa","#E58FB4"],["grau","Grau","#A3A9B1"]];
-const BB_SYM={stern:"M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z",
+const BB_SYM={kunde:"M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z",stern:"M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z",
   blitz:"M7 2v11h3v9l7-12h-4l4-8z",
   wallbox:"M19.77 7.23l.01-.01-3.72-3.72L15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33 0 1.38 1.12 2.5 2.5 2.5.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14c0-1.1-.9-2-2-2h-1V5c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v16h10v-7.5h1.5v5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V9c0-.69-.28-1.32-.73-1.77zM18 10c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zM8 18v-4.5H6L10 6v5h2l-4 7z",
   haus:"M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z",
@@ -60,7 +60,8 @@ const BB_SYM={stern:"M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8
   herz:"M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z",
   ort:"M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
   baustelle:"M13.78 15.3L19.78 21.3L21.89 19.14L15.89 13.14L13.78 15.3M17.5 10.1C17.11 10.1 16.69 10.05 16.36 9.91L4.97 21.25L2.86 19.14L10.27 11.74L8.5 9.96L7.78 10.66L6.33 9.25V12.11L5.63 12.81L2.11 9.25L2.81 8.55H5.62L4.22 7.14L7.78 3.58C8.95 2.41 10.83 2.41 12 3.58L9.89 5.74L11.3 7.14L10.59 7.85L12.38 9.63L14.2 7.75C14.06 7.42 14 7 14 6.63C14 4.66 15.56 3.11 17.5 3.11C18.09 3.11 18.61 3.25 19.08 3.53L16.41 6.2L17.91 7.7L20.58 5.03C20.86 5.5 21 6 21 6.63C21 8.55 19.45 10.1 17.5 10.1Z"};
-const BB_SYM_WAHL=["stern","blitz","wallbox","haus","firma","fabrik","laden","apotheke","schule","kirche","sonne","werkzeug","herz"];
+/* Kunden-Ordner tragen standardmäßig das Kunden-Symbol; „Ohne“ wird als sym:"ohne" gemerkt */
+const BB_SYM_WAHL=["kunde","stern","blitz","wallbox","haus","firma","fabrik","laden","apotheke","schule","kirche","sonne","werkzeug","herz"];
 const bbFarbe=f=>(BB_FARBEN.find(x=>x[0]===f)||BB_FARBEN[0])[2];
 /* Ordner-Bild im GoodNotes-Stil: Rückwand mit weicher Lasche, ein Blatt Papier schaut heraus, Vorderseite mit sanftem Verlauf, Symbol eingeprägt (dunkel mit heller Unterkante) */
 let BB_GID=0;
@@ -99,7 +100,7 @@ function bbEigenschaften(k,u){
   const z=(l,v)=>v?`<div class="bb-ez"><small>${esc(l)}</small><span>${esc(v)}</span></div>`:"";
   const adr=ziel&&typeof adrText==="function"?adrText(ziel):"";
   const st=(kd&&kd.ordner)||{};
-  dialog(name,`<div class="bb-eig"><div class="bb-ebild">${bbOrdnerBild(st.farbe,u?(u[0]==="b"?"baustelle":"ort"):st.sym)}</div><div class="bb-el">
+  dialog(name,`<div class="bb-eig"><div class="bb-ebild">${bbOrdnerBild(st.farbe,u?(u[0]==="b"?"baustelle":"ort"):kd?(st.sym||"kunde"):"")}</div><div class="bb-el">
       ${z("Art",u?(u[0]==="b"?"Baustelle":"Standort")+(kd?` von ${kd.name}`:""):"Kunden-Ordner")}
       ${z("Kundennummer",kd&&kd.kdnr)}${z("Adresse",adr)}
       ${z("Inhalt",`${A.length} ${A.length===1?"Datei":"Dateien"}${arten.length?" – "+arten.map(([t,n])=>`${n} ${t}`).join(", "):""}`)}
@@ -123,12 +124,12 @@ function bbStilFenster(btn,kid){
   const bg=document.createElement("div"); bg.id="fpopBg"; document.body.appendChild(bg); const m=document.createElement("div"); m.id="fpop"; m.className="fpop bb-stil";
   const male=()=>{ const o=k.ordner||{};
     m.innerHTML=`<div class="fp-t">Farbe</div><div class="bb-farben">${BB_FARBEN.map(([v,t,c])=>`<button type="button" class="bb-fa" data-sf="${v}" style="--o:${c}" aria-pressed="${(o.farbe||"papier")===v}" aria-label="${t}" title="${t}"></button>`).join("")}</div>
-      <div class="fp-t">Symbol</div><div class="bb-syms"><button type="button" class="bb-sy ohne" data-ss="" aria-pressed="${!o.sym}" title="Ohne Symbol">Ohne</button>${BB_SYM_WAHL.map(v=>`<button type="button" class="bb-sy" data-ss="${v}" aria-pressed="${o.sym===v}" title="${v}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${BB_SYM[v]}"/></svg></button>`).join("")}</div>`; };
+      <div class="fp-t">Symbol</div><div class="bb-syms"><button type="button" class="bb-sy ohne" data-ss="ohne" aria-pressed="${o.sym==="ohne"}" title="Ohne Symbol">Ohne</button>${BB_SYM_WAHL.map(v=>`<button type="button" class="bb-sy" data-ss="${v}" aria-pressed="${(o.sym||"kunde")===v}" title="${v}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${BB_SYM[v]}"/></svg></button>`).join("")}</div>`; };
   male(); document.body.appendChild(m);
   const r=btn.getBoundingClientRect(), w=Math.min(340,innerWidth-16); m.style.width=w+"px"; m.style.left=Math.max(8,Math.min(r.left+r.width/2-w/2,innerWidth-w-8))+"px";
   const unten=innerHeight-r.bottom; if(unten>330){ m.style.top=(r.bottom+8)+"px"; } else { m.style.bottom=(innerHeight-r.top+8)+"px"; }
   m.addEventListener("click",e=>{ const f=e.target.closest("[data-sf]"), y=e.target.closest("[data-ss]"); if(!f&&!y) return;
-    const o=Object.assign({},k.ordner||{}); if(f) o.farbe=f.dataset.sf; if(y) o.sym=y.dataset.ss; if(o.farbe==="papier") delete o.farbe; if(!o.sym) delete o.sym;
+    const o=Object.assign({},k.ordner||{}); if(f) o.farbe=f.dataset.sf; if(y) o.sym=y.dataset.ss; if(o.farbe==="papier") delete o.farbe; if(!o.sym||o.sym==="kunde") delete o.sym;
     k.ordner=Object.keys(o).length?o:undefined; if(!k.ordner) delete k.ordner; saveRec("kunden",k); male(); const rs=document.getElementById("res"); if(rs) rs.innerHTML=bibListe(); });
   const zu=()=>{ m.remove(); bg.remove(); removeEventListener("resize",zu); }; bg.addEventListener("click",zu); addEventListener("resize",zu);
 }
@@ -140,7 +141,7 @@ function bbOrdner(L,zeile){
     return `<div class="bb-m" ${attrs}><button class="bb-mk" data-act="bbOrdner" ${attrs} aria-label="${esc(name)} öffnen">${bbOrdnerBild(stil.farbe,stil.sym)}</button>
       <div class="bb-mn"><button class="bb-mt" data-act="bbOrdner" ${attrs}>${esc(name)}</button>${menuK!==false?`<button class="bb-mm" data-act="bbMenue" ${attrs} aria-label="Ordner-Menü" title="Bearbeiten, Farbe, Eigenschaften"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>`:""}</div>
       <small>${esc([art,`${G.length} ${G.length===1?"Datei":"Dateien"}`,t&&tag(t)].filter(Boolean).join(" · "))}</small></div>`; };
-  const kStil=k=>{ const r=k!==BB_OHNE&&bbKunde(k); return {stil:(r&&r.ordner)||{},darf:!!(r&&(typeof kdDarf==="function"?kdDarf(r):typeof canEdit==="function"&&canEdit(r)))}; };
+  const kStil=k=>{ const r=k!==BB_OHNE&&bbKunde(k), o=Object.assign({},(r&&r.ordner)||{}); if(r&&!o.sym) o.sym="kunde"; return {stil:o,darf:!!(r&&(typeof kdDarf==="function"?kdDarf(r):typeof canEdit==="function"&&canEdit(r)))}; };
   /* gleich heißende Kunden bleiben getrennte Ordner (Schlüssel ist der Kunde selbst); Reihenfolge dann nach Kundennummer */
   const kdnr=id=>String((bbKunde(id)||{}).kdnr||"");
   const nach=(a,b)=>a[2].localeCompare(b[2],"de",{numeric:true})||kdnr(a[0]).localeCompare(kdnr(b[0]),"de",{numeric:true})||String(a[0]).localeCompare(String(b[0]));
