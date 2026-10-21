@@ -2255,6 +2255,11 @@ async function karteLaden(a){
         "NavigationControl.ZoomIn":"Vergrößern","NavigationControl.ZoomOut":"Verkleinern"}});
     KARTE.map.touchZoomRotate.disableRotation();
     KARTE.map.addControl(new maplibregl.AttributionControl({compact:true}),"bottom-right");
+    /* Quellenangabe immer eingeklappt (nur das ⓘ); MapLibre klappt sie beim ersten Laden von selbst auf – das wird sofort zurückgenommen, außer man hat selbst aufs ⓘ getippt */
+    { const at=KARTE.el.querySelector(".maplibregl-ctrl-attrib"); let tipp=0;
+      if(at){ at.addEventListener("pointerdown",e=>{ if(e.target.closest(".maplibregl-ctrl-attrib-button")) tipp=Date.now(); },true);
+        const zu=()=>{ if(at.classList.contains("maplibregl-compact-show")&&Date.now()-tipp>800) at.classList.remove("maplibregl-compact-show"); };
+        new MutationObserver(zu).observe(at,{attributes:true,attributeFilter:["class"]}); zu(); } }
     KARTE.map.addControl(new maplibregl.NavigationControl({showCompass:false}),"top-right");
     KARTE.map.on("moveend",()=>{ const z=document.querySelector("#kdKarte .kd-zentr"); if(!z||!KARTE.mk) return; const m=KARTE.map.project(KARTE.mk.getLngLat()), cc=KARTE.map.project(KARTE.map.getCenter());
       z.hidden=Math.hypot(m.x-cc.x,m.y-cc.y)<30&&Math.abs(KARTE.map.getZoom()-15.2)<.3; });
