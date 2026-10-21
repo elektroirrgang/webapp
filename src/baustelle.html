@@ -449,8 +449,17 @@ body.is-login .topbar{display:none}
 .b-meta{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--on-sv);font-size:14px}
 .b-meta span{display:inline-flex;align-items:center;gap:6px;min-width:0}
 .b-meta .ic{width:18px;height:18px}
-.ekarte{background:var(--sc-low);border-radius:20px;padding:12px 16px 14px;margin:0 0 12px;border:1px solid transparent}
-.ekarte.neu{background:var(--sc);border-color:var(--outline-v)}
+.ekarte{background:var(--sc-low);border-radius:20px;padding:10px 16px 14px;margin:0 0 10px}
+.ekarte.neu{background:var(--sc)}
+.ekarte.klapp:not(.auf){padding-bottom:10px}
+.ekarte.klapp > .ek-k{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ek-pf{display:grid;place-items:center;width:36px;height:36px;color:var(--on-sv);transition:transform .2s} .ekarte.auf .ek-pf{transform:rotate(180deg)}
+.avs{display:inline-flex;align-items:center;padding-left:8px;cursor:pointer}
+.avs-i{width:30px;height:30px;border-radius:50%;margin-left:-8px;display:grid;place-items:center;font-size:11px;font-weight:700;background:var(--sec-c) center/cover no-repeat;color:var(--on-sec-c);box-shadow:0 0 0 2px var(--sc);position:relative}
+.ekarte:not(.neu) .avs-i{box-shadow:0 0 0 2px var(--sc-low)}
+.avs-mehr{background:var(--sc-highest);color:var(--on-sv)}
+.av-pop{position:fixed;z-index:120;min-width:200px;max-width:300px;padding:8px;border-radius:18px;background:var(--sc-high);box-shadow:var(--schweben);display:flex;flex-direction:column;gap:2px;animation:schwebenEin .14s ease-out}
+.avp-z{display:flex;align-items:center;gap:10px;padding:6px 8px} .avp-z .avs-i{margin:0;box-shadow:none;width:32px;height:32px} .avp-z b{display:block;font-size:14px} .avp-z small{display:block;font-size:12px;color:var(--on-sv)}
 .ek-k{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;min-height:36px}
 .ek-k > span:not(.ek-a):not(.ek-tag){display:inline-flex;align-items:center;gap:4px;color:var(--on-sv);font-size:14px}
 .ek-br{display:none}
@@ -1084,8 +1093,15 @@ body input,body textarea,body select,body [contenteditable],body [contenteditabl
 html::after{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--sb);z-index:2147483000;pointer-events:none}
 
 /* Aufnahmeprotokoll */
-.b-tabs{margin:4px 0 16px}.b-tabs .seg{width:100%}
-@media (min-width:744px){.b-tabs .seg{width:420px!important;max-width:100%!important}}
+.b-tabs{margin:0;flex:1;min-width:0}.b-tabs .seg{width:100%;max-width:none!important}
+.b-zeile{display:flex;align-items:center;gap:12px;margin:0 0 16px} .b-zeile .bs-pick{flex:none}
+@media (max-width:599px){ .b-zeile{gap:8px} .b-zeile .seg button{font-size:13.5px;padding:0 4px;white-space:nowrap} .b-zeile .bs-pick{padding-left:12px;padding-right:12px;min-width:0} .b-zeile .bs-pick .spick-p{display:none} }
+.spick.nur{cursor:default}
+.bk-karte{display:flex;align-items:center;gap:14px;width:100%;margin:0 0 12px;padding:12px 14px 12px 12px;border:0;border-radius:20px;background:var(--sc-low);color:var(--on-surface);font:inherit;text-align:left;cursor:pointer}
+.bk-karte:hover{background:color-mix(in srgb,var(--on-surface) 5%,var(--sc-low))}
+.bkk-ic{width:44px;height:44px;border-radius:14px;flex:none;display:grid;place-items:center;background:var(--pc);color:var(--on-pc)} .bkk-ic .ic{width:24px;height:24px}
+.bkk-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px} .bkk-t b{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .bkk-t small{font-size:13.5px;color:var(--on-sv);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bk-karte > .ic{color:var(--on-sv);flex:none}
 .b-kopf2{margin:0 0 16px}
 .bk-zeile{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 .bk-c{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px 0 10px;border:0;border-radius:18px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:14px;font-weight:600;text-decoration:none;cursor:pointer}
@@ -1963,7 +1979,7 @@ function go(n){ nav=n; closeOverlays(); render(); window.scrollTo(0,0); }
 const KOPF_START="Baustellen";
 const bStatusKnopf=b=>`<button class="spick bs-pick" data-act="bStatusPick" aria-label="Status ändern"><i class="bs-dot ${b.status||"aktiv"}"></i><span class="spick-t">${STATUS_TXT[b.status||"aktiv"]}</span><span class="spick-p">${icon("chev")}</span></button>`;
 const stiftKnopf=()=>`<button class="sk-stift" data-act="editLoc" aria-label="Daten bearbeiten" title="Daten bearbeiten">${icon("edit")}</button>`;
-const skRechts=()=>{ if(VIEW_KIND[nav.v]){ const r=DB[VIEW_KIND[nav.v]].get(nav.id); return r&&canEdit(r)?stiftKnopf():""; } if(nav.v!=="baustelle") return ""; const b=DB.baustellen.get(nav.id); return b&&canEdit(b)?bStatusKnopf(b):""; };
+const skRechts=()=>{ if(VIEW_KIND[nav.v]){ const r=DB[VIEW_KIND[nav.v]].get(nav.id); return r&&canEdit(r)?stiftKnopf():""; } return ""; };
 function seitenKopf(t,s,f){ t=t||(f?KOPF_START:""); if(!t&&!f) return "";
   const T=pfadTeile(); if(!t&&!f&&typeof skRechts==="function"&&skRechts()) t=KOPF_START; if(s&&s.includes("›")) s=s.split(/\s*›\s*/).pop(); 
   const pf="";
@@ -2255,7 +2271,7 @@ function render(){ profilAnwenden();
   else if(nav.v==="about"){ title="Über die App"; body=aboutView(); }
   else if(nav.v==="baustelle"){ const b=DB.baustellen.get(nav.id); if(!b||b.deleted){ nav={v:"start"}; return render(); }
     if(!nav.tab) nav.tab=b.status==="besichtigung"?"aufnahme":"uebergaben";
-    title=b.name; sub=pfadText(b).replace(/ › /g," · "); body=baustelleView(b); fab=null; fotoFetch([...eintraegeVon(b.id).flatMap(e=>e.fotos||[]),...afFotoIds(b)]); }
+    title=b.name; sub=[b.auftragsnr&&`Auftrag ${b.auftragsnr}`,b.termin&&b.termin.datum&&`Termin ${deDate(b.termin.datum)}${b.termin.zeit?` · ${b.termin.zeit} Uhr`:""}${b.termin.mit?` · ${b.termin.mit}`:""}`].filter(Boolean).join(" · "); body=baustelleView(b); fab=null; fotoFetch([...eintraegeVon(b.id).flatMap(e=>e.fotos||[]),...afFotoIds(b)]); }
   else if(nav.v==="eintrag"){ const b=DB.baustellen.get(entw.baustelleId); title=entw._neu||!entw.id?"Neue Übergabe":"Übergabe"; sub=b?b.name:""; body=eintragView(); fab=["edFertig","Fertig","check"]; }
   else if(VIEW_KIND[nav.v]){ const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id); if(!r||r.deleted){ nav={v:"kunden"}; return render(); }
     title=r.name; sub=kind==="kunden"?"Kunde":(kundeOf(r.kundeId)||{}).name||""; body=kind==="kunden"?kundeView(r):standortView(r);
@@ -2324,33 +2340,47 @@ function startView(){
     <div class="chips filt"><button class="chip" data-act="filter" data-v="alle" aria-pressed="${META.filter==="alle"}">Alle (${live("baustellen").length})</button><button class="chip" data-act="filter" data-v="kunden" aria-pressed="${META.filter==="kunden"}">${icon("firma")}Kunden</button>${STATUS.map(([v,t])=>`<button class="chip" data-act="filter" data-v="${v}" aria-pressed="${META.filter===v}"><i class="bs-dot ${v}"></i>${t} (${n(v)})</button>`).join("")}</div>
     <div id="res">${baustellenListe()}</div></div>`;
 }
-function eintragKarte(e,erster){
-  const ok=canEdit(e), fs=e.fotos||[];
+/* Personen einer Übergabe als überlappende Profilbilder (wie in Microsoft 365): wer geschrieben hat zuerst, dann wer dabei war */
+function ekLeute(e){ const L=[], add=(p,rolle)=>{ if(!p||!p.name) return; const m=String(p.mail||"").toLowerCase(); if(L.some(x=>(m&&x.mail===m)||(!m&&x.name===p.name))) return; L.push({name:p.name,mail:m,rolle}); };
+  add(e.createdBy,"hat die Übergabe geschrieben"); (e.dabei||[]).forEach(p=>add(typeof p==="string"?{name:p}:p,"war dabei")); return L; }
+function avStapel(e){ const L=ekLeute(e); if(!L.length) return "";
+  const nm=x=>{ const p=typeof profilVon==="function"&&x.mail&&profilVon(x.mail), v=p&&[p.vorname,p.nachname].filter(Boolean).join(" "); return {n:v||x.name,b:p&&p.bild||""}; };
+  return `<span class="avs" data-act="avListe" data-id="${esc(e.id)}" role="button" tabindex="0" aria-label="${esc(L.map(x=>nm(x).n).join(", "))}">${L.slice(0,5).map((x,i)=>{ const q=nm(x);
+    return `<span class="avs-i" style="z-index:${10-i}${q.b?`;background-image:url('${q.b}')`:""}" title="${esc(q.n+" – "+x.rolle)}">${q.b?"":esc(initials(q.n))}</span>`; }).join("")}${L.length>5?`<span class="avs-i avs-mehr">+${L.length-5}</span>`:""}</span>`; }
+const EK_AUF=new Map();
+function avPop(el,L){ document.getElementById("avPop")?.remove(); const d=document.createElement("div"); d.id="avPop"; d.className="av-pop";
+  d.innerHTML=L.map(x=>{ const p=typeof profilVon==="function"&&x.mail&&profilVon(x.mail), n=(p&&[p.vorname,p.nachname].filter(Boolean).join(" "))||x.name;
+    return `<div class="avp-z"><span class="avs-i"${p&&p.bild?` style="background-image:url('${p.bild}')"`:""}>${p&&p.bild?"":esc(initials(n))}</span><span><b>${esc(n)}</b><small>${esc(x.rolle)}</small></span></div>`; }).join("");
+  document.body.appendChild(d); const r=el.getBoundingClientRect(), w=d.offsetWidth; d.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left))+"px"; d.style.top=(r.bottom+8)+"px";
+  const zu=ev=>{ if(!d.contains(ev.target)){ d.remove(); document.removeEventListener("pointerdown",zu,true); removeEventListener("scroll",weg,true); } }, weg=()=>{ d.remove(); document.removeEventListener("pointerdown",zu,true); removeEventListener("scroll",weg,true); };
+  setTimeout(()=>{ document.addEventListener("pointerdown",zu,true); addEventListener("scroll",weg,true); },0); }
+function eintragKarte(e,erster,klappbar){
+  const ok=canEdit(e), fs=e.fotos||[], auf=!klappbar||(EK_AUF.has(e.id)?EK_AUF.get(e.id):!!erster);
   const block=(l,t,cls="")=>String(t||"").trim()?`<div class="eb ${cls}"><small>${l}</small><p>${esc(t)}</p></div>`:"";
-  return `<div class="ekarte${erster?" neu":""}"><div class="ek-k">${erster?`<span class="ek-tag">Aktueller Stand</span><i class="ek-br"></i>`:""}<b>${esc(tagText(e.datum))}</b><span>${icon("person")}${esc(vonText(e)||"–")}</span>
-      <span class="ek-a">${erster?`<button class="icon-btn sm" data-act="teilen" data-id="${e.id}" aria-label="Teilen">${icon("share")}</button>`:""}${ok?`<button class="icon-btn sm" data-act="eintragEdit" data-id="${e.id}" aria-label="Bearbeiten">${icon("edit")}</button>`:""}</span></div>
-    ${block("Dabei",dabeiNamen(e).join(", "),"eb-dabei")}${block("Stand",e.stand)}${block("Offen / nächste Schritte",e.offen)}${matBlock(e)}
+  return `<div class="ekarte${erster?" neu":""}${klappbar?" klapp":""}${auf?" auf":""}">
+    <div class="ek-k"${klappbar?` data-act="ekKlapp" data-id="${e.id}" role="button" tabindex="0" aria-expanded="${auf}"`:""}>${erster?`<span class="ek-tag">Aktueller Stand</span>`:""}<b>${esc(tagText(e.datum))}</b>${avStapel(e)}
+      <span class="ek-a">${auf&&erster?`<button class="icon-btn sm" data-act="teilen" data-id="${e.id}" aria-label="Teilen">${icon("share")}</button>`:""}${auf&&ok?`<button class="icon-btn sm" data-act="eintragEdit" data-id="${e.id}" aria-label="Bearbeiten">${icon("edit")}</button>`:""}${klappbar?`<span class="ek-pf">${icon("drop")}</span>`:""}</span></div>
+    ${auf?`<div class="ek-in">${block("Stand",e.stand)}${block("Offen / nächste Schritte",e.offen)}${matBlock(e)}
     ${fs.length?`<div class="ek-f">${fs.map(id=>{ const src=fotoCache.get(id); return src?`<button class="foto" data-act="fotoShow" data-id="${id}" aria-label="Foto ansehen"><img src="${src}" alt=""></button>`:`<div class="foto leer">${icon("sync")}</div>`; }).join("")}</div>`:""}
-    ${e.updated&&e.created&&e.updated-e.created>60000?`<div class="by">geändert ${esc(wann(e.updated))}${e.updatedBy&&e.updatedBy.name&&e.updatedBy.name!==vonText(e)?` von ${esc(e.updatedBy.name)}`:""}</div>`:""}</div>`;
+    ${e.updated&&e.created&&e.updated-e.created>60000?`<div class="by">geändert ${esc(wann(e.updated))}${e.updatedBy&&e.updatedBy.name&&e.updatedBy.name!==vonText(e)?` von ${esc(e.updatedBy.name)}`:""}</div>`:""}</div>`:""}</div>`;
 }
 function baustelleView(b){
   const s=standortOf(b.standortId), kd=!s&&kundeOf(b.kundeId), E=eintraegeVon(b.id);
   let h=`<div class="narrow">`;
-  /* Kopf schlank: eine Zeile kleiner Knöpfe (Route, Anrufen, Infos) und daneben Auftrag/Termin; Beschreibung darunter.
-     Die ausführlichen Angaben zu Standort/Kunde gibt es über „Infos“ im Fenster statt als großer Kasten. */
-  const ort=s||kundeOf(b.kundeId), adr=adrText(ort)||adrText(kundeOf(b.kundeId)), telR=(s&&s.tel)||(kundeOf(b.kundeId)||{}).tel||"", tel=String(telR).replace(/[^\d+]/g,"");
-  const bk=(href,ic,t,act,extra)=>href?`<a class="bk-c" href="${href}"${/^https/.test(href)?' target="_blank" rel="noopener"':""}>${icon(ic)}<span>${t}</span></a>`:`<button class="bk-c" data-act="${act}"${extra||""}>${icon(ic)}<span>${t}</span></button>`;
-  const knoepfe=[adr&&bk(mapsHref(adr),"route","Route"),tel&&bk("tel:"+tel,"phone","Anrufen"),ort&&bk("","info","Infos","bInfo",` data-id="${esc(b.id)}"`)].filter(Boolean).join("");
-  const meta=[b.auftragsnr&&`<span>${icon("tag")}${esc(b.auftragsnr)}</span>`,b.termin&&b.termin.datum&&`<span>${icon("cal")}${esc(deDate(b.termin.datum))}${b.termin.zeit?` · ${esc(b.termin.zeit)} Uhr`:""}${b.termin.mit?` · ${esc(b.termin.mit)}`:""}</span>`].filter(Boolean).join("");
-  h+=`<div class="b-kopf2"><div class="bk-zeile">${knoepfe}${meta?`<span class="bk-meta">${meta}</span>`:""}<span class="bk-sp"></span>${!WIDE.matches&&canEdit(b)?bStatusKnopf(b):""}</div>${b.notiz?`<p class="bk-notiz">${esc(b.notiz)}</p>`:""}</div>`;
+  /* Kopf: Kachel zum Kunden (antippen ⇒ Kunde), darunter Aufnahme/Übergaben und Status in einer Zeile */
+  const kdB=kundeOf(b.kundeId), adr=adrText(s)||adrText(kdB);
+  if(kdB||s) h+=`<button class="bk-karte" data-act="bKunde" data-id="${esc((kdB||{}).id||"")}" data-s="${esc((s||{}).id||"")}"><span class="bkk-ic">${icon("firma")}</span>
+    <span class="bkk-t"><b>${esc(kdB?kdB.name:s.name)}</b><small>${esc([s&&kdB?s.name:"",adr].filter(Boolean).join(" · ")||"Kunde öffnen")}</small></span>${icon("chev")}</button>`;
   const [an,am]=afGesamt(b);
-  h+=`<div class="b-tabs">${seg("bTab",nav.tab||"uebergaben",[["aufnahme",`Aufnahme${an?` · ${Math.round(an/am*100)} %`:""}`],["uebergaben",`Übergaben${E.length?` · ${E.length}`:""}`]])}</div>`;
+  h+=`<div class="b-zeile"><div class="b-tabs">${seg("bTab",nav.tab||"uebergaben",[["aufnahme",`Aufnahme${an?` · ${Math.round(an/am*100)} %`:""}`],["uebergaben",`Übergaben${E.length?` · ${E.length}`:""}`]])}</div>
+    ${canEdit(b)?bStatusKnopf(b):`<span class="spick bs-pick nur"><i class="bs-dot ${b.status||"aktiv"}"></i><span class="spick-t">${STATUS_TXT[b.status||"aktiv"]}</span></span>`}</div>
+    ${b.notiz?`<p class="bk-notiz">${esc(b.notiz)}</p>`:""}`;
   if(nav.tab==="aufnahme") return h+aufnahmeView(b)+`</div>`;
   const NZ=notizenAlle().filter(n=>n.baustelleId===b.id&&!n.archiv);
   h+=`<div class="sec-row"><div class="sec-lbl">Notizen</div><button class="plus-k" data-act="neueNotizHier" aria-label="Notiz anlegen" title="Notiz anlegen">${icon("add")}</button></div>${NZ.length?nGrid(NZ):`<p class="meta">Eigene Notizen zur Baustelle – z. B. Tagesablauf, Checkliste oder Skizze.</p>`}`;
   h+=vgBauAbschnitt(b);
   h+=`<div class="sec-row"><div class="sec-lbl">Übergaben</div><button class="plus-k" data-act="neuerEintrag" aria-label="Übergabe schreiben" title="Übergabe schreiben">${icon("add")}</button></div>`;
-  h+=E.length?E.map((e,i)=>eintragKarte(e,i===0)).join(""):`<p class="meta">Noch keine Übergabe. Am Ende des Tages kurz festhalten: Stand, was offen ist und welches Material morgen gebraucht wird.</p>`;
+  h+=E.length?E.map((e,i)=>eintragKarte(e,i===0,true)).join(""):`<p class="meta">Noch keine Übergabe. Am Ende des Tages kurz festhalten: Stand, was offen ist und welches Material morgen gebraucht wird.</p>`;
   return h+`</div>`;
 }
 let entw=null, entwZurueck=null;
@@ -2900,7 +2930,7 @@ function zurueck(){
   if(nav.v==="eintrag"){ entwFertig(); return; }
   if(nav.v==="baustelle"){ go(nav.von||{v:"start"}); return; }
   if(nav.v==="standort"){ const s=standortOf(nav.id); go(s?{v:"kunde",id:s.kundeId}:{v:"kunden"}); return; }
-  if(nav.v==="kunde"){ go({v:"kunden"}); return; }
+  if(nav.v==="kunde"){ go(nav.von||{v:"kunden"}); return; }
   if(MEHR_SUB[nav.v]){ go({v:"mehr"}); return; }
   go({v:"start"});
 }
@@ -2963,6 +2993,9 @@ document.addEventListener("click",ev=>{
   case "export": exportBackup(); return;
   case "import": $("#importFile").click(); return;
   case "filter": META.filter=b.dataset.v; metaSave(); render(); return;
+  case "bKunde": { const id=b.dataset.id||((standortOf(b.dataset.s)||{}).kundeId); if(id) go({v:"kunde",id,von:{...nav}}); else if(b.dataset.s) go({v:"standort",id:b.dataset.s,von:{...nav}}); return; }
+  case "ekKlapp": { const k=b.closest(".ekarte"); EK_AUF.set(b.dataset.id,!(k&&k.classList.contains("auf"))); softRender(); return; }
+  case "avListe": { ev.stopPropagation(); const en=DB.eintraege.get(b.dataset.id); if(!en) return; avPop(b,ekLeute(en)); return; }
   case "bInfo": { const bb=DB.baustellen.get(b.dataset.id); if(!bb) return; const st=standortOf(bb.standortId), kd=kundeOf(bb.kundeId);
     dialog(st?st.name:(kd?kd.name:"Infos"),`${st?infoKarte(st,"standorte"):""}${kd?`${st?`<div class="sec-lbl">Kunde · ${esc(kd.name)}</div>`:""}${infoKarte(kd,"kunden")}`:""}`,
       `${kd?`<button class="btn-text" data-act="nav" data-v="kunde" data-id="${esc(kd.id)}">Kunde öffnen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`); return; }
