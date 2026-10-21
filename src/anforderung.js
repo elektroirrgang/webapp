@@ -222,4 +222,4 @@ let mlTestT=null;
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="mlTest"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
   clearTimeout(mlTestT); toast(mlPushAn()?"Kommt in 10 Sekunden – jetzt App wechseln oder Fenster minimieren":"Kommt in 10 Sekunden als Banner – für Meldungen im Hintergrund oben „Benachrichtigungen auf diesem Gerät“ einschalten");
   mlTestT=setTimeout(async()=>{ const m={id:"test",von:null,h:"Test-Benachrichtigung",s:"So sieht eine Meldung aus – bei echten Meldungen öffnet Antippen den Auftrag.",t:Date.now()};
-    let sys=false; if(mlPushAn()) sys=await mlSystem([m]); mlBanner([m]); if(mlPushAn()&&!sys) toast("Das System hat die Benachrichtigung nicht angenommen"); },10000); },true);
+    let sys=false; if(mlPushAn()) sys=await mlSystem([m]); if(!sys) mlBanner([m]); if(mlPushAn()&&!sys) toast("Das System hat die Benachrichtigung nicht angenommen"); },10000); },true);
