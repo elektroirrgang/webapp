@@ -57,6 +57,7 @@ async function pushProtokolle(){
 /* PDF eines anderen Geräts holen, im Gerät ablegen und öffnen */
 async function bbFern(id){
   const r=DB.protokolle&&DB.protokolle.get(id); if(!r) return;
+  if(r.demo){ toast("Beispiel aus der Demo-Vorschau – dazu gibt es kein echtes PDF"); return; }
   if(!(typeof SYNC_ON!=="undefined"&&SYNC_ON&&ME.signedIn)){ toast("Das PDF liegt in der Share – dafür bitte anmelden"); return; }
   if(!navigator.onLine){ toast("Kein Internet – das PDF liegt in der Share"); return; }
   toast("PDF wird geladen …");

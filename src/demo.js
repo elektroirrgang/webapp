@@ -4,8 +4,11 @@
    Sie werden NIE nach SharePoint hochgeladen (der Abgleich überspringt demo-Datensätze). Beim Ausschalten wird alles
    wieder entfernt, auch was man an Beispieldaten geändert hat. Der Schalter gilt für alle Apps dieses Browsers. */
 const DEMO_KEY="irrgang_demo";
-const demoAn=()=>{ try{ return localStorage.getItem(DEMO_KEY)==="1"; }catch(e){ return false; } };
-const DEMO_SPEICHER=[["evse_daten",["kunden","standorte","ladeparks","pruefungen","katalog"]],["baustelle_daten",["baustellen","eintraege","notizen","anforderungen"]],["irrgang_apps",["vorgaenge","geraete","dateien"]]];
+/* Schalter gilt systemweit: er steht im eigenen Profil (wird abgeglichen) – so ist die Demo in allen Apps und auf allen eigenen Geräten an.
+   Ohne Profil (nicht angemeldet) gilt der Schalter dieses Browsers. */
+const demoProfil=()=>{ try{ return typeof profilVon==="function"&&typeof ME!=="undefined"&&ME.mail?profilVon(ME.mail):null; }catch(e){ return null; } };
+const demoAn=()=>{ const p=demoProfil(); if(p&&typeof p.demoVorschau==="boolean") return p.demoVorschau; /* nicht „demo“ – Datensätze mit demo werden nie abgeglichen */ try{ return localStorage.getItem(DEMO_KEY)==="1"; }catch(e){ return false; } };
+const DEMO_SPEICHER=[["evse_daten",["kunden","standorte","ladeparks","pruefungen","katalog"]],["baustelle_daten",["baustellen","eintraege","notizen","anforderungen"]],["irrgang_apps",["vorgaenge","geraete","dateien","protokolle"]]];
 const DEMO_FOTOS={"demo-f-zp":"zp","demo-f-hak":"hak","demo-f-uvalt":"uvalt","demo-f-mangel":"mangel","demo-f-ue-baustrom":"baustrom","demo-f-ue-leerrohr":"leerrohr","demo-f-ue-uv":"uv","demo-f-ue-pa":"pa"};
 function demoDaten(){
   const T=864e5, jetzt=Date.now(), vor=(t,h=0)=>jetzt-t*T-h*36e5, tag=t=>new Date(jetzt+t*T).toISOString().slice(0,10);
@@ -53,7 +56,11 @@ function demoDaten(){
     pr("demo-p2","demo-k1","demo-s5","Wiederholungsprüfung",tag(-400),tag(-35),true,P.ms,vor(400)),
     pr("demo-p3","demo-k5","demo-s3","Wiederholungsprüfung",tag(-330),tag(35),true,P.mp,vor(330)),
     pr("demo-p4","demo-k3","demo-s6","Erstprüfung",tag(0),"",false,P.ab,vor(0,1))];
-  return {kunden,standorte,baustellen,eintraege,vorgaenge,anforderungen,pruefungen};
+  /* Bibliothek: zu jeder Beispiel-Prüfung mit PDF ein Eintrag – so zeigt die Demo die Ordner in allen Apps */
+  const protokolle=pruefungen.filter(x=>x.pdfAblage).map(x=>{ const k=kunden.find(y=>y.id===x.kundeId), s=standorte.find(y=>y.id===x.standortId);
+    return r({id:"demo-pa-"+x.id,app:"evse",bib:"pdf",pfad:"demo.pdf",pruefungId:x.id,kundeId:x.kundeId,standortId:x.standortId||"",name:"Prüfprotokoll "+x.p.datum,titel:[k&&k.name,s&&s.name].filter(Boolean).join(" · "),
+      datum:x.p.datum,art:x.p.art,pruefer:x.p.pruefer,ergebnis:"ok",von:x.createdBy},x.createdBy,x.created); });
+  return {kunden,standorte,baustellen,eintraege,vorgaenge,anforderungen,pruefungen,protokolle};
 }
 let demoCache=null;
 /* Beispieldaten in den Speicher dieser App legen (nicht in die Datenbank) – true, wenn etwas dazugekommen ist */
@@ -83,6 +90,9 @@ async function demoSchalten(){
 }
 function demoUmschalten(an){
   try{ localStorage.setItem(DEMO_KEY,an?"1":"0"); }catch(e){}
+  /* im eigenen Profil merken ⇒ alle Apps und Geräte ziehen beim nächsten Abgleich nach */
+  try{ if(typeof ME!=="undefined"&&ME.mail&&DB.profile&&typeof saveRec==="function"){ const id=String(ME.mail).toLowerCase(), p=DB.profile.get(id);
+    if(p){ p.demoVorschau=an; saveRec("profile",p); } else saveRec("profile",{id,demoVorschau:an},true); } }catch(e){}
   if(an){ demoNachfuellen(); render(); toast("Demo-Vorschau an – Beispieldaten werden nicht gespeichert oder synchronisiert"); }
   else demoSchalten();
 }
@@ -91,8 +101,17 @@ let demoWeg=false;
 /* Demo aus, aber noch Beispieldaten auf dem Gerät (z. B. in einer anderen App ausgeschaltet) ⇒ aufräumen */
 const demoPruefen=()=>{ try{ if(!demoAn()&&!demoWeg&&demoDa()){ demoWeg=true; demoSchalten(); } }catch(e){} };
 addEventListener("load",()=>{ setTimeout(demoPruefen,1500); setTimeout(demoPruefen,6000); });
+/* Schalter kommt evtl. erst mit dem Abgleich (andere App/anderes Gerät): regelmäßig nachsehen */
+setInterval(()=>{ try{ if(demoAn()){ if(demoNachfuellen()) (typeof softRender==="function"?softRender:render)(); } else demoPruefen(); }catch(e){} },8000);
+/* Zeile für „Mehr“ in allen Apps */
+function demoZeile(){ return `<div class="li" role="button" tabindex="0" data-act="demoUm"><span class="av">${icon("bulb")}</span><span class="lt"><span class="h">Demo-Vorschau</span><span class="s">Beispielkunden, Aufträge, Baustellen, Prüfungen und Bibliothek zum Ausprobieren – gilt in allen Apps und auf allen deinen Geräten, Beispieldaten werden nie hochgeladen</span></span><span class="schalter${demoAn()?" an":""}" aria-hidden="true"><i></i></span></div>`; }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="demoUm"]'); if(!b) return; e.stopPropagation(); e.preventDefault(); demoUmschalten(!demoAn()); },true);
+/* ===== Entwickler-Einstellungen (nur Rolle „Entwickler“): ganz unten in „Mehr“ ===== */
+const istEntwickler=()=>{ try{ return typeof meineRollen==="function"&&meineRollen().includes("Entwickler"); }catch(e){ return false; } };
+function entwicklerBereich(){ if(!istEntwickler()) return ""; const z=[typeof mlTestZeile==="function"&&ME.mail?mlTestZeile():""].join("").trim();
+  return z?`<div class="sec-lbl">Entwickler</div><div class="list">${z}</div>`:""; }
 /* Hinweis oben, solange die Demo läuft */
 function demoMarke(){ const row=document.querySelector("#topbar .tb-row"); if(!row) return; let m=document.getElementById("demoMarke");
   if(!demoAn()){ if(m) m.remove(); return; }
-  if(!m){ m=document.createElement("span"); m.id="demoMarke"; m.className="demo-marke"; m.textContent="Demo"; m.title="Demo-Vorschau: Beispieldaten, nur auf diesem Gerät. Ausschalten in der Übersicht unter Einstellungen."; }
+  if(!m){ m=document.createElement("span"); m.id="demoMarke"; m.className="demo-marke"; m.textContent="Demo"; m.title="Demo-Vorschau: Beispieldaten in allen Apps. Ausschalten unter Mehr → Demo-Vorschau."; }
   const vor=document.getElementById("glBtn")||document.getElementById("avBtn"); if(vor&&m.nextSibling!==vor) row.insertBefore(m,vor); }

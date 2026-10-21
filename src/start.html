@@ -2232,14 +2232,14 @@ function mehrView(){
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}${ME.admin?" · Admin":""}`)):""}
       ${row("theme","theme","Darstellung",TH_LABEL[theme])}
       ${ME.mail?mlGeraetZeile():""}
-      <div class="li" role="button" tabindex="0" data-act="demoUm"><span class="av">${icon("bulb")}</span><span class="lt"><span class="h">Demo-Vorschau</span><span class="s">Beispielkunden, Aufträge, Baustellen und Prüfungen zum Ausprobieren – nur auf diesem Gerät, wird nie synchronisiert</span></span><span class="schalter${demoAn()?" an":""}" aria-hidden="true"><i></i></span></div></div>
+      ${demoZeile()}</div>
     ${ME.admin?`<div class="sec-lbl">Verwaltung</div><div class="list">
       ${row("nav:team","person","Mitarbeiter und Rechte",`${team().length} aktiv · Protokolle an ${esc(mailAn())}`)}</div>`:""}
     <div class="app-weiter"><div class="sec-lbl">Apps</div>${listOf(APPS.filter(a=>!a.geplant).map(a=>`<a class="li" href="${a.href}" style="text-decoration:none;color:inherit"><img class="app-mini" src="${a.ic}" alt=""><span class="lt"><span class="h">${a.name}</span><span class="s">${a.text}</span></span>${icon("chev")}</a>`))}</div>
     <div class="sec-lbl">Info</div><div class="list">
       ${row("nav:entwicklung","bulb","Entwicklung der Apps",`Stand ${ENTW_STAND}`)}
       ${row("nav:impressum","paragraph","Impressum","")}
-      ${row("nav:about","info","Über",`Version ${APP_VERSION}`)}</div></div>`;
+      ${row("nav:about","info","Über",`Version ${APP_VERSION}`)}</div>${entwicklerBereich()}</div>`;
 }
 function entwicklungView(){
   return `<div class="narrow"><div class="entw">${ENTWICKLUNG.map(e=>`<div class="ew ${e.st}"><span class="ew-p"></span><div><b>${esc(e.t)}</b> ${pill(e.st,e.s)}<p>${esc(e.d)}</p></div></div>`).join("")}</div>

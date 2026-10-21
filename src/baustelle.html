@@ -2889,7 +2889,7 @@ function mehrView(){
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}`)):""}
       ${row("nav:team","person","Mitarbeiter",esc(META.profil.name||""))}
       ${row("theme","theme","Darstellung",TH_LABEL[theme])}
-      ${ME.mail?mlGeraetZeile():""}</div>
+      ${ME.mail?mlGeraetZeile():""}${demoZeile()}</div>
     <div class="sec-lbl">Daten</div><div class="list">
       ${SYNC_ON?row("syncNow","sync","Jetzt abgleichen",esc(syncText())):""}
       ${row("export","backup","Alle sichern","Baustellen, Übergaben, Fotos und Kunden")}
@@ -2897,7 +2897,7 @@ function mehrView(){
     <div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${`<a class="li" href="../uebersicht/" style="text-decoration:none;color:inherit"><span class="av">${icon("home")}</span><span class="lt"><span class="h">Übersicht</span><span class="s">Startseite mit Statistik und Kunden</span></span>${icon("chev")}</a><a class="li" href="../evse/" style="text-decoration:none;color:inherit"><span class="av">${icon("ev")}</span><span class="lt"><span class="h">EVSE</span><span class="s">Prüfung von Wallboxen und Ladesäulen</span></span>${icon("chev")}</a><a class="li" href="../echeck/" style="text-decoration:none;color:inherit"><span class="av">${icon("home")}</span><span class="lt"><span class="h">E-Check</span><span class="s">Hausinstallation und Geräte · in Vorbereitung</span></span>${icon("chev")}</a>`}</div></div>
     <div class="sec-lbl">Rechtliches und Info</div><div class="list">
       ${row("nav:impressum","paragraph","Impressum","")}
-      ${row("nav:about","info","Über die App",`Version ${APP_VERSION}`)}</div>
+      ${row("nav:about","info","Über die App",`Version ${APP_VERSION}`)}</div>${entwicklerBereich()}
     <p class="hint">Baustelle · Version ${APP_VERSION}${nf?` · ${nf} abgeschlossene Baustelle${nf>1?"n":""} unter „Abgeschlossen“`:""}</p></div>`;
 }
 function teamView(){

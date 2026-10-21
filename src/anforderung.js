@@ -209,7 +209,7 @@ function mlGeraetZeile(){ const geht=mlKannSys(), verw=geht&&Notification.permis
     :verw?"Im Browser blockiert – über das Schloss neben der Adresse wieder erlauben"
     :"Neue Aufträge, Zuweisungen und Notizen auch melden, wenn die App im Hintergrund offen ist";
   return `<div class="li" role="button" tabindex="0" data-act="mlPushUm"><span class="av">${icon("glocke")}</span><span class="lt"><span class="h">Benachrichtigungen auf diesem Gerät</span><span class="s">${esc(sub)}</span></span><span class="schalter${an?" an":""}" aria-hidden="true"><i></i></span></div>
-    ${mlTestZeile()}`; }
+`; }
 document.addEventListener("click",async e=>{ const b=e.target.closest&&e.target.closest('[data-act="mlPushUm"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
   if(mlPushAn()){ mlLs(ML_PUSH,"0"); render(); toast("Benachrichtigungen auf diesem Gerät aus"); return; }
   if(!mlKannSys()){ toast("Dieser Browser kann keine Benachrichtigungen zeigen"); return; }
