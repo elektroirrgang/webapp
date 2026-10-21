@@ -178,8 +178,7 @@ function mlMelden(){ if(!ME||!ME.mail||(typeof nav!=="undefined"&&nav.v==="login
   const frisch=neu.filter(m=>Date.now()-(m.t||0)<12*36e5); if(!frisch.length) return;
   const vorne=document.visibilityState==="visible"&&document.hasFocus();
   if(!vorne&&mlPushAn()) mlSystem(frisch); mlBanner(frisch); }
-function mlOeffnenId(id){ const S=mlSt(), m=id&&meldungen().find(x=>x.id===id);
-  document.getElementById("mlBan")?.remove();
+function mlOeffnenId(id){ document.getElementById("mlBan")?.remove(); if(id==="test") return; const S=mlSt(), m=id&&meldungen().find(x=>x.id===id);
   if(!m){ mlAuf(); return; } S.gel[id]=1; mlStSpeichern(); mlGlocke(); if(m.go) mlGo(m.go); }
 let mlBanT=null;
 function mlBanner(neu){ document.getElementById("mlBan")?.remove(); clearTimeout(mlBanT); const m=neu[0], n=neu.length;
@@ -197,11 +196,11 @@ function mlBanner(neu){ document.getElementById("mlBan")?.remove(); clearTimeout
   const sicht=()=>{ if(!document.body.contains(d)){ document.removeEventListener("visibilitychange",sicht); return; } start(); };
   document.addEventListener("visibilitychange",sicht); start(); }
 async function mlSystem(neu){ const m=neu[0], n=neu.length;
-  const titel=n===1?`${mlName(m)} ${m.h}`:`${n} neue Benachrichtigungen`, text=n===1?(m.s||""):neu.slice(0,4).map(x=>`${mlName(x)}: ${x.h}`).join("\n");
-  const ic=(document.querySelector('link[rel="apple-touch-icon"]')||document.querySelector('link[rel~="icon"]')||{}).href, id=n===1?m.id:"";
-  try{ const no=new Notification(titel,{body:text,icon:ic,tag:"irrgang-"+(id||"mehr")}); no.onclick=()=>{ try{ window.focus(); }catch(e){} no.close(); mlOeffnenId(id); }; }
-  catch(e){ /* iPad/Android: nur über den Service Worker */
-    try{ const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration(); if(r) r.showNotification(titel,{body:text,icon:ic,tag:"irrgang-"+(id||"mehr"),data:{ml:id}}); }catch(x){} } }
+  const titel=n===1?(m.von?`${mlName(m)} ${m.h}`:m.h):`${n} neue Benachrichtigungen`, text=n===1?(m.s||""):neu.slice(0,4).map(x=>`${mlName(x)}: ${x.h}`).join("\n");
+  const ic=(document.querySelector('link[rel="apple-touch-icon"]')||document.querySelector('link[rel~="icon"]')||{}).href, id=n===1?m.id:"", tag="irrgang-"+(id||"mehr");
+  /* zuerst über den Service Worker (geht auch am iPad als Home-Bildschirm-App), sonst direkt */
+  try{ const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration(); if(r&&r.showNotification){ await r.showNotification(titel,{body:text,icon:ic,tag,data:{ml:id}}); return true; } }catch(e){}
+  try{ const no=new Notification(titel,{body:text,icon:ic,tag}); no.onclick=()=>{ try{ window.focus(); }catch(e){} no.close(); mlOeffnenId(id); }; return true; }catch(e){ return false; } }
 navigator.serviceWorker&&navigator.serviceWorker.addEventListener("message",e=>{ if(e.data&&"ml" in e.data) mlOeffnenId(e.data.ml); });
 setInterval(mlMelden,10000);
 /* Schalter in „Mehr“ */
@@ -209,10 +208,18 @@ function mlGeraetZeile(){ const geht=mlKannSys(), verw=geht&&Notification.permis
   const sub=!geht?"Dieser Browser kann keine Benachrichtigungen zeigen – am iPad die App vom Home-Bildschirm öffnen"
     :verw?"Im Browser blockiert – über das Schloss neben der Adresse wieder erlauben"
     :"Neue Aufträge, Zuweisungen und Notizen auch melden, wenn die App im Hintergrund offen ist";
-  return `<div class="li" role="button" tabindex="0" data-act="mlPushUm"><span class="av">${icon("glocke")}</span><span class="lt"><span class="h">Benachrichtigungen auf diesem Gerät</span><span class="s">${esc(sub)}</span></span><span class="schalter${an?" an":""}" aria-hidden="true"><i></i></span></div>`; }
+  return `<div class="li" role="button" tabindex="0" data-act="mlPushUm"><span class="av">${icon("glocke")}</span><span class="lt"><span class="h">Benachrichtigungen auf diesem Gerät</span><span class="s">${esc(sub)}</span></span><span class="schalter${an?" an":""}" aria-hidden="true"><i></i></span></div>
+    <div class="li" role="button" tabindex="0" data-act="mlTest"><span class="av">${icon("send")}</span><span class="lt"><span class="h">Test-Benachrichtigung</span><span class="s">Kommt nach 10 Sekunden – vorher die App in den Hintergrund legen oder das Fenster minimieren</span></span>${icon("chev")}</div>`; }
 document.addEventListener("click",async e=>{ const b=e.target.closest&&e.target.closest('[data-act="mlPushUm"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
   if(mlPushAn()){ mlLs(ML_PUSH,"0"); render(); toast("Benachrichtigungen auf diesem Gerät aus"); return; }
   if(!mlKannSys()){ toast("Dieser Browser kann keine Benachrichtigungen zeigen"); return; }
   let p=Notification.permission; if(p==="default"){ try{ p=await Notification.requestPermission(); }catch(x){} }
   if(p==="granted"){ mlLs(ML_PUSH,"1"); render(); toast("Benachrichtigungen an – du bekommst Bescheid, auch wenn die App im Hintergrund ist"); }
   else { render(); toast("Nicht erlaubt – im Browser bei dieser Seite Benachrichtigungen erlauben"); } },true);
+
+/* Test: nach 10 Sekunden Banner + (wenn eingeschaltet) System-Benachrichtigung */
+let mlTestT=null;
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="mlTest"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
+  clearTimeout(mlTestT); toast(mlPushAn()?"Kommt in 10 Sekunden – jetzt App wechseln oder Fenster minimieren":"Kommt in 10 Sekunden als Banner – für Meldungen im Hintergrund oben „Benachrichtigungen auf diesem Gerät“ einschalten");
+  mlTestT=setTimeout(async()=>{ const m={id:"test",von:null,h:"Test-Benachrichtigung",s:"So sieht eine Meldung aus – bei echten Meldungen öffnet Antippen den Auftrag.",t:Date.now()};
+    let sys=false; if(mlPushAn()) sys=await mlSystem([m]); mlBanner([m]); if(mlPushAn()&&!sys) toast("Das System hat die Benachrichtigung nicht angenommen"); },10000); },true);
