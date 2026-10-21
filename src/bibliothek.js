@@ -57,7 +57,7 @@ async function pushProtokolle(){
 /* PDF eines anderen Geräts holen, im Gerät ablegen und öffnen */
 async function bbFern(id){
   const r=DB.protokolle&&DB.protokolle.get(id); if(!r) return;
-  if(r.demo){ if(typeof demoProtBlob!=="function") return; const blob=demoProtBlob(r), x={id:r.id,demo:true}; BB_FELDER.forEach(f=>{ if(r[f]!==undefined) x[f]=r[f]; }); x.size=blob.size; x.created=r.created||Date.now();
+  if(r.demo){ if(typeof demoProtBlob!=="function") return; const blob=await demoProtBlob(r), x={id:r.id,demo:true}; BB_FELDER.forEach(f=>{ if(r[f]!==undefined) x[f]=r[f]; }); x.size=blob.size; x.created=r.created||Date.now();
     try{ const d=await new Promise((res,rej)=>{ const q=indexedDB.open("evse_protokolle"); q.onupgradeneeded=()=>{ const z=q.result; if(!z.objectStoreNames.contains("meta")) z.createObjectStore("meta",{keyPath:"id"}); if(!z.objectStoreNames.contains("blob")) z.createObjectStore("blob"); }; q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); });
       const tx=d.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").put(x); tx.objectStore("blob").put(blob,x.id); await new Promise(ok=>{ tx.oncomplete=ok; tx.onerror=ok; }); d.close(); }catch(e){}
     BB_PROT.push(x); if(typeof PROT!=="undefined"&&!PROT.some(y=>y.id===x.id)) PROT.push(x); const rs=document.getElementById("res"); if(rs) rs.innerHTML=bibListe(); bbOeffnen(x.id); return; }
@@ -93,7 +93,7 @@ function bbEintraege(){
   const echt=new Set([...BB_PROT,...P.filter(r=>!r.deleted&&!String(r.id).startsWith("pa-"))].map(x=>x.pruefungId).filter(Boolean)); /* „pa-“ nur, solange es zur Prüfung kein richtiges Protokoll gibt */
   P.filter(r=>!r.deleted&&!hier.has(r.id)&&!(String(r.id).startsWith("pa-")&&echt.has(r.pruefungId))).forEach(r=>L.push(protE(r,`data-act="bbFern" data-id="${esc(r.id)}"`,!r.demo)));
   const demo=typeof demoAn==="function"&&demoAn();
-  BB_PROT.filter(x=>(!x.demo||demo)&&!weg.has(x.id)).forEach(x=>L.push({art:x.app==="baustelle"?"bericht":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
+  BB_PROT.filter(x=>(!x.demo||(demo&&DB.protokolle&&DB.protokolle.has(x.id)))&&!weg.has(x.id)).forEach(x=>L.push({art:x.app==="baustelle"?"bericht":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
     info:[x.app==="baustelle"?"Baustelle":"EVSE",x.art,bbDatum(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`,x.von&&x.von.name].filter(Boolean).join(" · "),
     pill:x.ergebnis?pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden"):"",ziel:`data-act="bbOeffnen" data-id="${esc(x.id)}"`}));
   if(DB.pruefungen) [...DB.pruefungen.values()].filter(p=>!p.deleted&&p.pdfAblage&&!lokal.has(p.id)&&(!p.demo||(typeof demoAn==="function"&&demoAn()))).forEach(p=>{

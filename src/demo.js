@@ -58,13 +58,13 @@ function demoDaten(){
     pr("demo-p4","demo-k3","demo-s6","Erstprüfung",tag(0),"",false,P.ab,vor(0,1))];
   /* Bibliothek: zu jeder Beispiel-Prüfung mit PDF ein Eintrag – so zeigt die Demo die Ordner in allen Apps */
   const protokolle=pruefungen.filter(x=>x.pdfAblage).map(x=>{ const k=kunden.find(y=>y.id===x.kundeId), s=standorte.find(y=>y.id===x.standortId);
-    return r({id:"demo-pa-"+x.id,app:"evse",bib:"pdf",pfad:"demo.pdf",pruefungId:x.id,kundeId:x.kundeId,standortId:x.standortId||"",name:"Prüfprotokoll "+x.p.datum,titel:[k&&k.name,s&&s.name].filter(Boolean).join(" · "),
+    return r({id:"demo-pb-"+x.id,app:"evse",bib:"pdf",pfad:"demo.pdf",pruefungId:x.id,kundeId:x.kundeId,standortId:x.standortId||"",name:"Prüfprotokoll "+x.p.datum,titel:[k&&k.name,s&&s.name].filter(Boolean).join(" · "),
       datum:x.p.datum,art:x.p.art,pruefer:x.p.pruefer,ergebnis:"ok",von:x.createdBy},x.createdBy,x.created); });
   /* Baustellen-Berichte und ein Prüfprotokoll mit Mängeln (PDF wird beim Öffnen erzeugt) */
   protokolle.forEach(x=>{ if(x.pruefungId==="demo-p2"){ x.ergebnis="bad"; x.maengel=true; } });
   protokolle.push(
-    r({id:"demo-pa-b1",app:"baustelle",bib:"baustellen",pfad:"demo.pdf",kundeId:"demo-k4",baustelleId:"demo-b1",name:"Aufnahme Familie Hoffmann Neubau EFH",titel:"Familie Hoffmann · Elektroinstallation Neubau EFH",datum:tag(-19),art:"Aufnahmeprotokoll",auftragsnr:"A-24117",von:P.ai},P.ai,vor(19)),
-    r({id:"demo-pa-b2",app:"baustelle",bib:"baustellen",pfad:"demo.pdf",kundeId:"demo-k2",standortId:"demo-s1",baustelleId:"demo-b2",name:"Aufnahme Autohaus Bergland Ladeinfrastruktur",titel:"Autohaus Bergland GmbH · Ladeinfrastruktur Werkstatt",datum:tag(-13),art:"Aufnahmeprotokoll",auftragsnr:"A-24121",von:P.ms},P.ms,vor(13)));
+    r({id:"demo-pb-b1",app:"baustelle",bib:"baustellen",pfad:"demo.pdf",kundeId:"demo-k4",baustelleId:"demo-b1",name:"Aufnahme Familie Hoffmann Neubau EFH",titel:"Familie Hoffmann · Elektroinstallation Neubau EFH",datum:tag(-19),art:"Aufnahmeprotokoll",auftragsnr:"A-24117",von:P.ai},P.ai,vor(19)),
+    r({id:"demo-pb-b2",app:"baustelle",bib:"baustellen",pfad:"demo.pdf",kundeId:"demo-k2",standortId:"demo-s1",baustelleId:"demo-b2",name:"Aufnahme Autohaus Bergland Ladeinfrastruktur",titel:"Autohaus Bergland GmbH · Ladeinfrastruktur Werkstatt",datum:tag(-13),art:"Aufnahmeprotokoll",auftragsnr:"A-24121",von:P.ms},P.ms,vor(13)));
   /* Notizen: für die ganze Firma, für bestimmte Personen, ein Whiteboard */
   const nid=(()=>{ let i=0; return ()=>"demo-nb"+(++i); })();
   const notizen=[
@@ -79,11 +79,11 @@ function demoDaten(){
       {t:"zettel",c:"#C8E6C9",p:[280,220,520,390],s:"Material\nbis Di bestellen",fs:26}]}]},P.ai,vor(0,6))];
   /* Dokumente und Fotos in den Kundenablagen (Inhalt wird beim Öffnen erzeugt) */
   const dateien=[
-    r({id:"demo-d1",bezugKind:"kunden",bezugId:"demo-k2",name:"Angebot Wallboxen Ausstellung.pdf",typ:"application/pdf",groesse:48200,demoArt:"angebot"},P.bu,vor(5)),
-    r({id:"demo-d2",bezugKind:"standorte",bezugId:"demo-s1",name:"Zählerschrank Werkstatt.jpg",typ:"image/jpeg",groesse:182000,demoArt:"zaehler"},P.ms,vor(13)),
-    r({id:"demo-d3",bezugKind:"kunden",bezugId:"demo-k1",name:"Notleuchte Lager.jpg",typ:"image/jpeg",groesse:121000,demoArt:"leuchte"},P.ab,vor(1)),
-    r({id:"demo-d4",bezugKind:"kunden",bezugId:"demo-k5",name:"Schaltplan Haus B.pdf",typ:"application/pdf",groesse:63000,demoArt:"schaltplan"},P.bu,vor(30)),
-    r({id:"demo-d5",bezugKind:"standorte",bezugId:"demo-s3",name:"Unterverteilung Haus A.jpg",typ:"image/jpeg",groesse:150000,demoArt:"uv"},P.ms,vor(20))];
+    r({id:"demo-d1b",bezugKind:"kunden",bezugId:"demo-k2",name:"Angebot Wallboxen Ausstellung.pdf",typ:"application/pdf",groesse:48200,demoArt:"angebot"},P.bu,vor(5)),
+    r({id:"demo-d2b",bezugKind:"standorte",bezugId:"demo-s1",name:"Zählerschrank Werkstatt.jpg",typ:"image/jpeg",groesse:182000,demoArt:"zaehler"},P.ms,vor(13)),
+    r({id:"demo-d3b",bezugKind:"kunden",bezugId:"demo-k1",name:"Notleuchte Lager.jpg",typ:"image/jpeg",groesse:121000,demoArt:"leuchte"},P.ab,vor(1)),
+    r({id:"demo-d4b",bezugKind:"kunden",bezugId:"demo-k5",name:"Schaltplan Haus B.pdf",typ:"application/pdf",groesse:63000,demoArt:"schaltplan"},P.bu,vor(30)),
+    r({id:"demo-d5b",bezugKind:"standorte",bezugId:"demo-s3",name:"Unterverteilung Haus A.jpg",typ:"image/jpeg",groesse:150000,demoArt:"uv"},P.ms,vor(20))];
   return {kunden,standorte,baustellen,eintraege,vorgaenge,anforderungen,pruefungen,protokolle,notizen,dateien};
 }
 let demoCache=null;
@@ -176,7 +176,39 @@ function demoPdfVorlage(titel,unter,felder,tab,schluss){ return demoPdfBauen((P,
     tab.zeilen.forEach(z=>{ let x=46; z.forEach((v,i)=>{ const schlecht=/nicht bestanden|Mangel/.test(v); P.text(x,y+14,v,{gr:9.5,farbe:schlecht?[.75,.1,.1]:undefined,fett:schlecht}); x+=sp[i]; }); y+=22; P.linie(40,y,W-40,y,[.9,.9,.92]); }); }
   (schluss||[]).forEach(([t,o])=>{ y+=o&&o.abstand?o.abstand:20; P.text(40,y,t,o||{}); });
   P.linie(40,780,W-40,780); P.text(40,796,"Erstellt mit der Demo-Vorschau der Irrgang-Apps – Beispieldaten, kein echtes Protokoll.",{gr:8,farbe:G}); }); }
-function demoProtBlob(r){
+/* Demo-PDFs im echten Irrgang-Layout (pdfstil.js wie das EVSE-Prüfprotokoll); ohne jsPDF (offline) die einfache Ersatzfassung */
+function demoWasserzeichen(d){ const N=d.getNumberOfPages(); for(let i=1;i<=N;i++){ d.setPage(i); d.setFont("helvetica","bold"); d.setFontSize(70); d.setTextColor(236,238,241); d.text("BEISPIEL",52,200,{angle:35}); } }
+async function demoProtBlob(r){
+  const k=DB.kunden&&DB.kunden.get(r.kundeId), st=r.standortId&&DB.standorte&&DB.standorte.get(r.standortId), b=r.baustelleId&&DB.baustellen&&DB.baustellen.get(r.baustelleId);
+  const datum=String(r.datum||"").split("-").reverse().join("."), adr=x=>x?[x.strasse,[x.plz,x.ort].filter(Boolean).join(" ")].filter(Boolean).join(", "):"";
+  let lib; try{ lib=await pdfLib(); }catch(e){ return demoProtBlobEinfach(r); }
+  const d=new lib.jsPDF({unit:"mm",format:"a4"});
+  if(r.app==="baustelle"){ const bn=(b&&b.name)||String(r.titel||"").split(" · ").pop();
+    const S=pdfStil(d,{wasser:"BEISPIEL",titel:"Aufnahmeprotokoll",unter:[k&&k.name,bn].filter(Boolean).join(" | "),fuss:`Aufnahme vom ${datum}${r.auftragsnr?` | Auftrag ${r.auftragsnr}`:""}`});
+    S.kopf(); S.abschnitt("Auftragsdaten");
+    S.werte([["Kunde",k&&k.name],["Auftragsnr.",r.auftragsnr],["Adresse",adr(k)],["Kundennr.",k&&k.kdnr],["Baustelle",bn],["Ansprechpartner",k&&k.ansprech],["Datum",datum],["Aufgenommen von",r.von&&r.von.name]]);
+    S.abschnitt("Bestand und Wünsche");
+    S.tabelle(["Bereich","Befund","Wunsch / Hinweis"],[42,58,82],[["Hausanschluss","TN-C-S, 63 A","-"],["Zählerschrank","Platz für 1 Zählerfeld","neuer Zählerschrank nach TAB"],["Unterverteilung OG","nicht vorhanden","UV 3-reihig mit FI/LS"],["Außenbereich","1 Steckdose","Außensteckdose Terrasse"],["Netzwerk","keins","Cat 7 in jedes Zimmer, Patchfeld im HAR"]]);
+    S.abschnitt("Vereinbarungen"); S.text("Baustrom über Zählerschrank Bestand. Leerrohre werden vom Bauherrn bauseits gestellt. Nächster Termin nach Rohbauabnahme.");
+    S.abschnitt("Unterschriften"); S.y+=2; S.unterschriften([["Aufgenommen",r.von&&r.von.name,datum],["Kunde",k&&k.ansprech||k&&k.name,datum]]);
+    return S.ende(); }
+  const bad=r.ergebnis==="bad", art=r.art||"Prüfung";
+  const S=pdfStil(d,{wasser:"BEISPIEL",titel:"Prüfprotokoll Ladeeinrichtungen",unter:`${art} | DIN VDE 0100-600 | DIN VDE 0105-100`,ehw:true,fuss:[k&&k.name,st&&st.name,`Prüfdatum ${datum}`].filter(Boolean).join(" | ")});
+  S.kopf(); S.abschnitt("Auftragsdaten");
+  S.werte([["Auftraggeber",[k&&k.name,adr(k)].filter(Boolean).join(", ")],["Auftragsnr.",r.auftragsnr||"-"],["Kundennr.",k&&k.kdnr],["Ansprechpartner",k&&k.ansprech],["Standort",st?[st.name,adr(st)].filter(Boolean).join(", "):"wie Auftraggeber"],["Ladepark","-"],
+    ["Prüfdatum",datum],["Prüfer",r.pruefer||(r.von&&r.von.name)],["Messgerät","Wiha MFT one"],["Prüfadapter","Fluke FEV300"],["Art der Prüfung",art],["Netzform","TN-S | 230/400 V"]]);
+  S.abschnitt("Prüfumfang"); S.text("Prüfung der Ladeeinrichtungen einschließlich Zuleitung ab Verteiler: Besichtigen, Erproben und Messen nach DIN VDE 0100-600 bzw. DIN VDE 0105-100 sowie Funktionsprüfung mit Prüfadapter.");
+  S.abschnitt("Übersicht Ladestationen");
+  S.tabelle(["Ladestation","Hersteller / Typ","Seriennummer","Ladepunkte","Ergebnis"],[40,58,40,24,20],[["Wallbox 1","Mennekes AMTRON 4Business","1347122205BK","1","ok"],["Wallbox 2","Mennekes AMTRON 4Business","1347122219BK","1",bad?"bad":"ok"]],4);
+  S.abschnitt("Messwerte");
+  S.tabelle(["Ladepunkt","R iso","R PE","Z s","RCD t / I","DC 6 mA","Ergebnis"],[26,24,22,22,30,24,34],[["Wallbox 1",">500 MOhm","0,21 Ohm","0,38 Ohm","24 ms | 21 mA","ok","ok"],["Wallbox 2",">500 MOhm",bad?"1,84 Ohm":"0,24 Ohm","0,41 Ohm","26 ms | 22 mA","ok",bad?"bad":"ok"]],6);
+  S.abschnitt("Gesamtergebnis"); d.setFont("helvetica","bold"); d.setFontSize(10); d.setTextColor(20);
+  d.text(pdfT(bad?"Mängel festgestellt - Beseitigung erforderlich.":"Keine Mängel festgestellt. Die Ladeeinrichtungen entsprechen den Anforderungen."),S.M,S.y); S.plakette(S.M+S.CW-1,S.y,bad?"bad":"ok"); S.y+=9;
+  S.abschnitt("Festgestellte Mängel / Maßnahmen"); S.text(bad?"Wallbox 2: Schutzleiterwiderstand 1,84 Ohm zu hoch. PE-Anschluss in der Wallbox nachziehen, danach erneut messen.":"Keine.");
+  S.abschnitt("Nächste Prüfung"); S.text("Empfohlen in 1 Jahr. Die Frist legt der Betreiber fest.");
+  S.abschnitt("Unterschriften"); S.y+=2; S.unterschriften([["Prüfer",r.pruefer||(r.von&&r.von.name),datum],["Auftraggeber",k&&k.ansprech,datum]]);
+  return S.ende(String(r.id).slice(-6).toUpperCase()); }
+function demoProtBlobEinfach(r){
   const k=DB.kunden&&DB.kunden.get(r.kundeId), st=r.standortId&&DB.standorte&&DB.standorte.get(r.standortId), b=r.baustelleId&&DB.baustellen&&DB.baustellen.get(r.baustelleId);
   const datum=String(r.datum||"").split("-").reverse().join(".");
   if(r.app==="baustelle") return demoPdfVorlage("Aufnahmeprotokoll",(b&&b.name)||String(r.titel||"").split(" · ").pop(),
@@ -199,6 +231,14 @@ async function demoBild(art){
   x.fillStyle="rgba(200,16,46,.85)"; x.fillRect(0,540,800,60); x.fillStyle="#fff"; x.font="bold 26px sans-serif"; x.fillText("Beispielfoto (Demo)",24,580);
   return await new Promise(ok=>c.toBlob(b=>ok(b),"image/jpeg",.82)); }
 async function demoDateiBlob(d){ if(!d||!d.demo) return null; const a=d.demoArt;
+  if(a==="angebot"||a==="schaltplan"){ try{ const lib=await pdfLib(), doc=new lib.jsPDF({unit:"mm",format:"a4"}), heute=new Date().toLocaleDateString("de-DE");
+    if(a==="angebot"){ const S=pdfStil(doc,{wasser:"BEISPIEL",titel:"Angebot",unter:"Autohaus Bergland GmbH | Zwei weitere Wallboxen an der Ausstellung",fuss:"Angebot A-24130"}); S.kopf(); S.abschnitt("Angebotsdaten");
+      S.werte([["Kunde","Autohaus Bergland GmbH"],["Angebot","A-24130"],["Datum",heute],["Gültig","30 Tage"],["Ansprechpartner","Thomas Berg"],["Bearbeiter","Büro"]]); S.abschnitt("Positionen");
+      S.tabelle(["Pos.","Leistung","Menge","Preis netto"],[14,110,26,32],[["1","Wallbox Mennekes AMTRON 4Business 22 kW","2 Stück","3.980,00 EUR"],["2","NYY-J 5x16 mm², verlegt inkl. Befestigung","45 m","1.215,00 EUR"],["3","FI/LS Typ B in Unterverteilung","2 Stück","1.140,00 EUR"],["4","Erstprüfung mit Prüfprotokoll","1","290,00 EUR"]]);
+      S.abschnitt("Summe"); S.text("Summe netto 6.625,00 EUR | zzgl. 19 % MwSt. 1.258,75 EUR | Gesamt 7.883,75 EUR"); return S.ende(); }
+    const S=pdfStil(doc,{wasser:"BEISPIEL",titel:"Übersichtsschaltplan",unter:"Wohnbau Waldbröl eG | Haus B, Kaiserstraße 34",fuss:"Stand "+heute}); S.kopf(); S.abschnitt("Unterverteilung Haus B");
+    S.tabelle(["Nr.","Schutzorgan","RCD","Stromkreis","Leitung"],[16,34,34,60,38],[["F1","B16","30 mA Typ A","Treppenhaus Licht","NYM-J 3x1,5"],["F2","B16","30 mA Typ A","Keller Steckdosen","NYM-J 3x2,5"],["F3","B16","-","Außenbeleuchtung","NYM-J 3x1,5"],["F4","B10","-","Klingelanlage","NYM-J 3x1,5"]]);
+    return S.ende(); }catch(e){} }
   if(a==="angebot") return demoPdfVorlage("Angebot A-24130","Zwei weitere Wallboxen an der Ausstellung",[["Kunde","Autohaus Bergland GmbH"],["Datum",new Date().toLocaleDateString("de-DE")],["Gültig bis","30 Tage"],["Ansprechpartner","Thomas Berg"]],
     {t:"Positionen",kopf:["Pos.","Leistung","Menge","Preis"],sp:[40,300,70,100],zeilen:[["1","Wallbox Mennekes AMTRON 4Business 22 kW","2 Stück","3.980,00 €"],["2","NYY-J 5×16 mm², verlegt","45 m","1.215,00 €"],["3","LS/RCD Typ B in UV","2 Stück","1.140,00 €"],["4","Erstprüfung mit Protokoll","1","290,00 €"]]},
     [["Summe netto: 6.625,00 €",{fett:1,gr:12,abstand:28}]]);

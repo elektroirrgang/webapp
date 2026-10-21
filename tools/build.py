@@ -11,6 +11,7 @@ version = f"{V} · {datetime.date.today().strftime('%d.%m.%Y')}"
 
 def baue(quelle, ziel, icon):
     html = (root / quelle).read_text(encoding="utf-8")
+    html = html.replace("/*PDFSTIL*/", (root / "src/pdfstil.js").read_text(encoding="utf-8"))
     html = html.replace("<!--JSPDF-->", (root / "vendor/jspdf.umd.min.js").read_text(encoding="utf-8"))
     html = html.replace("<!--MSAL-->", (root / "vendor/msal-browser-3.28.1.min.js").read_text(encoding="utf-8"))
     html = html.replace("<!--EHANDWERK-->", "data:image/jpeg;base64," + b64("brand/e-handwerk.jpg"))
