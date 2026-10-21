@@ -612,3 +612,6 @@ body:has(.vg-bar) .snackbar{bottom:96px!important}
 .kt-b:hover{background:color-mix(in srgb,var(--primary) 8%,transparent)}
 .kt-b .ic{width:20px;height:20px}
 .kt-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px}
+
+/* Fenster nie unter die Statusleiste (iOS-Web-App mit durchscheinender Leiste): Mitte und Höhe ohne die sicheren Ränder */
+.dlg{top:calc(50% + (env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) / 2);max-height:calc(100dvh - 48px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow:auto}
