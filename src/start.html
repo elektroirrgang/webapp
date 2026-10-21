@@ -1021,16 +1021,36 @@ body.kopf-oben .edk-platz{display:none!important}
 @media (min-width:900px){.kd-oben{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 .kd-oben .infok2{margin:0}
 .kd-oben .qa-row{justify-content:space-around;gap:8px}.kd-oben .qa{flex:1 1 0;width:auto;max-width:112px}
-.kd-karte .maplibregl-ctrl-top-right{margin:10px 10px 0 0}
-.kd-karte .maplibregl-ctrl-group{background:color-mix(in srgb,var(--surface) 88%,transparent);border-radius:20px;box-shadow:var(--schweben);overflow:hidden;margin:0}
+/* Kartenknöpfe: matt, gefüllt (M3), alle in einer Flucht am rechten Rand – oben Zoom, unten Zurück-zum-Ort und ⓘ */
+.kd-karte{--kk:var(--sc-high);--kk-i:var(--on-surface)}
+.kd-karte .maplibregl-ctrl-top-right,.kd-karte .maplibregl-ctrl-bottom-right{right:12px;z-index:4}
+.kd-karte .maplibregl-marker{z-index:1} .kd-karte .kd-pin{z-index:2}
+.kd-karte .maplibregl-ctrl-top-right{top:12px} .kd-karte .maplibregl-ctrl-bottom-right{bottom:12px}
+.kd-karte .maplibregl-ctrl-top-right .maplibregl-ctrl,.kd-karte .maplibregl-ctrl-bottom-right .maplibregl-ctrl{margin:0}
+.kd-karte .maplibregl-ctrl-group{background:var(--kk);border-radius:20px;box-shadow:var(--e1);overflow:hidden}
 .kd-karte .maplibregl-ctrl-group button{width:40px;height:40px;border:0!important;background-color:transparent}
-.kd-karte .maplibregl-ctrl-group button+button{border-top:0}
 .kd-karte .maplibregl-ctrl-group button:hover{background-color:color-mix(in srgb,var(--on-surface) 8%,transparent)}
-:root[data-theme="dark"] .kd-karte .maplibregl-ctrl-icon{filter:invert(1)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .kd-karte .maplibregl-ctrl-icon{filter:invert(1)}}
+.kd-karte .maplibregl-ctrl-group button .maplibregl-ctrl-icon{background-image:none!important;background-color:var(--kk-i);-webkit-mask:var(--kk-m) center/22px no-repeat;mask:var(--kk-m) center/22px no-repeat}
+.kd-karte .maplibregl-ctrl-zoom-in{--kk-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z'/%3E%3C/svg%3E")}
+.kd-karte .maplibregl-ctrl-zoom-out{--kk-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M19 13H5v-2h14v2z'/%3E%3C/svg%3E")}
+.kd-karte .maplibregl-ctrl-attrib.maplibregl-compact{position:relative;min-height:40px;min-width:40px;box-sizing:border-box;margin:0;padding:0 40px 0 0;border-radius:20px;background:var(--kk);color:var(--on-sv);box-shadow:var(--e1);display:flex;align-items:center;font-size:11px}
+.kd-karte .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show){padding:0}
+.kd-karte .maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-inner{padding:0 4px 0 14px}
+.kd-karte .maplibregl-ctrl-attrib a{color:var(--on-sv)}
+.kd-karte .maplibregl-ctrl-attrib-button{position:absolute;right:0;top:0;width:40px;height:40px;border-radius:50%;background:none!important;display:block;cursor:pointer;list-style:none}
+.kd-karte .maplibregl-ctrl-attrib-button::-webkit-details-marker{display:none}
+.kd-karte .maplibregl-ctrl button:focus,.kd-karte .maplibregl-ctrl-attrib-button:focus{outline:none;box-shadow:none} .kd-karte .maplibregl-ctrl button:focus-visible,.kd-karte .maplibregl-ctrl-attrib-button:focus-visible{box-shadow:inset 0 0 0 2px var(--primary)}
+.kd-karte .maplibregl-ctrl-attrib-button::after{content:"";position:absolute;inset:0;background:var(--kk-i);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z'/%3E%3C/svg%3E") center/22px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z'/%3E%3C/svg%3E") center/22px no-repeat}
+.kd-karte .maplibregl-ctrl-attrib-button:hover{background:color-mix(in srgb,var(--on-surface) 8%,transparent)!important}
 .kd-karte .maplibregl-cooperative-gesture-screen{font:inherit;font-size:15px;font-weight:600;border-radius:24px}
-.kd-zentr{position:absolute;z-index:3;right:10px;bottom:44px;width:40px;height:40px;border:0;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--surface) 88%,transparent);color:var(--primary);box-shadow:var(--schweben);cursor:pointer}
+.kd-zentr{position:absolute;z-index:5;right:12px;bottom:60px;width:40px;height:40px;border:0;border-radius:50%;display:grid;place-items:center;background:var(--kk);color:var(--kk-i);box-shadow:var(--e1);cursor:pointer}
+.kd-zentr:hover{background:color-mix(in srgb,var(--on-surface) 8%,var(--kk))}
 .kd-zentr[hidden]{display:none} .kd-zentr .ic{width:22px;height:22px}
+/* Anhaltspunkte in der Nähe (Supermarkt, Kirche, Tankstelle …) */
+.kd-poi{display:flex;align-items:center;gap:5px;height:26px;padding:0 9px 0 3px;border-radius:13px;background:var(--kk);color:var(--on-surface);box-shadow:var(--e1);font-size:11.5px;font-weight:650;white-space:nowrap;pointer-events:auto;cursor:default}
+.kd-poi i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--poi,#5F6368);color:#fff;flex:none}
+.kd-poi i svg{width:13px;height:13px;fill:currentColor}
+.kd-karte.fern .kd-poi{padding:0 3px} .kd-karte.fern .kd-poi span{display:none}
 .kd-karte{position:relative;min-height:280px;height:100%;border-radius:24px;overflow:hidden;background:var(--sc-low);color:var(--on-sv);isolation:isolate}
 .kd-slot{position:absolute;inset:0}
 .kd-karte .kd-map{position:absolute!important;inset:0;width:100%;height:100%}
@@ -1039,11 +1059,10 @@ body.kopf-oben .edk-platz{display:none!important}
 .kd-lade .ic{width:28px;height:28px}
 .kd-pin{width:30px;height:38px;background:var(--primary);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 30'%3E%3Cpath d='M12 0C5.4 0 0 5.2 0 11.7 0 20.4 12 30 12 30s12-9.6 12-18.3C24 5.2 18.6 0 12 0zm0 16.5a4.8 4.8 0 1 1 0-9.6 4.8 4.8 0 0 1 0 9.6z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 30'%3E%3Cpath d='M12 0C5.4 0 0 5.2 0 11.7 0 20.4 12 30 12 30s12-9.6 12-18.3C24 5.2 18.6 0 12 0zm0 16.5a4.8 4.8 0 1 1 0-9.6 4.8 4.8 0 0 1 0 9.6z'/%3E%3C/svg%3E") center/contain no-repeat;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
 /* schwebende Ortsauswahl auf der Karte */
-.kd-orte{position:absolute;left:12px;top:12px;right:12px;z-index:2;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.kd-orte{position:absolute;left:12px;top:12px;right:64px;z-index:5;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
 .kd-ort{pointer-events:auto;height:36px;padding:0 14px;border:0;border-radius:18px;background:var(--surface);color:var(--on-surface);font:inherit;font-size:14px;font-weight:650;box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer}
 .kd-ort[aria-pressed="true"]{background:var(--primary);color:var(--on-primary)}
 /* Kartenhinweis (Pflicht-Quellenangabe) nur als kleines „i“ */
-.kd-karte .maplibregl-ctrl-attrib.maplibregl-compact{margin:0 8px 8px 0;background:color-mix(in srgb,var(--surface) 80%,transparent);border-radius:12px;min-height:22px;font-size:10px}
 .kd-karte .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show){padding:0}
 .kt-box .sec-row{margin-top:20px}
 @media (min-width:900px){.kt-liste{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
@@ -2219,7 +2238,7 @@ function karteView(r,ss){
   const O=karteOrte(r,ss); if(!O.length) return `<div class="kd-karte leer"><span class="kd-lade">${icon("ort")}<span>Keine Adresse hinterlegt</span></span></div>`;
   const w=O.find(x=>x.id===karteWahl[r.id])||O[0];
   setTimeout(()=>karteLaden(w.a),0);
-  return `<div class="kd-karte" id="kdKarte" data-a="${esc(w.a)}"><div class="kd-slot"></div><span class="kd-lade">${icon("ort")}</span><button class="kd-zentr" data-act="karteZentr" hidden title="Zurück zum Ort" aria-label="Zurück zum Ort">${icon("ort")}</button>
+  return `<div class="kd-karte" id="kdKarte" data-a="${esc(w.a)}"><div class="kd-slot"></div><span class="kd-lade">${icon("ort")}</span><button class="kd-zentr" data-act="karteZentr" hidden title="Zurück zum Ort" aria-label="Zurück zum Ort"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg></button>
     ${O.length>1?`<div class="kd-orte">${O.map(x=>`<button class="kd-ort" data-act="karteOrt" data-r="${esc(r.id)}" data-id="${esc(x.id)}" aria-pressed="${x===w}">${esc(x.t)}</button>`).join("")}</div>`:""}</div>`;
 }
 function karteLib(){
@@ -2238,6 +2257,36 @@ const karteFehler=(el,t)=>{ const l=el.querySelector(".kd-lade"); if(l){ l.inner
 /* Kartenstile: hell = farbige Karte (OpenFreeMap „Liberty“), dunkel = Luftbild (Esri World Imagery) */
 const karteStil=st=>st==="satellit"?{version:8,sources:{sat:{type:"raster",tileSize:256,maxzoom:19,tiles:["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
   attribution:"Luftbild © Esri, Maxar, Earthstar Geographics"}},layers:[{id:"sat",type:"raster",source:"sat",paint:{"raster-brightness-max":.92}}]}:"https://tiles.openfreemap.org/styles/"+st;
+/* Anhaltspunkte aus OpenStreetMap (Overpass): Supermärkte, Kirchen, Tankstellen, Schulen, Apotheken, Rathaus, Bank, Krankenhaus, Feuerwehr, Bahnhof.
+   Je Adresse 30 Tage im Gerät gemerkt; max. 12 Stück, nahe beieinander liegende werden ausgedünnt. Die eigenen Punkte der Kartenvorlage werden ausgeblendet. */
+const POI_ART={supermarket:["Supermarkt","#2E7D32","M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"],
+  place_of_worship:["Kirche","#6D4C41","M18 12.22V9l-5-2.5V5h2V3h-2V1h-2v2H9v2h2v1.5L6 9v3.22L2 14v8h8v-4c0-1.1.9-2 2-2s2 .9 2 2v4h8v-8l-4-1.78zM12 13.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"],
+  fuel:["Tankstelle","#E65100","M19.77 7.23l.01-.01-3.72-3.72L15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33 0 1.38 1.12 2.5 2.5 2.5.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14c0-1.1-.9-2-2-2h-1V5c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v16h10v-7.5h1.5v5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V9c0-.69-.28-1.32-.73-1.77zM12 10H6V5h6v5zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"],
+  school:["Schule","#1565C0","M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"],
+  pharmacy:["Apotheke","#C62828","M21 5h-2.64l1.14-3.14L17.15 1l-1.46 4H3v2l2 6-2 6v2h18v-2l-2-6 2-6V5zm-5 9h-3v3h-2v-3H8v-2h3V9h2v3h3v2z"],
+  hospital:["Krankenhaus","#C62828","M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"],
+  townhall:["Rathaus","#455A64","M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z"],
+  bank:["Bank","#455A64","M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z"],
+  fire_station:["Feuerwehr","#D84315","M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"],
+  station:["Bahnhof","#37474F","M12 2c-4 0-8 .5-8 4v9.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h2.23l2-2H14l2 2h2v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V6c0-3.5-3.58-4-8-4zM7.5 17c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm3.5-7H6V6h5v4zm2 0V6h5v4h-5zm3.5 7c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"]};
+const POI_RANG=["supermarket","place_of_worship","fuel","station","townhall","school","pharmacy","hospital","fire_station","bank"];
+async function kartePoiHolen(g){ const key=g.lat.toFixed(4)+","+g.lon.toFixed(4); META.poi=META.poi||{}; const alt=META.poi[key]; if(alt&&Date.now()-alt.t<30*864e5) return alt.L;
+  const um=`(around:800,${g.lat},${g.lon})`, q=`[out:json][timeout:15];(nwr${um}["shop"="supermarket"];nwr${um}["amenity"~"^(place_of_worship|fuel|school|pharmacy|townhall|hospital|bank|fire_station)$"];nwr${um}["railway"="station"];);out center 80;`;
+  const r=await fetch("https://overpass-api.de/api/interpreter?data="+encodeURIComponent(q)); if(!r.ok) throw new Error("poi "+r.status); const j=await r.json();
+  const d=(a,b)=>Math.hypot((a.lat-b.lat)*111000,(a.lon-b.lon)*111000*Math.cos(a.lat*Math.PI/180));
+  let L=(j.elements||[]).map(e=>{ const t=e.tags||{}, art=t.shop==="supermarket"?"supermarket":t.railway==="station"?"station":t.amenity, lat=e.lat||(e.center&&e.center.lat), lon=e.lon||(e.center&&e.center.lon);
+    return POI_ART[art]&&lat?{art,lat,lon,n:String(t.name||t.brand||POI_ART[art][0]).slice(0,28)}:null; }).filter(Boolean);
+  L.forEach(x=>x.d=d(x,g)); L=L.filter(x=>x.d>25).sort((a,b)=>POI_RANG.indexOf(a.art)-POI_RANG.indexOf(b.art)||a.d-b.d);
+  const W=[]; for(const x of L){ if(W.length>=12) break; if(W.some(y=>d(x,y)<90)) continue; W.push({art:x.art,lat:x.lat,lon:x.lon,n:x.n}); }
+  META.poi[key]={t:Date.now(),L:W}; const ks=Object.keys(META.poi); if(ks.length>60) delete META.poi[ks[0]]; metaSave(); return W; }
+async function kartePoi(g,a){ (KARTE.poi||[]).forEach(m=>m.remove()); KARTE.poi=[];
+  let L=[]; try{ L=await kartePoiHolen(g); }catch(e){ return; }
+  const el=document.getElementById("kdKarte"); if(!el||el.dataset.a!==a||!KARTE.map) return;
+  KARTE.poi=L.map(x=>{ const [t,f,pfad]=POI_ART[x.art], d=document.createElement("div"); d.className="kd-poi"; d.title=`${t}: ${x.n}`;
+    d.innerHTML=`<i style="--poi:${f}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${pfad}"/></svg></i><span>${esc(x.n)}</span>`;
+    return new maplibregl.Marker({element:d,anchor:"left",offset:[-13,0]}).setLngLat([x.lon,x.lat]).addTo(KARTE.map); });
+  if(KARTE.mk){ const p=KARTE.mk.getElement(); p.parentNode&&p.parentNode.appendChild(p); } }
+function karteVorlagePoiAus(){ try{ const st=KARTE.map.getStyle(); (st&&st.layers||[]).forEach(l=>{ if(/^poi/.test(l.id)) KARTE.map.setLayoutProperty(l.id,"visibility","none"); }); }catch(e){} }
 const karteGrenze=c=>[[c[0]-.022,c[1]-.014],[c[0]+.022,c[1]+.014]];
 async function karteLaden(a){
   const el=document.getElementById("kdKarte"); if(!el||el.dataset.a!==a) return;
@@ -2254,6 +2303,8 @@ async function karteLaden(a){
       locale:{"CooperativeGesturesHandler.WindowsHelpText":"Zum Zoomen Strg + Mausrad – oder + und −","CooperativeGesturesHandler.MacHelpText":"Zum Zoomen ⌘ + Mausrad – oder + und −","CooperativeGesturesHandler.MobileHelpText":"Mit zwei Fingern verschieben und zoomen",
         "NavigationControl.ZoomIn":"Vergrößern","NavigationControl.ZoomOut":"Verkleinern"}});
     KARTE.map.touchZoomRotate.disableRotation();
+    KARTE.map.on("styledata",karteVorlagePoiAus);
+    KARTE.map.on("zoom",()=>{ const k=document.getElementById("kdKarte"); if(k) k.classList.toggle("fern",KARTE.map.getZoom()<14.6); });
     KARTE.map.addControl(new maplibregl.AttributionControl({compact:true}),"bottom-right");
     /* Quellenangabe immer eingeklappt (nur das ⓘ); MapLibre klappt sie beim ersten Laden von selbst auf – das wird sofort zurückgenommen, außer man hat selbst aufs ⓘ getippt */
     { const at=KARTE.el.querySelector(".maplibregl-ctrl-attrib"); let tipp=0;
@@ -2274,6 +2325,7 @@ async function karteLaden(a){
     if(Math.abs(alt.lng-c[0])+Math.abs(alt.lat-c[1])>1e-6) KARTE.map.easeTo({center:c,duration:500}); else KARTE.map.jumpTo({center:c});
   }
   const l=el2.querySelector(".kd-lade"); if(l) l.hidden=true;
+  if(KARTE.poiA!==a||!(KARTE.poi||[]).length){ KARTE.poiA=a; kartePoi(g,a); }
 }
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{ const el=document.getElementById("kdKarte"); if(el) karteLaden(el.dataset.a); });
 
