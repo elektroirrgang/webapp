@@ -2021,6 +2021,30 @@ function dashboard(kacheln){
 }
 function balken(werte){ const max=Math.max(1,...werte.map(w=>w[1]));
   return `<div class="balken">${werte.map(([l,v])=>`<div class="bk"><span class="bk-v">${v||""}</span><span class="bk-b" style="height:${Math.round(v/max*100)}%"></span><span class="bk-l">${l}</span></div>`).join("")}</div>`; }
+/* Statistik: Kennzahl-Kacheln wie bei den Aufträgen, Diagramme flach auf gefüllter Fläche, Werte beim Drüberfahren */
+const stK=(n,t,o={})=>{ const tag=o.act?"button":"div"; return `<${tag} class="st-k${o.warn?" warn":""}${o.act?" klick":""}"${o.act?` data-act="${o.act}" data-v="${esc(o.v||"")}"`:""}><b>${n}</b><span>${esc(t)}</span></${tag}>`; };
+const stKopf=(ic,t,mehr)=>`<div class="st-kopf"><h3>${icon(ic)}${esc(t)}</h3>${mehr||""}</div>`;
+function stMonate(){ const M=[]; for(let i=11;i>=0;i--){ const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-i); M.push({k:d.toISOString().slice(0,7),kurz:d.toLocaleDateString("de-DE",{month:"narrow"}),lang:d.toLocaleDateString("de-DE",{month:"long",year:"numeric"})}); } return M; }
+const stMon=t=>t?new Date(t).toISOString().slice(0,7):"";
+/* Säulen je Monat; mehrere Reihen nebeneinander mit Legende. Zahlen stehen im Hinweis beim Drüberfahren/Antippen, nicht an jeder Säule. */
+function stSaeulen(M,reihen,txt){ const max=Math.max(1,...M.flatMap((m,i)=>reihen.map(r=>r.w[i])));
+  const leg=reihen.length>1?`<div class="st-leg">${reihen.map(r=>`<span><i class="st-f ${r.kl}"></i>${esc(r.n)}</span>`).join("")}</div>`:"";
+  return `<div class="st-dia">${leg}<div class="st-saeulen" style="--st-n:${reihen.length}"><span class="st-max">${max}</span>${M.map((m,i)=>`<div class="st-g" data-tip="${esc(m.lang+": "+txt(i))}" tabindex="0">
+    <div class="st-bars">${reihen.map(r=>`<i class="st-f ${r.kl}" style="height:${r.w[i]?Math.max(3,Math.round(r.w[i]/max*100)):0}%"></i>`).join("")}</div><span class="st-l">${m.kurz}</span></div>`).join("")}</div></div>`; }
+const stDauer=ms=>{ const h=ms/36e5; return h<1?"unter 1 Std.":h<24?`${Math.round(h)} Std.`:`${(h/24).toFixed(1).replace(".",",").replace(",0","")} Tage`; };
+function stAuftraege(){ const V=echt("vorgaenge"), offen=V.filter(v=>!vgZu(v)), t0=new Date(), monat=t0.toISOString().slice(0,7), M=stMonate(), seit=Date.now()-90*864e5;
+  const erl=v=>v.s&&v.s.ausgefuehrt&&!v.abgelehnt?v.s.ausgefuehrt.at:0;
+  const ein=M.map(m=>V.filter(v=>stMon(vgAt(v))===m.k).length), fertig=M.map(m=>V.filter(v=>stMon(erl(v))===m.k).length);
+  /* Dauer je Schritt: nur Übergänge der letzten 90 Tage */
+  const D=[0,1,2,3].map(i=>{ const a=VG_S[i][0], b=VG_S[i+1][0], L=V.map(v=>v.s&&v.s[a]&&v.s[b]&&v.s[b].at>=seit?v.s[b].at-v.s[a].at:null).filter(x=>x!=null&&x>=0); return {t:`${VG_T[i]} → ${VG_T[i+1]}`,n:L.length,ms:L.length?L.reduce((x,y)=>x+y,0)/L.length:0}; });
+  const ges=V.filter(v=>erl(v)>=seit&&v.s.anruf).map(v=>erl(v)-v.s.anruf.at), dmax=Math.max(1,...D.map(d=>d.ms));
+  return `<section class="st-ab">${stKopf("vgTafel","Aufträge",`<button class="btn-text" data-act="nav" data-v="auftraege">Zur Tabelle${icon("chev")}</button>`)}
+    <div class="st-kacheln">${stK(offen.length,"offen",{act:"vgK",v:"offen"})}${stK(offen.filter(v=>vgStufe(v)===1).length,"warten aufs Büro",{act:"vgK",v:"buero"})}${stK(offen.filter(v=>vgAlter(v)).length,"hängen",{act:"vgK",v:"haengt",warn:offen.some(v=>vgAlter(v))})}${stK(V.filter(v=>stMon(erl(v))===monat).length,`erledigt im ${t0.toLocaleDateString("de-DE",{month:"long"})}`)}</div>
+    <div class="st-zwei"><div class="st-fl"><div class="st-t">Aufträge der letzten 12 Monate</div>${stSaeulen(M,[{n:"Eingegangen",kl:"ein",w:ein},{n:"Erledigt",kl:"erl",w:fertig}],i=>`${ein[i]} eingegangen · ${fertig[i]} erledigt`)}</div>
+      <div class="st-fl"><div class="st-t">Wie lange dauert ein Schritt? <small>Durchschnitt, letzte 90 Tage</small></div>
+        ${D.some(d=>d.n)?`<div class="st-dl">${D.map(d=>`<div class="st-dz"><span class="st-dl-l">${esc(d.t)}</span><span class="st-dl-b"><i style="width:${d.n?Math.max(2,Math.round(d.ms/dmax*100)):0}%"></i></span><b>${d.n?stDauer(d.ms):"–"}</b></div>`).join("")}</div>
+        <p class="st-fuss">${ges.length?`Vom Anruf bis erledigt im Schnitt <b>${stDauer(ges.reduce((x,y)=>x+y,0)/ges.length)}</b> (${ges.length} Auftr${ges.length===1?"ag":"äge"})`:"Noch kein Auftrag in den letzten 90 Tagen erledigt."}</p>`
+        :`<p class="meta">Noch zu wenig Daten – sobald Aufträge weitergegeben werden, steht hier, wo sie am längsten liegen.</p>`}</div></div></section>`; }
 function uebersichtView(){
   const bs=echt("baustellen"), es=echt("eintraege"), ps=echt("pruefungen"), t=today(), jahr=t.slice(0,4);
   const n=s=>bs.filter(b=>(b.status||"aktiv")===s).length, woche=Date.now()-7*864e5;
@@ -2032,20 +2056,20 @@ function uebersichtView(){
   const F=faellig(), bald=new Date(Date.now()+90*864e5).toISOString().slice(0,10), fUeber=F.filter(p=>p.a.naechste<t), fBald=F.filter(p=>p.a.naechste>=t&&p.a.naechste<=bald);
   const bZeile=b=>{ const e=eintraegeVon(b.id)[0]; return `<div class="li ruhig"><span class="av">${icon("baustelle")}</span><span class="lt"><span class="h">${esc(b.name)}</span><span class="s">${esc(bPfad(b))}</span>${e&&e.stand?`<span class="b-stand">${esc(e.stand)}</span>`:""}<span class="s">${e?`Letzte Übergabe ${esc(wann(e.updated||e.created))}`:"Noch keine Übergabe"}</span></span></div>`; };
   const fZeile=(p,kl,txt)=>`<div class="li ruhig"><span class="av">${icon("ev")}</span><span class="lt"><span class="h">${esc(pPfad(p))}</span><span class="s">Fällig ${esc(deDate(p.a.naechste))} · zuletzt ${esc(deDate(p.p.datum))}</span><span class="st">${pill(kl,txt)}</span></span></div>`;
-  return `<div class="narrow">
-    <section class="card ue"><h3>${icon("baustelle")}Baustellen</h3>
-      <div class="kpis">${kpi(n("aktiv"),"aktiv")}${kpi(n("pausiert"),"pausiert")}${kpi(n("fertig"),"abgeschlossen")}${kpi(es.filter(e=>(e.created||0)>=woche).length,"Übergaben in 7 Tagen")}</div>
+  return `<div class="narrow st">${stAuftraege()}
+    <section class="st-ab">${stKopf("baustelle","Baustellen")}
+      <div class="st-kacheln">${stK(n("aktiv"),"aktiv")}${stK(n("pausiert"),"pausiert")}${stK(n("fertig"),"abgeschlossen")}${stK(es.filter(e=>(e.created||0)>=woche).length,"Übergaben in 7 Tagen")}</div>
       ${mat.length?`<div class="sec-lbl">Material offen</div>${listOf(mat.map(b=>{ const e=eintraegeVon(b.id)[0]; return `<div class="li ruhig"><span class="av">${icon("baustelle")}</span><span class="lt"><span class="h">${esc(b.name)}</span><span class="b-stand">${esc(e.material)}</span></span></div>`; }))}`:""}
       ${aktiv.length?`<div class="sec-lbl">Aktive Baustellen</div>${listOf(aktiv.slice(0,8).map(bZeile))}${aktiv.length>8?`<p class="hint">und ${aktiv.length-8} weitere</p>`:""}`:`<p class="meta">Keine aktiven Baustellen.</p>`}
       ${still.length?`<p class="hint">${still.length} aktive Baustelle${still.length>1?"n":""} seit über einer Woche ohne neuen Eintrag – vielleicht auf „Pausiert“ setzen.</p>`:""}</section>
-    <section class="card ue"><h3>${icon("ev")}Prüfungen EVSE</h3>
-      <div class="kpis">${kpi(pj.length,`Prüfungen ${jahr}`)}${kpi(pj.reduce((s,p)=>s+lpZahl(p),0),`Ladepunkte ${jahr}`)}${kpi(ps.filter(p=>["wip","open"].includes(pStand(p))).length,"in Arbeit")}${kpi(ps.filter(p=>pStand(p)==="bad").length,"mit Mängeln",ps.some(p=>pStand(p)==="bad")?"warn":"")}</div>
-      <div class="sec-lbl">Prüfungen der letzten 12 Monate</div>${balken(monate)}
+    <section class="st-ab">${stKopf("ev","Prüfungen EVSE")}
+      <div class="st-kacheln">${stK(pj.length,`Prüfungen ${jahr}`)}${stK(pj.reduce((s,p)=>s+lpZahl(p),0),`Ladepunkte ${jahr}`)}${stK(ps.filter(p=>["wip","open"].includes(pStand(p))).length,"in Arbeit")}${stK(ps.filter(p=>pStand(p)==="bad").length,"mit Mängeln",{warn:ps.some(p=>pStand(p)==="bad")})}</div>
+      <div class="st-fl"><div class="st-t">Prüfungen der letzten 12 Monate</div>${stSaeulen(stMonate(),[{n:"Prüfungen",kl:"ein",w:monate.map(m=>m[1])}],i=>`${monate[i][1]} Prüfung${monate[i][1]===1?"":"en"}`)}</div>
       ${fUeber.length?`<div class="sec-lbl">Überfällige Wiederholungsprüfungen</div>${listOf(fUeber.map(p=>fZeile(p,"bad","überfällig")))}`:""}
       ${fBald.length?`<div class="sec-lbl">Fällig in den nächsten 3 Monaten</div>${listOf(fBald.map(p=>fZeile(p,"wip","bald fällig")))}`:""}
       ${!fUeber.length&&!fBald.length?`<p class="meta">In den nächsten 3 Monaten ist keine Wiederholungsprüfung fällig.</p>`:""}</section>
-    <section class="card ue"><h3>${icon("firma")}Kunden</h3>
-      <div class="kpis">${kpi(echt("kunden").length,"Kunden")}${kpi(echt("standorte").length,"Standorte")}${kpi(echt("ladeparks").length,"Ladeparks")}${kpi(echt("dateien").length,"abgelegte Dateien")}</div></section>
+    <section class="st-ab">${stKopf("firma","Kunden")}
+      <div class="st-kacheln">${stK(echt("kunden").length,"Kunden")}${stK(echt("standorte").length,"Standorte")}${stK(echt("ladeparks").length,"Ladeparks")}${stK(echt("dateien").length,"abgelegte Dateien")}</div></section>
     <p class="hint">${SYNC_ON?`Stand: ${esc(syncText())}.`:"Die Zahlen stammen von diesem Gerät. Firmenweite Zahlen gibt es, sobald die Microsoft-Anbindung läuft."}</p></div>`;
 }
 
@@ -2206,13 +2230,13 @@ async function karteLaden(a){
   if(g.nix) return karteFehler(el,"Adresse auf der Karte nicht gefunden");
   try{ await karteLib(); }catch(e){ return karteFehler(el,"Karte gerade nicht erreichbar"); }
   const el2=document.getElementById("kdKarte"); if(!el2||el2.dataset.a!==a) return;
-  const slot=el2.querySelector(".kd-slot"), stil=kDunkel()?"dark":"positron", c=[g.lon,g.lat];
+  const slot=el2.querySelector(".kd-slot"), stil="liberty", c=[g.lon,g.lat];
   if(!KARTE.map){
     KARTE.el=document.createElement("div"); KARTE.el.className="kd-map"; slot.appendChild(KARTE.el); KARTE.stil=stil;
     KARTE.map=new maplibregl.Map({container:KARTE.el,style:"https://tiles.openfreemap.org/styles/"+stil,center:c,zoom:15.2,interactive:false,attributionControl:false,fadeDuration:0});
     KARTE.map.addControl(new maplibregl.AttributionControl({compact:true}),"bottom-right");
     /* falls der dunkle Kartenstil nicht lädt: hellen nehmen */
-    KARTE.map.on("error",ev=>{ if(KARTE.stil==="dark"&&!KARTE.map.isStyleLoaded()&&!KARTE.ersatz){ KARTE.ersatz=1; KARTE.stil="positron"; KARTE.map.setStyle("https://tiles.openfreemap.org/styles/positron"); } });
+    KARTE.map.on("error",ev=>{ if(KARTE.stil!=="positron"&&!KARTE.map.isStyleLoaded()&&!KARTE.ersatz){ KARTE.ersatz=1; KARTE.stil="positron"; KARTE.map.setStyle("https://tiles.openfreemap.org/styles/positron"); } });
     if(window.ResizeObserver) new ResizeObserver(()=>{ if(KARTE.map&&KARTE.el.isConnected) KARTE.map.resize(); }).observe(KARTE.el);
     const m=document.createElement("div"); m.className="kd-pin"; KARTE.mk=new maplibregl.Marker({element:m,anchor:"bottom"}).setLngLat(c).addTo(KARTE.map);
   } else {

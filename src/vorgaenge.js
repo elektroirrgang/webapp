@@ -241,7 +241,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     if(![...w.querySelectorAll("[data-act=vgMitT]")].some(x=>x.dataset.v===n)) w.querySelector(".vg-mitp").insertAdjacentHTML("beforebegin",`<button type="button" class="vg-mitc" data-act="vgMitT" data-v="${esc(n)}" aria-pressed="true">${esc(n)}</button>`);
     i.value=""; }
   else if(a==="vgSpeichern") vgSpeichern();
-  else if(a==="vgK"){ const k=b.dataset.v; META.vgK=vgKAkt()===k&&k!=="offen"?"offen":k; metaSave(); render(); }
+  else if(a==="vgK"){ const k=b.dataset.v; if(nav.v!=="auftraege"){ META.vgK=k; if(!VG_PC.matches) META.vgF=k==="buero"?"buero":"offen"; metaSave(); go({v:"auftraege"}); return; } META.vgK=vgKAkt()===k&&k!=="offen"?"offen":k; metaSave(); render(); }
   else if(a==="vgSort"){ const k=b.dataset.v; fSet("vg","sort",fW("vg","sort")===k?"dringend":k); render(); }
   else if(a==="vgMark"&&v){ if(VG_MARK.has(v.id)) VG_MARK.delete(v.id); else VG_MARK.add(v.id); render(); }
   else if(a==="vgMarkAlle"){ const ids=[...document.querySelectorAll(".vr[data-id]")].map(x=>x.dataset.id), alle=ids.length&&ids.every(i=>VG_MARK.has(i)); ids.forEach(i=>alle?VG_MARK.delete(i):VG_MARK.add(i)); render(); }

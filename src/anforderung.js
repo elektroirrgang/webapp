@@ -169,8 +169,9 @@ const mlKannSys=()=>"Notification" in window;
 const mlPushAn=()=>mlLs(ML_PUSH)==="1"&&mlKannSys()&&Notification.permission==="granted";
 function mlMelden(){ if(!ME||!ME.mail||(typeof nav!=="undefined"&&nav.v==="login")) return;
   const key=ML_GEZ+String(ME.mail).toLowerCase(); let G=null; try{ G=JSON.parse(mlLs(key)||"null"); }catch(e){}
-  const S=mlSt(), L=meldungen().filter(m=>!S.gel[m.id]&&m.von);
-  if(!Array.isArray(G)){ mlLs(key,JSON.stringify(L.map(m=>m.id))); return; }
+  const S=mlSt(), L=meldungen().filter(m=>!S.gel[m.id]&&m.von&&!String(m.id).includes("demo-"));
+  /* erstes Mal auf diesem Gerät: erst nach dem ersten Abgleich den Stand merken, sonst würde alles Geholte als „neu“ aufpoppen */
+  if(!Array.isArray(G)){ if(typeof SYNC_ON!=="undefined"&&SYNC_ON&&!(META.sync&&META.sync.last)) return; mlLs(key,JSON.stringify(L.map(m=>m.id))); return; }
   const set=new Set(G), neu=L.filter(m=>!set.has(m.id));
   if(!neu.length) return;
   mlLs(key,JSON.stringify([...G,...neu.map(m=>m.id)].slice(-400)));
