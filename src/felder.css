@@ -615,3 +615,5 @@ body:has(.vg-bar) .snackbar{bottom:96px!important}
 
 /* Fenster nie unter die Statusleiste (iOS-Web-App mit durchscheinender Leiste): Mitte und Höhe ohne die sicheren Ränder */
 .dlg{top:calc(50% + (env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) / 2);max-height:calc(100dvh - 48px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow:auto}
+/* iPad und PC: Fenster breiter (mehr Platz für Text und Fotos) */
+@media (min-width:744px){.dlg{width:min(680px,calc(100% - 64px))}.dlg.breit{width:min(960px,calc(100% - 64px))}}

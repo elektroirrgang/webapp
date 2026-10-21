@@ -479,6 +479,16 @@ body.is-login .topbar{display:none}
 .ek-tag{background:var(--pc);color:var(--on-pc);font-size:12px;font-weight:700;border-radius:8px;padding:2px 8px}
 .ek-a{margin-left:auto;display:flex;gap:2px}
 .eb{margin-top:10px}
+/* Übergabe bearbeiten */
+.ed-ueb .edu-datum{max-width:280px;margin-top:4px}
+.ed-ueb .sec-lbl{margin:22px 4px 10px}
+.ed-ueb .sec-row{margin:22px 0 10px} .ed-ueb .sec-row .sec-lbl{margin:0 4px}
+.ed-ueb .fg1{gap:12px}
+.ed-ueb .mat-ed{margin-top:22px} .ed-ueb .mat-kopf{margin:0;padding:0 2px} .ed-ueb .mat-kopf span{font-size:14px;font-weight:700;color:var(--primary)}
+.ed-ueb .mat-leer{background:none;padding:0 4px 4px}
+.ed-ueb .e-fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.ed-ueb .e-fotos .foto{aspect-ratio:1;border:0}
+.ed-ueb .vorher{margin-top:24px}
 .chips.dabei{margin:0 0 4px}.chips.dabei .chip{padding:4px 14px}.chips.dabei .chip[aria-pressed="true"]{padding-left:14px}
 .chips.dabei .dabei-plus{padding:4px 10px}.chips.dabei .dabei-plus .ic{display:block!important;width:20px;height:20px}
 .eb-dabei p{font-weight:600}
@@ -2279,6 +2289,7 @@ function render(){ profilAnwenden();
     fab=null; }
   if(SY.state==="anmelden"&&!login) body=`<div class="robanner warn">${icon("sync")}<span>Anmeldung abgelaufen – Änderungen werden nur auf dem Gerät gespeichert.</span><button class="btn-text" data-act="relogin">Anmelden</button></div>`+body;
   const edAn=(nav.v==="eintrag")||(nav.v==="notiz"&&istMeine(nEntw)); document.body.classList.toggle("n-modus",nav.v==="notiz");
+  if(edAn&&WIDE.matches&&!login) fab=null; /* iPad/PC: „Fertig“ steht oben im Kopf – kein zweiter unten */
   app.innerHTML=(WIDE.matches&&!login?(edAn?edKopf(title,sub):seitenKopf(title,sub,fab)):"")+body; backSetzen(); navIndSetzen(); segInd(); kopfEinhaengen(); if(nav.v==="notiz") requestAnimationFrame(nGrow);
   $("#topTitle").innerHTML=title?`<span>${esc(title)}</span>${sub?`<small>${esc(String(sub).split(/\s*›\s*/).pop())}</small>`:""}`:"";
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
@@ -2297,7 +2308,7 @@ function edKopf(t,s){
   let tools="", del="";
   if(nav.v==="notiz"){ tools=tool("nAdd","text","notes","Text")+tool("nAdd","check","checkliste","Checkliste")+tool("nAdd","liste","liste","Liste")+tool("nAdd","zeichnung","stift","Zeichnen")+tool("nAdd","foto","cam","Foto");
     del=`<button class="edk-del" data-act="nDelAsk" aria-label="Notiz löschen" title="Notiz löschen">${icon("del")}</button>`; }
-  else if(nav.v==="eintrag"&&entw){ const da=entw.id&&DB.eintraege.has(entw.id), neu=entw._neu||!da; tools=tool("entwFoto","","cam","Foto aufnehmen");
+  else if(nav.v==="eintrag"&&entw){ const da=entw.id&&DB.eintraege.has(entw.id), neu=entw._neu||!da; /* Kamera sitzt beim Abschnitt Fotos – nicht doppelt im Kopf */
     del=`<button class="edk-del" data-act="${neu?"entwVerwerfenAsk":"eintragDelAsk"}" aria-label="${neu?"Übergabe verwerfen":"Übergabe löschen"}" title="${neu?"Übergabe verwerfen":"Übergabe löschen"}">${icon("del")}</button>`; }
   return `<div class="edk-platz" aria-hidden="true"></div><div class="edk"><button class="sk-zur sk-zt" data-act="skZurueck" aria-label="Zurück" title="Zurück">${icon("chev")}</button>
   <div class="edk-t"><h1>${esc(t)}</h1>${s?`<p>${esc(s)}</p>`:""}</div>
@@ -2399,13 +2410,14 @@ function baustelleView(b){
 let entw=null, entwZurueck=null;
 /* Wer war dabei: Mitarbeiter aus dem Team (mit Mail, später fürs Büro auswertbar) plus freie Namen (z. B. Fremdfirma). */
 const dabeiNamen=e=>(e&&e.dabei||[]).map(p=>p.name).filter(Boolean);
-const dabeiGleich=(p,q)=>p.mail&&q.mail?p.mail.toLowerCase()===q.mail.toLowerCase():!p.mail&&!q.mail&&String(p.name).trim().toLowerCase()===String(q.name).trim().toLowerCase();
+/* gleiche Person: beide mit Mail → Mail vergleichen, sonst den Namen (alte Einträge haben nur den Namen) */
+const dabeiGleich=(p,q)=>p.mail&&q.mail?p.mail.toLowerCase()===q.mail.toLowerCase():String(p.name).trim().toLowerCase()===String(q.name).trim().toLowerCase();
 function dabeiStart(b){ const me=who(), L=[]; const add=p=>{ if(p&&p.name&&!L.some(q=>dabeiGleich(p,q))) L.push({name:p.name,mail:(p.mail||"").toLowerCase()}); };
   const tm=team().find(m=>me.mail&&m.mail===me.mail.toLowerCase()); add(tm?{name:tm.name,mail:tm.mail}:(me.name?{name:me.name,mail:me.mail}:null));
   const vor=b&&eintraegeVon(b.id)[0]; (vor&&vor.dabei||[]).forEach(add); return L; }
 function dabeiEditor(){
   const D=entw.dabei||[], T=team().filter(m=>m.name).map(m=>{ const p=typeof profilVon==="function"&&profilVon(m.mail), v=p&&[p.vorname,p.nachname].filter(Boolean).join(" "); return v?Object.assign({},m,{name:v}):m; }), frei=D.filter(p=>!T.some(m=>dabeiGleich(p,{name:m.name,mail:m.mail})));
-  return `<div class="lbl" style="margin:16px 4px 8px">Dabei</div><div class="chips dabei">
+  return `<div class="chips dabei">
     ${T.map(m=>`<button class="chip" data-act="dabeiTog" data-mail="${esc(m.mail)}" data-name="${esc(m.name)}" aria-pressed="${D.some(p=>dabeiGleich(p,{name:m.name,mail:m.mail}))}">${esc(m.name)}</button>`).join("")}
     ${frei.map(p=>`<button class="chip" data-act="dabeiTog" data-mail="" data-name="${esc(p.name)}" aria-pressed="true">${esc(p.name)}</button>`).join("")}
     <button class="chip dabei-plus" data-act="dabeiPlus" aria-label="Weitere Person" title="Weitere Person">${icon("add")}</button></div>`;
@@ -2413,15 +2425,16 @@ function dabeiEditor(){
 function eintragView(){
   const e=entw, b=DB.baustellen.get(e.baustelleId), vor=b&&eintraegeVon(b.id).find(x=>x.id!==e.id);
   const fs=e.fotos||[];
-  return `<div class="narrow"><section class="card"><div class="fg1">
-      ${tf("datum","Datum",e.datum,{type:"date",form:true})}
-    </div>${dabeiEditor()}<div class="fg1">
-      ${ta("stand","Stand – was ist heute passiert?",e.stand,{form:true,ph:"z. B. Unterverteilung OG gesetzt, Leitungen Bad gezogen"})}
-      ${ta("offen","Offen / nächste Schritte",e.offen,{form:true,ph:"z. B. Bad anschließen, FI-Prüfung UV OG"})}
-    </div>${matEditor()}
-    <div class="lbl" style="margin:16px 4px 8px">Fotos</div>
-    <div class="fotos e-fotos">${fs.map(id=>{ const src=fotoCache.get(id); return src?`<button class="foto" data-act="entwFotoShow" data-id="${id}"><img src="${src}" alt=""></button>`:""; }).join("")}
-      ${fs.length<8?`<button class="foto leer" data-act="entwFoto">${icon("cam")}<span class="fl">Foto</span></button>`:""}</div></section>
+  /* aufgeräumt wie das Übergabe-Fenster: keine Karte um die Felder, Abschnitte mit Überschrift, Fotos als kleine Kacheln */
+  return `<div class="narrow lesen ed-ueb">
+    <div class="edu-datum">${tf("datum","Datum",e.datum,{type:"date",form:true})}</div>
+    <div class="sec-lbl">Dabei</div>${dabeiEditor()}
+    <div class="sec-lbl">Bericht</div>
+    <div class="fg1">${ta("stand","Stand – was ist heute passiert?",e.stand,{form:true,ph:"z. B. Unterverteilung OG gesetzt, Leitungen Bad gezogen"})}
+      ${ta("offen","Offen / nächste Schritte",e.offen,{form:true,ph:"z. B. Bad anschließen, FI-Prüfung UV OG"})}</div>
+    ${matEditor()}
+    <div class="sec-row"><div class="sec-lbl">Fotos${fs.length?` · ${fs.length}`:""}</div>${fs.length<8?`<span class="ab-btns"><button class="ab-ic" data-act="entwFoto" aria-label="Foto aufnehmen" title="Foto aufnehmen">${icon("cam")}</button></span>`:""}</div>
+    ${fs.length?`<div class="e-fotos">${fs.map(id=>{ const src=fotoCache.get(id); return src?`<button class="foto" data-act="entwFotoShow" data-id="${id}"><img src="${src}" alt=""></button>`:""; }).join("")}</div>`:`<p class="meta">Noch kein Foto.</p>`}
     ${e.id&&DB.eintraege.has(e.id)?`<button class="btn-del nur-schmal" data-act="${e._neu?"entwVerwerfenAsk":"eintragDelAsk"}">${icon("del")}${e._neu?"Übergabe verwerfen":"Übergabe löschen"}</button>`:""}
     ${vor?`<details class="vorher"><summary>${icon("doc")}<span>Letzte Übergabe: ${esc(tagText(vor.datum))} · ${esc(vonText(vor))}</span>${icon("drop")}</summary>${eintragKarte(vor)}</details>`:""}
   </div>`;
@@ -2431,6 +2444,7 @@ function entwNeu(b,e){
   entwZurueck=nav;
   entw=e?JSON.parse(JSON.stringify(e)):{id:null,baustelleId:b.id,datum:today(),stand:"",offen:"",material:"",fotos:[],dabei:dabeiStart(b)};
   if(!Array.isArray(entw.dabei)) entw.dabei=[];
+  entw.dabei=entw.dabei.map(p=>typeof p==="string"?{name:p,mail:""}:p).filter(p=>p&&p.name);
   entw.mat=matListe(entw).map(x=>({t:x.t,q:x.q,u:x.u,ok:!!x.ok,okVon:x.okVon||null}));
   entw._neueFotos=[]; ED.st=e?"ok":"leer"; go({v:"eintrag"});
 }
