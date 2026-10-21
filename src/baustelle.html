@@ -458,6 +458,13 @@ body.is-login .topbar{display:none}
 .ek-zr{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--on-sv)}
 .ek-z .avs-i{box-shadow:0 0 0 2px var(--sc-low)}
 .ek-dlg .ek-wer{display:flex;align-items:center;gap:8px;margin:0 0 4px;color:var(--on-sv);font-size:14px} .ek-dlg .ek-wer .ic{width:18px;height:18px;flex:none}
+.ek-kopf{position:sticky;top:-24px;z-index:2;display:flex;align-items:center;gap:12px;margin:-24px -24px 8px;padding:24px 24px 8px;background:var(--dlg-bg)}
+.ek-kopf h2{margin:0!important;flex:1;min-width:0}
+.ek-kns{display:flex;gap:8px;flex:none}
+.ek-kn{width:44px;height:44px;border:0;border-radius:50%;display:grid;place-items:center;background:var(--sc-highest);color:var(--on-surface);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ek-kn .ic{width:22px;height:22px} .ek-kn:active{background:color-mix(in srgb,var(--on-surface) 14%,var(--sc-highest))}
+@media (hover:hover){.ek-kn:hover{background:color-mix(in srgb,var(--on-surface) 8%,var(--sc-highest))}}
+@media (max-width:420px){.ek-kopf{top:-20px;margin:-20px -20px 8px;padding:20px 20px 8px}.ek-kn{width:40px;height:40px}}
 .ek-dlg .eb:first-of-type{margin-top:6px} .ek-dlg .by{font-size:12px;color:var(--on-sv);margin-top:12px}
 .avs{display:inline-flex;align-items:center;padding-left:8px;cursor:pointer}
 .avs-i{width:30px;height:30px;border-radius:50%;margin-left:-8px;display:grid;place-items:center;font-size:11px;font-weight:700;background:var(--sec-c) center/cover no-repeat;color:var(--on-sec-c);box-shadow:0 0 0 2px var(--sc);position:relative}
@@ -2361,8 +2368,10 @@ function ekZeile(e,erster){
 }
 function ekZeigen(e){
   const N=ekLeute(e).map(x=>{ const p=typeof profilVon==="function"&&x.mail&&profilVon(x.mail); return (p&&[p.vorname,p.nachname].filter(Boolean).join(" "))||x.name; });
-  dialog(tagText(e.datum),`<div class="ek-dlg">${N.length?`<p class="ek-wer">${icon("person")}<span>${esc(N.join(", "))}</span></p>`:""}${ekInhalt(e)}</div>`,
-    `<button class="btn-text" data-act="teilen" data-id="${e.id}">Teilen</button>${canEdit(e)?`<button class="btn-text" data-act="eintragEdit" data-id="${e.id}">Bearbeiten</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`,{breit:true});
+  dialog(tagText(e.datum),`<div class="ek-dlg">${N.length?`<p class="ek-wer">${icon("person")}<span>${esc(N.join(", "))}</span></p>`:""}${ekInhalt(e)}</div>`,"",{breit:true});
+  /* Teilen, Bearbeiten, Schließen als gefüllte Rundknöpfe oben rechts neben dem Datum (bleiben beim Scrollen stehen) */
+  const k=(act,ic,t)=>`<button class="ek-kn" data-act="${act}" data-id="${e.id}" aria-label="${t}" title="${t}">${icon(ic)}</button>`;
+  const h=$("#dlg h2"); if(h) h.outerHTML=`<div class="ek-kopf"><h2>${esc(tagText(e.datum))}</h2><span class="ek-kns">${k("teilen","share","Teilen")}${canEdit(e)?k("eintragEdit","edit","Bearbeiten"):""}${k("cancel","close","Schließen")}</span></div>`;
   EK_DLG=e.id;
 }
 let EK_DLG=null;
