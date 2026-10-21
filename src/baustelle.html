@@ -451,9 +451,11 @@ body.is-login .topbar{display:none}
 .b-meta .ic{width:18px;height:18px}
 .ekarte{background:var(--sc-low);border-radius:20px;padding:10px 16px 14px;margin:0 0 10px}
 .ekarte.neu{background:var(--sc)}
-.ekarte.klapp:not(.auf){padding-bottom:10px}
+.ekarte.klapp{padding-bottom:10px} .ekarte.klapp .ek-in{padding-bottom:4px}
 .ekarte.klapp > .ek-k{cursor:pointer;-webkit-tap-highlight-color:transparent}
-.ek-pf{display:grid;place-items:center;width:36px;height:36px;color:var(--on-sv);transition:transform .2s} .ekarte.auf .ek-pf{transform:rotate(180deg)}
+.ek-pf{display:grid;place-items:center;width:44px;height:44px;margin-left:4px;border-radius:50%;background:var(--sc-high);color:var(--on-surface);transition:transform .22s}
+.ek-pf .ic{width:28px;height:28px} .ekarte.auf .ek-pf{transform:rotate(180deg)}
+.ekarte.klapp:not(.auf) .ek-in,.ekarte.klapp:not(.auf) .ek-auf-nur{display:none}
 .avs{display:inline-flex;align-items:center;padding-left:8px;cursor:pointer}
 .avs-i{width:30px;height:30px;border-radius:50%;margin-left:-8px;display:grid;place-items:center;font-size:11px;font-weight:700;background:var(--sec-c) center/cover no-repeat;color:var(--on-sec-c);box-shadow:0 0 0 2px var(--sc);position:relative}
 .ekarte:not(.neu) .avs-i{box-shadow:0 0 0 2px var(--sc-low)}
@@ -2348,6 +2350,14 @@ function avStapel(e){ const L=ekLeute(e); if(!L.length) return "";
   return `<span class="avs" data-act="avListe" data-id="${esc(e.id)}" role="button" tabindex="0" aria-label="${esc(L.map(x=>nm(x).n).join(", "))}">${L.slice(0,5).map((x,i)=>{ const q=nm(x);
     return `<span class="avs-i" style="z-index:${10-i}${q.b?`;background-image:url('${q.b}')`:""}" title="${esc(q.n+" – "+x.rolle)}">${q.b?"":esc(initials(q.n))}</span>`; }).join("")}${L.length>5?`<span class="avs-i avs-mehr">+${L.length-5}</span>`:""}</span>`; }
 const EK_AUF=new Map();
+/* Einklappen direkt am Element (kein Neuzeichnen der Seite) und mit kurzer Höhen-Animation – so springt der Inhalt nicht */
+function ekKlappen(k,id){ const inn=k.querySelector(".ek-in"), auf=!k.classList.contains("auf"), kopf=k.querySelector(".ek-k"); EK_AUF.set(id,auf); if(kopf) kopf.setAttribute("aria-expanded",auf);
+  if(!inn||matchMedia("(prefers-reduced-motion: reduce)").matches){ k.classList.toggle("auf",auf); return; }
+  const ende=()=>{ inn.style.height=""; inn.style.opacity=""; inn.style.overflow=""; inn.style.transition=""; };
+  inn.style.overflow="hidden";
+  if(auf){ k.classList.add("auf"); const h=inn.scrollHeight; inn.style.height="0px"; inn.style.opacity="0"; inn.offsetHeight; inn.style.transition="height .24s cubic-bezier(.2,.8,.2,1),opacity .2s"; inn.style.height=h+"px"; inn.style.opacity="1"; }
+  else { inn.style.height=inn.scrollHeight+"px"; inn.offsetHeight; inn.style.transition="height .22s cubic-bezier(.4,0,.2,1),opacity .15s"; inn.style.height="0px"; inn.style.opacity="0"; }
+  setTimeout(()=>{ if(!auf) k.classList.remove("auf"); ende(); },260); }
 function avPop(el,L){ document.getElementById("avPop")?.remove(); const d=document.createElement("div"); d.id="avPop"; d.className="av-pop";
   d.innerHTML=L.map(x=>{ const p=typeof profilVon==="function"&&x.mail&&profilVon(x.mail), n=(p&&[p.vorname,p.nachname].filter(Boolean).join(" "))||x.name;
     return `<div class="avp-z"><span class="avs-i"${p&&p.bild?` style="background-image:url('${p.bild}')"`:""}>${p&&p.bild?"":esc(initials(n))}</span><span><b>${esc(n)}</b><small>${esc(x.rolle)}</small></span></div>`; }).join("");
@@ -2359,10 +2369,10 @@ function eintragKarte(e,erster,klappbar){
   const block=(l,t,cls="")=>String(t||"").trim()?`<div class="eb ${cls}"><small>${l}</small><p>${esc(t)}</p></div>`:"";
   return `<div class="ekarte${erster?" neu":""}${klappbar?" klapp":""}${auf?" auf":""}">
     <div class="ek-k"${klappbar?` data-act="ekKlapp" data-id="${e.id}" role="button" tabindex="0" aria-expanded="${auf}"`:""}>${erster?`<span class="ek-tag">Aktueller Stand</span>`:""}<b>${esc(tagText(e.datum))}</b>${avStapel(e)}
-      <span class="ek-a">${auf&&erster?`<button class="icon-btn sm" data-act="teilen" data-id="${e.id}" aria-label="Teilen">${icon("share")}</button>`:""}${auf&&ok?`<button class="icon-btn sm" data-act="eintragEdit" data-id="${e.id}" aria-label="Bearbeiten">${icon("edit")}</button>`:""}${klappbar?`<span class="ek-pf">${icon("drop")}</span>`:""}</span></div>
-    ${auf?`<div class="ek-in">${block("Stand",e.stand)}${block("Offen / nächste Schritte",e.offen)}${matBlock(e)}
+      <span class="ek-a">${erster?`<button class="icon-btn sm ek-auf-nur" data-act="teilen" data-id="${e.id}" aria-label="Teilen">${icon("share")}</button>`:""}${ok?`<button class="icon-btn sm ek-auf-nur" data-act="eintragEdit" data-id="${e.id}" aria-label="Bearbeiten">${icon("edit")}</button>`:""}${klappbar?`<span class="ek-pf" aria-hidden="true">${icon("drop")}</span>`:""}</span></div>
+    ${`<div class="ek-in">${block("Stand",e.stand)}${block("Offen / nächste Schritte",e.offen)}${matBlock(e)}
     ${fs.length?`<div class="ek-f">${fs.map(id=>{ const src=fotoCache.get(id); return src?`<button class="foto" data-act="fotoShow" data-id="${id}" aria-label="Foto ansehen"><img src="${src}" alt=""></button>`:`<div class="foto leer">${icon("sync")}</div>`; }).join("")}</div>`:""}
-    ${e.updated&&e.created&&e.updated-e.created>60000?`<div class="by">geändert ${esc(wann(e.updated))}${e.updatedBy&&e.updatedBy.name&&e.updatedBy.name!==vonText(e)?` von ${esc(e.updatedBy.name)}`:""}</div>`:""}</div>`:""}</div>`;
+    ${e.updated&&e.created&&e.updated-e.created>60000?`<div class="by">geändert ${esc(wann(e.updated))}${e.updatedBy&&e.updatedBy.name&&e.updatedBy.name!==vonText(e)?` von ${esc(e.updatedBy.name)}`:""}</div>`:""}</div>`}</div>`;
 }
 function baustelleView(b){
   const s=standortOf(b.standortId), kd=!s&&kundeOf(b.kundeId), E=eintraegeVon(b.id);
@@ -2994,7 +3004,7 @@ document.addEventListener("click",ev=>{
   case "import": $("#importFile").click(); return;
   case "filter": META.filter=b.dataset.v; metaSave(); render(); return;
   case "bKunde": { const id=b.dataset.id||((standortOf(b.dataset.s)||{}).kundeId); if(id) go({v:"kunde",id,von:{...nav}}); else if(b.dataset.s) go({v:"standort",id:b.dataset.s,von:{...nav}}); return; }
-  case "ekKlapp": { const k=b.closest(".ekarte"); EK_AUF.set(b.dataset.id,!(k&&k.classList.contains("auf"))); softRender(); return; }
+  case "ekKlapp": { const k=b.closest(".ekarte"); if(!k) return; ekKlappen(k,b.dataset.id); return; }
   case "avListe": { ev.stopPropagation(); const en=DB.eintraege.get(b.dataset.id); if(!en) return; avPop(b,ekLeute(en)); return; }
   case "bInfo": { const bb=DB.baustellen.get(b.dataset.id); if(!bb) return; const st=standortOf(bb.standortId), kd=kundeOf(bb.kundeId);
     dialog(st?st.name:(kd?kd.name:"Infos"),`${st?infoKarte(st,"standorte"):""}${kd?`${st?`<div class="sec-lbl">Kunde · ${esc(kd.name)}</div>`:""}${infoKarte(kd,"kunden")}`:""}`,
