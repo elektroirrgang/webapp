@@ -1,4 +1,4 @@
-const CACHE = "start-v0.54.0-1ed1e452";
+const CACHE = "start-v0.55.0-5a72b9c2";
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll([new Request("./", {cache: "reload"}), new Request("./index.html", {cache: "reload"}), new Request("./pdfjs/pdf.min.js", {cache: "reload"}), new Request("./pdfjs/pdf.worker.min.js", {cache: "reload"})]))); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => (k.startsWith("start-v") && k !== CACHE) || /^evse-v([0-9]|[0-5][0-9]|6[0-2])$/.test(k)).map(k => caches.delete(k))))); self.clients.claim(); });
 self.addEventListener("fetch", e => {

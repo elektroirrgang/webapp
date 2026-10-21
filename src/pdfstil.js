@@ -38,8 +38,11 @@ function pdfStil(d,o){
     let zz=0;
     zeilen.forEach((z,ri)=>{ if(S.y>272){ S.seite(); kz(); }
       if(typeof z==="string"){ d.setFont("helvetica","bold"); d.setFontSize(8.5); d.setTextColor(...NAVY); d.text(pdfT(z),M+2,S.y+1); d.setDrawColor(...LINE); d.line(M,S.y+2.6,M+CW,S.y+2.6); S.y+=7; zz=0; return; }
-      ri=zz++; if(ri%2){ d.setFillColor(...SUNK); d.rect(M,S.y-4,CW,6,"F"); } let x=M+2; d.setFont("helvetica","normal"); d.setFontSize(8); d.setTextColor(20);
-      z.forEach((v,i)=>{ if(i===erg){ const [r,t]=String(v).split("|"); S.plakette(M+CW-1,S.y,r,t); } else { const t=d.splitTextToSize(pdfT(v||"-"),sp[i]-2)[0]; d.text(t,x,S.y); } x+=sp[i]; }); S.y+=6; }); S.y+=4; };
+      /* lange Zellen umbrechen (max. 3 Zeilen), die Zeile wächst mit */
+      d.setFont("helvetica","normal"); d.setFontSize(8); const L=z.map((v,i)=>i===erg?[""]:d.splitTextToSize(pdfT(v||"-"),sp[i]-2).slice(0,3)), n=Math.max(...L.map(l=>l.length)), ex=(n-1)*3.4;
+      if(n>1&&S.y+ex>272){ S.seite(); kz(); }
+      ri=zz++; if(ri%2){ d.setFillColor(...SUNK); d.rect(M,S.y-4,CW,6+ex,"F"); } let x=M+2; d.setFont("helvetica","normal"); d.setFontSize(8); d.setTextColor(20);
+      z.forEach((v,i)=>{ if(i===erg){ const [r,t]=String(v).split("|"); S.plakette(M+CW-1,S.y,r,t); } else d.text(L[i],x,S.y,{lineHeightFactor:1.2}); x+=sp[i]; }); S.y+=6+ex; }); S.y+=4; };
   S.unterschriften=(L)=>{ S.platz(44); const sw=(CW-12)/2; L.forEach(([l,name,datum],i)=>{ const x=M+i*(sw+12); d.setDrawColor(40); d.line(x,S.y+30,x+sw,S.y+30);
       d.setFont("helvetica","normal"); d.setFontSize(8); d.setTextColor(...GR); d.text(pdfT(`${l}: ${name||""} | ${datum||""}`),x,S.y+35); }); S.y+=42; };
   S.ende=nr=>{ S.fuss(); const N=d.getNumberOfPages(); for(let i=1;i<=N;i++){ d.setPage(i); d.setFont("helvetica","normal"); d.setFontSize(7); d.setTextColor(...GR); d.text(`Seite ${i} von ${N}`,W-M,292,{align:"right"}); if(nr) d.text(pdfT(`Protokoll-Nr. ${nr}`),W-M,288,{align:"right"}); }
