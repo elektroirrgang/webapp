@@ -26,7 +26,9 @@ const EC_PRUEFART=["Wiederholungsprüfung","Erstprüfung","E-CHECK"];
 const EC_SART={sd:"Steckdose",herd:"Herdanschluss",fest:"Festanschluss",licht:"Licht",sonst:"Sonstiges"};
 const EC_LAGE=["Eingang","unterm Schalter","neben Tür","neben Fenster","Arbeitsfläche","Bett","TV","Schreibtisch","Außen"];
 /* Messgeräte pflegt die Übersicht (Mehr › Geräte); hier nur zur Auswahl */
-const ecMessgeraete=()=>(DB.geraete?live("geraete"):[]).filter(x=>x.art==="mess"&&!x.aus);
+/* Einsatz: „installation“ (Installation/EVSE), „geraete“ (Geräteprüfung) oder „beide“; ohne Angabe gilt ein PAT als Gerätetester */
+const ecEinsatz=g=>g.einsatz||(/\bPAT\b/i.test(g.modell||"")?"geraete":"installation");
+const ecMessgeraete=art=>(DB.geraete?live("geraete"):[]).filter(x=>x.art==="mess"&&!x.aus&&(!art||[art==="geraete"?"geraete":"installation","beide"].includes(ecEinsatz(x)))).sort((a,b)=>String(a.kurz||a.modell||"").localeCompare(String(b.kurz||b.modell||""),"de",{numeric:true}));
 const ecMgDaten=m=>({mess:[m.hersteller,m.modell].filter(Boolean).join(" ")||"Messgerät",kurz:m.kurz||"",sn:m.sn||"",kal:m.kal||"",mgId:m.id});
 const ecMgLabel=m=>(m.kurz?m.kurz+" · ":"")+([m.hersteller,m.modell].filter(Boolean).join(" ")||"Messgerät");
 /* Prüfer legt die Übersicht fest (Mitarbeiter › Prüfer); ist niemand markiert, bleibt das Feld frei */
@@ -56,8 +58,26 @@ function ecGebNorm(g){ g.etagen=g.etagen&&g.etagen.length?g.etagen:[{id:"eg",nam
   return g; }
 function ecGeb(ortId){ const g=DB.gebaeude.get(ecGebId(ortId)); if(g&&!g.deleted) return ecGebNorm(g); return ecGebNorm({id:ecGebId(ortId),ortId}); }
 const ecGebSpeichern=g=>{ const neu=!DB.gebaeude.has(g.id); delete g.deleted; saveRec("gebaeude",g,neu); };
+/* Etagen: Bezeichnung frei (z. B. „Level 1“), Geschoss als Zahl für die Reihenfolge (KG = -1, EG = 0, 1. OG = 1 … DG = 50) */
+const EC_GESCHOSS=[[-3,"3. UG"],[-2,"2. UG"],[-1,"KG / UG"],[0,"EG"],...Array.from({length:12},(_,i)=>[i+1,`${i+1}. OG`]),[50,"DG"],[60,"Spitzboden"]];
+const ecGeschossName=n=>(EC_GESCHOSS.find(x=>x[0]===+n)||[0,""])[1];
+function ecEbeneRaten(n){ n=String(n||"").toLowerCase().replace(/\s+/g," ").trim(); let m;
+  if(/spitzboden/.test(n)) return 60; if(/^(dg|dach)/.test(n)) return 50;
+  if((m=n.match(/^(\d+)\.?\s*(ug|untergeschoss|keller)/))) return -(+m[1]);
+  if(/^(kg|ug|keller|untergeschoss|souterrain)/.test(n)) return -1;
+  if(/^(eg|erdgeschoss|parterre)/.test(n)) return 0;
+  if((m=n.match(/^(\d+)\.?\s*(og|obergeschoss|etage|stock)/))) return +m[1];
+  if((m=n.match(/^(og|obergeschoss|etage|stock)\s*(\d+)/))) return +m[2];
+  if(/^og/.test(n)) return 1;
+  if((m=n.match(/^(level|lvl|ebene|l)\s*(-?\d+)/))) return +m[2]-1;
+  return null; }
+const ecEbene=e=>e.ebene!=null&&e.ebene!==""?+e.ebene:(ecEbeneRaten(e.name)??0);
+const ecEtagen=g=>g.etagen.map((e,i)=>[e,i]).sort((a,b)=>ecEbene(a[0])-ecEbene(b[0])||a[1]-b[1]).map(x=>x[0]);
+const ecEtStd=g=>{ const E=ecEtagen(g); return E.find(e=>ecEbene(e)===0)||E[0]; };
+/* Anzeige: „Level 1 (EG)“, wenn Bezeichnung und Geschoss nicht dasselbe sind */
+const ecEtLabel=e=>{ const gs=ecGeschossName(ecEbene(e)); return !gs||ecEbeneRaten(e.name)===ecEbene(e)&&!/^(level|lvl|ebene|l)\s*\d/i.test(e.name)?e.name:`${e.name} (${gs})`; };
 const ecRaumName=(g,id)=>{ for(const e of g.etagen) for(const r of e.raeume) if(r.id===id) return `${e.name} · ${r.name}`; return ""; };
-const ecRaeume=g=>g.etagen.flatMap(e=>e.raeume.map(r=>({...r,etage:e,titel:`${e.name} · ${r.name}`})));
+const ecRaeume=g=>ecEtagen(g).flatMap(e=>e.raeume.map(r=>({...r,etage:e,titel:`${ecEtLabel(e)} · ${r.name}`})));
 const ecSkListe=g=>[...g.stromkreise].sort((a,b)=>{ const va=g.verteiler.findIndex(v=>v.id===a.vId), vb=g.verteiler.findIndex(v=>v.id===b.vId); return (va<0?999:va)-(vb<0?999:vb)||ecNr(a,b); });
 const ecVtName=(g,id)=>(g.verteiler.find(v=>v.id===id)||{}).name||"";
 const ecRcdVon=(g,sk)=>sk&&sk.rcdId?g.rcds.find(r=>r.id===sk.rcdId):null;
@@ -171,7 +191,7 @@ function ecNeuDialog(art,kundeId,ort){ ecNeuArt=art; const K=live("kunden").sort
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecNeuOk">Anlegen</button>`,{breit:true}); }
 function ecNeuOk(){ const F=formVals(); if(!F.ecKunde){ toast("Bitte einen Kunden wählen"); return; }
   const ortId=F.ecOrt||"k:"+F.ecKunde, art=ecNeuArt, vorher=ecAlle().filter(p=>p.ortId===ortId&&(p.art||"anlage")===art).sort((a,b)=>String(b.datum).localeCompare(String(a.datum)))[0];
-  const mg=ecMessgeraete()[0];
+  const MG=ecMessgeraete(art), mg=MG.find(m=>m.bei&&m.bei===ME.mail)||MG[0];
   const pr={id:uid(),art,kundeId:F.ecKunde,standortId:ortId.startsWith("k:")?"":ortId,ortId,datum:ecHeute(),pruefart:vorher?"Wiederholungsprüfung":(art==="anlage"?"Erstprüfung":"Wiederholungsprüfung"),pruefer:ecStdPruefer(),status:"offen",
     sicht:{},werte:{},netz:vorher&&vorher.netz?{...vorher.netz}:{form:"TN-C-S"},geraet:mg?ecMgDaten(mg):{},umfang:vorher&&vorher.umfang?{...vorher.umfang}:null,fristM:vorher&&vorher.fristM||(art==="anlage"?48:12)};
   saveRec("echecks",pr,true);
@@ -204,7 +224,7 @@ function ecUmfangAuto(pr,g){ const V=g.verteiler.filter(v=>ecImUmfang(pr,{vId:v.
   return `Besichtigen, Erproben und Messen der elektrischen Anlage nach DIN VDE 0100-600 bzw. DIN VDE 0105-100${V.length?`. Verteiler: ${V.map(v=>v.name).join(", ")}`:""}.${aus.length?` Nicht Bestandteil dieser Prüfung: ${aus.map(v=>v.name).join(", ")}.`:""}`; }
 /* Auftrag: wie in EVSE – was, womit, welche Prüfung, welcher Umfang */
 function ecAuftragView(pr){ const o=ecOrt(pr.ortId), an=ecAn(pr), G=pr.geraet||{}, N=pr.netz||{}, zu=pr.status==="fertig";
-  const MG=ecMessgeraete(), g=an?ecGeb(pr.ortId):null;
+  const MG=ecMessgeraete(pr.art||"anlage"), g=an?ecGeb(pr.ortId):null;
   return `${ecKennzahlen(pr)}<div class="ec-karten">
     <section class="card"><h3>Auftrag</h3><div class="ec-ortz">${icon("ort")}<div><b>${esc(o.kunde?o.kunde.name:"Kein Kunde")}</b><span>${esc(o.standort?[o.standort.name,adrText(o.standort)].filter(Boolean).join(" · "):(o.name||""))}</span></div></div>
       <div class="ec-fg">${ecFeld(pr,"auftragsnr","Auftragsnummer",pr.auftragsnr)}<div class="reihe2">${ecFeld(pr,"datum","Prüfdatum",pr.datum,{type:"date"})}${ecFeld(pr,"pruefer","Prüfer",pr.pruefer)}</div>
@@ -221,7 +241,7 @@ function ecAuftragView(pr){ const o=ecOrt(pr.ortId), an=ecAn(pr), G=pr.geraet||{
   </div>${ecWeiter(an?"gebaeude":"geraete",an?"Weiter zum Gebäude":"Weiter zu den Geräten")}`; }
 
 /* Gebäude: Etagen und Räume links, Verteiler mit RCDs und Stromkreisen rechts */
-function ecGebView(pr){ const g=ecGeb(pr.ortId), et=g.etagen.find(e=>e.id===nav.et)||g.etagen[0];
+function ecGebView(pr){ const g=ecGeb(pr.ortId), et=g.etagen.find(e=>e.id===nav.et)||ecEtStd(g);
   const raum=r=>{ const P=ecRaumPunkte(g,r.id), S=[...new Set(P.map(p=>p.st.skId).filter(Boolean))].map(id=>g.stromkreise.find(s=>s.id===id)).filter(Boolean).sort(ecNr), ohne=P.some(p=>!p.st.skId);
     const st=P.filter(p=>ecPflicht(p.st)).map(p=>ecPunktStand(pr,g,p)), n=st.filter(x=>x!=="open").length, bad=st.filter(x=>x==="bad").length;
     return `<button class="ec-raum" data-act="ecRaum" data-id="${esc(r.id)}"><b>${esc(r.name)}</b><small>${P.length} Messpunkt${P.length===1?"":"e"}${S.length?` · ${esc(S.map(s=>s.nr||"?").join(", "))}`:""}</small>
@@ -234,7 +254,7 @@ function ecGebView(pr){ const g=ecGeb(pr.ortId), et=g.etagen.find(e=>e.id===nav.
       ${ohne.length&&R.length?`<div class="ec-vz rcd ohne"><span class="nr"></span><span class="t">ohne RCD</span></div>`:""}${ohne.map(skZeile).join("")}
       ${pr.status==="fertig"?"":`<div class="ec-vt-f"><button class="btn-text" data-act="ecRcdNeu" data-v="${esc(v.id)}">${icon("add")}RCD</button><button class="btn-text" data-act="ecSkNeu" data-v="${esc(v.id)}">${icon("add")}Stromkreis</button></div>`}</div>`; };
   const ohneV=ecSkListe(g).filter(s=>!s.vId||!g.verteiler.some(v=>v.id===s.vId));
-  return `<div class="ec-et">${g.etagen.map(e=>`<button class="ec-etk${e===et?" an":""}" data-act="ecEt" data-id="${esc(e.id)}">${esc(e.name)}</button>`).join("")}${pr.status==="fertig"?"":`<button class="ec-etk plus" data-act="ecEtNeu" aria-label="Etage hinzufügen" title="Etage hinzufügen">${icon("add")}</button>`}</div>
+  return `<div class="ec-et">${ecEtagen(g).map(e=>{ const gs=ecGeschossName(ecEbene(e)), zwei=ecEtLabel(e)!==e.name; return `<button class="ec-etk${e===et?" an":""}${zwei?" zwei":""}" data-act="ecEt" data-id="${esc(e.id)}">${esc(e.name)}${zwei?`<small>${esc(gs)}</small>`:""}</button>`; }).join("")}${pr.status==="fertig"?"":`<button class="ec-etk plus" data-act="ecEtNeu" aria-label="Etage hinzufügen" title="Etage hinzufügen">${icon("add")}</button>`}</div>
     <div class="ec-zwei"><div>${kdKopf(`Räume im ${esc(et?et.name:"")}`,et&&"ecRaumNeu","Raum hinzufügen")}
       ${et&&et.raeume.length?`<div class="ec-raster">${et.raeume.map(raum).join("")}</div>`:`<p class="meta">Noch keine Räume. Mit + anlegen – z. B. Küche, Bad, Flur, Hausanschlussraum.</p>`}
       ${et&&pr.status!=="fertig"?`<button class="btn-text ec-etedit" data-act="ecEtEdit" data-id="${esc(et.id)}">${icon("edit")}Etage „${esc(et.name)}“ umbenennen oder löschen</button>`:""}</div>
@@ -299,6 +319,14 @@ function ecAbschlussView(pr){ const an=ecAn(pr), F=ecFehlt(pr), zu=pr.status==="
 let ecDlg=null, ecLetzterSk="";
 const ecPr=()=>nav.v==="ec"&&DB.echecks.get(nav.id);
 const ecChips=(gr,opts,cur,dis)=>`<div class="chips ec-wahl">${opts.map(([v,t])=>`<button type="button" class="chip" data-act="ecWahl" data-g="${gr}" data-v="${esc(v)}" aria-pressed="${String(cur)===String(v)}" ${dis?"disabled":""}>${esc(t)}</button>`).join("")}</div>`;
+function ecEtDlg(et){ const pr=ecPr(), g=ecGeb(pr.ortId); ecDlg={et:et?et.id:null,ebeneHand:!!(et&&et.ebene!=null)};
+  const vorschl=["KG","EG","1. OG","2. OG","3. OG","DG"].filter(n=>!g.etagen.some(e=>e.name===n&&e!==et));
+  dialog(et?"Etage bearbeiten":"Neue Etage",`<div class="fg1">${tf("ecName","Bezeichnung",et?et.name:"",{form:true,ph:"z. B. 1. OG oder Level 2"})}</div>
+    ${vorschl.length?`<div class="chips ec-wahl">${vorschl.map(n=>`<button type="button" class="chip" data-act="ecNameSetz" data-v="${n}">${n}</button>`).join("")}</div>`:""}
+    <div class="fg1" style="margin-top:14px">${sf("ecEbene","Geschoss (bestimmt die Reihenfolge)",et?String(ecEbene(et)):"",[["","aus der Bezeichnung erkennen"],...EC_GESCHOSS.map(([v,t])=>[String(v),t])],{form:true})}</div>
+    <p class="meta" style="margin-top:8px">Heißt die Etage beim Kunden anders, z. B. „Level 1“, hier das echte Geschoss wählen (EG) – sortiert wird danach, angezeigt der Name.</p>
+    ${et?"":`<button type="button" class="btn-text" data-act="ecEtSerieDlg" style="margin-top:6px">${icon("add")}Mehrere auf einmal (Level 1 bis 5 …)</button>`}`,
+    `${et?`<button class="btn-text danger" data-act="ecEtDel">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecEtOk">Speichern</button>`,{breit:true}); }
 function ecNameDlg(t,wert,act,del,extra){ dialog(t,`<div class="fg1">${tf("ecName","Bezeichnung",wert||"",{form:true})}${extra||""}</div>`,`${del?`<button class="btn-text danger" data-act="${del}">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="${act}">Speichern</button>`); }
 /* Raum: Anschlusspunkte in Laufreihenfolge */
 function ecRaumDlg(raumId){ const pr=ecPr(), g=ecGeb(pr.ortId), zu=pr.status==="fertig", name=ecRaumName(g,raumId); if(!name) return; ecDlg={raumDlg:raumId};
@@ -428,7 +456,7 @@ function ecImportStart(){ const i=document.createElement("input"); i.type="file"
     if(!docs.length){ toast("Keine Messungen in der Datei gefunden"); return; }
     ecImportVorbereiten(docs,f.name); }); i.click(); }
 function ecSkSchluessel(row){ const fn=String(row.fuse_number||"").trim(), m=fn.match(/\bF\s*(\d+[\w.]*)/i); return m?"F"+m[1]:fn||String(row.circuit_name||"").trim(); }
-function ecImportVorbereiten(docs,datei){ const pr=ecPr(), g=ecGeb(pr.ortId), et=g.etagen.find(e=>e.id===nav.et)||g.etagen[0];
+function ecImportVorbereiten(docs,datei){ const pr=ecPr(), g=ecGeb(pr.ortId), et=g.etagen.find(e=>e.id===nav.et)||ecEtStd(g);
   const raumNach=n=>{ n=String(n||"").trim().toLowerCase(); const r=ecRaeume(g).find(x=>x.name.toLowerCase()===n); return r?r.id:"__neu"; };
   ecImp={datei,vId:g.verteiler[0]?g.verteiler[0].id:"__neu",etId:et.id,docs:docs.map(d=>({name:d.documentation_name||"Messungen",kdnr:d.client&&d.client.customer_number||"",netz:d.system_info&&d.system_info.grid_type||"",raumId:raumNach(d.documentation_name),rows:d.circuits.map(r=>({r,ziel:""}))}))};
   ecImportZiele(); ecImportDlg(); }
@@ -443,7 +471,7 @@ function ecImportDlg(){ const pr=ecPr(), g=ecGeb(pr.ortId), o=ecOrt(pr.ortId), R
   const kurz=r=>[r.fuse_number,r.circuit_name].filter(Boolean).join(" · ")+" — "+[r.loop_impedance&&`Z s ${ecSpWert(r.loop_impedance,"Ω")} Ω`,r.insulation_resistance&&`R iso ${ecSpWert(r.insulation_resistance,"MΩ")} MΩ`,(r.rcd_tripping_time_1||r.rcd_tripping_time)&&`RCD ${ecSpWert(r.rcd_tripping_time_1||r.rcd_tripping_time,"ms")} ms`].filter(Boolean).join(" · ");
   dialog("Sparkify-Import",`<p class="ec-sub">${esc(ecImp.datei)} · ${anz} Messung${anz===1?"":"en"} in ${ecImp.docs.length} Dokumentation${ecImp.docs.length===1?"":"en"}</p>
     ${kdWarn?`<div class="ec-tipp warn">${icon("warn")}<span>Kundennummer in der Datei (${esc(kdWarn)}) passt nicht zu ${esc(o.kunde.name)} (${esc(o.kunde.kdnr)}). Richtige Datei?</span></div>`:""}
-    <div class="fg1"><div class="reihe2">${sf("impV","Neue Stromkreise in Verteiler",ecImp.vId,[...g.verteiler.map(v=>[v.id,v.name]),["__neu","Neuer Verteiler „Hauptverteiler“"]],{form:true})}${sf("impEt","Neue Räume auf Etage",ecImp.etId,g.etagen.map(e=>[e.id,e.name]),{form:true})}</div></div>
+    <div class="fg1"><div class="reihe2">${sf("impV","Neue Stromkreise in Verteiler",ecImp.vId,[...g.verteiler.map(v=>[v.id,v.name]),["__neu","Neuer Verteiler „Hauptverteiler“"]],{form:true})}${sf("impEt","Neue Räume auf Etage",ecImp.etId,ecEtagen(g).map(e=>[e.id,ecEtLabel(e)]),{form:true})}</div></div>
     ${ecImp.docs.map((d,di)=>{ const P=d.raumId==="__neu"?[]:ecRaumPunkte(g,d.raumId);
       return `<div class="ec-imp"><div class="fg1">${sf("impR_"+di,`Dokumentation „${d.name}“ → Raum`,d.raumId,[...R.map(r=>[r.id,r.titel]),["__neu",`Neuer Raum „${d.name}“`]],{form:true})}</div>
         <div class="list">${d.rows.map((x,ri)=>`<div class="ec-imp-z"><span class="nr">${ri+1}</span><span class="t">${esc(kurz(x.r))}</span>
@@ -536,11 +564,13 @@ async function ecPdfAblegen(pr){ toast("PDF wird erstellt …");
 /* ---- Klicks und Eingaben ---- */
 document.addEventListener("change",e=>{ const el=e.target;
   if(el.id==="f_ecKunde"){ const f=document.getElementById("ecOrtFeld"); if(f) f.innerHTML=ecOrtFeld(el.value); return; }
+  if(el.id==="f_ecEbene"&&ecDlg&&"ebeneHand" in ecDlg){ ecDlg.ebeneHand=el.value!==""; return; }
   if(el.id==="f_skV"){ const pr=ecPr(), f=document.getElementById("ecRcdFeld"); if(pr&&f) f.innerHTML=ecRcdFeld(ecGeb(pr.ortId),el.value,""); return; }
   if(ecImp&&/^f_imp(R_|V$|Et$)/.test(el.id)){ ecImportLesen(); ecImportZiele(); ecImportDlg(); return; }
   if(/^f_zu_/.test(el.id)&&el.value){ const pr=ecPr(), g=ecGeb(pr.ortId), st=g.stellen.find(s=>s.id===el.id.slice(5)); if(st){ ecWerteLesen(); st.skId=el.value; ecLetzterSk=el.value; ecGebSpeichern(g); const r=ecDlg&&ecDlg.raumMess; render(); if(r) ecRaumMessDlg(r); } return; }
   if(el.dataset&&el.dataset.ec){ const pr=ecPr(); if(!pr||pr.status==="fertig") return; const [a,b]=el.dataset.ec.split("."); if(b){ pr[a]=Object.assign({},pr[a]||{},{[b]:el.value.trim()}); } else pr[a]=el.value.trim(); saveRec("echecks",pr); } });
 document.addEventListener("input",e=>{ const el=e.target; if(!el.dataset) return;
+  if(el.id==="f_ecName"&&ecDlg&&"ebeneHand" in ecDlg&&!ecDlg.ebeneHand){ const s2=document.getElementById("f_ecEbene"), v=ecEbeneRaten(el.value); if(s2) s2.value=v==null?"":String(v); return; }
   if(el.dataset.mw&&el.dataset.gsk){ const f=el.closest(".ec-feld"); if(!f) return; const st=ecWertStand(EC_GW[el.dataset.mw].gw(el.dataset.gsk),el.value); f.classList.remove("ok","bad"); if(st) f.classList.add(st); return; }
   if(!el.dataset.z||!el.dataset.k||!EC_F[el.dataset.k]) return; const pr=ecPr(); if(!pr) return; const g=ecGeb(pr.ortId), z=el.dataset.z, k=el.dataset.k;
   const bezug=["t1","t5","idelta"].includes(k)||(k==="ub"&&g.rcds.some(r=>r.id===z))?g.rcds.find(r=>r.id===z):z.includes(".")?ecSkVon(g,{st:g.stellen.find(s=>s.id===z.split(".")[0])||{}}):g.stromkreise.find(s=>s.id===z);
@@ -571,18 +601,24 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     if(gr==="lage"||gr==="schutz"||gr==="leitung"){ const i=document.getElementById({lage:"f_ecLage",schutz:"f_skSchutz",leitung:"f_skLeitung"}[gr]); if(i){ i.value=b.dataset.v; i.parentElement.classList.add("fl"); } return; }
     if(ecDlg&&ecDlg.w) ecDlg.w[gr]=b.dataset.v; if(gr==="art"){ const z=document.getElementById("ecFachZeile"); if(z) z.hidden=b.dataset.v!=="sd"; } return; }
   /* Etagen und Räume */
-  case "ecEt": { if(nav.et===b.dataset.id||(!nav.et&&g.etagen[0]&&g.etagen[0].id===b.dataset.id)){ if(zu) return; const et=g.etagen.find(x=>x.id===b.dataset.id); if(et){ ecDlg={et:et.id}; ecNameDlg("Etage bearbeiten",et.name,"ecEtOk","ecEtDel"); } return; } nav.et=b.dataset.id; render(); return; }
-  case "ecEtEdit": { if(!nichtZu()) return; const et=g.etagen.find(x=>x.id===b.dataset.id); if(et){ ecDlg={et:et.id}; ecNameDlg("Etage bearbeiten",et.name,"ecEtOk","ecEtDel"); } return; }
-  case "ecEtNeu": if(!nichtZu()) return; ecDlg={et:null}; ecNameDlg("Neue Etage","","ecEtOk",null,`<div class="chips">${["KG","EG","OG","1. OG","2. OG","DG"].filter(n=>!g.etagen.some(e=>e.name===n)).map(n=>`<button type="button" class="chip" data-act="ecNameSetz" data-v="${n}">${n}</button>`).join("")}</div>`); return;
-  case "ecNameSetz": { const i=document.getElementById("f_ecName"); if(i){ i.value=b.dataset.v; i.parentElement.classList.add("fl"); } return; }
-  case "ecEtOk": { const n=(formVals().ecName||"").trim(); if(!n){ toast("Bitte eine Bezeichnung eingeben"); return; } if(ecDlg.et){ g.etagen.find(x=>x.id===ecDlg.et).name=n; } else { const et={id:uid(),name:n,raeume:[]}; g.etagen.push(et); nav.et=et.id; } sp(); closeOverlays(); render(); return; }
+  case "ecEt": { const akt=g.etagen.find(e=>e.id===nav.et)||ecEtStd(g); if(akt&&akt.id===b.dataset.id){ if(zu) return; ecEtDlg(akt); return; } nav.et=b.dataset.id; render(); return; }
+  case "ecEtEdit": { if(!nichtZu()) return; const et=g.etagen.find(x=>x.id===b.dataset.id); if(et) ecEtDlg(et); return; }
+  case "ecEtNeu": if(!nichtZu()) return; ecEtDlg(null); return;
+  case "ecNameSetz": { const i=document.getElementById("f_ecName"); if(i){ i.value=b.dataset.v; i.parentElement.classList.add("fl"); i.dispatchEvent(new Event("input",{bubbles:true})); } return; }
+  case "ecEtOk": { const F=formVals(), n=(F.ecName||"").trim(), eb=F.ecEbene!==""&&F.ecEbene!=null?+F.ecEbene:(ecEbeneRaten(n)??0); if(!n){ toast("Bitte eine Bezeichnung eingeben"); return; }
+    if(ecDlg.et){ Object.assign(g.etagen.find(x=>x.id===ecDlg.et),{name:n,ebene:eb}); } else { const et={id:uid(),name:n,ebene:eb,raeume:[]}; g.etagen.push(et); nav.et=et.id; } sp(); closeOverlays(); render(); return; }
   case "ecEtDel": { const et=g.etagen.find(x=>x.id===ecDlg.et); if(!et) return; if(g.etagen.length<2){ toast("Mindestens eine Etage bleibt"); return; } if(et.raeume.length){ toast("Erst die Räume dieser Etage löschen"); return; } g.etagen=g.etagen.filter(x=>x!==et); nav.et=null; sp(); closeOverlays(); render(); return; }
+  case "ecEtSerie": { const F=formVals(), von=+F.esVon, bis=+F.esBis, ab=+F.esAb; if(!(bis>=von)){ toast("Bitte einen gültigen Bereich wählen"); return; } if(bis-von>15){ toast("Höchstens 16 Etagen auf einmal"); return; }
+    for(let n=von;n<=bis;n++){ const name=`${F.esName||"Level"} ${n}`; if(g.etagen.some(e=>e.name===name)) continue; g.etagen.push({id:uid(),name,ebene:ab+(n-von),raeume:[]}); }
+    if(g.etagen.length>1&&g.etagen.some(e=>e.id==="eg"&&!e.raeume.length&&e.name==="EG")&&g.etagen.some(e=>e.id!=="eg"&&ecEbene(e)===0)) g.etagen=g.etagen.filter(e=>!(e.id==="eg"&&!e.raeume.length&&e.name==="EG"));
+    nav.et=null; sp(); closeOverlays(); render(); return; }
+  case "ecEtSerieDlg": { dialog("Mehrere Etagen anlegen",`<p class="ec-sub">Für Gebäude mit eigener Zählung, z. B. Level 1 bis 5, wobei Level 1 das Erdgeschoss ist.</p><div class="fg1">${tf("esName","Bezeichnung",b.dataset.n||"Level",{form:true})}<div class="reihe2">${sf("esVon","von",String(1),Array.from({length:21},(_,i)=>[String(i-5),String(i-5)]),{form:true})}${sf("esBis","bis",String(5),Array.from({length:21},(_,i)=>[String(i-5),String(i-5)]),{form:true})}</div>${sf("esAb","Die erste davon ist",String(0),EC_GESCHOSS.map(([v,t])=>[String(v),t]),{form:true})}</div><p class="meta" style="margin-top:10px">Das „EG“, das jedes neue Gebäude hat, wird dabei entfernt, solange es leer ist.</p>`,`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecEtSerie">Anlegen</button>`,{breit:true}); return; }
   case "ecRaumNeu": if(!nichtZu()) return; ecDlg={raum:null}; ecNameDlg("Neuer Raum","","ecRaumOk",null,`<div class="chips">${["Küche","Bad","Flur","Wohnen","Schlafen","Kind","Büro","Keller","Hausanschlussraum","Garage","Treppenhaus","Außen"].map(n=>`<button type="button" class="chip" data-act="ecNameSetz" data-v="${n}">${n}</button>`).join("")}</div>`); return;
   case "ecRaum": ecRaumDlg(b.dataset.id); return;
   case "ecRaumEdit": { let r=null; g.etagen.forEach(e=>e.raeume.forEach(x=>{ if(x.id===b.dataset.id) r=x; })); if(r&&nichtZu()){ ecDlg={raum:r.id}; ecNameDlg("Raum bearbeiten",r.name,"ecRaumOk","ecRaumDel"); } return; }
   case "ecRaumOk": { const n=(formVals().ecName||"").trim(); if(!n){ toast("Bitte eine Bezeichnung eingeben"); return; }
     if(ecDlg.raum){ g.etagen.forEach(e=>e.raeume.forEach(x=>{ if(x.id===ecDlg.raum) x.name=n; })); sp(); render(); ecRaumDlg(ecDlg.raum); return; }
-    const et=g.etagen.find(e=>e.id===nav.et)||g.etagen[0], r={id:uid(),name:n}; et.raeume.push(r); sp(); render(); ecRaumDlg(r.id); return; }
+    const et=g.etagen.find(e=>e.id===nav.et)||ecEtStd(g), r={id:uid(),name:n}; et.raeume.push(r); sp(); render(); ecRaumDlg(r.id); return; }
   case "ecRaumDel": { const id=ecDlg.raum, n=g.stellen.filter(s=>s.raumId===id).length; if(n&&!b.dataset.ok){ b.dataset.ok="1"; b.textContent=`Mit ${n} Anschlusspunkt${n>1?"en":""} löschen`; return; }
     g.etagen.forEach(e=>{ e.raeume=e.raeume.filter(x=>x.id!==id); }); g.stellen=g.stellen.filter(s=>s.raumId!==id); g.verteiler.forEach(v=>{ if(v.raumId===id) v.raumId=""; }); sp(); closeOverlays(); render(); return; }
   /* Anschlusspunkte */

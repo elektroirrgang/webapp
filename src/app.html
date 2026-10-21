@@ -3310,7 +3310,7 @@ const gerName=g=>[g.hersteller,g.modell].filter(Boolean).join(" ")||"Gerät";
 const gerLabel=g=>(g.kurz?g.kurz+" · ":"")+gerName(g);
 /* Prüfer: in der Übersicht unter Mitarbeiter festgelegt */
 const prueferListe=()=>team().filter(m=>m.pruefer);
-const gerListe=art=>live("geraete").filter(g=>!g.aus&&(g.art||"mess")===art).sort((a,b)=>gerName(a).localeCompare(gerName(b),"de"));
+const gerListe=art=>live("geraete").filter(g=>!g.aus&&(g.art||"mess")===art&&(g.einsatz||(/\bPAT\b/i.test(g.modell||"")?"geraete":"installation"))!=="geraete").sort((a,b)=>gerName(a).localeCompare(gerName(b),"de"));
 function gerChips(p){
   const M=gerListe("mess"), A=gerListe("adapter"); if(!M.length&&!A.length) return "";
   const c=(g,an)=>`<button type="button" class="chip" data-act="gerWahl" data-id="${esc(g.id)}" aria-pressed="${an}" ${canEdit(cur)?"":"disabled"}>${esc(gerLabel(g))}${g.sn?` · ${esc(g.sn)}`:""}</button>`;

@@ -2201,7 +2201,7 @@ function gerDialog(g){
     <div class="ger-bildzeile"><div class="ger-foto" id="gerFoto">${gerFotoHtml(r)}</div>${tf("bildUrl","Herstellerbild (Internetadresse, optional)",GER_BILD_ALT[r.bildUrl]||r.bildUrl,{form:true,type:"url"})}</div>
     <div class="reihe3">${sf("art","Art",r.art||"mess",GER_ART,{form:true})}${tf("hersteller","Hersteller",r.hersteller,{form:true,ph:"z. B. Wiha"})}${tf("modell","Modell",r.modell,{form:true,ph:"z. B. MFT one"})}</div>
     <div class="reihe3">${tf("kurz","Kurzname",r.kurz,{form:true,ph:"z. B. MFT 1 oder Bertha"})}${tf("sn","Seriennummer",r.sn,{form:true})}${tf("kal","Kalibrierung gültig bis",r.kal,{form:true,ph:"MM.JJJJ"})}</div>
-    ${sf("bei","Zugeteilt an",r.bei||"",[["","niemand / Firma"],...T.map(m=>[m.mail,m.name])],{form:true})}
+    <div class="reihe2">${sf("einsatz","Einsatz",r.einsatz||(/\bPAT\b/i.test(r.modell||"")?"geraete":"installation"),[["installation","Installation und EVSE"],["geraete","Geräteprüfung"],["beide","beides"]],{form:true})}${sf("bei","Zugeteilt an",r.bei||"",[["","niemand / Firma"],...T.map(m=>[m.mail,m.name])],{form:true})}</div>
     <p class="sup" style="margin:0 4px">Der Kurzname steht in allen Apps vor dem Gerät – damit man gleiche Geräte auseinanderhält.</p>
     <div class="ger-notiz">${ta("notiz","Notiz",r.notiz,{form:true,ph:"z. B. liegt im Sprinter, Kalibrierung bei …"})}</div></div><input type="file" id="gerDatei" accept="image/*" hidden>`,
     `${g?`<button class="btn-text danger" data-act="gerAus">${r.aus?"Wieder aktiv":"Ausmustern"}</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gerSave">Speichern</button>`,{breit:true});
@@ -2384,7 +2384,7 @@ document.addEventListener("click",async ev=>{
   case "gerFotoWeg": if(gerForm){ gerForm.bild=""; gerFotoNeu(); } return;
   case "gerEdit": gerDialog(DB.geraete.get(b.dataset.id)); return;
   case "gerSave": { if(!ME.admin||!gerForm) return; const F=formVals(); if(!F.modell&&!F.hersteller&&!F.sn){ toast("Bitte mindestens Modell oder Seriennummer eintragen"); return; }
-    const r=gerForm.id?DB.geraete.get(gerForm.id):{id:uid()}; Object.assign(r,{art:F.art,hersteller:F.hersteller,modell:F.modell,kurz:(F.kurz||"").trim(),sn:F.sn,kal:F.kal,bei:F.bei,notiz:F.notiz,bildUrl:F.bildUrl,bild:gerForm.bild||""}); saveRec("geraete",r,!gerForm.id); gerForm=null; closeOverlays(); render(); return; }
+    const r=gerForm.id?DB.geraete.get(gerForm.id):{id:uid()}; Object.assign(r,{art:F.art,hersteller:F.hersteller,modell:F.modell,kurz:(F.kurz||"").trim(),einsatz:F.einsatz||"",sn:F.sn,kal:F.kal,bei:F.bei,notiz:F.notiz,bildUrl:F.bildUrl,bild:gerForm.bild||""}); saveRec("geraete",r,!gerForm.id); gerForm=null; closeOverlays(); render(); return; }
   case "gerAus": { const r=gerForm&&DB.geraete.get(gerForm.id); if(!r||!ME.admin) return; r.aus=!r.aus; saveRec("geraete",r); gerForm=null; closeOverlays(); render(); toast(r.aus?"Ausgemustert – in EVSE nicht mehr auswählbar":"Wieder aktiv"); return; }
   case "teamEdit": teamDialog(teamAlle().find(m=>m.mail===b.dataset.mail)); return;
   case "teamStatus": if(teamForm){ if(teamForm.alt===ME.mail&&b.dataset.v==="weg"){ toast("Dich selbst kannst du nicht austragen"); return; } teamForm.status=b.dataset.v; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;
