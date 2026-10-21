@@ -40,6 +40,15 @@ async function pushProtokolle(){
   if(!bbSync()) return; if(!bbGeladen) await bbLaden();
   const weg=new Set([...DB.protokolle.values()].filter(r=>r.deleted).map(r=>r.id));
   BB_PROT.forEach(x=>{ if(!weg.has(x.id)&&!x.demo&&!x.ausShare&&!DB.protokolle.has(x.id)) bbProtMelden(x); });
+  /* Prüfungen, deren PDF schon in der Share liegt (auch von Geräten mit älterer App): ein Eintrag „pa-<Prüfung>“, damit Baustelle und E-Check sie ebenfalls zeigen */
+  if(DB.pruefungen){ const mit=new Set([...DB.protokolle.values()].filter(r=>!r.deleted&&!String(r.id).startsWith("pa-")).map(r=>r.pruefungId).filter(Boolean));
+    for(const pr of DB.pruefungen.values()){ if(pr.deleted||pr.demo||!pr.pdfAblage||mit.has(pr.id)) continue; const id="pa-"+pr.id, alt=DB.protokolle.get(id);
+      if(alt&&alt.pfad===pr.pdfAblage) continue;
+      const k=bbKunde(pr.kundeId), st=pr.standortId&&DB.standorte?DB.standorte.get(pr.standortId):null, pp=pr.p||{};
+      const r=Object.assign(alt||{id},{app:"evse",bib:"pdf",pfad:pr.pdfAblage,pruefungId:pr.id,kundeId:pr.kundeId||"",standortId:pr.standortId||"",ladeparkId:pr.ladeparkId||"",
+        name:String(pr.pdfAblage).split("/").pop().replace(/\.pdf$/i,""),titel:[k&&k.name,st&&st.name].filter(Boolean).join(" · ")||"Prüfung",datum:pp.datum||"",art:pp.art||"",auftragsnr:pp.auftragsnr||"",pruefer:pp.pruefer||"",created:pr.updated||Date.now(),von:pr.updatedBy||null});
+      if(typeof protoResult==="function") try{ r.ergebnis=protoResult(pr)==="bad"?"bad":"ok"; }catch(e){}
+      delete r.deleted; saveRec("protokolle",r,!alt); } }
   for(const id of [...(META.sync.protQueue||[])]){
     const r=DB.protokolle.get(id); if(!r||r.deleted){ bbProtOben(id); continue; }
     const b=await bbBlob(id).catch(()=>null); if(!b){ bbProtOben(id); continue; }
@@ -77,7 +86,8 @@ function bbEintraege(){
   const protE=(x,ziel,fern)=>({art:x.app==="baustelle"?"bericht":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
     info:[x.app==="baustelle"?"Baustelle":"EVSE",x.art,bbDatum(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`,x.von&&x.von.name,fern&&"auf einem anderen Gerät erstellt"].filter(Boolean).join(" · "),
     pill:x.ergebnis?pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden"):"",ziel});
-  P.filter(r=>!r.deleted&&!hier.has(r.id)).forEach(r=>L.push(protE(r,`data-act="bbFern" data-id="${esc(r.id)}"`,true)));
+  const echt=new Set([...BB_PROT,...P.filter(r=>!r.deleted&&!String(r.id).startsWith("pa-"))].map(x=>x.pruefungId).filter(Boolean)); /* „pa-“ nur, solange es zur Prüfung kein richtiges Protokoll gibt */
+  P.filter(r=>!r.deleted&&!hier.has(r.id)&&!(String(r.id).startsWith("pa-")&&echt.has(r.pruefungId))).forEach(r=>L.push(protE(r,`data-act="bbFern" data-id="${esc(r.id)}"`,true)));
   BB_PROT.filter(x=>!x.demo&&!weg.has(x.id)).forEach(x=>L.push({art:x.app==="baustelle"?"bericht":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
     info:[x.app==="baustelle"?"Baustelle":"EVSE",x.art,bbDatum(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`,x.von&&x.von.name].filter(Boolean).join(" · "),
     pill:x.ergebnis?pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden"):"",ziel:`data-act="bbOeffnen" data-id="${esc(x.id)}"`}));
