@@ -2303,15 +2303,16 @@ function kundenKacheln(){ const q=query.toLowerCase(), H=v=>String(v||"").toLowe
 function baustellenListe(){
   if(META.filter==="kunden") return kundenKacheln();
   const q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
-  const L=live("baustellen").filter(b=>(q?true:(b.status||"aktiv")===META.filter)&&(!q||H(b.name)||H(b.auftragsnr)||H(pfadText(b))||H((ortVon(b)||{}).ort))).sort((a,b)=>aktiv(b)-aktiv(a));
-  if(!L.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:META.filter==="aktiv"?"Keine aktiven Baustellen.":`Keine Baustellen im Status „${STATUS_TXT[META.filter]}“.`}</p>`;
+  const alle=META.filter==="alle", rang=b=>b.status==="fertig"?1:0;
+  const L=live("baustellen").filter(b=>(q||alle?true:(b.status||"aktiv")===META.filter)&&(!q||H(b.name)||H(b.auftragsnr)||H(pfadText(b))||H((ortVon(b)||{}).ort))).sort((a,b)=>(alle||q?rang(a)-rang(b):0)||aktiv(b)-aktiv(a));
+  if(!L.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:alle?"Keine Baustellen.":META.filter==="aktiv"?"Keine aktiven Baustellen.":`Keine Baustellen im Status „${STATUS_TXT[META.filter]}“.`}</p>`;
   return listOf(L.map(bItem));
 }
 function startView(){
   if(!live("baustellen").length) return `<div class="empty">${icon("baustelle")}<h2>Noch keine Baustellen</h2><p>Lege mit „Baustelle“ die erste an. Danach schreibt jeder am Ende des Tages kurz rein, was der Stand ist – der Nächste ist sofort im Bild.</p></div>`;
   const n=s=>live("baustellen").filter(b=>(b.status||"aktiv")===s).length;
   return `<div class="narrow">${vgMeineKarte()}${searchBar("Baustelle, Kunde, Ort oder Auftragsnr. suchen")}
-    <div class="chips filt"><button class="chip" data-act="filter" data-v="kunden" aria-pressed="${META.filter==="kunden"}">${icon("firma")}Kunden</button>${STATUS.map(([v,t])=>`<button class="chip" data-act="filter" data-v="${v}" aria-pressed="${META.filter===v}"><i class="bs-dot ${v}"></i>${t} (${n(v)})</button>`).join("")}</div>
+    <div class="chips filt"><button class="chip" data-act="filter" data-v="alle" aria-pressed="${META.filter==="alle"}">Alle (${live("baustellen").length})</button><button class="chip" data-act="filter" data-v="kunden" aria-pressed="${META.filter==="kunden"}">${icon("firma")}Kunden</button>${STATUS.map(([v,t])=>`<button class="chip" data-act="filter" data-v="${v}" aria-pressed="${META.filter===v}"><i class="bs-dot ${v}"></i>${t} (${n(v)})</button>`).join("")}</div>
     <div id="res">${baustellenListe()}</div></div>`;
 }
 function eintragKarte(e,erster){
