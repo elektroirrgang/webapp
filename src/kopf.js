@@ -70,7 +70,7 @@ const KUERZEL=[["N","Neu anlegen (wie der rote Knopf unten rechts)"],["/ oder St
   ["Entf","Menü zum Eintrag (z. B. Löschen)"],["Alt ←","Zurück"],["Alt 1 … 9","Bereich in der Seitenleiste"],["Strg Enter oder Strg S","Im Fenster speichern"],["Esc","Fenster oder Menü schließen"],["?","Diese Übersicht"]];
 const kzImFeld=t=>!!(t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)));
 const kzSichtbar=el=>!!(el&&!el.hidden&&el.getClientRects().length);
-const LISTE_SEL="#app .li[role=button],#app a.li,#app button.li,#app .vg-k,#app .kt-haupt:not(:disabled),#app .wg.klick,#app .vk";
+const LISTE_SEL="#app .li[role=button],#app a.li,#app button.li,#app .vg-k,#app .kt-haupt:not(:disabled),#app .wg.klick,#app .vk,#app .vr";
 function kuerzelHilfe(){ dialog("Tastenkürzel",`<div class="kz-liste">${KUERZEL.map(([k,t])=>`<div class="kz-z"><span>${esc(t)}</span><span class="kz-k">${k.split(" oder ").map(x=>`<kbd>${esc(x)}</kbd>`).join(" ")}</span></div>`).join("")}</div>
   <p class="sup" style="margin:14px 4px 0">Rechtsklick auf Einträge öffnet das gleiche Menü wie Gedrückthalten am iPad.</p>`,`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`); }
 document.addEventListener("keydown",e=>{
