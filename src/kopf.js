@@ -2,7 +2,14 @@
    PC mit Seitenleiste: in derselben Zeile wie Glocke und Profilbild. iPad (Tab-Leiste oben): als zweite Zeile direkt darunter,
    ohne Lücke – beides ist ein Element, scrollender Inhalt kann nicht mehr dazwischen durchscheinen. */
 const KOPF_PC=matchMedia("(min-width:1024px) and (hover:hover) and (pointer:fine)"), KOPF_BREIT=matchMedia("(min-width:744px)");
+/* iPad/iPhone (Safari): beim Seitenwechsel blieben Teile der alten Seite stehen (z. B. Bibliothek-Ordner über den Notizen).
+   Nach jedem Wechsel des Bereichs die Inhaltsfläche einmal neu zeichnen lassen. */
+const KOPF_IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+let kopfLetzteSeite="";
+function kopfNeuZeichnen(){ const a=document.getElementById("app"); if(!a) return; const s=typeof nav!=="undefined"?nav.v+"|"+(nav.id||""):""; if(s===kopfLetzteSeite) return; kopfLetzteSeite=s;
+  if(!KOPF_IOS) return; a.style.opacity=".999"; requestAnimationFrame(()=>requestAnimationFrame(()=>{ a.style.opacity=""; })); }
 function kopfEinhaengen(){
+  kopfNeuZeichnen();
   const tb=document.getElementById("topbar"), row=tb&&tb.querySelector(".tb-row"); if(!row) return;
   let slot=document.getElementById("tbKopf");
   if(!slot){ slot=document.createElement("div"); slot.id="tbKopf"; slot.className="tb-kopf"; }

@@ -133,9 +133,9 @@ const bbFarbe=f=>(BB_FARBEN.find(x=>x[0]===f)||BB_FARBEN[0])[2];
 let BB_GID=0;
 const BB_HELL=new Set(["papier","gelb"]);
 function bbOrdnerBild(farbe,sym){ const g="bbg"+(++BB_GID), f=BB_FARBEN.some(x=>x[0]===farbe)?farbe:"papier";
-  return `<svg class="bb-mappe${BB_HELL.has(f)?" hell":""}" viewBox="0 0 120 96" style="--o:${bbFarbe(f)}" aria-hidden="true">
+  return `<svg class="bb-mappe${BB_HELL.has(f)?" hell":""}" viewBox="0 0 120 100" style="--o:${bbFarbe(f)}" aria-hidden="true">
     <defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".45" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#000" stop-opacity=".06"/></linearGradient></defs>
-    <path class="ob" d="M2 20a12 12 0 0 1 12-12h25c3.6 0 5.8 1.3 8 3.7l2.6 2.8c1.9 2 3.9 3.5 7.4 3.5H106a12 12 0 0 1 12 12v54a12 12 0 0 1-12 12H14A12 12 0 0 1 2 84z"/>
+    <rect class="osh" x="6" y="38" width="108" height="61" rx="13"/><rect class="osh" x="4" y="36" width="112" height="62" rx="12" opacity=".5"/><path class="ob" d="M2 20a12 12 0 0 1 12-12h25c3.6 0 5.8 1.3 8 3.7l2.6 2.8c1.9 2 3.9 3.5 7.4 3.5H106a12 12 0 0 1 12 12v54a12 12 0 0 1-12 12H14A12 12 0 0 1 2 84z"/>
     <rect class="op2" x="15" y="20" width="90" height="46" rx="5" transform="rotate(-3 60 43)"/><rect class="op" x="13" y="22" width="94" height="46" rx="5"/>
     <rect class="of" x="2" y="32" width="116" height="64" rx="12"/><rect x="2" y="32" width="116" height="64" rx="12" fill="url(#${g})"/>
     <path class="ol" d="M14 32.6h92a11.4 11.4 0 0 1 11.4 11.4" fill="none" stroke-width="1.2"/>
