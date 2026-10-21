@@ -2153,6 +2153,8 @@ function gerKalBis(t){ t=String(t||"").trim(); let m;
 function gerKal(g){ if(!g.kal) return g.art==="mess"?{s:"leer",t:"Kalibrierung fehlt"}:null; const b=gerKalBis(g.kal); if(!b) return {s:"form",t:"Datum prüfen (MM.JJJJ)"};
   const rest=Math.floor((b-new Date())/864e5); return rest<0?{s:"ab",t:`abgelaufen seit ${g.kal}`}:rest<=60?{s:"bald",t:`läuft ab ${g.kal}`}:{s:"ok",t:`kalibriert bis ${g.kal}`}; }
 const gerName=g=>[g.hersteller,g.modell].filter(Boolean).join(" ")||"Gerät";
+/* Kurzname unterscheidet gleiche Geräte (z. B. zwei MFT one: „MFT 1“, „MFT 2“) – überall vorangestellt */
+const gerLabel=g=>(g.kurz?g.kurz+" · ":"")+gerName(g);
 /* Firmengeräte (20.10.2026), einmalig angelegt – Seriennr. und Kalibrierung trägt der Admin nach. Feste IDs: legt ein zweites Gerät
    sie auch an, gewinnt beim Abgleich die Fassung in SharePoint (updated=1). */
 const GER_MFT="https://wiha.com/media/87/89/b9/1770026915/47216-47217_Installation_tester_set_MFT_one_top.webp",
@@ -2161,12 +2163,13 @@ const GER_MFT="https://wiha.com/media/87/89/b9/1770026915/47216-47217_Installati
 /* frühere, falsche Herstellerbilder (PAT one: Seitenansicht, FEV300: falsches Motiv) → einmalig ersetzen */
 const GER_BILD_ALT={"https://wiha.com/media/6e/b7/6f/1772786021/47220-47221-47222-47223_PAT_02_side.webp":GER_PAT,
   "https://media.fluke.com/60d0e9ea-10d8-4871-801e-b108002e6ece_original__size.jpg":GER_FEV};
-const GER_VORLAGE=[{id:"ger-wiha-mft-one-1",art:"mess",hersteller:"Wiha",modell:"MFT one",bildUrl:GER_MFT,notiz:"Installationstester"},
-  {id:"ger-wiha-mft-one-2",art:"mess",hersteller:"Wiha",modell:"MFT one",bildUrl:GER_MFT,notiz:"Installationstester"},
-  {id:"ger-wiha-pat-one-1",art:"mess",hersteller:"Wiha",modell:"PAT one",bildUrl:GER_PAT,notiz:"Gerätetester (ortsveränderliche Geräte)"},
-  {id:"ger-fluke-fev300-1",art:"adapter",hersteller:"Fluke",modell:"FEV300",bildUrl:GER_FEV,notiz:"Prüfadapter für Ladestationen"}];
+const GER_VORLAGE=[{id:"ger-wiha-mft-one-1",art:"mess",kurz:"MFT 1",hersteller:"Wiha",modell:"MFT one",bildUrl:GER_MFT,notiz:"Installationstester"},
+  {id:"ger-wiha-mft-one-2",art:"mess",kurz:"MFT 2",hersteller:"Wiha",modell:"MFT one",bildUrl:GER_MFT,notiz:"Installationstester"},
+  {id:"ger-wiha-pat-one-1",art:"mess",kurz:"PAT",hersteller:"Wiha",modell:"PAT one",bildUrl:GER_PAT,notiz:"Gerätetester (ortsveränderliche Geräte)"},
+  {id:"ger-fluke-fev300-1",art:"adapter",kurz:"FEV",hersteller:"Fluke",modell:"FEV300",bildUrl:GER_FEV,notiz:"Prüfadapter für Ladestationen"}];
 function gerVorlagen(){ if(!ME.admin) return;
   if(!META.gerBild2){ for(const g of DB.geraete.values()){ const n=GER_BILD_ALT[g.bildUrl]; if(n){ g.bildUrl=n; saveRec("geraete",g); } } META.gerBild2=1; metaSave(); }
+  if(!META.gerKurz&&DB.geraete.size){ for(const v of GER_VORLAGE){ const g=DB.geraete.get(v.id); if(g&&!g.kurz&&!g.deleted){ g.kurz=v.kurz; saveRec("geraete",g); } } META.gerKurz=1; metaSave(); }
   if(META.gerVorlage) return;
   for(const v of GER_VORLAGE){ if(DB.geraete.has(v.id)) continue; const r=saveRec("geraete",Object.assign({sn:"",kal:"",bei:""},v),true); r.created=r.updated=1; dbPut("geraete",r); }
   META.gerVorlage=1; metaSave(); }
@@ -2176,7 +2179,7 @@ function geraeteView(){
   const L=live("geraete").filter(g=>!g.aus).sort((a,b)=>gerName(a).localeCompare(gerName(b),"de")), A=live("geraete").filter(g=>g.aus);
   if(!L.length&&!A.length) return `<div class="empty">${icon("geraet")}<h2>Noch keine Geräte</h2><p>${ME.admin?"Lege mit „Gerät“ die Messgeräte und Prüfadapter an – mit Seriennummer und Kalibrierdatum. In EVSE werden sie dann nur noch ausgewählt.":"Messgeräte pflegt der Chef oder das Büro."}</p></div>`;
   const z=g=>{ const k=gerKal(g), wer=g.bei?(team().find(m=>m.mail===g.bei)||{name:g.bei}).name:"";
-    return `<div class="li" role="button" tabindex="0" data-act="gerEdit" data-id="${esc(g.id)}">${gerAv(g)}<span class="lt"><span class="h">${esc(gerName(g))}</span>
+    return `<div class="li" role="button" tabindex="0" data-act="gerEdit" data-id="${esc(g.id)}">${gerAv(g)}<span class="lt"><span class="h">${esc(gerLabel(g))}</span>
       <span class="s">${esc([g.sn?`SN ${g.sn}`:"Seriennummer fehlt",wer&&`bei ${wer}`,g.notiz].filter(Boolean).join(" · "))}</span>${k?`<span class="st">${pill(k.s==="ok"?"ok":k.s==="bald"?"wip":"bad",k.t)}</span>`:""}</span></div>`; };
   return `<div class="narrow">${GER_ART.map(([v,t])=>{ const g=L.filter(x=>(x.art||"mess")===v); return g.length?`<div class="sec-lbl">${t} · ${g.length}</div>${listOf(g.map(z))}`:""; }).join("")}
     ${A.length?`<div class="sec-lbl">Ausgemustert · ${A.length}</div>${listOf(A.map(z))}`:""}
@@ -2197,13 +2200,15 @@ function gerDialog(g){
   dialog(g?"Gerät bearbeiten":"Neues Gerät",`<div class="fg1">
     <div class="ger-bildzeile"><div class="ger-foto" id="gerFoto">${gerFotoHtml(r)}</div>${tf("bildUrl","Herstellerbild (Internetadresse, optional)",GER_BILD_ALT[r.bildUrl]||r.bildUrl,{form:true,type:"url"})}</div>
     <div class="reihe3">${sf("art","Art",r.art||"mess",GER_ART,{form:true})}${tf("hersteller","Hersteller",r.hersteller,{form:true,ph:"z. B. Wiha"})}${tf("modell","Modell",r.modell,{form:true,ph:"z. B. MFT one"})}</div>
-    <div class="reihe3">${tf("sn","Seriennummer",r.sn,{form:true})}${tf("kal","Kalibrierung gültig bis",r.kal,{form:true,ph:"MM.JJJJ"})}${sf("bei","Zugeteilt an",r.bei||"",[["","niemand / Firma"],...T.map(m=>[m.mail,m.name])],{form:true})}</div>
+    <div class="reihe3">${tf("kurz","Kurzname",r.kurz,{form:true,ph:"z. B. MFT 1 oder Bertha"})}${tf("sn","Seriennummer",r.sn,{form:true})}${tf("kal","Kalibrierung gültig bis",r.kal,{form:true,ph:"MM.JJJJ"})}</div>
+    ${sf("bei","Zugeteilt an",r.bei||"",[["","niemand / Firma"],...T.map(m=>[m.mail,m.name])],{form:true})}
+    <p class="sup" style="margin:0 4px">Der Kurzname steht in allen Apps vor dem Gerät – damit man gleiche Geräte auseinanderhält.</p>
     <div class="ger-notiz">${ta("notiz","Notiz",r.notiz,{form:true,ph:"z. B. liegt im Sprinter, Kalibrierung bei …"})}</div></div><input type="file" id="gerDatei" accept="image/*" hidden>`,
     `${g?`<button class="btn-text danger" data-act="gerAus">${r.aus?"Wieder aktiv":"Ausmustern"}</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gerSave">Speichern</button>`,{breit:true});
 }
 function teamView(){
   const T=teamAlle(), a=T.filter(m=>m.status!=="weg"), w=T.filter(m=>m.status==="weg");
-  const z=m=>`<div class="li" role="button" tabindex="0" data-act="teamEdit" data-mail="${esc(m.mail)}"><span class="av">${esc(initials(m.name))}</span><span class="lt"><span class="h">${esc(m.name)}</span><span class="s">${esc([m.mail,m.rolle].filter(Boolean).join(" · "))}</span>${m.admin||m.status==="weg"?`<span class="st">${m.admin?pill("ok","Admin"):""}${m.status==="weg"?pill("open","ausgeschieden"):""}</span>`:""}</span>${icon("edit")}</div>`;
+  const z=m=>`<div class="li" role="button" tabindex="0" data-act="teamEdit" data-mail="${esc(m.mail)}"><span class="av">${esc(initials(m.name))}</span><span class="lt"><span class="h">${esc(m.name)}</span><span class="s">${esc([m.mail,m.rolle].filter(Boolean).join(" · "))}</span>${m.admin||m.pruefer||m.status==="weg"?`<span class="st">${m.admin?pill("ok","Admin"):""}${m.pruefer?pill("open","Prüfer"):""}${m.status==="weg"?pill("open","ausgeschieden"):""}</span>`:""}</span>${icon("edit")}</div>`;
   return `<div class="narrow"><div class="sec-lbl">Aktiv · ${a.length}</div>${listOf(a.map(z))}
     ${w.length?`<div class="sec-lbl">Ausgeschieden · ${w.length}</div>${listOf(w.map(z))}`:""}
     <section class="card tipp"><b>${icon("person")}Neuer Mitarbeiter</b>
@@ -2215,12 +2220,14 @@ function teamView(){
 }
 let teamForm=null;
 function teamDialog(m){
-  teamForm={alt:m?m.mail:null,admin:!!(m&&m.admin),status:m?m.status||"aktiv":"aktiv"};
+  teamForm={alt:m?m.mail:null,admin:!!(m&&m.admin),status:m?m.status||"aktiv":"aktiv",pruefer:!!(m&&m.pruefer)};
   const ich=m&&m.mail===ME.mail;
   dialog(m?"Mitarbeiter bearbeiten":"Mitarbeiter hinzufügen",`<div class="fg1">${tf("name","Name (abgekürzt)",m?m.name:"",{form:true,ph:"z. B. M. Mustermann"})}${tf("mail","E-Mail",m?m.mail:"",{form:true,type:"email",ph:"m.mustermann@elektro-irrgang.de"})}${tf("rolle","Aufgabe (optional)",m?m.rolle:"",{form:true,ph:"z. B. Geselle, Azubi, Büro"})}</div>
     <div class="lbl" style="margin:16px 4px 8px">Status</div>${seg("teamStatus",teamForm.status,STATUS_MA)}
     <div class="lbl" style="margin:16px 4px 8px">Rechte</div>${seg("teamAdmin",teamForm.admin?"1":"0",[["0","Mitarbeiter"],["1","Admin"]])}
-    <p class="sup" style="margin:8px 0 0">Admins sehen die Statistik, verwalten Mitarbeiter und dürfen alle Einträge bearbeiten.${ich?" Dich selbst kannst du nicht herabstufen oder austragen.":""}</p>`,
+    <p class="sup" style="margin:8px 0 0">Admins sehen die Statistik, verwalten Mitarbeiter und dürfen alle Einträge bearbeiten.${ich?" Dich selbst kannst du nicht herabstufen oder austragen.":""}</p>
+    <div class="lbl" style="margin:16px 4px 8px">Prüfer</div>${seg("teamPruefer",teamForm.pruefer?"1":"0",[["0","Nein"],["1","Ja, darf Prüfungen leiten"]])}
+    <p class="sup" style="margin:8px 0 0">Prüfer erscheinen in EVSE und E-Check zur Auswahl und stehen im Protokoll. Prüfen darf nur eine Elektrofachkraft.</p>`,
     `${m&&!ich?`<button class="btn-text danger" data-act="teamDelAsk">Entfernen</button><span style="flex:1"></span>`:""}<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="teamSave">${m?"Speichern":"Hinzufügen"}</button>`);
 }
 function teamSpeichern(liste){ const r=DB.einstellungen.get("team")||{id:"team"}; r.liste=liste; r.deleted=false; saveRec("einstellungen",r,!DB.einstellungen.has("team")); }
@@ -2377,17 +2384,18 @@ document.addEventListener("click",async ev=>{
   case "gerFotoWeg": if(gerForm){ gerForm.bild=""; gerFotoNeu(); } return;
   case "gerEdit": gerDialog(DB.geraete.get(b.dataset.id)); return;
   case "gerSave": { if(!ME.admin||!gerForm) return; const F=formVals(); if(!F.modell&&!F.hersteller&&!F.sn){ toast("Bitte mindestens Modell oder Seriennummer eintragen"); return; }
-    const r=gerForm.id?DB.geraete.get(gerForm.id):{id:uid()}; Object.assign(r,{art:F.art,hersteller:F.hersteller,modell:F.modell,sn:F.sn,kal:F.kal,bei:F.bei,notiz:F.notiz,bildUrl:F.bildUrl,bild:gerForm.bild||""}); saveRec("geraete",r,!gerForm.id); gerForm=null; closeOverlays(); render(); return; }
+    const r=gerForm.id?DB.geraete.get(gerForm.id):{id:uid()}; Object.assign(r,{art:F.art,hersteller:F.hersteller,modell:F.modell,kurz:(F.kurz||"").trim(),sn:F.sn,kal:F.kal,bei:F.bei,notiz:F.notiz,bildUrl:F.bildUrl,bild:gerForm.bild||""}); saveRec("geraete",r,!gerForm.id); gerForm=null; closeOverlays(); render(); return; }
   case "gerAus": { const r=gerForm&&DB.geraete.get(gerForm.id); if(!r||!ME.admin) return; r.aus=!r.aus; saveRec("geraete",r); gerForm=null; closeOverlays(); render(); toast(r.aus?"Ausgemustert – in EVSE nicht mehr auswählbar":"Wieder aktiv"); return; }
   case "teamEdit": teamDialog(teamAlle().find(m=>m.mail===b.dataset.mail)); return;
   case "teamStatus": if(teamForm){ if(teamForm.alt===ME.mail&&b.dataset.v==="weg"){ toast("Dich selbst kannst du nicht austragen"); return; } teamForm.status=b.dataset.v; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;
+  case "teamPruefer": if(teamForm){ teamForm.pruefer=b.dataset.v==="1"; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;
   case "teamAdmin": if(teamForm){ if(teamForm.alt===ME.mail&&b.dataset.v==="0"){ toast("Dich selbst kannst du nicht herabstufen"); return; } teamForm.admin=b.dataset.v==="1"; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;
   case "teamSave": { const F=formVals(), T=teamForm, mail=(F.mail||"").trim().toLowerCase();
     if(!F.name){ toast("Bitte einen Namen eingeben"); return; }
     if(!mail.endsWith(TEST_LOGIN.domain)){ toast(`Bitte die Arbeitsadresse (…${TEST_LOGIN.domain}) eingeben`); return; }
     const L=teamAlle().map(m=>({...m}));
     if(L.some(m=>m.mail===mail&&m.mail!==T.alt)){ toast("Diese Adresse ist schon eingetragen"); return; }
-    const neu={name:F.name.trim(),mail,rolle:(F.rolle||"").trim()||undefined,admin:T.admin,status:T.status};
+    const neu={name:F.name.trim(),mail,rolle:(F.rolle||"").trim()||undefined,admin:T.admin,status:T.status,pruefer:T.pruefer||undefined};
     const i=L.findIndex(m=>m.mail===T.alt); if(i>=0) L[i]=neu; else L.push(neu);
     if(!L.some(m=>m.admin&&m.status!=="weg")){ toast("Mindestens ein aktiver Admin muss bleiben"); return; }
     teamSpeichern(L); teamForm=null; closeOverlays(); render(); toast(i>=0?"Gespeichert – gilt in allen Apps":"Hinzugefügt – erscheint in allen Apps"); return; }

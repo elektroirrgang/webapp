@@ -1187,9 +1187,9 @@ const CONFIG=Object.assign({
 const SYNC_ON=!!(CONFIG.tenantId&&CONFIG.clientId&&CONFIG.shareUrl);
 
 const TH_KEY="evse_theme", OLD_KEY="evse_protos_v1";
-const KINDS=["kunden","standorte","ladeparks","pruefungen","katalog","geraete","profile","dateien","protokolle"];
-const APP_KINDS=["dateien","protokolle"]; /* liegen im gemeinsamen Gerätespeicher „irrgang_apps“ (wie in Übersicht und Baustelle) */
-const DB={kunden:new Map(),standorte:new Map(),ladeparks:new Map(),pruefungen:new Map(),katalog:new Map(),geraete:new Map(),profile:new Map(),dateien:new Map(),protokolle:new Map()};
+const KINDS=["kunden","standorte","ladeparks","pruefungen","katalog","geraete","profile","dateien","protokolle","einstellungen"];
+const APP_KINDS=["dateien","protokolle","einstellungen"]; /* liegen im gemeinsamen Gerätespeicher „irrgang_apps“ (wie in Übersicht und Baustelle) */
+const DB={kunden:new Map(),standorte:new Map(),ladeparks:new Map(),pruefungen:new Map(),katalog:new Map(),geraete:new Map(),profile:new Map(),dateien:new Map(),protokolle:new Map(),einstellungen:new Map()};
 let META={profil:{name:""},pins:[],archiv:[],filter:"alle",sync:{}};
 let cur=null, nav={v:"start"}, saveTimer=null, dirtyCur=false, dataDB=null, aDB=null, query="";
 let ME={name:"",mail:"",admin:false,signedIn:false};
@@ -1466,7 +1466,7 @@ async function syncNow(manual){
   if(!navigator.onLine){ setSync("offline"); return; }
   SY.running=true; setSync("läuft"); konflikte=[];
   try{
-    await syncRoot(); const c1=await push(); const c2=await pull(); fotoNachholen(); await pushFotos(); await pushDateien(); await pushProtokolle(); await pdfNachholen(); if(await katReparieren()) softRender();
+    await syncRoot(); const c1=await push(); const c2=await pull(); einstSetzen([...DB.einstellungen.values()]); fotoNachholen(); await pushFotos(); await pushDateien(); await pushProtokolle(); await pdfNachholen(); if(await katReparieren()) softRender();
     META.sync.last=Date.now(); metaSave(); setSync("ok");
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
     if(c1||c2) softRender();
@@ -2260,7 +2260,7 @@ function projektView(){
       ${tf("p.auftragsnr","Auftragsnr.",p.auftragsnr)}
       ${tf("p.datum","Prüfdatum",p.datum,{type:"date"})}
       ${tf("p.standort","Verteiler / Anlage",p.standort,{ph:"z. B. UV Tiefgarage"})}
-      ${tf("p.pruefer","Prüfer",p.pruefer)}
+      ${tf("p.pruefer","Prüfer",p.pruefer)}${prueferListe().length?`<div class="full"><div class="lbl">Prüfer</div><div class="chips">${prueferListe().map(m=>`<button type="button" class="chip" data-act="prWahl" data-n="${esc(m.name)}" aria-pressed="${m.name===p.pruefer}" ${canEdit(cur)?"":"disabled"}>${esc(m.name)}</button>`).join("")}</div></div>`:""}
       ${tf("p.projekt","Bezeichnung (optional)",p.projekt,{full:true,ph:"z. B. Erweiterung Ladesäule 5 und 6"})}
     </div></section>
     <section class="card"><h3>Messgeräte</h3><div class="fg">${gerChips(p)}
@@ -2814,7 +2814,7 @@ function neuePruefung(kundeId,standortId,ladeparkId,st,vorlage){
   const G0=geraeteOrt(standortId,ladeparkId||null).filter(g=>!g.aus);
   if(!G0.length&&!st){ stDialog({mode:"neu",k:kundeId,s:standortId,l:ladeparkId}); return; }
   const p=newProto();
-  if(st){ p.s=st.stationen; nummeriere(p.s); } p.kundeId=kundeId; p.standortId=standortId; p.ladeparkId=ladeparkId||null; p.p.pruefer=who().name;
+  if(st){ p.s=st.stationen; nummeriere(p.s); } p.kundeId=kundeId; p.standortId=standortId; p.ladeparkId=ladeparkId||null; p.p.pruefer=prueferListe().length&&!prueferListe().some(m=>m.mail===ME.mail)?"":who().name;
   const meine=live("pruefungen").filter(x=>!SYNC_ON||sameUser(x.createdBy,ME)).sort((a,b)=>(b.created||0)-(a.created||0))[0];
   if(meine) ["geraet","geraetSn","kal","adapter","adapterSn"].forEach(f=>p.p[f]=meine.p[f]); gerVorbelegen(p);
   const prev=vorlage||pruefAt(standortId,ladeparkId||null)[0];
@@ -3231,6 +3231,7 @@ document.addEventListener("click",ev=>{
   case "frist": { const n=b.dataset.v; if(String(cur.a.fristJ)===n){ delete cur.a.fristJ; cur.a.naechste=""; } else { cur.a.fristJ=n; const d=new Date((cur.p.datum||today())+"T12:00:00"); d.setFullYear(d.getFullYear()+(+n)); cur.a.naechste=d.toISOString().slice(0,10); }
     scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "kAbw": cur.a.kAbwesend=!cur.a.kAbwesend; if(cur.a.kAbwesend){ cur.a.sigK=""; } scheduleSave(); { const y=scrollY; render(); scrollTo(0,y); } return;
+  case "prWahl": { if(!canEdit(cur)) return; cur.p.pruefer=b.dataset.n; commit(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "gerWahl": { if(!canEdit(cur)) return; gerSetzen(cur,DB.geraete.get(b.dataset.id)); commit(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "norm": { const n=b.dataset.n, L=cur.p.normen, i=L.indexOf(n); if(i>=0) L.splice(i,1); else L.push(n); b.setAttribute("aria-pressed",i<0); scheduleSave(); return; }
   case "addS": stDialog({mode:"add",bauart:BAUART(cur.s[cur.s.length-1]||{})}); return;
@@ -3306,10 +3307,13 @@ function snDoppelt(p,si){ const n=snNorm(p.s[si].sn); if(!n) return []; return p
 const snWarnHtml=(p,si)=>{ const d=snDoppelt(p,si); return d.length?`<p class="warnline">${icon("warn")}Seriennummer kommt auch bei ${esc(d.join(", "))} vor.</p>`:""; };
 /* Geräteliste aus der Übersicht: antippen übernimmt Name, Seriennummer und Kalibrierdatum. */
 const gerName=g=>[g.hersteller,g.modell].filter(Boolean).join(" ")||"Gerät";
+const gerLabel=g=>(g.kurz?g.kurz+" · ":"")+gerName(g);
+/* Prüfer: in der Übersicht unter Mitarbeiter festgelegt */
+const prueferListe=()=>team().filter(m=>m.pruefer);
 const gerListe=art=>live("geraete").filter(g=>!g.aus&&(g.art||"mess")===art).sort((a,b)=>gerName(a).localeCompare(gerName(b),"de"));
 function gerChips(p){
   const M=gerListe("mess"), A=gerListe("adapter"); if(!M.length&&!A.length) return "";
-  const c=(g,an)=>`<button type="button" class="chip" data-act="gerWahl" data-id="${esc(g.id)}" aria-pressed="${an}" ${canEdit(cur)?"":"disabled"}>${esc(gerName(g))}${g.sn?` · ${esc(g.sn)}`:""}</button>`;
+  const c=(g,an)=>`<button type="button" class="chip" data-act="gerWahl" data-id="${esc(g.id)}" aria-pressed="${an}" ${canEdit(cur)?"":"disabled"}>${esc(gerLabel(g))}${g.sn?` · ${esc(g.sn)}`:""}</button>`;
   return `<div class="full"><div class="lbl">Aus der Geräteliste</div><div class="chips">${M.map(g=>c(g,!!g.sn&&g.sn===p.geraetSn)).join("")}${A.map(g=>c(g,!!g.sn&&g.sn===p.adapterSn)).join("")}</div></div>`;
 }
 function gerSetzen(p,g){ if(!g) return;

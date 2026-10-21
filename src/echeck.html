@@ -1281,7 +1281,7 @@ async function syncNow(manual){
   if(!navigator.onLine){ setSync("offline"); return; }
   SY.running=true; setSync("läuft"); konflikte=[];
   try{
-    await syncRoot(); const c1=await push(); const c2=await pull(); await pushFotos(); await pushDateien(); await pushProtokolle();
+    await syncRoot(); const c1=await push(); const c2=await pull(); einstSetzen([...DB.einstellungen.values()]); await pushFotos(); await pushDateien(); await pushProtokolle();
     META.sync.last=Date.now(); metaSave(); setSync("ok");
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
     if(c1||c2) softRender();
@@ -1456,8 +1456,8 @@ const TH_KEY="evse_theme";
 const RES_TXT={ok:"fertig",bad:"Mängel",open:"offen",wip:"in Arbeit"};
 /* E-Check-Daten (Gebäude, Prüfungen, Geräte der Kunden) liegen in echeck_daten und werden wie alles andere abgeglichen; Messgeräte („geraete“) pflegt die Übersicht */
 const EC_KINDS=["gebaeude","echecks","betriebsmittel"];
-const KINDS=["kunden","standorte","profile","dateien","protokolle","geraete",...EC_KINDS];
-const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["dateien","protokolle","geraete"];
+const KINDS=["kunden","standorte","profile","dateien","protokolle","geraete","einstellungen",...EC_KINDS];
+const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["dateien","protokolle","geraete","einstellungen"];
 const DB=Object.fromEntries(KINDS.map(k=>[k,new Map()]));
 let META={profil:{name:""},sync:{}};
 let nav={v:"anlagen"}, query="", kDB=null, eDB=null, aDB=null, warned=false, syncT=null;
