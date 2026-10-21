@@ -2346,6 +2346,7 @@ function mehrView(){
       ${SYNC_ON?row("konto","person","Konto",esc(ME.name)):""}
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}${ME.admin?" · Admin":""}`)):""}
       ${row("theme","theme","Darstellung",TH_LABEL[theme])}
+      ${ME.mail?mlGeraetZeile():""}
       <div class="li" role="button" tabindex="0" data-act="demoUm"><span class="av">${icon("bulb")}</span><span class="lt"><span class="h">Demo-Vorschau</span><span class="s">Beispielkunden, Aufträge, Baustellen und Prüfungen zum Ausprobieren – nur auf diesem Gerät, wird nie synchronisiert</span></span><span class="schalter${demoAn()?" an":""}" aria-hidden="true"><i></i></span></div></div>
     ${ME.admin?`<div class="sec-lbl">Verwaltung</div><div class="list">
       ${row("nav:team","person","Mitarbeiter und Rechte",`${team().length} aktiv · Protokolle an ${esc(mailAn())}`)}</div>`:""}

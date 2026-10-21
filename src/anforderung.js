@@ -109,7 +109,7 @@ function meldungenRoh(){
 }
 function meldungen(){ const S=mlSt(); return meldungenRoh().filter(m=>!S.weg[m.id]).sort((a,b)=>(S.pin[b.id]?1:0)-(S.pin[a.id]?1:0)||b.t-a.t); }
 const mlNeu=()=>{ const S=mlSt(); return meldungen().filter(m=>!S.gel[m.id]).length; };
-function mlGlocke(){ const b=document.getElementById("glBtn"); if(!b) return; const n=ME.mail?mlNeu():0;
+function mlGlocke(){ setTimeout(()=>{ try{ mlMelden(); }catch(e){} },0); const b=document.getElementById("glBtn"); if(!b) return; const n=ME.mail?mlNeu():0;
   b.dataset.act="mlAuf"; b.removeAttribute("data-v");
   b.hidden=!ME.mail||nav.v==="login"; const z=document.getElementById("glN"); if(z){ z.textContent=n>9?"9+":String(n); z.hidden=!n; } b.setAttribute("aria-label",n?`${n} neue Benachrichtigungen`:"Benachrichtigungen");
   if(document.getElementById("mlPop")) mlFuellen(); }
@@ -157,3 +157,61 @@ addEventListener("resize",mlPlatz);
 /* Ziel öffnen: in der Übersicht gibt es Baustellen/Notizen nicht als Ansicht ⇒ Baustelle-App */
 function mlGo(z){ if(["baustelle","notizen"].includes(z.v)&&typeof notizenView!=="function"){ location.href="../baustelle/"; return; } go(z); }
 function meldungenView(){ setTimeout(mlAuf,0); return ""; }
+
+/* ===== Neue Meldungen ankündigen =====
+   App im Vordergrund: kleines Banner oben (Antippen öffnet, verschwindet nach ein paar Sekunden).
+   App offen, aber im Hintergrund (anderes Fenster, anderer Tab, minimiert): Benachrichtigung vom System (Windows/macOS/iPad-Home-Bildschirm-App),
+   wenn auf diesem Gerät eingeschaltet. Läuft ohne Server – geht also nur, solange die App irgendwo offen ist.
+   Was schon angekündigt wurde, merkt sich das Gerät (je Konto); beim allerersten Mal wird nichts nachgeholt. */
+const ML_GEZ="irrgang_ml_gezeigt|", ML_PUSH="irrgang_ml_push";
+const mlLs=(k,v)=>{ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } };
+const mlKannSys=()=>"Notification" in window;
+const mlPushAn=()=>mlLs(ML_PUSH)==="1"&&mlKannSys()&&Notification.permission==="granted";
+function mlMelden(){ if(!ME||!ME.mail||(typeof nav!=="undefined"&&nav.v==="login")) return;
+  const key=ML_GEZ+String(ME.mail).toLowerCase(); let G=null; try{ G=JSON.parse(mlLs(key)||"null"); }catch(e){}
+  const S=mlSt(), L=meldungen().filter(m=>!S.gel[m.id]&&m.von);
+  if(!Array.isArray(G)){ mlLs(key,JSON.stringify(L.map(m=>m.id))); return; }
+  const set=new Set(G), neu=L.filter(m=>!set.has(m.id));
+  if(!neu.length) return;
+  mlLs(key,JSON.stringify([...G,...neu.map(m=>m.id)].slice(-400)));
+  const frisch=neu.filter(m=>Date.now()-(m.t||0)<12*36e5); if(!frisch.length) return;
+  const vorne=document.visibilityState==="visible"&&document.hasFocus();
+  if(!vorne&&mlPushAn()) mlSystem(frisch); mlBanner(frisch); }
+function mlOeffnenId(id){ const S=mlSt(), m=id&&meldungen().find(x=>x.id===id);
+  document.getElementById("mlBan")?.remove();
+  if(!m){ mlAuf(); return; } S.gel[id]=1; mlStSpeichern(); mlGlocke(); if(m.go) mlGo(m.go); }
+let mlBanT=null;
+function mlBanner(neu){ document.getElementById("mlBan")?.remove(); clearTimeout(mlBanT); const m=neu[0], n=neu.length;
+  const d=document.createElement("div"); d.id="mlBan"; d.className="ml-ban"; d.setAttribute("role","status");
+  d.innerHTML=`<button type="button" class="ml-ban-in" data-ban="${esc(n===1?m.id:"")}">${n===1?mlAv(m):`<span class="ml-av">${n}</span>`}
+    <span class="ml-tx"><span class="ml-k"><b>${esc(n===1?mlName(m):`${n} neue Benachrichtigungen`)}</b><span class="ml-zeit">jetzt</span></span>
+    <span class="ml-h">${esc(n===1?m.h:neu.slice(0,3).map(x=>`${mlName(x)}: ${x.h}`).join(" · "))}</span>${n===1&&m.s?`<span class="ml-s">${esc(m.s)}</span>`:""}</span></button>
+    <button type="button" class="ml-ban-x" aria-label="Schließen" title="Schließen">${mlSvg("weg")}</button>`;
+  document.body.appendChild(d);
+  /* Zeit läuft erst, wenn man hinschaut; Maus drüber hält das Banner */
+  const weg=()=>{ d.classList.add("geht"); setTimeout(()=>d.remove(),220); };
+  const start=()=>{ clearTimeout(mlBanT); if(document.visibilityState==="visible") mlBanT=setTimeout(weg,n===1?7000:9000); };
+  d.addEventListener("pointerenter",()=>clearTimeout(mlBanT)); d.addEventListener("pointerleave",start);
+  d.addEventListener("click",e=>{ e.stopPropagation(); if(e.target.closest(".ml-ban-x")){ weg(); return; } const b=e.target.closest("[data-ban]"); if(b) mlOeffnenId(b.dataset.ban); });
+  const sicht=()=>{ if(!document.body.contains(d)){ document.removeEventListener("visibilitychange",sicht); return; } start(); };
+  document.addEventListener("visibilitychange",sicht); start(); }
+async function mlSystem(neu){ const m=neu[0], n=neu.length;
+  const titel=n===1?`${mlName(m)} ${m.h}`:`${n} neue Benachrichtigungen`, text=n===1?(m.s||""):neu.slice(0,4).map(x=>`${mlName(x)}: ${x.h}`).join("\n");
+  const ic=(document.querySelector('link[rel="apple-touch-icon"]')||document.querySelector('link[rel~="icon"]')||{}).href, id=n===1?m.id:"";
+  try{ const no=new Notification(titel,{body:text,icon:ic,tag:"irrgang-"+(id||"mehr")}); no.onclick=()=>{ try{ window.focus(); }catch(e){} no.close(); mlOeffnenId(id); }; }
+  catch(e){ /* iPad/Android: nur über den Service Worker */
+    try{ const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration(); if(r) r.showNotification(titel,{body:text,icon:ic,tag:"irrgang-"+(id||"mehr"),data:{ml:id}}); }catch(x){} } }
+navigator.serviceWorker&&navigator.serviceWorker.addEventListener("message",e=>{ if(e.data&&"ml" in e.data) mlOeffnenId(e.data.ml); });
+setInterval(mlMelden,10000);
+/* Schalter in „Mehr“ */
+function mlGeraetZeile(){ const geht=mlKannSys(), verw=geht&&Notification.permission==="denied", an=mlPushAn();
+  const sub=!geht?"Dieser Browser kann keine Benachrichtigungen zeigen – am iPad die App vom Home-Bildschirm öffnen"
+    :verw?"Im Browser blockiert – über das Schloss neben der Adresse wieder erlauben"
+    :"Neue Aufträge, Zuweisungen und Notizen auch melden, wenn die App im Hintergrund offen ist";
+  return `<div class="li" role="button" tabindex="0" data-act="mlPushUm"><span class="av">${icon("glocke")}</span><span class="lt"><span class="h">Benachrichtigungen auf diesem Gerät</span><span class="s">${esc(sub)}</span></span><span class="schalter${an?" an":""}" aria-hidden="true"><i></i></span></div>`; }
+document.addEventListener("click",async e=>{ const b=e.target.closest&&e.target.closest('[data-act="mlPushUm"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
+  if(mlPushAn()){ mlLs(ML_PUSH,"0"); render(); toast("Benachrichtigungen auf diesem Gerät aus"); return; }
+  if(!mlKannSys()){ toast("Dieser Browser kann keine Benachrichtigungen zeigen"); return; }
+  let p=Notification.permission; if(p==="default"){ try{ p=await Notification.requestPermission(); }catch(x){} }
+  if(p==="granted"){ mlLs(ML_PUSH,"1"); render(); toast("Benachrichtigungen an – du bekommst Bescheid, auch wenn die App im Hintergrund ist"); }
+  else { render(); toast("Nicht erlaubt – im Browser bei dieser Seite Benachrichtigungen erlauben"); } },true);

@@ -2817,7 +2817,8 @@ function mehrView(){
       ${SYNC_ON?row("konto","person","Konto",esc(ME.name)):""}
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}`)):""}
       ${row("nav:team","person","Mitarbeiter",esc(META.profil.name||""))}
-      ${row("theme","theme","Darstellung",TH_LABEL[theme])}</div>
+      ${row("theme","theme","Darstellung",TH_LABEL[theme])}
+      ${ME.mail?mlGeraetZeile():""}</div>
     <div class="sec-lbl">Daten</div><div class="list">
       ${SYNC_ON?row("syncNow","sync","Jetzt abgleichen",esc(syncText())):""}
       ${row("export","backup","Alle sichern","Baustellen, Übergaben, Fotos und Kunden")}
