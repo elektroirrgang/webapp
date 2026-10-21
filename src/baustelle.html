@@ -1584,19 +1584,7 @@ async function listAll(fid){ let url=`/drives/${fid}/children?$top=200`, out=[];
 async function readItem(it){ const u=it["@microsoft.graph.downloadUrl"]; const r=u?await fetch(u):await g(`/drives/${(it.parentReference&&it.parentReference.driveId)||SY.drive}/items/${it.id}/content`); if(!r.ok) throw new Error("Download "+r.status); return r; }
 const strip=r=>{ const o={...r}; delete o._dirty; delete o._etag; delete o._itemId; delete o._ort; return o; };
 let konflikte=[];
-async function pull(){
-  let changed=false;
-  for(const k of KINDS){
-    const items=await listAll(await folderId(`${CONFIG.dataFolder}/${k}`,BIB[k]));
-    for(const it of items){
-      if(!it.file||!it.name.endsWith(".json")) continue;
-      const id=it.name.slice(0,-5), loc=DB[k].get(id);
-      if(loc&&loc._etag===it.eTag) continue;
-      try{ const rec=await (await readItem(it)).json(); if(rec&&rec.id===id&&takeServer(k,rec,it)) changed=true; }catch(e){}
-    }
-  }
-  return changed;
-}
+/*ABGLEICH*/
 /* Notizen: geteilte (Firma/Personen) in der Bibliothek „Baustellen“, private im eigenen OneDrive-App-Ordner des Mitarbeiters.
    Wird eine geteilte Notiz privat, bleibt am geteilten Ort nur ein Grabstein (tomb) – so verschwindet sie bei den anderen.
    Geht der App-Ordner nicht, landen private Notizen in „Baustellen/_App-Daten/notizen-privat/<mail>“ (App blendet sie für andere aus). */
@@ -1626,19 +1614,16 @@ async function pushNotizen(){
   return changed;
 }
 async function pullNotizen(){
-  let changed=false;
-  for(const ort of ["site","app"]){
-    const items=await listAll(await nFid(ort));
-    for(const it of items){
-      if(!it.file||!it.name.endsWith(".json")) continue;
-      const id=it.name.slice(0,-5), loc=DB.notizen.get(id);
-      if(loc&&loc._etag===it.eTag&&loc._ort===ort) continue;
-      if(ort==="site"&&loc&&loc._ort==="app"&&istMeine(loc)) continue;
-      try{ const rec=await (await readItem(it)).json(); if(!rec||rec.id!==id) continue;
-        rec._ort=ort; if(takeServer("notizen",rec,it)) changed=true; }catch(e){}
-    }
-  }
-  return changed;
+  /* beide Ordner gleichzeitig auflisten, geänderte Notizen gleichzeitig laden (siehe abgleich.js) */
+  const L=await gleichzeitig(["site","app"],2,async ort=>[ort,await listAll(await nFid(ort))]), todo=[];
+  for(const [ort,items] of L) for(const it of items){
+    if(!it.file||!it.name.endsWith(".json")) continue;
+    const id=it.name.slice(0,-5), loc=DB.notizen.get(id);
+    if(loc&&loc._etag===it.eTag&&loc._ort===ort) continue;
+    if(ort==="site"&&loc&&loc._ort==="app"&&istMeine(loc)) continue;
+    todo.push([ort,it,id]); }
+  return (await gleichzeitig(todo,6,async([ort,it,id])=>{ try{ const rec=await (await readItem(it)).json(); if(!rec||rec.id!==id) return false;
+    rec._ort=ort; return takeServer("notizen",rec,it); }catch(e){ return false; } })).some(Boolean);
 }
 const nFotoIds=n=>(n.bloecke||[]).flatMap(b=>b.typ==="foto"?[b.foto]:b.typ==="zeichnung"?(b.striche||[]).filter(s=>s.t==="bild").map(s=>s.foto):[]);
 async function pushOne(k,rec,fid,force){
@@ -1684,7 +1669,7 @@ async function syncNow(manual){
   if(!navigator.onLine){ setSync("offline"); return; }
   SY.running=true; setSync("läuft"); konflikte=[];
   try{
-    await syncRoot(); const c1=await push(); const n1=await pushNotizen(); const c2=await pull(); const n2=await pullNotizen(); fotoNachholen(); await pushFotos(); await pushDateien();
+    await syncRoot(); const c1=await push(); const n1=await pushNotizen(); const [c2,n2]=await Promise.all([pull(),pullNotizen()]); fotoNachholen(); await pushFotos(); await pushDateien();
     META.sync.last=Date.now(); metaSave(); setSync("ok");
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
     if(c1||c2||n1||n2) softRender();
@@ -3039,7 +3024,8 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   await dataLoad(); try{ matStammSeed(); }catch(e){} await einstLaden(); loginSync(); await Auth.init(); setMe();
   if(SYNC_ON&&!ME.signedIn) nav={v:"login"};
   render(); fotoInit(); protLaden().then(()=>{ if(nav.v==="bibliothek"||nav.v==="baustelle") softRender(); });
-  if(SYNC_ON&&ME.signedIn){ syncNow(); setInterval(()=>{ if(document.visibilityState==="visible") syncNow(); },120000); }
+  if(SYNC_ON&&ME.signedIn){ syncNow(); setInterval(()=>{ if(document.visibilityState==="visible") syncNow(); },60000);
+    document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&Date.now()-(META.sync.last||0)>15000) syncSoon(); }); }
 })();
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") syncSoon(); else { notizSpeichernStill(); eSpeichernStill(); } });
 window.addEventListener("pagehide",()=>{ notizSpeichernStill(); eSpeichernStill(); });

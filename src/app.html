@@ -1381,19 +1381,7 @@ function takeServer(k,rec,it){
   if(k==="pruefungen"&&cur&&cur.id===rec.id&&!dirtyCur){ cur=JSON.parse(JSON.stringify(rec)); }
   return true;
 }
-async function pull(){
-  let changed=false;
-  for(const k of KINDS){
-    const items=await listAll(await folderId(`${CONFIG.dataFolder}/${k}`,BIB[k]));
-    for(const it of items){
-      if(!it.file||!it.name.endsWith(".json")) continue;
-      const id=it.name.slice(0,-5), loc=DB[k].get(id);
-      if(loc&&loc._etag===it.eTag) continue;
-      try{ const rec=await (await readItem(it)).json(); if(rec&&rec.id===id&&takeServer(k,rec,it)) changed=true; }catch(e){}
-    }
-  }
-  return changed;
-}
+/*ABGLEICH*/
 async function pushOne(k,rec,fid,force){
   /* Noch nie hochgeladen: erst nachsehen, ob es die Datei schon gibt (z. B. Grunddaten mit fester ID von einem anderen Gerät).
      Ist die Fassung dort neuer, wird sie übernommen statt überschrieben. */
@@ -3659,7 +3647,8 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   await dataLoad(); await einstLaden(); loginSync(); await Auth.init(); setMe();
   if(SYNC_ON&&!ME.signedIn) nav={v:"login"};
   render(); protLaden().then(()=>{ if(nav.v==="bibliothek") render(); }); fotoInit(); dateiInit().then(()=>{ if(nav.v==="katmodell") render(); });
-  if(SYNC_ON&&ME.signedIn){ syncNow(); setInterval(()=>{ if(document.visibilityState==="visible") syncNow(); },120000); }
+  if(SYNC_ON&&ME.signedIn){ syncNow(); setInterval(()=>{ if(document.visibilityState==="visible") syncNow(); },60000);
+    document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&Date.now()-(META.sync.last||0)>15000) syncSoon(); }); }
 })();
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden"){ if(cur) saveNow(); } else syncSoon(); });
 window.addEventListener("pagehide",()=>{ if(cur) saveNow(); });
