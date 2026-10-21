@@ -971,6 +971,76 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 .tb-kopf:not(.pc){padding:2px 0 10px}
 body.kopf-oben .edk-platz{display:none!important}
 /*FELDER*/
+/* Kunden wie in der Übersicht */
+.kd-adr3{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,.7fr) minmax(0,1.3fr);gap:12px}
+.kd-nr2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px}
+@media (max-width:599px){.kd-adr3,.kd-nr2{grid-template-columns:minmax(0,1fr)}}
+.lt .st{flex-wrap:wrap}
+.kz-wahl{flex-direction:column;align-items:stretch;margin-top:12px}.kz-wahl .chip{justify-content:flex-start;min-height:44px}
+.kz-liste{max-height:50vh;overflow:auto;margin-top:8px}.kz-manuell{margin:16px 0 0}
+/* ===== E-Check: Prüfung ===== */
+.ec .robanner{margin-bottom:12px}
+.ec-kz{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 16px}
+.ec-k{background:var(--sc-low);border-radius:20px;padding:14px 16px;min-width:0}
+.ec-k b{display:block;font-size:24px;font-weight:700;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ec-k b.rot{color:var(--err)}
+.ec-k small{display:block;color:var(--on-sv);font-size:13px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ec-bar{display:block;height:6px;border-radius:3px;background:var(--sc-highest);margin-top:10px;overflow:hidden}.ec-bar i{display:block;height:100%;background:var(--ok);border-radius:3px;transition:width .3s}
+@media (max-width:743px){.ec-kz{grid-template-columns:repeat(2,minmax(0,1fr))}.ec-k b{font-size:20px}}
+.ec-tabs{max-width:560px;margin-bottom:4px}
+.ec-et{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 0}
+.ec-etk{border:0;height:40px;min-width:56px;padding:0 18px;border-radius:20px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:15px;font-weight:700;cursor:pointer}
+.ec-etk.an{background:var(--sec-c);color:var(--on-sec-c)}.ec-etk.plus{padding:0;width:40px;min-width:40px;display:grid;place-items:center}.ec-etk .ic{width:20px;height:20px}
+.ec-zwei{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:899px){.ec-zwei{grid-template-columns:minmax(0,1fr);gap:0}}
+.ec-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.ec-raum{border:0;text-align:left;font:inherit;color:var(--on-surface);background:var(--sc-low);border-radius:20px;padding:14px 16px;min-height:108px;display:flex;flex-direction:column;gap:4px;cursor:pointer}
+.ec-raum:hover{background:color-mix(in srgb,var(--on-surface) 5%,var(--sc-low))}
+.ec-raum b{font-size:16px}.ec-raum small{color:var(--on-sv);font-size:13px}.ec-rst{margin-top:auto;padding-top:6px;display:flex}
+.ec-etedit{margin:10px 0 0;display:inline-flex;align-items:center;gap:8px}.ec-etedit .ic{width:18px;height:18px}
+.av.ec-uv{border-radius:12px;font-size:13px;font-weight:700}
+.ec-tab{overflow-x:auto}
+.ec-sk{display:grid;grid-template-columns:52px minmax(130px,1.4fr) minmax(70px,.8fr) repeat(4,minmax(64px,.7fr)) 92px;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid var(--outline-v);font-size:14px;cursor:pointer;min-width:720px}
+.ec-sk:hover:not(.h){background:color-mix(in srgb,var(--on-surface) 4%,transparent)}
+.ec-sk.h{background:var(--sc-high);color:var(--on-sv);font-weight:700;font-size:12px;border:0;cursor:default}
+.ec-sk .nr{font-weight:700}.ec-sk small{display:block;color:var(--on-sv);font-size:12px}.ec-sk .bz{min-width:0;overflow-wrap:anywhere}
+.ec-rk{padding:10px 16px;background:var(--sc);font-weight:700;font-size:14px;border-top:1px solid var(--outline-v);min-width:720px}
+.mw{border-radius:8px;padding:4px 6px;font-weight:600;text-align:center;font-size:13px;white-space:nowrap}.mw.ok{background:var(--ok-c);color:var(--on-ok-c)}.mw.bad{background:var(--err-c);color:var(--on-err-c)}.mw.leer{background:var(--sc-high);color:var(--on-sv)}
+.ec-sicht .ec-sz{display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid var(--outline-v);min-height:56px}.ec-sicht .ec-sz:first-child{border-top:0}
+.ec-sz>span:first-child{flex:1;min-width:0;font-size:15px}
+.ec-tri{display:flex;gap:4px;flex:none;background:var(--sc-high);border-radius:20px;padding:3px}
+.ec-tri button{border:0;background:transparent;color:var(--on-sv);font:inherit;font-size:13px;font-weight:700;height:34px;padding:0 12px;border-radius:17px;cursor:pointer;white-space:nowrap}
+.ec-tri button[aria-pressed="true"].ok{background:var(--ok-c);color:var(--on-ok-c)}.ec-tri button[aria-pressed="true"].nok{background:var(--err-c);color:var(--on-err-c)}.ec-tri button[aria-pressed="true"].na{background:var(--sc-highest);color:var(--on-surface)}
+@media (max-width:599px){.ec-sicht .ec-sz{flex-direction:column;align-items:stretch;gap:8px}.ec-tri{align-self:flex-start}}
+.ec-sub{color:var(--on-sv);font-size:14px;margin:-4px 0 16px}
+.ec-felder{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
+.ec-feld{background:var(--sc-highest);border-radius:16px;padding:10px 14px 10px 16px;position:relative;overflow:hidden}
+.ec-feld::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:transparent}.ec-feld.ok::before{background:var(--ok)}.ec-feld.bad::before{background:var(--err)}
+.ec-feld label{display:block;color:var(--on-sv);font-size:12px;font-weight:600}
+.ec-ein{display:flex;align-items:baseline;gap:6px;margin-top:2px}.ec-ein input{flex:1;min-width:0;border:0;background:transparent;color:var(--on-surface);font:inherit;font-size:24px;font-weight:700;padding:0;outline:0}
+.ec-ein input::placeholder{color:var(--on-sv);opacity:.6}.ec-ein span{color:var(--on-sv);font-size:14px}
+.ec-gw{display:block;font-size:12px;color:var(--on-sv);margin-top:4px}.ec-feld.bad .ec-gw{color:var(--err);font-weight:600}
+.ec-schnell{margin:4px 0 16px}
+.ec-chg{margin:8px 4px 0}.ec-chg small{display:block;color:var(--on-sv);font-size:12px;font-weight:700;margin-bottom:6px}
+.ec-fg{display:grid;gap:12px;margin-bottom:4px}.ec-fg .reihe2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}@media (max-width:599px){.ec-fg .reihe2{grid-template-columns:minmax(0,1fr)}}
+.ec-rk+.ec-sk{border-top:0}.ec-mg{margin:0 0 12px}
+.ec-erg{display:flex;align-items:center;gap:12px;justify-content:space-between;border-radius:20px;padding:16px 18px;margin:20px 0 0;font-weight:700;background:var(--sc-low)}
+.ec-erg.bad span{color:var(--err)}
+.ec-knoepfe{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0 8px}
+.ec-knoepfe .btn-filled,.ec-knoepfe .btn-tonal{display:inline-flex;align-items:center;gap:8px}.ec-knoepfe .ic{width:18px;height:18px}
+.ec-body.zu .ab-ic{display:none}
+.ec-body{padding-top:8px}
+@media (max-width:743px){
+  .ec-tab{overflow:visible}.ec-sk.h{display:none}
+  .ec-sk{min-width:0;grid-template-columns:40px repeat(4,minmax(0,1fr));row-gap:6px;column-gap:6px;padding:12px 12px 12px 14px}
+  .ec-rk{min-width:0;padding:10px 14px}
+  .ec-sk>.nr{grid-column:1;grid-row:1/4;align-self:start;padding-top:2px}
+  .ec-sk>.bz{grid-column:2/5;grid-row:1;font-weight:600}
+  .ec-sk>.er{grid-column:5;grid-row:1;justify-self:end;align-self:start}
+  .ec-sk>.sz{grid-column:2/6;grid-row:2;display:flex;gap:6px;color:var(--on-sv);font-size:13px}.ec-sk>.sz small{display:inline;font-size:13px}
+  .ec-sk>.mw{grid-row:3}.ec-sk>.mw:nth-child(4){grid-column:2}.ec-sk>.mw:nth-child(5){grid-column:3}.ec-sk>.mw:nth-child(6){grid-column:4}.ec-sk>.mw:nth-child(7){grid-column:5}
+  .mw::before{content:attr(data-l);display:block;font-size:10px;font-weight:700;opacity:.75}
+  .ec-felder{grid-template-columns:repeat(2,minmax(0,1fr))}.ec-ein input{font-size:20px}.ec-feld{padding:8px 12px 8px 14px}
+}
 </style>
 </head>
 <body class="is-list">
@@ -1080,7 +1150,7 @@ async function gj(path,opt){ const r=await g(path,opt); if(!r.ok) throw Object.a
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
 const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",protokolle:"Kundendaten",
   ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
-  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Prüfprotokolle"};
+  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Prüfprotokolle",gebaeude:"Prüfprotokolle",echecks:"Prüfprotokolle",betriebsmittel:"Prüfprotokolle"};
 async function syncRoot(){
   if(SY.drive) return;
   const c=META.sync.root;
@@ -1262,6 +1332,7 @@ const IC={
   person:"M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z",
 };
 const icon=n=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]}"/></svg>`;
+/*FILTER*/
 const initials=n=>(n||"?").split(/[\s.@]+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("")||"?";
 function tf(path,label,val,o={}){
   const cls=["tf"]; if(o.full) cls.push("full"); if(o.ph||o.type==="date") cls.push("fl"); if(o.sfx) cls.push("has-sfx");
@@ -1279,7 +1350,7 @@ function sf(path,label,val,opts,o={}){
 const datalist=(id,vals)=>`<datalist id="${id}">${[...new Set(vals.map(v=>String(v||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"de",{numeric:true})).map(v=>`<option value="${esc(v)}">`).join("")}</datalist>`;
 const seg=(act,cur,opts,cls="")=>`<div class="seg ${cls}" role="group">${opts.map(([v,t])=>`<button type="button" data-act="${act}" data-v="${v}" aria-pressed="${String(cur)===String(v)}">${icon("check")}${esc(t)}</button>`).join("")}</div>`;
 const listOf=items=>items.length?`<div class="list">${items.join("")}</div>`:"";
-const searchBar=ph=>`<div class="search">${icon("search")}<input id="q" type="search" placeholder="${esc(ph)}" value="${esc(query)}" autocomplete="off" aria-label="Suchen"></div>`;
+const searchBar=(ph,f)=>`<div class="search${f?" mit-f":""}">${icon("search")}<input id="q" type="search" placeholder="${esc(ph)}" value="${esc(query)}" autocomplete="off" aria-label="Suchen">${f?`<button type="button" class="such-f${f.aktiv?" an":""}" data-act="${f.act}" data-n="${f.n||""}" aria-label="Filtern und sortieren">${icon("filt")}</button>`:""}</div>`;
 const FREEMAIL=/^(gmail|googlemail|web|gmx|t-online|outlook|hotmail|live|icloud|me|mac|yahoo|aol|freenet|arcor|posteo|mailbox|online|vodafone|1und1|ionos)\./i;
 const webHref=w=>!w?"":/^https?:\/\//i.test(w)?w:"https://"+w;
 const webText=w=>String(w||"").replace(/^https?:\/\//i,"").replace(/\/$/,"");
@@ -1341,11 +1412,13 @@ const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
 
 const TH_KEY="evse_theme";
 const RES_TXT={ok:"fertig",bad:"Mängel",open:"offen",wip:"in Arbeit"};
-const KINDS=["kunden","standorte","profile","dateien","protokolle"];
-const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["dateien","protokolle"];
-const DB={kunden:new Map(),standorte:new Map(),profile:new Map(),dateien:new Map(),protokolle:new Map()};
+/* E-Check-Daten (Gebäude, Prüfungen, Geräte der Kunden) liegen in echeck_daten und werden wie alles andere abgeglichen; Messgeräte („geraete“) pflegt die Übersicht */
+const EC_KINDS=["gebaeude","echecks","betriebsmittel"];
+const KINDS=["kunden","standorte","profile","dateien","protokolle","geraete",...EC_KINDS];
+const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["dateien","protokolle","geraete"];
+const DB=Object.fromEntries(KINDS.map(k=>[k,new Map()]));
 let META={profil:{name:""},sync:{}};
-let nav={v:"start"}, query="", kDB=null, eDB=null, aDB=null, warned=false, syncT=null;
+let nav={v:"anlagen"}, query="", kDB=null, eDB=null, aDB=null, warned=false, syncT=null;
 let ME={name:"",mail:"",admin:false,signedIn:false};
 
 function openStores(name,stores,meta){ return new Promise((res,rej)=>{
@@ -1358,13 +1431,13 @@ function openStores(name,stores,meta){ return new Promise((res,rej)=>{
     const v=db.version+1; db.close(); const r2=indexedDB.open(name,v);
     r2.onupgradeneeded=()=>anlegen(r2.result); r2.onsuccess=()=>{ r2.result.onversionchange=()=>r2.result.close(); res(r2.result); }; r2.onerror=()=>rej(r2.error); };
   r.onerror=()=>rej(r.error); }); }
-const dbOf=k=>APP_KINDS.includes(k)?aDB:kDB;
+const dbOf=k=>APP_KINDS.includes(k)?aDB:EC_KINDS.includes(k)?eDB:kDB;
 function dbPut(kind,rec){ DB[kind].set(rec.id,rec); const db=dbOf(kind); if(!db) return;
   try{ const t=db.transaction(kind,"readwrite"); t.objectStore(kind).put(rec); t.onerror=t.onabort=storageWarn; }catch(e){ storageWarn(); } }
 function dbDelHard(kind,id){ DB[kind].delete(id); const db=dbOf(kind); if(db) try{ db.transaction(kind,"readwrite").objectStore(kind).delete(id); }catch(e){} }
 function metaSave(){ if(eDB) try{ eDB.transaction("meta","readwrite").objectStore("meta").put(META,"meta"); }catch(e){} }
 async function dataLoad(){
-  try{ kDB=await openStores("evse_daten",KUNDEN_KINDS,false); eDB=await openStores("echeck_daten",["anlagen","geraete"],true); aDB=await openStores("irrgang_apps",["einstellungen",...APP_KINDS],true);
+  try{ kDB=await openStores("evse_daten",KUNDEN_KINDS,false); eDB=await openStores("echeck_daten",EC_KINDS,true); aDB=await openStores("irrgang_apps",["einstellungen",...APP_KINDS],true);
     for(const k of KINDS){ (await idbReq(dbOf(k).transaction(k).objectStore(k).getAll())).forEach(r=>DB[k].set(r.id,r)); }
     const m=await idbReq(eDB.transaction("meta").objectStore("meta").get("meta")); if(m) META=Object.assign(META,m);
   }catch(e){ kDB=eDB=aDB=null; toast("Gerätespeicher nicht verfügbar – Daten nur bis zum Schließen"); }
@@ -1388,18 +1461,13 @@ applyTheme(theme);
 WIDE.addEventListener?.("change",()=>{ if(typeof render==="function"&&nav) render(); });
 
 const APP_VERSION="<!--VERSION-->";
-const BEREICHE=[
-  {id:"anlage",t:"Hausinstallation",ic:"home",s:"Elektrische Anlagen prüfen",normen:"DIN VDE 0100-600 (Erstprüfung) · DIN VDE 0105-100 (Wiederholungsprüfung)",
-    plan:["Prüfung je Kunde und Standort, gegliedert nach Verteiler und Stromkreisen","Besichtigen, Erproben, Messen (RLO, RISO, Zs/Zi, RCD) mit Grenzwertprüfung","Mängel mit Fotos, Prüfprotokoll als PDF und E-Check-Plakette","Übernahme der Messwerte aus dem Messgerät, sobald das Exportformat geklärt ist"]},
-  {id:"geraet",t:"Geräte E-Check",ic:"steckdose",s:"Ortsveränderliche Geräte prüfen",normen:"DIN EN 50699 (VDE 0702) Wiederholungsprüfung · DIN EN 50678 (VDE 0701) nach Instandsetzung",
-    plan:["Geräteliste je Kunde mit Inventarnummer, Schutzklasse und Prüffrist","Sichtprüfung, Schutzleiter-, Isolations- und Ableitstrommessung","Prüfprotokoll pro Gerät und Sammelprotokoll je Kunde","Erinnerung an fällige Wiederholungsprüfungen"]}];
-const TOPDEST=[["start","E-Check","done"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
+const TOPDEST=[["anlagen","Anlagen","home"],["geraete","Geräte","ecStecker"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
 const TOP=TOPDEST.map(x=>x[0]), MEHR_SUB={team:"Mitarbeiter",impressum:"Impressum",about:"Über die App"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
 const KIND_NAME={kunden:"Kunde",standorte:"Standort"};
 
 function go(n){ nav=n; closeOverlays(); render(); window.scrollTo(0,0); }
-const KOPF_START="E-Check";
+const KOPF_START="Anlagen";
 function seitenKopf(t,s,f){ t=t||(f?KOPF_START:""); if(!t&&!f) return "";
   const T=pfadTeile(); if(!t&&!f&&typeof skRechts==="function"&&skRechts()) t=KOPF_START; if(s&&s.includes("›")) s=s.split(/\s*›\s*/).pop(); 
   const pf="";
@@ -1413,6 +1481,7 @@ function pfadTeile(){
   if(nav.v==="standort"){ const s=standortOf(nav.id); return kette(s&&s.kundeId); }
   if(nav.v==="kunde") return kette();
   if(MEHR_SUB[nav.v]) return [["Mehr",{v:"mehr"}]];
+  if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); return p&&p.art==="geraete"?[["Geräte",{v:"geraete"}]]:[["Anlagen",{v:"anlagen"}]]; }
   return [];
 }
 let NAV_IND_ALT=null;
@@ -1558,24 +1627,28 @@ document.addEventListener("click",e=>{
 /*PDFSTIL*/
 /*DEMO*/
 /*BIBLIOTHEK*/
+/*ECHECKPRUEF*/
 /*PROFIL*/
 /*KOPF*/
-function render(){ profilAnwenden();
+function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   const app=$("#app");
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
   const top=TOP.includes(nav.v), login=nav.v==="login";
-  document.body.classList.toggle("is-list",nav.v==="start"||login);
+  document.body.classList.toggle("is-list",nav.v==="anlagen"||login);
   document.body.classList.toggle("is-login",login);
   document.body.classList.toggle("has-nav",!login);
   $("#backBtn").hidden=top||login; $("#navbar").hidden=login; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]);
   $("#menuBtn").hidden=!VIEW_KIND[nav.v];
-  const active=top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]?"kunden":"start";
+  const active=top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]?"kunden":nav.v==="ec"&&(DB.echecks.get(nav.id)||{}).art==="geraete"?"geraete":"anlagen";
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
     +TOPDEST.map(([k,t,i])=>`<button class="nav-item${k==="mehr"?" nav-end":""}" data-act="nav" data-v="${k}" ${k===active?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join("");
   let title="", sub="", fab=null, body="";
   if(login) body=loginView();
-  else if(nav.v==="start") body=startView();
+  else if(nav.v==="anlagen"){ title="Anlagen"; body=ecListeView("anlage"); fab=["ecNeuA","Prüfung","add"]; }
+  else if(nav.v==="geraete"){ title="Geräte"; body=ecListeView("geraete"); fab=["ecNeuG","Prüfung","add"]; }
+  else if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); if(!p||p.deleted){ nav={v:"anlagen"}; return render(); }
+    title=ecOrt(p.ortId).titel; sub=`${EC_ART[p.art||"anlage"]} · ${ecDatum(p.datum)}`; body=ecView(p); }
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=["newKunde","Kunde","add"]; }
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
   else if(nav.v==="mehr"){ title="Mehr"; body=mehrView(); }
@@ -1593,39 +1666,95 @@ function render(){ profilAnwenden();
   profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); $("#avBtn").dataset.sync=SY.state; profilAvatar(); bilderFuellen();
 }
 
-function startView(){
-  return `<div class="narrow"><div class="bereiche">${BEREICHE.map(b=>`<section class="card bereich"><div class="br-k"><span class="br-ic">${icon(b.ic)}</span><div><h2>${b.t}</h2><p>${b.s}</p><span class="br-p">${pill("open","in Vorbereitung")}</span></div></div>
-      <p class="br-n">${b.normen}</p><div class="sec-lbl">Geplant</div><ul class="br-l">${b.plan.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
-      <button class="btn-filled" disabled>${icon("add")}Neue Prüfung</button></section>`).join("")}</div>
-    <p class="hint">Diese App ist vorbereitet: Anmeldung, Kunden und Darstellung laufen schon. Die Prüfabläufe kommen, sobald Messgeräte und Protokollvorlagen festgelegt sind.</p></div>`;
-}
+/* Kunden und Standorte – wie in der Übersicht (Filter, A–Z, Doppelte zusammenführen, Löschen); dazu die Prüfungen dieser App */
 function locItem(kind,r){
+  const P=live("echecks").filter(p=>kind==="kunden"?p.kundeId===r.id:p.standortId===r.id), na=P.filter(p=>(p.art||"anlage")==="anlage").length, ng=P.length-na;
+  const nb=live("betriebsmittel").filter(b=>kind==="kunden"?b.kundeId===r.id:b.ortId===r.id).length;
+  const nd=kind==="kunden"?live("dateien").filter(d=>(d.bezugKind==="kunden"&&d.bezugId===r.id)||(d.bezugKind==="standorte"&&(standortOf(d.bezugId)||{}).kundeId===r.id)).length:dateienVon("standorte",r.id).length;
   const sub=kind==="kunden"?[r.kdnr&&`Kd.-Nr. ${r.kdnr}`,r.ort,`${standorteVon(r.id).length} Standort${standorteVon(r.id).length===1?"":"e"}`].filter(Boolean).join(" · "):(adrText(r)||"");
+  const pills=[na&&pill("open",`${na} Anlagenprüfung${na>1?"en":""}`),ng&&pill("open",`${ng} Geräteprüfung${ng>1?"en":""}`),nb&&pill("open",`${nb} Gerät${nb>1?"e":""}`),nd&&pill("open",`${nd} Datei${nd>1?"en":""}`)].filter(Boolean).join("");
   return `<div class="li" role="button" tabindex="0" data-act="nav" data-v="${kind==="kunden"?"kunde":"standort"}" data-id="${esc(r.id)}"><span class="av">${icon(kind==="kunden"?"firma":"ort")}</span>
-    <span class="lt"><span class="h">${esc(r.name)}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}</span>${icon("chev")}</div>`;
+    <span class="lt"><span class="h">${esc(r.name)}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}${pills?`<span class="st">${pills}</span>`:""}</span>${icon("chev")}</div>`;
 }
+FDEF.kunden={std:{sort:"az"},sort:[["az","Name A–Z"],["za","Name Z–A"],["kdnr","Kundennummer"],["neu","Zuletzt angelegt"]],gruppen:[],liste:()=>kundenListe()};
 function kundenListe(){
-  const q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
-  const ks=live("kunden").sort((a,b)=>a.name.localeCompare(b.name,"de")).filter(k=>!q||H(k.name)||H(k.kdnr)||H(k.ort)||standorteVon(k.id).some(s=>H(s.name)||H(s.ort)));
-  return ks.length?listOf(ks.map(k=>locItem("kunden",k))):`<p class="meta">Kein Kunde gefunden.</p>`;
+  const q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q), so=fW("kunden","sort"), nm=(a,b)=>a.name.localeCompare(b.name,"de");
+  const ks=live("kunden").filter(k=>!q||H(k.name)||H(k.kdnr)||H(k.ort)||H(k.ansprech)||standorteVon(k.id).some(s=>H(s.name)||H(s.ort)||H(s.strasse)));
+  ks.sort(so==="za"?(a,b)=>nm(b,a):so==="kdnr"?(a,b)=>String(a.kdnr||"~").localeCompare(String(b.kdnr||"~"),"de",{numeric:true})||nm(a,b):so==="neu"?(a,b)=>(b.created||0)-(a.created||0):nm);
+  if(!ks.length) return `<p class="meta">Kein Kunde gefunden.</p>`;
+  return so==="az"||so==="za"?abcListe(ks,k=>k.name,k=>locItem("kunden",k)):listOf(ks.map(k=>locItem("kunden",k)));
+}
+/* Doppelte Kunden: gleicher Name (ohne „Familie“, „GmbH“ usw.). Zusammenführen nur für Admins. */
+const kNorm=s=>String(s||"").toLowerCase().replace(/\b(familie|fam|firma|fa|herrn?|frau|gmbh|ug|kg|ag|ohg|gbr|ek|e\.k)\b\.?/g,"").replace(/[^a-z0-9äöüß]/g,"");
+const kRefs=id=>live("standorte").filter(x=>x.kundeId===id).length+live("echecks").filter(p=>p.kundeId===id).length+live("betriebsmittel").filter(b=>b.kundeId===id).length;
+const kBester=L=>[...L].sort((a,b)=>kRefs(b.id)-kRefs(a.id)||(a.created||0)-(b.created||0))[0];
+function kDoppelt(){ const m=new Map(); live("kunden").forEach(k=>{ const n=kNorm(k.name); if(!n) return; if(!m.has(n)) m.set(n,[]); m.get(n).push(k); }); return [...m.values()].filter(g=>g.length>1); }
+function kDoppeltKarte(){
+  if(!ME.admin) return ""; const G=kDoppelt(); if(!G.length) return "";
+  return `<div class="sec-lbl">Doppelte Kunden · ${G.length}</div>${listOf(G.map((g,i)=>`<div class="li" role="button" tabindex="0" data-act="kzGruppe" data-i="${i}"><span class="av">${icon("firma")}</span>
+    <span class="lt"><span class="h">${esc(g[0].name)}</span><span class="s">${g.length}× vorhanden · ${esc(g.map(k=>adrText(k)||k.ort||"ohne Adresse").join(" / "))}</span></span>${pill("open","Zusammenführen")}</div>`))}<div class="sec-lbl">Alle Kunden</div>`;
+}
+let kzSatz=null;
+function kzDialog(L,behalten){
+  kzSatz={ids:L.map(k=>k.id),behalten:behalten||kBester(L).id};
+  const z=DB.kunden.get(kzSatz.behalten), anz=k=>{ const n=kRefs(k.id); return n?`${n} verknüpft`:"nichts verknüpft"; };
+  dialog("Kunden zusammenführen",`<p>Welcher Eintrag bleibt? Prüfungen, Geräte und Standorte der anderen werden dorthin verschoben, fehlende Angaben (Adresse, Telefon …) übernommen.</p>
+    <div class="chips kz-wahl">${L.map(k=>`<button class="chip" data-act="kzWahl" data-id="${esc(k.id)}" aria-pressed="${k.id===z.id}">${esc(k.name)} · ${esc(adrText(k)||"ohne Adresse")} · ${anz(k)}</button>`).join("")}</div>
+    <p class="meta" style="margin-top:12px">Standorte mit gleichem Namen und gleicher Straße werden dabei ebenfalls zusammengelegt.</p>`,
+    `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="kzOk">Zusammenführen</button>`);
+}
+/* Ort umziehen (Kundenadresse „k:…“ oder Standort): Prüfungen, Geräte und das Gebäude mitnehmen */
+function ortUmziehen(alt,neu){ let n=0;
+  for(const p of live("echecks")) if(p.ortId===alt){ p.ortId=neu; p.standortId=neu.startsWith("k:")?"":neu; if(neu.startsWith("k:")) p.kundeId=neu.slice(2); else p.kundeId=(standortOf(neu)||{}).kundeId||p.kundeId; saveRec("echecks",p); n++; }
+  for(const b of live("betriebsmittel")) if(b.ortId===alt){ b.ortId=neu; b.kundeId=neu.startsWith("k:")?neu.slice(2):(standortOf(neu)||{}).kundeId||b.kundeId; saveRec("betriebsmittel",b); n++; }
+  const g=DB.gebaeude.get(ecGebId(alt)); if(g&&!g.deleted&&!DB.gebaeude.get(ecGebId(neu))){ saveRec("gebaeude",{...g,id:ecGebId(neu),ortId:neu,_etag:undefined,_itemId:undefined},true); g.deleted=true; saveRec("gebaeude",g); }
+  return n; }
+function kzAusfuehren(zid,wegIds){
+  const z=DB.kunden.get(zid); if(!z) return 0; let n=0;
+  for(const wid of wegIds){ const w=DB.kunden.get(wid); if(!w||w.deleted||wid===zid) continue;
+    for(const f of ["kdnr","strasse","plz","ort","adresse","ansprech","tel","mail","web"]) if(!z[f]&&w[f]) z[f]=w[f];
+    if(w.notiz&&!String(z.notiz||"").includes(w.notiz)) z.notiz=[z.notiz,w.notiz].filter(Boolean).join("\n");
+    for(const x of live("standorte").filter(x=>x.kundeId===wid)){ x.kundeId=zid; saveRec("standorte",x); n++;
+      for(const p of live("echecks")) if(p.standortId===x.id){ p.kundeId=zid; saveRec("echecks",p); } for(const b of live("betriebsmittel")) if(b.ortId===x.id){ b.kundeId=zid; saveRec("betriebsmittel",b); } }
+    n+=ortUmziehen("k:"+wid,"k:"+zid);
+    for(const d of DB.dateien.values()) if(d.bezugKind==="kunden"&&d.bezugId===wid){ d.bezugId=zid; saveRec("dateien",d); n++; }
+    w.deleted=true; w.mergedInto=zid; saveRec("kunden",w);
+  }
+  saveRec("kunden",z);
+  const sn=x=>kNorm(x.name)+"|"+kNorm(x.strasse||x.adresse||""), M=new Map();
+  standorteVon(zid).forEach(x=>{ const k=sn(x); if(!M.has(k)) M.set(k,[]); M.get(k).push(x); });
+  for(const g of M.values()) if(g.length>1){ const sRefs=x=>live("echecks").filter(p=>p.standortId===x.id).length+live("betriebsmittel").filter(b=>b.ortId===x.id).length;
+    const [bleibt,...rest]=[...g].sort((a,b)=>sRefs(b)-sRefs(a)||(a.created||0)-(b.created||0));
+    for(const w of rest){ for(const f of ["strasse","plz","ort","adresse","ansprech","tel","notiz"]) if(!bleibt[f]&&w[f]) bleibt[f]=w[f];
+      ortUmziehen(w.id,bleibt.id); for(const d of DB.dateien.values()) if(d.bezugKind==="standorte"&&d.bezugId===w.id){ d.bezugId=bleibt.id; saveRec("dateien",d); }
+      w.deleted=true; w.mergedInto=bleibt.id; saveRec("standorte",w); }
+    saveRec("standorte",bleibt); }
+  return n;
 }
 function kundenView(){
-  if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden und Standorte sind dieselben wie in den Apps EVSE und Baustelle.</p></div>`;
-  return `<div class="narrow">${searchBar("Kunde, Kundennr. oder Ort suchen")}<div id="res">${kundenListe()}</div></div>`;
+  if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden und Standorte sind dieselben wie in der Übersicht und den Apps EVSE und Baustelle.</p></div>`;
+  return `<div class="narrow">${searchBar("Kunde, Ort, Ansprechpartner suchen",fKnopf("kunden"))}${query?"":kDoppeltKarte()}<div id="res">${kundenListe()}</div></div>`;
 }
 function kundeView(k){ const ss=standorteVon(k.id);
   return `<div class="narrow kd-seite">${kdOben(k,"kunden",ss)}${kontakteView("kunden",k)}
+    ${ablageView("kunden",k)}
     ${kdKopf("Standorte",kdDarf(k)&&"newStandort","Standort hinzufügen")}${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager).</p>`}
-    ${ablageView("kunden",k)}</div>`; }
-function standortView(s){ return `<div class="narrow kd-seite">${kdOben(s,"standorte")}${kontakteView("standorte",s)}${ablageView("standorte",s)}</div>`; }
+    ${ecBeiKunde("kunden",k)}
+    ${ME.admin&&live("kunden").length>1?`<button class="btn-text kz-manuell" data-act="kzManuell">${icon("firma")}Mit anderem Kunden zusammenführen</button>`:""}</div>`; }
+function standortView(s){ return `<div class="narrow kd-seite">${kdOben(s,"standorte")}${kontakteView("standorte",s)}${ablageView("standorte",s)}${ecBeiKunde("standorte",s)}</div>`; }
 let locForm=null;
 function locDialog(kind,rec,parentId){
   locForm={kind,id:rec&&rec.id,parentId}; const r=rec||{}; if(rec) adrSplit(r);
-  const adr=tf("strasse","Straße und Hausnummer",r.strasse,{form:true})+`<div class="row2">${tf("plz","PLZ",r.plz,{form:true,im:"numeric"})}${tf("ort","Ort",r.ort,{form:true})}</div>`;
-  const felder=kind==="kunden"?tf("name","Firma / Name",r.name,{form:true,ph:"z. B. Musterfirma GmbH"})+tf("kdnr","Kundennummer",r.kdnr,{form:true})+adr
-      +tf("ansprech","Ansprechpartner",r.ansprech,{form:true})+tf("tel","Telefon",r.tel,{form:true,type:"tel"})+tf("mail","E-Mail",r.mail,{form:true,type:"email"})+tf("web","Webseite",r.web,{form:true,type:"url",ph:"z. B. musterfirma.de"})+ta("notiz","Notiz",r.notiz,{form:true})
-    :tf("name","Bezeichnung",r.name,{form:true,ph:"z. B. Einfamilienhaus"})+adr+tf("ansprech","Ansprechpartner vor Ort",r.ansprech,{form:true})+tf("tel","Telefon vor Ort",r.tel,{form:true,type:"tel"})+ta("notiz","Notiz (z. B. Zufahrt, Schlüssel)",r.notiz,{form:true});
-  dialog(`${KIND_NAME[kind]} ${rec?"bearbeiten":"anlegen"}`,`<div class="fg1">${felder}</div>`,`<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="saveLoc">${rec?"Speichern":"Anlegen"}</button>`);
+  const adr=`<div class="kd-adr3">${tf("strasse","Straße und Hausnummer",r.strasse,{form:true})}${tf("plz","PLZ",r.plz,{form:true,im:"numeric"})}${tf("ort","Ort",r.ort,{form:true})}</div>`;
+  const felder=kind==="kunden"?`<div class="kd-nr2">${tf("name","Firma / Name",r.name,{form:true,ph:"z. B. Musterfirma GmbH"})}${tf("kdnr","Kundennummer",r.kdnr,{form:true})}</div>`+adr
+      +`<div class="reihe3">${tf("tel","Telefon",r.tel,{form:true,type:"tel"})+tf("mail","E-Mail",r.mail,{form:true,type:"email"})+tf("web","Webseite",r.web,{form:true,type:"url",ph:"z. B. musterfirma.de"})}</div>`+ta("notiz","Notiz",r.notiz,{form:true})
+    :tf("name","Bezeichnung",r.name,{form:true,ph:"z. B. Einfamilienhaus"})+adr+tf("tel","Telefon vor Ort",r.tel,{form:true,type:"tel"})+ta("notiz","Notiz (z. B. Zufahrt, Schlüssel)",r.notiz,{form:true});
+  dialog(`${KIND_NAME[kind]} ${rec?"bearbeiten":"anlegen"}`,`<div class="fg1">${felder}</div>`,`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="saveLoc">${rec?"Speichern":"Anlegen"}</button>`,{breit:true});
+}
+function bezugZahl(kind,id){
+  const ids=kind==="kunden"?[id,...standorteVon(id).map(s=>s.id)]:[id];
+  return live("echecks").filter(p=>kind==="kunden"?p.kundeId===id:p.standortId===id).length+live("betriebsmittel").filter(b=>kind==="kunden"?b.kundeId===id:b.ortId===id).length
+    +live("dateien").filter(d=>ids.includes(d.bezugId)).length+(kind==="kunden"?standorteVon(id).length:0);
 }
 function mehrView(){
   const row=(act,ic,t,sub)=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(ic)}</span><span class="lt"><span class="h">${t}</span>${sub?`<span class="s">${sub}</span>`:""}</span>${icon("chev")}</div>`;
@@ -1649,7 +1778,7 @@ function teamView(){
 function aboutView(){
   const ic=(document.querySelector('link[rel="apple-touch-icon"]')||{}).href||"";
   return `<div class="narrow"><section class="card about"><img class="app-ic" src="${ic}" alt=""><h2>E-Check</h2><p class="ver">Version ${APP_VERSION}</p>
-    <p>Prüfung von Hausinstallationen und ortsveränderlichen Geräten. Die App ist vorbereitet, die Prüfabläufe folgen.</p>
+    <p>Prüfung von Hausinstallationen und Anlagen (DIN VDE 0100-600 / 0105-100) und von ortsveränderlichen Geräten (DIN VDE 0701-0702, DGUV Vorschrift 3).</p>
     <div class="logos"><img class="lg-firma l-hell" src="${LOGO_PDF}" alt="Elektro Irrgang"></div>
     <p class="note-doc">${FIRMA.name} · ${FIRMA.strasse} · ${FIRMA.ort}</p></section></div>`;
 }
@@ -1672,19 +1801,21 @@ async function testAnmelden(){
   let ok=false; try{ ok=(await sha256(TEST_LOGIN.salt+"|"+pw))===TEST_LOGIN.hash; }catch(e){ toast("Anmeldung auf diesem Gerät nicht möglich"); return; }
   if(!ok){ toast("Passwort falsch"); $("#f_tlPw").value=""; $("#f_tlPw").focus(); return; }
   const m=team().find(x=>x.mail===mail)||{name:mail.split("@")[0].replace(/[._]/g," ").replace(/\b\w/g,c=>c.toUpperCase()),mail};
-  loginMerken(m); ichBin(m); META.angemeldet={mail,at:Date.now()}; metaSave(); go({v:"start"}); toast(`Angemeldet als ${m.name}`);
+  loginMerken(m); ichBin(m); META.angemeldet={mail,at:Date.now()}; metaSave(); go({v:"anlagen"}); toast(`Angemeldet als ${m.name}`);
 }
 document.addEventListener("submit",ev=>{ if(ev.target.id==="tlForm"){ ev.preventDefault(); testAnmelden(); } });
 function openMenu(){
-  const kind=VIEW_KIND[nav.v]; if(!kind) return; const r=DB[kind].get(nav.id); if(!canEdit(r)) return;
-  $("#menu").innerHTML=`<button class="mi" role="menuitem" data-act="editLoc">${icon("edit")}<span>${KIND_NAME[kind]} bearbeiten</span></button>`;
+  const kind=VIEW_KIND[nav.v]; if(!kind) return; const r=DB[kind].get(nav.id); if(!kdDarf(r)) return;
+  const it=[["editLoc",`${KIND_NAME[kind]} bearbeiten`,"edit"],...(ME.admin?[["locDelAsk",`${KIND_NAME[kind]} löschen`,"del","danger"]]:[])];
+  $("#menu").innerHTML=it.map(x=>`<button class="mi ${x[3]||""}" role="menuitem" data-act="${x[0]}">${icon(x[2])}<span>${x[1]}</span></button>`).join("");
   $("#menu").hidden=false; $("#scrim").hidden=false; $("#menuBtn").setAttribute("aria-expanded","true");
 }
 function zurueck(){
   if(nav.v==="standort"){ const s=standortOf(nav.id); go(s?{v:"kunde",id:s.kundeId}:{v:"kunden"}); return; }
   if(nav.v==="kunde"){ go({v:"kunden"}); return; }
   if(MEHR_SUB[nav.v]){ go({v:"mehr"}); return; }
-  go({v:"start"});
+  if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); go({v:p&&p.art==="geraete"?"geraete":"anlagen"}); return; }
+  go({v:"anlagen"});
 }
 document.addEventListener("input",ev=>{ if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():kundenListe(); } });
 document.addEventListener("change",ev=>{ const el=ev.target;
@@ -1717,7 +1848,23 @@ document.addEventListener("click",ev=>{
     let r; if(L.id){ r=DB[L.kind].get(L.id); Object.assign(r,F); delete r.adresse; saveRec(L.kind,r); }
     else { r={id:uid(),...F}; if(L.kind==="standorte") r.kundeId=L.parentId; saveRec(L.kind,r,true); }
     locForm=null; closeOverlays(); if(!L.id) go({v:L.kind==="kunden"?"kunde":"standort",id:r.id}); else render(); return; }
-  case "webSuchen": { const k=DB.kunden.get(nav.id); if(k) window.open("https://www.google.com/search?q="+encodeURIComponent([k.name,k.ort].filter(Boolean).join(" ")),"_blank","noopener"); return; }
+  case "fPop": filterPop(b,b.dataset.n); return;
+  case "fWeg": fWeg(b.dataset.n,false); return;
+  case "locDelAsk": { const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id), n=bezugZahl(kind,r.id);
+    if(n){ dialog(`${KIND_NAME[kind]} löschen`,esc(`„${r.name}“ hängt noch an ${n} Eintrag/Einträgen (Standorte, Prüfungen, Geräte oder Dateien). Erst diese löschen oder umhängen – sonst gehen Verknüpfungen verloren.`),`<button class="btn-text" data-act="cancel">Verstanden</button>`); return; }
+    confirmDlg(`${KIND_NAME[kind]} löschen?`,`„${r.name}“ wird in allen Apps entfernt.`,"Löschen","locDel"); return; }
+  case "locDel": { const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id); closeOverlays(); if(!r||!ME.admin) return; r.deleted=true; saveRec(kind,r); go(kind==="standorte"?{v:"kunde",id:r.kundeId}:{v:"kunden"}); toast(`${KIND_NAME[kind]} gelöscht`); return; }
+  case "kzGruppe": { const g=kDoppelt()[+b.dataset.i]; if(g&&ME.admin) kzDialog(g); return; }
+  case "kzWahl": { if(!kzSatz) return; kzSatz.behalten=b.dataset.id; $("#dlg").querySelectorAll("[data-act=kzWahl]").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.id===kzSatz.behalten))); return; }
+  case "kzManuell": { const k=DB.kunden.get(nav.id); if(!k||!ME.admin) return;
+    dialog("Zusammenführen mit …",`<p>Welcher Kunde ist derselbe wie „${esc(k.name)}“?</p><div class="list kz-liste">${live("kunden").filter(x=>x.id!==k.id).sort((a,b)=>a.name.localeCompare(b.name,"de")).map(x=>`<div class="li" role="button" tabindex="0" data-act="kzPaar" data-id="${esc(x.id)}"><span class="lt"><span class="h">${esc(x.name)}</span><span class="s">${esc(adrText(x)||"ohne Adresse")}</span></span></div>`).join("")}</div>`,`<button class="btn-text" data-act="cancel">Abbrechen</button>`); return; }
+  case "kzPaar": { const a=DB.kunden.get(nav.id), c=DB.kunden.get(b.dataset.id); if(!a||!c) return; closeOverlays(); kzDialog([a,c],kBester([a,c]).id); return; }
+  case "kzOk": { if(!kzSatz||!ME.admin) return; const {ids,behalten}=kzSatz, z=DB.kunden.get(behalten); kzSatz=null; closeOverlays();
+    const n=kzAusfuehren(behalten,ids.filter(x=>x!==behalten)); if(nav.v==="kunde"&&nav.id!==behalten) nav={v:"kunde",id:behalten}; render(); toast(`Zusammengeführt zu „${z?z.name:""}“${n?` · ${n} Einträge umgehängt`:""}`); return; }
+  case "webSuchen": { const k=DB.kunden.get(nav.id); if(!k) return; window.open("https://www.google.com/search?q="+encodeURIComponent([k.name,k.ort].filter(Boolean).join(" ")),"_blank","noopener");
+    if(!kdDarf(k)) return;
+    dialog("Webseite eintragen",`<div class="fg1">${tf("web","Webseite",k.web||"",{form:true,type:"url",ph:"z. B. musterfirma.de"})}</div>`,`<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="webSave">Speichern</button>`); return; }
+  case "webSave": { const k=DB.kunden.get(nav.id), v=webText(formVals().web.trim()); if(!k) return; k.web=v; saveRec("kunden",k); closeOverlays(); render(); return; }
   }
 });
 $("#backBtn").addEventListener("click",zurueck);
@@ -1741,7 +1888,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   if(SYNC_ON&&ME.signedIn){ syncNow(); setInterval(()=>{ if(document.visibilityState==="visible") syncNow(); },60000);
     document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&Date.now()-(META.sync.last||0)>15000) syncSoon(); }); }
 })();
-document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"){ syncSoon(); einstLaden().then(()=>{ const w=loginSync(); if(w&&nav.v==="login"&&META.angemeldet) nav={v:"start"}; setMe(); if(w||(testGesperrt()&&nav.v!=="login")) render(); }); } });
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"){ syncSoon(); einstLaden().then(()=>{ const w=loginSync(); if(w&&nav.v==="login"&&META.angemeldet) nav={v:"anlagen"}; setMe(); if(w||(testGesperrt()&&nav.v!=="login")) render(); }); } });
 window.addEventListener("online",()=>syncSoon()); window.addEventListener("offline",()=>setSync("offline"));
 try{ navigator.storage&&navigator.storage.persist&&navigator.storage.persist(); }catch(e){}
 window.__EVSE__={DB,syncNow,get SY(){return SY},get ME(){return ME}};

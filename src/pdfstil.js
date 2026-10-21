@@ -32,11 +32,14 @@ function pdfStil(d,o){
   S.text=t=>{ d.setFont("helvetica","normal"); d.setFontSize(8.5); d.setTextColor(30); const l=d.splitTextToSize(pdfT(t||"-"),CW); S.platz(l.length*4+4); d.text(l,M,S.y); S.y+=l.length*4+4; };
   S.plakette=(x,yy,r,txt)=>{ const col=r==="ok"?OKC:r==="bad"?BADC:GR; d.setFillColor(...col); const t=pdfT(txt||(r==="ok"?"bestanden":r==="bad"?"nicht bestanden":"offen")).toUpperCase();
     d.setFontSize(7.5); d.setFont("helvetica","bold"); const w=d.getTextWidth(t)+5; d.roundedRect(x-w,yy-3.6,w,5,1.2,1.2,"F"); d.setTextColor(255); d.text(t,x-w+2.5,yy); };
-  /* Tabelle: sp = Spaltenbreiten in mm (Summe ≤ CW); erg = Index der Spalte mit Ergebnis-Plakette ("ok"/"bad"/"open") */
+  /* Tabelle: sp = Spaltenbreiten in mm (Summe ≤ CW); erg = Index der Spalte mit Ergebnis-Plakette ("ok"/"bad"/"open", eigener Text mit „bad|Mangel“); Zeile als Text = Zwischenüberschrift */
   S.tabelle=(kopf,sp,zeilen,erg)=>{ const kz=()=>{ d.setFillColor(...NAVY); d.rect(M,S.y-4,CW,6,"F"); d.setTextColor(255); d.setFontSize(8); d.setFont("helvetica","bold"); let x=M+2; kopf.forEach((t,i)=>{ d.text(pdfT(t),x,S.y); x+=sp[i]; }); S.y+=6; };
     S.platz(14); kz();
-    zeilen.forEach((z,ri)=>{ if(S.y>272){ S.seite(); kz(); } if(ri%2){ d.setFillColor(...SUNK); d.rect(M,S.y-4,CW,6,"F"); } let x=M+2; d.setFont("helvetica","normal"); d.setFontSize(8); d.setTextColor(20);
-      z.forEach((v,i)=>{ if(i===erg) S.plakette(M+CW-1,S.y,v); else { const t=d.splitTextToSize(pdfT(v||"-"),sp[i]-2)[0]; d.text(t,x,S.y); } x+=sp[i]; }); S.y+=6; }); S.y+=4; };
+    let zz=0;
+    zeilen.forEach((z,ri)=>{ if(S.y>272){ S.seite(); kz(); }
+      if(typeof z==="string"){ d.setFont("helvetica","bold"); d.setFontSize(8.5); d.setTextColor(...NAVY); d.text(pdfT(z),M+2,S.y+1); d.setDrawColor(...LINE); d.line(M,S.y+2.6,M+CW,S.y+2.6); S.y+=7; zz=0; return; }
+      ri=zz++; if(ri%2){ d.setFillColor(...SUNK); d.rect(M,S.y-4,CW,6,"F"); } let x=M+2; d.setFont("helvetica","normal"); d.setFontSize(8); d.setTextColor(20);
+      z.forEach((v,i)=>{ if(i===erg){ const [r,t]=String(v).split("|"); S.plakette(M+CW-1,S.y,r,t); } else { const t=d.splitTextToSize(pdfT(v||"-"),sp[i]-2)[0]; d.text(t,x,S.y); } x+=sp[i]; }); S.y+=6; }); S.y+=4; };
   S.unterschriften=(L)=>{ S.platz(44); const sw=(CW-12)/2; L.forEach(([l,name,datum],i)=>{ const x=M+i*(sw+12); d.setDrawColor(40); d.line(x,S.y+30,x+sw,S.y+30);
       d.setFont("helvetica","normal"); d.setFontSize(8); d.setTextColor(...GR); d.text(pdfT(`${l}: ${name||""} | ${datum||""}`),x,S.y+35); }); S.y+=42; };
   S.ende=nr=>{ S.fuss(); const N=d.getNumberOfPages(); for(let i=1;i<=N;i++){ d.setPage(i); d.setFont("helvetica","normal"); d.setFontSize(7); d.setTextColor(...GR); d.text(`Seite ${i} von ${N}`,W-M,292,{align:"right"}); if(nr) d.text(pdfT(`Protokoll-Nr. ${nr}`),W-M,288,{align:"right"}); }
