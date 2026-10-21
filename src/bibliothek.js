@@ -73,6 +73,50 @@ function bbOrdnerBild(farbe,sym){ const g="bbg"+(++BB_GID), f=BB_FARBEN.some(x=>
     <rect class="of" x="2" y="32" width="116" height="64" rx="12"/><rect x="2" y="32" width="116" height="64" rx="12" fill="url(#${g})"/>
     <path class="ol" d="M14 32.6h92a11.4 11.4 0 0 1 11.4 11.4" fill="none" stroke-width="1.2"/>
     ${sym&&BB_SYM[sym]?`<svg x="45" y="49.8" width="30" height="30" viewBox="0 0 24 24"><path class="osl" d="${BB_SYM[sym]}"/></svg><svg x="45" y="49" width="30" height="30" viewBox="0 0 24 24"><path class="os" d="${BB_SYM[sym]}"/></svg>`:""}</svg>`; }
+/* ===== Ordner-Menü: Rechtsklick (PC), lange drücken (iPad/Handy) oder der Pfeil neben dem Namen ===== */
+IC.bbFarbe=IC.bbFarbe||"M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z";
+IC.bbOffen=IC.bbOffen||"M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z";
+IC.bbInfo=IC.bbInfo||"M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z";
+function bbOrdnerMenue(el,x,y){
+  const k=el.dataset.k, u=el.dataset.u||"", kd=k&&k!==BB_OHNE?bbKunde(k):null, darf=!!(kd&&(typeof kdDarf==="function"?kdDarf(kd):typeof canEdit==="function"&&canEdit(kd)));
+  const oeffnen=()=>{ BB_ORT={k,u:u||null}; const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); scrollTo(0,0); };
+  const id=u.slice(2), hatBau=u[0]==="b"&&typeof baustelleView==="function"&&DB.baustellen&&DB.baustellen.get(id);
+  kontextMenu(x,y,[{t:"Öffnen",ic:"bbOffen",fn:oeffnen},"-",
+    !u&&kd&&{t:"Zum Kunden",ic:"firma",fn:()=>go({v:"kunde",id:kd.id})},
+    !u&&darf&&typeof locDialog==="function"&&{t:"Kunde bearbeiten",ic:"edit",fn:()=>locDialog("kunden",kd)},
+    !u&&darf&&{t:"Farbe und Symbol",ic:"bbFarbe",fn:()=>bbStilFenster(el.querySelector(".bb-mm")||el,kd.id)},
+    u[0]==="s"&&DB.standorte&&DB.standorte.get(id)&&{t:"Zum Standort",ic:"ort",fn:()=>go({v:"standort",id})},
+    hatBau&&{t:"Zur Baustelle",ic:"baustelle",fn:()=>go({v:"baustelle",id})},
+    {t:"Eigenschaften",ic:"bbInfo",fn:()=>bbEigenschaften(k,u)}]);
+}
+function bbEigenschaften(k,u){
+  const kd=k&&k!==BB_OHNE?bbKunde(k):null, uKey=x=>x.bs?"b:"+x.bs:x.st?"s:"+x.st:"";
+  const A=bbEintraege().filter(x=>(x.kundeId||BB_OHNE)===k&&(!u||uKey(x)===u)), EINZ={prot:"Prüfprotokoll",bericht:"Baustellenbericht",dok:"Dokument",foto:"Foto"}, arten=BB_ART.filter(([a])=>a!=="alle").map(([a,t])=>{ const n=A.filter(x=>x.art===a).length; return [n===1?EINZ[a]:t,n]; }).filter(x=>x[1]);
+  const U=new Set(A.map(uKey).filter(Boolean)), nS=[...U].filter(x=>x[0]==="s").length, nB=[...U].filter(x=>x[0]==="b").length;
+  const t=A.length?Math.max(...A.map(x=>x.t||0)):0, tag=v=>v?new Date(v).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"}):"";
+  const id=u.slice(2), ziel=u[0]==="s"?(DB.standorte&&DB.standorte.get(id)):u[0]==="b"?(DB.baustellen&&DB.baustellen.get(id)):kd;
+  const name=u?(ziel&&ziel.name)||(u[0]==="b"?"Baustelle":"Standort"):kd?kd.name:"Ohne Kunde";
+  const z=(l,v)=>v?`<div class="bb-ez"><small>${esc(l)}</small><span>${esc(v)}</span></div>`:"";
+  const adr=ziel&&typeof adrText==="function"?adrText(ziel):"";
+  const st=(kd&&kd.ordner)||{};
+  dialog(name,`<div class="bb-eig"><div class="bb-ebild">${bbOrdnerBild(st.farbe,u?(u[0]==="b"?"baustelle":"ort"):st.sym)}</div><div class="bb-el">
+      ${z("Art",u?(u[0]==="b"?"Baustelle":"Standort")+(kd?` von ${kd.name}`:""):"Kunden-Ordner")}
+      ${z("Kundennummer",kd&&kd.kdnr)}${z("Adresse",adr)}
+      ${z("Inhalt",`${A.length} ${A.length===1?"Datei":"Dateien"}${arten.length?" – "+arten.map(([t,n])=>`${n} ${t}`).join(", "):""}`)}
+      ${!u?z("Unterordner",[nS&&`${nS} ${nS===1?"Standort":"Standorte"}`,nB&&`${nB} ${nB===1?"Baustelle":"Baustellen"}`].filter(Boolean).join(", ")):""}
+      ${z("Zuletzt hinzugefügt",tag(t))}
+      ${z("Angelegt",ziel&&[tag(ziel.created),ziel.createdBy&&ziel.createdBy.name].filter(Boolean).join(" · "))}</div></div>`,
+    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`);
+}
+/* lange drücken (Finger/Stift) */
+let bbLp=null, bbLpZeit=0;
+document.addEventListener("pointerdown",e=>{ if(e.pointerType==="mouse") return; const m=e.target.closest&&e.target.closest(".bb-m[data-k]"); if(!m) return;
+  const x=e.clientX, y=e.clientY; bbLp={x,y,t:setTimeout(()=>{ bbLp=null; bbLpZeit=Date.now(); if(navigator.vibrate) try{ navigator.vibrate(10); }catch(_){} bbOrdnerMenue(m,x,y); },480)}; });
+document.addEventListener("pointermove",e=>{ if(bbLp&&Math.hypot(e.clientX-bbLp.x,e.clientY-bbLp.y)>10){ clearTimeout(bbLp.t); bbLp=null; } });
+["pointerup","pointercancel"].forEach(t=>document.addEventListener(t,()=>{ if(bbLp){ clearTimeout(bbLp.t); bbLp=null; } },true));
+addEventListener("scroll",()=>{ if(bbLp){ clearTimeout(bbLp.t); bbLp=null; } },true);
+document.addEventListener("click",e=>{ if(Date.now()-bbLpZeit<700&&!(e.target.closest&&e.target.closest("#menu,#dlg,#fpop"))){ e.stopImmediatePropagation(); e.preventDefault(); } },true);
+document.addEventListener("contextmenu",e=>{ const m=e.target.closest&&e.target.closest(".bb-m[data-k]"); if(!m) return; e.preventDefault(); if(Date.now()-bbLpZeit<1000) return; bbOrdnerMenue(m,e.clientX,e.clientY); });
 function bbStilFenster(btn,kid){
   document.getElementById("fpop")?.remove(); document.getElementById("fpopBg")?.remove();
   const k=DB.kunden&&DB.kunden.get(kid); if(!k) return;
@@ -93,8 +137,8 @@ function bbOrdner(L,zeile){
   const kn=id=>id===BB_OHNE?"Ohne Kunde":(bbKunde(id)||{}).name||"Unbekannter Kunde", kk=x=>x.kundeId||BB_OHNE;
   const tag=t=>t?new Date(t).toLocaleDateString("de-DE"):"";
   const mappe=(attrs,name,art,G,stil,menuK)=>{ const t=Math.max(0,...G.map(x=>x.t||0));
-    return `<div class="bb-m"><button class="bb-mk" data-act="bbOrdner" ${attrs} aria-label="${esc(name)} öffnen">${bbOrdnerBild(stil.farbe,stil.sym)}</button>
-      <div class="bb-mn"><button class="bb-mt" data-act="bbOrdner" ${attrs}>${esc(name)}</button>${menuK?`<button class="bb-mm" data-act="bbStil" data-k="${esc(menuK)}" aria-label="Ordner gestalten" title="Farbe und Symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>`:""}</div>
+    return `<div class="bb-m" ${attrs}><button class="bb-mk" data-act="bbOrdner" ${attrs} aria-label="${esc(name)} öffnen">${bbOrdnerBild(stil.farbe,stil.sym)}</button>
+      <div class="bb-mn"><button class="bb-mt" data-act="bbOrdner" ${attrs}>${esc(name)}</button>${menuK!==false?`<button class="bb-mm" data-act="bbMenue" ${attrs} aria-label="Ordner-Menü" title="Bearbeiten, Farbe, Eigenschaften"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>`:""}</div>
       <small>${esc([art,`${G.length} ${G.length===1?"Datei":"Dateien"}`,t&&tag(t)].filter(Boolean).join(" · "))}</small></div>`; };
   const kStil=k=>{ const r=k!==BB_OHNE&&bbKunde(k); return {stil:(r&&r.ordner)||{},darf:!!(r&&(typeof kdDarf==="function"?kdDarf(r):typeof canEdit==="function"&&canEdit(r)))}; };
   /* gleich heißende Kunden bleiben getrennte Ordner (Schlüssel ist der Kunde selbst); Reihenfolge dann nach Kundennummer */
@@ -103,7 +147,7 @@ function bbOrdner(L,zeile){
   if(!BB_ORT.k||!L.some(x=>kk(x)===BB_ORT.k)){ BB_ORT={k:null,u:null};
     const M=new Map(); L.forEach(x=>{ const k=kk(x); if(!M.has(k)) M.set(k,[]); M.get(k).push(x); });
     const O=[...M].map(([k,G])=>[k,G,kn(k)]).sort((a,b)=>(a[0]===BB_OHNE)-(b[0]===BB_OHNE)||nach(a,b));
-    return `<div class="bb-oraster">${O.map(([k,G,n])=>{ const S=kStil(k); return mappe(`data-k="${esc(k)}"`,n,"",G,S.stil,S.darf&&k); }).join("")}</div>`; }
+    return `<div class="bb-oraster">${O.map(([k,G,n])=>{ const S=kStil(k); return mappe(`data-k="${esc(k)}"`,n,"",G,S.stil,true); }).join("")}</div>`; }
   const K=L.filter(x=>kk(x)===BB_ORT.k), uKey=x=>x.bs?"b:"+x.bs:x.st?"s:"+x.st:"", U=new Map();
   K.forEach(x=>{ const u=uKey(x); if(!u) return; if(!U.has(u)) U.set(u,[]); U.get(u).push(x); });
   const uName=u=>{ const id=u.slice(2); if(u[0]==="b"){ const b=typeof DB!=="undefined"&&DB.baustellen&&DB.baustellen.get(id); return (b&&b.name)||(K.find(x=>x.bs===id)||{}).bsName||"Baustelle"; }
@@ -113,7 +157,7 @@ function bbOrdner(L,zeile){
     <button class="bb-pt" data-act="bbOrdner" data-k="">Alle Kunden</button><span class="bb-ps">›</span>${BB_ORT.u?`<button class="bb-pt" data-act="bbOrdner" data-k="${esc(BB_ORT.k)}">${esc(kn(BB_ORT.k))}</button><span class="bb-ps">›</span><b>${esc(uName(BB_ORT.u))}</b>`:`<b>${esc(kn(BB_ORT.k))}</b>`}</nav>`;
   if(BB_ORT.u) return pfad+listOf(U.get(BB_ORT.u).map(zeile));
   const lose=K.filter(x=>!uKey(x)), O=[...U].map(([u,G])=>[u,G,uName(u)]).sort((a,b)=>(a[0][0]>b[0][0]?1:a[0][0]<b[0][0]?-1:0)||nach(a,b));
-  return pfad+(O.length?`<div class="bb-oraster">${O.map(([u,G,n])=>mappe(`data-k="${esc(BB_ORT.k)}" data-u="${esc(u)}"`,n,u[0]==="b"?"Baustelle":"Standort",G,{farbe:(kStil(BB_ORT.k).stil.farbe),sym:u[0]==="b"?"baustelle":"ort"},null)).join("")}</div>`:"")
+  return pfad+(O.length?`<div class="bb-oraster">${O.map(([u,G,n])=>mappe(`data-k="${esc(BB_ORT.k)}" data-u="${esc(u)}"`,n,u[0]==="b"?"Baustelle":"Standort",G,{farbe:(kStil(BB_ORT.k).stil.farbe),sym:u[0]==="b"?"baustelle":"ort"},true)).join("")}</div>`:"")
     +(lose.length?(O.length?`<div class="sec-lbl">Direkt beim Kunden</div>`:"")+listOf(lose.map(zeile)):"");
 }
 function bibListe(){
@@ -205,6 +249,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="bbReset"){ bbSet("sort","neu"); bbSet("kunde","alle"); }
   else if(a==="bbOrdner"){ BB_ORT={k:b.dataset.k||null,u:b.dataset.u||null}; const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); scrollTo(0,0); }
   else if(a==="bbStil") bbStilFenster(b,b.dataset.k);
+  else if(a==="bbMenue"){ const m=b.closest(".bb-m"), r=b.getBoundingClientRect(); if(m) bbOrdnerMenue(m,r.left,r.bottom); }
   else if(a==="bbOeffnen") bbOeffnen(b.dataset.id);
   else if(a==="bbShare") bbShare(b.dataset.id);
 },true);
