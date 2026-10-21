@@ -199,9 +199,8 @@ function vgOpen(v){ VG_SEL=v.id; if(nav.v!=="auftraege") go({v:"auftraege"}); el
 /* Erfassen / Bearbeiten */
 let vgE=null;
 function vgDialog(v){ vgE=v?JSON.parse(JSON.stringify(v)):{id:null,kundeName:"",tel:"",anliegen:"",dringend:false};
-  const namen=live("kunden").map(k=>k.name);
   dialog(v?"Vorgang bearbeiten":"Neuer Vorgang",`<div class="fg1">
-    ${tf("vgKunde","Kunde",v?vgKunde(v):"",{form:true,list:"dl-vgk",ph:"Name oder Firma"})}${datalist("dl-vgk",namen)}
+    <div class="vgk-w">${tf("vgKunde","Kunde",v?vgKunde(v):"",{form:true,ph:"Name oder Firma"})}<div class="vgk" id="vgkVl" role="listbox" hidden></div><p class="vgk-hin" id="vgkHin"></p></div>
     ${tf("vgTel","Telefon (Rückruf)",vgE.tel||"",{form:true,im:"tel",ph:"z. B. 0171 …"})}
     ${ta("vgAnliegen","Was möchte der Kunde?",vgE.anliegen||"",{form:true,ph:"z. B. Steckdose im Bad ohne Funktion"})}
     <div class="vg-drw"><span>Dringend</span>${seg("vgDring",vgE.dringend?"ja":"nein",[["nein","Nein"],["ja","Ja"]])}</div>
@@ -316,6 +315,32 @@ function vgZuBaustelle(v,F){ const termin={datum:F.vgDatum,zeit:F.vgZeitE||"",mi
   b=saveRec("baustellen",Object.assign({id:uid(),kundeId:k.id,standortId:s.id,name:vgKurz(v.anliegen)||"Auftrag",auftragsnr:nr,notiz:v.anliegen||"",status:"aktiv",termin,vorgangId:v.id},dm),true);
   v.baustelleId=b.id; return b; }
 /* Kunde gewählt ⇒ Rückrufnummer aus der Kundenakte (nur wenn das Feld leer ist oder noch die vorgeschlagene Nummer enthält) */
+/* Kundenauswahl im Vorgang: Treffer direkt unter dem Feld im Fenster (statt schwebender Liste) – mit Ort und Telefon,
+   leer = zuletzt bearbeitete Kunden; darunter ein Hinweis, ob es ein bekannter oder ein neuer Kunde ist */
+let vgkHl=-1;
+const vgkExakt=q=>live("kunden").find(k=>!k.mergedInto&&k.name.toLowerCase()===String(q||"").trim().toLowerCase());
+function vgkTreffer(q){ q=String(q||"").trim().toLowerCase(); const K=live("kunden").filter(k=>!k.mergedInto);
+  if(!q) return K.sort((a,b)=>(b.updated||b.created||0)-(a.updated||a.created||0)).slice(0,5);
+  const H=x=>String(x||"").toLowerCase().includes(q);
+  return K.filter(k=>H(k.name)||H(k.ort)||H(k.kdnr)||H(k.ansprech)).sort((a,b)=>(a.name.toLowerCase().startsWith(q)?0:1)-(b.name.toLowerCase().startsWith(q)?0:1)||a.name.localeCompare(b.name,"de")).slice(0,6); }
+function vgkMalen(offen){ const i=document.getElementById("f_vgKunde"), w=document.getElementById("vgkVl"), h=document.getElementById("vgkHin"); if(!i||!w) return;
+  const q=i.value.trim(), ex=vgkExakt(q), L=offen&&!ex?vgkTreffer(q):[];
+  const mark=t=>{ const p=q?t.toLowerCase().indexOf(q.toLowerCase()):-1; return p<0?esc(t):esc(t.slice(0,p))+"<b>"+esc(t.slice(p,p+q.length))+"</b>"+esc(t.slice(p+q.length)); };
+  w.hidden=!L.length; vgkHl=-1;
+  w.innerHTML=(q?"":`<div class="vgk-g">Zuletzt</div>`)+L.map(k=>`<button type="button" class="vgk-i" role="option" data-vgk="${esc(k.id)}"><span class="vgk-av">${icon("firma")}</span><span class="vgk-t"><span class="vgk-n">${mark(k.name)}</span><small>${esc([k.ort,k.tel].filter(Boolean).join(" · ")||"ohne Adresse")}</small></span></button>`).join("");
+  if(h) h.innerHTML=ex?`${icon("firma")}<span>Bestandskunde${ex.ort?` · ${esc(ex.ort)}`:""}</span>`:q&&!L.length?`${icon("add")}<span>Neuer Kunde – wird mit dem Termin angelegt</span>`:"";
+  if(h) h.classList.toggle("neu",!ex); }
+function vgkNimm(id){ const k=DB.kunden.get(id), i=document.getElementById("f_vgKunde"); if(!k||!i) return; i.value=k.name; vgTelVorschlag(); vgkMalen(false);
+  const n=document.getElementById("f_vgTel"); if(n&&!n.value) n.focus(); else { const a=document.getElementById("f_vgAnliegen"); if(a) a.focus(); } }
+document.addEventListener("focusin",e=>{ if(e.target&&e.target.id==="f_vgKunde") vgkMalen(true); });
+document.addEventListener("input",e=>{ if(e.target&&e.target.id==="f_vgKunde") vgkMalen(true); });
+document.addEventListener("focusout",e=>{ if(e.target&&e.target.id==="f_vgKunde") setTimeout(()=>{ if(document.activeElement!==e.target) vgkMalen(false); },120); });
+document.addEventListener("pointerdown",e=>{ if(e.target.closest&&e.target.closest("#vgkVl")) e.preventDefault(); },true);
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest("[data-vgk]"); if(!b) return; e.preventDefault(); e.stopPropagation(); vgkNimm(b.dataset.vgk); },true);
+document.addEventListener("keydown",e=>{ if(!e.target||e.target.id!=="f_vgKunde") return; const w=document.getElementById("vgkVl"); if(!w||w.hidden) return; const B=[...w.querySelectorAll("[data-vgk]")]; if(!B.length) return;
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){ e.preventDefault(); e.stopPropagation(); vgkHl=(vgkHl+(e.key==="ArrowDown"?1:-1)+B.length)%B.length; B.forEach((x,j)=>x.classList.toggle("hl",j===vgkHl)); }
+  else if(e.key==="Enter"&&vgkHl>=0){ e.preventDefault(); e.stopPropagation(); vgkNimm(B[vgkHl].dataset.vgk); }
+  else if(e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); vgkMalen(false); } },true);
 function vgTelVorschlag(){ const i=document.getElementById("f_vgKunde"), t=document.getElementById("f_vgTel"); if(!i||!t) return;
   const k=live("kunden").find(x=>x.name.toLowerCase()===i.value.trim().toLowerCase());
   if(!t.value.trim()||t.dataset.auto===t.value){ const n=(k&&k.tel)||""; t.value=n; t.dataset.auto=n; } }
