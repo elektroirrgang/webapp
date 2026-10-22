@@ -101,7 +101,7 @@ function demoTx(tx){ return new Promise(res=>{ tx.oncomplete=tx.onerror=tx.onabo
 async function demoSchalten(){
   for(const [name,stores] of DEMO_SPEICHER){
     try{ const db=await openStores(name,stores,true);
-      for(const s of stores){ if(!db.objectStoreNames.contains(s)) continue; const alle=await demoIdb(db.transaction(s).objectStore(s).getAll()); const tx=db.transaction(s,"readwrite"); alle.filter(r=>r&&r.demo).forEach(r=>tx.objectStore(s).delete(r.id)); await demoTx(tx); }
+      for(const s of stores){ if(!db.objectStoreNames.contains(s)) continue; const alle=await demoIdb(db.transaction(s).objectStore(s).getAll()); const tx=db.transaction(s,"readwrite"); alle.filter(r=>r&&r.demo&&!r.sim).forEach(r=>tx.objectStore(s).delete(r.id)); /* sim: Auftrags-Simulation räumt selbst auf */ await demoTx(tx); }
       db.close(); }catch(e){}
   }
   try{ const rq=indexedDB.open("baustelle_fotos",1); rq.onupgradeneeded=()=>rq.result.createObjectStore("f"); const db=await demoIdb(rq);
@@ -123,7 +123,7 @@ function demoUmschalten(an){
   if(an){ demoNachfuellen(); render(); toast("Demo-Vorschau an – Beispieldaten werden nicht gespeichert oder synchronisiert"); }
   else demoSchalten();
 }
-const demoDa=()=>["kunden","standorte","baustellen","pruefungen","eintraege","vorgaenge","anforderungen"].some(k=>DB[k]&&[...DB[k].values()].some(r=>r.demo));
+const demoDa=()=>["kunden","standorte","baustellen","pruefungen","eintraege","vorgaenge","anforderungen"].some(k=>DB[k]&&[...DB[k].values()].some(r=>r.demo&&!r.sim));
 let demoWeg=false;
 /* Demo aus, aber noch Beispieldaten auf dem Gerät (z. B. in einer anderen App ausgeschaltet) ⇒ aufräumen */
 const demoPruefen=()=>{ try{ if(!demoAn()&&!demoWeg&&demoDa()){ demoWeg=true; demoSchalten(); } }catch(e){} };
@@ -135,7 +135,7 @@ function demoZeile(){ return `<div class="li" role="button" tabindex="0" data-ac
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="demoUm"]'); if(!b) return; e.stopPropagation(); e.preventDefault(); demoUmschalten(!demoAn()); },true);
 /* ===== Entwickler-Einstellungen (nur Rolle „Entwickler“): ganz unten in „Mehr“ ===== */
 const istEntwickler=()=>{ try{ return typeof meineRollen==="function"&&meineRollen().includes("Entwickler"); }catch(e){ return false; } };
-function entwicklerBereich(){ if(!istEntwickler()) return ""; const z=[typeof mlDiagZeile==="function"&&ME.mail?mlDiagZeile():"",typeof mlTestZeile==="function"&&ME.mail?mlTestZeile():""].join("").trim();
+function entwicklerBereich(){ if(!istEntwickler()) return ""; const z=[typeof mlDiagZeile==="function"&&ME.mail?mlDiagZeile():"",typeof mlTestZeile==="function"&&ME.mail?mlTestZeile():"",typeof simZeile==="function"&&ME.mail?simZeile():""].join("").trim();
   return z?`<div class="sec-lbl">Entwickler</div><div class="list">${z}</div>`:""; }
 /* Hinweis oben, solange die Demo läuft */
 function demoMarke(){ const row=document.querySelector("#topbar .tb-row"); if(!row) return; let m=document.getElementById("demoMarke");

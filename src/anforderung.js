@@ -82,7 +82,7 @@ const mlIch=r=>!!(r&&r.mail&&String(r.mail).toLowerCase()===String(ME.mail||"").
 const mlSt=()=>{ META.ml=META.ml||{gel:{},weg:{},pin:{}}; return META.ml; };
 function meldungenRoh(){
   if(!ME.mail) return [];
-  const ab=Date.now()-ML_TAGE*864e5, L=[], v=anfVerw(), alle=k=>DB[k]?[...DB[k].values()].filter(r=>!r.deleted&&!r.demo):[];
+  const ab=Date.now()-ML_TAGE*864e5, L=[], v=anfVerw(), alle=k=>DB[k]?[...DB[k].values()].filter(r=>!r.deleted&&(!r.demo||r.sim)):[]; /* Simulation: nur auf diesem Gerät, wird nie abgeglichen */
   const P=(id,t,von,h,s,go)=>L.push({id,t,von,h,s,go});
   if(v){
     anfAlle().filter(a=>(a.created||0)>=ab&&!mlIch(a.createdBy)).forEach(a=>P("anf:"+a.id,a.created,a.createdBy,"fordert Material an",`${anfOrt(a)}: ${anfPosText(a)}`,{v:"materialanf"}));
@@ -102,7 +102,13 @@ function meldungenRoh(){
     if(v.zust&&mlIch(v.zust)&&v.zust.von&&!mlIch(v.zust.von)&&(v.zust.at||0)>=ab) P("vz:"+v.id+":"+v.zust.at,v.zust.at,v.zust.von,"hat dir einen Auftrag zugewiesen",`${kd}${v.anliegen?": "+v.anliegen:""}`,go);
     const meins=(v.zust&&mlIch(v.zust))||mlIch(v.createdBy);
     (v.notizen||[]).filter(n=>!mlIch(n.wer)&&(n.at||0)>=ab&&(meins||v.zust==null&&v&&anfVerw())).forEach(n=>P("vn:"+n.id,n.at,n.wer,`Notiz zu ${kd}`,n.text,go));
-    if(v&&anfVerw()&&v.s&&v.s.anfrage&&!v.s.auftrag&&!v.abgelehnt&&!mlIch(v.s.anfrage.wer)&&(v.s.anfrage.at||0)>=ab) P("va:"+v.id,v.s.anfrage.at,v.s.anfrage.wer,"Neue Anfrage ans Büro",`${kd}${v.anliegen?": "+v.anliegen:""}`,go); });
+    if(v&&anfVerw()&&v.s&&v.s.anfrage&&!v.s.auftrag&&!v.abgelehnt&&!mlIch(v.s.anfrage.wer)&&(v.s.anfrage.at||0)>=ab) P("va:"+v.id,v.s.anfrage.at,v.s.anfrage.wer,"Neue Anfrage ans Büro",`${kd}${v.anliegen?": "+v.anliegen:""}`,go);
+    /* Rückmeldungen an den, der angefragt hat (und an Zuständige/Auftraggeber): angenommen, abgelehnt, Termin, ausgeführt */
+    const S=v.s||{}, anfr=(S.anfrage&&S.anfrage.wer)||v.createdBy, frisch=x=>x&&!mlIch(x.wer)&&(x.at||0)>=ab, was=`${kd}${v.anliegen?": "+v.anliegen:""}`;
+    if(frisch(S.auftrag)&&mlIch(anfr)) P("vok:"+v.id+":"+S.auftrag.at,S.auftrag.at,S.auftrag.wer,"hat deine Anfrage angenommen",`${was}${S.auftrag.nr?` · SCC ${S.auftrag.nr}`:""}`,go);
+    if(frisch(v.abgelehnt)&&mlIch(anfr)) P("vab:"+v.id+":"+v.abgelehnt.at,v.abgelehnt.at,v.abgelehnt.wer,"hat deine Anfrage abgelehnt",`${was}${v.abgelehnt.grund?` – ${v.abgelehnt.grund}`:""}`,go);
+    if(frisch(S.termin)&&(mlIch(anfr)||mlIch(v.zust)||(S.auftrag&&mlIch(S.auftrag.wer)))) P("vt:"+v.id+":"+S.termin.at,S.termin.at,S.termin.wer,"hat einen Termin eingetragen",`${kd} · ${S.termin.datum?S.termin.datum.split("-").reverse().join("."):""}${S.termin.zeit?` ${S.termin.zeit} Uhr`:""}${S.termin.mit?` · ${S.termin.mit}`:""}`,go);
+    if(frisch(S.ausgefuehrt)&&(anfVerw()||mlIch(anfr)||(S.auftrag&&mlIch(S.auftrag.wer)))) P("vx:"+v.id+":"+S.ausgefuehrt.at,S.ausgefuehrt.at,S.ausgefuehrt.wer,"hat einen Auftrag als ausgeführt gemeldet",was,go); });
   alle("notizen").filter(n=>!mlIch(n.createdBy)&&(n.sicht==="firma"||(n.sicht==="personen"&&(n.personen||[]).map(x=>String(x).toLowerCase()).includes(String(ME.mail).toLowerCase())))&&(n.updated||0)>=ab)
     .forEach(n=>P("no:"+n.id,n.updated,n.createdBy,"hat eine Notiz geteilt",n.titel||"Notiz",{v:"notizen"}));
   return L;
@@ -273,3 +279,54 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     const jetzt=Date.now(); mlLs(ML_TEST,JSON.stringify({start:jetzt,f:jetzt+min*60000,min})); render(); toast(`Langzeit-Test läuft – kommt um ${mlUhr(jetzt+min*60000)}${hin}`); return; }
   clearTimeout(mlTestT); toast(mlPushAn()?"Kommt in 10 Sekunden – jetzt App wechseln oder Fenster minimieren":"Kommt in 10 Sekunden als Banner"+hin);
   mlTestT=setTimeout(()=>mlTestZeigen("Test-Benachrichtigung","So sieht eine Meldung aus – bei echten Meldungen öffnet Antippen den Auftrag."),10000); },true);
+
+/* ===== Simulation: kompletter Auftragsablauf mit echten Benachrichtigungen (nur Entwickler) =====
+   Legt Vorgänge nur auf diesem Gerät an (demo + sim: werden nie abgeglichen) und spielt Kollegen nach:
+   1. Kollege stellt eine Anfrage ans Büro – du erteilst (oder lehnst ab) selbst unter „Aufträge“
+   2. Chef nimmt deine eigene Anfrage an   3. Chef weist dir einen Auftrag zu   4. Chef lehnt eine andere Anfrage von dir ab
+   5. nach deiner Bestätigung trägt ein Kollege den Termin ein   6. … und meldet ihn als ausgeführt   7. Notiz zu deinem Auftrag
+   Die Schritte laufen weiter, wenn die App im Hintergrund ist – so sieht man die Meldungen wie im echten Betrieb. */
+const SIM_KEY="irrgang_sim";
+const simDel=id=>{ if(typeof dbDelHard==="function") return dbDelHard("vorgaenge",id); DB.vorgaenge.delete(id); try{ dbOf("vorgaenge").transaction("vorgaenge","readwrite").objectStore("vorgaenge").delete(id); }catch(e){} };
+const simLesen=()=>{ try{ return JSON.parse(mlLs(SIM_KEY)||"null"); }catch(e){ return null; } };
+const simSchreiben=S=>mlLs(SIM_KEY,S?JSON.stringify(S):"");
+function simLeute(){ const T=(typeof team==="function"?team():[]).filter(m=>m.mail&&!mlIch(m)), w=m=>({name:m.name,mail:m.mail});
+  const chef=T.find(m=>/^info@/.test(m.mail))||T[0]||{name:"J. Irrgang",mail:"info@elektro-irrgang.de"}, rest=T.filter(m=>m!==chef);
+  return {chef:w(chef),a:w(rest[0]||{name:"M. Seipp",mail:"m.seipp@elektro-irrgang.de"}),b:w(rest[1]||rest[0]||{name:"A. Brandl",mail:"a.brandl@elektro-irrgang.de"})}; }
+function simVg(id,daten){ let v=DB.vorgaenge.get(id); const neu=!v; v=Object.assign(v||{id,demo:true,sim:true},daten); if(neu){ v.created=Date.now(); }
+  v.updated=Date.now(); dbPut("vorgaenge",v); return v; }
+const simTag=n=>{ const d=new Date(Date.now()+n*864e5); return d.toISOString().slice(0,10); };
+function simStart(){ if(!DB.vorgaenge){ toast("Aufträge gibt es in dieser App nicht"); return; } simEnde(true);
+  const L=simLeute(), ich=who(), t=Date.now(), S={start:t,schritt:0,ich:{name:ich.name,mail:ich.mail},L,ids:{A:"sim-a-"+t,B:"sim-b-"+t,C:"sim-c-"+t,D:"sim-d-"+t},nach:0};
+  /* deine eigenen Anfragen (warten aufs Büro) */
+  simVg(S.ids.C,{kundeName:"Familie Becker (Simulation)",anliegen:"Herdanschluss prüfen, Sicherung fliegt",createdBy:S.ich,s:{anruf:{wer:S.ich,at:t-60000},anfrage:{wer:S.ich,at:t-50000}}});
+  simVg(S.ids.D,{kundeName:"Hausverwaltung Klein (Simulation)",anliegen:"Außensteckdose Garage",createdBy:S.ich,s:{anruf:{wer:S.ich,at:t-40000},anfrage:{wer:S.ich,at:t-30000}}});
+  simSchreiben(S); render();
+  toast(anfVerw()?"Simulation läuft – gleich kommt eine Anfrage ans Büro. Öffne sie und erteile den Auftrag (oder lehn ab).":"Simulation läuft – die Meldungen kommen in den nächsten Minuten"); }
+function simEnde(still){ const S=simLesen(); if(S&&S.ids) Object.values(S.ids).forEach(id=>{ if(DB.vorgaenge&&DB.vorgaenge.has(id)) simDel(id); });
+  if(DB.vorgaenge) [...DB.vorgaenge.values()].filter(v=>v.sim).forEach(v=>simDel(v.id));
+  simSchreiben(null); if(!still){ render(); toast("Simulation beendet – die Beispiel-Aufträge sind entfernt"); } }
+function simTick(){ const S=simLesen(); if(!S||!DB.vorgaenge) return; const t=Date.now()-S.start, {chef,a,b}=S.L, A=DB.vorgaenge.get(S.ids.A); let tat=false;
+  const schritt=(n,bed,fn)=>{ if(S.schritt===n&&bed){ fn(); S.schritt=n+1; S.nach=Date.now(); tat=true; } };
+  schritt(0,t>=5000,()=>simVg(S.ids.A,{kundeName:"Bäckerei Krämer (Simulation)",anliegen:"FI löst immer wieder aus",dringend:true,createdBy:a,s:{anruf:{wer:a,at:Date.now()-20000},anfrage:{wer:a,at:Date.now()}}}));
+  schritt(1,t>=20000,()=>{ const v=DB.vorgaenge.get(S.ids.C); if(v){ v.s.auftrag={wer:chef,at:Date.now(),nr:"26-1187"}; simVg(v.id,v); } });
+  schritt(2,t>=32000,()=>simVg(S.ids.B,{kundeName:"Autohaus Lenz (Simulation)",anliegen:"Wallbox prüfen (Wiederholungsprüfung)",createdBy:chef,
+    s:{anruf:{wer:chef,at:Date.now()-90000},anfrage:{wer:chef,at:Date.now()-80000},auftrag:{wer:chef,at:Date.now()-70000,nr:"26-1190"}},zust:{mail:S.ich.mail,name:S.ich.name,at:Date.now(),von:chef}}));
+  schritt(3,t>=44000,()=>{ const v=DB.vorgaenge.get(S.ids.D); if(v){ v.abgelehnt={wer:chef,at:Date.now(),grund:"An die Hausverwaltung verwiesen"}; simVg(v.id,v); } });
+  /* Schritt 4 wartet auf dich: Auftrag zur Anfrage A erteilen oder ablehnen. Bist du nicht im Büro, übernimmt das der Chef. */
+  const erteilt=A&&A.s&&A.s.auftrag, abgelehnt=A&&A.abgelehnt;
+  if(S.schritt===4&&A&&!erteilt&&!abgelehnt&&!anfVerw()&&t>=60000){ A.s.auftrag={wer:chef,at:Date.now(),nr:"26-1191"}; simVg(A.id,A); }
+  schritt(4,(erteilt||abgelehnt)&&Date.now()-S.nach>=3000,()=>{ if(abgelehnt) S.schritt=5; });
+  schritt(5,Date.now()-S.nach>=10000,()=>{ if(A&&A.s&&A.s.auftrag&&!A.abgelehnt){ A.s.termin={wer:b,at:Date.now(),datum:simTag(2),zeit:"08:00",mit:b.name}; simVg(A.id,A); } });
+  schritt(6,Date.now()-S.nach>=12000,()=>{ if(A&&A.s&&A.s.termin&&!A.abgelehnt){ A.s.ausgefuehrt={wer:a,at:Date.now()}; simVg(A.id,A); } });
+  schritt(7,Date.now()-S.nach>=8000,()=>{ const v=DB.vorgaenge.get(S.ids.B); if(v){ v.notizen=[...(v.notizen||[]),{id:"sim-n-"+Date.now(),at:Date.now(),wer:b,text:"Kunde ist erst ab 10 Uhr da, Schlüssel liegt beim Pförtner."}]; simVg(v.id,v); } });
+  if(S.schritt>=8&&!S.fertig){ S.fertig=Date.now(); tat=true; }
+  simSchreiben(S);
+  if(tat){ mlGlocke(); if(typeof nav!=="undefined"&&(nav.v==="auftraege"||nav.v==="mehr")&&$("#dlg").hidden) render(); if(S.fertig&&document.visibilityState==="visible") toast("Simulation durch – über „Simulation beenden“ räumst du die Beispiel-Aufträge weg"); } }
+setInterval(simTick,2000);
+const SIM_TXT=["Gleich: Kollege stellt eine Anfrage ans Büro","Chef nimmt deine Anfrage an","Chef weist dir einen Auftrag zu","Chef lehnt deine zweite Anfrage ab","Wartet auf dich: Anfrage „Bäckerei Krämer“ unter Aufträge bestätigen oder ablehnen","Kollege trägt den Termin ein","Kollege meldet den Auftrag als ausgeführt","Kollege schreibt eine Notiz zu deinem Auftrag","fertig"];
+function simZeile(){ if(!DB.vorgaenge) return ""; const S=simLesen();
+  return `<div class="li" role="button" tabindex="0" data-act="simUm"><span class="av">${icon(S?"done":"info")}</span><span class="lt"><span class="h">${S?"Simulation beenden":"Auftragsablauf simulieren"}</span><span class="s">${S
+      ?esc(`Schritt ${Math.min(S.schritt+1,8)} von 8: ${SIM_TXT[Math.min(S.schritt,8)]} – antippen beendet und entfernt die Beispiel-Aufträge`)
+      :"Anfrage, Bestätigung, Zuweisung, Ablehnung, Termin, ausgeführt und Notiz – mit echten Benachrichtigungen, nur auf diesem Gerät"}</span></span>${icon("chev")}</div>`; }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="simUm"]'); if(!b) return; e.stopPropagation(); e.preventDefault(); if(simLesen()) simEnde(); else simStart(); },true);
