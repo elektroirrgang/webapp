@@ -502,6 +502,8 @@ function ecImportOk(){ ecImportLesen(); const pr=ecPr(), g=ecGeb(pr.ortId); let 
   for(const d of ecImp.docs){ const vId=d.typ==="vt"?vtSicher(d.vId,d.name):vtSicher(ecImp.vId,"Hauptverteiler");
     let raumId=d.raumId; const raumSicher=()=>{ if(raumId&&raumId!=="__neu"&&ecRaumName(g,raumId)) return raumId; const r={id:uid(),name:d.typ==="vt"?ecOhneVt(d.name):d.name}; et.raeume.push(r); raumId=r.id; return raumId; };
     if(d.netz&&["TN-C-S","TN-S","TT"].includes(d.netz)&&!(pr.netz&&pr.netz.formGesetzt)) pr.netz=Object.assign({},pr.netz||{},{form:d.netz});
+    /* Prüfanlass aus Sparkify, solange die Prüfart nicht von Hand gewählt wurde */
+    if(!pr.pruefartGesetzt&&ecAn(pr)){ if(/neuanlage|erst|neubau/i.test(d.anlass)) pr.pruefart="Erstprüfung"; else if(/wiederhol/i.test(d.anlass)) pr.pruefart="Wiederholungsprüfung"; else if(/e-?check/i.test(d.anlass)) pr.pruefart="E-CHECK"; }
     for(const x of d.rows){ if(x.ziel==="__skip") continue; const r=x.r, key=x.key, namen=ecImpNamen(d,key);
       /* Stromkreis */ let sk=ecSkFinden(g,key,vId);
       const schutz=(String(r.fuse_type||"")+String(r.fuse_rated_current||"")).replace(/\s/g,""), leitung=[r.cable_type,r.conductor_cross_section&&`${r.conductor_cross_section} mm²`].filter(Boolean).join(" ");
@@ -590,7 +592,7 @@ document.addEventListener("change",e=>{ const el=e.target;
   if(el.id==="f_skV"){ const pr=ecPr(), f=document.getElementById("ecRcdFeld"); if(pr&&f) f.innerHTML=ecRcdFeld(ecGeb(pr.ortId),el.value,""); return; }
   if(ecImp&&/^f_imp(R_|DV_|V$|Et$)/.test(el.id)){ ecImportLesen(); ecImportZiele(); ecImportDlg(); return; }
   if(/^f_zu_/.test(el.id)&&el.value){ const pr=ecPr(), g=ecGeb(pr.ortId), st=g.stellen.find(s=>s.id===el.id.slice(5)); if(st){ ecWerteLesen(); st.skId=el.value; ecLetzterSk=el.value; ecGebSpeichern(g); const r=ecDlg&&ecDlg.raumMess; render(); if(r) ecRaumMessDlg(r); } return; }
-  if(el.dataset&&el.dataset.ec){ const pr=ecPr(); if(!pr||pr.status==="fertig") return; const [a,b]=el.dataset.ec.split("."); if(b){ pr[a]=Object.assign({},pr[a]||{},{[b]:el.value.trim()}); } else pr[a]=el.value.trim(); saveRec("echecks",pr); } });
+  if(el.dataset&&el.dataset.ec){ const pr=ecPr(); if(!pr||pr.status==="fertig") return; const [a,b]=el.dataset.ec.split("."); if(a==="pruefart") pr.pruefartGesetzt=true; if(b){ pr[a]=Object.assign({},pr[a]||{},{[b]:el.value.trim()}); } else pr[a]=el.value.trim(); saveRec("echecks",pr); } });
 document.addEventListener("input",e=>{ const el=e.target; if(!el.dataset) return;
   if(el.id==="f_ecName"&&ecDlg&&"ebeneHand" in ecDlg&&!ecDlg.ebeneHand){ const s2=document.getElementById("f_ecEbene"), v=ecEbeneRaten(el.value); if(s2) s2.value=v==null?"":String(v); return; }
   if(el.dataset.mw&&el.dataset.gsk){ const f=el.closest(".ec-feld"); if(!f) return; const st=ecWertStand(EC_GW[el.dataset.mw].gw(el.dataset.gsk),el.value); f.classList.remove("ok","bad"); if(st) f.classList.add(st); return; }
