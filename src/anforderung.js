@@ -199,14 +199,17 @@ async function mlSystem(neu){ const m=neu[0], n=neu.length;
   const titel=n===1?(m.von?`${mlName(m)} ${m.h}`:m.h):`${n} neue Benachrichtigungen`, text=n===1?(m.s||""):neu.slice(0,4).map(x=>`${mlName(x)}: ${x.h}`).join("\n");
   const ic=(document.querySelector('link[rel="apple-touch-icon"]')||document.querySelector('link[rel~="icon"]')||{}).href, id=n===1?m.id:"", tag="irrgang-"+(id||"mehr");
   /* zuerst über den Service Worker (geht auch am iPad als Home-Bildschirm-App), sonst direkt */
-  try{ const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration(); if(r&&r.showNotification){ await r.showNotification(titel,{body:text,icon:ic,tag,data:{ml:id}}); return true; } }catch(e){}
-  try{ const no=new Notification(titel,{body:text,icon:ic,tag}); no.onclick=()=>{ try{ window.focus(); }catch(e){} no.close(); mlOeffnenId(id); }; return true; }catch(e){ return false; } }
+  mlFehler="";
+  try{ const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration(); if(r&&r.showNotification){ await r.showNotification(titel,{body:text,icon:ic,tag,renotify:true,data:{ml:id}}); mlWeg="Service Worker"; return true; } mlFehler="kein Service Worker"; }catch(e){ mlFehler="Service Worker: "+(e&&e.message||e); }
+  try{ const no=new Notification(titel,{body:text,icon:ic,tag}); no.onclick=()=>{ try{ window.focus(); }catch(e){} no.close(); mlOeffnenId(id); }; mlWeg="direkt"; return true; }catch(e){ mlFehler+=" · direkt: "+(e&&e.message||e); return false; } }
+let mlFehler="", mlWeg="";
 navigator.serviceWorker&&navigator.serviceWorker.addEventListener("message",e=>{ if(e.data&&"ml" in e.data) mlOeffnenId(e.data.ml); });
 setInterval(mlMelden,10000);
 /* Schalter in „Mehr“ */
 function mlGeraetZeile(){ const geht=mlKannSys(), verw=geht&&Notification.permission==="denied", an=mlPushAn();
   const sub=!geht?"Dieser Browser kann keine Benachrichtigungen zeigen – am iPad die App vom Home-Bildschirm öffnen"
     :verw?"Im Browser blockiert – über das Schloss neben der Adresse wieder erlauben"
+    :an&&/Windows/.test(navigator.userAgent)?"An – kommt nichts, unter Windows › Benachrichtigungen Chrome und die App erlauben, „Nicht stören“ aus"
     :"Neue Aufträge, Zuweisungen und Notizen auch melden, wenn die App im Hintergrund offen ist";
   return `<div class="li" role="button" tabindex="0" data-act="mlPushUm"><span class="av">${icon("glocke")}</span><span class="lt"><span class="h">Benachrichtigungen auf diesem Gerät</span><span class="s">${esc(sub)}</span></span><span class="schalter${an?" an":""}" aria-hidden="true"><i></i></span></div>
 `; }
@@ -222,7 +225,9 @@ document.addEventListener("click",async e=>{ const b=e.target.closest&&e.target.
 const ML_TEST="irrgang_ml_test";
 const mlUhr=t=>new Date(t).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
 function mlTestLesen(){ try{ return JSON.parse(mlLs(ML_TEST)||"null"); }catch(e){ return null; } }
-async function mlTestZeigen(h,txt){ const m={id:"test",von:null,h,s:txt,t:Date.now()}; let sys=false; if(mlPushAn()) sys=await mlSystem([m]); if(!sys) mlBanner([m]); }
+async function mlTestZeigen(h,txt){ const m={id:"test",von:null,h,s:txt,t:Date.now()}; let sys=false; if(mlPushAn()) sys=await mlSystem([m]);
+  if(!sys||document.visibilityState==="visible") mlBanner([m]);
+  if(mlPushAn()&&!sys) toast("Systemmeldung fehlgeschlagen: "+(mlFehler||"unbekannt")); }
 const mlLaeuftSeit=Date.now();
 function mlTestPruefen(){ const T=mlTestLesen(); if(!T||Date.now()<T.f) return; mlLs(ML_TEST,"");
   const zu=Math.round((Date.now()-T.f)/60000), neu=T.start<mlLaeuftSeit-1000? false : true;
@@ -234,6 +239,18 @@ document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==
 function mlTestZeile(){ const T=mlTestLesen(), lang=T&&T.min>=60;
   return `<div class="li" role="button" tabindex="0" data-act="mlTest" data-min="0"><span class="av">${icon("send")}</span><span class="lt"><span class="h">Test-Benachrichtigung</span><span class="s">Kommt nach 10 Sekunden – vorher die App in den Hintergrund legen oder das Fenster minimieren</span></span>${icon("chev")}</div>
     <div class="li" role="button" tabindex="0" data-act="mlTest" data-min="60"><span class="av">${icon("send")}</span><span class="lt"><span class="h">Langzeit-Test (60 Minuten)</span><span class="s">${lang?`Läuft – fällig um ${mlUhr(T.f)}. Antippen bricht ab.`:"Prüft, ob Meldungen auch nach langer Zeit im Hintergrund kommen – App danach einfach liegen lassen"}</span></span>${icon("chev")}</div>`; }
+/* Diagnose: zeigt, woran es liegt, wenn am PC nichts erscheint */
+function mlDiagZeile(){ return `<div class="li" role="button" tabindex="0" data-act="mlDiag"><span class="av">${icon("info")}</span><span class="lt"><span class="h">Benachrichtigungen prüfen</span><span class="s">Zeigt Erlaubnis, Schalter und sendet sofort eine Meldung</span></span>${icon("chev")}</div>`; }
+document.addEventListener("click",async e=>{ const b=e.target.closest&&e.target.closest('[data-act="mlDiag"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
+  const sw=navigator.serviceWorker?await navigator.serviceWorker.getRegistration().catch(()=>null):null, win=/Windows/.test(navigator.userAgent), mac=/Macintosh/.test(navigator.userAgent)&&!("ontouchend" in document);
+  const app=matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: window-controls-overlay)").matches;
+  const z=[["Browser kann Meldungen",mlKannSys()?"ja":"nein"],["Erlaubnis",mlKannSys()?({granted:"erlaubt",denied:"blockiert",default:"noch nicht gefragt"}[Notification.permission]):"–"],
+    ["Schalter in „Mehr“",mlLs(ML_PUSH)==="1"?"an":"aus"],["Service Worker",sw?"aktiv":"fehlt"],["Läuft als",app?"installierte App":"Browser-Tab"]];
+  let ok=false; if(mlKannSys()&&Notification.permission==="granted") ok=await mlSystem([{id:"test",von:null,h:"Prüfung",s:"Wenn du das siehst, klappen Benachrichtigungen auf diesem Gerät.",t:Date.now()}]);
+  z.push(["Testmeldung",mlKannSys()&&Notification.permission==="granted"?(ok?`abgeschickt (${mlWeg})`:`Fehler: ${mlFehler}`):"nicht möglich ohne Erlaubnis"]);
+  const tipp=win?`<p><b>Kam trotz „abgeschickt“ nichts an?</b> Dann hält Windows sie zurück:</p><ul><li>Windows-Einstellungen › System › Benachrichtigungen: oben „Benachrichtigungen“ an, darunter <b>Google Chrome</b>${app?" und <b>"+esc(document.title.split(" · ")[0])+"</b>":""} an</li><li>„Nicht stören“ bzw. „Fokus“ aus</li><li>In Chrome: Einstellungen › Datenschutz › Website-Einstellungen › Benachrichtigungen – diese Seite muss erlaubt sein</li></ul>`
+    :mac?`<p><b>Kam trotz „abgeschickt“ nichts an?</b> Systemeinstellungen › Mitteilungen › Google Chrome (bzw. die App) erlauben, „Nicht stören“/Fokus aus.</p>`:`<p>Kam trotz „abgeschickt“ nichts an, blockiert das Betriebssystem die Meldungen (Einstellungen › Mitteilungen).</p>`;
+  dialog("Benachrichtigungen prüfen",`<div class="list">${z.map(([k,v])=>`<div class="li"><span class="lt"><span class="h">${esc(v)}</span><span class="s">${esc(k)}</span></span></div>`).join("")}</div><div style="margin-top:12px">${tipp}</div>`,`<button class="btn-text" data-act="cancel">Schließen</button>`); },true);
 let mlTestT=null;
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="mlTest"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
   const min=+b.dataset.min||0, hin=mlPushAn()?"":" – für Meldungen im Hintergrund oben „Benachrichtigungen auf diesem Gerät“ einschalten";

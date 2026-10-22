@@ -135,7 +135,7 @@ function demoZeile(){ return `<div class="li" role="button" tabindex="0" data-ac
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="demoUm"]'); if(!b) return; e.stopPropagation(); e.preventDefault(); demoUmschalten(!demoAn()); },true);
 /* ===== Entwickler-Einstellungen (nur Rolle „Entwickler“): ganz unten in „Mehr“ ===== */
 const istEntwickler=()=>{ try{ return typeof meineRollen==="function"&&meineRollen().includes("Entwickler"); }catch(e){ return false; } };
-function entwicklerBereich(){ if(!istEntwickler()) return ""; const z=[typeof mlTestZeile==="function"&&ME.mail?mlTestZeile():""].join("").trim();
+function entwicklerBereich(){ if(!istEntwickler()) return ""; const z=[typeof mlDiagZeile==="function"&&ME.mail?mlDiagZeile():"",typeof mlTestZeile==="function"&&ME.mail?mlTestZeile():""].join("").trim();
   return z?`<div class="sec-lbl">Entwickler</div><div class="list">${z}</div>`:""; }
 /* Hinweis oben, solange die Demo läuft */
 function demoMarke(){ const row=document.querySelector("#topbar .tb-row"); if(!row) return; let m=document.getElementById("demoMarke");
