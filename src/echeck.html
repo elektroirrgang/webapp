@@ -1004,6 +1004,18 @@ body.kopf-oben .edk-platz{display:none!important}
 .ec-sk:hover:not(.h){background:color-mix(in srgb,var(--on-surface) 4%,transparent)}
 .ec-sk.h{background:var(--sc-high);color:var(--on-sv);font-weight:700;font-size:12px;border:0;cursor:default}
 .ec-sk .lbm{display:none}
+/* Infrastruktur: Schrankkarten mit kleiner Vorschau */
+.ec-iks{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:16px}
+@media (max-width:599px){.ec-iks{grid-template-columns:minmax(0,1fr)}}
+.ec-ik{display:flex;align-items:center;gap:16px;padding:16px;border-radius:24px;background:var(--sc-low);cursor:pointer;min-width:0}
+.ec-ik:hover{background:color-mix(in srgb,var(--on-surface) 4%,var(--sc-low))}.ec-ik>.ic{flex:none;color:var(--on-sv)}
+.ec-ik-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}.ec-ik-t b{font-size:17px}.ec-ik-t span{font-size:13px;color:var(--on-sv)}
+.ec-ik-t .ec-ik-g{color:var(--on-surface)}.ec-ik-p{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.rk-bau.mini{display:block;flex:none;width:110px}
+.rk.mini{--he:7px;grid-template-columns:4px minmax(0,1fr) 4px;row-gap:1px;padding:6px 3px;border-radius:8px;pointer-events:none;min-height:40px}
+.rk.mini .rk-t{border-radius:1px;padding:0 3px;gap:2px;box-shadow:none}.rk.mini .rk-griff,.rk.mini .rk-n,.rk.mini .rk-tag,.rk.mini .rk-sfp,.rk.mini .rk-reihe{display:none}
+.rk.mini .rk-p{height:3px;border-radius:0}.rk.mini .rk-ports{gap:1px}
+.ec-eins{display:block}
 /* Auftrag wie EVSE: Karten untereinander */
 .ec-spalte{display:grid;gap:16px}.ec-spalte .card h3{margin-bottom:12px}
 .ec-kmg{display:flex;align-items:center;gap:12px;border:0;font:inherit;color:inherit;text-align:left;cursor:pointer}.ec-kmg:disabled{cursor:default}.ec-kmg:hover:not(:disabled){background:color-mix(in srgb,var(--on-surface) 5%,var(--sc-low))}
@@ -1777,7 +1789,7 @@ document.addEventListener("click",e=>{
 /*PROFIL*/
 /*KOPF*/
 function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
-  document.body.classList.toggle("rk-offen",nav.v==="ec"&&!!nav.schr&&nav.tab==="gebaeude");
+  document.body.classList.toggle("rk-offen",nav.v==="ec"&&!!nav.schr&&nav.tab==="infra");
   const app=$("#app");
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
   const top=TOP.includes(nav.v), login=nav.v==="login";
