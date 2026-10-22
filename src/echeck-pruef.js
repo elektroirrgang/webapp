@@ -515,7 +515,7 @@ function ecNetSchrankSpalte(pr,g){ const A=ecNetAlle(g), zu=pr.status==="fertig"
       const st=ecNetStand(pr,L[0]), kl=L.length>1?"bad":st==="ok"?"ok":st==="bad"?"bad":"belegt";
       return `<button type="button" class="ec-ks ${kl}" data-act="ecDose" data-id="${esc(L[0].d.id)}" title="${esc(`${pf}.${port} · ${ecRaumName(g,L[0].raumId)}${L.length>1?" · doppelt vergeben":""}`)}">${port}</button>`; }).join("")}</div>`; }).join("");
   const schr=s=>{ const P=ecNetListe({},g).filter(p=>p.d.sId===s.id), ein=ecNetImUmfang(pr,{sId:s.id});
-    return `<div class="ec-vt${ein?"":" aus"}"><div class="ec-vz kopf" role="button" tabindex="0" data-act="ecSchrEdit" data-id="${esc(s.id)}"><span class="av ec-uv">${icon("ecNetz")}</span><span class="t"><b>${esc(s.name)}</b><small>${esc([ecRaumName(g,s.raumId),`${ecSchrHe(s)} HE`,`${ecPfListe(s).length} Patchfeld${ecPfListe(s).length===1?"":"er"}`,`${P.length} belegt`,ein?"":"nicht im Prüfumfang"].filter(Boolean).join(" · "))}</small></span>${icon("edit")}</div><div class="ec-vt-f"><button class="btn-text" data-act="ecRkAuf" data-id="${esc(s.id)}">${icon("ecNetz")}Schrank planen</button></div>${raster(s,P)}${P.map(zeile).join("")}</div>`; };
+    return `<div class="ec-vt${ein?"":" aus"}"><div class="ec-vz kopf" role="button" tabindex="0" data-act="ecSchrEdit" data-id="${esc(s.id)}"><span class="av ec-uv">${icon("ecNetz")}</span><span class="t"><b>${esc(s.name)}</b><small>${esc([ecRaumName(g,s.raumId),`${ecSchrHe(s)} HE · ${ecSchrTiefe(s)} tief`,`${ecPfListe(s).length} Patchfeld${ecPfListe(s).length===1?"":"er"}`,`${P.length} belegt`,ein?"":"nicht im Prüfumfang"].filter(Boolean).join(" · "))}</small></span>${icon("edit")}</div><div class="ec-vt-f"><button class="btn-text" data-act="ecRkAuf" data-id="${esc(s.id)}">${icon("ecNetz")}Schrank planen</button></div>${raster(s,P)}${P.map(zeile).join("")}</div>`; };
   const ohne=A.filter(p=>!p.d.sId||!g.schraenke.some(s=>s.id===p.d.sId));
   return `${kdKopf("Netzwerkschränke",zu?"":"ecSchrNeu","Schrank hinzufügen")}${g.schraenke.length?g.schraenke.map(schr).join(""):`<p class="meta">Noch kein Netzwerkschrank. Am besten zuerst den Schrank mit seinen Patchfeldern anlegen, dann durch die Räume gehen und jede Datendose eintragen.</p>`}
     ${ohne.length?`<div class="ec-vt"><div class="ec-vz kopf"><span class="t"><b>Ohne Schrank</b></span></div>${ohne.map(zeile).join("")}</div>`:""}`; }
@@ -562,6 +562,28 @@ const ecPpPlus=(s,k)=>{ const t=ecPpTeile(s); if(t) return `${t.pf}.${t.port+k}`
 const EC_RK={patch:"Patchfeld",switch:"Switch",kabel:"Kabelführung",boden:"Fachboden",router:"Router / Firewall",usv:"USV",pdu:"Steckdosenleiste",luefter:"Lüftereinschub",blind:"Blindblende",sonst:"Sonstiges"};
 const EC_RKSTD={patch:{he:1,ports:24},switch:{he:1,ports:24},kabel:{he:1},boden:{he:1},router:{he:1},usv:{he:2},pdu:{he:1},luefter:{he:1},blind:{he:1},sonst:{he:1}};
 const EC_RKHE=[6,9,12,15,18,20,22,24,27,32,42,47];
+/* Vorauswahl gängiger Schränke: [Bauart, HE, Breite, Tiefe] in mm */
+const EC_RKVOR=[["wand",6,600,450],["wand",9,600,450],["wand",12,600,450],["wand",12,600,600],["wand",15,600,600],["wand",18,600,600],["wand",20,600,600],["stand",22,600,800],["stand",27,800,800],["stand",32,800,800],["stand",42,800,800],["stand",42,800,1000],["stand",47,800,1000]];
+const EC_RKTIEFEN={wand:[250,300,400,450,500,600],stand:[600,800,1000,1200]};
+/* typische Einbautiefe ab Frontschiene in mm – nur fürs Bild, solange keine Tiefe eingetragen ist */
+const EC_RKT={patch:120,switch:250,kabel:80,router:220,usv:420,pdu:60,luefter:120,blind:15,sonst:200};
+const ecSchrTiefe=s=>+(s&&s.tiefe)||(s&&s.bauart==="stand"?800:450), ecSchrBreite=s=>+(s&&s.breite)||600;
+const ecSchrNutzbar=s=>Math.max(100,ecSchrTiefe(s)-100); /* Annahme: Tür, Rückwand und Schienenabstand kosten zusammen etwa 100 mm */
+const ecRkTiefe=(s,t)=>+t.tiefe||(t.typ==="boden"?ecSchrNutzbar(s):EC_RKT[t.typ]||200);
+const ecSchrFarbe=s=>s&&s.farbe==="hell"?"hell":s&&s.farbe==="dunkel"?"dunkel":"auto";
+const ecSchrText=s=>[`${ecSchrHe(s)} HE`,s.bauart==="stand"?"Standschrank":"Wandschrank",`${ecSchrBreite(s)} × ${ecSchrTiefe(s)} mm`].join(" · ");
+function ecSchrLesen(){ if(!ecDlg||!ecDlg.w) return; const F=formVals(); if(F.ecName!=null) ecDlg.w.name=F.ecName; if(F.ecVtRaum!=null) ecDlg.w.raumId=F.ecVtRaum; }
+function ecSchrDlg(){ const pr=ecPr(), g=ecGeb(pr.ortId), W=ecDlg.w, vor=EC_RKVOR.findIndex(p=>p[0]===W.bauart&&String(p[1])===W.he&&String(p[2])===W.breite&&String(p[3])===W.tiefe);
+  dialog(ecDlg.schr?"Netzwerkschrank bearbeiten":"Neuer Netzwerkschrank",`<div class="fg1">${tf("ecName","Bezeichnung",W.name||"",{form:true,ph:"z. B. Netzwerkschrank EG"})}${sf("ecVtRaum","Raum",W.raumId||"",[["","ohne Raum"],...ecRaeume(g).map(r=>[r.id,r.titel])],{form:true})}</div>
+    <div class="lbl" style="margin-top:14px">Vorauswahl</div><div class="chips ec-wahl rk-vor">${EC_RKVOR.map((p,i)=>`<button type="button" class="chip" data-act="ecWahl" data-g="vor" data-v="${i}" aria-pressed="${i===vor}">${p[0]==="wand"?"Wand":"Stand"} ${p[1]} HE · ${p[3]} tief</button>`).join("")}</div>
+    <div class="lbl" style="margin-top:14px">Bauart</div>${ecChips("bauart",[["wand","Wandschrank"],["stand","Standschrank"]],W.bauart)}
+    <div class="lbl" style="margin-top:12px">Höheneinheiten</div>${ecChips("he",EC_RKHE.map(x=>[String(x),`${x} HE`]),W.he)}
+    <div class="lbl" style="margin-top:12px">Breite</div>${ecChips("breite",[["600","600 mm"],["800","800 mm (mit Kabelkanälen)"]],W.breite)}
+    <div class="lbl" style="margin-top:12px">Tiefe</div>${ecChips("tiefe",(EC_RKTIEFEN[W.bauart]||EC_RKTIEFEN.wand).map(x=>[String(x),`${x} mm`]),W.tiefe)}
+    <div class="lbl" style="margin-top:12px">Farbe in der Zeichnung</div>${ecChips("farbe",[["auto","wie die App (hell/dunkel)"],["hell","Lichtgrau (RAL 7035)"],["dunkel","Schwarz (RAL 9005)"]],W.farbe)}
+    ${ecDlg.geplant?`<p class="meta" style="margin-top:10px">Patchfelder, Switches und alles Weitere legst du unter „Schrank planen“ fest.</p>`:`<div class="lbl" style="margin-top:12px">Patchfelder</div>${ecChips("pfAnz",[1,2,3,4,5,6].map(x=>[String(x),String(x)]),W.pfAnz)}<div class="lbl" style="margin-top:12px">Ports je Patchfeld</div>${ecChips("pfPorts",[["12","12"],["16","16"],["24","24"],["48","48"]],W.pfPorts)}`}
+    <p class="meta" style="margin-top:10px">Nutzbare Einbautiefe rechnet die App mit Schranktiefe − 100 mm (Tür, Rückwand, Schienen). Das genaue Maß steht im Datenblatt des Schranks.</p>`,
+    `${ecDlg.schr?`<button class="btn-text danger" data-act="ecSchrDel">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecSchrOk">Speichern</button>`,{breit:true}); }
 /* ältere Schränke ohne Bestückung: aus „Anzahl Patchfelder × Ports“ ableiten (Patchfeld, darunter Kabelführung) */
 function ecSchrTeile(s){ if(!s) return []; if(Array.isArray(s.teile)) return s.teile; const L=[]; let pos=1;
   for(let j=1;j<=Math.max(1,+s.pf||1);j++){ L.push({id:`p${j}`,typ:"patch",pos:pos++,he:1,ports:Math.max(1,+s.ports||24),nr:j}); L.push({id:`k${j}`,typ:"kabel",pos:pos++,he:1}); } return L; }
@@ -585,11 +607,12 @@ function ecRkPlanung(pr,g,s){ const T=ecSchrTeile(s), N=ecSchrHe(s), belegtHe=T.
   const poe=[...M.values()].flat().filter(p=>{ const w=ecW(pr,p.id); return w.poe==="ok"||w.poe==="nok"||/WLAN|AP|Kamera/i.test(p.d.lage||""); }).length;
   if(poe&&!SW.some(t=>t.poe)) H.push(["wip",`${poe} Port${poe>1?"s":""} brauchen PoE (Messung oder WLAN-AP/Kamera), aber kein PoE-Switch ist geplant.`]);
   T.filter(t=>t.typ==="patch").forEach(t=>{ if(!T.some(k=>k.typ==="kabel"&&(k.pos===t.pos+t.he||k.pos+k.he===t.pos))) H.push(["tipp",`Tipp: Direkt über oder unter ${ecRkName(t)} eine Kabelführung einplanen.`]); });
+  const nb=ecSchrNutzbar(s); T.filter(t=>+t.tiefe&&+t.tiefe>nb).forEach(t=>H.push(["bad",`${ecRkName(t)} ist ${t.tiefe} mm tief – nutzbar sind bei ${ecSchrTiefe(s)} mm Schranktiefe nur etwa ${nb} mm.`]));
   if((SW.length||T.some(t=>t.typ==="router"))&&!T.some(t=>t.typ==="pdu")) H.push(["tipp","Tipp: Noch keine Steckdosenleiste für Switch und Router geplant."]);
   return {H,N,frei,B,ports,swPorts}; }
 function ecRkStueck(g,s){ const T=ecSchrTeile(s), G=new Map();
   T.filter(t=>t.typ!=="blind").forEach(t=>{ const k=[EC_RK[t.typ],t.ports&&(t.typ==="patch"||t.typ==="switch")?`${t.ports} Port`:"",t.poe?"PoE":"",`${t.he} HE`].filter(Boolean).join(", ")+(t.name&&t.typ!=="patch"?` – ${t.name}`:""); G.set(k,(G.get(k)||0)+1); });
-  const L=[...G].map(([k,n])=>[n,k]), {M}=ecRkLinks(g,s), D=g.dosen.filter(d=>d.sId===s.id), fr=ecSchrHe(s)-T.reduce((a,t)=>a+t.he,0);
+  const L=[[1,`${s.bauart==="stand"?"Standschrank":"Wandschrank"} 19", ${ecSchrHe(s)} HE, ${ecSchrBreite(s)} × ${ecSchrTiefe(s)} mm (B × T)`],...[...G].map(([k,n])=>[n,k])], {M}=ecRkLinks(g,s), D=g.dosen.filter(d=>d.sId===s.id), fr=ecSchrHe(s)-T.reduce((a,t)=>a+t.he,0);
   if(M.size){ L.push([M.size,"Keystone-Module (Patchfeld)"]); L.push([M.size,"Patchkabel"]); }
   const DG=new Map(); D.forEach(d=>{ const k=`Datendose ${d.ports||1}-fach`; DG.set(k,(DG.get(k)||0)+1); }); DG.forEach((n,k)=>L.push([n,k]));
   if(fr>0) L.push([fr,"Blindblende 1 HE (für die freien HE)"]); return L; }
@@ -612,12 +635,14 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
   const nr=i=>`<span class="rk-he" style="grid-row:${i}">${i}</span><span class="rk-he r" style="grid-row:${i}">${i}</span>`;
   const leer=i=>belegt.has(i)?"":`<button type="button" class="rk-leer" data-act="ecRkLeer" data-pos="${i}" style="grid-row:${i}" ${zu?"disabled":""} aria-label="HE ${i} frei – Teil einsetzen"><span>+</span></button>`;
   const ic={ok:"done",bad:"warn",wip:"warn",tipp:"info"};
-  return `<div class="rk-seite"><button class="btn-text rk-zur" data-act="ecRkZu">${icon("back")}Gebäude</button><div class="rk-kopf"><div class="rk-kt"><h2>${esc(s.name)}</h2><p>${esc([`${N} HE`,s.bauart==="stand"?"Standschrank":"Wandschrank",ecRaumName(g,s.raumId)].filter(Boolean).join(" · "))}</p></div>
+  return `<div class="rk-seite"><button class="btn-text rk-zur" data-act="ecRkZu">${icon("back")}Gebäude</button><div class="rk-kopf"><div class="rk-kt"><h2>${esc(s.name)}</h2><p>${esc([ecSchrText(s),ecRaumName(g,s.raumId)].filter(Boolean).join(" · "))}</p></div>
       ${zu?"":`<button class="btn-tonal" data-act="ecSchrEdit" data-id="${esc(s.id)}">${icon("edit")}Schrank</button>`}</div>
     <div class="rk-zwei"><div>
       ${zu?"":`<div class="chips rk-pal">${["patch","switch","kabel","boden","router","pdu","usv","luefter","blind"].map(t2=>`<button type="button" class="chip" data-act="ecRkNeu" data-t="${t2}">${icon("add")}${EC_RK[t2]}</button>`).join("")}</div>`}
-      <div class="rk" style="--n:${N}">${Array.from({length:N},(_,i)=>nr(i+1)+leer(i+1)).join("")}${T.map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div>
-      <p class="hint">Teil antippen zum Bearbeiten, am Griff links ziehen zum Verschieben. Freie HE antippen, um dort etwas einzusetzen. Im Patchfeld: grau = belegt, grün = gemessen i. O., rot = Mangel.</p></div>
+      <div class="rk-bau ${ecSchrFarbe(s)}"><div class="rk-front"><div class="rk-ks">Vorderansicht</div><div class="rk${ecSchrBreite(s)>=800?" b800":""}" style="--n:${N}">${Array.from({length:N},(_,i)=>nr(i+1)+leer(i+1)).join("")}${T.map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div></div>
+        <div class="rk-side"><div class="rk-ks">Seite · ${ecSchrTiefe(s)} mm</div><div class="rk-sv" style="--n:${N}"><i class="rk-nb" style="left:${Math.round(ecSchrNutzbar(s)/ecSchrTiefe(s)*100)}%" title="nutzbar etwa ${ecSchrNutzbar(s)} mm"></i>
+          ${T.map(t=>{ const tf2=ecRkTiefe(s,t), zu2=tf2>ecSchrNutzbar(s); return `<span class="rk-sb rk-${t.typ}${+t.tiefe?"":" geschaetzt"}${zu2?" zutief":""}" style="grid-row:${t.pos} / span ${t.he};width:${Math.min(100,Math.round(tf2/ecSchrTiefe(s)*100))}%" title="${esc(`${ecRkName(t)}: ${tf2} mm${+t.tiefe?"":" (typisch)"}`)}"></span>`; }).join("")}</div></div></div>
+      <p class="hint">Teil antippen zum Bearbeiten, am Griff links ziehen zum Verschieben. Freie HE antippen, um dort etwas einzusetzen. Im Patchfeld: grau = belegt, grün = gemessen i. O., rot = Mangel. Seitenansicht: Einbautiefe der Teile, Strich = nutzbare Tiefe; blass = typischer Wert, solange keine Tiefe eingetragen ist.</p></div>
     <div class="rk-rechts"><section class="card"><h3>Planung</h3><ul class="rk-hw">${P.H.map(([k,t2])=>`<li class="${k}">${icon(ic[k])}<span>${esc(t2)}</span></li>`).join("")}</ul></section>
       <section class="card"><h3>Stückliste</h3>${(()=>{ const L=ecRkStueck(g,s); return L.length?`<ul class="rk-sl">${L.map(([n,t2])=>`<li><b>${n}×</b><span>${esc(t2)}</span></li>`).join("")}</ul>`:`<p class="meta">Noch nichts geplant.</p>`; })()}
         <p class="meta">Keystones und Patchkabel = belegte Ports; Längen der Patchkabel nach Abstand Patchfeld–Switch wählen.</p></section></div></div></div>`; }
@@ -625,7 +650,7 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
 function ecRkDlg(z){ const pr=ecPr(), g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x.id===nav.schr); if(!s) return; ecDlg={rk:z}; const N=ecSchrHe(s), mitPorts=z.typ==="patch"||z.typ==="switch";
   dialog(z.id?`${ecRkName(z)} bearbeiten`:`${EC_RK[z.typ]} einsetzen`,`<div class="lbl">Art</div>${ecChips("rkTyp",Object.entries(EC_RK),z.typ)}
     <div class="fg1" style="margin-top:14px">${tf("rkName",z.typ==="patch"?"Bezeichnung (optional)":"Bezeichnung / Modell (optional)",z.name||"",{form:true,ph:{switch:"z. B. UniFi USW-24-PoE",router:"z. B. FRITZ!Box 7590",boden:"z. B. für FRITZ!Box und NAS",usv:"z. B. APC Smart-UPS 750"}[z.typ]||""})}
-      <div class="reihe2">${sf("rkPos","Position (HE von oben)",String(z.pos),Array.from({length:N},(_,i)=>[String(i+1),`HE ${i+1}${ecRkFrei(s,i+1,+z.he||1,z.id)?"":" – belegt"}`]),{form:true})}${z.typ==="patch"?tf("rkNr","Patchfeld-Nummer",String(z.nr||""),{form:true,ph:"1"}):"<span></span>"}</div></div>
+      <div class="reihe2">${sf("rkPos","Position (HE von oben)",String(z.pos),Array.from({length:N},(_,i)=>[String(i+1),`HE ${i+1}${ecRkFrei(s,i+1,+z.he||1,z.id)?"":" – belegt"}`]),{form:true})}${z.typ==="patch"?tf("rkNr","Patchfeld-Nummer",String(z.nr||""),{form:true,ph:"1"}):tf("rkTiefe","Einbautiefe in mm (optional)",z.tiefe?String(z.tiefe):"",{form:true,ph:`typisch ${EC_RKT[z.typ]||200}`})}</div></div>
     <div class="lbl" style="margin-top:12px">Höhe</div>${ecChips("rkHe",[["1","1 HE"],["2","2 HE"],["3","3 HE"],["4","4 HE"]],String(z.he||1))}
     ${mitPorts?`<div class="lbl" style="margin-top:12px">Ports</div>${ecChips("rkPorts",[["8","8"],["12","12"],["16","16"],["24","24"],["48","48"]],String(z.ports||24))}`:""}
     ${z.typ==="switch"?`<div class="lbl" style="margin-top:12px">PoE</div>${ecChips("rkPoe",[["0","ohne PoE"],["1","mit PoE"]],z.poe?"1":"0")}`:""}
@@ -634,7 +659,7 @@ function ecRkDlg(z){ const pr=ecPr(), g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x
 function ecRkNeuZ(s,typ,pos){ const d=EC_RKSTD[typ]||{he:1}, he=d.he, p=pos&&ecRkFrei(s,+pos,he)?+pos:pos&&ecRkFrei(s,+pos,1)?+pos:ecRkErsterFrei(s,he)||ecRkErsterFrei(s,1);
   const z={typ,pos:p||1,he:p&&!ecRkFrei(s,p,he)?1:he,ports:d.ports||0,name:"",poe:false};
   if(typ==="patch") z.nr=Math.max(0,...ecPfListe(s).map(x=>x.nr))+1; return {z,platz:!!p}; }
-function ecRkLesen(){ const z=ecDlg&&ecDlg.rk; if(!z) return; const F=formVals(); if(F.rkName!=null) z.name=String(F.rkName).trim(); if(F.rkPos) z.pos=+F.rkPos; if(F.rkNr!=null&&String(F.rkNr).trim()) z.nr=+F.rkNr; }
+function ecRkLesen(){ const z=ecDlg&&ecDlg.rk; if(!z) return; const F=formVals(); if(F.rkName!=null) z.name=String(F.rkName).trim(); if(F.rkPos) z.pos=+F.rkPos; if(F.rkNr!=null&&String(F.rkNr).trim()) z.nr=+F.rkNr; if(F.rkTiefe!=null) z.tiefe=parseInt(F.rkTiefe,10)||0; }
 /* Ziehen am Griff: Schritt = eine HE */
 let ecRkZug=null;
 document.addEventListener("pointerdown",e=>{ const h=e.target.closest&&e.target.closest("[data-drag]"); if(!h) return; const el=h.closest(".rk-t"), rk=h.closest(".rk"); const pr=ecPr(); if(!el||!rk||!pr||pr.status==="fertig") return;
@@ -927,6 +952,9 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     L=L.includes(b.dataset.id)?L.filter(x=>x!==b.dataset.id):[...L,b.dataset.id]; if(!L.length){ toast("Mindestens ein Verteiler gehört zur Prüfung"); return; }
     pr.umfang=alle.every(x=>L.includes(x))?null:{vIds:L}; saveRec("echecks",pr); render(); return; }
   case "ecWahl": { const gr=b.dataset.g; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+    if(ecDlg&&"geplant" in ecDlg&&["vor","bauart","he","breite","tiefe","farbe","pfAnz","pfPorts"].includes(gr)){ const v=b.dataset.v; ecSchrLesen();
+      if(gr==="vor"){ const p=EC_RKVOR[+v]; Object.assign(ecDlg.w,{bauart:p[0],he:String(p[1]),breite:String(p[2]),tiefe:String(p[3])}); ecSchrDlg(); return; }
+      ecDlg.w[gr]=v; if(gr==="bauart"){ const T=EC_RKTIEFEN[v]; if(!T.includes(+ecDlg.w.tiefe)) ecDlg.w.tiefe=String(v==="stand"?800:450); ecSchrDlg(); } return; }
     if(ecDlg&&ecDlg.rk&&/^rk/.test(gr)){ const z=ecDlg.rk, v=b.dataset.v; ecRkLesen();
       if(gr==="rkTyp"){ const s2=g&&g.schraenke.find(x=>x.id===nav.schr), d=EC_RKSTD[v]||{he:1}; z.typ=v; z.he=d.he; z.ports=d.ports||0; if(v==="patch"&&!z.nr&&s2) z.nr=Math.max(0,...ecPfListe(s2).map(x=>x.nr))+1; ecRkDlg(z); return; }
       if(gr==="rkHe") z.he=+v; if(gr==="rkPorts") z.ports=+v; if(gr==="rkPoe") z.poe=v==="1"; return; }
@@ -1034,7 +1062,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecRkOk": { const s2=g.schraenke.find(x=>x.id===nav.schr); if(!s2||!ecDlg||!ecDlg.rk) return; ecRkLesen(); const z=ecDlg.rk;
     if(!ecRkFrei(s2,z.pos,z.he,z.id)){ toast(`Ab HE ${z.pos} ist nicht genug Platz für ${z.he} HE`); return; }
     if(z.typ==="patch"){ if(!(z.nr>0)){ toast("Bitte eine Patchfeld-Nummer angeben"); return; } if(ecPfListe(s2).some(x=>x.nr===z.nr&&x.id!==z.id)){ toast(`Patchfeld ${z.nr} gibt es schon`); return; } }
-    const t={id:z.id||uid(),typ:z.typ,pos:z.pos,he:z.he}; if(z.name) t.name=z.name; if(z.typ==="patch"||z.typ==="switch") t.ports=z.ports||24; if(z.typ==="patch") t.nr=z.nr; if(z.typ==="switch"&&z.poe) t.poe=true;
+    const t={id:z.id||uid(),typ:z.typ,pos:z.pos,he:z.he}; if(z.name) t.name=z.name; if(z.typ==="patch"||z.typ==="switch") t.ports=z.ports||24; if(z.typ==="patch") t.nr=z.nr; if(z.typ==="switch"&&z.poe) t.poe=true; if(z.tiefe&&z.typ!=="patch") t.tiefe=z.tiefe;
     const L=ecSchrTeile(s2).filter(x=>x.id!==t.id); s2.teile=[...L,t].sort((a2,b2)=>a2.pos-b2.pos); sp(); closeOverlays(); render(); return; }
   case "ecRkDel": { const s2=g.schraenke.find(x=>x.id===nav.schr); if(!s2||!ecDlg||!ecDlg.rk) return; const z=ecDlg.rk;
     if(z.typ==="patch"&&!b.dataset.ok){ const n=[...ecRkLinks(g,s2).M.keys()].filter(k=>ecPpTeile(k).pf===z.nr).length; if(n){ b.dataset.ok="1"; b.textContent=`Trotzdem entfernen (${n} Port${n>1?"s":""} belegt)`; return; } }
@@ -1043,14 +1071,15 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecUmfangS": { if(!nichtZu()) return; const alle=g.schraenke.map(s=>s.id); let L=pr.umfang&&pr.umfang.sIds?[...pr.umfang.sIds]:[...alle];
     L=L.includes(b.dataset.id)?L.filter(x=>x!==b.dataset.id):[...L,b.dataset.id]; if(!L.length){ toast("Mindestens ein Schrank gehört zur Prüfung"); return; }
     pr.umfang=alle.every(x=>L.includes(x))?null:{sIds:L}; saveRec("echecks",pr); render(); return; }
-  case "ecSchrNeu": case "ecSchrEdit": { if(!nichtZu()) return; const s=a==="ecSchrEdit"&&g.schraenke.find(x=>x.id===b.dataset.id); ecDlg={schr:s?s.id:null,w:{pfAnz:String(ecSchrPf(s)),pfPorts:String(ecSchrPorts(s)),he:String(s?ecSchrHe(s):12),bauart:s&&s.bauart||"wand"}}; const geplant=!!(s&&Array.isArray(s.teile));
-    ecNameDlg(s?"Netzwerkschrank bearbeiten":"Neuer Netzwerkschrank",s?s.name:"","ecSchrOk",s?"ecSchrDel":null,sf("ecVtRaum","Raum",s?s.raumId||"":"",[["","ohne Raum"],...ecRaeume(g).map(r=>[r.id,r.titel])],{form:true})+`<div class="lbl" style="margin-top:12px">Bauart</div>${ecChips("bauart",[["wand","Wandschrank"],["stand","Standschrank"]],ecDlg.w.bauart)}<div class="lbl" style="margin-top:12px">Höheneinheiten</div>${ecChips("he",EC_RKHE.map(x=>[String(x),`${x} HE`]),ecDlg.w.he)}`
-      +(geplant?`<p class="meta" style="margin-top:10px">Patchfelder, Switches und alles Weitere legst du unter „Schrank planen“ fest.</p>`:`<div class="lbl" style="margin-top:12px">Patchfelder</div>${ecChips("pfAnz",[1,2,3,4,5,6].map(x=>[String(x),String(x)]),ecDlg.w.pfAnz)}<div class="lbl" style="margin-top:12px">Ports je Patchfeld</div>${ecChips("pfPorts",[["12","12"],["16","16"],["24","24"],["48","48"]],ecDlg.w.pfPorts)}`));
-    if(!s){ const i=document.getElementById("f_ecName"); if(i&&!g.schraenke.length){ i.value="Netzwerkschrank"; i.parentElement.classList.add("fl"); } } return; }
-  case "ecSchrOk": { const F=formVals(), n=(F.ecName||"").trim(); if(!n){ toast("Bitte eine Bezeichnung eingeben"); return; }
-    if(ecDlg.schr){ const s=g.schraenke.find(x=>x.id===ecDlg.schr); const W=ecDlg.w, he=+W.he||12;
-      if(Array.isArray(s.teile)&&s.teile.some(t=>t.pos+t.he-1>he)){ toast(`Bei ${he} HE passt die geplante Bestückung nicht mehr – erst Teile nach oben schieben oder entfernen`); return; }
-      s.name=n; s.raumId=F.ecVtRaum||""; s.he=he; s.bauart=W.bauart; if(!Array.isArray(s.teile)){ s.pf=+W.pfAnz||1; s.ports=+W.pfPorts||24; } } else { const W=ecDlg.w, s={id:uid(),name:n,raumId:F.ecVtRaum||"",pf:+W.pfAnz||1,ports:+W.pfPorts||24,he:+W.he||12,bauart:W.bauart}; g.schraenke.push(s); ecLetzterSchr=s.id; } sp(); closeOverlays(); render(); return; }
+  case "ecSchrNeu": case "ecSchrEdit": { if(!nichtZu()) return; const s2=a==="ecSchrEdit"&&g.schraenke.find(x=>x.id===b.dataset.id);
+    ecDlg={schr:s2?s2.id:null,geplant:!!(s2&&Array.isArray(s2.teile)),w:{name:s2?s2.name:(g.schraenke.length?"":"Netzwerkschrank"),raumId:s2?s2.raumId||"":"",pfAnz:String(ecSchrPf(s2)),pfPorts:String(ecSchrPorts(s2)),
+      he:String(s2?ecSchrHe(s2):12),bauart:s2&&s2.bauart||"wand",breite:String(s2?ecSchrBreite(s2):600),tiefe:String(s2?ecSchrTiefe(s2):450),farbe:s2&&s2.farbe||"auto"}}; ecSchrDlg(); return; }
+  case "ecSchrOk": { ecSchrLesen(); const W=ecDlg.w, n=(W.name||"").trim(); if(!n){ toast("Bitte eine Bezeichnung eingeben"); return; } const he=+W.he||12;
+    const daten={name:n,raumId:W.raumId||"",he,bauart:W.bauart,breite:+W.breite||600,tiefe:+W.tiefe||450,farbe:W.farbe||"auto"};
+    if(ecDlg.schr){ const s2=g.schraenke.find(x=>x.id===ecDlg.schr);
+      if(Array.isArray(s2.teile)&&s2.teile.some(t=>t.pos+t.he-1>he)){ toast(`Bei ${he} HE passt die geplante Bestückung nicht mehr – erst Teile nach oben schieben oder entfernen`); return; }
+      Object.assign(s2,daten); if(!Array.isArray(s2.teile)){ s2.pf=+W.pfAnz||1; s2.ports=+W.pfPorts||24; } }
+    else { const s2={id:uid(),...daten,pf:+W.pfAnz||1,ports:+W.pfPorts||24}; g.schraenke.push(s2); ecLetzterSchr=s2.id; } sp(); closeOverlays(); render(); return; }
   case "ecSchrDel": { const n=g.dosen.filter(d=>d.sId===ecDlg.schr).length; if(n&&!b.dataset.ok){ b.dataset.ok="1"; b.textContent=`Löschen (${n} Dose${n>1?"n":""} ohne Schrank)`; return; }
     g.dosen.forEach(d=>{ if(d.sId===ecDlg.schr) d.sId=""; }); g.schraenke=g.schraenke.filter(x=>x.id!==ecDlg.schr); sp(); closeOverlays(); render(); return; }
   case "ecDoseNeu": if(!nichtZu()) return; ecDoseDlg(null,b.dataset.id); return;
