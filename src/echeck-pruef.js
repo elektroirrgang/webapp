@@ -223,7 +223,8 @@ function ecKennzahlen(pr){ const k=(z,t,bar,rot)=>`<div class="ec-k"><b${rot?' c
   const m=st.filter(x=>x==="bad").length+Object.values(pr.sicht||{}).filter(v=>v==="nok").length, si=ecSichtZahl(pr);
   return `<div class="ec-kz">${k(`${si} / ${EC_SICHT.length}`,"Besichtigung",si/EC_SICHT.length)}${k(`${n} / ${S.length}`,"Stromkreise fertig",S.length?n/S.length:0)}${k(`${pn} / ${P.length}`,"Messpunkte",P.length?pn/P.length:0)}${k(m,"Mängel",null,m>0)}</div>`; }
 function ecView(pr){ const tab=ecTab(pr), zu=pr.status==="fertig";
-  const body=tab==="auftrag"?ecAuftragView(pr):tab==="gebaeude"?ecGebView(pr):tab==="sicht"?ecSichtView(pr):tab==="messen"?(ecNz(pr)?ecNetMessView(pr):ecMessView(pr)):tab==="geraete"?ecGerListe(pr):ecAbschlussView(pr);
+  const schr=tab==="gebaeude"&&ecNz(pr)&&nav.schr&&ecGeb(pr.ortId).schraenke.find(x=>x.id===nav.schr);
+  const body=schr?ecRackView(pr,schr):tab==="auftrag"?ecAuftragView(pr):tab==="gebaeude"?ecGebView(pr):tab==="sicht"?ecSichtView(pr):tab==="messen"?(ecNz(pr)?ecNetMessView(pr):ecMessView(pr)):tab==="geraete"?ecGerListe(pr):ecAbschlussView(pr);
   return `<div class="narrow ec">${zu?`<div class="robanner">${icon("lock")}<span>Abgeschlossen am ${esc(ecDatum(pr.fertigAm||pr.datum))} – zum Ändern unter „Abschluss“ wieder öffnen.</span></div>`:""}
     <div class="ec-body${zu?" zu":""}">${body}</div></div>`; }
 const ecFeld=(pr,k,l,v,o={})=>{ const id="f_ec_"+k.replace(".","_"), zu=pr.status==="fertig";
@@ -508,13 +509,13 @@ const ecSchrPf=s=>Math.max(1,+(s&&s.pf)||1), ecSchrPorts=s=>Math.max(1,+(s&&s.po
 function ecPfFrei(g,sId,pf,ohne){ let max=0; g.dosen.forEach(d=>{ if(d.sId!==sId||d.id===ohne) return; Object.values(d.pp||{}).forEach(t=>{ const x=ecPpTeile(t); if(x&&x.pf===+pf&&x.port>max) max=x.port; }); }); return max+1; }
 function ecNetSchrankSpalte(pr,g){ const A=ecNetAlle(g), zu=pr.status==="fertig";
   const zeile=p=>`<div class="ec-vz sk" role="button" tabindex="0" data-act="ecDose" data-id="${esc(p.d.id)}"><span class="nr">${esc(p.pp||"–")}</span><span class="t">${esc(ecLinkOrt(g,p))}<small>${esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · "))}</small></span>${icon("chev")}</div>`;
-  const raster=(s,P)=>Array.from({length:ecSchrPf(s)},(_,j)=>{ const pf=j+1, n=ecSchrPorts(s);
+  const raster=(s,P)=>ecPfListe(s).map(({nr:pf,ports:n})=>{
     return `<div class="ec-pfk">Patchfeld ${pf}</div><div class="ec-pf" style="grid-template-columns:repeat(${Math.min(n,12)},minmax(0,1fr))">${Array.from({length:n},(_,k)=>{ const port=k+1, L=P.filter(p=>{ const x=ecPpTeile(p.pp); return x&&x.pf===pf&&x.port===port; });
       if(!L.length) return `<span class="ec-ks frei" title="${pf}.${port} frei">${port}</span>`;
       const st=ecNetStand(pr,L[0]), kl=L.length>1?"bad":st==="ok"?"ok":st==="bad"?"bad":"belegt";
       return `<button type="button" class="ec-ks ${kl}" data-act="ecDose" data-id="${esc(L[0].d.id)}" title="${esc(`${pf}.${port} · ${ecRaumName(g,L[0].raumId)}${L.length>1?" · doppelt vergeben":""}`)}">${port}</button>`; }).join("")}</div>`; }).join("");
   const schr=s=>{ const P=ecNetListe({},g).filter(p=>p.d.sId===s.id), ein=ecNetImUmfang(pr,{sId:s.id});
-    return `<div class="ec-vt${ein?"":" aus"}"><div class="ec-vz kopf" role="button" tabindex="0" data-act="ecSchrEdit" data-id="${esc(s.id)}"><span class="av ec-uv">${icon("ecNetz")}</span><span class="t"><b>${esc(s.name)}</b><small>${esc([ecRaumName(g,s.raumId),`${ecSchrPf(s)} × ${ecSchrPorts(s)} Ports`,`${P.length} belegt`,ein?"":"nicht im Prüfumfang"].filter(Boolean).join(" · "))}</small></span>${icon("edit")}</div>${raster(s,P)}${P.map(zeile).join("")}</div>`; };
+    return `<div class="ec-vt${ein?"":" aus"}"><div class="ec-vz kopf" role="button" tabindex="0" data-act="ecSchrEdit" data-id="${esc(s.id)}"><span class="av ec-uv">${icon("ecNetz")}</span><span class="t"><b>${esc(s.name)}</b><small>${esc([ecRaumName(g,s.raumId),`${ecSchrHe(s)} HE`,`${ecPfListe(s).length} Patchfeld${ecPfListe(s).length===1?"":"er"}`,`${P.length} belegt`,ein?"":"nicht im Prüfumfang"].filter(Boolean).join(" · "))}</small></span>${icon("edit")}</div><div class="ec-vt-f"><button class="btn-text" data-act="ecRkAuf" data-id="${esc(s.id)}">${icon("ecNetz")}Schrank planen</button></div>${raster(s,P)}${P.map(zeile).join("")}</div>`; };
   const ohne=A.filter(p=>!p.d.sId||!g.schraenke.some(s=>s.id===p.d.sId));
   return `${kdKopf("Netzwerkschränke",zu?"":"ecSchrNeu","Schrank hinzufügen")}${g.schraenke.length?g.schraenke.map(schr).join(""):`<p class="meta">Noch kein Netzwerkschrank. Am besten zuerst den Schrank mit seinen Patchfeldern anlegen, dann durch die Räume gehen und jede Datendose eintragen.</p>`}
     ${ohne.length?`<div class="ec-vt"><div class="ec-vz kopf"><span class="t"><b>Ohne Schrank</b></span></div>${ohne.map(zeile).join("")}</div>`:""}`; }
@@ -533,9 +534,10 @@ function ecNetRaumDlg(raumId){ const pr=ecPr(), g=ecGeb(pr.ortId), zu=pr.status=
     `${zu?"":`<button class="btn-text" data-act="ecRaumEdit" data-id="${esc(raumId)}">Umbenennen</button>`}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>${zu?"":`<button class="btn-text" data-act="ecDoseNeu" data-id="${esc(raumId)}">Datendose</button>`}`,{breit:true}); }
 let ecLetzterSchr="";
 let ecLetzterPf=1;
-const ecPfChips=(g,sId,pf)=>{ const s=g.schraenke.find(x=>x.id===sId), n=ecSchrPf(s); return `<div class="lbl" style="margin-top:4px">Patchfeld</div>${ecChips("pf",Array.from({length:n},(_,i)=>[String(i+1),`Patchfeld ${i+1}`]),String(Math.min(+pf||1,n)))}`; };
+const ecPfWahl=(s,pf)=>{ const L=s?ecPfListe(s):[{nr:1}]; return L.some(x=>x.nr===+pf)?+pf:(L[0]||{nr:1}).nr; };
+const ecPfChips=(g,sId,pf)=>{ const s=g.schraenke.find(x=>x.id===sId), L=s?ecPfListe(s):[{nr:1}]; return `<div class="lbl" style="margin-top:4px">Patchfeld</div>${ecChips("pf",L.map(x=>[String(x.nr),`Patchfeld ${x.nr}`]),String(ecPfWahl(s,pf)))}`; };
 function ecDoseDlg(dId,raumId){ const pr=ecPr(), g=ecGeb(pr.ortId), d=dId&&g.dosen.find(x=>x.id===dId), v=d||{ports:2,lage:"",sId:g.schraenke.some(s=>s.id===ecLetzterSchr)?ecLetzterSchr:(g.schraenke.length===1?g.schraenke[0].id:""),pp:{}};
-  const n=+v.ports||1, t0=ecPpTeile((v.pp||{})[1]), pf=t0?t0.pf:Math.min(ecLetzterPf,ecSchrPf(g.schraenke.find(x=>x.id===v.sId))), start=t0?t0.port:ecPfFrei(g,v.sId,pf,dId);
+  const n=+v.ports||1, t0=ecPpTeile((v.pp||{})[1]), pf=t0?t0.pf:ecPfWahl(g.schraenke.find(x=>x.id===v.sId),ecLetzterPf), start=t0?t0.port:ecPfFrei(g,v.sId,pf,dId);
   ecDlg={dose:dId||null,raumId:d?d.raumId:raumId,w:{ports:String(n),anz:"1",pf:String(pf)}};
   const pp=i=>d?((v.pp||{})[i]||""):`${pf}.${start+i-1}`;
   dialog(d?"Datendose bearbeiten":`Neu in ${ecRaumName(g,ecDlg.raumId)}`,`<div class="lbl">Ports an der Dose</div>${ecChips("ports",[["1","1 Port"],["2","2 Ports"],["3","3 Ports"],["4","4 Ports"]],String(n))}
@@ -553,6 +555,98 @@ function ecPpFuellen(){ if(!ecDlg||!("dose" in ecDlg)) return; const st=document
   for(let i=1;i<=4;i++){ const f=document.getElementById("f_pp"+i); if(!f) continue; f.value=i<=n?`${ecDlg.w.pf||1}.${z+i-1}`:""; f.parentElement.classList.toggle("fl",!!f.value); } }
 /* „A01“ → „A02“, „1-12“ → „1-13“; ohne Zahl am Ende bleibt es leer */
 const ecPpPlus=(s,k)=>{ const t=ecPpTeile(s); if(t) return `${t.pf}.${t.port+k}`; const m=String(s||"").match(/^(.*?)(\d+)$/); if(!m) return ""; const z=String(+m[2]+k); return m[1]+(m[2].length>z.length?z.padStart(m[2].length,"0"):z); };
+
+/* ---- Schrankplaner: Netzwerkschrank in Höheneinheiten (HE) bestücken, Patchfelder mit belegten Ports, Prüfung der Planung, Stückliste ----
+   Schrank {he, bauart:"wand"|"stand", teile:[{id,typ,pos,he,name,ports,nr,poe}]}; pos = oberste HE des Teils, gezählt von oben (1 = ganz oben).
+   Patchfelder tragen eine feste Nummer (nr) – die steht in der Beschriftung der Dosen (1.13) und ändert sich beim Verschieben nicht. */
+const EC_RK={patch:"Patchfeld",switch:"Switch",kabel:"Kabelführung",boden:"Fachboden",router:"Router / Firewall",usv:"USV",pdu:"Steckdosenleiste",luefter:"Lüftereinschub",blind:"Blindblende",sonst:"Sonstiges"};
+const EC_RKSTD={patch:{he:1,ports:24},switch:{he:1,ports:24},kabel:{he:1},boden:{he:1},router:{he:1},usv:{he:2},pdu:{he:1},luefter:{he:1},blind:{he:1},sonst:{he:1}};
+const EC_RKHE=[6,9,12,15,18,20,22,24,27,32,42,47];
+/* ältere Schränke ohne Bestückung: aus „Anzahl Patchfelder × Ports“ ableiten (Patchfeld, darunter Kabelführung) */
+function ecSchrTeile(s){ if(!s) return []; if(Array.isArray(s.teile)) return s.teile; const L=[]; let pos=1;
+  for(let j=1;j<=Math.max(1,+s.pf||1);j++){ L.push({id:`p${j}`,typ:"patch",pos:pos++,he:1,ports:Math.max(1,+s.ports||24),nr:j}); L.push({id:`k${j}`,typ:"kabel",pos:pos++,he:1}); } return L; }
+const ecSchrHe=s=>Math.max(+(s&&s.he)||0,...ecSchrTeile(s).map(t=>t.pos+t.he-1),s&&s.he?0:12);
+const ecPfListe=s=>ecSchrTeile(s).filter(t=>t.typ==="patch").map(t=>({nr:+t.nr||1,ports:Math.max(1,+t.ports||24),id:t.id})).sort((a,b)=>a.nr-b.nr);
+const ecRkFrei=(s,pos,he,ohne)=>pos>=1&&pos+he-1<=ecSchrHe(s)&&!ecSchrTeile(s).some(t=>t.id!==ohne&&pos<=t.pos+t.he-1&&t.pos<=pos+he-1);
+const ecRkErsterFrei=(s,he)=>{ for(let p=1;p<=ecSchrHe(s)-he+1;p++) if(ecRkFrei(s,p,he)) return p; return 0; };
+const ecRkName=t=>t.name||(t.typ==="patch"?`Patchfeld ${t.nr||""}`.trim():EC_RK[t.typ]||"Teil");
+/* Links und Ports dieses Schranks */
+function ecRkLinks(g,s){ const M=new Map(), D=[];
+  ecNetAlle(g).filter(p=>p.d.sId===s.id).forEach(p=>{ const x=ecPpTeile(p.pp); if(!x){ D.push(p); return; } const k=`${x.pf}.${x.port}`; if(!M.has(k)) M.set(k,[]); M.get(k).push(p); }); return {M,ohne:D}; }
+function ecRkPlanung(pr,g,s){ const T=ecSchrTeile(s), N=ecSchrHe(s), belegtHe=T.reduce((a,t)=>a+t.he,0), frei=N-belegtHe, {M,ohne}=ecRkLinks(g,s), PF=ecPfListe(s), H=[];
+  const ports=PF.reduce((a,p)=>a+p.ports,0), B=M.size, SW=T.filter(t=>t.typ==="switch"), swPorts=SW.reduce((a,t)=>a+(+t.ports||0),0);
+  H.push(frei<0?["bad",`Mehr Teile als Platz: ${belegtHe} HE geplant, der Schrank hat ${N} HE.`]:frei<Math.ceil(N*0.2)?["wip",`Nur ${frei} von ${N} HE frei – für spätere Erweiterungen sind rund 20 % Reserve üblich.`]:["ok",`${frei} von ${N} HE frei`]);
+  H.push(!PF.length?["wip","Noch kein Patchfeld geplant."]:B>ports?["bad",`${B} Ports belegt, aber nur ${ports} Patchports vorhanden.`]:["ok",`${B} von ${ports} Patchports belegt`]);
+  const falsch=[...M.keys()].filter(k=>{ const x=ecPpTeile(k), pf=PF.find(p=>p.nr===x.pf); return !pf||x.port>pf.ports; });
+  if(falsch.length) H.push(["bad",`Dose ${falsch.join(", ")}: dieses Patchfeld bzw. diesen Port gibt es im Schrank nicht.`]);
+  const dop=[...M].filter(x=>x[1].length>1).map(x=>x[0]); if(dop.length) H.push(["bad",`Port ${dop.join(", ")} ist doppelt vergeben.`]);
+  if(ohne.length) H.push(["wip",`${ohne.length} Port${ohne.length>1?"s":""} ohne Beschriftung nach Patchfeld.Port – im Raster nicht sichtbar.`]);
+  if(B) H.push(!SW.length?["wip",`Noch kein Switch geplant – für ${B} belegte Ports braucht es mindestens ${B} Switch-Ports.`]:swPorts<B?["bad",`Es fehlen ${B-swPorts} Switch-Ports (${swPorts} geplant, ${B} belegt).`]:["ok",`Switch-Ports reichen: ${swPorts} für ${B} belegte Ports`]);
+  const poe=[...M.values()].flat().filter(p=>{ const w=ecW(pr,p.id); return w.poe==="ok"||w.poe==="nok"||/WLAN|AP|Kamera/i.test(p.d.lage||""); }).length;
+  if(poe&&!SW.some(t=>t.poe)) H.push(["wip",`${poe} Port${poe>1?"s":""} brauchen PoE (Messung oder WLAN-AP/Kamera), aber kein PoE-Switch ist geplant.`]);
+  T.filter(t=>t.typ==="patch").forEach(t=>{ if(!T.some(k=>k.typ==="kabel"&&(k.pos===t.pos+t.he||k.pos+k.he===t.pos))) H.push(["tipp",`Tipp: Direkt über oder unter ${ecRkName(t)} eine Kabelführung einplanen.`]); });
+  if((SW.length||T.some(t=>t.typ==="router"))&&!T.some(t=>t.typ==="pdu")) H.push(["tipp","Tipp: Noch keine Steckdosenleiste für Switch und Router geplant."]);
+  return {H,N,frei,B,ports,swPorts}; }
+function ecRkStueck(g,s){ const T=ecSchrTeile(s), G=new Map();
+  T.filter(t=>t.typ!=="blind").forEach(t=>{ const k=[EC_RK[t.typ],t.ports&&(t.typ==="patch"||t.typ==="switch")?`${t.ports} Port`:"",t.poe?"PoE":"",`${t.he} HE`].filter(Boolean).join(", ")+(t.name&&t.typ!=="patch"?` – ${t.name}`:""); G.set(k,(G.get(k)||0)+1); });
+  const L=[...G].map(([k,n])=>[n,k]), {M}=ecRkLinks(g,s), D=g.dosen.filter(d=>d.sId===s.id), fr=ecSchrHe(s)-T.reduce((a,t)=>a+t.he,0);
+  if(M.size){ L.push([M.size,"Keystone-Module (Patchfeld)"]); L.push([M.size,"Patchkabel"]); }
+  const DG=new Map(); D.forEach(d=>{ const k=`Datendose ${d.ports||1}-fach`; DG.set(k,(DG.get(k)||0)+1); }); DG.forEach((n,k)=>L.push([n,k]));
+  if(fr>0) L.push([fr,"Blindblende 1 HE (für die freien HE)"]); return L; }
+/* Zeichnung */
+function ecRkTeilHtml(pr,g,s,t,M){
+  const ports=(n,fn)=>{ const c=Math.min(n,24); return `<span class="rk-ports" style="--c:${c}">${Array.from({length:n},(_,i)=>fn(i+1)).join("")}</span>`; };
+  let innen="";
+  if(t.typ==="patch") innen=ports(Math.max(1,+t.ports||24),port=>{ const L=M.get(`${t.nr}.${port}`); if(!L) return `<span class="rk-p" title="${t.nr}.${port} frei"></span>`;
+      const st=ecNetStand(pr,L[0]), kl=L.length>1?"bad":st==="ok"?"ok":st==="bad"?"bad":"belegt";
+      return `<button type="button" class="rk-p ${kl}" data-act="ecRkPort" data-id="${esc(L[0].d.id)}" title="${esc(`${t.nr}.${port} · ${ecRaumName(g,L[0].raumId)}${L.length>1?" · doppelt":""}`)}"></button>`; });
+  else if(t.typ==="switch") innen=ports(Math.max(1,+t.ports||24),()=>`<span class="rk-p sw"></span>`)+`<span class="rk-sfp"></span><span class="rk-sfp"></span>${t.poe?`<span class="rk-tag">PoE</span>`:""}`;
+  else if(t.typ==="pdu") innen=`<span class="rk-reihe">${Array.from({length:Math.min(8,4+t.he*4)},()=>`<span class="rk-dose"></span>`).join("")}</span>`;
+  else if(t.typ==="luefter") innen=`<span class="rk-reihe">${Array.from({length:4},()=>`<span class="rk-fan"></span>`).join("")}</span>`;
+  else if(t.typ==="usv") innen=`<span class="rk-reihe"><span class="rk-led"></span><span class="rk-led"></span><span class="rk-led an"></span></span>`;
+  else if(t.typ==="router") innen=`<span class="rk-reihe">${Array.from({length:5},()=>`<span class="rk-p sw" style="width:14px"></span>`).join("")}</span>`;
+  return `<div class="rk-t rk-${t.typ}" data-act="ecRkTeil" data-id="${esc(t.id)}" style="grid-row:${t.pos} / span ${t.he}" title="${esc(ecRkName(t))}">
+    <span class="rk-griff" data-act="ecRkGriff" data-drag="${esc(t.id)}" aria-label="verschieben"></span><span class="rk-n">${esc(t.typ==="patch"?`P${t.nr}`:ecRkName(t))}</span>${innen}</div>`; }
+function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=ecSchrHe(s), T=ecSchrTeile(s), {M}=ecRkLinks(g,s), P=ecRkPlanung(pr,g,s), belegt=new Set();
+  T.forEach(t=>{ for(let i=t.pos;i<t.pos+t.he;i++) belegt.add(i); });
+  const nr=i=>`<span class="rk-he" style="grid-row:${i}">${i}</span><span class="rk-he r" style="grid-row:${i}">${i}</span>`;
+  const leer=i=>belegt.has(i)?"":`<button type="button" class="rk-leer" data-act="ecRkLeer" data-pos="${i}" style="grid-row:${i}" ${zu?"disabled":""} aria-label="HE ${i} frei – Teil einsetzen"><span>+</span></button>`;
+  const ic={ok:"done",bad:"warn",wip:"warn",tipp:"info"};
+  return `<div class="rk-seite"><button class="btn-text rk-zur" data-act="ecRkZu">${icon("back")}Gebäude</button><div class="rk-kopf"><div class="rk-kt"><h2>${esc(s.name)}</h2><p>${esc([`${N} HE`,s.bauart==="stand"?"Standschrank":"Wandschrank",ecRaumName(g,s.raumId)].filter(Boolean).join(" · "))}</p></div>
+      ${zu?"":`<button class="btn-tonal" data-act="ecSchrEdit" data-id="${esc(s.id)}">${icon("edit")}Schrank</button>`}</div>
+    <div class="rk-zwei"><div>
+      ${zu?"":`<div class="chips rk-pal">${["patch","switch","kabel","boden","router","pdu","usv","luefter","blind"].map(t2=>`<button type="button" class="chip" data-act="ecRkNeu" data-t="${t2}">${icon("add")}${EC_RK[t2]}</button>`).join("")}</div>`}
+      <div class="rk" style="--n:${N}">${Array.from({length:N},(_,i)=>nr(i+1)+leer(i+1)).join("")}${T.map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div>
+      <p class="hint">Teil antippen zum Bearbeiten, am Griff links ziehen zum Verschieben. Freie HE antippen, um dort etwas einzusetzen. Im Patchfeld: grau = belegt, grün = gemessen i. O., rot = Mangel.</p></div>
+    <div class="rk-rechts"><section class="card"><h3>Planung</h3><ul class="rk-hw">${P.H.map(([k,t2])=>`<li class="${k}">${icon(ic[k])}<span>${esc(t2)}</span></li>`).join("")}</ul></section>
+      <section class="card"><h3>Stückliste</h3>${(()=>{ const L=ecRkStueck(g,s); return L.length?`<ul class="rk-sl">${L.map(([n,t2])=>`<li><b>${n}×</b><span>${esc(t2)}</span></li>`).join("")}</ul>`:`<p class="meta">Noch nichts geplant.</p>`; })()}
+        <p class="meta">Keystones und Patchkabel = belegte Ports; Längen der Patchkabel nach Abstand Patchfeld–Switch wählen.</p></section></div></div></div>`; }
+/* Teil bearbeiten */
+function ecRkDlg(z){ const pr=ecPr(), g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x.id===nav.schr); if(!s) return; ecDlg={rk:z}; const N=ecSchrHe(s), mitPorts=z.typ==="patch"||z.typ==="switch";
+  dialog(z.id?`${ecRkName(z)} bearbeiten`:`${EC_RK[z.typ]} einsetzen`,`<div class="lbl">Art</div>${ecChips("rkTyp",Object.entries(EC_RK),z.typ)}
+    <div class="fg1" style="margin-top:14px">${tf("rkName",z.typ==="patch"?"Bezeichnung (optional)":"Bezeichnung / Modell (optional)",z.name||"",{form:true,ph:{switch:"z. B. UniFi USW-24-PoE",router:"z. B. FRITZ!Box 7590",boden:"z. B. für FRITZ!Box und NAS",usv:"z. B. APC Smart-UPS 750"}[z.typ]||""})}
+      <div class="reihe2">${sf("rkPos","Position (HE von oben)",String(z.pos),Array.from({length:N},(_,i)=>[String(i+1),`HE ${i+1}${ecRkFrei(s,i+1,+z.he||1,z.id)?"":" – belegt"}`]),{form:true})}${z.typ==="patch"?tf("rkNr","Patchfeld-Nummer",String(z.nr||""),{form:true,ph:"1"}):"<span></span>"}</div></div>
+    <div class="lbl" style="margin-top:12px">Höhe</div>${ecChips("rkHe",[["1","1 HE"],["2","2 HE"],["3","3 HE"],["4","4 HE"]],String(z.he||1))}
+    ${mitPorts?`<div class="lbl" style="margin-top:12px">Ports</div>${ecChips("rkPorts",[["8","8"],["12","12"],["16","16"],["24","24"],["48","48"]],String(z.ports||24))}`:""}
+    ${z.typ==="switch"?`<div class="lbl" style="margin-top:12px">PoE</div>${ecChips("rkPoe",[["0","ohne PoE"],["1","mit PoE"]],z.poe?"1":"0")}`:""}
+    ${z.typ==="patch"?`<p class="meta" style="margin-top:10px">Die Nummer steht vorn in der Beschriftung der Dosen (1.13 = Patchfeld 1, Port 13) und bleibt beim Verschieben gleich.</p>`:""}`,
+    `${z.id?`<button class="btn-text danger" data-act="ecRkDel">Entfernen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecRkOk">Speichern</button>`,{breit:true}); }
+function ecRkNeuZ(s,typ,pos){ const d=EC_RKSTD[typ]||{he:1}, he=d.he, p=pos&&ecRkFrei(s,+pos,he)?+pos:pos&&ecRkFrei(s,+pos,1)?+pos:ecRkErsterFrei(s,he)||ecRkErsterFrei(s,1);
+  const z={typ,pos:p||1,he:p&&!ecRkFrei(s,p,he)?1:he,ports:d.ports||0,name:"",poe:false};
+  if(typ==="patch") z.nr=Math.max(0,...ecPfListe(s).map(x=>x.nr))+1; return {z,platz:!!p}; }
+function ecRkLesen(){ const z=ecDlg&&ecDlg.rk; if(!z) return; const F=formVals(); if(F.rkName!=null) z.name=String(F.rkName).trim(); if(F.rkPos) z.pos=+F.rkPos; if(F.rkNr!=null&&String(F.rkNr).trim()) z.nr=+F.rkNr; }
+/* Ziehen am Griff: Schritt = eine HE */
+let ecRkZug=null;
+document.addEventListener("pointerdown",e=>{ const h=e.target.closest&&e.target.closest("[data-drag]"); if(!h) return; const el=h.closest(".rk-t"), rk=h.closest(".rk"); const pr=ecPr(); if(!el||!rk||!pr||pr.status==="fertig") return;
+  const g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x.id===nav.schr), t=s&&ecSchrTeile(s).find(x=>x.id===h.dataset.drag); if(!t) return;
+  const schritt=parseFloat(getComputedStyle(rk).getPropertyValue("--he"))+2; ecRkZug={id:t.id,y0:e.clientY,el,schritt,pos0:t.pos,he:t.he,d:0};
+  try{ h.setPointerCapture(e.pointerId); }catch(_){} el.classList.add("zieh"); e.preventDefault(); });
+document.addEventListener("pointermove",e=>{ if(!ecRkZug) return; const dy=e.clientY-ecRkZug.y0; ecRkZug.d=Math.round(dy/ecRkZug.schritt); ecRkZug.el.style.transform=`translateY(${dy}px)`; });
+const ecRkLos=()=>{ const z=ecRkZug; if(!z) return; ecRkZug=null; z.el.style.transform=""; z.el.classList.remove("zieh"); if(!z.d) return;
+  const pr=ecPr(), g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x.id===nav.schr); if(!s) return; const np=z.pos0+z.d;
+  if(!ecRkFrei(s,np,z.he,z.id)){ toast("Dort ist kein Platz – erst etwas verschieben oder entfernen"); return; }
+  s.teile=ecSchrTeile(s).map(t=>t.id===z.id?{...t,pos:np}:t); ecGebSpeichern(g); render(); };
+document.addEventListener("pointerup",ecRkLos); document.addEventListener("pointercancel",ecRkLos);
 
 /* Messen */
 function ecNetMessView(pr){ const g=ecGeb(pr.ortId), L=ecNetListe(pr,g), fertig=L.filter(p=>!["open","wip"].includes(ecNetStand(pr,p))).length;
@@ -796,7 +890,7 @@ async function ecPdfAblegen(pr){ toast("PDF wird erstellt …");
 document.addEventListener("change",e=>{ const el=e.target;
   if(el.id==="f_ecKunde"){ const f=document.getElementById("ecOrtFeld"); if(f) f.innerHTML=ecOrtFeld(el.value); return; }
   if(el.id==="f_ecEbene"&&ecDlg&&"ebeneHand" in ecDlg){ ecDlg.ebeneHand=el.value!==""; return; }
-  if(el.id==="f_ecSchr"&&ecDlg&&"dose" in ecDlg){ const pr=ecPr(), g=ecGeb(pr.ortId), s2=g.schraenke.find(x=>x.id===el.value), pf=Math.min(+ecDlg.w.pf||1,ecSchrPf(s2)); ecDlg.w.pf=String(pf);
+  if(el.id==="f_ecSchr"&&ecDlg&&"dose" in ecDlg){ const pr=ecPr(), g=ecGeb(pr.ortId), s2=g.schraenke.find(x=>x.id===el.value), pf=ecPfWahl(s2,+ecDlg.w.pf||1); ecDlg.w.pf=String(pf);
     const z=document.getElementById("ecPfZeile"); if(z) z.innerHTML=ecPfChips(g,el.value,pf); const st=document.getElementById("f_ppStart"); if(st){ st.value=String(ecPfFrei(g,el.value,pf,ecDlg.dose)); st.parentElement.classList.add("fl"); } ecPpFuellen(); return; }
   if(el.id==="f_skV"){ const pr=ecPr(), f=document.getElementById("ecRcdFeld"); if(pr&&f) f.innerHTML=ecRcdFeld(ecGeb(pr.ortId),el.value,""); return; }
   if(ecImp&&/^f_imp(R_|DV_|V$|Et$)/.test(el.id)){ ecImportLesen(); ecImportZiele(); ecImportDlg(); return; }
@@ -825,7 +919,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecOeffnen": { const p=DB.echecks.get(b.dataset.id); if(p) go({v:"ec",id:p.id,tab:p.status==="fertig"?"abschluss":p.status==="offen"?"auftrag":p.art==="geraete"?"geraete":"messen"}); return; }
   case "ecTab": { if(!pr) return; const T=ecSchritte(pr).find(x=>x[0]===b.dataset.v);
     if(T&&T[3]){ toast(`Abschluss erst, wenn alles fertig ist – noch offen: ${ecFehlt(pr).join(", ")}`); if(typeof navIndSetzen==="function") navIndSetzen(); return; }
-    nav.tab=b.dataset.v; closeOverlays(); render(); scrollTo(0,0); return; }
+    nav.tab=b.dataset.v; nav.schr=null; closeOverlays(); render(); scrollTo(0,0); return; }
   case "ecMv": nav.mv=b.dataset.v; render(); return;
   case "ecPruefer": { if(!nichtZu()) return; pr.pruefer=b.dataset.n; saveRec("echecks",pr); render(); return; }
   case "ecMg": { if(!nichtZu()) return; const m=DB.geraete&&DB.geraete.get(b.dataset.id); if(m){ pr.geraet=ecMgDaten(m); saveRec("echecks",pr); render(); } return; }
@@ -833,6 +927,9 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     L=L.includes(b.dataset.id)?L.filter(x=>x!==b.dataset.id):[...L,b.dataset.id]; if(!L.length){ toast("Mindestens ein Verteiler gehört zur Prüfung"); return; }
     pr.umfang=alle.every(x=>L.includes(x))?null:{vIds:L}; saveRec("echecks",pr); render(); return; }
   case "ecWahl": { const gr=b.dataset.g; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+    if(ecDlg&&ecDlg.rk&&/^rk/.test(gr)){ const z=ecDlg.rk, v=b.dataset.v; ecRkLesen();
+      if(gr==="rkTyp"){ const s2=g&&g.schraenke.find(x=>x.id===nav.schr), d=EC_RKSTD[v]||{he:1}; z.typ=v; z.he=d.he; z.ports=d.ports||0; if(v==="patch"&&!z.nr&&s2) z.nr=Math.max(0,...ecPfListe(s2).map(x=>x.nr))+1; ecRkDlg(z); return; }
+      if(gr==="rkHe") z.he=+v; if(gr==="rkPorts") z.ports=+v; if(gr==="rkPoe") z.poe=v==="1"; return; }
     if(gr==="lage"||gr==="nlage"||gr==="schutz"||gr==="leitung"){ const i=document.getElementById({lage:"f_ecLage",nlage:"f_ecLage",schutz:"f_skSchutz",leitung:"f_skLeitung"}[gr]); if(i){ i.value=b.dataset.v; i.parentElement.classList.add("fl"); } return; }
     if(/^impTyp\d+$/.test(gr)&&ecImp){ ecImportLesen(); const d=ecImp.docs[+gr.slice(6)]; if(d){ d.typ=b.dataset.v; ecImportZiele(); ecImportDlg(); } return; }
     if(ecDlg&&ecDlg.w) ecDlg.w[gr]=b.dataset.v; if(gr==="art"){ const z=document.getElementById("ecFachZeile"); if(z) z.hidden=b.dataset.v!=="sd"; }
@@ -863,7 +960,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   /* Anschlusspunkte */
   case "ecStelleNeu": if(!nichtZu()) return; ecStelleDlg(null,b.dataset.id); return;
   case "ecStelle": if(!nichtZu()) return; ecStelleDlg(b.dataset.id); return;
-  case "ecZumRaum": { if(ecDlg&&ecDlg.netMessZurueck){ ecNetMessDlg(ecDlg.netMessZurueck); return; } const r=ecDlg&&ecDlg.raumId; if(r) ecRaumDlg(r); else closeOverlays(); return; }
+  case "ecZumRaum": { if(ecDlg&&ecDlg.ausRack){ closeOverlays(); return; } if(ecDlg&&ecDlg.netMessZurueck){ ecNetMessDlg(ecDlg.netMessZurueck); return; } const r=ecDlg&&ecDlg.raumId; if(r) ecRaumDlg(r); else closeOverlays(); return; }
   case "ecStelleOk": { const F=formVals(), W=ecDlg.w, raumId=ecDlg.raumId, neu={art:W.art,fach:W.art==="sd"?+W.fach||1:1,lage:(F.ecLage||"").trim(),skId:F.ecSk||""}; ecLetzterSk=neu.skId;
     if(ecDlg.stelle) Object.assign(g.stellen.find(s=>s.id===ecDlg.stelle),neu);
     else { let ord=Math.max(0,...g.stellen.filter(s=>s.raumId===raumId).map(s=>s.ord||0)); for(let i=0;i<(+W.anz||1);i++) g.stellen.push({id:uid(),raumId,ord:++ord,...neu}); }
@@ -926,15 +1023,34 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     closeOverlays(); render(); return; }
   case "ecBmDel": { const bm=DB.betriebsmittel.get(ecDlg.bm); if(bm){ bm.deleted=true; saveRec("betriebsmittel",bm); } closeOverlays(); render(); return; }
   case "ecGer": ecGerDlg(b.dataset.id); return;
+  /* Schrankplaner */
+  case "ecRkAuf": nav.schr=b.dataset.id; closeOverlays(); render(); scrollTo(0,0); return;
+  case "ecRkZu": nav.schr=null; render(); scrollTo(0,0); return;
+  case "ecRkGriff": return;
+  case "ecRkNeu": case "ecRkLeer": { if(!nichtZu()) return; const s2=g.schraenke.find(x=>x.id===nav.schr); if(!s2) return; const r=ecRkNeuZ(s2,b.dataset.t||"patch",b.dataset.pos);
+    if(!r.platz){ toast("Kein Platz mehr frei – Schrank größer wählen oder etwas entfernen"); return; } ecRkDlg(r.z); return; }
+  case "ecRkTeil": { if(!nichtZu()) return; const s2=g.schraenke.find(x=>x.id===nav.schr), t=s2&&ecSchrTeile(s2).find(x=>x.id===b.dataset.id); if(t) ecRkDlg({...t}); return; }
+  case "ecRkPort": { if(!nichtZu()) return; ecDoseDlg(b.dataset.id); if(ecDlg) ecDlg.ausRack=true; return; }
+  case "ecRkOk": { const s2=g.schraenke.find(x=>x.id===nav.schr); if(!s2||!ecDlg||!ecDlg.rk) return; ecRkLesen(); const z=ecDlg.rk;
+    if(!ecRkFrei(s2,z.pos,z.he,z.id)){ toast(`Ab HE ${z.pos} ist nicht genug Platz für ${z.he} HE`); return; }
+    if(z.typ==="patch"){ if(!(z.nr>0)){ toast("Bitte eine Patchfeld-Nummer angeben"); return; } if(ecPfListe(s2).some(x=>x.nr===z.nr&&x.id!==z.id)){ toast(`Patchfeld ${z.nr} gibt es schon`); return; } }
+    const t={id:z.id||uid(),typ:z.typ,pos:z.pos,he:z.he}; if(z.name) t.name=z.name; if(z.typ==="patch"||z.typ==="switch") t.ports=z.ports||24; if(z.typ==="patch") t.nr=z.nr; if(z.typ==="switch"&&z.poe) t.poe=true;
+    const L=ecSchrTeile(s2).filter(x=>x.id!==t.id); s2.teile=[...L,t].sort((a2,b2)=>a2.pos-b2.pos); sp(); closeOverlays(); render(); return; }
+  case "ecRkDel": { const s2=g.schraenke.find(x=>x.id===nav.schr); if(!s2||!ecDlg||!ecDlg.rk) return; const z=ecDlg.rk;
+    if(z.typ==="patch"&&!b.dataset.ok){ const n=[...ecRkLinks(g,s2).M.keys()].filter(k=>ecPpTeile(k).pf===z.nr).length; if(n){ b.dataset.ok="1"; b.textContent=`Trotzdem entfernen (${n} Port${n>1?"s":""} belegt)`; return; } }
+    s2.teile=ecSchrTeile(s2).filter(x=>x.id!==z.id); sp(); closeOverlays(); render(); return; }
   /* Netzwerk */
   case "ecUmfangS": { if(!nichtZu()) return; const alle=g.schraenke.map(s=>s.id); let L=pr.umfang&&pr.umfang.sIds?[...pr.umfang.sIds]:[...alle];
     L=L.includes(b.dataset.id)?L.filter(x=>x!==b.dataset.id):[...L,b.dataset.id]; if(!L.length){ toast("Mindestens ein Schrank gehört zur Prüfung"); return; }
     pr.umfang=alle.every(x=>L.includes(x))?null:{sIds:L}; saveRec("echecks",pr); render(); return; }
-  case "ecSchrNeu": case "ecSchrEdit": { if(!nichtZu()) return; const s=a==="ecSchrEdit"&&g.schraenke.find(x=>x.id===b.dataset.id); ecDlg={schr:s?s.id:null,w:{pfAnz:String(ecSchrPf(s)),pfPorts:String(ecSchrPorts(s))}};
-    ecNameDlg(s?"Netzwerkschrank bearbeiten":"Neuer Netzwerkschrank",s?s.name:"","ecSchrOk",s?"ecSchrDel":null,sf("ecVtRaum","Raum",s?s.raumId||"":"",[["","ohne Raum"],...ecRaeume(g).map(r=>[r.id,r.titel])],{form:true})+`<div class="lbl" style="margin-top:12px">Patchfelder</div>${ecChips("pfAnz",[1,2,3,4,5,6].map(x=>[String(x),String(x)]),ecDlg.w.pfAnz)}<div class="lbl" style="margin-top:12px">Ports je Patchfeld</div>${ecChips("pfPorts",[["12","12"],["16","16"],["24","24"],["48","48"]],ecDlg.w.pfPorts)}`);
+  case "ecSchrNeu": case "ecSchrEdit": { if(!nichtZu()) return; const s=a==="ecSchrEdit"&&g.schraenke.find(x=>x.id===b.dataset.id); ecDlg={schr:s?s.id:null,w:{pfAnz:String(ecSchrPf(s)),pfPorts:String(ecSchrPorts(s)),he:String(s?ecSchrHe(s):12),bauart:s&&s.bauart||"wand"}}; const geplant=!!(s&&Array.isArray(s.teile));
+    ecNameDlg(s?"Netzwerkschrank bearbeiten":"Neuer Netzwerkschrank",s?s.name:"","ecSchrOk",s?"ecSchrDel":null,sf("ecVtRaum","Raum",s?s.raumId||"":"",[["","ohne Raum"],...ecRaeume(g).map(r=>[r.id,r.titel])],{form:true})+`<div class="lbl" style="margin-top:12px">Bauart</div>${ecChips("bauart",[["wand","Wandschrank"],["stand","Standschrank"]],ecDlg.w.bauart)}<div class="lbl" style="margin-top:12px">Höheneinheiten</div>${ecChips("he",EC_RKHE.map(x=>[String(x),`${x} HE`]),ecDlg.w.he)}`
+      +(geplant?`<p class="meta" style="margin-top:10px">Patchfelder, Switches und alles Weitere legst du unter „Schrank planen“ fest.</p>`:`<div class="lbl" style="margin-top:12px">Patchfelder</div>${ecChips("pfAnz",[1,2,3,4,5,6].map(x=>[String(x),String(x)]),ecDlg.w.pfAnz)}<div class="lbl" style="margin-top:12px">Ports je Patchfeld</div>${ecChips("pfPorts",[["12","12"],["16","16"],["24","24"],["48","48"]],ecDlg.w.pfPorts)}`));
     if(!s){ const i=document.getElementById("f_ecName"); if(i&&!g.schraenke.length){ i.value="Netzwerkschrank"; i.parentElement.classList.add("fl"); } } return; }
   case "ecSchrOk": { const F=formVals(), n=(F.ecName||"").trim(); if(!n){ toast("Bitte eine Bezeichnung eingeben"); return; }
-    if(ecDlg.schr){ const s=g.schraenke.find(x=>x.id===ecDlg.schr); s.name=n; s.raumId=F.ecVtRaum||""; s.pf=+ecDlg.w.pfAnz||1; s.ports=+ecDlg.w.pfPorts||24; } else { const s={id:uid(),name:n,raumId:F.ecVtRaum||"",pf:+ecDlg.w.pfAnz||1,ports:+ecDlg.w.pfPorts||24}; g.schraenke.push(s); ecLetzterSchr=s.id; } sp(); closeOverlays(); render(); return; }
+    if(ecDlg.schr){ const s=g.schraenke.find(x=>x.id===ecDlg.schr); const W=ecDlg.w, he=+W.he||12;
+      if(Array.isArray(s.teile)&&s.teile.some(t=>t.pos+t.he-1>he)){ toast(`Bei ${he} HE passt die geplante Bestückung nicht mehr – erst Teile nach oben schieben oder entfernen`); return; }
+      s.name=n; s.raumId=F.ecVtRaum||""; s.he=he; s.bauart=W.bauart; if(!Array.isArray(s.teile)){ s.pf=+W.pfAnz||1; s.ports=+W.pfPorts||24; } } else { const W=ecDlg.w, s={id:uid(),name:n,raumId:F.ecVtRaum||"",pf:+W.pfAnz||1,ports:+W.pfPorts||24,he:+W.he||12,bauart:W.bauart}; g.schraenke.push(s); ecLetzterSchr=s.id; } sp(); closeOverlays(); render(); return; }
   case "ecSchrDel": { const n=g.dosen.filter(d=>d.sId===ecDlg.schr).length; if(n&&!b.dataset.ok){ b.dataset.ok="1"; b.textContent=`Löschen (${n} Dose${n>1?"n":""} ohne Schrank)`; return; }
     g.dosen.forEach(d=>{ if(d.sId===ecDlg.schr) d.sId=""; }); g.schraenke=g.schraenke.filter(x=>x.id!==ecDlg.schr); sp(); closeOverlays(); render(); return; }
   case "ecDoseNeu": if(!nichtZu()) return; ecDoseDlg(null,b.dataset.id); return;
@@ -947,10 +1063,10 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     else { let ord=Math.max(0,...g.dosen.filter(d=>d.raumId===raumId).map(d=>d.ord||0)); for(let k=0;k<anz;k++) g.dosen.push({id:uid(),raumId,ord:++ord,...basis,pp:ppFuer(k)}); }
     ecLetzterPf=+W.pf||1;
     const N=new Map(); g.dosen.filter(d=>d.sId&&d.sId===basis.sId).forEach(d=>Object.values(d.pp||{}).forEach(t=>{ const k=String(t).trim(); if(k) N.set(k,(N.get(k)||0)+1); })); const dop=[...N].filter(x=>x[1]>1).map(x=>x[0]);
-    sp(); render(); if(ecDlg&&ecDlg.netMessZurueck) ecNetMessDlg(ecDlg.netMessZurueck); else ecNetRaumDlg(raumId);
+    const ausRack=ecDlg&&ecDlg.ausRack; sp(); render(); if(ausRack) closeOverlays(); else if(ecDlg&&ecDlg.netMessZurueck) ecNetMessDlg(ecDlg.netMessZurueck); else ecNetRaumDlg(raumId);
     if(dop.length) toast(`Achtung: Port ${dop.join(", ")} ist im Schrank doppelt vergeben`); return; }
   case "ecDoseDel": { const d=g.dosen.find(x=>x.id===ecDlg.dose), raumId=ecDlg.raumId; if(d&&!b.dataset.ok&&pr.werte&&Object.keys(pr.werte).some(k=>k.startsWith(d.id+"."))){ b.dataset.ok="1"; b.textContent="Mit Messwerten löschen"; return; }
-    g.dosen=g.dosen.filter(x=>x.id!==ecDlg.dose); sp(); render(); ecNetRaumDlg(raumId); return; }
+    const ausRack=ecDlg.ausRack; g.dosen=g.dosen.filter(x=>x.id!==ecDlg.dose); sp(); render(); if(ausRack) closeOverlays(); else ecNetRaumDlg(raumId); return; }
   case "ecDoseOrd": { const d=g.dosen.find(x=>x.id===b.dataset.id); if(!d) return; const D=g.dosen.filter(x=>x.raumId===d.raumId).sort((x,y)=>(x.ord||0)-(y.ord||0)), i=D.indexOf(d), j=i+(+b.dataset.d); if(j<0||j>=D.length) return;
     [D[i],D[j]]=[D[j],D[i]]; D.forEach((x,k)=>x.ord=k+1); sp(); render(); ecNetRaumDlg(d.raumId); return; }
   case "ecNetMess": ecNetMessDlg(b.dataset.id); return;
