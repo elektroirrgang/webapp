@@ -177,11 +177,13 @@ function mlMelden(){ if(!ME||!ME.mail||(typeof nav!=="undefined"&&nav.v==="login
   mlLs(key,JSON.stringify([...G,...neu.map(m=>m.id)].slice(-400)));
   const frisch=neu.filter(m=>Date.now()-(m.t||0)<12*36e5); if(!frisch.length) return;
   const vorne=document.visibilityState==="visible"&&document.hasFocus();
-  if(!vorne&&mlPushAn()) mlSystem(frisch); mlBanner(frisch); }
+  /* Ob Windows/macOS gerade stumm sind („Nicht stören“), kann eine Webseite nicht erfahren. Deshalb: kam die Meldung, während die App
+     nicht vorne war, bleibt das Banner in der App stehen, bis man es antippt oder schließt – so geht nichts verloren. */
+  if(!vorne&&mlPushAn()) mlSystem(frisch); mlBanner(frisch,!vorne); }
 function mlOeffnenId(id){ document.getElementById("mlBan")?.remove(); if(id==="test") return; const S=mlSt(), m=id&&meldungen().find(x=>x.id===id);
   if(!m){ mlAuf(); return; } S.gel[id]=1; mlStSpeichern(); mlGlocke(); if(m.go) mlGo(m.go); }
 let mlBanT=null;
-function mlBanner(neu){ document.getElementById("mlBan")?.remove(); clearTimeout(mlBanT); const m=neu[0], n=neu.length;
+function mlBanner(neu,bleibt){ document.getElementById("mlBan")?.remove(); clearTimeout(mlBanT); const m=neu[0], n=neu.length;
   const d=document.createElement("div"); d.id="mlBan"; d.className="ml-ban"; d.setAttribute("role","status");
   d.innerHTML=`<button type="button" class="ml-ban-in" data-ban="${esc(n===1?m.id:"")}">${n===1?mlAv(m):`<span class="ml-av">${n}</span>`}
     <span class="ml-tx"><span class="ml-k"><b>${esc(n===1?mlName(m):`${n} neue Benachrichtigungen`)}</b><span class="ml-zeit">jetzt</span></span>
@@ -190,7 +192,8 @@ function mlBanner(neu){ document.getElementById("mlBan")?.remove(); clearTimeout
   document.body.appendChild(d);
   /* Zeit läuft erst, wenn man hinschaut; Maus drüber hält das Banner */
   const weg=()=>{ d.classList.add("geht"); setTimeout(()=>d.remove(),220); };
-  const start=()=>{ clearTimeout(mlBanT); if(document.visibilityState==="visible") mlBanT=setTimeout(weg,n===1?7000:9000); };
+  if(bleibt) d.classList.add("bleibt");
+  const start=()=>{ clearTimeout(mlBanT); if(!bleibt&&document.visibilityState==="visible") mlBanT=setTimeout(weg,n===1?7000:9000); };
   d.addEventListener("pointerenter",()=>clearTimeout(mlBanT)); d.addEventListener("pointerleave",start);
   d.addEventListener("click",e=>{ e.stopPropagation(); if(e.target.closest(".ml-ban-x")){ weg(); return; } const b=e.target.closest("[data-ban]"); if(b) mlOeffnenId(b.dataset.ban); });
   const sicht=()=>{ if(!document.body.contains(d)){ document.removeEventListener("visibilitychange",sicht); return; } start(); };
@@ -226,7 +229,7 @@ const ML_TEST="irrgang_ml_test";
 const mlUhr=t=>new Date(t).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
 function mlTestLesen(){ try{ return JSON.parse(mlLs(ML_TEST)||"null"); }catch(e){ return null; } }
 async function mlTestZeigen(h,txt){ const m={id:"test",von:null,h,s:txt,t:Date.now()}; let sys=false; if(mlPushAn()) sys=await mlSystem([m]);
-  if(!sys||document.visibilityState==="visible") mlBanner([m]);
+  mlBanner([m],!(document.visibilityState==="visible"&&document.hasFocus()));
   if(mlPushAn()&&!sys) toast("Systemmeldung fehlgeschlagen: "+(mlFehler||"unbekannt")); }
 const mlLaeuftSeit=Date.now();
 function mlTestPruefen(){ const T=mlTestLesen(); if(!T||Date.now()<T.f) return; mlLs(ML_TEST,"");
