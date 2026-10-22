@@ -28,7 +28,7 @@ const ecListeV=art=>({geraete:"geraete",netz:"netzwerk"}[art]||"anlagen");
 const EC_PRUEFART=["Wiederholungsprüfung","Erstprüfung","E-CHECK"];
 const EC_SART={sd:"Steckdose",herd:"Herdanschluss",fest:"Festanschluss",licht:"Licht",sonst:"Sonstiges"};
 const EC_LAGE=["Eingang","unterm Schalter","neben Tür","neben Fenster","Arbeitsfläche","Bett","TV","Schreibtisch","Außen"];
-/* Messgeräte pflegt die Übersicht (Mehr › Geräte); hier nur zur Auswahl */
+/* Messgeräte pflegt die Übersicht (Messgeräte); hier nur zur Auswahl */
 /* Einsatz: „installation“ (Installation/EVSE), „geraete“ (Geräteprüfung) oder „beide“; ohne Angabe gilt ein PAT als Gerätetester */
 const ecEinsatz=g=>g.einsatz||(/\bPAT\b/i.test(g.modell||"")?"geraete":/signaltek|lantek|navitek|netzwerk|kabeltester|ethernet/i.test(`${g.hersteller||""} ${g.modell||""}`)?"netzwerk":"installation");
 const ecMessgeraete=art=>(DB.geraete?live("geraete"):[]).filter(x=>x.art==="mess"&&!x.aus&&(!art||(art==="netz"?["netzwerk"]:[art==="geraete"?"geraete":"installation","beide"]).includes(ecEinsatz(x)))).sort((a,b)=>String(a.kurz||a.modell||"").localeCompare(String(b.kurz||b.modell||""),"de",{numeric:true}));
@@ -244,7 +244,7 @@ function ecAuftragView(pr){ const o=ecOrt(pr.ortId), an=ecAn(pr), nz=ecNz(pr), G
       ${ecFeld(pr,"bez","Bezeichnung (optional)",pr.bez,{ph:an?"z. B. Einfamilienhaus, Erweiterung Küche":nz?"z. B. Neubau Büro, Erweiterung 2. OG":"z. B. Büro und Werkstatt"})}</div></section>
     <section class="card"><h3>Messgerät</h3>${!zu&&MG.length?`<div class="chips ec-mg">${MG.map(m=>`<button type="button" class="chip" data-act="ecMg" data-id="${esc(m.id)}" aria-pressed="${G.mgId===m.id}">${esc(ecMgLabel(m))}${m.sn?` · ${esc(m.sn)}`:""}</button>`).join("")}</div>`:""}
       <div class="ec-fg">${ecFeld(pr,"geraet.mess","Messgerät",G.mess)}<div class="reihe2">${ecFeld(pr,"geraet.sn","Seriennummer",G.sn)}${ecFeld(pr,"geraet.kal","Kalibriert bis",G.kal,{ph:"z. B. 03/2027"})}</div></div>
-      ${MG.length?"":`<p class="meta">Messgeräte werden in der Übersicht unter „Geräte“ gepflegt und erscheinen dann hier zur Auswahl${nz?" – beim Netzwerktester als Einsatz „Netzwerk“ wählen":""}.</p>`}</section>
+      ${MG.length?"":`<p class="meta">Messgeräte werden in der Übersicht unter „Messgeräte“ gepflegt und erscheinen dann hier zur Auswahl${nz?" – beim Netzwerktester als Einsatz „Netzwerk“ wählen":""}.</p>`}</section>
     ${nz?`<section class="card"><h3>Prüfung</h3><div class="ec-fg">${ecWahlSel(pr,"pruefart","Prüfart",pr.pruefart,["Abnahme","Wiederholungsprüfung","Fehlersuche"])}${ecFeld(pr,"kabel","Verkabelung",pr.kabel,{ph:"z. B. Cat 7 Verlegekabel, Cat 6A Module"})}
       <div class="lbl" style="margin-top:4px">Belegung</div>${seg("ecBelegStd",ecWmStd(pr),[["T568A","T568A"],["T568B","T568B"]])}
       <div class="lbl" style="margin-top:4px">Schirm</div>${seg("ecSchirmStd",pr.schirm==="nein"?"nein":"ja",[["ja","geschirmt"],["nein","ungeschirmt"]])}</div>

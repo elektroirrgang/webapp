@@ -547,6 +547,9 @@ html.standalone .app-weiter{display:none!important}html.standalone a.li.weiter{p
   .tb-title{font-size:18px}
   .nav-item{letter-spacing:0;font-size:11.5px}
   .nav-item > span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+  .nav-item > span:last-child{padding:0;overflow:visible;text-overflow:clip} /* sechs Ziele: „Messgeräte“, „Bibliothek“ ganz zeigen */
+}
+@media (max-width:419px){ .nav-item{font-size:10.5px!important;letter-spacing:-.01em}
 }
 
 #railBtn{display:none}
@@ -1555,7 +1558,7 @@ const ENTWICKLUNG=[
   {t:"Firmenadresse",st:"open",s:"Geplant",d:"Umzug auf ein Firmenkonto bei GitHub und ggf. eine eigene Adresse unter elektro-irrgang.de."},
   {t:"E-Check (Hausinstallation und Geräte)",st:"wip",s:"In Vorbereitung",d:"App angelegt mit Anmeldung und Kunden. Offen: Messgeräte, Protokollvorlagen, Datenübernahme aus dem Messgerät, Abgrenzung zu SCC Mobile."}];
 const ENTW_STAND="15.10.2026";
-const TOPDEST_ALLE=[["start","Start","home"],["auftraege","Aufträge","board"],["uebersicht","Statistik","chart"],["kunden","Kunden","firma"],["geraete","Geräte","geraet"],["bibliothek","Bibliothek","folder"]];
+const TOPDEST_ALLE=[["start","Start","home"],["auftraege","Aufträge","board"],["uebersicht","Statistik","chart"],["kunden","Kunden","firma"],["geraete","Messgeräte","geraet"],["bibliothek","Bibliothek","folder"]];
 const topdest=()=>TOPDEST_ALLE.filter(d=>d[0]!=="uebersicht"||ME.admin);
 const MEHR_SUB={team:"Mitarbeiter",impressum:"Impressum",about:"Über",entwicklung:"Entwicklung"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
@@ -1838,7 +1841,7 @@ function render(){ profilAnwenden();
   if(login) body=loginView();
   else if(nav.v==="start"){ title=startTitel(); sub=startUnter(); body=startView(); }
   else if(nav.v==="uebersicht"){ title="Statistik"; body=uebersichtView()+(SYNC_ON?"":`<p class="hint">Daten auf diesem Gerät – mit der Microsoft-Anbindung kommen die Daten aller Mitarbeiter dazu.</p>`); }
-  else if(nav.v==="geraete"){ title="Geräte"; gerVorlagen(); body=geraeteView(); fab=ME.admin?["gerNeu","Gerät","add"]:null; }
+  else if(nav.v==="geraete"){ title="Messgeräte"; gerVorlagen(); body=geraeteView(); fab=ME.admin?["gerNeu","Messgerät","add"]:null; }
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=ME.admin?["newKunde","Kunde","add"]:null; }
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
   else if(nav.v==="auftraege"){ title="Aufträge"; body=vorgaengeView(); fab=["vgNeu","Vorgang","add"]; }
@@ -2181,7 +2184,7 @@ function gerVorlagen(){ if(!ME.admin) return;
 const gerAv=g=>{ const u=g.bild||GER_BILD_ALT[g.bildUrl]||g.bildUrl; return u?`<span class="av av-img ger-av">${icon("geraet")}<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></span>`:`<span class="av">${icon("geraet")}</span>`; };
 function geraeteView(){
   const L=live("geraete").filter(g=>!g.aus).sort((a,b)=>gerName(a).localeCompare(gerName(b),"de")), A=live("geraete").filter(g=>g.aus);
-  if(!L.length&&!A.length) return `<div class="empty">${icon("geraet")}<h2>Noch keine Geräte</h2><p>${ME.admin?"Lege mit „Gerät“ die Messgeräte und Prüfadapter an – mit Seriennummer und Kalibrierdatum. In EVSE werden sie dann nur noch ausgewählt.":"Messgeräte pflegt der Chef oder das Büro."}</p></div>`;
+  if(!L.length&&!A.length) return `<div class="empty">${icon("geraet")}<h2>Noch keine Messgeräte</h2><p>${ME.admin?"Lege mit „Messgerät“ die Messgeräte und Prüfadapter an – mit Seriennummer und Kalibrierdatum. In EVSE werden sie dann nur noch ausgewählt.":"Messgeräte pflegt der Chef oder das Büro."}</p></div>`;
   const z=g=>{ const k=gerKal(g), wer=g.bei?(team().find(m=>m.mail===g.bei)||{name:g.bei}).name:"";
     return `<div class="li" role="button" tabindex="0" data-act="gerEdit" data-id="${esc(g.id)}">${gerAv(g)}<span class="lt"><span class="h">${esc(gerLabel(g))}</span>
       <span class="s">${esc([g.sn?`SN ${g.sn}`:"Seriennummer fehlt",wer&&`bei ${wer}`,g.notiz].filter(Boolean).join(" · "))}</span>${k?`<span class="st">${pill(k.s==="ok"?"ok":k.s==="bald"?"wip":"bad",k.t)}</span>`:""}</span></div>`; };
@@ -2201,7 +2204,7 @@ function gerFotoNeu(){ const el=document.getElementById("gerFoto"); if(!el||!ger
 function gerDialog(g){
   gerForm={id:g&&g.id,bild:g&&g.bild||""}; const r=g||{art:"mess"}, T=team().filter(m=>m.mail);
   if(!ME.admin){ const k=gerKal(r); dialog(gerName(r),`<p>${esc([GER_ART.find(x=>x[0]===r.art)?.[1],r.sn&&`Seriennr. ${r.sn}`,k&&k.t].filter(Boolean).join(" · "))}</p>${r.notiz?`<p class="meta">${esc(r.notiz)}</p>`:""}`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return; }
-  dialog(g?"Gerät bearbeiten":"Neues Gerät",`<div class="fg1">
+  dialog(g?"Messgerät bearbeiten":"Neues Messgerät",`<div class="fg1">
     <div class="ger-bildzeile"><div class="ger-foto" id="gerFoto">${gerFotoHtml(r)}</div>${tf("bildUrl","Herstellerbild (Internetadresse, optional)",GER_BILD_ALT[r.bildUrl]||r.bildUrl,{form:true,type:"url"})}</div>
     <div class="reihe3">${sf("art","Art",r.art||"mess",GER_ART,{form:true})}${tf("hersteller","Hersteller",r.hersteller,{form:true,ph:"z. B. Wiha"})}${tf("modell","Modell",r.modell,{form:true,ph:"z. B. MFT one"})}</div>
     <div class="reihe3">${tf("kurz","Kurzname",r.kurz,{form:true,ph:"z. B. MFT 1 oder Bertha"})}${tf("sn","Seriennummer",r.sn,{form:true})}${tf("kal","Kalibrierung gültig bis",r.kal,{form:true,ph:"MM.JJJJ"})}</div>
