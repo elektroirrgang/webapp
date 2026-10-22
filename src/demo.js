@@ -8,7 +8,7 @@ const DEMO_KEY="irrgang_demo";
    Ohne Profil (nicht angemeldet) gilt der Schalter dieses Browsers. */
 const demoProfil=()=>{ try{ return typeof profilVon==="function"&&typeof ME!=="undefined"&&ME.mail?profilVon(ME.mail):null; }catch(e){ return null; } };
 const demoAn=()=>{ const p=demoProfil(); if(p&&typeof p.demoVorschau==="boolean") return p.demoVorschau; /* nicht „demo“ – Datensätze mit demo werden nie abgeglichen */ try{ return localStorage.getItem(DEMO_KEY)==="1"; }catch(e){ return false; } };
-const DEMO_SPEICHER=[["evse_daten",["kunden","standorte","ladeparks","pruefungen","katalog"]],["baustelle_daten",["baustellen","eintraege","notizen","anforderungen"]],["irrgang_apps",["vorgaenge","geraete","dateien","protokolle"]]];
+const DEMO_SPEICHER=[["evse_daten",["kunden","standorte","ladeparks","pruefungen","katalog"]],["baustelle_daten",["baustellen","eintraege","notizen","anforderungen"]],["irrgang_apps",["vorgaenge","geraete","dateien","protokolle"]],["echeck_daten",["gebaeude","echecks","betriebsmittel"]]];
 const DEMO_FOTOS={"demo-f-zp":"zp","demo-f-hak":"hak","demo-f-uvalt":"uvalt","demo-f-mangel":"mangel","demo-f-ue-baustrom":"baustrom","demo-f-ue-leerrohr":"leerrohr","demo-f-ue-uv":"uv","demo-f-ue-pa":"pa"};
 function demoDaten(){
   const T=864e5, jetzt=Date.now(), vor=(t,h=0)=>jetzt-t*T-h*36e5, tag=t=>new Date(jetzt+t*T).toISOString().slice(0,10);
@@ -84,8 +84,130 @@ function demoDaten(){
     r({id:"demo-d3b",bezugKind:"kunden",bezugId:"demo-k1",name:"Notleuchte Lager.jpg",typ:"image/jpeg",groesse:121000,demoArt:"leuchte"},P.ab,vor(1)),
     r({id:"demo-d4b",bezugKind:"kunden",bezugId:"demo-k5",name:"Schaltplan Haus B.pdf",typ:"application/pdf",groesse:63000,demoArt:"schaltplan"},P.bu,vor(30)),
     r({id:"demo-d5b",bezugKind:"standorte",bezugId:"demo-s3",name:"Unterverteilung Haus A.jpg",typ:"image/jpeg",groesse:150000,demoArt:"uv"},P.ms,vor(20))];
-  return {kunden,standorte,baustellen,eintraege,vorgaenge,anforderungen,pruefungen,protokolle,notizen,dateien};
+  const H=demoHaus(r,P,vor,tag); kunden.push(H.kunde);
+  return {kunden,standorte,baustellen,eintraege,vorgaenge,anforderungen,pruefungen,protokolle,notizen,dateien,gebaeude:H.gebaeude,echecks:H.echecks};
 }
+/* Demo-Haus „Am Sonnenhang“: komplettes Gebäude für die E-Check-App – fünf Geschosse plus Garage auf EG-Ebene,
+   Hauptverteilung im Keller, drei Unterverteilungen, großer Serverschrank im Technikraum (KG) und ein Mini-Verteiler im 2. OG.
+   Dazu eine laufende Installationsprüfung (E-CHECK) und eine laufende Netzwerkprüfung mit ein paar typischen Fehlern. */
+function demoHaus(r,P,vor,tag){
+  const kunde=r({id:"demo-k6",name:"Demo-Haus Sonnenhang",kdnr:"D-1006",strasse:"Am Sonnenhang 1",plz:"51545",ort:"Waldbröl",tel:"0171 0000016",
+    kontakte:[{id:"demo-c7",name:"Familie Kessler",rolle:"Eigentümer",tel:"0171 0000016"}],ansprech:"Familie Kessler"},P.bu,vor(30));
+  const ET=[["kg","KG",-1,["Hausanschlussraum","Heizungsraum","Technikraum","Werkstatt","Waschküche","Weinkeller","Heimkino","Flur KG"]],
+    ["eg","EG",0,["Diele","Gäste-WC","Küche","Speisekammer","Wohnen / Essen","Büro","Wintergarten","Flur EG","Terrasse"]],
+    ["ga","Garage",0,["Doppelgarage","Fahrradraum"]],
+    ["og1","1. OG",1,["Schlafen","Ankleide","Bad","Kind 1","Kind 2","Bad Kinder","Flur OG","Balkon"]],
+    ["og2","2. OG",2,["Gästezimmer","Arbeitszimmer","Musikzimmer","Duschbad","Flur 2. OG","Abstellraum (Netzwerk)"]],
+    ["dg","DG",50,["Galerie","Abstellraum DG","Dachterrasse"]]];
+  const R={}; const etagen=ET.map(([id,name,ebene,L])=>({id:"dh-"+id,name,ebene,raeume:L.map((n,i)=>{ const rid=`dh-${id}-${i+1}`; R[`${id}:${n}`]=rid; return {id:rid,name:n}; })}));
+  const raum=(e,n)=>{ const x=R[`${e}:${n}`]; if(!x) throw new Error("Demo-Raum fehlt: "+e+" "+n); return x; };
+  const verteiler=[{id:"dh-hv",name:"Zählerschrank / HV",raumId:raum("kg","Hausanschlussraum")},{id:"dh-uveg",name:"UV EG",raumId:raum("eg","Flur EG")},
+    {id:"dh-uvga",name:"UV Garage",raumId:raum("ga","Doppelgarage")},{id:"dh-uvog",name:"UV OG",raumId:raum("og1","Flur OG")}];
+  const rcds=[["hv1","dh-hv","1","A",40,30],["hv2","dh-hv","2","F",40,30],["hv3","dh-hv","3","A",16,30,1],["eg1","dh-uveg","1","A",40,30],["eg2","dh-uveg","2","A",40,30],["eg3","dh-uveg","3","F",40,30],
+    ["ga1","dh-uvga","1","A",40,30],["ga2","dh-uvga","2","A",40,30],["og1","dh-uvog","1","A",40,30],["og2","dh-uvog","2","A",40,30],["og3","dh-uvog","3","A",40,30]]
+    .map(([id,vId,nr,typ,In,idn,fils])=>({id:"dh-r-"+id,vId,nr,typ,in:String(In),idn:String(idn),...(fils?{fils:true}:{})}));
+  const L15="NYM-J 3×1,5", L25="NYM-J 3×2,5", L525="NYM-J 5×2,5", L56="NYM-J 5×6";
+  /* Stromkreise: [Verteiler, Nr, Bezeichnung, Schutz, RCD, Leitung, Stellen [Etage, Raum, Art, Fach, Lage]] */
+  const SK=[
+    ["hv","F1","Licht KG","B10","hv1",L15,["Hausanschlussraum","Heizungsraum","Technikraum","Werkstatt","Waschküche","Weinkeller","Heimkino","Flur KG"].map(n=>["kg",n,"licht",1,"Decke"])],
+    ["hv","F2","Steckdosen HAR und Technikraum","B16","hv1",L25,[["kg","Hausanschlussraum","sd",2,"Eingang"],["kg","Technikraum","sd",2,"neben Tür"],["kg","Technikraum","sd",2,"Arbeitsfläche"]]],
+    ["hv","F3","Serverschrank (eigener Kreis)","B16","hv1",L25,[["kg","Technikraum","sd",3,"Serverschrank"]]],
+    ["hv","F4","Werkstatt Steckdosen","B16","hv1",L25,[["kg","Werkstatt","sd",3,"Arbeitsfläche"],["kg","Werkstatt","sd",3,"Arbeitsfläche"],["kg","Werkstatt","sd",1,"neben Tür"]]],
+    ["hv","F5","Werkstatt CEE 16 A","C16","hv1",L525,[["kg","Werkstatt","fest",1,"CEE-Dose 16 A"]]],
+    ["hv","F6","Waschmaschine","B16","hv2",L25,[["kg","Waschküche","sd",1,"Waschmaschine"]]],
+    ["hv","F7","Trockner","B16","hv2",L25,[["kg","Waschküche","sd",1,"Trockner"]]],
+    ["hv","F8","Waschküche Steckdosen","B16","hv2",L25,[["kg","Waschküche","sd",2,"Arbeitsfläche"]]],
+    ["hv","F9","Heizung / WP-Innengerät","B16","hv2",L25,[["kg","Heizungsraum","fest",1,"Wärmepumpe Innengerät"],["kg","Heizungsraum","sd",1,"neben Tür"]]],
+    ["hv","F10","Wärmepumpe Außengerät","C16","",L525,[["kg","Heizungsraum","fest",1,"Außengerät (Durchführung)"]]],
+    ["hv","F11","Heimkino","B16","hv1",L25,[["kg","Heimkino","sd",3,"TV"],["kg","Heimkino","sd",2,"Beamer"],["kg","Heimkino","sd",1,"neben Tür"]]],
+    ["hv","F12","Weinkeller Klimagerät","B16","hv1",L25,[["kg","Weinkeller","fest",1,"Klimagerät"]]],
+    ["hv","F13","Außensteckdosen Terrasse","B16","hv3",L25,[["eg","Terrasse","sd",2,"Außen"],["eg","Terrasse","sd",1,"Außen"]]],
+    ["uveg","F1","Licht EG","B10","eg1",L15,["Diele","Gäste-WC","Küche","Speisekammer","Wohnen / Essen","Büro","Wintergarten","Flur EG"].map(n=>["eg",n,"licht",1,"Decke"])],
+    ["uveg","F2","Diele, Flur, Gäste-WC","B16","eg1",L25,[["eg","Diele","sd",1,"Eingang"],["eg","Flur EG","sd",2,"neben Tür"],["eg","Gäste-WC","sd",1,"neben Tür"]]],
+    ["uveg","F3","Küche Arbeitsfläche links","B16","eg3",L25,[["eg","Küche","sd",2,"Arbeitsfläche"],["eg","Küche","sd",2,"Arbeitsfläche"]]],
+    ["uveg","F4","Küche Arbeitsfläche rechts","B16","eg3",L25,[["eg","Küche","sd",3,"Arbeitsfläche"]]],
+    ["uveg","F5","Herd","B16","eg3",L525,[["eg","Küche","herd",1,""]]],
+    ["uveg","F6","Geschirrspüler","B16","eg3",L25,[["eg","Küche","sd",1,"Geschirrspüler"]]],
+    ["uveg","F7","Kühl-/Gefrierkombi","B16","eg2",L25,[["eg","Küche","sd",1,"Kühlschrank"],["eg","Speisekammer","sd",1,"Gefriertruhe"]]],
+    ["uveg","F8","Backofen / Dampfgarer","B16","eg3",L25,[["eg","Küche","fest",1,"Backofen"]]],
+    ["uveg","F9","Wohnen Steckdosen","B16","eg2",L25,[["eg","Wohnen / Essen","sd",3,"TV"],["eg","Wohnen / Essen","sd",2,"neben Fenster"],["eg","Wohnen / Essen","sd",1,"neben Tür"]]],
+    ["uveg","F10","Essen Steckdosen","B16","eg2",L25,[["eg","Wohnen / Essen","sd",2,"neben Fenster"],["eg","Wohnen / Essen","sd",2,"Arbeitsfläche"]]],
+    ["uveg","F11","Büro","B16","eg1",L25,[["eg","Büro","sd",3,"Schreibtisch"],["eg","Büro","sd",3,"Schreibtisch"],["eg","Büro","sd",1,"neben Tür"]]],
+    ["uveg","F12","Wintergarten","B16","eg1",L25,[["eg","Wintergarten","sd",2,"neben Fenster"],["eg","Wintergarten","sd",2,"neben Fenster"]]],
+    ["uveg","F13","Rollläden EG","B10","eg2",L15,[["eg","Wohnen / Essen","fest",1,"Rollladenmotoren"]]],
+    ["uvga","F1","Wallbox 11 kW","B16","ga1",L56,[["ga","Doppelgarage","fest",1,"Wallbox"]]],
+    ["uvga","F2","Licht Garage","B10","ga2",L15,[["ga","Doppelgarage","licht",1,"Decke"],["ga","Fahrradraum","licht",1,"Decke"]]],
+    ["uvga","F3","Steckdosen Garage","B16","ga2",L25,[["ga","Doppelgarage","sd",2,"Arbeitsfläche"],["ga","Doppelgarage","sd",2,"neben Tür"],["ga","Fahrradraum","sd",2,"E-Bike laden"]]],
+    ["uvga","F4","Garagentor","B16","ga2",L25,[["ga","Doppelgarage","fest",1,"Torantrieb"]]],
+    ["uvog","F1","Licht 1. OG","B10","og1",L15,["Schlafen","Ankleide","Bad","Kind 1","Kind 2","Bad Kinder","Flur OG"].map(n=>["og1",n,"licht",1,"Decke"])],
+    ["uvog","F2","Schlafen","B16","og1",L25,[["og1","Schlafen","sd",2,"Bett"],["og1","Schlafen","sd",2,"Bett"],["og1","Schlafen","sd",2,"TV"]]],
+    ["uvog","F3","Ankleide, Flur OG, Balkon","B16","og1",L25,[["og1","Ankleide","sd",1,"neben Tür"],["og1","Flur OG","sd",1,"neben Tür"],["og1","Balkon","sd",2,"Außen"]]],
+    ["uvog","F4","Bad","B16","og2",L25,[["og1","Bad","sd",2,"Waschtisch"],["og1","Bad","fest",1,"Handtuchheizkörper"]]],
+    ["uvog","F5","Kind 1","B16","og2",L25,[["og1","Kind 1","sd",3,"Schreibtisch"],["og1","Kind 1","sd",2,"Bett"],["og1","Kind 1","sd",1,"neben Tür"]]],
+    ["uvog","F6","Kind 2","B16","og2",L25,[["og1","Kind 2","sd",3,"Schreibtisch"],["og1","Kind 2","sd",2,"Bett"],["og1","Kind 2","sd",1,"neben Tür"]]],
+    ["uvog","F7","Bad Kinder","B16","og2",L25,[["og1","Bad Kinder","sd",2,"Waschtisch"]]],
+    ["uvog","F8","Licht 2. OG und DG","B10","og3",L15,[...["Gästezimmer","Arbeitszimmer","Musikzimmer","Duschbad","Flur 2. OG","Abstellraum (Netzwerk)"].map(n=>["og2",n,"licht",1,"Decke"]),...["Galerie","Abstellraum DG"].map(n=>["dg",n,"licht",1,"Decke"])]],
+    ["uvog","F9","Gäste- und Musikzimmer","B16","og3",L25,[["og2","Gästezimmer","sd",2,"Bett"],["og2","Gästezimmer","sd",2,"TV"],["og2","Musikzimmer","sd",3,"neben Fenster"],["og2","Musikzimmer","sd",2,"neben Tür"]]],
+    ["uvog","F10","Arbeitszimmer 2. OG","B16","og3",L25,[["og2","Arbeitszimmer","sd",3,"Schreibtisch"],["og2","Arbeitszimmer","sd",3,"Schreibtisch"],["og2","Arbeitszimmer","sd",1,"neben Tür"]]],
+    ["uvog","F11","Duschbad 2. OG","B16","og3",L25,[["og2","Duschbad","sd",2,"Waschtisch"]]],
+    ["uvog","F12","Durchlauferhitzer 2. OG","B32","",L56,[["og2","Duschbad","fest",1,"Durchlauferhitzer 21 kW"]]],
+    ["uvog","F13","Netzwerk-Verteiler 2. OG","B16","og3",L25,[["og2","Abstellraum (Netzwerk)","sd",2,"Netzwerkschrank"]]],
+    ["uvog","F14","DG Galerie","B16","og3",L25,[["dg","Galerie","sd",3,"TV"],["dg","Galerie","sd",2,"neben Fenster"],["dg","Abstellraum DG","sd",1,"neben Tür"],["dg","Dachterrasse","sd",2,"Außen"]]],
+    ["uvog","F15","Rollläden OG","B10","og1",L15,[["og1","Schlafen","fest",1,"Rollladenmotoren"]]]];
+  const stromkreise=[], stellen=[], ord={}; let si=0;
+  SK.forEach(([v,nr,bez,schutz,rcd,leitung,St],k)=>{ const id=`dh-sk-${v}-${nr}`; stromkreise.push({id,vId:"dh-"+v,nr,bez,schutz,rcdId:rcd?"dh-r-"+rcd:"",leitung});
+    St.forEach(([e,n,art,fach,lage])=>{ const raumId=raum(e,n); ord[raumId]=(ord[raumId]||0)+1; stellen.push({id:`dh-st-${++si}`,raumId,ord:ord[raumId],art,fach,lage,skId:id}); }); });
+  /* Netzwerk: Serverschrank KG (Patchfeld 1–3), Mini-Verteiler 2. OG (Patchfeld 4) */
+  const schraenke=[
+    {id:"dh-s1",name:"Serverschrank KG",raumId:raum("kg","Technikraum"),he:42,bauart:"stand",breite:800,tiefe:1000,farbe:"auto",teile:[
+      {id:"t1",typ:"luefter",pos:1,he:1,name:"Lüftereinschub"},{id:"t2",typ:"patch",pos:2,he:1,ports:24,nr:1},{id:"t3",typ:"kabel",pos:3,he:1},{id:"t4",typ:"patch",pos:4,he:1,ports:24,nr:2},{id:"t5",typ:"kabel",pos:5,he:1},
+      {id:"t6",typ:"patch",pos:6,he:1,ports:24,nr:3},{id:"t7",typ:"kabel",pos:7,he:1},{id:"t8",typ:"switch",pos:8,he:1,ports:48,poe:true,name:"UniFi USW-Pro-48-PoE",tiefe:400},{id:"t9",typ:"kabel",pos:9,he:1},
+      {id:"t10",typ:"switch",pos:10,he:1,ports:8,name:"UniFi USW-Aggregation (SFP+)",tiefe:200},{id:"t11",typ:"router",pos:12,he:1,name:"UniFi Dream Machine Pro",tiefe:285},
+      {id:"t12",typ:"boden",pos:13,he:2,name:"FRITZ!Box 5590 Fiber + Glasfaser-Abschluss"},{id:"t13",typ:"sonst",pos:16,he:2,name:"NAS Synology RS1221+",tiefe:560},
+      {id:"t14",typ:"sonst",pos:19,he:2,name:"Home-Server (Proxmox, Home Assistant)",tiefe:650},{id:"t15",typ:"boden",pos:22,he:2,name:"KNX-IP-Router und Smart-Home-Gateways"},
+      {id:"t16",typ:"pdu",pos:38,he:1,name:"Steckdosenleiste 8-fach, schaltbar"},{id:"t17",typ:"usv",pos:40,he:2,name:"APC Smart-UPS 1500 RM",tiefe:480}]},
+    {id:"dh-s2",name:"Mini-Verteiler 2. OG",raumId:raum("og2","Abstellraum (Netzwerk)"),he:9,bauart:"wand",breite:600,tiefe:450,farbe:"auto",teile:[
+      {id:"m1",typ:"patch",pos:1,he:1,ports:24,nr:4},{id:"m2",typ:"kabel",pos:2,he:1},{id:"m3",typ:"switch",pos:3,he:1,ports:16,poe:true,name:"UniFi USW-Lite-16-PoE",tiefe:220},
+      {id:"m4",typ:"boden",pos:5,he:2,name:"Uplink: Glasfaser vom Serverschrank KG"},{id:"m5",typ:"pdu",pos:9,he:1,name:"Steckdosenleiste 6-fach"}]}];
+  /* Datendosen: [Etage, Raum, Ports, Lage, Patchfeld] – Ports im Patchfeld werden der Reihe nach vergeben */
+  const DO=[["kg","Heimkino",2,"TV",1],["kg","Heizungsraum",1,"Wärmepumpe (Modbus)",1],["kg","Werkstatt",2,"Arbeitsfläche",1],["kg","Flur KG",1,"Decke (WLAN-AP)",1],
+    ["eg","Diele",2,"Eingang",1],["eg","Büro",2,"Schreibtisch",1],["eg","Büro",2,"Schreibtisch",1],["eg","Wohnen / Essen",2,"TV",1],["eg","Wohnen / Essen",1,"Decke (WLAN-AP)",1],
+    ["eg","Küche",1,"neben Tür",1],["eg","Wintergarten",1,"Decke (WLAN-AP)",1],["eg","Terrasse",1,"Außen (Kamera)",1],
+    ["ga","Doppelgarage",2,"Wallbox (Lastmanagement)",2],["ga","Doppelgarage",1,"Decke (WLAN-AP)",2],["ga","Doppelgarage",1,"Außen (Kamera Einfahrt)",2],
+    ["og1","Schlafen",2,"TV",2],["og1","Kind 1",2,"Schreibtisch",2],["og1","Kind 2",2,"Schreibtisch",2],["og1","Flur OG",1,"Decke (WLAN-AP)",2],["og1","Balkon",1,"Außen (Kamera)",3],
+    ["og2","Arbeitszimmer",2,"Schreibtisch",4],["og2","Arbeitszimmer",2,"Schreibtisch",4],["og2","Musikzimmer",2,"neben Tür",4],["og2","Gästezimmer",2,"TV",4],["og2","Flur 2. OG",1,"Decke (WLAN-AP)",4],
+    ["dg","Galerie",2,"TV",4],["dg","Galerie",1,"Decke (WLAN-AP)",4],["dg","Dachterrasse",1,"Außen (Kamera)",4]];
+  const frei={}, dosen=[], dord={}; DO.forEach(([e,n,ports,lage,pf],i)=>{ const raumId=raum(e,n), pp={}; for(let p=1;p<=ports;p++){ frei[pf]=(frei[pf]||0)+1; pp[p]=`${pf}.${frei[pf]}`; }
+    dord[raumId]=(dord[raumId]||0)+1; dosen.push({id:`dh-d-${i+1}`,raumId,ord:dord[raumId],ports,lage,sId:pf===4?"dh-s2":"dh-s1",pp}); });
+  const g=r({id:"g-k_demo-k6",ortId:"k:demo-k6",etagen,verteiler,rcds,stromkreise,stellen,schraenke,dosen},P.mp,vor(6));
+  /* Netzwerkprüfung (läuft): fast alles gemessen, ein paar typische Fehler, 2. OG teilweise offen */
+  const nw={}; let li=0;
+  dosen.forEach(d=>{ for(let p=1;p<=d.ports;p++){ const id=`${d.id}.${p}`, et=Object.keys(R).find(k=>R[k]===d.raumId).split(":")[0], i=li++;
+    if(et==="og2"&&!/Arbeitszimmer/.test(Object.keys(R).find(k=>R[k]===d.raumId))) continue; /* noch nicht gemessen */
+    const basis={kg:9,eg:21,ga:34,og1:31,og2:7,dg:14}[et]||20, len=(basis+((i*7.3)%17)).toFixed(1).replace(".",",");
+    const w={wm:"ok",wmap:"12345678",wmS:"ok",len,v10:"ok",v100:"ok",v1g:"ok"}; if(/WLAN|Kamera/.test(d.lage)){ w.poe="ok"; w.poeW=/WLAN/.test(d.lage)?"12,4":"6,8"; } else w.poe="na";
+    nw[id]=w; } });
+  const dose=(raumName,nr)=>dosen.filter(d=>Object.keys(R).find(k=>R[k]===d.raumId).endsWith(":"+raumName))[nr||0];
+  const k2=dose("Kind 2"); Object.assign(nw[k2.id+".1"],{wm:"nok",wmap:"12645378",wmF:"Paar 3/6 verpolt"});
+  const gal=dose("Galerie"); Object.assign(nw[gal.id+".2"],{wm:"nok",wmap:"12345608",wmF:"Ader 7 offen",v1g:"nok"});
+  const dt=dose("Dachterrasse"); Object.assign(nw[dt.id+".1"],{len:"104,5",mangel:"Leitungsweg über Dachterrasse zu lang – Kamera über PoE-Extender oder vom Mini-Verteiler neu anfahren"});
+  const gap=dose("Doppelgarage",1); Object.assign(nw[gap.id+".1"],{poe:"nok",poeW:"",mangel:"Access Point startet unter Last neu – PoE-Budget bzw. Kabel prüfen"});
+  const hz=dose("Heizungsraum"); nw[hz.id+".1"]={ng:"Wärmepumpe angeschlossen, Port nicht abgeklemmt"};
+  const netz=r({id:"demo-ec-netz",art:"netz",kundeId:"demo-k6",standortId:"",ortId:"k:demo-k6",datum:tag(-1),pruefart:"Abnahme",pruefer:P.mp.name,status:"laeuft",
+    kabel:"Cat 7 Verlegekabel S/FTP, Cat 6A Module",belegung:"T568A",schirm:"ja",sicht:{},werte:nw,netz:{},umfang:null,
+    geraet:{mess:"Trend Networks SignalTEK CT",kurz:"SignalTEK",sn:"R156006-DEMO",kal:""}},P.mp,vor(1));
+  /* Installationsprüfung (E-CHECK, läuft): Keller, EG und Garage gemessen, OG noch offen; Mangel an der Terrasse */
+  const iw={}; let zi=0; const zs=()=>(0.42+((zi++*0.137)%0.9)).toFixed(2).replace(".",",");
+  rcds.filter(x=>!/og/.test(x.id)).forEach((x,i)=>{ iw[x.id]={t1:String(16+i*3),t5:String(8+i),idelta:String(19+i),ub:"0,"+(5+i)}; });
+  stromkreise.filter(s=>s.vId!=="dh-uvog").forEach((s,i)=>{ iw[s.id]={riso:i%4===2?"280":">500",rlo:(0.12+(i%6)*0.07).toFixed(2).replace(".",",")}; if(!s.rcdId||s.schutz.startsWith("C")||stellen.filter(st=>st.skId===s.id).every(st=>st.art==="licht")) iw[s.id].zs=zs(); });
+  stellen.forEach((st,k)=>{ const sk=stromkreise.find(s=>s.id===st.skId); if(!sk||sk.vId==="dh-uvog"||st.art==="licht"||st.art==="sonst") return; const n=st.art==="sd"?st.fach:1;
+    for(let p=1;p<=n;p++) iw[`${st.id}.${p}`]={zs:zs()}; });
+  const ter=stellen.find(st=>st.raumId===raum("eg","Terrasse")); iw[ter.id+".1"]={zs:"3,12",mangel:"Z s zu hoch – Klemmstelle in der Außendose prüfen"};
+  const sicht={}; for(let i=0;i<12;i++) sicht["s"+i]="ok"; sicht.s4="nok"; sicht.s7="na";
+  const anl=r({id:"demo-ec-anl",art:"anlage",kundeId:"demo-k6",standortId:"",ortId:"k:demo-k6",datum:tag(-3),pruefart:"E-CHECK",pruefer:P.ms.name,status:"laeuft",
+    sicht,werte:iw,netz:{form:"TN-C-S",hak:"63 A"},umfang:null,fristM:48,geraet:{mess:"Wiha MFT one",kurz:"MFT 1",sn:"MFT1-DEMO",kal:"03/2027"}},P.ms,vor(3));
+  return {kunde,gebaeude:[g],echecks:[anl,netz]}; }
+
 let demoCache=null;
 /* Beispieldaten in den Speicher dieser App legen (nicht in die Datenbank) – true, wenn etwas dazugekommen ist */
 function demoNachfuellen(){
@@ -123,7 +245,7 @@ function demoUmschalten(an){
   if(an){ demoNachfuellen(); render(); toast("Demo-Vorschau an – Beispieldaten werden nicht gespeichert oder synchronisiert"); }
   else demoSchalten();
 }
-const demoDa=()=>["kunden","standorte","baustellen","pruefungen","eintraege","vorgaenge","anforderungen"].some(k=>DB[k]&&[...DB[k].values()].some(r=>r.demo&&!r.sim));
+const demoDa=()=>["kunden","standorte","baustellen","pruefungen","eintraege","vorgaenge","anforderungen","gebaeude","echecks"].some(k=>DB[k]&&[...DB[k].values()].some(r=>r.demo&&!r.sim));
 let demoWeg=false;
 /* Demo aus, aber noch Beispieldaten auf dem Gerät (z. B. in einer anderen App ausgeschaltet) ⇒ aufräumen */
 const demoPruefen=()=>{ try{ if(!demoAn()&&!demoWeg&&demoDa()){ demoWeg=true; demoSchalten(); } }catch(e){} };
