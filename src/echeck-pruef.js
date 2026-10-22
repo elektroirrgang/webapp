@@ -81,7 +81,7 @@ const ecRaeume=g=>ecEtagen(g).flatMap(e=>e.raeume.map(r=>({...r,etage:e,titel:`$
 const ecSkListe=g=>[...g.stromkreise].sort((a,b)=>{ const va=g.verteiler.findIndex(v=>v.id===a.vId), vb=g.verteiler.findIndex(v=>v.id===b.vId); return (va<0?999:va)-(vb<0?999:vb)||ecNr(a,b); });
 const ecVtName=(g,id)=>(g.verteiler.find(v=>v.id===id)||{}).name||"";
 const ecRcdVon=(g,sk)=>sk&&sk.rcdId?g.rcds.find(r=>r.id===sk.rcdId):null;
-const ecRcdName=r=>`RCD ${r.nr||""}`.trim();
+const ecRcdName=r=>`${r.fils?"FI/LS":"RCD"} ${r.nr||""}`.trim();
 const ecRcdInfo=r=>[r.in&&`${r.in} A`,r.idn&&`${r.idn} mA`,r.typ&&`Typ ${r.typ}`].filter(Boolean).join(" / ");
 const ecSkName=sk=>[sk.nr,sk.bez||"Stromkreis"].filter(Boolean).join(" · ");
 const ecStName=st=>st.art==="sd"?((+st.fach||1)>1?`${st.fach}-fach-Kombination`:"Steckdose"):EC_SART[st.art]||"Anschlusspunkt";
@@ -249,7 +249,7 @@ function ecGebView(pr){ const g=ecGeb(pr.ortId), et=g.etagen.find(e=>e.id===nav.
   const skZeile=sk=>{ const R=ecSkRaeume(g,sk); return `<div class="ec-vz sk" role="button" tabindex="0" data-act="ecSkEdit" data-id="${esc(sk.id)}"><span class="nr">${esc(sk.nr||"–")}</span><span class="t">${esc(sk.bez||"Stromkreis")}<small>${esc([sk.schutz,sk.leitung,R.join(", ")].filter(Boolean).join(" · "))}</small></span>${icon("chev")}</div>`; };
   const vt=v=>{ const R=g.rcds.filter(r=>r.vId===v.id).sort(ecNr), S=ecSkListe(g).filter(s=>s.vId===v.id), ohne=S.filter(s=>!s.rcdId||!R.some(r=>r.id===s.rcdId));
     return `<div class="ec-vt${ecImUmfang(pr,{vId:v.id})?"":" aus"}"><div class="ec-vz kopf" role="button" tabindex="0" data-act="ecVtEdit" data-id="${esc(v.id)}"><span class="av ec-uv">${icon("ecMess")}</span><span class="t"><b>${esc(v.name)}</b><small>${esc([ecRaumName(g,v.raumId),`${S.length} Stromkreis${S.length===1?"":"e"}`,ecImUmfang(pr,{vId:v.id})?"":"nicht im Prüfumfang"].filter(Boolean).join(" · "))}</small></span>${icon("edit")}</div>
-      ${R.map(r=>`<div class="ec-vz rcd" role="button" tabindex="0" data-act="ecRcdEdit" data-id="${esc(r.id)}"><span class="nr">RCD</span><span class="t">${esc(ecRcdName(r))}<small>${esc(ecRcdInfo(r)||"Daten fehlen")}</small></span>${icon("chev")}</div>
+      ${R.map(r=>`<div class="ec-vz rcd" role="button" tabindex="0" data-act="ecRcdEdit" data-id="${esc(r.id)}"><span class="nr">${r.fils?"FI/LS":"RCD"}</span><span class="t">${esc(ecRcdName(r))}<small>${esc(ecRcdInfo(r)||"Daten fehlen")}</small></span>${icon("chev")}</div>
         ${S.filter(s=>s.rcdId===r.id).map(skZeile).join("")}`).join("")}
       ${ohne.length&&R.length?`<div class="ec-vz rcd ohne"><span class="nr"></span><span class="t">ohne RCD</span></div>`:""}${ohne.map(skZeile).join("")}
       ${pr.status==="fertig"?"":`<div class="ec-vt-f"><button class="btn-text" data-act="ecRcdNeu" data-v="${esc(v.id)}">${icon("add")}RCD</button><button class="btn-text" data-act="ecSkNeu" data-v="${esc(v.id)}">${icon("add")}Stromkreis</button></div>`}</div>`; };
@@ -356,8 +356,9 @@ function ecSkDlg(sk,vId){ const pr=ecPr(), g=ecGeb(pr.ortId); ecDlg={sk:sk&&sk.i
     ${ecChips("leitung",["NYM-J 3×1,5","NYM-J 3×2,5","NYM-J 5×1,5","NYM-J 5×2,5","NYM-J 5×6"].map(x=>[x,x]),"")}`,
     `${sk?`<button class="btn-text danger" data-act="ecSkDel">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecSkOk">Speichern</button>`,{breit:true}); }
 const ecRcdFeld=(g,vId,cur)=>sf("skRcd","RCD",cur||"",[["","kein RCD"],...g.rcds.filter(r=>r.vId===vId).sort(ecNr).map(r=>[r.id,`${ecRcdName(r)}${ecRcdInfo(r)?" · "+ecRcdInfo(r):""}`])],{form:true});
-function ecRcdDlg(r,vId){ const pr=ecPr(), g=ecGeb(pr.ortId), v=r||{vId,nr:String(g.rcds.filter(x=>x.vId===vId).length+1),typ:"A",idn:"30",in:"40"}; ecDlg={rcd:r&&r.id,vId:v.vId,w:{typ:v.typ,idn:String(v.idn||""),in:String(v.in||"")}};
+function ecRcdDlg(r,vId){ const pr=ecPr(), g=ecGeb(pr.ortId), v=r||{vId,nr:String(g.rcds.filter(x=>x.vId===vId).length+1),typ:"A",idn:"30",in:"40"}; ecDlg={rcd:r&&r.id,vId:v.vId,w:{typ:v.typ,idn:String(v.idn||""),in:String(v.in||""),bauart:v.fils?"fils":"rcd"}};
   dialog(r?`${ecRcdName(r)} bearbeiten`:`Neuer RCD in ${ecVtName(g,v.vId)||"Verteiler"}`,`<div class="fg1">${tf("rcdNr","Nummer / Bezeichnung",v.nr||"",{form:true,ph:"z. B. 1 oder FI2"})}</div>
+    <div class="lbl" style="margin-top:12px">Bauart</div>${ecChips("bauart",[["rcd","RCD (FI)"],["fils","FI/LS-Kombination"]],v.fils?"fils":"rcd")}
     <div class="lbl" style="margin-top:12px">Typ</div>${ecChips("typ",[["A","Typ A"],["F","Typ F"],["B","Typ B"],["AC","Typ AC"]],v.typ)}
     <div class="lbl" style="margin-top:12px">Bemessungsdifferenzstrom IΔN</div>${ecChips("idn",[["10","10 mA"],["30","30 mA"],["100","100 mA"],["300","300 mA"]],String(v.idn||""))}
     <div class="lbl" style="margin-top:12px">Bemessungsstrom</div>${ecChips("in",[["25","25 A"],["40","40 A"],["63","63 A"],["80","80 A"]],String(v.in||""))}`,
@@ -455,51 +456,72 @@ function ecImportStart(){ const i=document.createElement("input"); i.type="file"
     const docs=(Array.isArray(d)?d:[d]).filter(x=>x&&Array.isArray(x.circuits));
     if(!docs.length){ toast("Keine Messungen in der Datei gefunden"); return; }
     ecImportVorbereiten(docs,f.name); }); i.click(); }
-function ecSkSchluessel(row){ const fn=String(row.fuse_number||"").trim(), m=fn.match(/\bF\s*(\d+[\w.]*)/i); return m?"F"+m[1]:fn||String(row.circuit_name||"").trim(); }
-function ecImportVorbereiten(docs,datei){ const pr=ecPr(), g=ecGeb(pr.ortId), et=g.etagen.find(e=>e.id===nav.et)||ecEtStd(g);
-  const raumNach=n=>{ n=String(n||"").trim().toLowerCase(); const r=ecRaeume(g).find(x=>x.name.toLowerCase()===n); return r?r.id:"__neu"; };
-  ecImp={datei,vId:g.verteiler[0]?g.verteiler[0].id:"__neu",etId:et.id,docs:docs.map(d=>({name:d.documentation_name||"Messungen",kdnr:d.client&&d.client.customer_number||"",netz:d.system_info&&d.system_info.grid_type||"",raumId:raumNach(d.documentation_name),rows:d.circuits.map(r=>({r,ziel:""}))}))};
+/* Stromkreis-Nummer: „FI2 F1“ → F1, „1“ → 1; verglichen wird ohne „F“ (F1 = 1) */
+function ecSkSchluessel(row){ const fn=String(row.fuse_number||"").trim(), m=fn.match(/\bF\s*(\d+[\w.]*)\s*$/i); return m?"F"+m[1]:fn||String(row.circuit_name||"").trim(); }
+const ecNrNorm=v=>String(v||"").trim().toLowerCase().replace(/^f\s*/,"").replace(/\s+/g,"");
+const ecSkFinden=(g,key,vId)=>{ const n=ecNrNorm(key); if(!n) return null; return g.stromkreise.find(s=>s.vId===vId&&ecNrNorm(s.nr)===n)||g.stromkreise.find(s=>ecNrNorm(s.nr)===n); };
+const ecVtWort=n=>/^(uv|hv|nv|sv|verteiler|unterverteil|hauptverteil|zähler|zaehler|hak)\b/i.test(String(n||"").trim());
+const ecOhneVt=n=>String(n||"").replace(/^(uv|hv|nv|sv|verteiler|unterverteilung|hauptverteilung)[\s\-–:]*/i,"").trim()||String(n||"");
+/* gleiche Stromkreis-Nummer, verschiedene Namen → die Namen sind Messpunkte (z. B. „Doppelsteckdose oben/unten“) */
+const ecImpNamen=(d,key)=>[...new Set(d.rows.filter(x=>x.key===key).map(x=>String(x.r.circuit_name||"").trim()).filter(Boolean))];
+function ecImportVorbereiten(docs,datei){ const pr=ecPr(), g=ecGeb(pr.ortId), et=g.etagen.find(e=>e.id===nav.et)||ecEtStd(g), R=ecRaeume(g);
+  const raumNach=n=>{ n=String(n||"").trim().toLowerCase(); const r=R.find(x=>x.name.toLowerCase()===n); return r?r.id:"__neu"; };
+  const vtNach=n=>{ n=String(n||"").trim().toLowerCase(); const v=g.verteiler.find(x=>x.name.toLowerCase()===n); return v?v.id:"__neu"; };
+  ecImp={datei,vId:g.verteiler[0]?g.verteiler[0].id:"__neu",etId:et.id,docs:docs.map(d=>{ const name=d.documentation_name||"Messungen", vt=ecVtWort(name);
+    return {name,typ:vt?"vt":"raum",vId:vtNach(name),raumId:raumNach(vt?ecOhneVt(name):name),kdnr:d.client&&d.client.customer_number||"",netz:d.system_info&&d.system_info.grid_type||"",anlass:d.system_info&&d.system_info.inspection_reason||"",
+      rows:d.circuits.map(r=>({r,key:ecSkSchluessel(r),ziel:""}))}; })};
   ecImportZiele(); ecImportDlg(); }
-/* Zielpunkte vorschlagen: der Reihe nach auf freie Punkte des Raums (gleicher oder noch kein Stromkreis), sonst neu anlegen */
+/* Ziele vorschlagen. Raum: der Reihe nach auf freie Punkte des Raums, sonst neu.
+   Verteiler: Stromkreis mit nur einer Messung → Wert direkt am Stromkreis; mehrere Messungen → je Messung ein Messpunkt. */
 function ecImportZiele(){ const pr=ecPr(), g=ecGeb(pr.ortId);
   ecImp.docs.forEach(d=>{ const P=d.raumId==="__neu"?[]:ecRaumPunkte(g,d.raumId), belegt=new Set();
-    d.rows.forEach(x=>{ const key=ecSkSchluessel(x.r), sk=g.stromkreise.find(s=>(s.nr||"").toLowerCase()===key.toLowerCase());
+    d.rows.forEach(x=>{ const vId=d.typ==="vt"?d.vId:ecImp.vId, sk=ecSkFinden(g,x.key,vId), viele=d.rows.filter(y=>y.key===x.key).length>1;
+      if(d.typ==="vt"&&!viele){ x.ziel="__sk"; return; }
       const p=P.find(p=>!belegt.has(p.id)&&!ecW(pr,p.id).zs&&(!p.st.skId||(sk&&p.st.skId===sk.id))); x.ziel=p?p.id:"__neu"; if(p) belegt.add(p.id); }); }); }
 function ecImportDlg(){ const pr=ecPr(), g=ecGeb(pr.ortId), o=ecOrt(pr.ortId), R=ecRaeume(g);
   const kdWarn=ecImp.docs.map(d=>d.kdnr).filter(Boolean).find(n=>o.kunde&&o.kunde.kdnr&&String(o.kunde.kdnr)!==String(n));
-  const anz=ecImp.docs.reduce((s,d)=>s+d.rows.length,0);
-  const kurz=r=>[r.fuse_number,r.circuit_name].filter(Boolean).join(" · ")+" — "+[r.loop_impedance&&`Z s ${ecSpWert(r.loop_impedance,"Ω")} Ω`,r.insulation_resistance&&`R iso ${ecSpWert(r.insulation_resistance,"MΩ")} MΩ`,(r.rcd_tripping_time_1||r.rcd_tripping_time)&&`RCD ${ecSpWert(r.rcd_tripping_time_1||r.rcd_tripping_time,"ms")} ms`].filter(Boolean).join(" · ");
+  const anz=ecImp.docs.reduce((s,d)=>s+d.rows.length,0), mitRaum=ecImp.docs.some(d=>d.typ==="raum");
+  const kurz=r=>[r.fuse_number,r.circuit_name].filter(Boolean).join(" · ")+" — "+[r.loop_impedance&&`Z s ${ecSpWert(r.loop_impedance,"Ω")} Ω`,r.insulation_resistance&&`R iso ${ecSpWert(r.insulation_resistance,"MΩ")} MΩ`,r.protective_earth_resistance&&`R LO ${ecSpWert(r.protective_earth_resistance,"Ω")} Ω`,(r.rcd_tripping_time_1||r.rcd_tripping_time)&&`RCD ${ecSpWert(r.rcd_tripping_time_1||r.rcd_tripping_time,"ms")} ms`].filter(Boolean).join(" · ");
   dialog("Sparkify-Import",`<p class="ec-sub">${esc(ecImp.datei)} · ${anz} Messung${anz===1?"":"en"} in ${ecImp.docs.length} Dokumentation${ecImp.docs.length===1?"":"en"}</p>
     ${kdWarn?`<div class="ec-tipp warn">${icon("warn")}<span>Kundennummer in der Datei (${esc(kdWarn)}) passt nicht zu ${esc(o.kunde.name)} (${esc(o.kunde.kdnr)}). Richtige Datei?</span></div>`:""}
-    <div class="fg1"><div class="reihe2">${sf("impV","Neue Stromkreise in Verteiler",ecImp.vId,[...g.verteiler.map(v=>[v.id,v.name]),["__neu","Neuer Verteiler „Hauptverteiler“"]],{form:true})}${sf("impEt","Neue Räume auf Etage",ecImp.etId,ecEtagen(g).map(e=>[e.id,ecEtLabel(e)]),{form:true})}</div></div>
-    ${ecImp.docs.map((d,di)=>{ const P=d.raumId==="__neu"?[]:ecRaumPunkte(g,d.raumId);
-      return `<div class="ec-imp"><div class="fg1">${sf("impR_"+di,`Dokumentation „${d.name}“ → Raum`,d.raumId,[...R.map(r=>[r.id,r.titel]),["__neu",`Neuer Raum „${d.name}“`]],{form:true})}</div>
+    <div class="fg1"><div class="reihe2">${mitRaum?sf("impV","Neue Stromkreise in Verteiler",ecImp.vId,[...g.verteiler.map(v=>[v.id,v.name]),["__neu","Neuer Verteiler „Hauptverteiler“"]],{form:true}):""}${sf("impEt","Neue Räume auf Etage",ecImp.etId,ecEtagen(g).map(e=>[e.id,ecEtLabel(e)]),{form:true})}</div></div>
+    ${ecImp.docs.map((d,di)=>{ const P=d.raumId==="__neu"?[]:ecRaumPunkte(g,d.raumId), rName=d.typ==="vt"?ecOhneVt(d.name):d.name;
+      return `<div class="ec-imp"><div class="ec-imp-k"><b>„${esc(d.name)}“ ist ein</b>${ecChips("impTyp"+di,[["raum","Raum"],["vt","Verteiler"]],d.typ)}</div>
+        <div class="fg1"><div class="reihe2">${d.typ==="vt"?sf("impDV_"+di,"Verteiler",d.vId,[...g.verteiler.map(v=>[v.id,v.name]),["__neu",`Neuer Verteiler „${d.name}“`]],{form:true}):""}
+          ${sf("impR_"+di,d.typ==="vt"?"Messpunkte im Raum":"Raum",d.raumId,[...R.map(r=>[r.id,r.titel]),["__neu",`Neuer Raum „${rName}“`]],{form:true})}</div></div>
         <div class="list">${d.rows.map((x,ri)=>`<div class="ec-imp-z"><span class="nr">${ri+1}</span><span class="t">${esc(kurz(x.r))}</span>
-          <div class="ec-imp-s">${sf(`impZ_${di}_${ri}`,"Messpunkt",x.ziel,[...P.map(p=>[p.id,`${p.nr} · ${ecStName(p.st)}${p.st.lage?" ("+p.st.lage+")":""}`]),["__neu","neue Steckdose anlegen"],["__skip","nicht übernehmen"]],{form:true})}</div></div>`).join("")}</div></div>`; }).join("")}
-    <p class="meta" style="margin-top:10px">Fehlende Stromkreise (nach Nummer, z. B. „F1“) und RCDs legt die App an. Vorhandene Werte werden überschrieben.</p>`,
+          <div class="ec-imp-s">${sf(`impZ_${di}_${ri}`,"Ziel",x.ziel,[...P.map(p=>[p.id,`${p.nr} · ${ecStName(p.st)}${p.st.lage?" ("+p.st.lage+")":""}`]),["__neu","neue Steckdose anlegen"],["__sk","am Stromkreis (ohne Messpunkt)"],["__skip","nicht übernehmen"]],{form:true})}</div></div>`).join("")}</div></div>`; }).join("")}
+    <p class="meta" style="margin-top:10px">Stromkreise werden über die Nummer gefunden (F1 = 1), fehlende Stromkreise und RCDs legt die App an. Vorhandene Werte werden überschrieben.</p>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecImportOk">Übernehmen</button>`,{breit:true}); }
-function ecImportLesen(){ const F=formVals(); ecImp.vId=F.impV||ecImp.vId; ecImp.etId=F.impEt||ecImp.etId;
-  ecImp.docs.forEach((d,di)=>{ if(F["impR_"+di]!=null) d.raumId=F["impR_"+di]; d.rows.forEach((x,ri)=>{ const v=F[`impZ_${di}_${ri}`]; if(v!=null) x.ziel=v; }); }); }
+function ecImportLesen(){ const F=formVals(); if(F.impV) ecImp.vId=F.impV; if(F.impEt) ecImp.etId=F.impEt;
+  ecImp.docs.forEach((d,di)=>{ if(F["impR_"+di]!=null) d.raumId=F["impR_"+di]; if(F["impDV_"+di]!=null) d.vId=F["impDV_"+di]; d.rows.forEach((x,ri)=>{ const v=F[`impZ_${di}_${ri}`]; if(v!=null) x.ziel=v; }); }); }
 function ecImportOk(){ ecImportLesen(); const pr=ecPr(), g=ecGeb(pr.ortId); let n=0;
-  let vId=ecImp.vId; if(vId==="__neu"||!g.verteiler.some(v=>v.id===vId)){ const v={id:uid(),name:"Hauptverteiler",raumId:""}; g.verteiler.push(v); vId=v.id; }
-  const et=g.etagen.find(e=>e.id===ecImp.etId)||g.etagen[0];
+  const vtSicher=(id,name)=>{ if(id&&id!=="__neu"&&g.verteiler.some(v=>v.id===id)) return id; const da=g.verteiler.find(v=>v.name===name); if(da) return da.id; const v={id:uid(),name,raumId:""}; g.verteiler.push(v); return v.id; };
+  const et=g.etagen.find(e=>e.id===ecImp.etId)||ecEtStd(g);
   pr.werte=pr.werte||{}; const setz=(id,o)=>{ const w=Object.assign({},pr.werte[id]||{}); Object.entries(o).forEach(([k,v])=>{ if(v) w[k]=v; }); pr.werte[id]=w; };
-  for(const d of ecImp.docs){ let raumId=d.raumId;
-    if(raumId==="__neu"||!ecRaumName(g,raumId)){ const r={id:uid(),name:d.name}; et.raeume.push(r); raumId=r.id; }
+  for(const d of ecImp.docs){ const vId=d.typ==="vt"?vtSicher(d.vId,d.name):vtSicher(ecImp.vId,"Hauptverteiler");
+    let raumId=d.raumId; const raumSicher=()=>{ if(raumId&&raumId!=="__neu"&&ecRaumName(g,raumId)) return raumId; const r={id:uid(),name:d.typ==="vt"?ecOhneVt(d.name):d.name}; et.raeume.push(r); raumId=r.id; return raumId; };
     if(d.netz&&["TN-C-S","TN-S","TT"].includes(d.netz)&&!(pr.netz&&pr.netz.formGesetzt)) pr.netz=Object.assign({},pr.netz||{},{form:d.netz});
-    for(const x of d.rows){ if(x.ziel==="__skip") continue; const r=x.r, key=ecSkSchluessel(r);
-      /* Stromkreis */ let sk=g.stromkreise.find(s=>(s.nr||"").toLowerCase()===key.toLowerCase());
-      /* RCD: hat der Stromkreis schon einen, gelten die Werte für diesen; sonst nach Nummer suchen oder anlegen */
-      let rcd=ecRcdVon(g,sk); if(!rcd&&(r.rcd_type||r.rcd_residual_current||r.rcd_circuit_number)){ const v2=sk&&sk.vId||vId, nr=String(r.rcd_circuit_number||"").trim()||"1";
-        rcd=g.rcds.find(q=>q.vId===v2&&String(q.nr)===nr); const t=ecRcdText(`${r.rcd_residual_current} ${r.rcd_type}`);
-        if(!rcd){ rcd={id:uid(),vId:v2,nr,typ:t.typ,idn:t.idn,in:String(r.rcd_rated_current||"").replace(/\D/g,"")}; g.rcds.push(rcd); } }
+    for(const x of d.rows){ if(x.ziel==="__skip") continue; const r=x.r, key=x.key, namen=ecImpNamen(d,key);
+      /* Stromkreis */ let sk=ecSkFinden(g,key,vId);
       const schutz=(String(r.fuse_type||"")+String(r.fuse_rated_current||"")).replace(/\s/g,""), leitung=[r.cable_type,r.conductor_cross_section&&`${r.conductor_cross_section} mm²`].filter(Boolean).join(" ");
-      if(!sk){ sk={id:uid(),vId,nr:key,bez:r.circuit_name||"",schutz,leitung,rcdId:rcd?rcd.id:""}; g.stromkreise.push(sk); }
-      else { if(!sk.schutz) sk.schutz=schutz; if(!sk.leitung) sk.leitung=leitung; if(!sk.bez) sk.bez=r.circuit_name||""; if(!sk.rcdId&&rcd) sk.rcdId=rcd.id; }
-      /* Messpunkt */ let pid=x.ziel;
-      if(!pid||pid==="__neu"||!ecAllePunkte(g).some(p=>p.id===pid)){ const ord=Math.max(0,...g.stellen.filter(s=>s.raumId===raumId).map(s=>s.ord||0))+1, st={id:uid(),raumId,ord,art:"sd",fach:1,lage:"",skId:sk.id}; g.stellen.push(st); pid=st.id+".1"; }
-      else { const st=g.stellen.find(s=>s.id===pid.split(".")[0]); if(st&&!st.skId) st.skId=sk.id; }
-      setz(pid,{zs:ecSpWert(r.loop_impedance,"Ω"),ub:ecSpWert(r.contact_voltage,"V"),zi:ecSpWert(r.line_impedance,"Ω"),ik:ecSpWert(r.short_circuit_current,"A")});
+      const bez=namen.length===1?namen[0]:(()=>{ const W=namen.map(n=>n.split(/\s+/)), out=[]; for(let i=0;i<W[0].length&&W.every(w=>w[i]===W[0][i]);i++) out.push(W[0][i]); return out.join(" "); })();
+      if(!sk){ sk={id:uid(),vId,nr:key,bez,schutz,leitung,rcdId:""}; g.stromkreise.push(sk); }
+      else { if(!sk.schutz) sk.schutz=schutz; if(!sk.leitung) sk.leitung=leitung; if(!sk.bez&&bez) sk.bez=bez; }
+      /* RCD: hat der Stromkreis schon einen, gelten die Werte für diesen; sonst nach Nummer suchen oder anlegen.
+         Gleiche Nummer und gleicher Bemessungsstrom wie der LS → FI/LS-Kombination (RCBO) */
+      let rcd=ecRcdVon(g,sk); if(!rcd&&(r.rcd_type||r.rcd_residual_current||r.rcd_circuit_number)){ const v2=sk.vId||vId, nr=String(r.rcd_circuit_number||"").trim()||"1";
+        rcd=g.rcds.find(q=>q.vId===v2&&String(q.nr)===nr); const t=ecRcdText(`${r.rcd_residual_current} ${r.rcd_type}`), inn=String(r.rcd_rated_current||"").replace(/\D/g,"");
+        if(!rcd){ rcd={id:uid(),vId:v2,nr,typ:t.typ,idn:t.idn,in:inn,fils:!!inn&&inn===String(r.fuse_rated_current||"").replace(/\D/g,"")&&ecNrNorm(nr)===ecNrNorm(key)}; g.rcds.push(rcd); } }
+      if(rcd&&!sk.rcdId) sk.rcdId=rcd.id;
+      /* Wohin mit Z s? am Stromkreis oder an einem Messpunkt */
+      const pw={zs:ecSpWert(r.loop_impedance,"Ω"),ub:ecSpWert(r.contact_voltage,"V"),zi:ecSpWert(r.line_impedance,"Ω"),ik:ecSpWert(r.short_circuit_current,"A"),modus:r.measurement_mode||""};
+      if(x.ziel==="__sk") setz(sk.id,pw);
+      else { let pid=x.ziel;
+        if(!pid||pid==="__neu"||!ecAllePunkte(g).some(p=>p.id===pid)){ const rid=raumSicher(), ord=Math.max(0,...g.stellen.filter(s=>s.raumId===rid).map(s=>s.ord||0))+1,
+            st={id:uid(),raumId:rid,ord,art:"sd",fach:1,lage:namen.length>1?String(r.circuit_name||"").trim():"",skId:sk.id}; g.stellen.push(st); pid=st.id+".1"; }
+        else { const st=g.stellen.find(s=>s.id===pid.split(".")[0]); if(st&&!st.skId) st.skId=sk.id; }
+        setz(pid,pw); }
       setz(sk.id,{riso:ecSpWert(r.insulation_resistance,"MΩ"),rlo:ecSpWert(r.protective_earth_resistance,"Ω")});
       if(rcd) setz(rcd.id,{t1:ecSpWert(r.rcd_tripping_time_1||r.rcd_tripping_time,"ms"),t5:ecSpWert(r.rcd_tripping_time_5,"ms"),idelta:ecSpWert(r.rcd_current,"mA"),ub:r.rcd_tripping_time_1||r.rcd_current?ecSpWert(r.contact_voltage,"V"):""});
       n++; } }
@@ -566,7 +588,7 @@ document.addEventListener("change",e=>{ const el=e.target;
   if(el.id==="f_ecKunde"){ const f=document.getElementById("ecOrtFeld"); if(f) f.innerHTML=ecOrtFeld(el.value); return; }
   if(el.id==="f_ecEbene"&&ecDlg&&"ebeneHand" in ecDlg){ ecDlg.ebeneHand=el.value!==""; return; }
   if(el.id==="f_skV"){ const pr=ecPr(), f=document.getElementById("ecRcdFeld"); if(pr&&f) f.innerHTML=ecRcdFeld(ecGeb(pr.ortId),el.value,""); return; }
-  if(ecImp&&/^f_imp(R_|V$|Et$)/.test(el.id)){ ecImportLesen(); ecImportZiele(); ecImportDlg(); return; }
+  if(ecImp&&/^f_imp(R_|DV_|V$|Et$)/.test(el.id)){ ecImportLesen(); ecImportZiele(); ecImportDlg(); return; }
   if(/^f_zu_/.test(el.id)&&el.value){ const pr=ecPr(), g=ecGeb(pr.ortId), st=g.stellen.find(s=>s.id===el.id.slice(5)); if(st){ ecWerteLesen(); st.skId=el.value; ecLetzterSk=el.value; ecGebSpeichern(g); const r=ecDlg&&ecDlg.raumMess; render(); if(r) ecRaumMessDlg(r); } return; }
   if(el.dataset&&el.dataset.ec){ const pr=ecPr(); if(!pr||pr.status==="fertig") return; const [a,b]=el.dataset.ec.split("."); if(b){ pr[a]=Object.assign({},pr[a]||{},{[b]:el.value.trim()}); } else pr[a]=el.value.trim(); saveRec("echecks",pr); } });
 document.addEventListener("input",e=>{ const el=e.target; if(!el.dataset) return;
@@ -599,6 +621,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     pr.umfang=alle.every(x=>L.includes(x))?null:{vIds:L}; saveRec("echecks",pr); render(); return; }
   case "ecWahl": { const gr=b.dataset.g; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
     if(gr==="lage"||gr==="schutz"||gr==="leitung"){ const i=document.getElementById({lage:"f_ecLage",schutz:"f_skSchutz",leitung:"f_skLeitung"}[gr]); if(i){ i.value=b.dataset.v; i.parentElement.classList.add("fl"); } return; }
+    if(/^impTyp\d+$/.test(gr)&&ecImp){ ecImportLesen(); const d=ecImp.docs[+gr.slice(6)]; if(d){ d.typ=b.dataset.v; ecImportZiele(); ecImportDlg(); } return; }
     if(ecDlg&&ecDlg.w) ecDlg.w[gr]=b.dataset.v; if(gr==="art"){ const z=document.getElementById("ecFachZeile"); if(z) z.hidden=b.dataset.v!=="sd"; } return; }
   /* Etagen und Räume */
   case "ecEt": { const akt=g.etagen.find(e=>e.id===nav.et)||ecEtStd(g); if(akt&&akt.id===b.dataset.id){ if(zu) return; ecEtDlg(akt); return; } nav.et=b.dataset.id; render(); return; }
@@ -642,7 +665,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecRcdNeu": if(!nichtZu()) return; ecRcdDlg(null,b.dataset.v); return;
   case "ecRcdEdit": if(!nichtZu()) return; ecRcdDlg(g.rcds.find(r=>r.id===b.dataset.id)); return;
   case "ecRcdEditAusMess": { ecWerteLesen(); if(!nichtZu()) return; ecRcdDlg(g.rcds.find(r=>r.id===b.dataset.id)); return; }
-  case "ecRcdOk": { const F=formVals(), W=ecDlg.w, neu={nr:(F.rcdNr||"").trim()||"1",typ:W.typ||"",idn:W.idn||"",in:W.in||""};
+  case "ecRcdOk": { const F=formVals(), W=ecDlg.w, neu={nr:(F.rcdNr||"").trim()||"1",typ:W.typ||"",idn:W.idn||"",in:W.in||"",fils:W.bauart==="fils"};
     if(ecDlg.rcd) Object.assign(g.rcds.find(r=>r.id===ecDlg.rcd),neu); else g.rcds.push({id:uid(),vId:ecDlg.vId,...neu}); sp(); closeOverlays(); render(); return; }
   case "ecRcdDel": { if(g.stromkreise.some(s=>s.rcdId===ecDlg.rcd)){ toast("Am RCD hängen noch Stromkreise – erst dort „kein RCD“ wählen"); return; } g.rcds=g.rcds.filter(r=>r.id!==ecDlg.rcd); sp(); closeOverlays(); render(); return; }
   case "ecSkNeu": if(!nichtZu()) return; ecSkDlg(null,b.dataset.v); return;
