@@ -243,7 +243,9 @@ function ecAuftragView(pr){ const o=ecOrt(pr.ortId), an=ecAn(pr), nz=ecNz(pr), G
     <section class="card"><h3>Messgerät</h3>${!zu&&MG.length?`<div class="chips ec-mg">${MG.map(m=>`<button type="button" class="chip" data-act="ecMg" data-id="${esc(m.id)}" aria-pressed="${G.mgId===m.id}">${esc(ecMgLabel(m))}${m.sn?` · ${esc(m.sn)}`:""}</button>`).join("")}</div>`:""}
       <div class="ec-fg">${ecFeld(pr,"geraet.mess","Messgerät",G.mess)}<div class="reihe2">${ecFeld(pr,"geraet.sn","Seriennummer",G.sn)}${ecFeld(pr,"geraet.kal","Kalibriert bis",G.kal,{ph:"z. B. 03/2027"})}</div></div>
       ${MG.length?"":`<p class="meta">Messgeräte werden in der Übersicht unter „Geräte“ gepflegt und erscheinen dann hier zur Auswahl${nz?" – beim Netzwerktester als Einsatz „Netzwerk“ wählen":""}.</p>`}</section>
-    ${nz?`<section class="card"><h3>Prüfung</h3><div class="ec-fg">${ecWahlSel(pr,"pruefart","Prüfart",pr.pruefart,["Abnahme","Wiederholungsprüfung","Fehlersuche"])}${ecFeld(pr,"kabel","Verkabelung",pr.kabel,{ph:"z. B. Cat 7 Verlegekabel, Cat 6A Module"})}</div>
+    ${nz?`<section class="card"><h3>Prüfung</h3><div class="ec-fg">${ecWahlSel(pr,"pruefart","Prüfart",pr.pruefart,["Abnahme","Wiederholungsprüfung","Fehlersuche"])}${ecFeld(pr,"kabel","Verkabelung",pr.kabel,{ph:"z. B. Cat 7 Verlegekabel, Cat 6A Module"})}
+      <div class="lbl" style="margin-top:4px">Belegung</div>${seg("ecBelegStd",ecWmStd(pr),[["T568A","T568A"],["T568B","T568B"]])}
+      <div class="lbl" style="margin-top:4px">Schirm</div>${seg("ecSchirmStd",pr.schirm==="nein"?"nein":"ja",[["ja","geschirmt"],["nein","ungeschirmt"]])}</div>
       <p class="meta">Übertragungsprüfung (Qualifizierung) nach IEEE 802.3. Das ist keine Zertifizierung nach DIN EN 50173 – dafür braucht es ein Zertifizierungs-Messgerät.</p></section>
     <section class="card"><h3>Prüfumfang</h3>${g.schraenke.length?`<div class="lbl">Welche Netzwerkschränke werden heute geprüft?</div><div class="chips ec-wahl">${g.schraenke.map(s=>`<button type="button" class="chip" data-act="ecUmfangS" data-id="${esc(s.id)}" aria-pressed="${ecNetImUmfang(pr,{sId:s.id})}" ${zu?"disabled":""}>${esc(s.name)}</button>`).join("")}</div>`:`<p class="meta">Netzwerkschränke legst du im nächsten Schritt „Gebäude“ an – dann kannst du hier wählen, welche heute geprüft werden.</p>`}
       <div class="ec-fg" style="margin-top:12px"><div class="tf fl"><textarea id="f_ec_umfangText" data-ec="umfangText" placeholder="${esc(ecNetUmfangAuto(pr,g))}" ${zu?"disabled":""}>${esc(pr.umfangText||"")}</textarea><label for="f_ec_umfangText">Text im Protokoll (leer = automatisch)</label></div></div></section>`:""}
@@ -543,14 +545,16 @@ function ecNetMessView(pr){ const g=ecGeb(pr.ortId), L=ecNetListe(pr,g), fertig=
   [...g.schraenke,{id:"",name:"Ohne Schrank"}].forEach(s=>{ const T=L.filter(p=>s.id?p.d.sId===s.id:(!p.d.sId||!g.schraenke.some(x=>x.id===p.d.sId))); if(!T.length) return;
     h+=`<div class="ec-rk">${esc(s.name)}</div>${T.map(zeile).join("")}`; });
   return h+`</div><p class="hint">Link antippen: Belegung, Länge, Übertragung und PoE eintragen. „Weiter“ springt zum nächsten Port im Schrank.</p>`+ecWeiter("abschluss","Weiter zum Abschluss"); }
-function ecNetMessDlg(id){ const pr=ecPr(), g=ecGeb(pr.ortId), L=ecNetListe(pr,g), i=L.findIndex(p=>p.id===id), p=L[i]||ecNetAlle(g).find(x=>x.id===id); if(!p) return; ecDlg={netMess:p.id};
-  const w=ecW(pr,p.id), zu=pr.status==="fertig", vor=L[i-1], nach=L[i+1], lenSt=ecWertStand(EC_NLEN,w.len);
+function ecNetMessDlg(id){ const pr=ecPr(), g=ecGeb(pr.ortId), L=ecNetListe(pr,g), i=L.findIndex(p=>p.id===id), p=L[i]||ecNetAlle(g).find(x=>x.id===id); if(!p) return;
+  const w=ecW(pr,p.id), wm0=ecWmLesen(w.wmap); ecDlg={netMess:p.id,wm:{m:wm0||ecWmGerade(),s:w.wmS||ecWmSchirmStd(pr),sel:null,leer:!wm0&&w.wm!=="ok",auto:wm0?ecWmText(wm0,w.wmS||""):""}};
+  const zu=pr.status==="fertig", vor=L[i-1], nach=L[i+1], lenSt=ecWertStand(EC_NLEN,w.len);
   const tri=(k,l,na)=>`<div class="ec-sz"><span>${l}</span><span class="ec-tri">${[["ok","i. O."],["nok","n. i. O."],...(na?[["na","entfällt"]]:[])].map(([v,t])=>`<button type="button" data-act="ecNetTri" data-k="${k}" data-v="${v}" aria-pressed="${w[k]===v}" class="${v}" ${zu?"disabled":""}>${t}</button>`).join("")}</span></div>`;
   dialog(`${p.pp?`Port ${p.pp} · `:""}${ecRaumName(g,p.raumId)} ${p.nr}`,`<p class="ec-sub">${esc([ecSchrName(g,p.d.sId)||"ohne Schrank",ecDoseName(p.d)+((+p.d.ports||1)>1?` (Port ${p.i})`:""),p.d.lage].filter(Boolean).join(" · "))}</p>
     ${zu?"":`<div class="ec-tipp">${icon("info")}<span>Am SignalTEK CT: Hauptgerät an den Patchport, Remote an die Datendose. Kabeltest für Belegung und Länge, danach der Übertragungstest. PoE nur, wenn an der Dose ein PoE-Gerät hängt.</span></div>`}
     <div id="ecNgZeile" ${w.ng?"":"hidden"}><div class="tf fl"><input id="m_ng" data-nw="ng" value="${esc(w.ng||"")}" placeholder="z. B. Raum nicht zugänglich, Dose verbaut" ${zu?"disabled":""}><label for="m_ng">Nicht gemessen – Grund</label></div></div>
     <div id="ecMessTeil" ${w.ng?"hidden":""}>
       <div class="list ec-sicht">${tri("wm","Belegung (Wiremap)")}</div>
+      <div id="ecWm">${ecWmBereich(pr)}</div>
       <div class="fg1" style="margin-top:8px">${tf("nwF","Fehlerbild (bei n. i. O.)",w.wmF||"",{form:true,ph:"z. B. Paar 3/6 vertauscht, Ader 7 offen"})}</div>
       <div class="ec-felder"><div class="ec-feld ${lenSt}"><label for="m_len">Länge</label><span class="ec-ein"><input id="m_len" data-nw="len" inputmode="decimal" value="${esc(w.len||"")}" placeholder="–" autocomplete="off" ${zu?"disabled":""}><span>m</span></span><small class="ec-gw">${esc(EC_NLEN.txt)}</small></div>
         <div class="ec-feld"><label for="m_poeW">PoE-Last (optional)</label><span class="ec-ein"><input id="m_poeW" data-nw="poeW" inputmode="decimal" value="${esc(w.poeW||"")}" placeholder="–" autocomplete="off" ${zu?"disabled":""}><span>W</span></span><small class="ec-gw">zur Dokumentation</small></div></div>
@@ -564,7 +568,56 @@ function ecNetLesen(){ const pr=ecPr(); if(!pr||!ecDlg||!ecDlg.netMess||pr.statu
   document.querySelectorAll("#dlg [data-nw]").forEach(el=>{ const v=el.value.trim(); if(v) w[el.dataset.nw]=el.dataset.nw==="len"||el.dataset.nw==="poeW"?v.replace(".",","):v; });
   const f=document.getElementById("f_nwF"); if(f&&f.value.trim()) w.wmF=f.value.trim();
   if(document.getElementById("ecNgZeile")&&document.getElementById("ecNgZeile").hidden) delete w.ng;
+  if(ecDlg.wm&&!ecDlg.wm.leer){ w.wmap=ecDlg.wm.m.join(""); w.wmS=ecDlg.wm.s; }
   pr.werte=pr.werte||{}; if(JSON.stringify(alt)!==JSON.stringify(w)){ if(Object.keys(w).length) pr.werte[id]=w; else delete pr.werte[id]; if(pr.status==="offen") pr.status="laeuft"; saveRec("echecks",pr); } }
+
+/* Belegungsplan (Wiremap) wie am Tester: links Patchfeld, rechts Dose, je Ader eine Linie in ihrer Farbe, Schirm als eigene Linie.
+   Gespeichert als w.wmap = 8 Zeichen, Stelle i = wo Ader i an der Dose ankommt ("1"–"8", "0" offen, "k" Kurzschluss), w.wmS = ok|offen|none */
+const EC_WMF={gn:"#2E9D4A",or:"#F08A1C",bl:"#2563C9",br:"#7A4A2A"};
+const EC_WMSTD={T568A:[["gn",1],["gn"],["or",1],["bl"],["bl",1],["or"],["br",1],["br"]],T568B:[["or",1],["or"],["gn",1],["bl"],["bl",1],["gn"],["br",1],["br"]]};
+const EC_WMNAME={gn:"grün",or:"orange",bl:"blau",br:"braun"};
+const ecWmAder=(std,i)=>{ const [f,w]=(EC_WMSTD[std]||EC_WMSTD.T568A)[i-1]; return w?`weiß-${EC_WMNAME[f]}`:EC_WMNAME[f]; };
+const ecWmGerade=()=>[1,2,3,4,5,6,7,8];
+const ecWmLesen=t=>{ t=String(t||""); return t.length===8?[...t].map(c=>c==="k"?"k":+c):null; };
+const ecWmStd=pr=>pr.belegung==="T568B"?"T568B":"T568A";
+const ecWmSchirmStd=pr=>pr.schirm==="nein"?"none":"ok";
+const ecWmIstGerade=m=>m.every((x,i)=>x===i+1);
+function ecWmText(m,s){ const T=[], key=m.join("");
+  if(key==="36145278") T.push("Crossover (Paar 1/2 ↔ 3/6)"); else if(key==="36178245") T.push("Crossover alle Paare (Gigabit)");
+  else { const off=m.map((x,i)=>x===0?i+1:0).filter(Boolean), kz=m.map((x,i)=>x==="k"?i+1:0).filter(Boolean), weg=new Set();
+    if(off.length) T.push(`Ader${off.length>1?"n":""} ${off.join(", ")} offen`);
+    if(kz.length) T.push(`Kurzschluss Ader ${kz.join("/")}`);
+    m.forEach((x,i)=>{ const p=i+1; if(typeof x!=="number"||!x||x===p||weg.has(p)) return;
+      if(m[x-1]===p){ weg.add(p); weg.add(x); const paar=[[1,2],[3,6],[4,5],[7,8]].some(([a,b])=>(a===p&&b===x)||(a===x&&b===p)); T.push(paar?`Paar ${Math.min(p,x)}/${Math.max(p,x)} verpolt`:`Ader ${p} und ${x} vertauscht`); }
+      else { weg.add(p); T.push(`Ader ${p} → ${x}`); } }); }
+  if(s==="offen") T.push("Schirm unterbrochen"); return T.join(", "); }
+function ecWmSvg(z){ const {m,s,std,sel,leer}=z, Y=i=>34+(i-1)*26, xl=46, xr=294, a=112, b=228, F=EC_WMSTD[std]||EC_WMSTD.T568A, kz=m.map((x,i)=>x==="k"?i+1:0).filter(Boolean);
+  const linie=(i)=>{ const [f,w]=F[i-1], ziel=m[i-1], y1=Y(i), c=EC_WMF[f];
+    let d; if(ziel===0) d=`M${xl+12} ${y1}H${(a+b)/2}`; else if(ziel==="k") d=`M${xl+12} ${y1}H${a}L${b-14} ${y1}`; else { const y2=Y(ziel); d=`M${xl+12} ${y1}H${a}L${b} ${y2}H${xr-12}`; }
+    const o=`<path d="${d}" class="wm-o" stroke-width="9"/>`, base=w?`<path d="${d}" stroke="#fff" stroke-width="7"/><path d="${d}" stroke="${c}" stroke-width="7" stroke-dasharray="7 7"/>`:`<path d="${d}" stroke="${c}" stroke-width="7"/>`;
+    const ende=ziel===0?`<g class="wm-x"><path d="M${(a+b)/2+4} ${y1-6}l12 12M${(a+b)/2+16} ${y1-6}l-12 12"/></g>`:"";
+    return o+base+ende; };
+  const pin=(seite,i)=>{ const x=seite==="l"?xl:xr, an=seite==="l"&&sel===i, ziel=seite==="r"&&sel&&m[sel-1]===i;
+    return `<g class="wm-pin${an?" an":""}${ziel?" ziel":""}" data-act="ecWmPin" data-s="${seite}" data-p="${i}" role="button" aria-label="${seite==="l"?"Patchfeld":"Dose"} Pin ${i}"><rect x="${x-22}" y="${Y(i)-13}" width="44" height="26" fill="transparent" stroke="none"/><circle cx="${x}" cy="${Y(i)}" r="12"/><text x="${x}" y="${Y(i)+4.5}">${i}</text></g>`; };
+  const sy=Y(9)+12;
+  const schirm=s==="none"?`<text x="170" y="${sy+4}" class="wm-st">ungeschirmt</text>`
+    :`<path d="M${xl+12} ${sy}H${s==="offen"?150:xr-12}" class="wm-s${s==="offen"?" offen":""}" stroke-width="5"/>${s==="offen"?`<path d="M190 ${sy}H${xr-12}" class="wm-s offen" stroke-width="5"/><g class="wm-x"><path d="M158 ${sy-6}l12 12M170 ${sy-6}l-12 12"/></g>`:""}`;
+  return `<svg class="ec-wm${leer?" leer":""}" viewBox="0 0 340 ${sy+22}" role="img" aria-label="Belegungsplan">
+    <text x="${xl}" y="14" class="wm-k">Patchfeld</text><text x="${xr}" y="14" class="wm-k">Dose</text>
+    <g fill="none" stroke-linecap="butt">${ecWmGerade().map(linie).join("")}</g>
+    ${kz.length>1?`<path d="M${b-14} ${Y(Math.min(...kz))}V${Y(Math.max(...kz))}" class="wm-kz" stroke-width="4"/>`:""}${kz.map(i=>`<circle cx="${b-14}" cy="${Y(i)}" r="5" class="wm-kp"/>`).join("")}
+    <g fill="none">${schirm}</g><g class="wm-sl"><circle cx="${xl}" cy="${sy}" r="12"/><text x="${xl}" y="${sy+4.5}">S</text>${s==="none"?"":`<circle cx="${xr}" cy="${sy}" r="12"/><text x="${xr}" y="${sy+4.5}">S</text>`}</g>
+    ${ecWmGerade().map(i=>pin("l",i)+pin("r",i)).join("")}</svg>`; }
+function ecWmBereich(pr){ const z=ecDlg.wm, std=ecWmStd(pr), zu=pr.status==="fertig", t=ecWmText(z.m,z.s);
+  return `${ecWmSvg({...z,std})}
+    <p class="ec-wm-t ${z.leer?"":t?"bad":"ok"}">${z.leer?"Noch nicht eingetragen – Pin links antippen, dann rechts, wo die Ader ankommt.":t?esc(t):`Alle Adern 1:1${z.s==="ok"?", Schirm durchgängig":""}`}</p>
+    ${zu?"":`${z.sel?`<div class="chips ec-wahl"><span class="ec-wm-sel">Ader ${z.sel} (${esc(ecWmAder(std,z.sel))}):</span><button type="button" class="chip" data-act="ecWmSetz" data-v="0">offen</button><button type="button" class="chip" data-act="ecWmSetz" data-v="k">Kurzschluss</button><button type="button" class="chip" data-act="ecWmSetz" data-v="g">gerade</button></div>`:""}
+    <div class="chips ec-wahl"><button type="button" class="chip" data-act="ecWmVorlage" data-v="12345678">1:1</button><button type="button" class="chip" data-act="ecWmVorlage" data-v="36145278">Crossover</button>
+      <span class="ec-wm-sel">Schirm:</span>${[["ok","durchgängig"],["offen","unterbrochen"],["none","ungeschirmt"]].map(([v,t2])=>`<button type="button" class="chip" data-act="ecWmSchirm" data-v="${v}" aria-pressed="${z.s===v}">${t2}</button>`).join("")}</div>`}`; }
+/* nach jeder Änderung: Bild neu zeichnen, „Belegung“ und Fehlerbild mitziehen */
+function ecWmNeu(pr){ const z=ecDlg.wm; z.leer=false; const el=document.getElementById("ecWm"); if(el) el.innerHTML=ecWmBereich(pr);
+  const t=ecWmText(z.m,z.s), v=t?"nok":"ok"; document.querySelectorAll('#dlg [data-act=ecNetTri][data-k=wm]').forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===v)));
+  const f=document.getElementById("f_nwF"); if(f&&(!f.value.trim()||f.value===z.auto)){ f.value=t; f.parentElement.classList.toggle("fl",!!t); } z.auto=t; }
 
 /* PDF-Teil */
 function ecNetPdf(pr,S,pl){ const g=ecGeb(pr.ortId), L=ecNetListe(pr,g), t=v=>v==="ok"?"i.O.":v==="nok"?"n.i.O.":v==="na"?"entf.":"-";
@@ -670,7 +723,7 @@ async function ecPdf(pr){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",f
     fuss:[k&&k.name,o.standort&&o.standort.name,pr.auftragsnr&&`Auftrag ${pr.auftragsnr}`,`Prüfdatum ${ecDatum(pr.datum)}`].filter(Boolean).join(" | ")});
   S.kopf(); S.abschnitt("Auftragsdaten");
   S.werte([["Auftraggeber",adr(k)],["Auftragsnr.",pr.auftragsnr],["Kundennr.",k&&k.kdnr],["Ansprechpartner",k&&k.ansprech],["Prüfort",o.standort?adr(o.standort):"wie Auftraggeber"],["Art der Prüfung",pr.pruefart],
-    ["Prüfdatum",ecDatum(pr.datum)],["Prüfer",pr.pruefer],["Messgerät",G.mess],["Seriennr.",G.sn],["Kal. gültig bis",G.kal],nz?["Verkabelung",pr.kabel||"-"]:an?["Netzform",`${N.form||"-"} | 230/400 V${N.hak?` | HAK ${N.hak}`:""}`]:["Anzahl Geräte",String(ecGeraeteAm(pr.ortId).filter(b=>!["open","ng"].includes(ecGerStand(pr,b))).length)],
+    ["Prüfdatum",ecDatum(pr.datum)],["Prüfer",pr.pruefer],["Messgerät",G.mess],["Seriennr.",G.sn],["Kal. gültig bis",G.kal],nz?["Verkabelung",[pr.kabel,ecWmStd(pr),pr.schirm==="nein"?"ungeschirmt":"geschirmt"].filter(Boolean).join(" | ")]:an?["Netzform",`${N.form||"-"} | 230/400 V${N.hak?` | HAK ${N.hak}`:""}`]:["Anzahl Geräte",String(ecGeraeteAm(pr.ortId).filter(b=>!["open","ng"].includes(ecGerStand(pr,b))).length)],
     ...(pr.bez?[["Bezeichnung",pr.bez]]:[])]);
   if(nz) ecNetPdf(pr,S,pl);
   else if(an){ const g=ecGeb(pr.ortId), SK=ecSkListe(g).filter(s=>ecImUmfang(pr,s));
@@ -874,7 +927,18 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     [D[i],D[j]]=[D[j],D[i]]; D.forEach((x,k)=>x.ord=k+1); sp(); render(); ecNetRaumDlg(d.raumId); return; }
   case "ecNetMess": ecNetMessDlg(b.dataset.id); return;
   case "ecNetTri": { b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b&&x.getAttribute("aria-pressed")!=="true"))); return; }
-  case "ecNetAlleOk": { document.querySelectorAll('#dlg [data-act="ecNetTri"]').forEach(x=>{ if(x.dataset.k!=="poe") x.setAttribute("aria-pressed",String(x.dataset.v==="ok")); }); return; }
+  case "ecNetAlleOk": { document.querySelectorAll('#dlg [data-act="ecNetTri"]').forEach(x=>{ if(x.dataset.k!=="poe") x.setAttribute("aria-pressed",String(x.dataset.v==="ok")); });
+    if(ecDlg&&ecDlg.wm){ const z=ecDlg.wm; z.m=ecWmGerade(); z.sel=null; if(z.s==="offen") z.s=ecWmSchirmStd(pr); ecWmNeu(pr); } return; }
+  case "ecWmPin": { if(zu||!ecDlg||!ecDlg.wm) return; const z=ecDlg.wm, p=+b.dataset.p, zeich=()=>{ const el=document.getElementById("ecWm"); if(el) el.innerHTML=ecWmBereich(pr); };
+    if(b.dataset.s==="l"){ z.sel=z.sel===p?null:p; zeich(); return; }
+    if(!z.sel){ const l=z.m.findIndex(x=>x===p); z.sel=l>=0?l+1:null; zeich(); return; }
+    const i=z.sel-1, alt=z.m[i], r=z.m.findIndex((x,j)=>x===p&&j!==i); if(r>=0) z.m[r]=alt; z.m[i]=p; z.sel=null; ecWmNeu(pr); return; }
+  case "ecWmSetz": { const z=ecDlg&&ecDlg.wm; if(!z||!z.sel) return; const i=z.sel-1, v=b.dataset.v;
+    if(v==="g"){ const alt=z.m[i], r=z.m.findIndex((x,j)=>x===i+1&&j!==i); if(r>=0) z.m[r]=alt; z.m[i]=i+1; } else z.m[i]=v==="k"?"k":0; z.sel=null; ecWmNeu(pr); return; }
+  case "ecWmVorlage": { const z=ecDlg&&ecDlg.wm; if(!z) return; z.m=ecWmLesen(b.dataset.v); z.sel=null; ecWmNeu(pr); return; }
+  case "ecWmSchirm": { const z=ecDlg&&ecDlg.wm; if(!z) return; z.s=b.dataset.v; ecWmNeu(pr); return; }
+  case "ecBelegStd": { if(!nichtZu()) return; pr.belegung=b.dataset.v; saveRec("echecks",pr); render(); return; }
+  case "ecSchirmStd": { if(!nichtZu()) return; pr.schirm=b.dataset.v; saveRec("echecks",pr); render(); return; }
   case "ecNetGeh": { ecNetLesen(); const L=ecNetListe(pr,g), i=L.findIndex(p=>p.id===(ecDlg&&ecDlg.netMess)), d=+b.dataset.d; if(d&&L[i+d]){ render(); ecNetMessDlg(L[i+d].id); return; } closeOverlays(); ecDlg=null; render(); return; }
   case "ecGerTri": { b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b&&x.getAttribute("aria-pressed")!=="true"))); return; }
   case "ecGerGeh": { ecGerLesen(); const B=ecGeraeteAm(pr.ortId), i=B.findIndex(x=>x.id===ecDlg.ger), d=+b.dataset.d; if(d&&B[i+d]){ render(); ecGerDlg(B[i+d].id); return; } closeOverlays(); ecDlg=null; render(); return; }
