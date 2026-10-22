@@ -100,20 +100,23 @@ const POI_ART={supermarket:["Supermarkt","#2E7D32","M7 18c-1.1 0-1.99.9-1.99 2S5
   fire_station:["Feuerwehr","#D84315","M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"],
   station:["Bahnhof","#37474F","M12 2c-4 0-8 .5-8 4v9.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h2.23l2-2H14l2 2h2v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V6c0-3.5-3.58-4-8-4zM7.5 17c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm3.5-7H6V6h5v4zm2 0V6h5v4h-5zm3.5 7c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"]};
 const POI_RANG=["supermarket","place_of_worship","fuel","station","townhall","school","pharmacy","hospital","fire_station","bank"];
-async function kartePoiHolen(g){ const key=g.lat.toFixed(4)+","+g.lon.toFixed(4); META.poi=META.poi||{}; const alt=META.poi[key]; if(alt&&Date.now()-alt.t<30*864e5) return alt.L;
+/* Zwischenspeicher je Ort: Treffer 30 Tage, „nichts gefunden“ nur 1 Tag (sonst bleibt ein ausgelasteter Server einen Monat lang hängen).
+   META.poi aus älteren Fassungen kann solche leeren Antworten enthalten → einmalig verworfen (poi2). */
+async function kartePoiHolen(g){ const key=g.lat.toFixed(4)+","+g.lon.toFixed(4); if(META.poi) delete META.poi; META.poi2=META.poi2||{}; const alt=META.poi2[key];
+  if(alt&&Date.now()-alt.t<(alt.L.length?30:1)*864e5) return alt.L;
   const um=`(around:800,${g.lat},${g.lon})`, q=`[out:json][timeout:15];(nwr${um}["shop"="supermarket"];nwr${um}["amenity"~"^(place_of_worship|fuel|school|pharmacy|townhall|hospital|bank|fire_station)$"];nwr${um}["railway"="station"];);out center 80;`;
   /* Overpass-Server sind oft ausgelastet: nacheinander drei probieren, je max. 12 s */
   let j=null;
-  for(const srv of ["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter","https://overpass.private.coffee/api/interpreter"]){
+  for(const srv of ["https://overpass-api.de/api/interpreter","https://overpass.private.coffee/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter","https://overpass.kumi.systems/api/interpreter"]){
     const ab=new AbortController(), t=setTimeout(()=>ab.abort(),12000);
-    try{ const r=await fetch(srv,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"},signal:ab.signal}); if(r.ok){ j=await r.json(); if(j&&Array.isArray(j.elements)) break; j=null; } }catch(e){} finally{ clearTimeout(t); } }
+    try{ const r=await fetch(srv,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"},signal:ab.signal}); if(r.ok){ j=await r.json(); /* ausgelastet: Overpass antwortet trotzdem mit 200, leerer Liste und „remark: runtime error …“ */ if(j&&Array.isArray(j.elements)&&!(j.remark&&/error|timeout|busy|out of memory/i.test(j.remark))) break; j=null; } }catch(e){} finally{ clearTimeout(t); } }
   if(!j) throw new Error("Anhaltspunkte nicht erreichbar");
   const d=(a,b)=>Math.hypot((a.lat-b.lat)*111000,(a.lon-b.lon)*111000*Math.cos(a.lat*Math.PI/180));
   let L=(j.elements||[]).map(e=>{ const t=e.tags||{}, art=t.shop==="supermarket"?"supermarket":t.railway==="station"?"station":t.amenity, lat=e.lat||(e.center&&e.center.lat), lon=e.lon||(e.center&&e.center.lon);
     return POI_ART[art]&&lat?{art,lat,lon,n:String(t.name||t.brand||POI_ART[art][0]).slice(0,28)}:null; }).filter(Boolean);
   L.forEach(x=>x.d=d(x,g)); L=L.filter(x=>x.d>25).sort((a,b)=>POI_RANG.indexOf(a.art)-POI_RANG.indexOf(b.art)||a.d-b.d);
   const W=[]; for(const x of L){ if(W.length>=12) break; if(W.some(y=>d(x,y)<90)) continue; W.push({art:x.art,lat:x.lat,lon:x.lon,n:x.n}); }
-  META.poi[key]={t:Date.now(),L:W}; const ks=Object.keys(META.poi); if(ks.length>60) delete META.poi[ks[0]]; metaSave(); return W; }
+  META.poi2[key]={t:Date.now(),L:W}; const ks=Object.keys(META.poi2); if(ks.length>60) delete META.poi2[ks[0]]; metaSave(); return W; }
 async function kartePoi(g,a){ (KARTE.poi||[]).forEach(m=>m.remove()); KARTE.poi=[];
   let L=[]; try{ L=await kartePoiHolen(g); }catch(e){ console.warn("Anhaltspunkte:",e.message); KARTE.poiA=null; return; }
   const el=document.getElementById("kdKarte"); if(!el||el.dataset.a!==a||!KARTE.map) return;
