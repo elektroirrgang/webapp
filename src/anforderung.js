@@ -177,9 +177,10 @@ function mlMelden(){ if(!ME||!ME.mail||(typeof nav!=="undefined"&&nav.v==="login
   mlLs(key,JSON.stringify([...G,...neu.map(m=>m.id)].slice(-400)));
   const frisch=neu.filter(m=>Date.now()-(m.t||0)<12*36e5); if(!frisch.length) return;
   const vorne=document.visibilityState==="visible"&&document.hasFocus();
-  /* Ob Windows/macOS gerade stumm sind („Nicht stören“), kann eine Webseite nicht erfahren. Deshalb: kam die Meldung, während die App
-     nicht vorne war, bleibt das Banner in der App stehen, bis man es antippt oder schließt – so geht nichts verloren. */
-  if(!vorne&&mlPushAn()) mlSystem(frisch); mlBanner(frisch,!vorne); }
+  /* Ob Windows/macOS gerade stumm sind („Nicht stören“), kann eine Webseite nicht erfahren – dann bleibt nur die Zahl an der Glocke. */
+  /* nur eins von beiden: geht die Systemmeldung raus, kein Banner in der App; ist sie aus, blockiert oder schlägt fehl, das Banner (bleibt stehen, bis man es sieht) */
+  if(!vorne&&mlPushAn()){ mlSystem(frisch).then(ok=>{ if(!ok) mlBanner(frisch,true); }); return; }
+  mlBanner(frisch,!vorne); }
 function mlOeffnenId(id){ document.getElementById("mlBan")?.remove(); if(id==="test") return; const S=mlSt(), m=id&&meldungen().find(x=>x.id===id);
   if(!m){ mlAuf(); return; } S.gel[id]=1; mlStSpeichern(); mlGlocke(); if(m.go) mlGo(m.go); }
 let mlBanT=null;
@@ -240,7 +241,7 @@ const ML_TEST="irrgang_ml_test";
 const mlUhr=t=>new Date(t).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
 function mlTestLesen(){ try{ return JSON.parse(mlLs(ML_TEST)||"null"); }catch(e){ return null; } }
 async function mlTestZeigen(h,txt){ const m={id:"test",von:null,h,s:txt,t:Date.now()}; let sys=false; if(mlPushAn()) sys=await mlSystem([m]);
-  mlBanner([m],!(document.visibilityState==="visible"&&document.hasFocus()));
+  if(!sys) mlBanner([m],!(document.visibilityState==="visible"&&document.hasFocus()));
   if(mlPushAn()&&!sys) toast("Systemmeldung fehlgeschlagen: "+(mlFehler||"unbekannt")); }
 const mlLaeuftSeit=Date.now();
 function mlTestPruefen(){ const T=mlTestLesen(); if(!T||Date.now()<T.f) return; mlLs(ML_TEST,"");
