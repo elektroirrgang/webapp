@@ -198,9 +198,20 @@ function mlBanner(neu,bleibt){ document.getElementById("mlBan")?.remove(); clear
   d.addEventListener("click",e=>{ e.stopPropagation(); if(e.target.closest(".ml-ban-x")){ weg(); return; } const b=e.target.closest("[data-ban]"); if(b) mlOeffnenId(b.dataset.ban); });
   const sicht=()=>{ if(!document.body.contains(d)){ document.removeEventListener("visibilitychange",sicht); return; } start(); };
   document.addEventListener("visibilitychange",sicht); start(); }
+/* Symbol der Systemmeldung: bei einer Meldung von einer Person deren Profilbild (rund), sonst die Initialen auf rotem Kreis;
+   Sammel- und Systemmeldungen bekommen das App-Symbol mit abgerundeten Ecken statt der eckigen weißen Kachel. */
+async function mlSysIcon(m,n){ const S=192, c=document.createElement("canvas"); c.width=c.height=S; const x=c.getContext("2d");
+  const bildLaden=src=>new Promise(ok=>{ if(!src) return ok(null); const i=new Image(); i.onload=()=>ok(i); i.onerror=()=>ok(null); i.src=src; });
+  const p=n===1&&m.von&&typeof profilVon==="function"?profilVon(m.von.mail):null, foto=p&&p.bild?await bildLaden(p.bild):null;
+  if(n===1&&m.von){ x.beginPath(); x.arc(S/2,S/2,S/2,0,Math.PI*2); x.closePath(); x.clip();
+    if(foto){ const k=Math.max(S/foto.width,S/foto.height), w=foto.width*k, h=foto.height*k; x.drawImage(foto,(S-w)/2,(S-h)/2,w,h); }
+    else { x.fillStyle="#E11D2F"; x.fillRect(0,0,S,S); x.fillStyle="#fff"; x.font="700 76px system-ui,Segoe UI,Arial"; x.textAlign="center"; x.textBaseline="middle"; x.fillText(initials(mlName(m)),S/2,S/2+4); } }
+  else { const app=await bildLaden((document.querySelector('link[rel="apple-touch-icon"]')||document.querySelector('link[rel~="icon"]')||{}).href); if(!app) return "";
+    const r=S*.225; x.beginPath(); x.moveTo(r,0); x.arcTo(S,0,S,S,r); x.arcTo(S,S,0,S,r); x.arcTo(0,S,0,0,r); x.arcTo(0,0,S,0,r); x.closePath(); x.clip(); x.drawImage(app,0,0,S,S); }
+  try{ return c.toDataURL("image/png"); }catch(e){ return ""; } }
 async function mlSystem(neu){ const m=neu[0], n=neu.length;
   const titel=n===1?(m.von?`${mlName(m)} ${m.h}`:m.h):`${n} neue Benachrichtigungen`, text=n===1?(m.s||""):neu.slice(0,4).map(x=>`${mlName(x)}: ${x.h}`).join("\n");
-  const ic=(document.querySelector('link[rel="apple-touch-icon"]')||document.querySelector('link[rel~="icon"]')||{}).href, id=n===1?m.id:"", tag="irrgang-"+(id||"mehr");
+  const ic=await mlSysIcon(m,n)||(document.querySelector('link[rel="apple-touch-icon"]')||{}).href, id=n===1?m.id:"", tag="irrgang-"+(id||"mehr");
   /* zuerst über den Service Worker (geht auch am iPad als Home-Bildschirm-App), sonst direkt */
   mlFehler="";
   try{ const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration(); if(r&&r.showNotification){ await r.showNotification(titel,{body:text,icon:ic,tag,renotify:true,data:{ml:id}}); mlWeg="Service Worker"; return true; } mlFehler="kein Service Worker"; }catch(e){ mlFehler="Service Worker: "+(e&&e.message||e); }
