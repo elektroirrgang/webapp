@@ -214,15 +214,18 @@ const ecTab=pr=>{ const T=ecSchritte(pr); return T.some(x=>x[0]===nav.tab)?nav.t
 const ecWeiter=(v,t)=>`<div class="ec-weiter"><button class="btn-filled" data-act="ecTab" data-v="${v}">${esc(t)}${icon("chev")}</button></div>`;
 
 /* ---- Prüfung ---- */
+/* Kachel „Messgerät“ in der Leiste: Bild, Kurzname, Kalibrierstatus – antippen öffnet die Auswahl */
+function ecKMg(pr){ const M=ecMgAktuell(pr), kal=M.mess?ecKal(M.kal):null, zu=pr.status==="fertig";
+  return `<button type="button" class="ec-k ec-kmg" data-act="ecPick" data-w="mg" ${zu?"disabled":""} title="Messgerät wählen">${ecMgBild(M.bild)}<span class="ec-kmg-t"><b>${esc(M.mess?(M.kurz||M.mess):"wählen")}</b><small>${M.mess?`<i class="sd ${kal.s==="ok"?"ok":kal.s==="wip"?"wip":"bad"}"></i>${esc(kal.s==="ok"?"kalibriert":kal.s==="wip"?"Kalibrierung läuft ab":"Kalibrierung fehlt")}`:"Messgerät"}</small></span></button>`; }
 function ecKennzahlen(pr){ const k=(z,t,bar,rot)=>`<div class="ec-k"><b${rot?' class="rot"':""}>${z}</b><small>${t}</small>${bar!=null?`<span class="ec-bar"><i style="width:${Math.round(bar*100)}%"></i></span>`:""}</div>`;
   if(ecNz(pr)){ const g=ecGeb(pr.ortId), L=ecNetListe(pr,g), st=L.map(p=>ecNetStand(pr,p)), n=st.filter(x=>["ok","bad","ng"].includes(x)).length, m=st.filter(x=>x==="bad").length, D=new Set(L.map(p=>p.d.id)).size;
-    return `<div class="ec-kz">${k(`${n} / ${L.length}`,"Links gemessen",L.length?n/L.length:0)}${k(D,`Datendose${D===1?"":"n"}`)}${k(m,"Mängel",null,m>0)}${k(esc(pr.geraet&&(pr.geraet.kurz||pr.geraet.mess)||"–"),"Messgerät")}</div>`; }
+    return `<div class="ec-kz">${k(`${n} / ${L.length}`,"Links gemessen",L.length?n/L.length:0)}${k(D,`Datendose${D===1?"":"n"}`)}${k(m,"Mängel",null,m>0)}${ecKMg(pr)}</div>`; }
   if(!ecAn(pr)){ const B=ecGeraeteAm(pr.ortId), st=B.map(b=>ecGerStand(pr,b)), n=st.filter(x=>["ok","bad","ng"].includes(x)).length, m=st.filter(x=>x==="bad").length;
-    return `<div class="ec-kz">${k(`${n} / ${B.length}`,"Geräte geprüft",B.length?n/B.length:0)}${k(m,"Mängel",null,m>0)}${k(`${pr.fristM||12} Mon.`,"Prüffrist")}${k(esc(pr.geraet&&(pr.geraet.kurz||pr.geraet.mess)||"–"),"Messgerät")}</div>`; }
+    return `<div class="ec-kz">${k(`${n} / ${B.length}`,"Geräte geprüft",B.length?n/B.length:0)}${k(m,"Mängel",null,m>0)}${k(`${pr.fristM||12} Mon.`,"Prüffrist")}${ecKMg(pr)}</div>`; }
   const g=ecGeb(pr.ortId), S=g.stromkreise.filter(x=>ecImUmfang(pr,x)), st=S.map(s=>ecSkStand(pr,g,s)), n=st.filter(x=>["ok","bad","ng"].includes(x)).length;
   const P=ecAllePunkte(g).filter(p=>ecImUmfang(pr,ecSkVon(g,p))&&ecPflicht(p.st)), pn=P.filter(p=>["ok","bad","ng"].includes(ecPunktStand(pr,g,p))).length;
   const m=st.filter(x=>x==="bad").length+Object.values(pr.sicht||{}).filter(v=>v==="nok").length, si=ecSichtZahl(pr);
-  return `<div class="ec-kz">${k(`${si} / ${EC_SICHT.length}`,"Besichtigung",si/EC_SICHT.length)}${k(`${n} / ${S.length}`,"Stromkreise fertig",S.length?n/S.length:0)}${k(`${pn} / ${P.length}`,"Messpunkte",P.length?pn/P.length:0)}${k(m,"Mängel",null,m>0)}</div>`; }
+  return `<div class="ec-kz">${k(`${n} / ${S.length}`,"Stromkreise fertig",S.length?n/S.length:0)}${k(`${pn} / ${P.length}`,"Messpunkte",P.length?pn/P.length:0)}${k(m,"Mängel",null,m>0)}${ecKMg(pr)}</div>`; }
 function ecView(pr){ const tab=ecTab(pr), zu=pr.status==="fertig";
   const schr=tab==="gebaeude"&&ecNz(pr)&&nav.schr&&ecGeb(pr.ortId).schraenke.find(x=>x.id===nav.schr);
   const body=schr?ecRackView(pr,schr):tab==="auftrag"?ecAuftragView(pr):tab==="gebaeude"?ecGebView(pr):tab==="sicht"?ecSichtView(pr):tab==="messen"?(ecNz(pr)?ecNetMessView(pr):ecMessView(pr)):tab==="geraete"?ecGerListe(pr):ecAbschlussView(pr);
@@ -255,9 +258,10 @@ function ecAuftragView(pr){ const o=ecOrt(pr.ortId), an=ecAn(pr), nz=ecNz(pr), N
     <div class="ec-fg"><div class="reihe2">${ecFeld(pr,"auftragsnr","Auftragsnummer",pr.auftragsnr)}${ecFeld(pr,"datum","Prüfdatum",pr.datum,{type:"date"})}</div>
       ${ecFeld(pr,"pruefer","Prüfer",pr.pruefer)}${chipsP}
       ${ecFeld(pr,"bez","Bezeichnung (optional)",pr.bez,{ph:an?"z. B. Einfamilienhaus, Erweiterung Küche":nz?"z. B. Neubau Büro, Erweiterung 2. OG":"z. B. Büro und Werkstatt"})}</div></section>`;
-  const mg=`<section class="card"><h3>Messgerät</h3><div class="ec-mgk">${ecMgBild(M.bild,true)}<div class="ec-mgk-t">${M.mess?`<b>${esc((M.kurz?M.kurz+" · ":"")+M.mess)}</b><span>${esc(M.sn?`Seriennummer ${M.sn}`:"Seriennummer fehlt")}</span>${pill(kal.s,kal.t)}`:`<b>Noch kein Messgerät gewählt</b><span>${nz?"Netzwerktester":an?"Installationstester":"Gerätetester"} aus der Übersicht › Messgeräte</span>`}</div>
-      ${zu?"":`<button class="btn-tonal" data-act="ecPick" data-w="mg">${M.mess?"Ändern":"Wählen"}</button>`}</div>
-    ${M.mess&&(!M.sn||kal.s!=="ok")?`<p class="meta" style="margin:12px 4px 0">Seriennummer und Kalibrierung trägst du in der Übersicht unter „Messgeräte“ ein – sie werden hier und im Protokoll übernommen.</p>`:""}</section>`;
+  /* Messgerät: nur auswählen – Seriennummer und Kalibrierung kommen aus „Messgeräte“ */
+  const MG=ecMessgeraete(pr.art||"anlage"), G=pr.geraet||{}, hand=M.mess&&!G.mgId;
+  const mg=`<section class="card"><h3>Messgerät</h3><div class="ec-fg"><div class="tf fl"><select id="f_ecMg" ${zu?"disabled":""}>${!G.mgId&&!hand?`<option value="" selected>– wählen –</option>`:""}${MG.map(m=>`<option value="${esc(m.id)}" ${m.id===G.mgId?"selected":""}>${esc(ecMgLabel(m))}</option>`).join("")}${hand?`<option value="__hand" selected>${esc(M.mess)} (von Hand)</option>`:""}<option value="__neu">Von Hand eintragen …</option></select><label for="f_ecMg">Messgerät</label><span class="arr">${icon("drop")}</span></div></div>
+    ${M.mess?`<div class="ec-mginfo">${ecMgBild(M.bild)}<span>${esc(M.sn?`Seriennummer ${M.sn}`:"Seriennummer fehlt")}</span>${pill(kal.s,kal.t)}</div>`:MG.length?"":`<p class="meta" style="margin:10px 4px 0">Noch kein passendes Messgerät – in der Übersicht unter „Messgeräte“ anlegen${nz?" (Einsatz „Netzwerk“)":""}.</p>`}</section>`;
   const sg=(l,act,cur,opts)=>`<div class="ec-sgz"><span class="lbl">${l}</span>${ecZSeg(act,cur,opts,zu)}</div>`;
   const pruef=`<section class="card"><h3>Prüfung</h3><div class="ec-fg">${ecWahlSel(pr,"pruefart","Prüfart",pr.pruefart,EC_PA[pr.art||"anlage"]||EC_PRUEFART)}
       ${nz?`${ecFeld(pr,"kabel","Verkabelung",pr.kabel,{ph:"z. B. Cat 7 Verlegekabel, Cat 6A Module"})}${zu?"":`<div class="chips ec-wahl">${EC_KABEL.map(x=>`<button type="button" class="chip" data-act="ecPickSet" data-w="kabel" data-v="${esc(x)}" aria-pressed="${x===pr.kabel}">${esc(x)}</button>`).join("")}</div>`}
@@ -966,6 +970,8 @@ async function ecPdfAblegen(pr){ toast("PDF wird erstellt …");
 
 /* ---- Klicks und Eingaben ---- */
 document.addEventListener("change",e=>{ const el=e.target;
+  if(el.id==="f_ecMg"){ const pr=ecPr(); if(!pr||pr.status==="fertig") return; if(el.value==="__neu"){ ecMgHandDlg(); render(); return; } if(el.value==="__hand"||!el.value) return;
+    const m=DB.geraete&&DB.geraete.get(el.value); if(m){ pr.geraet=ecMgDaten(m); saveRec("echecks",pr); render(); } return; }
   if(el.id==="f_ecKunde"){ const f=document.getElementById("ecOrtFeld"); if(f) f.innerHTML=ecOrtFeld(el.value); return; }
   if(el.id==="f_ecEbene"&&ecDlg&&"ebeneHand" in ecDlg){ ecDlg.ebeneHand=el.value!==""; return; }
   if(el.id==="f_ecSchr"&&ecDlg&&"dose" in ecDlg){ const pr=ecPr(), g=ecGeb(pr.ortId), s2=g.schraenke.find(x=>x.id===el.value), pf=ecPfWahl(s2,+ecDlg.w.pf||1); ecDlg.w.pf=String(pf);
