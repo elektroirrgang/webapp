@@ -234,29 +234,65 @@ const ecWahlSel=(pr,k,l,v,opts)=>{ const id="f_ec_"+k.replace(".","_");
   return `<div class="tf fl"><select id="${id}" data-ec="${k}" ${pr.status==="fertig"?"disabled":""}>${opts.map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("")}</select><label for="${id}">${esc(l)}</label><span class="arr">${icon("drop")}</span></div>`; };
 function ecUmfangAuto(pr,g){ const V=g.verteiler.filter(v=>ecImUmfang(pr,{vId:v.id})), aus=g.verteiler.filter(v=>!ecImUmfang(pr,{vId:v.id}));
   return `Besichtigen, Erproben und Messen der elektrischen Anlage nach DIN VDE 0100-600 bzw. DIN VDE 0105-100${V.length?`. Verteiler: ${V.map(v=>v.name).join(", ")}`:""}.${aus.length?` Nicht Bestandteil dieser Prüfung: ${aus.map(v=>v.name).join(", ")}.`:""}`; }
-/* Auftrag: wie in EVSE – was, womit, welche Prüfung, welcher Umfang */
-function ecAuftragView(pr){ const o=ecOrt(pr.ortId), an=ecAn(pr), nz=ecNz(pr), G=pr.geraet||{}, N=pr.netz||{}, zu=pr.status==="fertig";
-  const MG=ecMessgeraete(pr.art||"anlage"), g=an||nz?ecGeb(pr.ortId):null;
-  return `${ecKennzahlen(pr)}<div class="ec-karten">
-    <section class="card"><h3>Auftrag</h3><div class="ec-ortz">${icon("ort")}<div><b>${esc(o.kunde?o.kunde.name:"Kein Kunde")}</b><span>${esc(o.standort?[o.standort.name,adrText(o.standort)].filter(Boolean).join(" · "):(o.name||""))}</span></div></div>
-      <div class="ec-fg">${ecFeld(pr,"auftragsnr","Auftragsnummer",pr.auftragsnr)}<div class="reihe2">${ecFeld(pr,"datum","Prüfdatum",pr.datum,{type:"date"})}${ecFeld(pr,"pruefer","Prüfer",pr.pruefer)}</div>
-      ${ecPrueferListe().length&&!zu?`<div class="chips ec-wahl">${ecPrueferListe().map(m=>`<button type="button" class="chip" data-act="ecPruefer" data-n="${esc(m.name)}" aria-pressed="${m.name===pr.pruefer}">${esc(m.name)}</button>`).join("")}</div>`:""}
-      ${ecFeld(pr,"bez","Bezeichnung (optional)",pr.bez,{ph:an?"z. B. Einfamilienhaus, Erweiterung Küche":nz?"z. B. Neubau Büro, Erweiterung 2. OG":"z. B. Büro und Werkstatt"})}</div></section>
-    <section class="card"><h3>Messgerät</h3>${!zu&&MG.length?`<div class="chips ec-mg">${MG.map(m=>`<button type="button" class="chip" data-act="ecMg" data-id="${esc(m.id)}" aria-pressed="${G.mgId===m.id}">${esc(ecMgLabel(m))}${m.sn?` · ${esc(m.sn)}`:""}</button>`).join("")}</div>`:""}
-      <div class="ec-fg">${ecFeld(pr,"geraet.mess","Messgerät",G.mess)}<div class="reihe2">${ecFeld(pr,"geraet.sn","Seriennummer",G.sn)}${ecFeld(pr,"geraet.kal","Kalibriert bis",G.kal,{ph:"z. B. 03/2027"})}</div></div>
-      ${MG.length?"":`<p class="meta">Messgeräte werden in der Übersicht unter „Messgeräte“ gepflegt und erscheinen dann hier zur Auswahl${nz?" – beim Netzwerktester als Einsatz „Netzwerk“ wählen":""}.</p>`}</section>
-    ${nz?`<section class="card"><h3>Prüfung</h3><div class="ec-fg">${ecWahlSel(pr,"pruefart","Prüfart",pr.pruefart,["Abnahme","Wiederholungsprüfung","Fehlersuche"])}${ecFeld(pr,"kabel","Verkabelung",pr.kabel,{ph:"z. B. Cat 7 Verlegekabel, Cat 6A Module"})}
-      <div class="lbl" style="margin-top:4px">Belegung</div>${seg("ecBelegStd",ecWmStd(pr),[["T568A","T568A"],["T568B","T568B"]])}
-      <div class="lbl" style="margin-top:4px">Schirm</div>${seg("ecSchirmStd",pr.schirm==="nein"?"nein":"ja",[["ja","geschirmt"],["nein","ungeschirmt"]])}</div>
-      <p class="meta">Übertragungsprüfung (Qualifizierung) nach IEEE 802.3. Das ist keine Zertifizierung nach DIN EN 50173 – dafür braucht es ein Zertifizierungs-Messgerät.</p></section>
-    <section class="card"><h3>Prüfumfang</h3>${g.schraenke.length?`<div class="lbl">Welche Netzwerkschränke werden heute geprüft?</div><div class="chips ec-wahl">${g.schraenke.map(s=>`<button type="button" class="chip" data-act="ecUmfangS" data-id="${esc(s.id)}" aria-pressed="${ecNetImUmfang(pr,{sId:s.id})}" ${zu?"disabled":""}>${esc(s.name)}</button>`).join("")}</div>`:`<p class="meta">Netzwerkschränke legst du im nächsten Schritt „Gebäude“ an – dann kannst du hier wählen, welche heute geprüft werden.</p>`}
-      <div class="ec-fg" style="margin-top:12px"><div class="tf fl"><textarea id="f_ec_umfangText" data-ec="umfangText" placeholder="${esc(ecNetUmfangAuto(pr,g))}" ${zu?"disabled":""}>${esc(pr.umfangText||"")}</textarea><label for="f_ec_umfangText">Text im Protokoll (leer = automatisch)</label></div></div></section>`:""}
-    ${nz?"":`<section class="card"><h3>Prüfung</h3><div class="ec-fg">${ecWahlSel(pr,"pruefart","Prüfart",pr.pruefart,an?EC_PRUEFART:["Wiederholungsprüfung","Erstprüfung"])}
-      ${an?`<div class="lbl" style="margin-top:4px">Netzform</div>${seg("ecNetz",N.form||"TN-C-S",[["TN-C-S","TN-C-S"],["TN-S","TN-S"],["TT","TT"]])}${ecFeld(pr,"netz.hak","Hausanschluss (z. B. 63 A)",N.hak)}`:""}</div>
-      <p class="meta">${an?"Nach DIN VDE 0100-600 (Erstprüfung) bzw. DIN VDE 0105-100 (Wiederholungsprüfung).":"Nach DIN VDE 0701-0702 und DGUV Vorschrift 3."}</p></section>`}
-    ${an?`<section class="card"><h3>Prüfumfang</h3>${g.verteiler.length?`<div class="lbl">Welche Verteiler werden heute geprüft?</div><div class="chips ec-wahl">${g.verteiler.map(v=>`<button type="button" class="chip" data-act="ecUmfangV" data-id="${esc(v.id)}" aria-pressed="${ecImUmfang(pr,{vId:v.id})}" ${zu?"disabled":""}>${esc(v.name)}</button>`).join("")}</div>`:`<p class="meta">Verteiler legst du im nächsten Schritt „Gebäude“ an – dann kannst du hier wählen, welche heute geprüft werden.</p>`}
-      <div class="ec-fg" style="margin-top:12px"><div class="tf fl"><textarea id="f_ec_umfangText" data-ec="umfangText" placeholder="${esc(ecUmfangAuto(pr,g))}" ${zu?"disabled":""}>${esc(pr.umfangText||"")}</textarea><label for="f_ec_umfangText">Text im Protokoll (leer = automatisch)</label></div></div></section>`:""}
-  </div>${ecWeiter(an||nz?"gebaeude":"geraete",an||nz?"Weiter zum Gebäude":"Weiter zu den Geräten")}`; }
+/* Auftrag: gruppierte Einstellungen wie in den System-Einstellungen – Zeile antippen öffnet die Auswahl, Texte direkt in der Zeile */
+const EC_PA={anlage:EC_PRUEFART,geraete:["Wiederholungsprüfung","Erstprüfung"],netz:["Abnahme","Wiederholungsprüfung","Fehlersuche"]};
+const EC_KABEL=["Cat 5e U/UTP","Cat 6 U/UTP","Cat 6A U/FTP","Cat 6A S/FTP","Cat 7 S/FTP Verlegekabel, Cat 6A Module","Cat 7A S/FTP Verlegekabel, Cat 6A Module"];
+function ecKalBis(t){ t=String(t||"").trim(); let m; if((m=t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/))) return new Date(+m[3],+m[2]-1,+m[1]); if((m=t.match(/^(\d{1,2})[./](\d{4})$/))) return new Date(+m[2],+m[1],0); return null; }
+function ecKal(kal){ if(!kal) return {s:"bad",t:"Kalibrierung fehlt"}; const b=ecKalBis(kal); if(!b) return {s:"wip",t:`kalibriert bis ${kal}`}; const rest=Math.floor((b-new Date())/864e5);
+  return rest<0?{s:"bad",t:`Kalibrierung abgelaufen (${kal})`}:rest<=60?{s:"wip",t:`Kalibrierung läuft ab ${kal}`}:{s:"ok",t:`kalibriert bis ${kal}`}; }
+/* gewähltes Messgerät: aktuelle Daten aus „Messgeräte“, sonst die beim Auswählen gemerkten */
+function ecMgAktuell(pr){ const G=pr.geraet||{}, m=G.mgId&&DB.geraete&&DB.geraete.get(G.mgId); return m&&!m.deleted?{...ecMgDaten(m),bild:m.bild||m.bildUrl||""}:{...G}; }
+const ecMgBild=(u,gross)=>`<span class="ec-mgb${gross?" gross":""}">${icon("ecMess")}${u?`<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`:""}</span>`;
+const ecZ=(l,inhalt,o={})=>`<${o.act?"button type=\"button\"":"div"} class="ec-zl${o.act?" tap":""}"${o.act?` data-act="${o.act}"${o.w?` data-w="${o.w}"`:""}${o.dis?" disabled":""}`:""}><span class="ec-zl-l">${l}${o.s?`<small>${esc(o.s)}</small>`:""}</span>${inhalt}${o.act&&!o.dis&&!o.ohneChev?icon("chev"):""}</${o.act?"button":"div"}>`;
+const ecZWert=(v,ph)=>`<span class="ec-zl-w${v?"":" leer"}">${esc(v||ph||"–")}</span>`;
+const ecZFeld=(pr,k,v,ph,typ)=>`<input class="ec-zl-in" id="f_ec_${k}" data-ec="${k}" value="${esc(v||"")}" placeholder="${esc(ph||"")}" ${typ?`type="${typ}"`:""} autocomplete="off" ${pr.status==="fertig"?"disabled":""} aria-label="${esc(ph||k)}">`;
+const ecZSeg=(act,cur,opts,zu)=>`<span class="ec-sg">${opts.map(([v,t])=>`<button type="button" data-act="${act}" data-v="${v}" aria-pressed="${String(cur)===String(v)}" ${zu?"disabled":""}>${esc(t)}</button>`).join("")}</span>`;
+const ecGr=(titel,zeilen,fuss)=>`<section class="ec-gru">${titel?`<h3 class="ec-grt">${titel}</h3>`:""}<div class="ec-gr">${zeilen.join("")}</div>${fuss?`<p class="ec-grf">${fuss}</p>`:""}</section>`;
+function ecAuftragView(pr){ const o=ecOrt(pr.ortId), an=ecAn(pr), nz=ecNz(pr), N=pr.netz||{}, zu=pr.status==="fertig", g=an||nz?ecGeb(pr.ortId):null, M=ecMgAktuell(pr), kal=M.mess?ecKal(M.kal):null;
+  const kunde=ecGr("",[`<div class="ec-zl ec-kd">${icon("ort")}<span class="ec-zl-l"><b>${esc(o.kunde?o.kunde.name:"Kein Kunde")}</b><small>${esc(o.standort?[o.standort.name,adrText(o.standort)].filter(Boolean).join(" · "):(o.name||""))}</small></span></div>`]);
+  const pruef=ecGr("Prüfung",[
+    ecZ("Prüfart",ecZWert(pr.pruefart),{act:"ecPick",w:"pruefart",dis:zu}),
+    ecZ("Prüfdatum",ecZFeld(pr,"datum",pr.datum,"","date")),
+    ecZ("Prüfer",ecZWert(pr.pruefer,"wählen"),{act:"ecPick",w:"pruefer",dis:zu}),
+    ecZ("Auftragsnummer",ecZFeld(pr,"auftragsnr",pr.auftragsnr,"optional")),
+    ecZ("Bezeichnung",ecZFeld(pr,"bez",pr.bez,an?"z. B. Erweiterung Küche":nz?"z. B. Neubau Büro":"optional"))],
+    nz?"Übertragungsprüfung (Qualifizierung) nach IEEE 802.3 – keine Zertifizierung nach DIN EN 50173.":an?"Nach DIN VDE 0100-600 (Erstprüfung) bzw. DIN VDE 0105-100 (Wiederholungsprüfung).":"Nach DIN VDE 0701-0702 und DGUV Vorschrift 3.");
+  const mg=ecGr("Messgerät",[`<button type="button" class="ec-zl tap ec-mgz" data-act="ecPick" data-w="mg" ${zu?"disabled":""}>${ecMgBild(M.bild,true)}<span class="ec-zl-l">${M.mess?`<b>${esc((M.kurz?M.kurz+" · ":"")+M.mess)}</b><small>${esc(M.sn?`SN ${M.sn}`:"Seriennummer fehlt")}</small>${pill(kal.s,kal.t)}`:`<b>Messgerät wählen</b><small>${nz?"Netzwerktester":an?"Installationstester":"Gerätetester"} aus „Messgeräte“</small>`}</span>${zu?"":icon("chev")}</button>`],
+    M.mess&&(!M.sn||kal.s!=="ok")?"Seriennummer und Kalibrierung pflegst du in der Übersicht unter „Messgeräte“ – hier werden sie übernommen.":"");
+  let rechts="";
+  if(nz){ const S=g.schraenke;
+    rechts=ecGr("Verkabelung",[ecZ("Kabel",ecZWert(pr.kabel,"wählen"),{act:"ecPick",w:"kabel",dis:zu}),
+      ecZ("Belegung",ecZSeg("ecBelegStd",ecWmStd(pr),[["T568A","T568A"],["T568B","T568B"]],zu)),
+      ecZ("Schirm",ecZSeg("ecSchirmStd",pr.schirm==="nein"?"nein":"ja",[["ja","geschirmt"],["nein","ungeschirmt"]],zu))])
+    +ecGr("Prüfumfang",[...(S.length?S.map(s=>ecZ(esc(s.name),`<span class="schalter${ecNetImUmfang(pr,{sId:s.id})?" an":""}" aria-hidden="true"><i></i></span>`,{act:"ecUmfangS",s:ecSchrText(s),dis:zu,ohneChev:1}).replace(`data-act="ecUmfangS"`,`data-act="ecUmfangS" data-id="${esc(s.id)}"`)):[ecZ("Netzwerkschränke",ecZWert("","im Schritt „Gebäude“ anlegen"))]),
+      ecZ("Text im Protokoll",ecZWert(pr.umfangText?"eigener Text":"automatisch"),{act:"ecPick",w:"umfang",dis:zu})]); }
+  else if(an){ rechts=ecGr("Netz",[ecZ("Netzform",ecZSeg("ecNetz",N.form||"TN-C-S",[["TN-C-S","TN-C-S"],["TN-S","TN-S"],["TT","TT"]],zu)),ecZ("Hausanschluss",ecZFeld(pr,"netz.hak",N.hak,"z. B. 63 A"))])
+    +ecGr("Prüfumfang",[...(g.verteiler.length?g.verteiler.map(v=>ecZ(esc(v.name),`<span class="schalter${ecImUmfang(pr,{vId:v.id})?" an":""}" aria-hidden="true"><i></i></span>`,{act:"ecUmfangV",s:ecRaumName(g,v.raumId),dis:zu,ohneChev:1}).replace(`data-act="ecUmfangV"`,`data-act="ecUmfangV" data-id="${esc(v.id)}"`)):[ecZ("Verteiler",ecZWert("","im Schritt „Gebäude“ anlegen"))]),
+      ecZ("Text im Protokoll",ecZWert(pr.umfangText?"eigener Text":"automatisch"),{act:"ecPick",w:"umfang",dis:zu})]); }
+  return `<div class="ec-auftrag"><div>${kunde}${pruef}</div><div>${mg}${rechts}</div></div>${ecWeiter(an||nz?"gebaeude":"geraete",an||nz?"Weiter zum Gebäude":"Weiter zu den Geräten")}`; }
+/* Auswahl-Fenster */
+const ecWahlZ=(act,w,v,titel,sub,an,extra)=>`<button type="button" class="ec-wz${an?" an":""}" data-act="${act}" data-w="${w}" data-v="${esc(v)}">${extra||""}<span class="ec-zl-l"><b>${esc(titel)}</b>${sub?`<small>${sub}</small>`:""}</span></button>`;
+function ecPickDlg(w){ const pr=ecPr(); if(!pr) return; const knopf=`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button>`;
+  if(w==="pruefart") return dialog("Prüfart",`<div class="ec-wl">${(EC_PA[pr.art||"anlage"]||EC_PRUEFART).map(x=>ecWahlZ("ecPickSet","pruefart",x,x,"",x===pr.pruefart)).join("")}</div>`,knopf);
+  if(w==="pruefer"){ const L=ecPrueferListe().length?ecPrueferListe():team();
+    return dialog("Prüfer",`<div class="ec-wl">${L.map(m=>ecWahlZ("ecPickSet","pruefer",m.name,m.name,m.pruefer?"Prüfer":"",m.name===pr.pruefer)).join("")}</div>
+      <div class="fg1" style="margin-top:12px">${tf("ecPrName","Andere Person",L.some(m=>m.name===pr.pruefer)?"":pr.pruefer||"",{form:true})}</div>${ecPrueferListe().length?"":`<p class="meta" style="margin-top:8px">Wer prüfen darf, legst du in der Übersicht unter Mitarbeiter fest.</p>`}`,
+      `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecPickPrName">Übernehmen</button>`); }
+  if(w==="mg"){ const MG=ecMessgeraete(pr.art||"anlage"), G=pr.geraet||{};
+    return dialog("Messgerät",MG.length?`<div class="ec-wl">${MG.map(m=>{ const k=ecKal(m.kal); return ecWahlZ("ecPickSet","mg",m.id,ecMgLabel(m),`${esc(m.sn?`SN ${m.sn}`:"Seriennummer fehlt")} ${pill(k.s,k.t)}`,m.id===G.mgId,ecMgBild(m.bild||m.bildUrl,true)); }).join("")}</div>`
+      :`<p class="meta">Noch kein passendes Messgerät. In der Übersicht unter „Messgeräte“ anlegen${ecNz(pr)?" – Einsatz „Netzwerk“":""}.</p>`,
+      `<button class="btn-text" data-act="ecPickMgHand">Von Hand eintragen</button>${knopf}`,{breit:true}); }
+  if(w==="kabel") return dialog("Kabel",`<div class="ec-wl">${EC_KABEL.map(x=>ecWahlZ("ecPickSet","kabel",x,x,"",x===pr.kabel)).join("")}</div>
+      <div class="fg1" style="margin-top:12px">${tf("ecKabel","Eigene Angabe",EC_KABEL.includes(pr.kabel)?"":pr.kabel||"",{form:true,ph:"z. B. Cat 7 S/FTP, LSA-Module"})}</div>`,
+      `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecPickKabelText">Übernehmen</button>`,{breit:true});
+  if(w==="umfang"){ const g=ecGeb(pr.ortId), auto=ecNz(pr)?ecNetUmfangAuto(pr,g):ecUmfangAuto(pr,g);
+    return dialog("Text im Protokoll",`<p class="ec-sub">Leer lassen, dann schreibt die App den Text selbst:</p><p class="ec-auto">${esc(auto)}</p>
+      <div class="tf${pr.umfangText?" fl":""}"><textarea id="f_umfangText" placeholder=" ">${esc(pr.umfangText||"")}</textarea><label for="f_umfangText">Eigener Text</label></div>`,
+      `<button class="btn-text" data-act="ecUmfangAuto">Automatisch</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecUmfangOk">Speichern</button>`,{breit:true}); } }
+function ecMgHandDlg(){ const pr=ecPr(), G=pr.geraet||{};
+  dialog("Messgerät von Hand",`<div class="fg1">${tf("mgMess","Messgerät",G.mgId?"":G.mess||"",{form:true,ph:"Hersteller und Modell"})}<div class="reihe2">${tf("mgSn","Seriennummer",G.mgId?"":G.sn||"",{form:true})}${tf("mgKal","Kalibriert bis",G.mgId?"":G.kal||"",{form:true,ph:"z. B. 03/2027"})}</div></div>
+    <p class="meta" style="margin-top:8px">Nur für Leihgeräte o. Ä. – eigene Messgeräte besser in der Übersicht anlegen, dann stehen sie hier zur Auswahl.</p>`,
+    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecMgHandOk">Übernehmen</button>`,{breit:true}); }
 
 /* Gebäude: Etagen und Räume links, Verteiler mit RCDs und Stromkreisen rechts */
 function ecGebView(pr){ const g=ecGeb(pr.ortId), et=g.etagen.find(e=>e.id===nav.et)||ecEtStd(g), nz=ecNz(pr);
@@ -871,7 +907,7 @@ function ecImportOk(){ ecImportLesen(); const pr=ecPr(), g=ecGeb(pr.ortId); let 
   ecImp=null; closeOverlays(); render(); toast(`${n} Messung${n===1?"":"en"} übernommen`); }
 
 /* ---- PDF im Irrgang-Layout (pdfstil.js) und Ablage in der Bibliothek ---- */
-async function ecPdf(pr){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",format:"a4"}), o=ecOrt(pr.ortId), k=o.kunde, an=ecAn(pr), erg=ecErgebnis(pr), G=pr.geraet||{}, N=pr.netz||{};
+async function ecPdf(pr){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",format:"a4"}), o=ecOrt(pr.ortId), k=o.kunde, an=ecAn(pr), erg=ecErgebnis(pr), G=ecMgAktuell(pr), N=pr.netz||{};
   const adr=x=>x?[x.name,adrText(x)].filter(Boolean).join(", "):"", pl=st=>st==="ok"?"ok|i.O.":st==="bad"?"bad|Mangel":st==="ng"?"open|n. gem.":"open|offen";
   const nz=ecNz(pr), S=pdfStil(d,{titel:nz?"Prüfprotokoll Netzwerkverkabelung":an?"Prüfprotokoll Elektroinstallation":"Prüfprotokoll ortsveränderliche Geräte",unter:nz?`${pr.pruefart||"Prüfung"} | Übertragungsprüfung (Qualifizierung) | IEEE 802.3`:an?`${pr.pruefart||"Prüfung"} | DIN VDE 0100-600 | DIN VDE 0105-100`:`${pr.pruefart||"Prüfung"} | DIN VDE 0701-0702 | DGUV Vorschrift 3`,ehw:true,
     fuss:[k&&k.name,o.standort&&o.standort.name,pr.auftragsnr&&`Auftrag ${pr.auftragsnr}`,`Prüfdatum ${ecDatum(pr.datum)}`].filter(Boolean).join(" | ")});
@@ -961,6 +997,17 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     if(T&&T[3]){ toast(`Abschluss erst, wenn alles fertig ist – noch offen: ${ecFehlt(pr).join(", ")}`); if(typeof navIndSetzen==="function") navIndSetzen(); return; }
     nav.tab=b.dataset.v; nav.schr=null; closeOverlays(); render(); scrollTo(0,0); return; }
   case "ecMv": nav.mv=b.dataset.v; render(); return;
+  case "ecPick": if(!nichtZu()) return; ecPickDlg(b.dataset.w); return;
+  case "ecPickSet": { if(!nichtZu()) return; const w=b.dataset.w, v=b.dataset.v;
+    if(w==="pruefart"){ pr.pruefart=v; pr.pruefartGesetzt=true; } else if(w==="pruefer") pr.pruefer=v; else if(w==="kabel") pr.kabel=v;
+    else if(w==="mg"){ const m=DB.geraete&&DB.geraete.get(v); if(!m) return; pr.geraet=ecMgDaten(m); }
+    saveRec("echecks",pr); closeOverlays(); render(); return; }
+  case "ecPickPrName": { const n=(formVals().ecPrName||"").trim(); if(!n){ toast("Bitte einen Namen eingeben oder oben wählen"); return; } pr.pruefer=n; saveRec("echecks",pr); closeOverlays(); render(); return; }
+  case "ecPickKabelText": { const n=(formVals().ecKabel||"").trim(); if(!n){ toast("Bitte eine Angabe eingeben oder oben wählen"); return; } pr.kabel=n; saveRec("echecks",pr); closeOverlays(); render(); return; }
+  case "ecPickMgHand": ecMgHandDlg(); return;
+  case "ecMgHandOk": { const F=formVals(); if(!(F.mgMess||"").trim()){ toast("Bitte das Messgerät angeben"); return; } pr.geraet={mess:F.mgMess.trim(),sn:(F.mgSn||"").trim(),kal:(F.mgKal||"").trim()}; saveRec("echecks",pr); closeOverlays(); render(); return; }
+  case "ecUmfangAuto": pr.umfangText=""; saveRec("echecks",pr); closeOverlays(); render(); return;
+  case "ecUmfangOk": { const t=document.getElementById("f_umfangText"); pr.umfangText=(t&&t.value||"").trim(); saveRec("echecks",pr); closeOverlays(); render(); return; }
   case "ecPruefer": { if(!nichtZu()) return; pr.pruefer=b.dataset.n; saveRec("echecks",pr); render(); return; }
   case "ecMg": { if(!nichtZu()) return; const m=DB.geraete&&DB.geraete.get(b.dataset.id); if(m){ pr.geraet=ecMgDaten(m); saveRec("echecks",pr); render(); } return; }
   case "ecUmfangV": { if(!nichtZu()) return; const alle=ecGeb(pr.ortId).verteiler.map(v=>v.id); let L=pr.umfang&&pr.umfang.vIds?[...pr.umfang.vIds]:[...alle];
