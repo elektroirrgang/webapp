@@ -678,19 +678,6 @@ function ecRkStueck(g,s){ const T=ecSchrTeile(s), G=new Map();
   const DG=new Map(); D.forEach(d=>{ const k=`Datendose ${d.ports||1}-fach`; DG.set(k,(DG.get(k)||0)+1); }); DG.forEach((n,k)=>L.push([n,k]));
   if(fr>0) L.push([fr,"Blindblende 1 HE (für die freien HE)"]); return L; }
 /* Zeichnung */
-function ecRkTeilHtml(pr,g,s,t,M){
-  const ports=(n,fn)=>{ const c=Math.min(n,24); return `<span class="rk-ports" style="--c:${c}">${Array.from({length:n},(_,i)=>fn(i+1)).join("")}</span>`; };
-  let innen="";
-  if(t.typ==="patch") innen=ports(Math.max(1,+t.ports||24),port=>{ const L=M.get(`${t.nr}.${port}`); if(!L) return `<span class="rk-p" title="${t.nr}.${port} frei"></span>`;
-      const st=ecNetStand(pr,L[0]), kl=L.length>1?"bad":st==="ok"?"ok":st==="bad"?"bad":"belegt";
-      return `<button type="button" class="rk-p ${kl}" data-act="ecRkPort" data-id="${esc(L[0].d.id)}" title="${esc(`${t.nr}.${port} · ${ecRaumName(g,L[0].raumId)}${L.length>1?" · doppelt":""}`)}"></button>`; });
-  else if(t.typ==="switch") innen=ports(Math.max(1,+t.ports||24),()=>`<span class="rk-p sw"></span>`)+`<span class="rk-sfp"></span><span class="rk-sfp"></span>${t.poe?`<span class="rk-tag">PoE</span>`:""}`;
-  else if(t.typ==="pdu") innen=`<span class="rk-reihe">${Array.from({length:Math.min(8,4+t.he*4)},()=>`<span class="rk-dose"></span>`).join("")}</span>`;
-  else if(t.typ==="luefter") innen=`<span class="rk-reihe">${Array.from({length:4},()=>`<span class="rk-fan"></span>`).join("")}</span>`;
-  else if(t.typ==="usv") innen=`<span class="rk-reihe"><span class="rk-led"></span><span class="rk-led"></span><span class="rk-led an"></span></span>`;
-  else if(t.typ==="router") innen=`<span class="rk-reihe">${Array.from({length:5},()=>`<span class="rk-p sw" style="width:14px"></span>`).join("")}</span>`;
-  return `<div class="rk-t rk-${t.typ}" data-act="ecRkTeil" data-id="${esc(t.id)}" style="grid-row:${t.pos} / span ${t.he}" title="${esc(ecRkName(t))}">
-    <span class="rk-griff" data-act="ecRkGriff" data-drag="${esc(t.id)}" aria-label="verschieben"></span><span class="rk-n">${esc(t.typ==="patch"?`P${t.nr}`:ecRkName(t))}</span>${innen}</div>`; }
 function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=ecSchrHe(s), T=ecSchrTeile(s), {M}=ecRkLinks(g,s), P=ecRkPlanung(pr,g,s), belegt=new Set();
   T.forEach(t=>{ for(let i=t.pos;i<t.pos+t.he;i++) belegt.add(i); });
   const nr=i=>`<span class="rk-he" style="grid-row:${i}">${i}</span><span class="rk-he r" style="grid-row:${i}">${i}</span>`;
@@ -702,10 +689,10 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
       ${zu?"":`<button class="btn-tonal" data-act="ecSchrEdit" data-id="${esc(s.id)}">${icon("edit")}Bearbeiten</button>`}</div>
     <div class="rk-inhalt"><div class="rk-zwei"><div>
       ${zu?"":`<div class="chips rk-pal">${["patch","switch","kabel","boden","router","pdu","usv","luefter","blind"].map(t2=>`<button type="button" class="chip" data-act="ecRkNeu" data-t="${t2}">${icon("add")}${EC_RK[t2]}</button>`).join("")}</div>`}
-      <div class="rk-bau ${ecSchrFarbe(s)}"><div class="rk-front"><div class="rk-ks">Vorderansicht</div><div class="rk${ecSchrBreite(s)>=800?" b800":""}" style="--n:${N}">${Array.from({length:N},(_,i)=>nr(i+1)+leer(i+1)).join("")}${T.map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div></div>
+      <div class="rk-bau ${ecSchrFarbe(s)}"><div class="rk-front"><div class="rk-ks">Vorderansicht</div><div class="rk${ecSchrBreite(s)>=800?" b800":""}" style="--n:${N}"><span class="rk-schiene l"></span><span class="rk-schiene r"></span>${Array.from({length:N},(_,i)=>nr(i+1)+leer(i+1)).join("")}${T.map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div></div>
         <div class="rk-side"><div class="rk-ks">Seite · ${ecSchrTiefe(s)} mm</div><div class="rk-sv" style="--n:${N}"><i class="rk-nb" style="left:${Math.round(ecSchrNutzbar(s)/ecSchrTiefe(s)*100)}%" title="nutzbar etwa ${ecSchrNutzbar(s)} mm"></i>
           ${T.map(t=>{ const tf2=ecRkTiefe(s,t), zu2=tf2>ecSchrNutzbar(s); return `<span class="rk-sb rk-${t.typ}${+t.tiefe?"":" geschaetzt"}${zu2?" zutief":""}" style="grid-row:${t.pos} / span ${t.he};width:${Math.min(100,Math.round(tf2/ecSchrTiefe(s)*100))}%" title="${esc(`${ecRkName(t)}: ${tf2} mm${+t.tiefe?"":" (typisch)"}`)}"></span>`; }).join("")}</div></div></div>
-      <p class="hint">Teil antippen zum Bearbeiten, am Griff links ziehen zum Verschieben. Freie HE antippen, um dort etwas einzusetzen. Im Patchfeld: grau = belegt, grün = gemessen i. O., rot = Mangel. Seitenansicht: Einbautiefe der Teile, Strich = nutzbare Tiefe; blass = typischer Wert, solange keine Tiefe eingetragen ist.</p></div>
+      <p class="hint">Teil antippen zum Bearbeiten. Verschieben: mit der Maus das Teil ziehen, am Handy am Griff links – ist die Stelle belegt, rücken die Teile dazwischen nach. Freie HE antippen, um dort etwas einzusetzen. Im Patchfeld: grau = belegt, grün = gemessen i. O., rot = Mangel. Seitenansicht: Einbautiefe der Teile, Strich = nutzbare Tiefe; blass = typischer Wert, solange keine Tiefe eingetragen ist.</p></div>
     <div class="rk-rechts"><section class="card"><h3>Planung</h3><ul class="rk-hw">${P.H.map(([k,t2])=>`<li class="${k}">${icon(ic[k])}<span>${esc(t2)}</span></li>`).join("")}</ul></section>
       <section class="card"><h3>Stückliste</h3>${(()=>{ const L=ecRkStueck(g,s); return L.length?`<ul class="rk-sl">${L.map(([n,t2])=>`<li><b>${n}×</b><span>${esc(t2)}</span></li>`).join("")}</ul>`:`<p class="meta">Noch nichts geplant.</p>`; })()}
         <p class="meta">Keystones und Patchkabel = belegte Ports; Längen der Patchkabel nach Abstand Patchfeld–Switch wählen.</p></section>
@@ -732,19 +719,68 @@ document.addEventListener("pointerdown",e=>{ if(e.pointerType!=="touch") return;
   ecCtxT=setTimeout(()=>{ ecCtxSchlucken=true; ecCtx(el); if(navigator.vibrate) try{ navigator.vibrate(15); }catch(_){} },550);
   const ab=ev=>{ if(ev.type==="pointermove"&&Math.hypot(ev.clientX-x,ev.clientY-y)<10) return; clearTimeout(ecCtxT); document.removeEventListener("pointermove",ab); document.removeEventListener("pointerup",ab); document.removeEventListener("pointercancel",ab); };
   document.addEventListener("pointermove",ab); document.addEventListener("pointerup",ab); document.addEventListener("pointercancel",ab); });
-document.addEventListener("click",e=>{ if(ecCtxSchlucken){ ecCtxSchlucken=false; e.preventDefault(); e.stopPropagation(); } },true);
-/* Ziehen am Griff: Schritt = eine HE */
+document.addEventListener("click",e=>{ if(ecCtxSchlucken){ ecCtxSchlucken=false; e.preventDefault(); e.stopImmediatePropagation(); } },true);
+/* Frontansicht der Teile – angelehnt an echte Geräte: 19"-Ohren mit Schrauben, Ports in 6er-Blöcken, Lüfter, USV mit Display usw. */
+const ecRkKurz=n=>String(n||"").replace(/^(UniFi|Ubiquiti|APC|Synology|FRITZ!Box)\s+/i,"$1 ").slice(0,28);
+function ecRkTeilHtml(pr,g,s,t,M){
+  const he=t.he||1, name=ecRkName(t), N=String(t.name||"");
+  const port=(kl,titel,act,id)=>act?`<button type="button" class="rk-pt ${kl}" data-act="${act}" data-id="${esc(id)}" title="${esc(titel)}"></button>`:`<span class="rk-pt ${kl}"${titel?` title="${esc(titel)}"`:""}></span>`;
+  /* Ports in Reihen: bis 24 Ports eine Reihe, darüber zwei (oben ungerade, unten gerade wie am Switch) */
+  const reihen=(n,fn,block)=>{ const zwei=n>24, pro=zwei?Math.ceil(n/2):n, R=[];
+    for(let r=0;r<(zwei?2:1);r++){ const L=[]; for(let i=0;i<pro;i++){ const nr=zwei?(i*2+r+1):(i+1); if(nr<=n) L.push(fn(nr)); }
+      const B=[]; for(let i=0;i<L.length;i+=block) B.push(`<span class="rk-blk">${L.slice(i,i+block).join("")}</span>`); R.push(`<span class="rk-reihe2">${B.join("")}</span>`); }
+    return `<span class="rk-ports2${zwei?" zwei":""}">${R.join("")}</span>`; };
+  let innen="";
+  if(t.typ==="patch"){ const n=Math.max(1,+t.ports||24);
+    innen=`<span class="rk-lab">P${esc(t.nr)}</span>${reihen(n,p=>{ const L=M.get(`${t.nr}.${p}`); if(!L) return port("frei",`${t.nr}.${p} frei`);
+      const st=ecNetStand(pr,L[0]), kl=L.length>1?"bad":st==="ok"?"ok":st==="bad"?"bad":"belegt"; return port(kl,`${t.nr}.${p} · ${ecRaumName(g,L[0].raumId)}${L.length>1?" · doppelt":""}`,"ecRkPort",L[0].d.id); },6)}`; }
+  else if(t.typ==="switch"){ const n=Math.max(1,+t.ports||24);
+    innen=`<span class="rk-lab klein">${esc(ecRkKurz(N||"Switch"))}${t.poe?`<i class="rk-poe">PoE</i>`:""}</span>${reihen(n,()=>`<span class="rk-pt sw"><i></i></span>`,n>16?6:4)}<span class="rk-sfps">${`<span class="rk-sfp2"></span>`.repeat(n>=24?4:2)}</span><span class="rk-con"></span><span class="rk-led2 an"></span>`; }
+  else if(t.typ==="router") innen=`<span class="rk-lab klein">${esc(ecRkKurz(N||"Router / Firewall"))}</span><span class="rk-lcd mini"><i></i></span>${reihen(8,()=>`<span class="rk-pt sw"><i></i></span>`,4)}<span class="rk-sfps"><span class="rk-sfp2"></span><span class="rk-sfp2"></span></span><span class="rk-led2 an"></span>`;
+  else if(t.typ==="luefter") innen=`<span class="rk-lab klein">${esc(N||"Lüftereinschub")}</span><span class="rk-fans">${`<span class="rk-fan2"><i></i></span>`.repeat(4)}</span><span class="rk-thermo">24 °C</span><span class="rk-wippe"></span>`;
+  else if(t.typ==="usv") innen=`<span class="rk-vent"></span><span class="rk-usvm"><span class="rk-lcd"><b>230 V</b><small>Last 34 % · Akku 100 %</small></span><span class="rk-tasten"><i></i><i></i><i></i></span><span class="rk-pwr2"></span></span><span class="rk-lab rechts">${esc(ecRkKurz(N||"USV"))}</span>`;
+  else if(t.typ==="pdu"){ const k=he>1?12:8; innen=`<span class="rk-lab klein">${esc(ecRkKurz(N||"Steckdosenleiste"))}</span><span class="rk-schukos">${`<span class="rk-schuko"><i></i></span>`.repeat(k)}</span><span class="rk-wippe rot"></span>`; }
+  else if(t.typ==="kabel") innen=`<span class="rk-buerste"></span>`;
+  else if(t.typ==="blind") innen=`<span class="rk-blindl"></span>`;
+  else if(t.typ==="boden"){ const weiss=/fritz|speedport|router|modem|glasfaser|ont/i.test(N); innen=`<span class="rk-box${weiss?" weiss":""}"><span>${esc(ecRkKurz(N||"Fachboden"))}</span><i class="rk-led2 an"></i><i class="rk-led2 an"></i><i class="rk-led2"></i></span>`; }
+  else if(/nas|synology|qnap|storage/i.test(N)) innen=`<span class="rk-lab">${esc(ecRkKurz(N))}</span><span class="rk-bays" style="--b:${he>1?4:4};--r:${he>1?2:1}">${`<span class="rk-bay"><i></i></span>`.repeat(he>1?8:4)}</span><span class="rk-pwr2 klein"></span>`;
+  else if(/server|proxmox|esx|hyper/i.test(N)) innen=`<span class="rk-lab">${esc(ecRkKurz(N))}</span><span class="rk-bays" style="--b:6;--r:${he>1?2:1}">${`<span class="rk-bay"><i></i></span>`.repeat(he>1?12:6)}</span><span class="rk-leds"><i class="an"></i><i class="an"></i><i></i></span><span class="rk-pwr2 klein"></span>`;
+  else innen=`<span class="rk-lab">${esc(ecRkKurz(N||name))}</span><span class="rk-vent kurz"></span>`;
+  return `<div class="rk-t rk-${t.typ} he${Math.min(he,4)}${/unifi|ubiquiti|ubnt/i.test(N)&&["switch","router"].includes(t.typ)?" rk-silber":""}" data-act="ecRkTeil" data-id="${esc(t.id)}" data-rk="${esc(t.id)}" style="grid-row:${t.pos} / span ${he}" title="${esc(name)}">
+    <span class="rk-ohr"><i></i>${he>1?"<i></i>":""}</span><span class="rk-griff" data-act="ecRkGriff" data-drag="${esc(t.id)}" aria-label="verschieben"></span><span class="rk-fr">${innen}</span><span class="rk-ohr"><i></i>${he>1?"<i></i>":""}</span></div>`; }
+/* Verschieben: Ziel frei ⇒ einfach hin; belegt ⇒ die Teile dazwischen rücken nach (wie Tauschen bei gleich hohen Teilen) */
+function ecRkPlan(s,id,np){ const T=ecSchrTeile(s).map(x=>({...x})), t=T.find(x=>x.id===id), N=ecSchrHe(s); if(!t) return null; const he=t.he;
+  np=Math.max(1,Math.min(N-he+1,np)); if(np===t.pos) return {teile:T,art:"gleich",pos:np,n:0};
+  const frei=ecRkFrei(s,np,he,id); if(frei){ t.pos=np; return {teile:T,art:"frei",pos:np,n:0}; }
+  let n=0;
+  if(np<t.pos){ const occ=T.find(x=>x!==t&&x.pos<np&&x.pos+x.he-1>=np); if(occ) np=occ.pos;
+    T.forEach(x=>{ if(x!==t&&x.pos>=np&&x.pos<t.pos){ x.pos+=he; n++; } }); t.pos=np; }
+  else { let end=np+he-1; const occ=T.find(x=>x!==t&&x.pos<=end&&x.pos+x.he-1>end); if(occ) end=occ.pos+occ.he-1; np=end-he+1;
+    T.forEach(x=>{ if(x!==t&&x.pos>t.pos+he-1&&x.pos+x.he-1<=end){ x.pos-=he; n++; } }); t.pos=np; }
+  for(const a of T){ if(a.pos<1||a.pos+a.he-1>N) return null; for(const b of T) if(a!==b&&a.pos<=b.pos+b.he-1&&b.pos<=a.pos+a.he-1) return null; }
+  return {teile:T,art:"tausch",pos:np,n}; }
+/* Ziehen: mit der Maus am ganzen Teil (ab 5 px Bewegung, sonst ist es ein Klick), am Handy am Griff */
 let ecRkZug=null;
-document.addEventListener("pointerdown",e=>{ const h=e.target.closest&&e.target.closest("[data-drag]"); if(!h) return; const el=h.closest(".rk-t"), rk=h.closest(".rk"); const pr=ecPr(); if(!el||!rk||!pr||pr.status==="fertig") return;
-  const g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x.id===nav.schr), t=s&&ecSchrTeile(s).find(x=>x.id===h.dataset.drag); if(!t) return;
-  const schritt=parseFloat(getComputedStyle(rk).getPropertyValue("--he"))+2; ecRkZug={id:t.id,y0:e.clientY,el,schritt,pos0:t.pos,he:t.he,d:0};
-  try{ h.setPointerCapture(e.pointerId); }catch(_){} el.classList.add("zieh"); e.preventDefault(); });
-document.addEventListener("pointermove",e=>{ if(!ecRkZug) return; const dy=e.clientY-ecRkZug.y0; ecRkZug.d=Math.round(dy/ecRkZug.schritt); ecRkZug.el.style.transform=`translateY(${dy}px)`; });
-const ecRkLos=()=>{ const z=ecRkZug; if(!z) return; ecRkZug=null; z.el.style.transform=""; z.el.classList.remove("zieh"); if(!z.d) return;
-  const pr=ecPr(), g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x.id===nav.schr); if(!s) return; const np=z.pos0+z.d;
-  if(!ecRkFrei(s,np,z.he,z.id)){ toast("Dort ist kein Platz – erst etwas verschieben oder entfernen"); return; }
-  s.teile=ecSchrTeile(s).map(t=>t.id===z.id?{...t,pos:np}:t); ecGebSpeichern(g); render(); };
+document.addEventListener("pointerdown",e=>{ if(e.button) return; const el=e.target.closest&&e.target.closest(".rk:not(.mini) .rk-t"); if(!el) return; const pr=ecPr(); if(!pr||pr.status==="fertig") return;
+  const griff=e.target.closest("[data-drag]"); if(e.pointerType!=="mouse"&&!griff) return;
+  const g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x.id===nav.schr), t=s&&ecSchrTeile(s).find(x=>x.id===el.dataset.rk); if(!t) return;
+  const rk=el.closest(".rk"), schritt=parseFloat(getComputedStyle(rk).getPropertyValue("--he"))+2;
+  ecRkZug={id:t.id,y0:e.clientY,el,rk,s,schritt,pos0:t.pos,he:t.he,aktiv:false,plan:null,pid:e.pointerId};
+  if(griff){ e.preventDefault(); ecRkStart(); } });
+function ecRkStart(){ const z=ecRkZug; z.aktiv=true; try{ z.el.setPointerCapture(z.pid); }catch(_){} z.el.classList.add("zieh"); document.body.classList.add("rk-zieht");
+  z.ziel=document.createElement("div"); z.ziel.className="rk-ziel"; z.rk.appendChild(z.ziel); ecRkZiel(); }
+function ecRkZiel(d){ const z=ecRkZug; const np=z.pos0+(d||0), p=ecRkPlan(z.s,z.id,np); z.plan=p; const pos=p?p.pos:Math.max(1,Math.min(ecSchrHe(z.s)-z.he+1,np));
+  z.ziel.style.gridRow=`${pos} / span ${z.he}`; z.ziel.className="rk-ziel "+(p?p.art:"nein"); z.ziel.textContent=p?(p.art==="tausch"?`HE ${pos} · ${p.n} Teil${p.n>1?"e":""} rücken nach`:`HE ${pos}`):"kein Platz"; }
+document.addEventListener("pointermove",e=>{ const z=ecRkZug; if(!z) return; const dy=e.clientY-z.y0;
+  if(!z.aktiv){ if(Math.abs(dy)<5) return; ecRkStart(); }
+  e.preventDefault(); z.el.style.transform=`translateY(${dy}px)`; ecRkZiel(Math.round(dy/z.schritt)); });
+const ecRkLos=()=>{ const z=ecRkZug; if(!z) return; ecRkZug=null; if(!z.aktiv) return;
+  z.el.style.transform=""; z.el.classList.remove("zieh"); document.body.classList.remove("rk-zieht"); if(z.ziel) z.ziel.remove(); ecCtxSchlucken=true; setTimeout(()=>{ ecCtxSchlucken=false; },350);
+  const p=z.plan; if(!p||p.art==="gleich"){ if(!p) toast("Dort passt das Teil nicht hin"); return; }
+  const pr=ecPr(), g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x.id===nav.schr); if(!s) return;
+  s.teile=p.teile.sort((a,b)=>a.pos-b.pos); ecGebSpeichern(g); render(); if(p.art==="tausch") toast(`Verschoben auf HE ${p.pos} – ${p.n} Teil${p.n>1?"e sind":" ist"} nachgerückt`); };
 document.addEventListener("pointerup",ecRkLos); document.addEventListener("pointercancel",ecRkLos);
+
 
 /* Messen */
 function ecNetMessView(pr){ const g=ecGeb(pr.ortId), L=ecNetListe(pr,g), fertig=L.filter(p=>!["open","wip"].includes(ecNetStand(pr,p))).length;
@@ -1146,10 +1182,11 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecRkTeil": { if(!nichtZu()) return; const s2=g.schraenke.find(x=>x.id===nav.schr), t=s2&&ecSchrTeile(s2).find(x=>x.id===b.dataset.id); if(t) ecRkDlg({...t}); return; }
   case "ecRkPort": { if(!nichtZu()) return; ecDoseDlg(b.dataset.id); if(ecDlg) ecDlg.ausRack=true; return; }
   case "ecRkOk": { const s2=g.schraenke.find(x=>x.id===nav.schr); if(!s2||!ecDlg||!ecDlg.rk) return; ecRkLesen(); const z=ecDlg.rk;
-    if(!ecRkFrei(s2,z.pos,z.he,z.id)){ toast(`Ab HE ${z.pos} ist nicht genug Platz für ${z.he} HE`); return; }
+    let nachruecken=null; if(!ecRkFrei(s2,z.pos,z.he,z.id)){ const alt=z.id&&ecSchrTeile(s2).find(x=>x.id===z.id); nachruecken=alt&&alt.he===z.he?ecRkPlan(s2,z.id,z.pos):null;
+      if(!nachruecken){ toast(`Ab HE ${z.pos} ist nicht genug Platz für ${z.he} HE`); return; } z.pos=nachruecken.pos; }
     if(z.typ==="patch"){ if(!(z.nr>0)){ toast("Bitte eine Patchfeld-Nummer angeben"); return; } if(ecPfListe(s2).some(x=>x.nr===z.nr&&x.id!==z.id)){ toast(`Patchfeld ${z.nr} gibt es schon`); return; } }
     const t={id:z.id||uid(),typ:z.typ,pos:z.pos,he:z.he}; if(z.name) t.name=z.name; if(z.typ==="patch"||z.typ==="switch") t.ports=z.ports||24; if(z.typ==="patch") t.nr=z.nr; if(z.typ==="switch"&&z.poe) t.poe=true; if(z.tiefe&&z.typ!=="patch") t.tiefe=z.tiefe;
-    const L=ecSchrTeile(s2).filter(x=>x.id!==t.id); s2.teile=[...L,t].sort((a2,b2)=>a2.pos-b2.pos); sp(); closeOverlays(); render(); return; }
+    const L=(nachruecken?nachruecken.teile:ecSchrTeile(s2)).filter(x=>x.id!==t.id); s2.teile=[...L,t].sort((a2,b2)=>a2.pos-b2.pos); sp(); closeOverlays(); render(); return; }
   case "ecRkDel": { const s2=g.schraenke.find(x=>x.id===nav.schr); if(!s2||!ecDlg||!ecDlg.rk) return; const z=ecDlg.rk;
     if(z.typ==="patch"&&!b.dataset.ok){ const n=[...ecRkLinks(g,s2).M.keys()].filter(k=>ecPpTeile(k).pf===z.nr).length; if(n){ b.dataset.ok="1"; b.textContent=`Trotzdem entfernen (${n} Port${n>1?"s":""} belegt)`; return; } }
     s2.teile=ecSchrTeile(s2).filter(x=>x.id!==z.id); sp(); closeOverlays(); render(); return; }
