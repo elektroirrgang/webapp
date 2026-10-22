@@ -248,28 +248,30 @@ const ecZWert=(v,ph)=>`<span class="ec-zl-w${v?"":" leer"}">${esc(v||ph||"–")}
 const ecZFeld=(pr,k,v,ph,typ)=>`<input class="ec-zl-in" id="f_ec_${k}" data-ec="${k}" value="${esc(v||"")}" placeholder="${esc(ph||"")}" ${typ?`type="${typ}"`:""} autocomplete="off" ${pr.status==="fertig"?"disabled":""} aria-label="${esc(ph||k)}">`;
 const ecZSeg=(act,cur,opts,zu)=>`<span class="ec-sg">${opts.map(([v,t])=>`<button type="button" data-act="${act}" data-v="${v}" aria-pressed="${String(cur)===String(v)}" ${zu?"disabled":""}>${esc(t)}</button>`).join("")}</span>`;
 const ecGr=(titel,zeilen,fuss)=>`<section class="ec-gru">${titel?`<h3 class="ec-grt">${titel}</h3>`:""}<div class="ec-gr">${zeilen.join("")}</div>${fuss?`<p class="ec-grf">${fuss}</p>`:""}</section>`;
+/* Auftrag wie in EVSE: oben die Kennzahlen, darunter Karten untereinander */
 function ecAuftragView(pr){ const o=ecOrt(pr.ortId), an=ecAn(pr), nz=ecNz(pr), N=pr.netz||{}, zu=pr.status==="fertig", g=an||nz?ecGeb(pr.ortId):null, M=ecMgAktuell(pr), kal=M.mess?ecKal(M.kal):null;
-  const kunde=ecGr("",[`<div class="ec-zl ec-kd">${icon("ort")}<span class="ec-zl-l"><b>${esc(o.kunde?o.kunde.name:"Kein Kunde")}</b><small>${esc(o.standort?[o.standort.name,adrText(o.standort)].filter(Boolean).join(" · "):(o.name||""))}</small></span></div>`]);
-  const pruef=ecGr("Prüfung",[
-    ecZ("Prüfart",ecZWert(pr.pruefart),{act:"ecPick",w:"pruefart",dis:zu}),
-    ecZ("Prüfdatum",ecZFeld(pr,"datum",pr.datum,"","date")),
-    ecZ("Prüfer",ecZWert(pr.pruefer,"wählen"),{act:"ecPick",w:"pruefer",dis:zu}),
-    ecZ("Auftragsnummer",ecZFeld(pr,"auftragsnr",pr.auftragsnr,"optional")),
-    ecZ("Bezeichnung",ecZFeld(pr,"bez",pr.bez,an?"z. B. Erweiterung Küche":nz?"z. B. Neubau Büro":"optional"))],
-    nz?"Übertragungsprüfung (Qualifizierung) nach IEEE 802.3 – keine Zertifizierung nach DIN EN 50173.":an?"Nach DIN VDE 0100-600 (Erstprüfung) bzw. DIN VDE 0105-100 (Wiederholungsprüfung).":"Nach DIN VDE 0701-0702 und DGUV Vorschrift 3.");
-  const mg=ecGr("Messgerät",[`<button type="button" class="ec-zl tap ec-mgz" data-act="ecPick" data-w="mg" ${zu?"disabled":""}>${ecMgBild(M.bild,true)}<span class="ec-zl-l">${M.mess?`<b>${esc((M.kurz?M.kurz+" · ":"")+M.mess)}</b><small>${esc(M.sn?`SN ${M.sn}`:"Seriennummer fehlt")}</small>${pill(kal.s,kal.t)}`:`<b>Messgerät wählen</b><small>${nz?"Netzwerktester":an?"Installationstester":"Gerätetester"} aus „Messgeräte“</small>`}</span>${zu?"":icon("chev")}</button>`],
-    M.mess&&(!M.sn||kal.s!=="ok")?"Seriennummer und Kalibrierung pflegst du in der Übersicht unter „Messgeräte“ – hier werden sie übernommen.":"");
-  let rechts="";
-  if(nz){ const S=g.schraenke;
-    rechts=ecGr("Verkabelung",[ecZ("Kabel",ecZWert(pr.kabel,"wählen"),{act:"ecPick",w:"kabel",dis:zu}),
-      ecZ("Belegung",ecZSeg("ecBelegStd",ecWmStd(pr),[["T568A","T568A"],["T568B","T568B"]],zu)),
-      ecZ("Schirm",ecZSeg("ecSchirmStd",pr.schirm==="nein"?"nein":"ja",[["ja","geschirmt"],["nein","ungeschirmt"]],zu))])
-    +ecGr("Prüfumfang",[...(S.length?S.map(s=>ecZ(esc(s.name),`<span class="schalter${ecNetImUmfang(pr,{sId:s.id})?" an":""}" aria-hidden="true"><i></i></span>`,{act:"ecUmfangS",s:ecSchrText(s),dis:zu,ohneChev:1}).replace(`data-act="ecUmfangS"`,`data-act="ecUmfangS" data-id="${esc(s.id)}"`)):[ecZ("Netzwerkschränke",ecZWert("","im Schritt „Gebäude“ anlegen"))]),
-      ecZ("Text im Protokoll",ecZWert(pr.umfangText?"eigener Text":"automatisch"),{act:"ecPick",w:"umfang",dis:zu})]); }
-  else if(an){ rechts=ecGr("Netz",[ecZ("Netzform",ecZSeg("ecNetz",N.form||"TN-C-S",[["TN-C-S","TN-C-S"],["TN-S","TN-S"],["TT","TT"]],zu)),ecZ("Hausanschluss",ecZFeld(pr,"netz.hak",N.hak,"z. B. 63 A"))])
-    +ecGr("Prüfumfang",[...(g.verteiler.length?g.verteiler.map(v=>ecZ(esc(v.name),`<span class="schalter${ecImUmfang(pr,{vId:v.id})?" an":""}" aria-hidden="true"><i></i></span>`,{act:"ecUmfangV",s:ecRaumName(g,v.raumId),dis:zu,ohneChev:1}).replace(`data-act="ecUmfangV"`,`data-act="ecUmfangV" data-id="${esc(v.id)}"`)):[ecZ("Verteiler",ecZWert("","im Schritt „Gebäude“ anlegen"))]),
-      ecZ("Text im Protokoll",ecZWert(pr.umfangText?"eigener Text":"automatisch"),{act:"ecPick",w:"umfang",dis:zu})]); }
-  return `<div class="ec-auftrag"><div>${kunde}${pruef}</div><div>${mg}${rechts}</div></div>${ecWeiter(an||nz?"gebaeude":"geraete",an||nz?"Weiter zum Gebäude":"Weiter zu den Geräten")}`; }
+  const PL=ecPrueferListe(), chipsP=PL.length&&!zu?`<div class="chips ec-wahl">${PL.map(m=>`<button type="button" class="chip" data-act="ecPruefer" data-n="${esc(m.name)}" aria-pressed="${m.name===pr.pruefer}">${esc(m.name)}</button>`).join("")}</div>`:"";
+  const auftrag=`<section class="card"><h3>Auftrag</h3><div class="ec-ortz">${icon("ort")}<div><b>${esc(o.kunde?o.kunde.name:"Kein Kunde")}</b><span>${esc(o.standort?[o.standort.name,adrText(o.standort)].filter(Boolean).join(" · "):(o.name||""))}</span></div></div>
+    <div class="ec-fg"><div class="reihe2">${ecFeld(pr,"auftragsnr","Auftragsnummer",pr.auftragsnr)}${ecFeld(pr,"datum","Prüfdatum",pr.datum,{type:"date"})}</div>
+      ${ecFeld(pr,"pruefer","Prüfer",pr.pruefer)}${chipsP}
+      ${ecFeld(pr,"bez","Bezeichnung (optional)",pr.bez,{ph:an?"z. B. Einfamilienhaus, Erweiterung Küche":nz?"z. B. Neubau Büro, Erweiterung 2. OG":"z. B. Büro und Werkstatt"})}</div></section>`;
+  const mg=`<section class="card"><h3>Messgerät</h3><div class="ec-mgk">${ecMgBild(M.bild,true)}<div class="ec-mgk-t">${M.mess?`<b>${esc((M.kurz?M.kurz+" · ":"")+M.mess)}</b><span>${esc(M.sn?`Seriennummer ${M.sn}`:"Seriennummer fehlt")}</span>${pill(kal.s,kal.t)}`:`<b>Noch kein Messgerät gewählt</b><span>${nz?"Netzwerktester":an?"Installationstester":"Gerätetester"} aus der Übersicht › Messgeräte</span>`}</div>
+      ${zu?"":`<button class="btn-tonal" data-act="ecPick" data-w="mg">${M.mess?"Ändern":"Wählen"}</button>`}</div>
+    ${M.mess&&(!M.sn||kal.s!=="ok")?`<p class="meta" style="margin:12px 4px 0">Seriennummer und Kalibrierung trägst du in der Übersicht unter „Messgeräte“ ein – sie werden hier und im Protokoll übernommen.</p>`:""}</section>`;
+  const sg=(l,act,cur,opts)=>`<div class="ec-sgz"><span class="lbl">${l}</span>${ecZSeg(act,cur,opts,zu)}</div>`;
+  const pruef=`<section class="card"><h3>Prüfung</h3><div class="ec-fg">${ecWahlSel(pr,"pruefart","Prüfart",pr.pruefart,EC_PA[pr.art||"anlage"]||EC_PRUEFART)}
+      ${nz?`${ecFeld(pr,"kabel","Verkabelung",pr.kabel,{ph:"z. B. Cat 7 Verlegekabel, Cat 6A Module"})}${zu?"":`<div class="chips ec-wahl">${EC_KABEL.map(x=>`<button type="button" class="chip" data-act="ecPickSet" data-w="kabel" data-v="${esc(x)}" aria-pressed="${x===pr.kabel}">${esc(x)}</button>`).join("")}</div>`}
+        ${sg("Belegung","ecBelegStd",ecWmStd(pr),[["T568A","T568A"],["T568B","T568B"]])}${sg("Schirm","ecSchirmStd",pr.schirm==="nein"?"nein":"ja",[["ja","geschirmt"],["nein","ungeschirmt"]])}`
+      :an?`${sg("Netzform","ecNetz",N.form||"TN-C-S",[["TN-C-S","TN-C-S"],["TN-S","TN-S"],["TT","TT"]])}${ecFeld(pr,"netz.hak","Hausanschluss (z. B. 63 A)",N.hak)}`:""}</div>
+    <p class="meta" style="margin:10px 4px 0">${nz?"Übertragungsprüfung (Qualifizierung) nach IEEE 802.3 – keine Zertifizierung nach DIN EN 50173; dafür braucht es ein Zertifizierungs-Messgerät.":an?"Nach DIN VDE 0100-600 (Erstprüfung) bzw. DIN VDE 0105-100 (Wiederholungsprüfung).":"Nach DIN VDE 0701-0702 und DGUV Vorschrift 3."}</p></section>`;
+  let umf="";
+  if(nz||an){ const L=nz?g.schraenke.map(s2=>[s2.id,s2.name,ecNetImUmfang(pr,{sId:s2.id})]):g.verteiler.map(v=>[v.id,v.name,ecImUmfang(pr,{vId:v.id})]), act=nz?"ecUmfangS":"ecUmfangV";
+    umf=`<section class="card"><h3>Prüfumfang</h3>${L.length?`<div class="lbl">Welche ${nz?"Netzwerkschränke":"Verteiler"} werden heute geprüft?</div><div class="chips ec-wahl">${L.map(([id,n,ein])=>`<button type="button" class="chip" data-act="${act}" data-id="${esc(id)}" aria-pressed="${ein}" ${zu?"disabled":""}>${esc(n)}</button>`).join("")}</div>`
+      :`<p class="meta">${nz?"Netzwerkschränke":"Verteiler"} legst du im nächsten Schritt „Gebäude“ an – dann wählst du hier, welche heute geprüft werden.</p>`}
+      <div class="ec-fg" style="margin-top:12px"><div class="tf fl"><textarea id="f_ec_umfangText" data-ec="umfangText" placeholder="${esc(nz?ecNetUmfangAuto(pr,g):ecUmfangAuto(pr,g))}" ${zu?"disabled":""}>${esc(pr.umfangText||"")}</textarea><label for="f_ec_umfangText">Text im Protokoll (leer = automatisch)</label></div></div></section>`; }
+  const wer=(x,t)=>x&&x.name?` ${t} ${esc(x.name)}`:"", wann=t=>new Date(t).toLocaleString("de-DE",{dateStyle:"medium",timeStyle:"short"});
+  return `${ecKennzahlen(pr)}<div class="ec-spalte">${auftrag}${mg}${pruef}${umf}</div>${ecWeiter(an||nz?"gebaeude":"geraete",an||nz?"Weiter zum Gebäude":"Weiter zu den Geräten")}
+    <p class="by-line">Angelegt${wer(pr.createdBy,"von")} am ${wann(pr.created||Date.now())}${pr.updated&&pr.updatedBy&&pr.updatedBy.name?` · zuletzt geändert von ${esc(pr.updatedBy.name)} am ${wann(pr.updated)}`:""}</p>`; }
 /* Auswahl-Fenster */
 const ecWahlZ=(act,w,v,titel,sub,an,extra)=>`<button type="button" class="ec-wz${an?" an":""}" data-act="${act}" data-w="${w}" data-v="${esc(v)}">${extra||""}<span class="ec-zl-l"><b>${esc(titel)}</b>${sub?`<small>${sub}</small>`:""}</span></button>`;
 function ecPickDlg(w){ const pr=ecPr(); if(!pr) return; const knopf=`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button>`;
