@@ -99,15 +99,17 @@ function meldungenRoh(){
   anfAlle().filter(a=>anfMeine(a)&&a.status!=="angefordert"&&(a.statusAm||0)>=ab&&!mlIch(a.statusVon)).forEach(a=>P("anfst:"+a.id+":"+a.status,a.statusAm,a.statusVon,a.status==="da"?"hat dein Material als da markiert":"hat dein Material bestellt",`${anfOrt(a)}: ${anfPosText(a)}`,{v:"materialanf"}));
   /* Aufträge: mir zugewiesen, neue Notizen an meinen Aufträgen, fürs Büro neue Anfragen */
   alle("vorgaenge").forEach(v=>{ const kd=(v.kundeId&&typeof kundeOf==="function"&&kundeOf(v.kundeId)||{}).name||v.kundeName||"Auftrag", go={v:"auftraege",sel:v.id};
-    if(v.zust&&mlIch(v.zust)&&v.zust.von&&!mlIch(v.zust.von)&&(v.zust.at||0)>=ab) P("vz:"+v.id+":"+v.zust.at,v.zust.at,v.zust.von,"hat dir einen Auftrag zugewiesen",`${kd}${v.anliegen?": "+v.anliegen:""}`,go);
-    const meins=(v.zust&&mlIch(v.zust))||mlIch(v.createdBy);
-    (v.notizen||[]).filter(n=>!mlIch(n.wer)&&(n.at||0)>=ab&&(meins||v.zust==null&&v&&anfVerw())).forEach(n=>P("vn:"+n.id,n.at,n.wer,`Notiz zu ${kd}`,n.text,go));
+    const ZL=Array.isArray(v.zustAlle)?v.zustAlle.filter(Boolean):(v.zust?[v.zust]:[]), zIch=ZL.some(mlIch);
+    ZL.filter(z=>mlIch(z)&&z.von&&!mlIch(z.von)&&(z.at||0)>=ab).forEach(z=>{ const mit=ZL.filter(x=>!mlIch(x)).map(x=>x.name).filter(Boolean);
+      P("vz:"+v.id+":"+z.at,z.at,z.von,"hat dir einen Auftrag zugewiesen",`${kd}${v.anliegen?": "+v.anliegen:""}${mit.length?` · mit ${mit.join(", ")}`:""}`,go); });
+    const meins=zIch||mlIch(v.createdBy);
+    (v.notizen||[]).filter(n=>!mlIch(n.wer)&&(n.at||0)>=ab&&(meins||!ZL.length&&v&&anfVerw())).forEach(n=>P("vn:"+n.id,n.at,n.wer,`Notiz zu ${kd}`,n.text,go));
     if(v&&anfVerw()&&v.s&&v.s.anfrage&&!v.s.auftrag&&!v.abgelehnt&&!mlIch(v.s.anfrage.wer)&&(v.s.anfrage.at||0)>=ab) P("va:"+v.id,v.s.anfrage.at,v.s.anfrage.wer,"Neue Anfrage ans Büro",`${kd}${v.anliegen?": "+v.anliegen:""}`,go);
     /* Rückmeldungen an den, der angefragt hat (und an Zuständige/Auftraggeber): angenommen, abgelehnt, Termin, ausgeführt */
     const S=v.s||{}, anfr=(S.anfrage&&S.anfrage.wer)||v.createdBy, frisch=x=>x&&!mlIch(x.wer)&&(x.at||0)>=ab, was=`${kd}${v.anliegen?": "+v.anliegen:""}`;
     if(frisch(S.auftrag)&&mlIch(anfr)) P("vok:"+v.id+":"+S.auftrag.at,S.auftrag.at,S.auftrag.wer,"hat deine Anfrage angenommen",`${was}${S.auftrag.nr?` · SCC ${S.auftrag.nr}`:""}`,go);
     if(frisch(v.abgelehnt)&&mlIch(anfr)) P("vab:"+v.id+":"+v.abgelehnt.at,v.abgelehnt.at,v.abgelehnt.wer,"hat deine Anfrage abgelehnt",`${was}${v.abgelehnt.grund?` – ${v.abgelehnt.grund}`:""}`,go);
-    if(frisch(S.termin)&&(mlIch(anfr)||mlIch(v.zust)||(S.auftrag&&mlIch(S.auftrag.wer)))) P("vt:"+v.id+":"+S.termin.at,S.termin.at,S.termin.wer,"hat einen Termin eingetragen",`${kd} · ${S.termin.datum?S.termin.datum.split("-").reverse().join("."):""}${S.termin.zeit?` ${S.termin.zeit} Uhr`:""}${S.termin.mit?` · ${S.termin.mit}`:""}`,go);
+    if(frisch(S.termin)&&(mlIch(anfr)||zIch||(S.auftrag&&mlIch(S.auftrag.wer)))) P("vt:"+v.id+":"+S.termin.at,S.termin.at,S.termin.wer,"hat einen Termin eingetragen",`${kd} · ${S.termin.datum?S.termin.datum.split("-").reverse().join("."):""}${S.termin.zeit?` ${S.termin.zeit} Uhr`:""}${S.termin.mit?` · ${S.termin.mit}`:""}`,go);
     if(frisch(S.ausgefuehrt)&&(anfVerw()||mlIch(anfr)||(S.auftrag&&mlIch(S.auftrag.wer)))) P("vx:"+v.id+":"+S.ausgefuehrt.at,S.ausgefuehrt.at,S.ausgefuehrt.wer,"hat einen Auftrag als ausgeführt gemeldet",was,go); });
   alle("notizen").filter(n=>!mlIch(n.createdBy)&&(n.sicht==="firma"||(n.sicht==="personen"&&(n.personen||[]).map(x=>String(x).toLowerCase()).includes(String(ME.mail).toLowerCase())))&&(n.updated||0)>=ab)
     .forEach(n=>P("no:"+n.id,n.updated,n.createdBy,"hat eine Notiz geteilt",n.titel||"Notiz",{v:"notizen"}));
@@ -311,7 +313,7 @@ function simTick(){ const S=simLesen(); if(!S||!DB.vorgaenge) return; const t=Da
   schritt(0,t>=5000,()=>simVg(S.ids.A,{kundeName:"Bäckerei Krämer (Simulation)",anliegen:"FI löst immer wieder aus",dringend:true,createdBy:a,s:{anruf:{wer:a,at:Date.now()-20000},anfrage:{wer:a,at:Date.now()}}}));
   schritt(1,t>=20000,()=>{ const v=DB.vorgaenge.get(S.ids.C); if(v){ v.s.auftrag={wer:chef,at:Date.now(),nr:"26-1187"}; simVg(v.id,v); } });
   schritt(2,t>=32000,()=>simVg(S.ids.B,{kundeName:"Autohaus Lenz (Simulation)",anliegen:"Wallbox prüfen (Wiederholungsprüfung)",createdBy:chef,
-    s:{anruf:{wer:chef,at:Date.now()-90000},anfrage:{wer:chef,at:Date.now()-80000},auftrag:{wer:chef,at:Date.now()-70000,nr:"26-1190"}},zust:{mail:S.ich.mail,name:S.ich.name,at:Date.now(),von:chef}}));
+    s:{anruf:{wer:chef,at:Date.now()-90000},anfrage:{wer:chef,at:Date.now()-80000},auftrag:{wer:chef,at:Date.now()-70000,nr:"26-1190"}},zust:{mail:S.ich.mail,name:S.ich.name,at:Date.now(),von:chef},zustAlle:[{mail:S.ich.mail,name:S.ich.name,at:Date.now(),von:chef},{mail:a.mail,name:a.name,at:Date.now(),von:chef}]}));
   schritt(3,t>=44000,()=>{ const v=DB.vorgaenge.get(S.ids.D); if(v){ v.abgelehnt={wer:chef,at:Date.now(),grund:"An die Hausverwaltung verwiesen"}; simVg(v.id,v); } });
   /* Schritt 4 wartet auf dich: Auftrag zur Anfrage A erteilen oder ablehnen. Bist du nicht im Büro, übernimmt das der Chef. */
   const erteilt=A&&A.s&&A.s.auftrag, abgelehnt=A&&A.abgelehnt;

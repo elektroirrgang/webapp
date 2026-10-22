@@ -657,3 +657,9 @@ body:has(.vg-bar) .snackbar{bottom:96px!important}
 @media (min-width:744px){.dlg{width:min(680px,calc(100% - 64px))}.dlg.breit{width:min(960px,calc(100% - 64px))}}
 /* PC: Seitenleiste oben rechts abgerundet (Wunsch 22.10.2026) */
 @media (min-width:1024px) and (hover:hover) and (pointer:fine){ :root body nav.navbar.navbar,:root body.rail-open nav.navbar.navbar{border-radius:0 28px 0 0!important} }
+
+/* Auswahl-Leiste der Aufträge: auf dem PC mittig im Inhalt, nicht im ganzen Fenster (Seitenleiste 204 px) */
+@media (min-width:1024px) and (hover:hover) and (pointer:fine){ .vg-bar{left:calc(50% + 102px);max-width:calc(100vw - 236px)} }
+/* mehrere Zuständige: Kürzel überlappend */
+.vk-ps{display:inline-flex;align-items:center}.vk-ps>*+*{margin-left:-8px;box-shadow:0 0 0 2px var(--sc-low)}
+.vk-p.mehr{background:var(--sc-highest);color:var(--on-sv)}

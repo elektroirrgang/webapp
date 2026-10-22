@@ -104,14 +104,21 @@ let VG_SEL=null;
 const VG_PC=matchMedia("(min-width:1024px)"), vgWide=()=>typeof WIDE!=="undefined"&&WIDE.matches;
 /* Tabelle nur ab Laptop-Breite – darunter fällt sie auf Tafel (iPad) bzw. Liste (Handy) zurück */
 const vgAnsicht=()=>{ let a=META.vgAnsicht||(VG_PC.matches?"tabelle":vgWide()?"tafel":"liste"); if(a==="tabelle"&&!VG_PC.matches) a=vgWide()?"tafel":"liste"; return a; };
-const vgDarfZust=v=>istBuero()||!v.zust||vgIstIch(v.zust);
+/* Zuständig: mehrere Personen möglich (v.zustAlle); v.zust bleibt die erste – für ältere App-Stände auf anderen Geräten */
+const vgZustL=v=>Array.isArray(v.zustAlle)?v.zustAlle.filter(Boolean):(v.zust?[v.zust]:[]);
+const vgZustIch=v=>vgZustL(v).some(p=>vgIstIch(p));
+const vgZustHat=(v,mail)=>vgZustL(v).some(p=>String(p.mail||"").toLowerCase()===String(mail||"").toLowerCase());
+function vgZustSchreiben(v,L){ v.zustAlle=L; v.zust=L[0]||null; saveRec("vorgaenge",v); }
+const vgZustNamen=v=>vgZustL(v).map(p=>p.name||"").filter(Boolean);
+const vgZustAv=(v,kl)=>{ const L=vgZustL(v); return L.length?`<span class="vk-ps">${L.slice(0,3).map(z=>`<span class="${kl||"vk-p"}${vgIstIch(z)?" ich":""}" title="Zuständig: ${esc(z.name||"")}">${esc(initials(z.name||"?"))}</span>`).join("")}${L.length>3?`<span class="${kl||"vk-p"} mehr">+${L.length-3}</span>`:""}</span>`:""; };
+const vgDarfZust=v=>istBuero()||!vgZustL(v).length||vgZustIch(v);
 const vgIstIch=p=>!!p&&!!ME.mail&&String(p.mail||"").toLowerCase()===String(ME.mail).toLowerCase();
 /* darf ich den Auftrag in Spalte ti schieben? (nur ein Schritt vor; zurück nur Büro/Chef) */
 function vgDarfNach(v,ti){ const fi=vgStufe(v); if(v.abgelehnt||ti===fi) return false;
   if(ti<fi) return istBuero();
   if(ti!==fi+1) return false;
   if(ti===1) return true;
-  if(ti===4) return istBuero()||vgIstIch(v.zust);
+  if(ti===4) return istBuero()||vgZustIch(v);
   return istBuero(); }
 FDEF.vg={std:{sort:"dringend",dr:"alle",wer:"alle"},
   sort:[["dringend","Dringende zuerst"],["neu","Neueste zuerst"],["alt","Älteste zuerst"],["az","Kunde A–Z"],["termin","Nächster Termin zuerst"],["zust","Zuständig A–Z"],["seit","Am längsten im Schritt"]],
@@ -119,13 +126,13 @@ FDEF.vg={std:{sort:"dringend",dr:"alle",wer:"alle"},
   liste:()=>vgListe()};
 const vgAt=v=>(v.s&&v.s.anruf&&v.s.anruf.at)||v.created||0;
 function vgMein(v){ const m=String(ME.mail||"").toLowerCase(), n=String(ME.name||"").trim(); if(!m&&!n) return true;
-  return vgIstIch(v.zust)||Object.values(v.s||{}).some(x=>x&&x.wer&&((m&&String(x.wer.mail||"").toLowerCase()===m)||(n&&x.wer.name===n)))||(v.createdBy&&String(v.createdBy.mail||"").toLowerCase()===m)
+  return vgZustIch(v)||Object.values(v.s||{}).some(x=>x&&x.wer&&((m&&String(x.wer.mail||"").toLowerCase()===m)||(n&&x.wer.name===n)))||(v.createdBy&&String(v.createdBy.mail||"").toLowerCase()===m)
     ||(n&&v.s&&v.s.termin&&String(v.s.termin.mit||"").split(/\s*,\s*/).includes(n)); }
 /* Suche + Filter (Person, dringend) + Sortierung – gilt für Tafel und Liste */
 function vgGefiltert(L){ const q=String(query||"").trim().toLowerCase(), H=x=>String(x||"").toLowerCase().includes(q);
-  if(q) L=L.filter(v=>H(vgKunde(v))||H(v.anliegen)||H(v.tel)||H(v.s&&v.s.auftrag&&v.s.auftrag.nr)||H(v.s&&v.s.termin&&v.s.termin.mit)||H(v.zust&&v.zust.name));
+  if(q) L=L.filter(v=>H(vgKunde(v))||H(v.anliegen)||H(v.tel)||H(v.s&&v.s.auftrag&&v.s.auftrag.nr)||H(v.s&&v.s.termin&&v.s.termin.mit)||vgZustNamen(v).some(H));
   if(fW("vg","dr")==="ja") L=L.filter(v=>v.dringend);
-  const w=fW("vg","wer"); if(w==="mein") L=L.filter(vgMein); else if(w==="zust"){ const ich=new Set(vgMeine().map(v=>v.id)); L=L.filter(v=>vgIstIch(v.zust)||ich.has(v.id)); }
+  const w=fW("vg","wer"); if(w==="mein") L=L.filter(vgMein); else if(w==="zust"){ const ich=new Set(vgMeine().map(v=>v.id)); L=L.filter(v=>vgZustIch(v)||ich.has(v.id)); }
   const so=fW("vg","sort"), td=v=>(v.s&&v.s.termin&&v.s.termin.datum)||"9999";
   if(so==="neu") L.sort((a,b)=>vgAt(b)-vgAt(a)); else if(so==="alt") L.sort((a,b)=>vgAt(a)-vgAt(b));
   else if(so==="az") L.sort((a,b)=>vgKunde(a).localeCompare(vgKunde(b),"de")||vgAt(b)-vgAt(a));
@@ -141,7 +148,7 @@ function vgKarte(v,liste){ const a=vgAlter(v), t=v.s&&v.s.termin, nr=v.s&&v.s.au
     ${v.anliegen?`<p class="vk-a">${esc(v.anliegen)}</p>`:""}
     <div class="vk-f">${t&&t.datum?`<span class="vk-c">${esc(new Date(t.datum+"T12:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"}))}${t.zeit?` · ${esc(t.zeit)}`:""}</span>`:""}${nr?`<span class="vk-c">SCC ${esc(nr)}</span>`:""}
       ${nk?`<span class="vk-c" title="${nk} Notiz${nk>1?"en":""}">${icon("notes")}${nk}</span>`:""}${nf?`<span class="vk-c" title="${nf} Foto/Datei">${icon("cam")}${nf}</span>`:""}
-      ${a?`<span class="vk-alt">${esc(a.txt)}</span>`:""}<span class="vk-sp"></span>${z?`<span class="vk-p${vgIstIch(z)?" ich":""}" title="Zuständig: ${esc(z.name||"")}">${esc(initials(z.name||"?"))}</span>`:""}${next}</div></div>`; }
+      ${a?`<span class="vk-alt">${esc(a.txt)}</span>`:""}<span class="vk-sp"></span>${vgZustAv(v)}${next}</div></div>`; }
 function vgTafel(L){
   const grenze=Date.now()-14*864e5;
   return `<div class="vt">${VG_T.map((t,i)=>{ let C=L.filter(v=>!v.abgelehnt&&Math.max(0,vgStufe(v))===i);
@@ -168,7 +175,7 @@ function vorgaengeView(){ vgAbgleich();
 function vgVerlauf(v){ const E=[];
   VG_S.forEach(([k,t],i)=>{ const s=v.s&&v.s[k]; if(s) E.push({at:s.at||0,html:`<div class="vv-e schritt"><i class="vv-p s${i}"></i><div><b>${esc(k==="anruf"&&s.vorOrt?"Vor Ort gemeldet":VG_T[i])}</b><span>${esc((s.wer&&s.wer.name)||"–")} · ${esc(vgZeit(s.at))}${k==="auftrag"&&s.nr?` · SCC ${esc(s.nr)}`:""}${k==="termin"&&s.datum?` · ${esc(deDate(s.datum))}${s.zeit?` ${esc(s.zeit)} Uhr`:""}${s.mit?` · ${esc(s.mit)}`:""}`:""}</span></div>${istBuero()&&k!=="anruf"?`<button class="vv-z" data-act="vgZurueck" data-id="${esc(v.id)}" data-k="${k}" title="Zurücknehmen">${icon("back")}</button>`:""}</div>`}); });
   if(v.abgelehnt) E.push({at:v.abgelehnt.at||0,html:`<div class="vv-e schritt"><i class="vv-p bad"></i><div><b>Abgelehnt</b><span>${esc((v.abgelehnt.wer&&v.abgelehnt.wer.name)||"–")} · ${esc(vgZeit(v.abgelehnt.at))}${v.abgelehnt.grund?` · ${esc(v.abgelehnt.grund)}`:""}</span></div>${istBuero()?`<button class="vv-z" data-act="vgAblZurueck" data-id="${esc(v.id)}" title="Ablehnung zurücknehmen">${icon("back")}</button>`:""}</div>`});
-  if(v.zust&&v.zust.at) E.push({at:v.zust.at,html:`<div class="vv-e info"><i class="vv-p"></i><div><span>${esc((v.zust.von&&v.zust.von.name)||"")} hat ${esc(v.zust.name||"")} zugewiesen · ${esc(vgZeit(v.zust.at))}</span></div></div>`});
+  vgZustL(v).filter(z=>z.at).forEach(z=>E.push({at:z.at,html:`<div class="vv-e info"><i class="vv-p"></i><div><span>${esc((z.von&&z.von.name)||"")} hat ${esc(z.name||"")} zugewiesen · ${esc(vgZeit(z.at))}</span></div></div>`}));
   (v.notizen||[]).forEach(n=>E.push({at:n.at||0,html:`<div class="vv-e notiz${vgIstIch(n.wer)?" ich":""}"><span class="vv-av">${esc(initials((n.wer&&n.wer.name)||"?"))}</span><div class="vv-blase"><b>${esc((n.wer&&n.wer.name)||"–")}<small>${esc(vgZeit(n.at))}</small></b><p>${esc(n.text)}</p></div></div>`}));
   return E.sort((a,b)=>a.at-b.at).map(e=>e.html).join(""); }
 function vgPanel(v){ const st=vgStufe(v), id=esc(v.id), k=v.kundeId&&kundeOf(v.kundeId), tel=v.tel&&v.tel.replace(/[^\d+]/g,""), F=vgFotos(v);
@@ -180,7 +187,7 @@ function vgPanel(v){ const st=vgStufe(v), id=esc(v.id), k=v.kundeId&&kundeOf(v.k
       <div class="vp-schritte">${VG_T.map((t,i)=>`<span class="${i<=st?"da":""}${i===st?" jetzt":""}"><i></i>${t}</span>`).join("")}</div>
       ${v.anliegen?`<p class="vp-an">${esc(v.anliegen)}</p>`:""}
       <div class="vp-qa">${tel?`<a class="vp-q" href="tel:${esc(tel)}">${icon("phone")}<span>${esc(v.tel)}</span></a>`:""}${k?`<button class="vp-q" data-act="nav" data-v="kunde" data-id="${esc(k.id)}">${icon("firma")}<span>Kunde öffnen</span></button>`:""}${vgBau(v)?vgBauLink(vgBau(v),`${icon("baustelle")}<span>Baustelle</span>`,"vp-q"):""}${vgVonBau(v)&&vgVonBau(v)!==vgBau(v)?vgBauLink(vgVonBau(v),`${icon("baustelle")}<span>Gemeldet auf ${esc(vgKurz(vgVonBau(v).name,28))}</span>`,"vp-q"):""}</div>
-      <div class="vp-ab"><div class="vp-l">Zuständig</div><div class="vp-zust">${T.map(m=>`<button class="vp-pc" data-act="vgZust" data-id="${id}" data-mail="${esc(m.mail)}" aria-pressed="${!!zust&&String(zust.mail).toLowerCase()===String(m.mail).toLowerCase()}" ${vgDarfZust(v)?"":"disabled"}>${esc(m.name)}</button>`).join("")}</div></div>
+      <div class="vp-ab"><div class="vp-l">Zuständig${vgZustL(v).length>1?` · ${vgZustL(v).length} Personen`:""}</div><div class="vp-zust">${T.map(m=>`<button class="vp-pc" data-act="vgZust" data-id="${id}" data-mail="${esc(m.mail)}" aria-pressed="${vgZustHat(v,m.mail)}" ${vgDarfZust(v)?"":"disabled"}>${esc(m.name)}</button>`).join("")}</div></div>
       <div class="vp-ab"><div class="sec-row" style="margin:0"><div class="vp-l">Fotos und Dateien</div><span class="ab-btns"><button class="ab-ic" data-act="ablageFoto" data-kind="vorgaenge" data-id="${id}" title="Foto aufnehmen">${icon("cam")}</button><button class="ab-ic" data-act="ablageDatei" data-kind="vorgaenge" data-id="${id}" title="Datei anhängen">${icon("attach")}</button></span></div>
         ${F.length?`<div class="vp-fotos">${F.map(d=>/^image\//.test(d.typ||"")?`<button class="ab-k" data-act="dateiOeffnen" data-id="${esc(d.id)}" aria-label="${esc(d.name)}"><img data-datei="${esc(d.id)}" alt=""></button>`:`<button class="vp-datei" data-act="dateiOeffnen" data-id="${esc(d.id)}">${icon("doc")}<span>${esc(d.name)}</span></button>`).join("")}</div>`:""}</div>
       <div class="vp-ab"><div class="vp-l">Verlauf</div><div class="vv">${vgVerlauf(v)}</div></div>
@@ -198,24 +205,26 @@ function vgOpen(v){ VG_SEL=v.id; if(nav.v!=="auftraege") go({v:"auftraege"}); el
 
 /* Erfassen / Bearbeiten */
 let vgE=null;
-function vgDialog(v){ vgE=v?JSON.parse(JSON.stringify(v)):{id:null,kundeName:"",tel:"",anliegen:"",dringend:false};
+function vgDialog(v){ vgE=v?JSON.parse(JSON.stringify(v)):{id:null,kundeName:"",tel:"",anliegen:"",dringend:false}; vgE.zustSel=v?vgZustL(v).map(p=>String(p.mail||"").toLowerCase()):[];
   dialog(v?"Vorgang bearbeiten":"Neuer Vorgang",`<div class="fg1">
     <div class="vgk-w">${tf("vgKunde","Kunde",v?vgKunde(v):"",{form:true,ph:"Name oder Firma"})}<div class="vgk" id="vgkVl" role="listbox" hidden></div><p class="vgk-hin" id="vgkHin"></p></div>
     ${tf("vgTel","Telefon (Rückruf)",vgE.tel||"",{form:true,im:"tel",ph:"z. B. 0171 …"})}
     ${ta("vgAnliegen","Was möchte der Kunde?",vgE.anliegen||"",{form:true,ph:"z. B. Steckdose im Bad ohne Funktion"})}
     <div class="vg-drw"><span>Dringend</span>${seg("vgDring",vgE.dringend?"ja":"nein",[["nein","Nein"],["ja","Ja"]])}</div>
-    ${sf("vgZustW","Zuständig (optional)",(v&&v.zust&&v.zust.mail)||"",[["","Noch niemand"],...team().filter(m=>m.mail).map(m=>[m.mail,m.name])],{form:true})}</div>`,
+    <div class="lbl" style="margin:8px 4px 6px">Zuständig (optional, mehrere möglich)</div><div class="chips vg-zw">${team().filter(m=>m.mail).map(m=>`<button type="button" class="chip" data-act="vgZustDlg" data-mail="${esc(m.mail)}" aria-pressed="${vgE.zustSel.includes(String(m.mail).toLowerCase())}">${esc(m.name)}</button>`).join("")}</div></div>`,
     `${v&&(istBuero()||(v.createdBy&&v.createdBy.mail===ME.mail))?`<button class="btn-text danger" data-act="vgDel" data-id="${esc(v.id)}">Löschen</button><span style="flex:1"></span>`:""}<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="vgSpeichern">${v?"Speichern":"Anlegen"}</button>`); }
 function vgSpeichern(){ const F=formVals(); if(!F.vgKunde&&!F.vgAnliegen){ toast("Bitte Kunde oder Anliegen eintragen"); return; }
   const k=live("kunden").find(x=>x.name.toLowerCase()===String(F.vgKunde||"").toLowerCase());
   const neu=!vgE.id, v=neu?{id:uid(),s:{anruf:{wer:who(),at:Date.now()}}}:DB.vorgaenge.get(vgE.id);
   Object.assign(v,{kundeId:k?k.id:"",kundeName:k?"":F.vgKunde,tel:F.vgTel,anliegen:F.vgAnliegen,dringend:!!vgE.dringend});
-  const zm=F.vgZustW&&team().find(x=>x.mail===F.vgZustW); if(zm&&(!v.zust||v.zust.mail!==zm.mail)) v.zust={mail:zm.mail,name:zm.name,at:Date.now(),von:who()}; else if(!F.vgZustW&&v.zust&&vgDarfZust(v)) v.zust=null;
+  { const alt=vgZustL(v), sel=vgE.zustSel||[], gleich=alt.length===sel.length&&alt.every(p=>sel.includes(String(p.mail||"").toLowerCase()));
+    if(!gleich&&(neu||vgDarfZust(v))) vgZustSchreiben(v,sel.map(mail=>alt.find(p=>String(p.mail||"").toLowerCase()===mail)||(m=>m&&{mail:m.mail,name:m.name,at:Date.now(),von:who()})(team().find(x=>String(x.mail).toLowerCase()===mail))).filter(Boolean)); }
   if(neu&&k&&k.demo) v.demo=true; if(!F.vgTel&&k&&k.tel&&neu) v.tel=k.tel;
   saveRec("vorgaenge",v,neu); closeOverlays(); render(); toast(neu?"Vorgang angelegt":"Gespeichert",neu?"Anfrage ans Büro":null,neu?()=>vgSchritt(v.id,"anfrage"):null); }
 function vgSchritt(id,k,extra={}){ const v=DB.vorgaenge.get(id); if(!v) return; v.s=v.s||{}; v.s[k]=Object.assign({wer:who(),at:Date.now()},extra); saveRec("vorgaenge",v); closeOverlays(); render();
   toast(k==="anfrage"?"Anfrage ans Büro gestellt":k==="auftrag"?"Auftrag erteilt":k==="termin"?"Termin eingetragen":"Gespeichert"); }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="vg"]'); if(!b) return; const a=b.dataset.act, id=b.dataset.id, v=id&&DB.vorgaenge.get(id);
+  if(a==="vgZustDlg"){ e.stopPropagation(); if(!vgE) return; const m=String(b.dataset.mail).toLowerCase(); vgE.zustSel=vgE.zustSel.includes(m)?vgE.zustSel.filter(x=>x!==m):[...vgE.zustSel,m]; b.setAttribute("aria-pressed",String(vgE.zustSel.includes(m))); return; }
   if(a==="vgDring"){ e.stopPropagation(); if(vgE) vgE.dringend=b.dataset.v==="ja"; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)); if(typeof segInd==="function") segInd(); return; }
   e.stopPropagation(); e.preventDefault();
   if(b.closest("#menu")) closeOverlays();
@@ -227,9 +236,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="vgWer"){ fSet("vg","wer",b.dataset.v); render(); }
   else if(a==="vgDr"){ fSet("vg","dr",fW("vg","dr")==="ja"?"alle":"ja"); render(); }
   else if(a==="vgZurListe"){ META.vgAnsicht="liste"; META.vgF=b.dataset.v; metaSave(); render(); }
-  else if(a==="vgZust"&&v){ if(!vgDarfZust(v)) return; const m=team().find(x=>String(x.mail).toLowerCase()===String(b.dataset.mail).toLowerCase()); if(!m) return;
-    const weg=v.zust&&String(v.zust.mail).toLowerCase()===String(m.mail).toLowerCase(); v.zust=weg?null:{mail:m.mail,name:m.name,at:Date.now(),von:who()}; saveRec("vorgaenge",v); render();
-    toast(weg?"Zuständigkeit entfernt":vgIstIch(v.zust)?"Du bist jetzt zuständig":`${m.name} ist jetzt zuständig – bekommt eine Benachrichtigung`); }
+  else if(a==="vgZust"&&v){ if(!vgDarfZust(v)) return; const m=team().find(x=>String(x.mail).toLowerCase()===String(b.dataset.mail).toLowerCase()); if(!m) return; vgZustSetzen(v,m); render(); }
   else if(a==="vgNotizOk"&&v){ const i=document.getElementById("f_vgNotiz"), t=String(i&&i.value||"").trim(); if(!t) return;
     v.notizen=(v.notizen||[]).concat([{id:uid(),wer:who(),at:Date.now(),text:t}]); saveRec("vorgaenge",v); render();
     setTimeout(()=>{ const n=document.getElementById("f_vgNotiz"); if(n) n.focus(); const vv=document.querySelector(".vp-in"); if(vv) vv.scrollTop=vv.scrollHeight; },0); }
@@ -247,7 +254,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="vgMarkAlle"){ const ids=[...document.querySelectorAll(".vr[data-id]")].map(x=>x.dataset.id), alle=ids.length&&ids.every(i=>VG_MARK.has(i)); ids.forEach(i=>alle?VG_MARK.delete(i):VG_MARK.add(i)); render(); }
   else if(a==="vgMarkWeg"){ VG_MARK.clear(); render(); }
   else if(a==="vgMarkZust"){ const r=b.getBoundingClientRect(), M=vgMarkiert().filter(vgDarfZust);
-    kontextMenu(r.left,r.top-8,[...team().filter(m=>m.mail).map(m=>({t:m.name,ic:"person",fn:()=>{ M.forEach(x=>vgZustSetzen(x,m,true)); toast(`${M.length} ${M.length===1?"Auftrag":"Aufträge"} an ${m.name}`); VG_MARK.clear(); render(); }})),"-",{t:"Niemand",ic:"close",fn:()=>{ M.forEach(x=>vgZustSetzen(x,null,true)); VG_MARK.clear(); render(); }}]); }
+    kontextMenu(r.left,r.top-8,[...team().filter(m=>m.mail).map(m=>({t:`${m.name} dazunehmen`,ic:"person",fn:()=>{ M.forEach(x=>{ if(!vgZustHat(x,m.mail)) vgZustSetzen(x,m,true); }); toast(`${m.name} ist jetzt bei ${M.length} ${M.length===1?"Auftrag":"Aufträgen"} zuständig`); VG_MARK.clear(); render(); }})),"-",{t:"Niemand mehr zuständig",ic:"close",fn:()=>{ M.forEach(x=>vgZustSetzen(x,null,true)); VG_MARK.clear(); render(); }}]); }
   else if(a==="vgMarkBuero"){ const M=vgMarkiert().filter(x=>!vgZu(x)&&vgStufe(x)===0), t=Date.now(); M.forEach(x=>{ x.s.anfrage={wer:who(),at:t}; saveRec("vorgaenge",x); }); VG_MARK.clear(); render(); toast(`${M.length} ${M.length===1?"Anfrage":"Anfragen"} ans Büro gegeben`); }
   else if(a==="vgMarkDel"){ const M=vgMarkiert().filter(vgDarfLoeschen);
     dialog(`${M.length} ${M.length===1?"Auftrag":"Aufträge"} löschen?`,`<p>${esc(M.map(vgKunde).slice(0,6).join(", "))}${M.length>6?" …":""} – wird für alle gelöscht. Direkt danach kannst du es noch rückgängig machen.</p>`,
@@ -255,7 +262,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="vgMarkDelOk"){ const M=vgMarkiert().filter(vgDarfLoeschen); M.forEach(x=>{ x.deleted=true; saveRec("vorgaenge",x); }); VG_MARK.clear(); closeOverlays(); render();
     toast(`${M.length} gelöscht`,"Rückgängig",()=>{ M.forEach(x=>{ delete x.deleted; saveRec("vorgaenge",x); }); render(); }); }
   else if(a==="vgZustPick"&&v){ if(!vgDarfZust(v)) return; const r=b.getBoundingClientRect();
-    kontextMenu(r.left,r.bottom,[...team().filter(m=>m.mail).map(m=>({t:m.name,ic:"person",fn:()=>{ vgZustSetzen(v,m); render(); }})),...(v.zust?["-",{t:"Niemand",ic:"close",fn:()=>{ vgZustSetzen(v,null); render(); }}]:[])]); }
+    kontextMenu(r.left,r.bottom,[...team().filter(m=>m.mail).map(m=>({t:vgZustHat(v,m.mail)?`${m.name} entfernen`:m.name,ic:vgZustHat(v,m.mail)?"close":"person",fn:()=>{ vgZustSetzen(v,m); render(); }})),...(vgZustL(v).length>1?["-",{t:"Niemand",ic:"close",fn:()=>{ vgZustSetzen(v,null); render(); }}]:[])]); }
   else if(a==="vgNrEd"&&v){ if(!istBuero()) return; vgInline(b,`<input class="vt-in" id="vgNrIn" data-id="${esc(v.id)}" value="${esc((v.s.auftrag&&v.s.auftrag.nr)||"")}" placeholder="SCC-Nr." autocomplete="off">`); }
   else if(a==="vgTerminEd"&&v){ if(!istBuero()) return; const t=v.s.termin||{};
     vgInline(b,`<span class="vt-ed2" data-id="${esc(v.id)}"><input class="vt-in" id="vgTdIn" type="date" value="${esc(t.datum||today())}"><input class="vt-in" id="vgTzIn" value="${esc(t.zeit||"")}" placeholder="Uhrzeit" autocomplete="off"></span>`); }
@@ -435,7 +442,7 @@ function vgBauAbschnitt(b){ const L=vgZuBau(b);
     ${L.length?`<div class="vg-l">${L.map(v=>vgKarte(v,true)).join("")}</div>`:`<p class="meta">Will der Kunde noch etwas zusätzlich? Mit + direkt ans Büro melden – gern mit Foto.</p>`}`; }
 /* „Meine Aufträge“: mir zugewiesen oder ich fahre zum Termin hin – solange nicht erledigt */
 function vgMeine(){ const n=String(ME.name||"").trim();
-  return vgAlle().filter(v=>!vgZu(v)&&(vgIstIch(v.zust)||(n&&v.s&&v.s.termin&&String(v.s.termin.mit||"").split(/\s*,\s*/).includes(n)))); }
+  return vgAlle().filter(v=>!vgZu(v)&&(vgZustIch(v)||(n&&v.s&&v.s.termin&&String(v.s.termin.mit||"").split(/\s*,\s*/).includes(n)))); }
 function vgMeineKarte(){ const L=vgMeine(); if(!L.length) return "";
   return `<div class="vg-meine"><div class="sec-row" style="margin-top:0"><div class="sec-lbl">Meine Aufträge · ${L.length}</div>${L.length>3?`<button class="btn-text" data-act="vgAlleMeine">Alle</button>`:""}</div>
     <div class="vg-l">${L.slice(0,3).map(v=>vgKarte(v,true)).join("")}</div></div>`; }
@@ -469,12 +476,12 @@ function vgTZelle(v,i){ const k=VG_S[i][0], s=v.s&&v.s[k], st=vgStufe(v), id=esc
   if(i===st+1&&!vgZu(v)) return vgDarfNach(v,i)?`<button class="vt-z next" data-act="vgWeiter" data-id="${id}" title="${esc(VG_NEXT_T[st])}">${icon("add")}<span>${esc(["Ans Büro","Erteilen","Termin","Erledigt"][st])}</span></button>`
     :`<div class="vt-z warte"><span class="vt-1">${st===1?"Wartet aufs Büro":"Macht das Büro"}</span></div>`;
   return `<div class="vt-z leer"></div>`; }
-function vgTZeile(v){ const a=vgAlter(v), z=v.zust, m=VG_MARK.has(v.id), id=esc(v.id), tel=v.tel;
+function vgTZeile(v){ const a=vgAlter(v), ZL=vgZustL(v), z=ZL[0], m=VG_MARK.has(v.id), id=esc(v.id), tel=v.tel;
   return `<div class="vr${v.dringend?" dr":""}${VG_SEL===v.id?" an":""}${m?" mark":""}${v.abgelehnt?" abgl":""}" data-act="vgSel" data-id="${id}" role="button" tabindex="0">
     <button class="vr-m" data-act="vgMark" data-id="${id}" role="checkbox" aria-checked="${m}" aria-label="Markieren"><i></i></button>
     <div class="vr-k"><span class="vr-n"><b>${esc(vgKunde(v))}</b>${v.dringend?`<span class="vk-dr">dringend</span>`:""}</span>${v.anliegen?`<span class="vr-a">${esc(v.anliegen)}</span>`:""}${tel?`<span class="vr-t">${icon("phone")}${esc(tel)}</span>`:""}</div>
     ${VG_T.map((t,i)=>vgTZelle(v,i)).join("")}
-    <div class="vr-z">${vgDarfZust(v)?`<button class="vr-zb${z?"":" leer"}" data-act="vgZustPick" data-id="${id}" title="Zuständig ändern">`:`<span class="vr-zb${z?"":" leer"}">`}${z?`<span class="vk-p${vgIstIch(z)?" ich":""}">${esc(initials(z.name||"?"))}</span><span class="vr-zn">${esc(z.name||"")}</span>`:`<span class="vr-zn">${vgDarfZust(v)?"Zuweisen":"–"}</span>`}${vgDarfZust(v)?"</button>":"</span>"}</div>
+    <div class="vr-z">${vgDarfZust(v)?`<button class="vr-zb${z?"":" leer"}" data-act="vgZustPick" data-id="${id}" title="Zuständig ändern">`:`<span class="vr-zb${z?"":" leer"}">`}${z?`<span class="vk-p${vgIstIch(z)?" ich":""}">${esc(initials(z.name||"?"))}</span><span class="vr-zn" title="${esc(vgZustNamen(v).join(", "))}">${esc(ZL.length>1?`${z.name||""} +${ZL.length-1}`:(z.name||""))}</span>`:`<span class="vr-zn">${vgDarfZust(v)?"Zuweisen":"–"}</span>`}${vgDarfZust(v)?"</button>":"</span>"}</div>
     <div class="vr-s">${a?`<span class="vr-alt ${a.kl}">${esc(a.txt.replace(/^seit /,""))}</span>`:`<span class="vr-ok">${esc(vgSeitKurz(vgSchrittAt(v)))}</span>`}</div></div>`; }
 function vgSeitKurz(t){ const h=(Date.now()-t)/36e5; return h<1?"gerade":h<24?`${Math.floor(h)} Std.`:`${Math.floor(h/24)} Tag${Math.floor(h/24)>1?"e":""}`; }
 function vgTabelle(L){ const so=fW("vg","sort"), sk=(k,t,cls)=>`<button class="vr-h${so===k?" an":""}${cls?" "+cls:""}" data-act="vgSort" data-v="${k}" title="Sortieren">${t}${so===k?icon("vgSort"):""}</button>`;
@@ -490,8 +497,11 @@ function vgLeiste(){ const M=vgMarkiert(); if(!M.length) return "";
   return `<div class="vg-bar" role="toolbar" aria-label="Markierte Aufträge"><button class="vg-bar-x" data-act="vgMarkWeg" aria-label="Markierung aufheben" title="Markierung aufheben">${icon("close")}</button><b>${M.length} markiert</b><span class="vg-bar-sp"></span>
     ${nz?`<button class="vg-bar-b" data-act="vgMarkZust">${icon("person")}<span>Zuweisen</span></button>`:""}${nb?`<button class="vg-bar-b" data-act="vgMarkBuero">${icon("send")}<span>Ans Büro geben${nb<M.length?` (${nb})`:""}</span></button>`:""}
     ${nd?`<button class="vg-bar-b gefahr" data-act="vgMarkDel">${icon("del")}<span>Löschen${nd<M.length?` (${nd})`:""}</span></button>`:""}</div>`; }
-function vgZustSetzen(v,m,still){ if(!vgDarfZust(v)) return; v.zust=m?{mail:m.mail,name:m.name,at:Date.now(),von:who()}:null; saveRec("vorgaenge",v);
-  if(!still) toast(!m?"Zuständigkeit entfernt":vgIstIch(v.zust)?"Du bist jetzt zuständig":`${m.name} ist jetzt zuständig – bekommt eine Benachrichtigung`); }
+/* m = null: niemand mehr zuständig; sonst Person dazunehmen bzw. – wenn schon dabei – herausnehmen */
+function vgZustSetzen(v,m,still){ if(!vgDarfZust(v)) return; let L=vgZustL(v).slice(), weg=false;
+  if(!m) L=[]; else if(vgZustHat(v,m.mail)){ L=L.filter(p=>String(p.mail||"").toLowerCase()!==String(m.mail).toLowerCase()); weg=true; } else L.push({mail:m.mail,name:m.name,at:Date.now(),von:who()});
+  vgZustSchreiben(v,L);
+  if(!still) toast(!m?"Zuständigkeit entfernt":weg?`${vgIstIch(m)?"Du bist":m.name+" ist"} nicht mehr zuständig`:vgIstIch(m)?"Du bist jetzt zuständig":`${m.name} ist jetzt zuständig – bekommt eine Benachrichtigung`); }
 /* direkt in der Zelle bearbeiten: Enter speichert, Esc bricht ab, Klick daneben speichert */
 let vgInl=null;
 function vgInline(b,html){ if(vgInl) return; const w=document.createElement("span"); w.className="vt-inl"; w.innerHTML=html; b.replaceWith(w); vgInl={w}; const i=w.querySelector("input"); i.focus(); if(i.select&&i.type!=="date") i.select();
