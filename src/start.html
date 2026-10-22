@@ -2171,24 +2171,30 @@ const GER_VORLAGE=[{id:"ger-wiha-mft-one-1",art:"mess",kurz:"MFT 1",hersteller:"
   {id:"ger-wiha-pat-one-1",art:"mess",kurz:"PAT",hersteller:"Wiha",modell:"PAT one",bildUrl:GER_PAT,notiz:"Gerätetester (ortsveränderliche Geräte)"},
   {id:"ger-fluke-fev300-1",art:"adapter",kurz:"FEV",hersteller:"Fluke",modell:"FEV300",bildUrl:GER_FEV,notiz:"Prüfadapter für Ladestationen"}];
 /* Netzwerktester: zwei Platzhalter (ältere und neuere Version) – Modell, Seriennummer und Kalibrierung trägt man nach */
-const GER_VORLAGE_NETZ=[{id:"ger-trend-signaltek-alt",art:"mess",kurz:"SignalTEK alt",hersteller:"Trend Networks",modell:"SignalTEK (ältere Version)",einsatz:"netzwerk",notiz:"Platzhalter – genaues Modell und Seriennummer ergänzen"},
-  {id:"ger-trend-signaltek-ct",art:"mess",kurz:"SignalTEK CT",hersteller:"Trend Networks",modell:"SignalTEK CT (R156006)",einsatz:"netzwerk",notiz:"Platzhalter – Seriennummer und Kalibrierung ergänzen"}];
+const GER_SIGNALTEK="https://www.trend-networks.com/wp-content/uploads/2019/04/signaltek-ct-01.jpg";
+const GER_VORLAGE_NETZ=[{id:"ger-trend-signaltek-alt",art:"mess",kurz:"SignalTEK alt",hersteller:"Trend Networks",modell:"SignalTEK (ältere Version)",einsatz:"netzwerk",bildUrl:GER_SIGNALTEK,notiz:"Platzhalter – genaues Modell und Seriennummer ergänzen"},
+  {id:"ger-trend-signaltek-ct",art:"mess",kurz:"SignalTEK CT",hersteller:"Trend Networks",modell:"SignalTEK CT (R156006)",einsatz:"netzwerk",bildUrl:GER_SIGNALTEK,notiz:"Platzhalter – Seriennummer und Kalibrierung ergänzen"}];
 function gerVorlagen(){ if(!ME.admin) return;
   if(!META.gerBild2){ for(const g of DB.geraete.values()){ const n=GER_BILD_ALT[g.bildUrl]; if(n){ g.bildUrl=n; saveRec("geraete",g); } } META.gerBild2=1; metaSave(); }
   if(!META.gerKurz&&DB.geraete.size){ for(const v of GER_VORLAGE){ const g=DB.geraete.get(v.id); if(g&&!g.kurz&&!g.deleted){ g.kurz=v.kurz; saveRec("geraete",g); } } META.gerKurz=1; metaSave(); }
+  if(!META.gerNetzBild){ for(const v of GER_VORLAGE_NETZ){ const g=DB.geraete.get(v.id); if(g&&!g.deleted&&!g.bild&&!g.bildUrl){ g.bildUrl=v.bildUrl; saveRec("geraete",g); } } if(DB.geraete.has(GER_VORLAGE_NETZ[0].id)){ META.gerNetzBild=1; metaSave(); } }
   if(!META.gerNetz){ for(const v of GER_VORLAGE_NETZ){ if(DB.geraete.has(v.id)) continue; const r=saveRec("geraete",Object.assign({sn:"",kal:"",bei:""},v),true); r.created=r.updated=1; dbPut("geraete",r); } META.gerNetz=1; metaSave(); }
   if(META.gerVorlage) return;
   for(const v of GER_VORLAGE){ if(DB.geraete.has(v.id)) continue; const r=saveRec("geraete",Object.assign({sn:"",kal:"",bei:""},v),true); r.created=r.updated=1; dbPut("geraete",r); }
   META.gerVorlage=1; metaSave(); }
 /* eigenes Foto (bild, klein im Datensatz) vor Herstellerbild (bildUrl); lädt das Herstellerbild nicht, bleibt das Symbol sichtbar */
 const gerAv=g=>{ const u=g.bild||GER_BILD_ALT[g.bildUrl]||g.bildUrl; return u?`<span class="av av-img ger-av">${icon("geraet")}<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></span>`:`<span class="av">${icon("geraet")}</span>`; };
+/* Gruppen in der Liste: Messgeräte nach Einsatz, dazu Prüfadapter und Sonstiges */
+const gerEinsatz=g=>g.einsatz||(/\bPAT\b/i.test(g.modell||"")?"geraete":/signaltek|lantek|navitek|netzwerk|kabeltester|ethernet/i.test(`${g.hersteller||""} ${g.modell||""}`)?"netzwerk":"installation");
+const GER_GRUPPEN=[["installation","Installationstester"],["geraete","Gerätetester"],["beide","Installations- und Gerätetester"],["netzwerk","Netzwerktester"],["adapter","Prüfadapter"],["sonst","Sonstiges"]];
+const gerGruppe=g=>{ const a=g.art||"mess"; return a==="mess"?gerEinsatz(g):a; };
 function geraeteView(){
   const L=live("geraete").filter(g=>!g.aus).sort((a,b)=>gerName(a).localeCompare(gerName(b),"de")), A=live("geraete").filter(g=>g.aus);
   if(!L.length&&!A.length) return `<div class="empty">${icon("geraet")}<h2>Noch keine Messgeräte</h2><p>${ME.admin?"Lege mit „Messgerät“ die Messgeräte und Prüfadapter an – mit Seriennummer und Kalibrierdatum. In EVSE werden sie dann nur noch ausgewählt.":"Messgeräte pflegt der Chef oder das Büro."}</p></div>`;
   const z=g=>{ const k=gerKal(g), wer=g.bei?(team().find(m=>m.mail===g.bei)||{name:g.bei}).name:"";
     return `<div class="li" role="button" tabindex="0" data-act="gerEdit" data-id="${esc(g.id)}">${gerAv(g)}<span class="lt"><span class="h">${esc(gerLabel(g))}</span>
       <span class="s">${esc([g.sn?`SN ${g.sn}`:"Seriennummer fehlt",wer&&`bei ${wer}`,g.notiz].filter(Boolean).join(" · "))}</span>${k?`<span class="st">${pill(k.s==="ok"?"ok":k.s==="bald"?"wip":"bad",k.t)}</span>`:""}</span></div>`; };
-  return `<div class="narrow">${GER_ART.map(([v,t])=>{ const g=L.filter(x=>(x.art||"mess")===v); return g.length?`<div class="sec-lbl">${t} · ${g.length}</div>${listOf(g.map(z))}`:""; }).join("")}
+  return `<div class="narrow">${GER_GRUPPEN.map(([v,t])=>{ const g=L.filter(x=>gerGruppe(x)===v); return g.length?`<div class="sec-lbl">${t} · ${g.length}</div>${listOf(g.map(z))}`:""; }).join("")}
     ${A.length?`<div class="sec-lbl">Ausgemustert · ${A.length}</div>${listOf(A.map(z))}`:""}
 </div>`;
 }
