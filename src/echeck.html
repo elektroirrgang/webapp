@@ -580,6 +580,7 @@ html.standalone .app-weiter{display:none!important}html.standalone a.li.weiter{p
   .tb-title{font-size:18px}
   .nav-item{letter-spacing:0;font-size:11.5px}
   .nav-item > span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+  .nav-item > span:last-child{padding:0;overflow:visible;text-overflow:clip} /* fünf Ziele: „Installation“ passt knapp, nicht abschneiden */
 }
 
 #railBtn{display:none}
@@ -1002,7 +1003,7 @@ body.kopf-oben .edk-platz{display:none!important}
 .ec-sk{display:grid;grid-template-columns:52px minmax(130px,1.4fr) minmax(70px,.8fr) repeat(3,minmax(64px,.7fr)) 112px;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid var(--outline-v);font-size:14px;cursor:pointer;min-width:720px}
 .ec-sk:hover:not(.h){background:color-mix(in srgb,var(--on-surface) 4%,transparent)}
 .ec-sk.h{background:var(--sc-high);color:var(--on-sv);font-weight:700;font-size:12px;border:0;cursor:default}
-.ec-sk .nr{font-weight:700}.ec-sk small{display:block;color:var(--on-sv);font-size:12px}.ec-sk .bz{min-width:0;overflow-wrap:anywhere}
+.ec-sk .lbm{display:none}.ec-sk .nr{font-weight:700}.ec-sk small{display:block;color:var(--on-sv);font-size:12px}.ec-sk .bz{min-width:0;overflow-wrap:anywhere}
 .ec-rk{padding:10px 16px;background:var(--sc);font-weight:700;font-size:14px;border-top:1px solid var(--outline-v);min-width:720px}
 .mw{border-radius:8px;padding:4px 6px;font-weight:600;text-align:center;font-size:13px;white-space:nowrap}.mw.ok{background:var(--ok-c);color:var(--on-ok-c)}.mw.bad{background:var(--err-c);color:var(--on-err-c)}.mw.leer{background:var(--sc-high);color:var(--on-sv)}
 .ec-sicht .ec-sz{display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid var(--outline-v);min-height:56px}.ec-sicht .ec-sz:first-child{border-top:0}
@@ -1070,7 +1071,7 @@ body.kopf-oben .edk-platz{display:none!important}
 @media (max-width:599px){.ec-imp-z{grid-template-columns:28px minmax(0,1fr)}.ec-imp-s{grid-column:2}.ec-pt{grid-template-columns:40px minmax(0,1fr) auto}.ec-pt .sz{display:none}.ec-pt .mw{grid-column:2;justify-self:start}.ec-pt .er{grid-column:3;grid-row:1}.ec-ein.klein{width:104px}}
 .ec-body{padding-top:8px}
 @media (max-width:743px){
-  .ec-tab{overflow:visible}.ec-sk.h{display:none}
+  .ec-tab{overflow:visible}.ec-sk.h{display:none}.ec-sk .lbm{display:inline}
   .ec-sk{min-width:0;grid-template-columns:40px repeat(4,minmax(0,1fr));row-gap:6px;column-gap:6px;padding:12px 12px 12px 14px}
   .ec-rk{min-width:0;padding:10px 14px}
   .ec-sk>.nr{grid-column:1;grid-row:1/4;align-self:start;padding-top:2px}
@@ -1503,7 +1504,7 @@ applyTheme(theme);
 WIDE.addEventListener?.("change",()=>{ if(typeof render==="function"&&nav) render(); });
 
 const APP_VERSION="<!--VERSION-->";
-const TOPDEST=[["anlagen","Installation","home"],["geraete","Geräte","ecStecker"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
+const TOPDEST=[["anlagen","Installation","home"],["geraete","Geräte","ecStecker"],["netzwerk","Netzwerk","ecNetz"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
 const TOP=TOPDEST.map(x=>x[0]), MEHR_SUB={team:"Mitarbeiter",impressum:"Impressum",about:"Über die App"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
 const KIND_NAME={kunden:"Kunde",standorte:"Standort"};
@@ -1523,7 +1524,7 @@ function pfadTeile(){
   if(nav.v==="standort"){ const s=standortOf(nav.id); return kette(s&&s.kundeId); }
   if(nav.v==="kunde") return kette();
   if(MEHR_SUB[nav.v]) return [["Mehr",{v:"mehr"}]];
-  if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); return p&&p.art==="geraete"?[["Geräte",{v:"geraete"}]]:[["Installation",{v:"anlagen"}]]; }
+  if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); const v=ecListeV(p&&p.art); return [[{geraete:"Geräte",netzwerk:"Netzwerk"}[v]||"Installation",{v}]]; }
   return [];
 }
 let NAV_IND_ALT=null;
@@ -1681,7 +1682,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   document.body.classList.toggle("has-nav",!login);
   $("#backBtn").hidden=top||login; $("#navbar").hidden=login; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]);
   $("#menuBtn").hidden=!VIEW_KIND[nav.v];
-  const active=top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]?"kunden":nav.v==="ec"&&(DB.echecks.get(nav.id)||{}).art==="geraete"?"geraete":"anlagen";
+  const active=top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]?"kunden":nav.v==="ec"?ecListeV((DB.echecks.get(nav.id)||{}).art):"anlagen";
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
     +(()=>{ const P=nav.v==="ec"&&DB.echecks.get(nav.id); if(P&&!P.deleted){ const T=ecSchritte(P), a=ecTab(P); /* in der Prüfung: Schritte wie in EVSE */
@@ -1691,6 +1692,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   if(login) body=loginView();
   else if(nav.v==="anlagen"){ title="Installation"; body=ecListeView("anlage"); fab=["ecNeuA","Prüfung","add"]; }
   else if(nav.v==="geraete"){ title="Geräte"; body=ecListeView("geraete"); fab=["ecNeuG","Prüfung","add"]; }
+  else if(nav.v==="netzwerk"){ title="Netzwerk"; body=ecListeView("netz"); fab=["ecNeuN","Prüfung","add"]; }
   else if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); if(!p||p.deleted){ nav={v:"anlagen"}; return render(); }
     title=ecOrt(p.ortId).titel; sub=`${EC_ART[p.art||"anlage"]} · ${ecDatum(p.datum)}`; body=ecView(p); }
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=["newKunde","Kunde","add"]; }
@@ -1712,11 +1714,11 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
 
 /* Kunden und Standorte – wie in der Übersicht (Filter, A–Z, Doppelte zusammenführen, Löschen); dazu die Prüfungen dieser App */
 function locItem(kind,r){
-  const P=live("echecks").filter(p=>kind==="kunden"?p.kundeId===r.id:p.standortId===r.id), na=P.filter(p=>(p.art||"anlage")==="anlage").length, ng=P.length-na;
+  const P=live("echecks").filter(p=>kind==="kunden"?p.kundeId===r.id:p.standortId===r.id), na=P.filter(p=>(p.art||"anlage")==="anlage").length, nn=P.filter(p=>p.art==="netz").length, ng=P.length-na-nn;
   const nb=live("betriebsmittel").filter(b=>kind==="kunden"?b.kundeId===r.id:b.ortId===r.id).length;
   const nd=kind==="kunden"?live("dateien").filter(d=>(d.bezugKind==="kunden"&&d.bezugId===r.id)||(d.bezugKind==="standorte"&&(standortOf(d.bezugId)||{}).kundeId===r.id)).length:dateienVon("standorte",r.id).length;
   const sub=kind==="kunden"?[r.kdnr&&`Kd.-Nr. ${r.kdnr}`,r.ort,`${standorteVon(r.id).length} Standort${standorteVon(r.id).length===1?"":"e"}`].filter(Boolean).join(" · "):(adrText(r)||"");
-  const pills=[na&&pill("open",`${na} Anlagenprüfung${na>1?"en":""}`),ng&&pill("open",`${ng} Geräteprüfung${ng>1?"en":""}`),nb&&pill("open",`${nb} Gerät${nb>1?"e":""}`),nd&&pill("open",`${nd} Datei${nd>1?"en":""}`)].filter(Boolean).join("");
+  const pills=[na&&pill("open",`${na} Anlagenprüfung${na>1?"en":""}`),ng&&pill("open",`${ng} Geräteprüfung${ng>1?"en":""}`),nn&&pill("open",`${nn} Netzwerkprüfung${nn>1?"en":""}`),nb&&pill("open",`${nb} Gerät${nb>1?"e":""}`),nd&&pill("open",`${nd} Datei${nd>1?"en":""}`)].filter(Boolean).join("");
   return `<div class="li" role="button" tabindex="0" data-act="nav" data-v="${kind==="kunden"?"kunde":"standort"}" data-id="${esc(r.id)}"><span class="av">${icon(kind==="kunden"?"firma":"ort")}</span>
     <span class="lt"><span class="h">${esc(r.name)}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}${pills?`<span class="st">${pills}</span>`:""}</span>${icon("chev")}</div>`;
 }
@@ -1858,7 +1860,7 @@ function zurueck(){
   if(nav.v==="standort"){ const s=standortOf(nav.id); go(s?{v:"kunde",id:s.kundeId}:{v:"kunden"}); return; }
   if(nav.v==="kunde"){ go({v:"kunden"}); return; }
   if(MEHR_SUB[nav.v]){ go({v:"mehr"}); return; }
-  if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); go({v:p&&p.art==="geraete"?"geraete":"anlagen"}); return; }
+  if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); go({v:ecListeV(p&&p.art)}); return; }
   go({v:"anlagen"});
 }
 document.addEventListener("input",ev=>{ if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():kundenListe(); } });

@@ -2,6 +2,7 @@
    Ablauf wie in EVSE: in der Prüfung zeigt die Seitenleiste die Schritte
      Installation: Auftrag › Gebäude › Besichtigung › Messen › Abschluss
      Geräte:       Auftrag › Geräte › Abschluss
+     Netzwerk:     Auftrag › Gebäude › Messen › Abschluss (Datenverkabelung, siehe unten)
    „Abschluss“ ist gesperrt, bis alles im Prüfumfang erledigt ist (Stromkreise dürfen bewusst „nicht gemessen“ mit Grund sein).
 
    Datensätze (Prüfprotokolle-Bibliothek, _App-Daten):
@@ -20,15 +21,17 @@
 IC.ecStecker=IC.ecStecker||"M16 7V3h-2v4h-4V3H8v4h-.01C6.9 7 6 7.9 6 8.99v5.49L9.5 18v3h5v-3l3.5-3.51v-5.5c0-1.1-.9-1.99-2-1.99z";
 IC.ecMess=IC.ecMess||"M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z";
 IC.ecSicht=IC.ecSicht||"M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z";
+IC.ecNetz=IC.ecNetz||"M13 22h8v-7h-3v-4h-5V9h3V2H8v7h3v2H6v4H3v7h8v-7H8v-2h8v2h-3z";
 IC.ecImport=IC.ecImport||"M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z";
-const EC_ART={anlage:"Installationsprüfung",geraete:"Geräteprüfung"};
+const EC_ART={anlage:"Installationsprüfung",geraete:"Geräteprüfung",netz:"Netzwerkprüfung"};
+const ecListeV=art=>({geraete:"geraete",netz:"netzwerk"}[art]||"anlagen");
 const EC_PRUEFART=["Wiederholungsprüfung","Erstprüfung","E-CHECK"];
 const EC_SART={sd:"Steckdose",herd:"Herdanschluss",fest:"Festanschluss",licht:"Licht",sonst:"Sonstiges"};
 const EC_LAGE=["Eingang","unterm Schalter","neben Tür","neben Fenster","Arbeitsfläche","Bett","TV","Schreibtisch","Außen"];
 /* Messgeräte pflegt die Übersicht (Mehr › Geräte); hier nur zur Auswahl */
 /* Einsatz: „installation“ (Installation/EVSE), „geraete“ (Geräteprüfung) oder „beide“; ohne Angabe gilt ein PAT als Gerätetester */
-const ecEinsatz=g=>g.einsatz||(/\bPAT\b/i.test(g.modell||"")?"geraete":"installation");
-const ecMessgeraete=art=>(DB.geraete?live("geraete"):[]).filter(x=>x.art==="mess"&&!x.aus&&(!art||[art==="geraete"?"geraete":"installation","beide"].includes(ecEinsatz(x)))).sort((a,b)=>String(a.kurz||a.modell||"").localeCompare(String(b.kurz||b.modell||""),"de",{numeric:true}));
+const ecEinsatz=g=>g.einsatz||(/\bPAT\b/i.test(g.modell||"")?"geraete":/signaltek|lantek|navitek|netzwerk|kabeltester|ethernet/i.test(`${g.hersteller||""} ${g.modell||""}`)?"netzwerk":"installation");
+const ecMessgeraete=art=>(DB.geraete?live("geraete"):[]).filter(x=>x.art==="mess"&&!x.aus&&(!art||(art==="netz"?["netzwerk"]:[art==="geraete"?"geraete":"installation","beide"]).includes(ecEinsatz(x)))).sort((a,b)=>String(a.kurz||a.modell||"").localeCompare(String(b.kurz||b.modell||""),"de",{numeric:true}));
 const ecMgDaten=m=>({mess:[m.hersteller,m.modell].filter(Boolean).join(" ")||"Messgerät",kurz:m.kurz||"",sn:m.sn||"",kal:m.kal||"",mgId:m.id});
 const ecMgLabel=m=>(m.kurz?m.kurz+" · ":"")+([m.hersteller,m.modell].filter(Boolean).join(" ")||"Messgerät");
 /* Prüfer legt die Übersicht fest (Mitarbeiter › Prüfer); ist niemand markiert, bleibt das Feld frei */
@@ -50,7 +53,7 @@ const ecAn=pr=>(pr.art||"anlage")==="anlage";
    Solange nichts eingetragen ist, wird es nur angezeigt und erst beim ersten Speichern angelegt. */
 const ecGebId=ortId=>"g-"+String(ortId).replace(/[^A-Za-z0-9_-]/g,"_");
 const ecRcdText=t=>{ t=String(t||""); const i=t.match(/(\d+)\s*mA/i), y=t.match(/Typ\s*([A-Z+]+)/i); return {idn:i?i[1]:"",typ:y?y[1].toUpperCase():""}; };
-function ecGebNorm(g){ g.etagen=g.etagen&&g.etagen.length?g.etagen:[{id:"eg",name:"EG",raeume:[]}]; g.verteiler=g.verteiler||[]; g.rcds=g.rcds||[]; g.stromkreise=g.stromkreise||[]; g.stellen=g.stellen||[];
+function ecGebNorm(g){ g.etagen=g.etagen&&g.etagen.length?g.etagen:[{id:"eg",name:"EG",raeume:[]}]; g.verteiler=g.verteiler||[]; g.rcds=g.rcds||[]; g.stromkreise=g.stromkreise||[]; g.stellen=g.stellen||[]; g.schraenke=g.schraenke||[]; g.dosen=g.dosen||[];
   /* frühere Fassung: RCD als Text am Stromkreis → eigenes RCD-Objekt am Verteiler (feste ID, damit Werte beim Neuladen bleiben) */
   for(const s of g.stromkreise){ if(s.rcd&&!s.rcdId){ const t=ecRcdText(s.rcd), id=("r-"+(s.vId||"x")+"-"+t.idn+t.typ).replace(/[^A-Za-z0-9_-]/g,"_");
       if(!g.rcds.some(r=>r.id===id)) g.rcds.push({id,vId:s.vId||"",nr:String(g.rcds.filter(r=>r.vId===s.vId).length+1),typ:t.typ,in:"",idn:t.idn}); s.rcdId=id; }
@@ -148,17 +151,20 @@ function ecFehlt(pr){ const F=[]; if(!String(pr.pruefer||"").trim()) F.push("kei
     const S=g.stromkreise.filter(x=>ecImUmfang(pr,x)); if(!S.length) F.push("noch kein Stromkreis");
     const o=S.filter(x=>["open","wip"].includes(ecSkStand(pr,g,x))).length; if(o) F.push(`${o} Stromkreis${o>1?"e":""} nicht fertig gemessen`);
     const ohne=ecAllePunkte(g).filter(p=>!p.st.skId).length; if(ohne) F.push(`${ohne} Messpunkt${ohne>1?"e":""} ohne Stromkreis`); }
+  else if(ecNz(pr)){ const g=ecGeb(pr.ortId), L=ecNetListe(pr,g); if(!L.length) F.push("noch keine Datendose");
+    const o=L.filter(p=>["open","wip"].includes(ecNetStand(pr,p))).length; if(o) F.push(`${o} Link${o>1?"s":""} nicht fertig gemessen`); }
   else { const B=ecGeraeteAm(pr.ortId); if(!B.length) F.push("noch kein Gerät"); const o=B.filter(b=>["open","wip"].includes(ecGerStand(pr,b))).length; if(o) F.push(`${o} Gerät${o>1?"e":""} nicht fertig geprüft`); }
   return F; }
 function ecErgebnis(pr){
   if(ecAn(pr)){ const g=ecGeb(pr.ortId); if(Object.values(pr.sicht||{}).includes("nok")||g.stromkreise.filter(x=>ecImUmfang(pr,x)).some(x=>ecSkStand(pr,g,x)==="bad")) return "bad"; return ecFehlt(pr).length?"open":"ok"; }
+  if(ecNz(pr)){ const g=ecGeb(pr.ortId); if(ecNetListe(pr,g).some(p=>ecNetStand(pr,p)==="bad")) return "bad"; return ecFehlt(pr).length?"open":"ok"; }
   const B=ecGeraeteAm(pr.ortId).map(b=>ecGerStand(pr,b)); if(B.includes("bad")) return "bad"; return ecFehlt(pr).length?"open":"ok"; }
 const EC_PILL={ok:["ok","i. O."],bad:["bad","Mangel"],wip:["wip","teilweise"],open:["open","offen"],ng:["open","nicht gemessen"],opt:["open","optional"]};
 const ecPill=s=>pill(EC_PILL[s][0],EC_PILL[s][1]);
 
 /* ---- Listen ---- */
 function ecItem(pr){ const o=ecOrt(pr.ortId), erg=ecErgebnis(pr), fertig=pr.status==="fertig";
-  return `<div class="li" role="button" tabindex="0" data-act="ecOeffnen" data-id="${esc(pr.id)}"><span class="av">${icon(pr.art==="geraete"?"ecStecker":"home")}</span>
+  return `<div class="li" role="button" tabindex="0" data-act="ecOeffnen" data-id="${esc(pr.id)}"><span class="av">${icon(pr.art==="geraete"?"ecStecker":pr.art==="netz"?"ecNetz":"home")}</span>
     <span class="lt"><span class="h">${esc(o.titel)}</span><span class="s">${esc([ecDatum(pr.datum),pr.pruefart,pr.bez,o.standort?"":o.name,pr.pruefer].filter(Boolean).join(" · "))}</span>
     <span class="st">${fertig?pill(erg==="bad"?"bad":"ok",erg==="bad"?"Mängel":"abgeschlossen"):pill("wip","in Arbeit")}</span></span>${icon("chev")}</div>`; }
 function ecListeView(art){
@@ -168,6 +174,7 @@ function ecListeView(art){
     if(F.length){ const M=new Map(); F.forEach(b=>{ if(!M.has(b.ortId)) M.set(b.ortId,[]); M.get(b.ortId).push(b); });
       h+=`<div class="sec-lbl">Fällig in den nächsten 4 Wochen</div>${listOf([...M].map(([o,G])=>`<div class="li" role="button" tabindex="0" data-act="ecNeuOrt" data-art="geraete" data-ort="${esc(o)}"><span class="av">${icon("warn")}</span>
         <span class="lt"><span class="h">${esc(ecOrt(o).titel)}</span><span class="s">${G.length} Gerät${G.length>1?"e":""} · ab ${esc(ecDatum(G[0].naechste))}</span></span>${pill(G[0].naechste<ecHeute()?"bad":"wip",G[0].naechste<ecHeute()?"überfällig":"bald fällig")}</div>`))}`; } }
+  if(!L.length&&art==="netz") return h+`<div class="empty">${icon("ecNetz")}<h2>Noch keine Netzwerkprüfung</h2><p>Datenverkabelung qualifizieren (z. B. mit dem SignalTEK CT): Netzwerkschrank und Datendosen anlegen, jeden Link messen – das Protokoll landet in der Bibliothek.</p></div></div>`;
   if(!L.length) return h+`<div class="empty">${icon(art==="geraete"?"ecStecker":"home")}<h2>${art==="geraete"?"Noch keine Geräteprüfung":"Noch keine Installationsprüfung"}</h2><p>${art==="geraete"
       ?"Ortsveränderliche Geräte (DGUV V3, DIN VDE 0701-0702): Geräte je Kunde erfassen, prüfen, Prüffrist setzen – das Protokoll landet in der Bibliothek."
       :"Hausinstallationen und Anlagen (DIN VDE 0100-600 / 0105-100): Räume, Verteiler, Stromkreise und Steckdosen anlegen, besichtigen, messen – das Protokoll landet in der Bibliothek."}</p></div></div>`;
@@ -183,7 +190,7 @@ function ecOrtFeld(kid,ort){ const k=kid&&kundeOf(kid); if(!k) return ""; const 
   return sf("ecOrt","Ort",ort||(ss.length===1?ss[0].id:"k:"+k.id),[["k:"+k.id,`Adresse des Kunden${adrText(k)?` (${adrText(k)})`:""}`],...ss.map(s=>[s.id,[s.name,s.ort].filter(Boolean).join(", ")])],{form:true}); }
 let ecNeuArt="anlage";
 function ecNeuDialog(art,kundeId,ort){ ecNeuArt=art; const K=live("kunden").sort((a,b)=>a.name.localeCompare(b.name,"de"));
-  dialog(art==="anlage"?"Neue Installationsprüfung":"Neue Geräteprüfung",`<div class="fg1">
+  dialog(`Neue ${EC_ART[art]||"Prüfung"}`,`<div class="fg1">
     ${sf("ecKunde","Kunde",kundeId||"",[["","Kunde wählen …"],...K.map(k=>[k.id,k.name+(k.kdnr?` (${k.kdnr})`:"")])],{form:true})}
     <div id="ecOrtFeld">${ecOrtFeld(kundeId,ort)}</div>
     ${K.length?"":`<p class="meta">Noch keine Kunden – erst unter „Kunden“ anlegen.</p>`}</div>
@@ -192,7 +199,7 @@ function ecNeuDialog(art,kundeId,ort){ ecNeuArt=art; const K=live("kunden").sort
 function ecNeuOk(){ const F=formVals(); if(!F.ecKunde){ toast("Bitte einen Kunden wählen"); return; }
   const ortId=F.ecOrt||"k:"+F.ecKunde, art=ecNeuArt, vorher=ecAlle().filter(p=>p.ortId===ortId&&(p.art||"anlage")===art).sort((a,b)=>String(b.datum).localeCompare(String(a.datum)))[0];
   const MG=ecMessgeraete(art), mg=MG.find(m=>m.bei&&m.bei===ME.mail)||MG[0];
-  const pr={id:uid(),art,kundeId:F.ecKunde,standortId:ortId.startsWith("k:")?"":ortId,ortId,datum:ecHeute(),pruefart:vorher?"Wiederholungsprüfung":(art==="anlage"?"Erstprüfung":"Wiederholungsprüfung"),pruefer:ecStdPruefer(),status:"offen",
+  const pr={id:uid(),art,kundeId:F.ecKunde,standortId:ortId.startsWith("k:")?"":ortId,ortId,datum:ecHeute(),pruefart:vorher?"Wiederholungsprüfung":(art==="anlage"?"Erstprüfung":art==="netz"?"Abnahme":"Wiederholungsprüfung"),pruefer:ecStdPruefer(),status:"offen",
     sicht:{},werte:{},netz:vorher&&vorher.netz?{...vorher.netz}:{form:"TN-C-S"},geraet:mg?ecMgDaten(mg):{},umfang:vorher&&vorher.umfang?{...vorher.umfang}:null,fristM:vorher&&vorher.fristM||(art==="anlage"?48:12)};
   saveRec("echecks",pr,true);
   closeOverlays(); go({v:"ec",id:pr.id,tab:"auftrag"}); }
@@ -200,12 +207,15 @@ function ecNeuOk(){ const F=formVals(); if(!F.ecKunde){ toast("Bitte einen Kunde
 /* ---- Schritte (Seitenleiste in der Prüfung) ---- */
 function ecSchritte(pr){ const zu=ecFehlt(pr).length&&pr.status!=="fertig";
   return ecAn(pr)?[["auftrag","Auftrag","project"],["gebaeude","Gebäude","home"],["sicht",matchMedia("(max-width:479px)").matches?"Sicht":"Besichtigung","ecSicht"],["messen","Messen","ecMess"],["abschluss","Abschluss","done",zu]]
+    :ecNz(pr)?[["auftrag","Auftrag","project"],["gebaeude","Gebäude","home"],["messen","Messen","ecMess"],["abschluss","Abschluss","done",zu]]
     :[["auftrag","Auftrag","project"],["geraete","Geräte","ecStecker"],["abschluss","Abschluss","done",zu]]; }
 const ecTab=pr=>{ const T=ecSchritte(pr); return T.some(x=>x[0]===nav.tab)?nav.tab:"auftrag"; };
 const ecWeiter=(v,t)=>`<div class="ec-weiter"><button class="btn-filled" data-act="ecTab" data-v="${v}">${esc(t)}${icon("chev")}</button></div>`;
 
 /* ---- Prüfung ---- */
 function ecKennzahlen(pr){ const k=(z,t,bar,rot)=>`<div class="ec-k"><b${rot?' class="rot"':""}>${z}</b><small>${t}</small>${bar!=null?`<span class="ec-bar"><i style="width:${Math.round(bar*100)}%"></i></span>`:""}</div>`;
+  if(ecNz(pr)){ const g=ecGeb(pr.ortId), L=ecNetListe(pr,g), st=L.map(p=>ecNetStand(pr,p)), n=st.filter(x=>["ok","bad","ng"].includes(x)).length, m=st.filter(x=>x==="bad").length, D=new Set(L.map(p=>p.d.id)).size;
+    return `<div class="ec-kz">${k(`${n} / ${L.length}`,"Links gemessen",L.length?n/L.length:0)}${k(D,`Datendose${D===1?"":"n"}`)}${k(m,"Mängel",null,m>0)}${k(esc(pr.geraet&&(pr.geraet.kurz||pr.geraet.mess)||"–"),"Messgerät")}</div>`; }
   if(!ecAn(pr)){ const B=ecGeraeteAm(pr.ortId), st=B.map(b=>ecGerStand(pr,b)), n=st.filter(x=>["ok","bad","ng"].includes(x)).length, m=st.filter(x=>x==="bad").length;
     return `<div class="ec-kz">${k(`${n} / ${B.length}`,"Geräte geprüft",B.length?n/B.length:0)}${k(m,"Mängel",null,m>0)}${k(`${pr.fristM||12} Mon.`,"Prüffrist")}${k(esc(pr.geraet&&(pr.geraet.kurz||pr.geraet.mess)||"–"),"Messgerät")}</div>`; }
   const g=ecGeb(pr.ortId), S=g.stromkreise.filter(x=>ecImUmfang(pr,x)), st=S.map(s=>ecSkStand(pr,g,s)), n=st.filter(x=>["ok","bad","ng"].includes(x)).length;
@@ -213,7 +223,7 @@ function ecKennzahlen(pr){ const k=(z,t,bar,rot)=>`<div class="ec-k"><b${rot?' c
   const m=st.filter(x=>x==="bad").length+Object.values(pr.sicht||{}).filter(v=>v==="nok").length, si=ecSichtZahl(pr);
   return `<div class="ec-kz">${k(`${si} / ${EC_SICHT.length}`,"Besichtigung",si/EC_SICHT.length)}${k(`${n} / ${S.length}`,"Stromkreise fertig",S.length?n/S.length:0)}${k(`${pn} / ${P.length}`,"Messpunkte",P.length?pn/P.length:0)}${k(m,"Mängel",null,m>0)}</div>`; }
 function ecView(pr){ const tab=ecTab(pr), zu=pr.status==="fertig";
-  const body=tab==="auftrag"?ecAuftragView(pr):tab==="gebaeude"?ecGebView(pr):tab==="sicht"?ecSichtView(pr):tab==="messen"?ecMessView(pr):tab==="geraete"?ecGerListe(pr):ecAbschlussView(pr);
+  const body=tab==="auftrag"?ecAuftragView(pr):tab==="gebaeude"?ecGebView(pr):tab==="sicht"?ecSichtView(pr):tab==="messen"?(ecNz(pr)?ecNetMessView(pr):ecMessView(pr)):tab==="geraete"?ecGerListe(pr):ecAbschlussView(pr);
   return `<div class="narrow ec">${zu?`<div class="robanner">${icon("lock")}<span>Abgeschlossen am ${esc(ecDatum(pr.fertigAm||pr.datum))} – zum Ändern unter „Abschluss“ wieder öffnen.</span></div>`:""}
     <div class="ec-body${zu?" zu":""}">${body}</div></div>`; }
 const ecFeld=(pr,k,l,v,o={})=>{ const id="f_ec_"+k.replace(".","_"), zu=pr.status==="fertig";
@@ -223,26 +233,30 @@ const ecWahlSel=(pr,k,l,v,opts)=>{ const id="f_ec_"+k.replace(".","_");
 function ecUmfangAuto(pr,g){ const V=g.verteiler.filter(v=>ecImUmfang(pr,{vId:v.id})), aus=g.verteiler.filter(v=>!ecImUmfang(pr,{vId:v.id}));
   return `Besichtigen, Erproben und Messen der elektrischen Anlage nach DIN VDE 0100-600 bzw. DIN VDE 0105-100${V.length?`. Verteiler: ${V.map(v=>v.name).join(", ")}`:""}.${aus.length?` Nicht Bestandteil dieser Prüfung: ${aus.map(v=>v.name).join(", ")}.`:""}`; }
 /* Auftrag: wie in EVSE – was, womit, welche Prüfung, welcher Umfang */
-function ecAuftragView(pr){ const o=ecOrt(pr.ortId), an=ecAn(pr), G=pr.geraet||{}, N=pr.netz||{}, zu=pr.status==="fertig";
-  const MG=ecMessgeraete(pr.art||"anlage"), g=an?ecGeb(pr.ortId):null;
+function ecAuftragView(pr){ const o=ecOrt(pr.ortId), an=ecAn(pr), nz=ecNz(pr), G=pr.geraet||{}, N=pr.netz||{}, zu=pr.status==="fertig";
+  const MG=ecMessgeraete(pr.art||"anlage"), g=an||nz?ecGeb(pr.ortId):null;
   return `${ecKennzahlen(pr)}<div class="ec-karten">
     <section class="card"><h3>Auftrag</h3><div class="ec-ortz">${icon("ort")}<div><b>${esc(o.kunde?o.kunde.name:"Kein Kunde")}</b><span>${esc(o.standort?[o.standort.name,adrText(o.standort)].filter(Boolean).join(" · "):(o.name||""))}</span></div></div>
       <div class="ec-fg">${ecFeld(pr,"auftragsnr","Auftragsnummer",pr.auftragsnr)}<div class="reihe2">${ecFeld(pr,"datum","Prüfdatum",pr.datum,{type:"date"})}${ecFeld(pr,"pruefer","Prüfer",pr.pruefer)}</div>
       ${ecPrueferListe().length&&!zu?`<div class="chips ec-wahl">${ecPrueferListe().map(m=>`<button type="button" class="chip" data-act="ecPruefer" data-n="${esc(m.name)}" aria-pressed="${m.name===pr.pruefer}">${esc(m.name)}</button>`).join("")}</div>`:""}
-      ${ecFeld(pr,"bez","Bezeichnung (optional)",pr.bez,{ph:an?"z. B. Einfamilienhaus, Erweiterung Küche":"z. B. Büro und Werkstatt"})}</div></section>
+      ${ecFeld(pr,"bez","Bezeichnung (optional)",pr.bez,{ph:an?"z. B. Einfamilienhaus, Erweiterung Küche":nz?"z. B. Neubau Büro, Erweiterung 2. OG":"z. B. Büro und Werkstatt"})}</div></section>
     <section class="card"><h3>Messgerät</h3>${!zu&&MG.length?`<div class="chips ec-mg">${MG.map(m=>`<button type="button" class="chip" data-act="ecMg" data-id="${esc(m.id)}" aria-pressed="${G.mgId===m.id}">${esc(ecMgLabel(m))}${m.sn?` · ${esc(m.sn)}`:""}</button>`).join("")}</div>`:""}
       <div class="ec-fg">${ecFeld(pr,"geraet.mess","Messgerät",G.mess)}<div class="reihe2">${ecFeld(pr,"geraet.sn","Seriennummer",G.sn)}${ecFeld(pr,"geraet.kal","Kalibriert bis",G.kal,{ph:"z. B. 03/2027"})}</div></div>
-      ${MG.length?"":`<p class="meta">Messgeräte werden in der Übersicht unter „Geräte“ gepflegt und erscheinen dann hier zur Auswahl.</p>`}</section>
-    <section class="card"><h3>Prüfung</h3><div class="ec-fg">${ecWahlSel(pr,"pruefart","Prüfart",pr.pruefart,an?EC_PRUEFART:["Wiederholungsprüfung","Erstprüfung"])}
+      ${MG.length?"":`<p class="meta">Messgeräte werden in der Übersicht unter „Geräte“ gepflegt und erscheinen dann hier zur Auswahl${nz?" – beim Netzwerktester als Einsatz „Netzwerk“ wählen":""}.</p>`}</section>
+    ${nz?`<section class="card"><h3>Prüfung</h3><div class="ec-fg">${ecWahlSel(pr,"pruefart","Prüfart",pr.pruefart,["Abnahme","Wiederholungsprüfung","Fehlersuche"])}${ecFeld(pr,"kabel","Verkabelung",pr.kabel,{ph:"z. B. Cat 7 Verlegekabel, Cat 6A Module"})}</div>
+      <p class="meta">Übertragungsprüfung (Qualifizierung) nach IEEE 802.3. Das ist keine Zertifizierung nach DIN EN 50173 – dafür braucht es ein Zertifizierungs-Messgerät.</p></section>
+    <section class="card"><h3>Prüfumfang</h3>${g.schraenke.length?`<div class="lbl">Welche Netzwerkschränke werden heute geprüft?</div><div class="chips ec-wahl">${g.schraenke.map(s=>`<button type="button" class="chip" data-act="ecUmfangS" data-id="${esc(s.id)}" aria-pressed="${ecNetImUmfang(pr,{sId:s.id})}" ${zu?"disabled":""}>${esc(s.name)}</button>`).join("")}</div>`:`<p class="meta">Netzwerkschränke legst du im nächsten Schritt „Gebäude“ an – dann kannst du hier wählen, welche heute geprüft werden.</p>`}
+      <div class="ec-fg" style="margin-top:12px"><div class="tf fl"><textarea id="f_ec_umfangText" data-ec="umfangText" placeholder="${esc(ecNetUmfangAuto(pr,g))}" ${zu?"disabled":""}>${esc(pr.umfangText||"")}</textarea><label for="f_ec_umfangText">Text im Protokoll (leer = automatisch)</label></div></div></section>`:""}
+    ${nz?"":`<section class="card"><h3>Prüfung</h3><div class="ec-fg">${ecWahlSel(pr,"pruefart","Prüfart",pr.pruefart,an?EC_PRUEFART:["Wiederholungsprüfung","Erstprüfung"])}
       ${an?`<div class="lbl" style="margin-top:4px">Netzform</div>${seg("ecNetz",N.form||"TN-C-S",[["TN-C-S","TN-C-S"],["TN-S","TN-S"],["TT","TT"]])}${ecFeld(pr,"netz.hak","Hausanschluss (z. B. 63 A)",N.hak)}`:""}</div>
-      <p class="meta">${an?"Nach DIN VDE 0100-600 (Erstprüfung) bzw. DIN VDE 0105-100 (Wiederholungsprüfung).":"Nach DIN VDE 0701-0702 und DGUV Vorschrift 3."}</p></section>
+      <p class="meta">${an?"Nach DIN VDE 0100-600 (Erstprüfung) bzw. DIN VDE 0105-100 (Wiederholungsprüfung).":"Nach DIN VDE 0701-0702 und DGUV Vorschrift 3."}</p></section>`}
     ${an?`<section class="card"><h3>Prüfumfang</h3>${g.verteiler.length?`<div class="lbl">Welche Verteiler werden heute geprüft?</div><div class="chips ec-wahl">${g.verteiler.map(v=>`<button type="button" class="chip" data-act="ecUmfangV" data-id="${esc(v.id)}" aria-pressed="${ecImUmfang(pr,{vId:v.id})}" ${zu?"disabled":""}>${esc(v.name)}</button>`).join("")}</div>`:`<p class="meta">Verteiler legst du im nächsten Schritt „Gebäude“ an – dann kannst du hier wählen, welche heute geprüft werden.</p>`}
       <div class="ec-fg" style="margin-top:12px"><div class="tf fl"><textarea id="f_ec_umfangText" data-ec="umfangText" placeholder="${esc(ecUmfangAuto(pr,g))}" ${zu?"disabled":""}>${esc(pr.umfangText||"")}</textarea><label for="f_ec_umfangText">Text im Protokoll (leer = automatisch)</label></div></div></section>`:""}
-  </div>${ecWeiter(an?"gebaeude":"geraete",an?"Weiter zum Gebäude":"Weiter zu den Geräten")}`; }
+  </div>${ecWeiter(an||nz?"gebaeude":"geraete",an||nz?"Weiter zum Gebäude":"Weiter zu den Geräten")}`; }
 
 /* Gebäude: Etagen und Räume links, Verteiler mit RCDs und Stromkreisen rechts */
-function ecGebView(pr){ const g=ecGeb(pr.ortId), et=g.etagen.find(e=>e.id===nav.et)||ecEtStd(g);
-  const raum=r=>{ const P=ecRaumPunkte(g,r.id), S=[...new Set(P.map(p=>p.st.skId).filter(Boolean))].map(id=>g.stromkreise.find(s=>s.id===id)).filter(Boolean).sort(ecNr), ohne=P.some(p=>!p.st.skId);
+function ecGebView(pr){ const g=ecGeb(pr.ortId), et=g.etagen.find(e=>e.id===nav.et)||ecEtStd(g), nz=ecNz(pr);
+  const raum=r=>{ if(nz) return ecNetRaumKachel(pr,g,r); const P=ecRaumPunkte(g,r.id), S=[...new Set(P.map(p=>p.st.skId).filter(Boolean))].map(id=>g.stromkreise.find(s=>s.id===id)).filter(Boolean).sort(ecNr), ohne=P.some(p=>!p.st.skId);
     const st=P.filter(p=>ecPflicht(p.st)).map(p=>ecPunktStand(pr,g,p)), n=st.filter(x=>x!=="open").length, bad=st.filter(x=>x==="bad").length;
     return `<button class="ec-raum" data-act="ecRaum" data-id="${esc(r.id)}"><b>${esc(r.name)}</b><small>${P.length} Messpunkt${P.length===1?"":"e"}${S.length?` · ${esc(S.map(s=>s.nr||"?").join(", "))}`:""}</small>
       <span class="ec-rst">${!P.length?pill("open","noch leer"):bad?pill("bad",`${bad} Mangel`):ohne?pill("wip","Stromkreis fehlt"):n===st.length&&st.length?pill("ok","gemessen"):pill(n?"wip":"open",n?`${n} von ${st.length} gemessen`:"offen")}</span></button>`; };
@@ -258,10 +272,10 @@ function ecGebView(pr){ const g=ecGeb(pr.ortId), et=g.etagen.find(e=>e.id===nav.
     <div class="ec-zwei"><div>${kdKopf(`Räume im ${esc(et?et.name:"")}`,et&&"ecRaumNeu","Raum hinzufügen")}
       ${et&&et.raeume.length?`<div class="ec-raster">${et.raeume.map(raum).join("")}</div>`:`<p class="meta">Noch keine Räume. Mit + anlegen – z. B. Küche, Bad, Flur, Hausanschlussraum.</p>`}
       ${et&&pr.status!=="fertig"?`<button class="btn-text ec-etedit" data-act="ecEtEdit" data-id="${esc(et.id)}">${icon("edit")}Etage „${esc(et.name)}“ umbenennen oder löschen</button>`:""}</div>
-    <div>${kdKopf("Verteiler","ecVtNeu","Verteiler hinzufügen")}${g.verteiler.length?g.verteiler.map(vt).join(""):`<p class="meta">Noch kein Verteiler. Am besten zuerst den Verteiler mit seinen RCDs und Stromkreisen anlegen, dann durch die Räume gehen.</p>`}
-      ${ohneV.length?`<div class="ec-vt"><div class="ec-vz kopf"><span class="t"><b>Ohne Verteiler</b></span></div>${ohneV.map(skZeile).join("")}</div>`:""}</div></div>
-    <p class="hint">Raum antippen, um Steckdosen und andere Anschlusspunkte in Laufreihenfolge anzulegen (Vorschlag: ab der Tür im Uhrzeigersinn). Alles bleibt für die nächste Prüfung erhalten.</p>
-    ${ecWeiter("sicht","Weiter zur Besichtigung")}`; }
+    <div>${nz?ecNetSchrankSpalte(pr,g):`${kdKopf("Verteiler","ecVtNeu","Verteiler hinzufügen")}${g.verteiler.length?g.verteiler.map(vt).join(""):`<p class="meta">Noch kein Verteiler. Am besten zuerst den Verteiler mit seinen RCDs und Stromkreisen anlegen, dann durch die Räume gehen.</p>`}
+      ${ohneV.length?`<div class="ec-vt"><div class="ec-vz kopf"><span class="t"><b>Ohne Verteiler</b></span></div>${ohneV.map(skZeile).join("")}</div>`:""}`}</div></div>
+    <p class="hint">${nz?"Raum antippen, um Datendosen in Laufreihenfolge anzulegen und jedem Port seinen Patchport zuzuordnen. Räume und Etagen teilt sich die Netzwerkprüfung mit der Installationsprüfung; alles bleibt für die nächste Prüfung erhalten.":"Raum antippen, um Steckdosen und andere Anschlusspunkte in Laufreihenfolge anzulegen (Vorschlag: ab der Tür im Uhrzeigersinn). Alles bleibt für die nächste Prüfung erhalten."}</p>
+    ${nz?ecWeiter("messen","Weiter zum Messen"):ecWeiter("sicht","Weiter zur Besichtigung")}`; }
 /* Besichtigung */
 function ecSichtView(pr){ const S=pr.sicht||{}, tri=(k)=>`<span class="ec-tri">${[["ok","i. O."],["nok","n. i. O."],["na","entfällt"]].map(([v,t])=>`<button data-act="ecSicht" data-k="${k}" data-v="${v}" aria-pressed="${S[k]===v}" class="${v}">${t}</button>`).join("")}</span>`;
   return `<div class="sec-row"><div class="sec-lbl">Besichtigen nach DIN VDE 0100-600</div><button class="btn-text" data-act="ecSichtAlle">Übrige i. O.</button></div>
@@ -303,14 +317,14 @@ function ecGerListe(pr){ const B=ecGeraeteAm(pr.ortId);
       <span class="s">${esc([b.typ,b.inv&&`Inv. ${b.inv}`,`SK ${b.sk||"I"}`,b.raum,w.ng?`nicht geprüft: ${w.ng}`:b.naechste&&`fällig ${ecDatum(b.naechste)}`].filter(Boolean).join(" · "))}</span></span>${ecPill(st==="ng"?"ng":st)}</div>`; }))
     :`<p class="meta">Noch keine Geräte an diesem Ort. Mit + anlegen – z. B. Bohrmaschine, Kaffeemaschine, Verlängerung.</p>`)+ecWeiter("abschluss","Weiter zum Abschluss"); }
 /* Abschluss */
-function ecAbschlussView(pr){ const an=ecAn(pr), F=ecFehlt(pr), zu=pr.status==="fertig";
+function ecAbschlussView(pr){ const an=ecAn(pr), nz=ecNz(pr), F=ecFehlt(pr), zu=pr.status==="fertig";
   if(F.length&&!zu) return `<div class="ec-gesperrt">${icon("lock")}<h2>Abschluss noch nicht möglich</h2><p>Es fehlen noch:</p><ul>${F.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
-    <div class="ec-knoepfe">${an?`<button class="btn-tonal" data-act="ecTab" data-v="sicht">Zur Besichtigung</button><button class="btn-tonal" data-act="ecTab" data-v="messen">Zum Messen</button>`:`<button class="btn-tonal" data-act="ecTab" data-v="geraete">Zu den Geräten</button>`}</div>
-    <p class="meta">Ein Stromkreis, der nicht gemessen werden kann, lässt sich beim Messen als „nicht gemessen“ mit Grund markieren.</p></div>`;
+    <div class="ec-knoepfe">${nz?`<button class="btn-tonal" data-act="ecTab" data-v="messen">Zum Messen</button>`:an?`<button class="btn-tonal" data-act="ecTab" data-v="sicht">Zur Besichtigung</button><button class="btn-tonal" data-act="ecTab" data-v="messen">Zum Messen</button>`:`<button class="btn-tonal" data-act="ecTab" data-v="geraete">Zu den Geräten</button>`}</div>
+    <p class="meta">${nz?"Ein Link, der nicht gemessen werden kann, lässt sich beim Messen als „nicht gemessen“ mit Grund markieren.":`Ein Stromkreis, der nicht gemessen werden kann, lässt sich beim Messen als „nicht gemessen“ mit Grund markieren.`}</p></div>`;
   const erg=ecErgebnis(pr), fr=an?[12,24,48]:[6,12,24];
   return `${ecKennzahlen(pr)}<div class="sec-row"><div class="sec-lbl">Mängel / Maßnahmen</div>${zu?"":`<button class="btn-text" data-act="ecMaengelAuto">Gefundene Mängel übernehmen</button>`}</div>
     <div class="ec-fg"><div class="tf${pr.maengel?" fl":""}"><textarea id="f_ec_maengel" data-ec="maengel" placeholder=" " ${zu?"disabled":""}>${esc(pr.maengel||"")}</textarea><label for="f_ec_maengel">Mängel und Maßnahmen</label></div></div>
-    <div class="sec-lbl">Nächste Prüfung</div>${seg("ecFrist",String(pr.fristM||fr[1]),fr.map(m=>[String(m),m%12?`${m} Monate`:`${m/12} Jahr${m>12?"e":""}`]))}<p class="meta">Empfohlen bis ${esc(ecDatum(ecPlus(pr.datum,pr.fristM||fr[1])))} – die Frist legt der Betreiber fest.</p>
+    ${nz?"":`<div class="sec-lbl">Nächste Prüfung</div>`}${nz?"":seg("ecFrist",String(pr.fristM||fr[1]),fr.map(m=>[String(m),m%12?`${m} Monate`:`${m/12} Jahr${m>12?"e":""}`]))}${nz?"":`<p class="meta">Empfohlen bis ${esc(ecDatum(ecPlus(pr.datum,pr.fristM||fr[1])))} – die Frist legt der Betreiber fest.</p>`}
     <div class="ec-erg ${erg}"><span>${erg==="ok"?"Keine Mängel festgestellt.":erg==="bad"?"Mängel festgestellt – Beseitigung erforderlich.":"Prüfung noch nicht vollständig."}</span>${ecPill(erg)}</div>
     <div class="ec-knoepfe"><button class="btn-filled" data-act="ecPdf">${icon("pdf")}PDF erstellen</button>${zu?`<button class="btn-tonal" data-act="ecAuf">Wieder öffnen</button>`:`<button class="btn-tonal" data-act="ecFertig">${icon("done")}Prüfung abschließen</button>`}
       ${canEdit(pr)&&!zu?`<span style="flex:1"></span><button class="btn-text danger" data-act="ecDelAsk">Prüfung löschen</button>`:""}</div>`; }
@@ -329,7 +343,7 @@ function ecEtDlg(et){ const pr=ecPr(), g=ecGeb(pr.ortId); ecDlg={et:et?et.id:nul
     `${et?`<button class="btn-text danger" data-act="ecEtDel">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecEtOk">Speichern</button>`,{breit:true}); }
 function ecNameDlg(t,wert,act,del,extra){ dialog(t,`<div class="fg1">${tf("ecName","Bezeichnung",wert||"",{form:true})}${extra||""}</div>`,`${del?`<button class="btn-text danger" data-act="${del}">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="${act}">Speichern</button>`); }
 /* Raum: Anschlusspunkte in Laufreihenfolge */
-function ecRaumDlg(raumId){ const pr=ecPr(), g=ecGeb(pr.ortId), zu=pr.status==="fertig", name=ecRaumName(g,raumId); if(!name) return; ecDlg={raumDlg:raumId};
+function ecRaumDlg(raumId){ if(ecNz(ecPr())) return ecNetRaumDlg(raumId); const pr=ecPr(), g=ecGeb(pr.ortId), zu=pr.status==="fertig", name=ecRaumName(g,raumId); if(!name) return; ecDlg={raumDlg:raumId};
   const S=g.stellen.filter(s=>s.raumId===raumId).sort((a,b)=>(a.ord||0)-(b.ord||0));
   dialog(name,S.length?`<div class="list ec-stl">${S.map((st,k)=>{ const sk=st.skId&&g.stromkreise.find(s=>s.id===st.skId), n=st.art==="sd"?+st.fach||1:1;
       return `<div class="ec-st"><span class="nr">${k+1}${n>1?`<small>.1–.${n}</small>`:""}</span><button type="button" class="ec-st-t" data-act="ecStelle" data-id="${esc(st.id)}" ${zu?"disabled":""}><b>${esc(ecStName(st))}${st.lage?` · ${esc(st.lage)}`:""}</b><small>${sk?esc(ecSkName(sk)+(sk.schutz?" · "+sk.schutz:"")):'<span class="rot">noch keinem Stromkreis zugeordnet</span>'}</small></button>
@@ -439,9 +453,128 @@ function ecMaengelText(pr){ const L=[];
       if(T.length) L.push(`${ecSkName(sk)}: ${T.join("; ")}.`);
       const r=ecRcdVon(g,sk); if(r&&!rcdGemeldet.has(r.id)&&ecRcdStand(pr,r)==="bad"){ rcdGemeldet.add(r.id); const rw=ecW(pr,r.id);
         L.push(`${ecRcdName(r)} (${ecVtName(g,r.vId)}): ${["t1","t5","idelta","ub"].filter(k=>ecWertStand(EC_F[k].gw(r),rw[k])==="bad").map(k=>`${EC_F[k].kurz} ${rw[k]} ${EC_F[k].e} (Grenzwert ${EC_F[k].gw(r).txt})`).join("; ")}.`); } }); }
+  else if(ecNz(pr)) L.push(...ecNetMaengel(pr,ecGeb(pr.ortId)));
   else ecGeraeteAm(pr.ortId).forEach(b=>{ const w=ecW(pr,b.id), sk=b.sk||"I", f=(EC_GSK[sk]||[]).filter(k=>ecWertStand(EC_GW[k].gw(sk),w[k])==="bad");
     if(!w.ng&&(f.length||w.sicht==="nok"||w.funktion==="nok"||w.mangel)) L.push(`${b.bez||"Gerät"}${b.inv?` (Inv. ${b.inv})`:""}: ${[w.sicht==="nok"&&"Sichtprüfung nicht in Ordnung",...f.map(k=>`${EC_GW[k].kurz} ${w[k]} ${EC_GW[k].e}`),w.funktion==="nok"&&"Funktion nicht in Ordnung",w.mangel].filter(Boolean).join("; ")}.`); });
   return L.join("\n"); }
+
+/* ---- Netzwerkprüfung (Datenverkabelung, z. B. mit dem Trend Networks SignalTEK CT) ----
+   Gebäude wie bei der Installation (Etagen, Räume); dazu
+     schraenke:[{id,name,raumId}]  Netzwerkschrank / Patchfeld
+     dosen:[{id,raumId,ord,ports,lage,sId,pp:{"1":"A01","2":"A02"}}]  Datendose mit 1–4 Ports, je Port der Patchport im Schrank
+   Ein Link ist „<Dose>.<Port>“ (Nummer im Raum wie bei Steckdosen: 1, 2.1, 2.2 …).
+   Werte je Link: wm (Belegung ok|nok), wmF (Fehlerbild), len (m), v10/v100/v1g (ok|nok), poe (ok|nok|na), poeW, ng, mangel.
+   Qualifizierung (Übertragungsprüfung), keine Zertifizierung nach DIN EN 50173 / ISO/IEC 11801 – so steht es auch im Protokoll. */
+const EC_NLAGE=["Eingang","neben Tür","Schreibtisch","TV","Decke (WLAN-AP)","Boden","Außen"];
+const EC_NV=[["v10","10 Mbit/s"],["v100","100 Mbit/s"],["v1g","1 Gbit/s"]];
+const EC_NLEN={max:100,txt:"≤ 100 m (Channel, IEEE 802.3)"};
+const ecNz=pr=>pr&&pr.art==="netz";
+const ecSchrName=(g,id)=>(g.schraenke.find(s=>s.id===id)||{}).name||"";
+const ecNetImUmfang=(pr,d)=>!(pr.umfang&&pr.umfang.sIds)||!d||!d.sId||pr.umfang.sIds.includes(d.sId);
+function ecNetPunkte(g,raumId){ const D=g.dosen.filter(d=>d.raumId===raumId).sort((a,b)=>(a.ord||0)-(b.ord||0)), P=[];
+  D.forEach((d,k)=>{ const n=Math.max(1,+d.ports||1); for(let i=1;i<=n;i++) P.push({id:`${d.id}.${i}`,nr:n>1?`${k+1}.${i}`:`${k+1}`,d,i,raumId,pp:((d.pp||{})[i]||"").trim()}); }); return P; }
+const ecNetAlle=g=>ecRaeume(g).flatMap(r=>ecNetPunkte(g,r.id));
+/* Reihenfolge beim Messen: je Schrank nach Patchport (so steckt man um), danach Links ohne Schrank in Raumfolge */
+function ecNetListe(pr,g){ const A=ecNetAlle(g).filter(p=>ecNetImUmfang(pr,p.d)), L=[];
+  [...g.schraenke.map(s=>s.id),""].forEach(sId=>{ const T=A.filter(p=>sId?p.d.sId===sId:(!p.d.sId||!g.schraenke.some(s=>s.id===p.d.sId)));
+    if(sId) T.sort((a,b)=>(a.pp?0:1)-(b.pp?0:1)||a.pp.localeCompare(b.pp,"de",{numeric:true})); L.push(...T); }); return L; }
+const ecDoseName=d=>`${(+d.ports||1)>1?`${d.ports}-Port-`:""}Datendose`;
+const ecLinkName=(g,p)=>`${ecRaumName(g,p.raumId)} ${p.nr}${p.pp?` · Port ${p.pp}`:""}`;
+function ecNetStand(pr,p){ const w=ecW(pr,p.id); if(w.ng) return "ng";
+  const tests=[w.wm,...EC_NV.map(x=>w[x[0]]),w.poe], lenSt=ecWertStand(EC_NLEN,w.len);
+  if(tests.includes("nok")||lenSt==="bad"||String(w.mangel||"").trim()) return "bad";
+  if(w.wm==="ok"&&EC_NV.some(x=>w[x[0]]==="ok")) return "ok";
+  return tests.some(Boolean)||w.len?"wip":"open"; }
+const ecNetV=w=>{ const b=[...EC_NV].reverse().find(x=>w[x[0]]); return b?{t:b[1].replace(" Mbit/s"," M").replace(" Gbit/s"," G"),st:EC_NV.some(x=>w[x[0]]==="nok")?"bad":"ok"}:null; };
+function ecNetMaengel(pr,g){ const L=[];
+  ecNetListe(pr,g).forEach(p=>{ const w=ecW(pr,p.id); if(w.ng) return; const T=[];
+    if(w.wm==="nok") T.push(`Belegung nicht in Ordnung${w.wmF?` (${w.wmF})`:""}`);
+    if(ecWertStand(EC_NLEN,w.len)==="bad") T.push(`Länge ${w.len} m (Grenzwert ${EC_NLEN.txt})`);
+    EC_NV.forEach(([k,t])=>{ if(w[k]==="nok") T.push(`Übertragung ${t} nicht bestanden`); });
+    if(w.poe==="nok") T.push("PoE-Lasttest nicht bestanden"); if(w.mangel) T.push(w.mangel);
+    if(T.length) L.push(`${ecLinkName(g,p)}: ${T.join("; ")}.`); }); return L; }
+const ecNetUmfangAuto=(pr,g)=>{ const S=g.schraenke.filter(s=>ecNetImUmfang(pr,{sId:s.id})), aus=g.schraenke.filter(s=>!ecNetImUmfang(pr,{sId:s.id}));
+  return `Übertragungsprüfung (Qualifizierung) der Datenverkabelung zwischen Patchfeld und Datendose: Belegung, Länge und Übertragung nach IEEE 802.3 (Ethernet 10/100/1000 Mbit/s), bei Bedarf PoE unter Last${S.length?`. Netzwerkschränke: ${S.map(s=>s.name).join(", ")}`:""}.${aus.length?` Nicht Bestandteil dieser Prüfung: ${aus.map(s=>s.name).join(", ")}.`:""} Keine Zertifizierung nach DIN EN 50173 / ISO/IEC 11801.`; };
+
+/* Gebäude: rechte Spalte mit den Netzwerkschränken und ihren Ports */
+function ecNetSchrankSpalte(pr,g){ const A=ecNetAlle(g), zu=pr.status==="fertig";
+  const zeile=p=>`<div class="ec-vz sk" role="button" tabindex="0" data-act="ecDose" data-id="${esc(p.d.id)}"><span class="nr">${esc(p.pp||"–")}</span><span class="t">${esc(ecRaumName(g,p.raumId))} ${esc(p.nr)}<small>${esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · "))}</small></span>${icon("chev")}</div>`;
+  const schr=s=>{ const P=ecNetListe({},g).filter(p=>p.d.sId===s.id), ein=ecNetImUmfang(pr,{sId:s.id});
+    return `<div class="ec-vt${ein?"":" aus"}"><div class="ec-vz kopf" role="button" tabindex="0" data-act="ecSchrEdit" data-id="${esc(s.id)}"><span class="av ec-uv">${icon("ecNetz")}</span><span class="t"><b>${esc(s.name)}</b><small>${esc([ecRaumName(g,s.raumId),`${P.length} Port${P.length===1?"":"s"} belegt`,ein?"":"nicht im Prüfumfang"].filter(Boolean).join(" · "))}</small></span>${icon("edit")}</div>${P.map(zeile).join("")}</div>`; };
+  const ohne=A.filter(p=>!p.d.sId||!g.schraenke.some(s=>s.id===p.d.sId));
+  return `${kdKopf("Netzwerkschränke",zu?"":"ecSchrNeu","Schrank hinzufügen")}${g.schraenke.length?g.schraenke.map(schr).join(""):`<p class="meta">Noch kein Netzwerkschrank. Am besten zuerst den Schrank anlegen, dann durch die Räume gehen und jede Datendose ihrem Patchport zuordnen.</p>`}
+    ${ohne.length?`<div class="ec-vt"><div class="ec-vz kopf"><span class="t"><b>Ohne Schrank</b></span></div>${ohne.map(zeile).join("")}</div>`:""}`; }
+function ecNetRaumKachel(pr,g,r){ const P=ecNetPunkte(g,r.id), st=P.map(p=>ecNetStand(pr,p)), n=st.filter(x=>x!=="open"&&x!=="wip").length, bad=st.filter(x=>x==="bad").length, D=g.dosen.filter(d=>d.raumId===r.id).length;
+  return `<button class="ec-raum" data-act="ecRaum" data-id="${esc(r.id)}"><b>${esc(r.name)}</b><small>${D} Dose${D===1?"":"n"} · ${P.length} Port${P.length===1?"":"s"}</small>
+    <span class="ec-rst">${!P.length?pill("open","noch leer"):bad?pill("bad",`${bad} Mangel`):n===P.length?pill("ok","gemessen"):pill(n?"wip":"open",n?`${n} von ${P.length} gemessen`:"offen")}</span></button>`; }
+
+/* Raum: Datendosen in Laufreihenfolge */
+function ecNetRaumDlg(raumId){ const pr=ecPr(), g=ecGeb(pr.ortId), zu=pr.status==="fertig", name=ecRaumName(g,raumId); if(!name) return; ecDlg={raumDlg:raumId};
+  const D=g.dosen.filter(d=>d.raumId===raumId).sort((a,b)=>(a.ord||0)-(b.ord||0));
+  dialog(name,D.length?`<div class="list ec-stl">${D.map((d,k)=>{ const n=+d.ports||1, pp=Array.from({length:n},(_,i)=>((d.pp||{})[i+1]||"").trim()), s=ecSchrName(g,d.sId);
+      return `<div class="ec-st"><span class="nr">${k+1}${n>1?`<small>.1–.${n}</small>`:""}</span><button type="button" class="ec-st-t" data-act="ecDose" data-id="${esc(d.id)}" ${zu?"disabled":""}><b>${esc(ecDoseName(d))}${d.lage?` · ${esc(d.lage)}`:""}</b><small>${s||pp.some(Boolean)?esc([s,pp.some(Boolean)&&`Port ${pp.map(x=>x||"?").join(", ")}`].filter(Boolean).join(" · ")):'<span class="rot">noch keinem Patchport zugeordnet</span>'}</small></button>
+        ${zu?"":`<span class="ec-ord"><button type="button" data-act="ecDoseOrd" data-id="${esc(d.id)}" data-d="-1" ${k?"":"disabled"} aria-label="nach vorn">${icon("chev")}</button><button type="button" class="ab" data-act="ecDoseOrd" data-id="${esc(d.id)}" data-d="1" ${k<D.length-1?"":"disabled"} aria-label="nach hinten">${icon("chev")}</button></span>`}</div>`; }).join("")}</div>
+      <p class="meta" style="margin:10px 4px 0">Reihenfolge = Nummerierung im Protokoll. Vorschlag: ab der Tür im Uhrzeigersinn.</p>`
+      :`<p class="meta">Noch keine Datendosen. Leg sie in der Reihenfolge an, in der du durch den Raum gehst, und trag den Port im Patchfeld ein.</p>`,
+    `${zu?"":`<button class="btn-text" data-act="ecRaumEdit" data-id="${esc(raumId)}">Umbenennen</button>`}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>${zu?"":`<button class="btn-text" data-act="ecDoseNeu" data-id="${esc(raumId)}">Datendose</button>`}`,{breit:true}); }
+let ecLetzterSchr="";
+function ecDoseDlg(dId,raumId){ const pr=ecPr(), g=ecGeb(pr.ortId), d=dId&&g.dosen.find(x=>x.id===dId), v=d||{ports:2,lage:"",sId:g.schraenke.some(s=>s.id===ecLetzterSchr)?ecLetzterSchr:(g.schraenke.length===1?g.schraenke[0].id:""),pp:{}};
+  ecDlg={dose:dId||null,raumId:d?d.raumId:raumId,w:{ports:String(v.ports||1),anz:"1"}};
+  const n=+v.ports||1;
+  dialog(d?"Datendose bearbeiten":`Neu in ${ecRaumName(g,ecDlg.raumId)}`,`<div class="lbl">Ports an der Dose</div>${ecChips("ports",[["1","1 Port"],["2","2 Ports"],["3","3 Ports"],["4","4 Ports"]],String(n))}
+    ${d?"":`<div class="lbl" style="margin-top:12px">Wie oft gleich anlegen</div>${ecChips("anz",[["1","1×"],["2","2×"],["3","3×"],["4","4×"],["5","5×"],["6","6×"]],"1")}`}
+    <div class="fg1" style="margin-top:16px">${sf("ecSchr","Netzwerkschrank",v.sId||"",[["","– noch offen –"],...g.schraenke.map(s=>[s.id,s.name])],{form:true})}
+      <div class="ec-pp">${[1,2,3,4].map(i=>`<div data-pp="${i}" ${i>n?"hidden":""}>${tf("pp"+i,`Patchport für Port ${i}`,((v.pp||{})[i])||"",{form:true,ph:i===1?"z. B. A01":""})}</div>`).join("")}</div>
+      ${tf("ecLage","Lage (optional)",v.lage||"",{form:true,ph:"z. B. Schreibtisch"})}</div>
+    ${ecChips("nlage",EC_NLAGE.map(x=>[x,x]),"")}
+    <p class="meta" style="margin-top:8px">${d?"":"Nur den ersten Patchport eintragen genügt: die übrigen Ports und Dosen zählt die App weiter (A01 → A02 → A03 …). "}${g.schraenke.length?"":"Netzwerkschränke legst du unter „Gebäude“ rechts an – zuordnen geht auch später."}</p>`,
+    `${d?`<button class="btn-text danger" data-act="ecDoseDel">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="ecZumRaum">Abbrechen</button><button class="btn-text" data-act="ecDoseOk">Speichern</button>`,{breit:true}); }
+/* „A01“ → „A02“, „1-12“ → „1-13“; ohne Zahl am Ende bleibt es leer */
+const ecPpPlus=(s,k)=>{ const m=String(s||"").match(/^(.*?)(\d+)$/); if(!m) return ""; const z=String(+m[2]+k); return m[1]+(m[2].length>z.length?z.padStart(m[2].length,"0"):z); };
+
+/* Messen */
+function ecNetMessView(pr){ const g=ecGeb(pr.ortId), L=ecNetListe(pr,g), fertig=L.filter(p=>!["open","wip"].includes(ecNetStand(pr,p))).length;
+  let h=`<p class="meta">${fertig} von ${L.length} Links fertig</p>`;
+  if(!L.length) return h+`<p class="meta">Noch nichts zu messen. Unter „Gebäude“ einen Netzwerkschrank anlegen und in den Räumen die Datendosen.</p>`+ecWeiter("abschluss","Weiter zum Abschluss");
+  const zeile=p=>{ const w=ecW(pr,p.id), st=ecNetStand(pr,p), v=ecNetV(w);
+    return `<div class="ec-sk" role="button" tabindex="0" data-act="ecNetMess" data-id="${esc(p.id)}"><span class="nr">${esc(p.pp||"–")}</span><span class="bz">${esc(ecRaumName(g,p.raumId))} ${esc(p.nr)}<small>${esc(w.ng?`nicht gemessen: ${w.ng}`:[ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · "))}</small></span>
+      <span class="sz"><span class="lbm">Belegung </span>${w.wm==="ok"?"i. O.":w.wm==="nok"?'<b class="rot">Fehler</b>':"–"}${w.wm==="nok"&&w.wmF?`<small>${esc(w.wmF)}</small>`:""}</span>${ecMw(w.len,"m",ecWertStand(EC_NLEN,w.len),"Länge")}${ecMw(v?v.t:"","",v?v.st:"","Übertr.")}${ecMw(w.poe&&w.poe!=="na"?(w.poe==="ok"?"i. O.":"Fehler"):w.poe==="na"?"entf.":"","",w.poe==="ok"?"ok":w.poe==="nok"?"bad":"","PoE")}<span class="er">${ecPill(st)}</span></div>`; };
+  h+=`<div class="list ec-tab"><div class="ec-sk h"><span>Port</span><span>Datendose</span><span>Belegung</span><span>Länge</span><span>Übertragung</span><span>PoE</span><span>Ergebnis</span></div>`;
+  [...g.schraenke,{id:"",name:"Ohne Schrank"}].forEach(s=>{ const T=L.filter(p=>s.id?p.d.sId===s.id:(!p.d.sId||!g.schraenke.some(x=>x.id===p.d.sId))); if(!T.length) return;
+    h+=`<div class="ec-rk">${esc(s.name)}</div>${T.map(zeile).join("")}`; });
+  return h+`</div><p class="hint">Link antippen: Belegung, Länge, Übertragung und PoE eintragen. „Weiter“ springt zum nächsten Port im Schrank.</p>`+ecWeiter("abschluss","Weiter zum Abschluss"); }
+function ecNetMessDlg(id){ const pr=ecPr(), g=ecGeb(pr.ortId), L=ecNetListe(pr,g), i=L.findIndex(p=>p.id===id), p=L[i]||ecNetAlle(g).find(x=>x.id===id); if(!p) return; ecDlg={netMess:p.id};
+  const w=ecW(pr,p.id), zu=pr.status==="fertig", vor=L[i-1], nach=L[i+1], lenSt=ecWertStand(EC_NLEN,w.len);
+  const tri=(k,l,na)=>`<div class="ec-sz"><span>${l}</span><span class="ec-tri">${[["ok","i. O."],["nok","n. i. O."],...(na?[["na","entfällt"]]:[])].map(([v,t])=>`<button type="button" data-act="ecNetTri" data-k="${k}" data-v="${v}" aria-pressed="${w[k]===v}" class="${v}" ${zu?"disabled":""}>${t}</button>`).join("")}</span></div>`;
+  dialog(`${p.pp?`Port ${p.pp} · `:""}${ecRaumName(g,p.raumId)} ${p.nr}`,`<p class="ec-sub">${esc([ecSchrName(g,p.d.sId)||"ohne Schrank",ecDoseName(p.d)+((+p.d.ports||1)>1?` (Port ${p.i})`:""),p.d.lage].filter(Boolean).join(" · "))}</p>
+    ${zu?"":`<div class="ec-tipp">${icon("info")}<span>Am SignalTEK CT: Hauptgerät an den Patchport, Remote an die Datendose. Kabeltest für Belegung und Länge, danach der Übertragungstest. PoE nur, wenn an der Dose ein PoE-Gerät hängt.</span></div>`}
+    <div id="ecNgZeile" ${w.ng?"":"hidden"}><div class="tf fl"><input id="m_ng" data-nw="ng" value="${esc(w.ng||"")}" placeholder="z. B. Raum nicht zugänglich, Dose verbaut" ${zu?"disabled":""}><label for="m_ng">Nicht gemessen – Grund</label></div></div>
+    <div id="ecMessTeil" ${w.ng?"hidden":""}>
+      <div class="list ec-sicht">${tri("wm","Belegung (Wiremap)")}</div>
+      <div class="fg1" style="margin-top:8px">${tf("nwF","Fehlerbild (bei n. i. O.)",w.wmF||"",{form:true,ph:"z. B. Paar 3/6 vertauscht, Ader 7 offen"})}</div>
+      <div class="ec-felder"><div class="ec-feld ${lenSt}"><label for="m_len">Länge</label><span class="ec-ein"><input id="m_len" data-nw="len" inputmode="decimal" value="${esc(w.len||"")}" placeholder="–" autocomplete="off" ${zu?"disabled":""}><span>m</span></span><small class="ec-gw">${esc(EC_NLEN.txt)}</small></div>
+        <div class="ec-feld"><label for="m_poeW">PoE-Last (optional)</label><span class="ec-ein"><input id="m_poeW" data-nw="poeW" inputmode="decimal" value="${esc(w.poeW||"")}" placeholder="–" autocomplete="off" ${zu?"disabled":""}><span>W</span></span><small class="ec-gw">zur Dokumentation</small></div></div>
+      <div class="sec-lbl">Übertragung</div><div class="list ec-sicht">${EC_NV.map(([k,t])=>tri(k,t)).join("")}</div>
+      <div class="sec-lbl">PoE</div><div class="list ec-sicht">${tri("poe","PoE unter Last",true)}</div></div>
+    ${zu?"":`<div class="chips ec-schnell"><button type="button" class="chip" data-act="ecNetAlleOk">Alles i. O.</button><button type="button" class="chip" data-act="ecNg" aria-pressed="${!!w.ng}">Nicht gemessen …</button><button type="button" class="chip" data-act="ecDoseAusMess" data-id="${esc(p.d.id)}">Dose bearbeiten</button></div>`}
+    <div class="tf${w.mangel?" fl":""}"><textarea id="m_mangel" data-nw="mangel" placeholder=" " ${zu?"disabled":""}>${esc(w.mangel||"")}</textarea><label for="m_mangel">Mangel / Bemerkung (optional)</label></div>`,
+    `${vor?`<button class="btn-text" data-act="ecNetGeh" data-d="-1">‹ ${esc(vor.pp||vor.nr)}</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="ecNetGeh" data-d="0">Fertig</button>${nach?`<button class="btn-text" data-act="ecNetGeh" data-d="1">Weiter zu ${esc(nach.pp||nach.nr)} ›</button>`:""}`,{breit:true}); }
+function ecNetLesen(){ const pr=ecPr(); if(!pr||!ecDlg||!ecDlg.netMess||pr.status==="fertig") return; const id=ecDlg.netMess, alt=ecW(pr,id), w={};
+  document.querySelectorAll("#dlg [data-act=ecNetTri][aria-pressed=true]").forEach(b=>w[b.dataset.k]=b.dataset.v);
+  document.querySelectorAll("#dlg [data-nw]").forEach(el=>{ const v=el.value.trim(); if(v) w[el.dataset.nw]=el.dataset.nw==="len"||el.dataset.nw==="poeW"?v.replace(".",","):v; });
+  const f=document.getElementById("f_nwF"); if(f&&f.value.trim()) w.wmF=f.value.trim();
+  if(document.getElementById("ecNgZeile")&&document.getElementById("ecNgZeile").hidden) delete w.ng;
+  pr.werte=pr.werte||{}; if(JSON.stringify(alt)!==JSON.stringify(w)){ if(Object.keys(w).length) pr.werte[id]=w; else delete pr.werte[id]; if(pr.status==="offen") pr.status="laeuft"; saveRec("echecks",pr); } }
+
+/* PDF-Teil */
+function ecNetPdf(pr,S,pl){ const g=ecGeb(pr.ortId), L=ecNetListe(pr,g), t=v=>v==="ok"?"i.O.":v==="nok"?"n.i.O.":v==="na"?"entf.":"-";
+  S.abschnitt("Prüfumfang"); S.text(pr.umfangText||ecNetUmfangAuto(pr,g));
+  S.abschnitt("Links"); const Z=[];
+  [...g.schraenke,{id:"",name:"Ohne Schrank"}].forEach(s=>{ const T=L.filter(p=>s.id?p.d.sId===s.id:(!p.d.sId||!g.schraenke.some(x=>x.id===p.d.sId))); if(!T.length) return; Z.push(s.name);
+    T.forEach(p=>{ const w=ecW(pr,p.id), st=ecNetStand(pr,p);
+      Z.push([p.pp||"-",[`${ecRaumName(g,p.raumId)} ${p.nr}`,p.d.lage,w.ng&&`nicht gemessen: ${w.ng}`].filter(Boolean).join(" - "),w.wm==="nok"?`n.i.O.${w.wmF?": "+w.wmF:""}`:t(w.wm),w.len?w.len+" m":"-",t(w.v10),t(w.v100),t(w.v1g),w.poe==="ok"&&w.poeW?`i.O. ${w.poeW} W`:t(w.poe),st==="ng"?"open|n. gem.":pl(st)]); }); });
+  if(Z.length) S.tabelle(["Port","Datendose (Raum Nr.)","Belegung","Länge","10 M","100 M","1 G","PoE","Ergebnis"],[16,50,24,16,12,14,12,16,22],Z,8); else S.text("Keine Links erfasst.");
+  S.text(`Grenzwerte und Hinweise: Belegung nach T568A/B ohne Vertauschung, Unterbrechung oder Kurzschluss; Länge des Channels <= 100 m; Übertragung nach IEEE 802.3 (10BASE-T, 100BASE-TX, 1000BASE-T) mit dem Messgerät bestanden. Diese Prüfung weist die Übertragungsfähigkeit der Links nach (Qualifizierung). Sie ersetzt keine Zertifizierung (Abnahmemessung mit Kategorie- bzw. Klassengrenzwerten nach DIN EN 50173 / ISO/IEC 11801).`); }
 
 /* ---- Sparkify-Import (JSON-Export der Sparkify-Weboberfläche: Projekt › Export › Installationsprüfung › JSON) ----
    Je Dokumentation eine Liste von Messungen ohne Zeitstempel/Namen – zugeordnet wird über die Reihenfolge.
@@ -533,13 +666,14 @@ function ecImportOk(){ ecImportLesen(); const pr=ecPr(), g=ecGeb(pr.ortId); let 
 /* ---- PDF im Irrgang-Layout (pdfstil.js) und Ablage in der Bibliothek ---- */
 async function ecPdf(pr){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",format:"a4"}), o=ecOrt(pr.ortId), k=o.kunde, an=ecAn(pr), erg=ecErgebnis(pr), G=pr.geraet||{}, N=pr.netz||{};
   const adr=x=>x?[x.name,adrText(x)].filter(Boolean).join(", "):"", pl=st=>st==="ok"?"ok|i.O.":st==="bad"?"bad|Mangel":st==="ng"?"open|n. gem.":"open|offen";
-  const S=pdfStil(d,{titel:an?"Prüfprotokoll Elektroinstallation":"Prüfprotokoll ortsveränderliche Geräte",unter:an?`${pr.pruefart||"Prüfung"} | DIN VDE 0100-600 | DIN VDE 0105-100`:`${pr.pruefart||"Prüfung"} | DIN VDE 0701-0702 | DGUV Vorschrift 3`,ehw:true,
+  const nz=ecNz(pr), S=pdfStil(d,{titel:nz?"Prüfprotokoll Netzwerkverkabelung":an?"Prüfprotokoll Elektroinstallation":"Prüfprotokoll ortsveränderliche Geräte",unter:nz?`${pr.pruefart||"Prüfung"} | Übertragungsprüfung (Qualifizierung) | IEEE 802.3`:an?`${pr.pruefart||"Prüfung"} | DIN VDE 0100-600 | DIN VDE 0105-100`:`${pr.pruefart||"Prüfung"} | DIN VDE 0701-0702 | DGUV Vorschrift 3`,ehw:true,
     fuss:[k&&k.name,o.standort&&o.standort.name,pr.auftragsnr&&`Auftrag ${pr.auftragsnr}`,`Prüfdatum ${ecDatum(pr.datum)}`].filter(Boolean).join(" | ")});
   S.kopf(); S.abschnitt("Auftragsdaten");
   S.werte([["Auftraggeber",adr(k)],["Auftragsnr.",pr.auftragsnr],["Kundennr.",k&&k.kdnr],["Ansprechpartner",k&&k.ansprech],["Prüfort",o.standort?adr(o.standort):"wie Auftraggeber"],["Art der Prüfung",pr.pruefart],
-    ["Prüfdatum",ecDatum(pr.datum)],["Prüfer",pr.pruefer],["Messgerät",G.mess],["Seriennr.",G.sn],["Kal. gültig bis",G.kal],an?["Netzform",`${N.form||"-"} | 230/400 V${N.hak?` | HAK ${N.hak}`:""}`]:["Anzahl Geräte",String(ecGeraeteAm(pr.ortId).filter(b=>!["open","ng"].includes(ecGerStand(pr,b))).length)],
+    ["Prüfdatum",ecDatum(pr.datum)],["Prüfer",pr.pruefer],["Messgerät",G.mess],["Seriennr.",G.sn],["Kal. gültig bis",G.kal],nz?["Verkabelung",pr.kabel||"-"]:an?["Netzform",`${N.form||"-"} | 230/400 V${N.hak?` | HAK ${N.hak}`:""}`]:["Anzahl Geräte",String(ecGeraeteAm(pr.ortId).filter(b=>!["open","ng"].includes(ecGerStand(pr,b))).length)],
     ...(pr.bez?[["Bezeichnung",pr.bez]]:[])]);
-  if(an){ const g=ecGeb(pr.ortId), SK=ecSkListe(g).filter(s=>ecImUmfang(pr,s));
+  if(nz) ecNetPdf(pr,S,pl);
+  else if(an){ const g=ecGeb(pr.ortId), SK=ecSkListe(g).filter(s=>ecImUmfang(pr,s));
     S.abschnitt("Prüfumfang"); S.text(pr.umfangText||ecUmfangAuto(pr,g));
     S.abschnitt("Besichtigung"); const half=Math.ceil(EC_SICHT.length/2), cw=S.CW/2; d.setFontSize(8);
     for(let i=0;i<half;i++){ S.platz(6); for(let c=0;c<2;c++){ const j=i+c*half, t=EC_SICHT[j]; if(!t) continue; const x=S.M+c*cw, v=(pr.sicht||{})["s"+j];
@@ -568,12 +702,12 @@ async function ecPdf(pr){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",f
   S.abschnitt("Gesamtergebnis"); S.platz(10); d.setFont("helvetica","bold"); d.setFontSize(10); d.setTextColor(20);
   d.text(pdfT(erg==="ok"?"Keine Mängel festgestellt.":erg==="bad"?"Mängel festgestellt - Beseitigung erforderlich.":"Prüfung unvollständig - nicht alle Werte erfasst."),S.M,S.y); S.plakette(S.M+S.CW-1,S.y,erg); S.y+=9;
   S.abschnitt("Festgestellte Mängel / Maßnahmen"); S.text(pr.maengel||ecMaengelText(pr)||"Keine.");
-  S.abschnitt("Nächste Prüfung"); S.text(`Empfohlen bis ${ecDatum(ecPlus(pr.datum,pr.fristM||(an?48:12)))}. Die Frist legt der Betreiber fest.`);
+  if(!nz){ S.abschnitt("Nächste Prüfung"); S.text(`Empfohlen bis ${ecDatum(ecPlus(pr.datum,pr.fristM||(an?48:12)))}. Die Frist legt der Betreiber fest.`); }
   S.abschnitt("Unterschriften"); S.y+=2; S.unterschriften([["Prüfer",pr.pruefer,ecDatum(pr.datum)],["Auftraggeber",k&&k.ansprech||"",ecDatum(pr.datum)]]);
   return S.ende(pr.id.slice(-6).toUpperCase()); }
 async function ecPdfAblegen(pr){ toast("PDF wird erstellt …");
   let blob; try{ blob=await ecPdf(pr); }catch(e){ console.error(e); toast("PDF konnte nicht erstellt werden – Internet für die PDF-Bibliothek nötig"); return; }
-  const o=ecOrt(pr.ortId), k=o.kunde, an=ecAn(pr), name=bbFs(`${pr.datum} ${an?"Installationsprüfung":"Geräteprüfung"} ${k?k.name:""}${o.standort?" "+o.standort.name:""}`);
+  const o=ecOrt(pr.ortId), k=o.kunde, an=ecAn(pr), name=bbFs(`${pr.datum} ${EC_ART[pr.art||"anlage"]||"Prüfung"} ${k?k.name:""}${o.standort?" "+o.standort.name:""}`);
   const x={id:uid(),app:"echeck",echeckId:pr.id,kundeId:pr.kundeId||"",standortId:pr.standortId||"",name,titel:o.titel,datum:pr.datum,art:`${EC_ART[pr.art||"anlage"]}${pr.pruefart?" · "+pr.pruefart:""}`,auftragsnr:pr.auftragsnr||"",pruefer:pr.pruefer||"",
     ergebnis:ecErgebnis(pr)==="bad"?"bad":"ok",created:Date.now(),von:who(),size:blob.size,fassung:(pr.pdf||[]).length+1};
   try{ const db=await new Promise((res,rej)=>{ const q=indexedDB.open("evse_protokolle"); q.onupgradeneeded=()=>{ const z=q.result; if(!z.objectStoreNames.contains("meta")) z.createObjectStore("meta",{keyPath:"id"}); if(!z.objectStoreNames.contains("blob")) z.createObjectStore("blob"); }; q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); });
@@ -601,17 +735,18 @@ document.addEventListener("input",e=>{ const el=e.target; if(!el.dataset) return
   const f=el.closest(".ec-feld,.ec-pz"); if(!f) return; const st=ecWertStand(EC_F[k].gw(bezug),el.value); f.classList.remove("ok","bad"); if(st) f.classList.add(st); });
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="ec"],[data-act="bmSk"]'); if(!b||b.disabled) return; const a=b.dataset.act;
   e.stopPropagation(); e.preventDefault();
-  const pr=ecPr(), g=pr&&ecAn(pr)?ecGeb(pr.ortId):null, zu=pr&&pr.status==="fertig", nichtZu=()=>{ if(zu){ toast("Prüfung ist abgeschlossen – unter „Abschluss“ wieder öffnen"); return false; } return true; };
+  const pr=ecPr(), g=pr&&pr.art!=="geraete"?ecGeb(pr.ortId):null, zu=pr&&pr.status==="fertig", nichtZu=()=>{ if(zu){ toast("Prüfung ist abgeschlossen – unter „Abschluss“ wieder öffnen"); return false; } return true; };
   const sp=()=>{ ecGebSpeichern(g); };
   switch(a){
   case "ecNeuA": ecNeuDialog("anlage"); return;
   case "ecNeuG": ecNeuDialog("geraete"); return;
+  case "ecNeuN": ecNeuDialog("netz"); return;
   case "ecNeuOrt": { const o=ecOrt(b.dataset.ort); ecNeuDialog(b.dataset.art,o.kunde&&o.kunde.id,b.dataset.ort); return; }
   case "ecNeuHier": { const r=DB[b.dataset.kind].get(b.dataset.id), kid=b.dataset.kind==="kunden"?r.id:r.kundeId, ort=b.dataset.kind==="kunden"?"k:"+r.id:r.id;
-    dialog("Welche Prüfung?",`<div class="list">${[["anlage","Installationsprüfung","Hausinstallation oder Anlage – Räume, Verteiler, Stromkreise, Steckdosen","home"],["geraete","Geräteprüfung","Ortsveränderliche Geräte nach DGUV V3","ecStecker"]].map(([v,t,s,i])=>`<div class="li" role="button" tabindex="0" data-act="ecNeuWahl" data-art="${v}" data-k="${esc(kid)}" data-ort="${esc(ort)}"><span class="av">${icon(i)}</span><span class="lt"><span class="h">${t}</span><span class="s">${s}</span></span>${icon("chev")}</div>`).join("")}</div>`,`<button class="btn-text" data-act="cancel">Abbrechen</button>`); return; }
+    dialog("Welche Prüfung?",`<div class="list">${[["anlage","Installationsprüfung","Hausinstallation oder Anlage – Räume, Verteiler, Stromkreise, Steckdosen","home"],["geraete","Geräteprüfung","Ortsveränderliche Geräte nach DGUV V3","ecStecker"],["netz","Netzwerkprüfung","Datenverkabelung – Netzwerkschrank, Datendosen, Links","ecNetz"]].map(([v,t,s,i])=>`<div class="li" role="button" tabindex="0" data-act="ecNeuWahl" data-art="${v}" data-k="${esc(kid)}" data-ort="${esc(ort)}"><span class="av">${icon(i)}</span><span class="lt"><span class="h">${t}</span><span class="s">${s}</span></span>${icon("chev")}</div>`).join("")}</div>`,`<button class="btn-text" data-act="cancel">Abbrechen</button>`); return; }
   case "ecNeuWahl": closeOverlays(); ecNeuDialog(b.dataset.art,b.dataset.k,b.dataset.ort); return;
   case "ecNeuOk": ecNeuOk(); return;
-  case "ecOeffnen": { const p=DB.echecks.get(b.dataset.id); if(p) go({v:"ec",id:p.id,tab:p.status==="fertig"?"abschluss":p.status==="offen"?"auftrag":ecAn(p)?"messen":"geraete"}); return; }
+  case "ecOeffnen": { const p=DB.echecks.get(b.dataset.id); if(p) go({v:"ec",id:p.id,tab:p.status==="fertig"?"abschluss":p.status==="offen"?"auftrag":p.art==="geraete"?"geraete":"messen"}); return; }
   case "ecTab": { if(!pr) return; const T=ecSchritte(pr).find(x=>x[0]===b.dataset.v);
     if(T&&T[3]){ toast(`Abschluss erst, wenn alles fertig ist – noch offen: ${ecFehlt(pr).join(", ")}`); if(typeof navIndSetzen==="function") navIndSetzen(); return; }
     nav.tab=b.dataset.v; closeOverlays(); render(); scrollTo(0,0); return; }
@@ -622,9 +757,10 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     L=L.includes(b.dataset.id)?L.filter(x=>x!==b.dataset.id):[...L,b.dataset.id]; if(!L.length){ toast("Mindestens ein Verteiler gehört zur Prüfung"); return; }
     pr.umfang=alle.every(x=>L.includes(x))?null:{vIds:L}; saveRec("echecks",pr); render(); return; }
   case "ecWahl": { const gr=b.dataset.g; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
-    if(gr==="lage"||gr==="schutz"||gr==="leitung"){ const i=document.getElementById({lage:"f_ecLage",schutz:"f_skSchutz",leitung:"f_skLeitung"}[gr]); if(i){ i.value=b.dataset.v; i.parentElement.classList.add("fl"); } return; }
+    if(gr==="lage"||gr==="nlage"||gr==="schutz"||gr==="leitung"){ const i=document.getElementById({lage:"f_ecLage",nlage:"f_ecLage",schutz:"f_skSchutz",leitung:"f_skLeitung"}[gr]); if(i){ i.value=b.dataset.v; i.parentElement.classList.add("fl"); } return; }
     if(/^impTyp\d+$/.test(gr)&&ecImp){ ecImportLesen(); const d=ecImp.docs[+gr.slice(6)]; if(d){ d.typ=b.dataset.v; ecImportZiele(); ecImportDlg(); } return; }
-    if(ecDlg&&ecDlg.w) ecDlg.w[gr]=b.dataset.v; if(gr==="art"){ const z=document.getElementById("ecFachZeile"); if(z) z.hidden=b.dataset.v!=="sd"; } return; }
+    if(ecDlg&&ecDlg.w) ecDlg.w[gr]=b.dataset.v; if(gr==="art"){ const z=document.getElementById("ecFachZeile"); if(z) z.hidden=b.dataset.v!=="sd"; }
+    if(gr==="ports") document.querySelectorAll("#dlg [data-pp]").forEach(x=>x.hidden=+x.dataset.pp>+b.dataset.v); return; }
   /* Etagen und Räume */
   case "ecEt": { const akt=g.etagen.find(e=>e.id===nav.et)||ecEtStd(g); if(akt&&akt.id===b.dataset.id){ if(zu) return; ecEtDlg(akt); return; } nav.et=b.dataset.id; render(); return; }
   case "ecEtEdit": { if(!nichtZu()) return; const et=g.etagen.find(x=>x.id===b.dataset.id); if(et) ecEtDlg(et); return; }
@@ -644,12 +780,12 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecRaumOk": { const n=(formVals().ecName||"").trim(); if(!n){ toast("Bitte eine Bezeichnung eingeben"); return; }
     if(ecDlg.raum){ g.etagen.forEach(e=>e.raeume.forEach(x=>{ if(x.id===ecDlg.raum) x.name=n; })); sp(); render(); ecRaumDlg(ecDlg.raum); return; }
     const et=g.etagen.find(e=>e.id===nav.et)||ecEtStd(g), r={id:uid(),name:n}; et.raeume.push(r); sp(); render(); ecRaumDlg(r.id); return; }
-  case "ecRaumDel": { const id=ecDlg.raum, n=g.stellen.filter(s=>s.raumId===id).length; if(n&&!b.dataset.ok){ b.dataset.ok="1"; b.textContent=`Mit ${n} Anschlusspunkt${n>1?"en":""} löschen`; return; }
-    g.etagen.forEach(e=>{ e.raeume=e.raeume.filter(x=>x.id!==id); }); g.stellen=g.stellen.filter(s=>s.raumId!==id); g.verteiler.forEach(v=>{ if(v.raumId===id) v.raumId=""; }); sp(); closeOverlays(); render(); return; }
+  case "ecRaumDel": { const id=ecDlg.raum, n=g.stellen.filter(s=>s.raumId===id).length+g.dosen.filter(d=>d.raumId===id).length; if(n&&!b.dataset.ok){ b.dataset.ok="1"; b.textContent=`Mit ${n} Anschlusspunkt${n>1?"en":""} und Dose${n>1?"n":""} löschen`; return; }
+    g.etagen.forEach(e=>{ e.raeume=e.raeume.filter(x=>x.id!==id); }); g.stellen=g.stellen.filter(s=>s.raumId!==id); g.dosen=g.dosen.filter(d=>d.raumId!==id); g.schraenke.forEach(s=>{ if(s.raumId===id) s.raumId=""; }); g.verteiler.forEach(v=>{ if(v.raumId===id) v.raumId=""; }); sp(); closeOverlays(); render(); return; }
   /* Anschlusspunkte */
   case "ecStelleNeu": if(!nichtZu()) return; ecStelleDlg(null,b.dataset.id); return;
   case "ecStelle": if(!nichtZu()) return; ecStelleDlg(b.dataset.id); return;
-  case "ecZumRaum": { const r=ecDlg&&ecDlg.raumId; if(r) ecRaumDlg(r); else closeOverlays(); return; }
+  case "ecZumRaum": { if(ecDlg&&ecDlg.netMessZurueck){ ecNetMessDlg(ecDlg.netMessZurueck); return; } const r=ecDlg&&ecDlg.raumId; if(r) ecRaumDlg(r); else closeOverlays(); return; }
   case "ecStelleOk": { const F=formVals(), W=ecDlg.w, raumId=ecDlg.raumId, neu={art:W.art,fach:W.art==="sd"?+W.fach||1:1,lage:(F.ecLage||"").trim(),skId:F.ecSk||""}; ecLetzterSk=neu.skId;
     if(ecDlg.stelle) Object.assign(g.stellen.find(s=>s.id===ecDlg.stelle),neu);
     else { let ord=Math.max(0,...g.stellen.filter(s=>s.raumId===raumId).map(s=>s.ord||0)); for(let i=0;i<(+W.anz||1);i++) g.stellen.push({id:uid(),raumId,ord:++ord,...neu}); }
@@ -701,7 +837,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecAuf": pr.status="laeuft"; delete pr.fertigAm; saveRec("echecks",pr); render(); return;
   case "ecPdf": ecPdfAblegen(pr); return;
   case "ecDelAsk": confirmDlg("Prüfung löschen?","Die Prüfung wird in allen Apps entfernt. Gebäude, Räume, Stromkreise und Geräte bleiben erhalten.","Löschen","ecDel"); return;
-  case "ecDel": { closeOverlays(); if(!canEdit(pr)) return; pr.deleted=true; saveRec("echecks",pr); go({v:pr.art==="geraete"?"geraete":"anlagen"}); toast("Prüfung gelöscht"); return; }
+  case "ecDel": { closeOverlays(); if(!canEdit(pr)) return; pr.deleted=true; saveRec("echecks",pr); go({v:ecListeV(pr.art)}); toast("Prüfung gelöscht"); return; }
   /* Geräte */
   case "ecBmNeu": if(!nichtZu()) return; ecBmDlg(null); return;
   case "ecBmEditAusPr": { ecGerLesen(); const bm=DB.betriebsmittel.get(b.dataset.id); closeOverlays(); if(bm) ecBmDlg(bm); return; }
@@ -712,6 +848,34 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     closeOverlays(); render(); return; }
   case "ecBmDel": { const bm=DB.betriebsmittel.get(ecDlg.bm); if(bm){ bm.deleted=true; saveRec("betriebsmittel",bm); } closeOverlays(); render(); return; }
   case "ecGer": ecGerDlg(b.dataset.id); return;
+  /* Netzwerk */
+  case "ecUmfangS": { if(!nichtZu()) return; const alle=g.schraenke.map(s=>s.id); let L=pr.umfang&&pr.umfang.sIds?[...pr.umfang.sIds]:[...alle];
+    L=L.includes(b.dataset.id)?L.filter(x=>x!==b.dataset.id):[...L,b.dataset.id]; if(!L.length){ toast("Mindestens ein Schrank gehört zur Prüfung"); return; }
+    pr.umfang=alle.every(x=>L.includes(x))?null:{sIds:L}; saveRec("echecks",pr); render(); return; }
+  case "ecSchrNeu": case "ecSchrEdit": { if(!nichtZu()) return; const s=a==="ecSchrEdit"&&g.schraenke.find(x=>x.id===b.dataset.id); ecDlg={schr:s?s.id:null};
+    ecNameDlg(s?"Netzwerkschrank bearbeiten":"Neuer Netzwerkschrank",s?s.name:"","ecSchrOk",s?"ecSchrDel":null,sf("ecVtRaum","Raum",s?s.raumId||"":"",[["","ohne Raum"],...ecRaeume(g).map(r=>[r.id,r.titel])],{form:true}));
+    if(!s){ const i=document.getElementById("f_ecName"); if(i&&!g.schraenke.length){ i.value="Netzwerkschrank"; i.parentElement.classList.add("fl"); } } return; }
+  case "ecSchrOk": { const F=formVals(), n=(F.ecName||"").trim(); if(!n){ toast("Bitte eine Bezeichnung eingeben"); return; }
+    if(ecDlg.schr){ const s=g.schraenke.find(x=>x.id===ecDlg.schr); s.name=n; s.raumId=F.ecVtRaum||""; } else { const s={id:uid(),name:n,raumId:F.ecVtRaum||""}; g.schraenke.push(s); ecLetzterSchr=s.id; } sp(); closeOverlays(); render(); return; }
+  case "ecSchrDel": { const n=g.dosen.filter(d=>d.sId===ecDlg.schr).length; if(n&&!b.dataset.ok){ b.dataset.ok="1"; b.textContent=`Löschen (${n} Dose${n>1?"n":""} ohne Schrank)`; return; }
+    g.dosen.forEach(d=>{ if(d.sId===ecDlg.schr) d.sId=""; }); g.schraenke=g.schraenke.filter(x=>x.id!==ecDlg.schr); sp(); closeOverlays(); render(); return; }
+  case "ecDoseNeu": if(!nichtZu()) return; ecDoseDlg(null,b.dataset.id); return;
+  case "ecDose": if(!nichtZu()) return; ecDoseDlg(b.dataset.id); return;
+  case "ecDoseAusMess": { ecNetLesen(); if(!nichtZu()) return; const zur=ecDlg&&ecDlg.netMess; ecDoseDlg(b.dataset.id); ecDlg.netMessZurueck=zur; return; }
+  case "ecDoseOk": { const F=formVals(), W=ecDlg.w, raumId=ecDlg.raumId, n=+W.ports||1, anz=ecDlg.dose?1:(+W.anz||1), pp1=[1,2,3,4].map(i=>(F["pp"+i]||"").trim());
+    const nurErster=pp1[0]&&!pp1.slice(1,n).some(Boolean), basis={ports:n,lage:(F.ecLage||"").trim(),sId:F.ecSchr||""}; ecLetzterSchr=basis.sId;
+    const ppFuer=k=>{ const o={}; for(let i=1;i<=n;i++){ const v=nurErster?(k===0&&i===1?pp1[0]:ecPpPlus(pp1[0],k*n+i-1)):(k===0?pp1[i-1]:ecPpPlus(pp1[i-1],k*n)); if(v) o[i]=v; } return o; };
+    if(ecDlg.dose) Object.assign(g.dosen.find(d=>d.id===ecDlg.dose),basis,{pp:ppFuer(0)});
+    else { let ord=Math.max(0,...g.dosen.filter(d=>d.raumId===raumId).map(d=>d.ord||0)); for(let k=0;k<anz;k++) g.dosen.push({id:uid(),raumId,ord:++ord,...basis,pp:ppFuer(k)}); }
+    sp(); render(); if(ecDlg&&ecDlg.netMessZurueck) ecNetMessDlg(ecDlg.netMessZurueck); else ecNetRaumDlg(raumId); return; }
+  case "ecDoseDel": { const d=g.dosen.find(x=>x.id===ecDlg.dose), raumId=ecDlg.raumId; if(d&&!b.dataset.ok&&pr.werte&&Object.keys(pr.werte).some(k=>k.startsWith(d.id+"."))){ b.dataset.ok="1"; b.textContent="Mit Messwerten löschen"; return; }
+    g.dosen=g.dosen.filter(x=>x.id!==ecDlg.dose); sp(); render(); ecNetRaumDlg(raumId); return; }
+  case "ecDoseOrd": { const d=g.dosen.find(x=>x.id===b.dataset.id); if(!d) return; const D=g.dosen.filter(x=>x.raumId===d.raumId).sort((x,y)=>(x.ord||0)-(y.ord||0)), i=D.indexOf(d), j=i+(+b.dataset.d); if(j<0||j>=D.length) return;
+    [D[i],D[j]]=[D[j],D[i]]; D.forEach((x,k)=>x.ord=k+1); sp(); render(); ecNetRaumDlg(d.raumId); return; }
+  case "ecNetMess": ecNetMessDlg(b.dataset.id); return;
+  case "ecNetTri": { b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b&&x.getAttribute("aria-pressed")!=="true"))); return; }
+  case "ecNetAlleOk": { document.querySelectorAll('#dlg [data-act="ecNetTri"]').forEach(x=>{ if(x.dataset.k!=="poe") x.setAttribute("aria-pressed",String(x.dataset.v==="ok")); }); return; }
+  case "ecNetGeh": { ecNetLesen(); const L=ecNetListe(pr,g), i=L.findIndex(p=>p.id===(ecDlg&&ecDlg.netMess)), d=+b.dataset.d; if(d&&L[i+d]){ render(); ecNetMessDlg(L[i+d].id); return; } closeOverlays(); ecDlg=null; render(); return; }
   case "ecGerTri": { b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b&&x.getAttribute("aria-pressed")!=="true"))); return; }
   case "ecGerGeh": { ecGerLesen(); const B=ecGeraeteAm(pr.ortId), i=B.findIndex(x=>x.id===ecDlg.ger), d=+b.dataset.d; if(d&&B[i+d]){ render(); ecGerDlg(B[i+d].id); return; } closeOverlays(); ecDlg=null; render(); return; }
   }
