@@ -198,7 +198,8 @@ function ecNeuDialog(art,kundeId,ort){ ecNeuArt=art; const K=live("kunden").sort
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecNeuOk">Anlegen</button>`,{breit:true}); }
 function ecNeuOk(){ const F=formVals(); if(!F.ecKunde){ toast("Bitte einen Kunden wählen"); return; }
   const ortId=F.ecOrt||"k:"+F.ecKunde, art=ecNeuArt, vorher=ecAlle().filter(p=>p.ortId===ortId&&(p.art||"anlage")===art).sort((a,b)=>String(b.datum).localeCompare(String(a.datum)))[0];
-  const MG=ecMessgeraete(art), mg=MG.find(m=>m.bei&&m.bei===ME.mail)||MG[0];
+  const MG=ecMessgeraete(art), zuletzt=ecAlle().filter(p=>(p.art||"anlage")===art&&p.geraet&&p.geraet.mgId).sort((a,b)=>(b.updated||0)-(a.updated||0))[0];
+  const mg=MG.find(m=>m.bei&&m.bei===ME.mail)||(zuletzt&&MG.find(m=>m.id===zuletzt.geraet.mgId))||MG.find(m=>/\bCT\b/.test(m.modell||""))||MG[0]; /* zugeteilt > zuletzt benutzt > neuerer Tester */
   const pr={id:uid(),art,kundeId:F.ecKunde,standortId:ortId.startsWith("k:")?"":ortId,ortId,datum:ecHeute(),pruefart:vorher?"Wiederholungsprüfung":(art==="anlage"?"Erstprüfung":art==="netz"?"Abnahme":"Wiederholungsprüfung"),pruefer:ecStdPruefer(),status:"offen",
     sicht:{},werte:{},netz:vorher&&vorher.netz?{...vorher.netz}:{form:"TN-C-S"},geraet:mg?ecMgDaten(mg):{},umfang:vorher&&vorher.umfang?{...vorher.umfang}:null,fristM:vorher&&vorher.fristM||(art==="anlage"?48:12)};
   saveRec("echecks",pr,true);
@@ -703,7 +704,7 @@ function ecNetMessDlg(id){ const pr=ecPr(), g=ecGeb(pr.ortId), L=ecNetListe(pr,g
   const zu=pr.status==="fertig", vor=L[i-1], nach=L[i+1], lenSt=ecWertStand(EC_NLEN,w.len);
   const tri=(k,l,na)=>`<div class="ec-sz"><span>${l}</span><span class="ec-tri">${[["ok","i. O."],["nok","n. i. O."],...(na?[["na","entfällt"]]:[])].map(([v,t])=>`<button type="button" data-act="ecNetTri" data-k="${k}" data-v="${v}" aria-pressed="${w[k]===v}" class="${v}" ${zu?"disabled":""}>${t}</button>`).join("")}</span></div>`;
   dialog(p.pp?`Dose ${p.pp} · ${ecRaumName(g,p.raumId)}`:ecLinkName(g,p),`<p class="ec-sub">${esc([ecSchrName(g,p.d.sId)||"ohne Schrank",ecDoseName(p.d)+((+p.d.ports||1)>1?` (Port ${p.i})`:""),p.d.lage].filter(Boolean).join(" · "))}</p>
-    ${zu?"":`<div class="ec-tipp">${icon("info")}<span>Am SignalTEK CT: Hauptgerät an den Patchport, Remote an die Datendose. Kabeltest für Belegung und Länge, danach der Übertragungstest. PoE nur, wenn an der Dose ein PoE-Gerät hängt.</span></div>`}
+    ${zu?"":`<div class="ec-tipp">${icon("info")}<span>${esc(pr.geraet&&(pr.geraet.kurz||pr.geraet.mess)?`Am ${pr.geraet.kurz||pr.geraet.mess}`:"Am Netzwerktester")}: Hauptgerät an den Patchport, Remote an die Datendose. Kabeltest für Belegung und Länge, danach der Übertragungstest. PoE nur, wenn an der Dose ein PoE-Gerät hängt.</span></div>`}
     <div id="ecNgZeile" ${w.ng?"":"hidden"}><div class="tf fl"><input id="m_ng" data-nw="ng" value="${esc(w.ng||"")}" placeholder="z. B. Raum nicht zugänglich, Dose verbaut" ${zu?"disabled":""}><label for="m_ng">Nicht gemessen – Grund</label></div></div>
     <div id="ecMessTeil" ${w.ng?"hidden":""}>
       <div class="list ec-sicht">${tri("wm","Belegung (Wiremap)")}</div>
