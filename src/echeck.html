@@ -1005,9 +1005,14 @@ body.kopf-oben .edk-platz{display:none!important}
 .ec-sk.h{background:var(--sc-high);color:var(--on-sv);font-weight:700;font-size:12px;border:0;cursor:default}
 .ec-sk .lbm{display:none}
 /* Schrankplaner – Farbe je Schrank: Lichtgrau (RAL 7035), Schwarz (RAL 9005) oder wie die App */
-.rk-zur{margin:0 0 4px -8px;display:inline-flex;flex-direction:row;align-items:center;gap:6px}.rk-zur .ic{width:18px;height:18px}
-.rk-kopf{display:flex;align-items:center;gap:12px;margin:0 0 14px}.rk-kopf .btn-tonal{flex:none;display:inline-flex;flex-direction:row;align-items:center;gap:8px;white-space:nowrap}
-.rk-kt{flex:1;min-width:0}.rk-kt h2{margin:0;font-size:22px}.rk-kt p{margin:2px 0 0;color:var(--on-sv);font-size:14px}
+/* eigene Seite über allem (Vollbild), Dialoge liegen darüber */
+.rk-seite{position:fixed;inset:0;z-index:35;overflow-y:auto;background:var(--surface);padding:0 0 env(safe-area-inset-bottom,0px)}
+body.rk-offen{overflow:hidden}
+.rk-inhalt{max-width:1280px;margin:0 auto;padding:16px 24px 48px}
+@media (max-width:599px){.rk-inhalt{padding:12px 16px 40px}}
+.rk-bel .list{max-height:420px;overflow-y:auto}.rk-bel .ec-vz .pill,.rk-bel .ec-vz>span:last-child{flex:none}
+.rk-kopf{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;background:var(--surface);box-shadow:0 1px 0 var(--outline-v)}.rk-kopf .btn-tonal{flex:none;display:inline-flex;flex-direction:row;align-items:center;gap:8px;white-space:nowrap}
+.rk-kt{flex:1;min-width:0}.rk-kt h2{margin:0;font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rk-kt p{margin:2px 0 0;color:var(--on-sv);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rk-zwei{display:grid;grid-template-columns:minmax(0,660px) minmax(0,1fr);gap:20px;align-items:start}
 @media (max-width:899px){.rk-zwei{grid-template-columns:minmax(0,1fr)}}
 .rk-pal{margin:0 0 12px}.rk-vor .chip{font-size:13px}
@@ -1735,6 +1740,7 @@ document.addEventListener("click",e=>{
 /*PROFIL*/
 /*KOPF*/
 function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
+  document.body.classList.toggle("rk-offen",nav.v==="ec"&&!!nav.schr&&nav.tab==="gebaeude");
   const app=$("#app");
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
   const top=TOP.includes(nav.v), login=nav.v==="login";

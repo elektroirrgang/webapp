@@ -514,10 +514,12 @@ function ecNetSchrankSpalte(pr,g){ const A=ecNetAlle(g), zu=pr.status==="fertig"
       if(!L.length) return `<span class="ec-ks frei" title="${pf}.${port} frei">${port}</span>`;
       const st=ecNetStand(pr,L[0]), kl=L.length>1?"bad":st==="ok"?"ok":st==="bad"?"bad":"belegt";
       return `<button type="button" class="ec-ks ${kl}" data-act="ecDose" data-id="${esc(L[0].d.id)}" title="${esc(`${pf}.${port} · ${ecRaumName(g,L[0].raumId)}${L.length>1?" · doppelt vergeben":""}`)}">${port}</button>`; }).join("")}</div>`; }).join("");
-  const schr=s=>{ const P=ecNetListe({},g).filter(p=>p.d.sId===s.id), ein=ecNetImUmfang(pr,{sId:s.id});
-    return `<div class="ec-vt${ein?"":" aus"}"><div class="ec-vz kopf" role="button" tabindex="0" data-act="ecSchrEdit" data-id="${esc(s.id)}"><span class="av ec-uv">${icon("ecNetz")}</span><span class="t"><b>${esc(s.name)}</b><small>${esc([ecRaumName(g,s.raumId),`${ecSchrHe(s)} HE · ${ecSchrTiefe(s)} tief`,`${ecPfListe(s).length} Patchfeld${ecPfListe(s).length===1?"":"er"}`,`${P.length} belegt`,ein?"":"nicht im Prüfumfang"].filter(Boolean).join(" · "))}</small></span>${icon("edit")}</div><div class="ec-vt-f"><button class="btn-text" data-act="ecRkAuf" data-id="${esc(s.id)}">${icon("ecNetz")}Schrank planen</button></div>${raster(s,P)}${P.map(zeile).join("")}</div>`; };
+  const schr=s=>{ const P=ecNetListe({},g).filter(p=>p.d.sId===s.id), ein=ecNetImUmfang(pr,{sId:s.id}), PL=ecRkPlanung(pr,g,s), bad=PL.H.filter(h=>h[0]==="bad").length, hw=PL.H.filter(h=>h[0]==="wip").length;
+    return `<div class="li${ein?"":" aus"}" role="button" tabindex="0" data-act="ecRkAuf" data-id="${esc(s.id)}" data-ctx="ecSchrEdit"><span class="av ec-uv">${icon("ecNetz")}</span>
+      <span class="lt"><span class="h">${esc(s.name)}</span><span class="s">${esc([ecSchrText(s),ecRaumName(g,s.raumId)].filter(Boolean).join(" · "))}</span><span class="s">${esc([`${PL.B} von ${PL.ports} Patchports belegt`,ein?"":"nicht im Prüfumfang"].filter(Boolean).join(" · "))}</span>
+      <span class="st">${bad?pill("bad",`${bad} Problem${bad>1?"e":""}`):hw?pill("wip",`${hw} Hinweis${hw>1?"e":""}`):pill("ok","Planung passt")}</span></span>${icon("chev")}</div>`; };
   const ohne=A.filter(p=>!p.d.sId||!g.schraenke.some(s=>s.id===p.d.sId));
-  return `${kdKopf("Netzwerkschränke",zu?"":"ecSchrNeu","Schrank hinzufügen")}${g.schraenke.length?g.schraenke.map(schr).join(""):`<p class="meta">Noch kein Netzwerkschrank. Am besten zuerst den Schrank mit seinen Patchfeldern anlegen, dann durch die Räume gehen und jede Datendose eintragen.</p>`}
+  return `${kdKopf("Netzwerkschränke",zu?"":"ecSchrNeu","Schrank hinzufügen")}${g.schraenke.length?listOf(g.schraenke.map(schr))+`<p class="meta" style="margin:8px 4px 0">Antippen öffnet den Schrank. Bearbeiten: Rechtsklick, am Handy lange drücken.</p>`:`<p class="meta">Noch kein Netzwerkschrank. Am besten zuerst den Schrank mit seinen Patchfeldern anlegen, dann durch die Räume gehen und jede Datendose eintragen.</p>`}
     ${ohne.length?`<div class="ec-vt"><div class="ec-vz kopf"><span class="t"><b>Ohne Schrank</b></span></div>${ohne.map(zeile).join("")}</div>`:""}`; }
 function ecNetRaumKachel(pr,g,r){ const P=ecNetPunkte(g,r.id), st=P.map(p=>ecNetStand(pr,p)), n=st.filter(x=>x!=="open"&&x!=="wip").length, bad=st.filter(x=>x==="bad").length, D=g.dosen.filter(d=>d.raumId===r.id).length;
   return `<button class="ec-raum" data-act="ecRaum" data-id="${esc(r.id)}"><b>${esc(r.name)}</b><small>${D} Dose${D===1?"":"n"} · ${P.length} Port${P.length===1?"":"s"}</small>
@@ -635,9 +637,11 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
   const nr=i=>`<span class="rk-he" style="grid-row:${i}">${i}</span><span class="rk-he r" style="grid-row:${i}">${i}</span>`;
   const leer=i=>belegt.has(i)?"":`<button type="button" class="rk-leer" data-act="ecRkLeer" data-pos="${i}" style="grid-row:${i}" ${zu?"disabled":""} aria-label="HE ${i} frei – Teil einsetzen"><span>+</span></button>`;
   const ic={ok:"done",bad:"warn",wip:"warn",tipp:"info"};
-  return `<div class="rk-seite"><button class="btn-text rk-zur" data-act="ecRkZu">${icon("back")}Gebäude</button><div class="rk-kopf"><div class="rk-kt"><h2>${esc(s.name)}</h2><p>${esc([ecSchrText(s),ecRaumName(g,s.raumId)].filter(Boolean).join(" · "))}</p></div>
-      ${zu?"":`<button class="btn-tonal" data-act="ecSchrEdit" data-id="${esc(s.id)}">${icon("edit")}Schrank</button>`}</div>
-    <div class="rk-zwei"><div>
+  const zeile=p=>`<div class="ec-vz sk" role="button" tabindex="0" data-act="ecRkPort" data-id="${esc(p.d.id)}"><span class="nr">${esc(p.pp||"–")}</span><span class="t">${esc(ecLinkOrt(g,p))}<small>${esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · "))}</small></span>${ecPill(ecNetStand(pr,p))}</div>`;
+  const Lk=ecNetListe({},g).filter(p=>p.d.sId===s.id);
+  return `<div class="rk-seite"><div class="rk-kopf"><button class="icon-btn" data-act="ecRkZu" aria-label="Zurück zum Gebäude" title="Zurück zum Gebäude">${icon("back")}</button><div class="rk-kt"><h2>${esc(s.name)}</h2><p>${esc([ecOrt(pr.ortId).titel,ecSchrText(s),ecRaumName(g,s.raumId)].filter(Boolean).join(" · "))}</p></div>
+      ${zu?"":`<button class="btn-tonal" data-act="ecSchrEdit" data-id="${esc(s.id)}">${icon("edit")}Bearbeiten</button>`}</div>
+    <div class="rk-inhalt"><div class="rk-zwei"><div>
       ${zu?"":`<div class="chips rk-pal">${["patch","switch","kabel","boden","router","pdu","usv","luefter","blind"].map(t2=>`<button type="button" class="chip" data-act="ecRkNeu" data-t="${t2}">${icon("add")}${EC_RK[t2]}</button>`).join("")}</div>`}
       <div class="rk-bau ${ecSchrFarbe(s)}"><div class="rk-front"><div class="rk-ks">Vorderansicht</div><div class="rk${ecSchrBreite(s)>=800?" b800":""}" style="--n:${N}">${Array.from({length:N},(_,i)=>nr(i+1)+leer(i+1)).join("")}${T.map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div></div>
         <div class="rk-side"><div class="rk-ks">Seite · ${ecSchrTiefe(s)} mm</div><div class="rk-sv" style="--n:${N}"><i class="rk-nb" style="left:${Math.round(ecSchrNutzbar(s)/ecSchrTiefe(s)*100)}%" title="nutzbar etwa ${ecSchrNutzbar(s)} mm"></i>
@@ -645,7 +649,8 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
       <p class="hint">Teil antippen zum Bearbeiten, am Griff links ziehen zum Verschieben. Freie HE antippen, um dort etwas einzusetzen. Im Patchfeld: grau = belegt, grün = gemessen i. O., rot = Mangel. Seitenansicht: Einbautiefe der Teile, Strich = nutzbare Tiefe; blass = typischer Wert, solange keine Tiefe eingetragen ist.</p></div>
     <div class="rk-rechts"><section class="card"><h3>Planung</h3><ul class="rk-hw">${P.H.map(([k,t2])=>`<li class="${k}">${icon(ic[k])}<span>${esc(t2)}</span></li>`).join("")}</ul></section>
       <section class="card"><h3>Stückliste</h3>${(()=>{ const L=ecRkStueck(g,s); return L.length?`<ul class="rk-sl">${L.map(([n,t2])=>`<li><b>${n}×</b><span>${esc(t2)}</span></li>`).join("")}</ul>`:`<p class="meta">Noch nichts geplant.</p>`; })()}
-        <p class="meta">Keystones und Patchkabel = belegte Ports; Längen der Patchkabel nach Abstand Patchfeld–Switch wählen.</p></section></div></div></div>`; }
+        <p class="meta">Keystones und Patchkabel = belegte Ports; Längen der Patchkabel nach Abstand Patchfeld–Switch wählen.</p></section>
+      <section class="card rk-bel"><h3>Belegung · ${Lk.length} Port${Lk.length===1?"":"s"}</h3>${Lk.length?`<div class="list">${Lk.map(zeile).join("")}</div>`:`<p class="meta">Noch keine Dose an diesem Schrank. Dosen legst du unter „Gebäude“ in den Räumen an.</p>`}</section></div></div></div></div>`; }
 /* Teil bearbeiten */
 function ecRkDlg(z){ const pr=ecPr(), g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x.id===nav.schr); if(!s) return; ecDlg={rk:z}; const N=ecSchrHe(s), mitPorts=z.typ==="patch"||z.typ==="switch";
   dialog(z.id?`${ecRkName(z)} bearbeiten`:`${EC_RK[z.typ]} einsetzen`,`<div class="lbl">Art</div>${ecChips("rkTyp",Object.entries(EC_RK),z.typ)}
@@ -660,6 +665,15 @@ function ecRkNeuZ(s,typ,pos){ const d=EC_RKSTD[typ]||{he:1}, he=d.he, p=pos&&ecR
   const z={typ,pos:p||1,he:p&&!ecRkFrei(s,p,he)?1:he,ports:d.ports||0,name:"",poe:false};
   if(typ==="patch") z.nr=Math.max(0,...ecPfListe(s).map(x=>x.nr))+1; return {z,platz:!!p}; }
 function ecRkLesen(){ const z=ecDlg&&ecDlg.rk; if(!z) return; const F=formVals(); if(F.rkName!=null) z.name=String(F.rkName).trim(); if(F.rkPos) z.pos=+F.rkPos; if(F.rkNr!=null&&String(F.rkNr).trim()) z.nr=+F.rkNr; if(F.rkTiefe!=null) z.tiefe=parseInt(F.rkTiefe,10)||0; }
+/* Rechtsklick bzw. lange drücken (Handy) auf [data-ctx] löst die dort genannte Aktion aus, z. B. Schrank bearbeiten */
+let ecCtxZeit=0, ecCtxT=null, ecCtxSchlucken=false;
+function ecCtx(el){ if(Date.now()-ecCtxZeit<800) return; ecCtxZeit=Date.now(); const b=document.createElement("button"); b.hidden=true; b.dataset.act=el.dataset.ctx; b.dataset.id=el.dataset.id||""; document.body.appendChild(b); b.click(); b.remove(); }
+document.addEventListener("contextmenu",e=>{ const el=e.target.closest&&e.target.closest("[data-ctx]"); if(!el) return; e.preventDefault(); ecCtx(el); });
+document.addEventListener("pointerdown",e=>{ if(e.pointerType!=="touch") return; const el=e.target.closest&&e.target.closest("[data-ctx]"); if(!el) return; const x=e.clientX, y=e.clientY; clearTimeout(ecCtxT);
+  ecCtxT=setTimeout(()=>{ ecCtxSchlucken=true; ecCtx(el); if(navigator.vibrate) try{ navigator.vibrate(15); }catch(_){} },550);
+  const ab=ev=>{ if(ev.type==="pointermove"&&Math.hypot(ev.clientX-x,ev.clientY-y)<10) return; clearTimeout(ecCtxT); document.removeEventListener("pointermove",ab); document.removeEventListener("pointerup",ab); document.removeEventListener("pointercancel",ab); };
+  document.addEventListener("pointermove",ab); document.addEventListener("pointerup",ab); document.addEventListener("pointercancel",ab); });
+document.addEventListener("click",e=>{ if(ecCtxSchlucken){ ecCtxSchlucken=false; e.preventDefault(); e.stopPropagation(); } },true);
 /* Ziehen am Griff: Schritt = eine HE */
 let ecRkZug=null;
 document.addEventListener("pointerdown",e=>{ const h=e.target.closest&&e.target.closest("[data-drag]"); if(!h) return; const el=h.closest(".rk-t"), rk=h.closest(".rk"); const pr=ecPr(); if(!el||!rk||!pr||pr.status==="fertig") return;
