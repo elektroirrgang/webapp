@@ -803,18 +803,39 @@ function ecRkTeilHtml(pr,g,s,t,M){
     <svg class="rk-svg" viewBox="0 0 ${RK_B} ${H}" preserveAspectRatio="none" aria-hidden="true">${h}</svg><span class="rk-griff" data-act="ecRkGriff" data-drag="${esc(t.id)}" aria-label="verschieben"></span></div>`; }
 
 /* ---- Beschriftung mit dem Brother P-touch (Pro Label Tool) ----
-   Die App liest CSV-Dateien als Datenbank („Datenbankdatei verbinden/serialisieren“); jede Zeile füllt ein Etikett bzw. ein Feld
-   im Verteiler-Streifen. Wir erzeugen pro Etikettenart eine CSV in Reihenfolge (Patchfeld von Port 1 an, Dosen nach Raum usw.). */
-const EC_ETI={patch:["Patchfeld-Streifen","je Port eine Zeile – für die Vorlage „Verteiler“"],dosen:["Datendosen","je Dose ein Etikett, z. B. „1.13 / 1.14“"],kabel:["Kabel-Fähnchen","je Link zwei Fähnchen: Schrankseite und Dosenseite"],geraete:["Geräte im Schrank","je Teil ein Etikett mit HE und Name"]};
+   Zwei Wege: (1) eigene Etikettendatei (.lbxs/.lbx) im Format der App – nachgebaut an einer echten Datei der Vorlage „Verteiler“,
+   (2) CSV als Datenbank („Datenbankdatei verbinden/serialisieren“). Profile (Bandbreite, Block-Abstand, Trennzeichen …) gelten firmenweit. */
+const EC_ETI={patch:["Patchfeld-Streifen","je Patchfeld ein Streifen, je Port ein Block – Vorlage „Verteiler“"],dosen:["Datendosen","je Dose ein Etikett, z. B. „1.13 / 1.14“"],kabel:["Kabel-Fähnchen","je Link zwei Fähnchen: Schrankseite und Dosenseite"],geraete:["Geräte im Schrank","je Teil ein Etikett mit HE und Name"]};
 const EC_ETI_INH=[["nr","nur Nummer"],["nr_raum","Nummer + Raum"],["raum","nur Raum"]];
-let ecEti={art:"patch",inh:"nr",sId:""};
+let ecEti={art:"patch",inh:"nr",sId:"",prof:"",fmt:"lbxs"};
+try{ const v=JSON.parse(localStorage.getItem("irrgang_eti")||"null"); if(v){ ecEti.prof=v.prof||""; ecEti.fmt=v.fmt||"lbxs"; } }catch(e){}
+const ecEtiMerken=()=>{ try{ localStorage.setItem("irrgang_eti",JSON.stringify({prof:ecEti.prof,fmt:ecEti.fmt})); }catch(e){} };
+/* Bänder: Werte aus echten Dateien (9 mm Verteiler, 12 mm Doppeltaster). Andere Breiten erst, wenn wir eine Musterdatei haben. */
+const EC_BAND={9:{papier:25.6,hoehe:20,format:258,schrift:10},12:{papier:33.6,hoehe:28,format:259,schrift:14}};
+/* [Wert in der Datei, Name in der App, aus echter Datei bestätigt] */
+const EC_TRENN=[["DOT","Markierungspunkte",false],["DASH","Gedankenstrich",false],["LINE","Linie",true],["BOLD","Fett",false],["FRAME","Rahmen",false],["NONE","Kein(e)",false]];
+const EC_MUSTER=[["{pf}.{port}","1.13"],["{pf}.{port} {raum}","1.13 Raum"],["{raum}","Raum"],["P{pf}-{port2}","P1-13"]];
+const EC_ETI_STD={id:"metz24",name:"Metz Connect 24 Port",band:9,block:18,anzahl:24,trenn:"LINE",vertikal:false,umkehren:false,mult:[],muster:"{pf}.{port}",frei:"nr",drucker:"PT-E560BT"};
+const ecEtiProfile=()=>{ const r=DB.einstellungen&&DB.einstellungen.get("etiketten"); return r&&!r.deleted&&Array.isArray(r.profile)&&r.profile.length?r.profile:[EC_ETI_STD]; };
+const ecEtiProfil=id=>{ const L=ecEtiProfile(); return {...EC_ETI_STD,...(L.find(p=>p.id===id)||L[0])}; };
+function ecEtiProfileSpeichern(L){ const neu=!DB.einstellungen.has("etiketten"), r=DB.einstellungen.get("etiketten")||{id:"etiketten"}; r.profile=L; r.deleted=false; saveRec("einstellungen",r,neu); }
+const ecEtiN=p=>Math.max(1,Math.min(50,Math.round(+p.anzahl)||24));
+const ecEtiMult=p=>Array.from({length:ecEtiN(p)},(_,i)=>Math.max(.5,Math.min(9.9,+((p.mult||[])[i])||1)));
+const ecEtiMm=(p,mm)=>String(Math.round(mm*10)/10).replace(".",",");
 /* ohne Sonderzeichen wie „·“ und „→“ – nicht jede Schrift im Drucker hat sie */
 const ecEtiRaum=(g,raumId)=>ecRaumName(g,raumId).replace(/\s*·\s*/g," ");
+const ecEtiMuster=(m,w)=>String(m||"{pf}.{port}").replace(/\{(\w+)\}/g,(_,k)=>w[k]??"").replace(/\s+/g," ").replace(/^[\s\-–.,/]+|[\s\-–.,/]+$/g,"").trim();
+/* Patchfeld-Streifen: je Patchfeld so viele Blöcke wie das Profil hat – größere Felder werden auf mehrere Streifen verteilt */
+function ecEtiStreifen(g,p){ const S=ecEti.sId?g.schraenke.filter(s=>s.id===ecEti.sId):g.schraenke, n=ecEtiN(p), R=[];
+  S.forEach(s=>{ const {M}=ecRkLinks(g,s); ecPfListe(s).forEach(pf=>{ const T=[];
+    for(let port=1;port<=pf.ports;port++){ const L=M.get(`${pf.nr}.${port}`), raum=L?ecEtiRaum(g,L[0].raumId):"", lage=L?L[0].d.lage||"":"";
+      T.push({port,raum,lage,belegt:!!L,text:!L&&p.frei==="leer"?"":ecEtiMuster(p.muster,{pf:pf.nr,port,port2:String(port).padStart(2,"0"),raum,lage,schrank:s.name})}); }
+    for(let a=0;a<T.length;a+=n){ const teil=T.slice(a,a+n); R.push({s,pf,von:a+1,bis:a+teil.length,teile:Math.ceil(T.length/n),T:teil}); } }); });
+  return R; }
 function ecEtiZeilen(pr,g){ const S=ecEti.sId?g.schraenke.filter(s=>s.id===ecEti.sId):g.schraenke, inh=ecEti.inh, Z=[];
   const text=(nr,raum)=>inh==="raum"?raum:inh==="nr_raum"?[nr,raum].filter(Boolean).join(" "):nr;
   if(ecEti.art==="patch"){ Z.push(["Schrank","Patchfeld","Port","Etikett","Raum","Lage"]);
-    S.forEach(s=>{ const {M}=ecRkLinks(g,s); ecPfListe(s).forEach(pf=>{ for(let p=1;p<=pf.ports;p++){ const L=M.get(`${pf.nr}.${p}`), raum=L?ecEtiRaum(g,L[0].raumId):"";
-      Z.push([s.name,`P${pf.nr}`,String(p),L?text(`${pf.nr}.${p}`,raum):"",raum,L?L[0].d.lage||"":""]); } }); }); }
+    ecEtiStreifen(g,ecEtiProfil(ecEti.prof)).forEach(st=>st.T.forEach(t=>Z.push([st.s.name,`P${st.pf.nr}`,String(t.port),t.text,t.raum,t.lage]))); }
   else if(ecEti.art==="dosen"){ Z.push(["Schrank","Raum","Dose","Etikett","Lage"]);
     ecRaeume(g).forEach(r=>{ g.dosen.filter(d=>d.raumId===r.id&&(!ecEti.sId||d.sId===ecEti.sId)).sort((a,b)=>(a.ord||0)-(b.ord||0)).forEach(d=>{ const n=Math.max(1,+d.ports||1), pp=Array.from({length:n},(_,i)=>((d.pp||{})[i+1]||"").trim()).filter(Boolean), raum=ecEtiRaum(g,r.id);
       Z.push([ecSchrName(g,d.sId),raum,pp.join(" / "),text(pp.join(" / "),raum),d.lage||""]); }); }); }
@@ -825,28 +846,132 @@ function ecEtiZeilen(pr,g){ const S=ecEti.sId?g.schraenke.filter(s=>s.id===ecEti
     S.forEach(s=>ecSchrTeile(s).filter(t=>!["blind","kabel"].includes(t.typ)).forEach(t=>Z.push([s.name,String(t.pos),`HE ${t.pos} ${ecRkName(t)}`,EC_RK[t.typ]||""]))); }
   return Z; }
 const ecCsv=Z=>"﻿"+Z.map(r=>r.map(v=>{ v=String(v??""); return /[",;\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v; }).join(",")).join("\r\n")+"\r\n";
-function ecEtiDlg(sId){ if(sId!==undefined) ecEti.sId=sId; const pr=ecPr(), g=ecGeb(pr.ortId), Z=ecEtiZeilen(pr,g), D=Z.slice(1), ki=Z[0].indexOf("Etikett"), mitText=D.filter(r=>r[ki]).length;
-  const andr=/android/i.test(navigator.userAgent);
-  dialog("Beschriften mit Brother",`<p class="ec-sub">CSV für die <b>Brother Pro Label Tool</b>-App (P-touch, z. B. PT-E560BT).</p>
+
+/* maßstäbliche Vorschau eines Streifens (mm), Trennzeichen so ähnlich wie in der App */
+function ecEtiSvg(p,texte,klein){ const n=ecEtiN(p), m=ecEtiMult(p), w=m.map(x=>(+p.block||18)*x), L=w.reduce((a,x)=>a+x,0), H=+p.band||9, fs=H*.4;
+  const T=Array.from({length:n},(_,i)=>String(texte[i]??"")), O=p.umkehren?[...T].reverse():T; let x=0, g="";
+  const trenn=xx=>{ const t=p.trenn; if(t==="NONE"||t==="FRAME") return "";
+    const st=t==="BOLD"?`stroke-width=".7"`:t==="DOT"?`stroke-width=".45" stroke-linecap="round" stroke-dasharray="0 1.1"`:t==="DASH"?`stroke-width=".3" stroke-dasharray="1.2 .9"`:`stroke-width=".25"`;
+    return `<line x1="${xx}" x2="${xx}" y1="${t==="DOT"?.8:0}" y2="${t==="DOT"?H-.8:H}" stroke="#111" ${st}/>`; };
+  w.forEach((b,i)=>{ const cx=x+b/2, t=O[i], platz=(p.vertikal?H:b)-1.4, breit=[...t].length*fs*.6;
+    if(p.trenn==="FRAME") g+=`<rect x="${x+.35}" y=".35" width="${b-.7}" height="${H-.7}" fill="none" stroke="#111" stroke-width=".3"/>`;
+    if(i) g+=trenn(x);
+    if(t) g+=`<text x="${cx}" y="${H/2}" font-size="${fs}" ${breit>platz?`textLength="${platz}" lengthAdjust="spacingAndGlyphs"`:""} ${p.vertikal?`transform="rotate(-90 ${cx} ${H/2})"`:""}>${esc(t)}</text>`;
+    x+=b; });
+  return `<svg class="ec-band${klein?" klein":""}" viewBox="-.3 -.3 ${L+.6} ${H+.6}" style="width:${((L+.6)*(klein?2.2:3.4)).toFixed(0)}px" role="img" aria-label="Etikett ${ecEtiMm(p,L)} mm"><rect x="0" y="0" width="${L}" height="${H}" rx=".6" fill="#FFF" stroke="#999" stroke-width=".2"/>${g}</svg>`; }
+
+/* ---- .lbx / .lbxs selbst schreiben: .lbxs = ZIP { config.json, <name>.lbx }, .lbx = ZIP { label.xml, prop.xml } ---- */
+const ecPtS=v=>{ const x=Math.round(v*10)/10; return (Number.isInteger(x)?String(x):x.toFixed(1))+"pt"; };
+const ecXml=t=>String(t??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const ecLbxId=()=>Math.floor(Math.random()*0xFFFFF).toString(16);
+function ecLbxVerteiler(p,texte){ const B=EC_BAND[p.band]||EC_BAND[9], n=ecEtiN(p), m=ecEtiMult(p), b=(+p.block||18)*2.83428, h=B.hoehe;   /* mm→pt: Faktor an den Rasterwerten der App nachgemessen */
+  const gx=[0]; m.forEach((f,i)=>gx.push(gx[i]+b*f)); for(let i=0;i<gx.length;i++) gx[i]=Math.round(gx[i]*10)/10; const L=gx[n];
+  const stift=`<pt:pen style="NULL" widthX="0.5pt" widthY="0.5pt" color="#666666" printColorNumber="1"></pt:pen><pt:brush style="NULL" color="#FFFFFF" printColorNumber="1" id="0"></pt:brush>`;
+  const schrift=`<text:ptFontInfo><text:logFont name="sans-serif" width="0" italic="false" weight="700" charSet="0" pitchAndFamily="2"></text:logFont><text:fontExt effect="NOEFFECT" underline="0" strikeout="0" size="${B.schrift}pt" orgSize="28.8pt" textColor="#000000" textPrintColorNumber="1"></text:fontExt></text:ptFontInfo>`;
+  const zelle=i=>{ const t=String(texte[i]??""); return `<table:cell addressX="${i+1}" addressY="1" spanX="1" spanY="1" backColor="#FFFFFF" backPrintColorNumber="0"><text:text><pt:objectStyle x="${ecPtS(7.3+gx[i])}" y="4.5pt" width="${ecPtS(gx[i+1]-gx[i]-2.7)}" height="${ecPtS(h-3.4)}" backColor="#FFFFFF" backPrintColorNumber="0" ropMode="COPYPEN" angle="0" anchor="TOPLEFT" flip="NONE">${stift}<pt:expanded objectName="" objectID="${ecLbxId()}" ID="0" lock="0" templateMergeTarget="LABELLIST" templateMergeType="NONE" templateMergeID="0" allowOutOfBoundsTransfer="false" linkStatus="NONE" linkID="0"></pt:expanded></pt:objectStyle>${schrift}<text:textControl control="FIXEDFRAME" clipFrame="false" aspectNormal="true" shrink="true" autoLF="false" avoidImage="false"></text:textControl><text:textAlign horizontalAlignment="CENTER" verticalAlignment="CENTER" inLineAlignment="BASELINE"></text:textAlign><text:textStyle vertical="${p.vertikal?"true":"false"}" nullBlock="false" charSpace="0" lineSpace="0" orgPoint="${B.schrift}pt" combinedChars="false"></text:textStyle><text:transferSettings editOnPrintFormat="" editOnPrintOrder="0"></text:transferSettings><pt:data>${ecXml(t)}</pt:data><text:stringItem charLen="${[...t].length}">${schrift}</text:stringItem></text:text><pt:brush style="NULL" color="#000000" printColorNumber="1" id="0"></pt:brush></table:cell>`; };
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<pt:document xmlns:pt="http://schemas.brother.info/ptouch/2007/lbx/main" xmlns:style="http://schemas.brother.info/ptouch/2007/lbx/style" xmlns:text="http://schemas.brother.info/ptouch/2007/lbx/text" xmlns:draw="http://schemas.brother.info/ptouch/2007/lbx/draw" xmlns:image="http://schemas.brother.info/ptouch/2007/lbx/image" xmlns:barcode="http://schemas.brother.info/ptouch/2007/lbx/barcode" xmlns:database="http://schemas.brother.info/ptouch/2007/lbx/database" xmlns:table="http://schemas.brother.info/ptouch/2007/lbx/table" xmlns:cable="http://schemas.brother.info/ptouch/2007/lbx/cable" version="1.11" generator="com.brother.ptouch.mobilecablelabeltool2"><pt:body currentSheet="1" direction="LTR"><style:sheet name="1">`
+    +`<style:paper media="0" width="${ecPtS(B.papier)}" height="${ecPtS(Math.round((L+2)*10)/10+11.2)}" marginLeft="2.8pt" marginTop="5.6pt" marginRight="2.8pt" marginBottom="5.6pt" orientation="landscape" autoLength="false" monochromeDisplay="true" printColorDisplay="false" printColorsID="0" paperColor="#FFFFFF" paperInk="#000000" split="1" format="${B.format}" backgroundTheme="0" printerID="32560" printerName="Brother ${ecXml(p.drucker||"PT-E560BT")}"></style:paper><style:cutLine regularCut="0pt" freeCut=""></style:cutLine>`
+    +`<style:backGround x="5.6pt" y="2.8pt" width="${ecPtS(L+2)}" height="${ecPtS(h)}" brushStyle="NULL" brushId="0" userPattern="NONE" userPatternId="0" color="#000000" printColorNumber="1" backColor="#FFFFFF" backPrintColorNumber="0"></style:backGround><pt:objects><cable:cable>`
+    +`<pt:objectStyle x="5.6pt" y="2.8pt" width="${ecPtS(L+.7)}" height="${ecPtS(h)}" backColor="#FFFFFF" backPrintColorNumber="0" ropMode="COPYPEN" angle="0" anchor="TOPLEFT" flip="NONE"><pt:pen style="SOLID" widthX="0.5pt" widthY="0.5pt" color="#666666" printColorNumber="1"></pt:pen><pt:brush style="NULL" color="#FFFFFF" printColorNumber="1" id="0"></pt:brush><pt:expanded objectName="" objectID="${ecLbxId()}" ID="0" lock="2" templateMergeTarget="LABELLIST" templateMergeType="NONE" templateMergeID="0" allowOutOfBoundsTransfer="false" linkStatus="NONE" linkID="0"></pt:expanded></pt:objectStyle>`
+    +`<cable:cableStyle cableType="PATCHPANEL" fontName="sans-serif" printerFont="false"></cable:cableStyle><cable:gridPosition x="${gx.map(ecPtS).join(" ")}" y="0pt ${ecPtS(h-.7)}"></cable:gridPosition>`
+    +`<cable:patchpanel fontSize="${B.schrift}pt" uiType="0" blocklength="${ecPtS(b)}" blocknumber="${n}" separator="${ecXml(p.trenn||"LINE")}" reverse="${p.umkehren?"true":"false"}" orientation="${p.vertikal?"true":"false"}" multipliers="${Array.from({length:50},(_,i)=>Math.round((m[i]||1)*10)).join(" ")}"></cable:patchpanel>`
+    +`<table:cells>${Array.from({length:n},(_,i)=>zelle(i)).join("")}</table:cells></cable:cable></pt:objects></style:sheet></pt:body></pt:document>`; }
+const ecLbxProp=titel=>{ const jetzt=new Date().toISOString().replace(/\.\d+Z$/,"Z");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<meta:properties xmlns:meta="http://schemas.brother.info/ptouch/2007/lbx/meta" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/"><meta:appName>com.brother.ptouch.mobilecablelabeltool2</meta:appName><dc:title>${ecXml(titel)}</dc:title><dc:subject></dc:subject><dc:creator>Elektro Irrgang</dc:creator><meta:keyword></meta:keyword><dc:description>{"databaseTypeKey":2}</dc:description><meta:template></meta:template><dcterms:created>${jetzt}</dcterms:created><dcterms:modified>${jetzt}</dcterms:modified><meta:lastPrinted></meta:lastPrinted><meta:modifiedBy></meta:modifiedBy><meta:revision>1</meta:revision><meta:editTime>0</meta:editTime><meta:numPages>1</meta:numPages><meta:numWords>0</meta:numWords><meta:numChars>0</meta:numChars><meta:security>0</meta:security><meta:transferScript></meta:transferScript></meta:properties>`; };
+/* ZIP ohne Kompression (Methode 0) – reicht für die kleinen Dateien und braucht keine Bibliothek */
+const EC_CRC=(()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c=c&1?0xEDB88320^(c>>>1):c>>>1; t[n]=c>>>0; } return t; })();
+const ecCrc=d=>{ let c=0xFFFFFFFF; for(let i=0;i<d.length;i++) c=EC_CRC[(c^d[i])&255]^(c>>>8); return (c^0xFFFFFFFF)>>>0; };
+function ecZip(dateien){ const enc=new TextEncoder(), teile=[], zentral=[]; let pos=0;
+  const d=new Date(), zeit=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1), datum=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+  for(const f of dateien){ const name=enc.encode(f.name), daten=typeof f.daten==="string"?enc.encode(f.daten):f.daten, crc=ecCrc(daten);
+    const k=new DataView(new ArrayBuffer(30)); k.setUint32(0,0x04034b50,true); k.setUint16(4,20,true); k.setUint16(6,0x0800,true); k.setUint16(10,zeit,true); k.setUint16(12,datum,true);
+    k.setUint32(14,crc,true); k.setUint32(18,daten.length,true); k.setUint32(22,daten.length,true); k.setUint16(26,name.length,true);
+    teile.push(new Uint8Array(k.buffer),name,daten);
+    const z=new DataView(new ArrayBuffer(46)); z.setUint32(0,0x02014b50,true); z.setUint16(4,20,true); z.setUint16(6,20,true); z.setUint16(8,0x0800,true); z.setUint16(12,zeit,true); z.setUint16(14,datum,true);
+    z.setUint32(16,crc,true); z.setUint32(20,daten.length,true); z.setUint32(24,daten.length,true); z.setUint16(28,name.length,true); z.setUint32(42,pos,true);
+    zentral.push(new Uint8Array(z.buffer),name); pos+=30+name.length+daten.length; }
+  const zl=zentral.reduce((a,x)=>a+x.length,0), e=new DataView(new ArrayBuffer(22)); e.setUint32(0,0x06054b50,true); e.setUint16(8,dateien.length,true); e.setUint16(10,dateien.length,true); e.setUint32(12,zl,true); e.setUint32(16,pos,true);
+  const alle=[...teile,...zentral,new Uint8Array(e.buffer)], out=new Uint8Array(alle.reduce((a,x)=>a+x.length,0)); let o=0; for(const x of alle){ out.set(x,o); o+=x.length; } return out; }
+const ecLbx=(name,p,texte)=>ecZip([{name:"label.xml",daten:ecLbxVerteiler(p,texte)},{name:"prop.xml",daten:ecLbxProp(name)}]);
+const ecLbxs=(name,p,texte)=>ecZip([{name:"config.json",daten:JSON.stringify({Version:"1.0",CurrentLbx:name+".lbx",CurrentCsv:""})},{name:name+".lbx",daten:ecLbx(name,p,texte)}]);
+
+/* ---- Dialog „Beschriften“ ---- */
+function ecEtiDlg(sId){ if(sId!==undefined) ecEti.sId=sId; const pr=ecPr(), g=ecGeb(pr.ortId), andr=/android/i.test(navigator.userAgent), patch=ecEti.art==="patch";
+  const PL=ecEtiProfile(); if(!PL.some(p=>p.id===ecEti.prof)) ecEti.prof=PL[0].id; const p=ecEtiProfil(ecEti.prof), fmt=patch?ecEti.fmt:"csv";
+  let vorschau="";
+  if(patch){ const ST=ecEtiStreifen(g,p), L=ecEtiMult(p).reduce((a,x)=>a+x*(+p.block||18),0);
+    vorschau=`<div class="lbl" style="margin-top:14px">Vorschau · ${ST.length} Streifen à ${ecEtiN(p)} Blöcke · ${ecEtiMm(p,L)} × ${p.band} mm</div>
+      <div class="ec-baender">${ST.length?ST.map(st=>`<div class="ec-bd"><div class="ec-bd-k">${esc(st.s.name)} · Patchfeld ${st.pf.nr}${st.teile>1?` · Port ${st.von}–${st.bis}`:""}</div><div class="ec-bd-s">${ecEtiSvg(p,st.T.map(t=>t.text))}</div></div>`).join(""):`<p class="meta">Kein Patchfeld im Schrank.</p>`}</div>
+      ${ST.some(st=>st.pf.ports%ecEtiN(p))?`<p class="meta" style="margin:6px 4px 0">Hinweis: Ein Patchfeld hat nicht ${ecEtiN(p)} Ports – der letzte Streifen hat leere Blöcke.</p>`:""}`; }
+  else { const Z=ecEtiZeilen(pr,g), D=Z.slice(1), ki=Z[0].indexOf("Etikett"), mitText=D.filter(r=>r[ki]).length;
+    vorschau=`<div class="lbl" style="margin-top:14px">Vorschau · ${D.length} Zeile${D.length===1?"":"n"}${mitText<D.length?` (${D.length-mitText} leer)`:""}</div>
+      <div class="ec-eti-v">${D.slice(0,24).map(r=>`<span class="ec-eti${r[ki]?"":" leer"}" title="${esc(r.join(" · "))}">${esc(r[ki]||"–")}</span>`).join("")}${D.length>24?`<span class="ec-eti mehr">+${D.length-24}</span>`:""}</div>`; }
+  const hilfe=fmt==="csv"?`<li>CSV teilen oder herunterladen (landet in „Downloads“).</li>
+      <li>Pro Label Tool öffnen, Vorlage wählen – ${patch?"„Verteiler“":ecEti.art==="kabel"?"„Fähnchen“":"„Selbstlaminierend“ oder ein Standard-Etikett"}.</li>
+      <li>„Datenbankdatei verbinden/serialisieren“ → die CSV wählen → „Erste Zeile als Kopfzeile“ an → Feld „Etikett“ zuordnen.</li>`
+    :`<li>Datei teilen und „Pro Label Tool“ wählen – oder herunterladen und in der App unter „Öffnen“ bzw. „Importieren“ laden.</li>
+      <li>Je Patchfeld kommt eine Datei; Blöcke, Abstand und Trennzeichen sind schon eingestellt, die Texte stehen drin.</li>
+      <li>Falls die App die Datei nicht annimmt: Format „CSV“ wählen und wie gewohnt als Datenbank verbinden.</li>`;
+  dialog("Beschriften mit Brother",`<p class="ec-sub">Für die <b>Brother Pro Label Tool</b>-App (P-touch, z. B. PT-E560BT).</p>
     <div class="lbl">Was beschriften?</div>${ecChips("etiArt",Object.entries(EC_ETI).map(([k,v])=>[k,v[0]]),ecEti.art)}
     <p class="meta" style="margin:6px 4px 0">${esc(EC_ETI[ecEti.art][1])}</p>
-    ${ecEti.art!=="geraete"?`<div class="lbl" style="margin-top:12px">Text auf dem Etikett</div>${ecChips("etiInh",EC_ETI_INH,ecEti.inh)}`:""}
+    ${patch?`<div class="lbl" style="margin-top:12px">Profil</div><div class="chips ec-wahl">${PL.map(x=>`<button type="button" class="chip" data-act="ecWahl" data-g="etiProf" data-v="${esc(x.id)}" aria-pressed="${x.id===ecEti.prof}">${esc(x.name)}</button>`).join("")}<button type="button" class="chip ec-chip-neu" data-act="ecEtiProf" data-id="">${icon("add")}Neues Profil</button></div>
+      <button type="button" class="ec-etp-kurz" data-act="ecEtiProf" data-id="${esc(p.id)}"><span>${p.band} mm Band · Block ${ecEtiMm(p,+p.block||18)} mm · ${ecEtiN(p)} Blöcke · ${esc((EC_TRENN.find(t=>t[0]===p.trenn)||EC_TRENN[2])[1])}${p.vertikal?" · vertikal":""}${p.umkehren?" · umgekehrt":""}</span>${icon("edit")}</button>`
+      :`<div class="lbl" style="margin-top:12px">Text auf dem Etikett</div>${ecChips("etiInh",EC_ETI_INH,ecEti.inh)}`}
     ${g.schraenke.length>1?`<div class="lbl" style="margin-top:12px">Schrank</div>${ecChips("etiS",[["","alle"],...g.schraenke.map(s=>[s.id,s.name])],ecEti.sId)}`:""}
-    <div class="lbl" style="margin-top:14px">Vorschau · ${D.length} Zeile${D.length===1?"":"n"}${mitText<D.length?` (${D.length-mitText} leer = freier Port)`:""}</div>
-    <div class="ec-eti-v">${D.slice(0,24).map(r=>`<span class="ec-eti${r[ki]?"":" leer"}" title="${esc(r.join(" · "))}">${esc(r[ki]||"–")}</span>`).join("")}${D.length>24?`<span class="ec-eti mehr">+${D.length-24}</span>`:""}</div>
-    <details class="ec-eti-hilfe"><summary>So druckst du in der App</summary><ol>
-      <li>CSV teilen oder herunterladen (landet in „Downloads“).</li>
-      <li>Pro Label Tool öffnen, Vorlage wählen – ${ecEti.art==="patch"?"„Verteiler“ für den Patchfeld-Streifen":ecEti.art==="kabel"?"„Fähnchen“ für Kabel":"„Selbstlaminierend“ oder ein Standard-Etikett"}.</li>
-      <li>Im Bearbeiten-Bildschirm „Datenbankdatei verbinden/serialisieren“ → die CSV wählen → „Erste Zeile als Kopfzeile“ an.</li>
-      <li>Im Feld „Etikett“ zuordnen und drucken.</li></ol>
+    ${vorschau}
+    ${patch?`<div class="lbl" style="margin-top:14px">Format</div>${ecChips("etiFmt",[["lbxs","Brother-Datei (.lbxs)"],["lbx","Etikett (.lbx)"],["csv","CSV-Datenbank"]],fmt)}`:""}
+    <details class="ec-eti-hilfe"><summary>So druckst du in der App</summary><ol>${hilfe}</ol>
       <p class="meta">Für den Drucker allein (ohne Handy): in der App unter Einstellungen „CSV-Datei übertragen“.</p></details>`,
     `${andr?`<button class="btn-text" data-act="ecEtiApp">App öffnen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button><button class="btn-text" data-act="ecEtiLaden">Herunterladen</button><button class="btn-text" data-act="ecEtiTeilen">Teilen</button>`,{breit:true}); }
-async function ecEtiAusgeben(teilen){ const pr=ecPr(), g=ecGeb(pr.ortId), Z=ecEtiZeilen(pr,g); if(Z.length<2){ toast("Nichts zu beschriften"); return; }
-  const s=ecEti.sId&&g.schraenke.find(x=>x.id===ecEti.sId), name=bbFs(`Etiketten ${EC_ETI[ecEti.art][0]}${s?" "+s.name:""} ${ecOrt(pr.ortId).titel}`)+".csv";
-  const blob=new Blob([ecCsv(Z)],{type:"text/csv;charset=utf-8"}), f=new File([blob],name,{type:"text/csv"});
-  if(teilen&&navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f],title:name}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
-  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
-  toast(teilen?"Teilen geht hier nicht – CSV wurde heruntergeladen":"CSV heruntergeladen"); }
+async function ecEtiAusgeben(teilen){ const pr=ecPr(), g=ecGeb(pr.ortId), fmt=ecEti.art==="patch"?ecEti.fmt:"csv", ort=ecOrt(pr.ortId).titel, F=[];
+  if(fmt==="csv"){ const Z=ecEtiZeilen(pr,g); if(Z.length<2){ toast("Nichts zu beschriften"); return; }
+    const s=ecEti.sId&&g.schraenke.find(x=>x.id===ecEti.sId); F.push(new File([ecCsv(Z)],bbFs(`Etiketten ${EC_ETI[ecEti.art][0]}${s?" "+s.name:""} ${ort}`)+".csv",{type:"text/csv"})); }
+  else { const p=ecEtiProfil(ecEti.prof), ST=ecEtiStreifen(g,p); if(!ST.length){ toast("Kein Patchfeld zum Beschriften"); return; }
+    ST.forEach(st=>{ const name=bbFs(`${st.s.name} P${st.pf.nr}${st.teile>1?` ${st.von}-${st.bis}`:""}`), T=st.T.map(t=>t.text);
+      F.push(new File([fmt==="lbx"?ecLbx(name,p,T):ecLbxs(name,p,T)],`${name}.${fmt}`,{type:"application/octet-stream"})); }); }
+  if(teilen&&navigator.canShare&&navigator.canShare({files:F})){ try{ await navigator.share({files:F,title:F.length===1?F[0].name:`Etiketten ${ort}`}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
+  F.forEach((f,i)=>setTimeout(()=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(f); a.download=f.name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500); },i*400));
+  const was=F.length===1?F[0].name.split(".").pop().toUpperCase()+"-Datei":`${F.length} Dateien`;
+  toast(teilen?`Teilen geht hier nicht – ${was} heruntergeladen`:`${was} heruntergeladen`); }
+
+/* ---- Profil bearbeiten (wie „Verteiler“-Einstellungen in der App) ---- */
+let ecEtp=null;
+function ecEtiProfDlg(id){ const L=ecEtiProfile(), alt=id?L.find(p=>p.id===id):null;
+  if(!ecEtp||ecEtp.id!==(alt?alt.id:"")) ecEtp={id:alt?alt.id:"",w:{...EC_ETI_STD,...(alt||{}),id:alt?alt.id:"",name:alt?alt.name:"",mult:[...((alt&&alt.mult)||[])]}};
+  const W=ecEtp.w;
+  dialog(alt?"Etiketten-Profil bearbeiten":"Neues Etiketten-Profil",`<div class="ec-etp">
+    <div class="fg1">${tf("etpName","Name",W.name,{form:true,ph:"z. B. Metz Connect 24 Port"})}</div>
+    <div class="lbl" style="margin-top:14px">Bandbreite</div>${ecChips("etpBand",Object.keys(EC_BAND).map(b=>[b,`${b} mm`]),String(W.band))}
+    <div class="fg" style="margin-top:12px">${tf("etpBlock","Block-Abstand",ecEtiMm(W,+W.block||18),{form:true,im:"decimal",sfx:"mm"})}${tf("etpAnz","Anzahl der Blöcke",String(ecEtiN(W)),{form:true,im:"numeric"})}</div>
+    <div class="lbl" style="margin-top:14px">Trennzeichen</div>${ecChips("etpTrenn",EC_TRENN.map(t=>[t[0],t[1]]),W.trenn)}
+    <div class="lbl" style="margin-top:12px">Textausrichtung</div>${ecZSeg("ecEtpSeg",W.vertikal?"v":"h",[["h","Horizontal"],["v","Vertikal"]]).replace(/data-act="ecEtpSeg"/g,'data-act="ecEtpSeg" data-k="vertikal"')}
+    <div class="lbl" style="margin-top:12px">Umkehren</div>${ecZSeg("ecEtpSeg",W.umkehren?"j":"n",[["n","Aus"],["j","An"]]).replace(/data-act="ecEtpSeg"/g,'data-act="ecEtpSeg" data-k="umkehren"')}
+    <div class="lbl" style="margin-top:14px">Text je Block</div>
+    <div class="fg1">${tf("etpMuster","Muster",W.muster,{form:true,ph:"{pf}.{port}"})}</div>
+    <div class="chips ec-wahl" style="margin-top:6px">${EC_MUSTER.map(([v,t])=>`<button type="button" class="chip" data-act="ecEtpMuster" data-v="${esc(v)}">${esc(t)}</button>`).join("")}</div>
+    <p class="meta" style="margin:6px 4px 0">Platzhalter: {pf} Patchfeld, {port} Port, {port2} Port zweistellig, {raum}, {lage}, {schrank}</p>
+    <div class="lbl" style="margin-top:12px">Freie Ports</div>${ecChips("etpFrei",[["nr","trotzdem beschriften"],["leer","leer lassen"]],W.frei)}
+    <details class="ec-etp-m"${W.mult.some(x=>x&&+x!==1)?" open":""}><summary>Blocklängen-Verhältnis je Block</summary><div id="etpMult">${ecEtpMultHtml(W)}</div></details>
+    <div class="lbl" style="margin-top:14px">Vorschau <span id="etpLaenge"></span></div><div class="ec-baender"><div class="ec-bd-s" id="etpVorschau"></div></div>
+    ${EC_TRENN.find(t=>t[0]===W.trenn&&!t[2])?`<p class="meta ec-etp-warn">„${esc(EC_TRENN.find(t=>t[0]===W.trenn)[1])}“ ist noch nicht an einer echten App-Datei geprüft – bei Problemen „Linie“ nehmen oder uns eine Musterdatei schicken.</p>`:""}
+  </div>`,`${alt&&L.length>1?`<button class="btn-text danger" data-act="ecEtpDel">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="ecEtpZurueck">Abbrechen</button><button class="btn-text" data-act="ecEtpOk">Speichern</button>`,{breit:true});
+  ecEtpVorschau(); }
+const ecEtpMultHtml=W=>`<div class="ec-etp-mg">${ecEtiMult(W).map((x,i)=>`<label><span>${i+1}</span><input type="text" inputmode="decimal" data-etpm="${i}" value="${String(x).replace(".",",")}"></label>`).join("")}</div><p class="meta">1,0 = normaler Block, 2,0 = doppelt so lang (z. B. für einen Doppelport).</p>`;
+const ecEtpZahl=v=>{ const x=parseFloat(String(v||"").replace(",",".")); return isFinite(x)?x:NaN; };
+function ecEtpLesen(){ if(!ecEtp) return; const W=ecEtp.w, v=id=>{ const e=document.getElementById(id); return e?e.value:null; };
+  if(v("f_etpName")!=null) W.name=v("f_etpName").trim();
+  if(v("f_etpBlock")!=null){ const b=ecEtpZahl(v("f_etpBlock")); if(b>=3&&b<=100) W.block=Math.round(b*10)/10; }
+  if(v("f_etpAnz")!=null){ const n=Math.round(ecEtpZahl(v("f_etpAnz"))); if(n>=1&&n<=50) W.anzahl=n; }
+  if(v("f_etpMuster")!=null) W.muster=v("f_etpMuster").trim()||"{pf}.{port}";
+  document.querySelectorAll("#dlg [data-etpm]").forEach(e=>{ const x=ecEtpZahl(e.value); W.mult[+e.dataset.etpm]=x>=.5&&x<=9.9?Math.round(x*10)/10:1; }); }
+function ecEtpVorschau(){ const el=document.getElementById("etpVorschau"); if(!el||!ecEtp) return; const W=ecEtp.w, n=ecEtiN(W);
+  el.innerHTML=ecEtiSvg(W,Array.from({length:n},(_,i)=>ecEtiMuster(W.muster,{pf:1,port:i+1,port2:String(i+1).padStart(2,"0"),raum:"Büro",lage:"",schrank:"Schrank"})));
+  const l=document.getElementById("etpLaenge"); if(l) l.textContent=`· ${ecEtiMm(W,ecEtiMult(W).reduce((a,x)=>a+x*(+W.block||18),0))} × ${W.band} mm`; }
+function ecEtpOk(){ ecEtpLesen(); const W=ecEtp.w; if(!W.name){ toast("Bitte einen Namen eingeben"); return; }
+  const L=ecEtiProfile().map(p=>({...p})), n=ecEtiN(W), mult=ecEtiMult(W), p={...W,anzahl:n,mult:mult.every(x=>x===1)?[]:mult};
+  if(!p.id){ p.id="etp"+Date.now().toString(36); L.push(p); } else { const i=L.findIndex(x=>x.id===p.id); if(i<0) L.push(p); else L[i]=p; }
+  ecEtiProfileSpeichern(L); ecEti.prof=p.id; ecEtiMerken(); ecEtp=null; toast("Profil gespeichert"); ecEtiDlg(); }
 
 /* Verschieben: Ziel frei ⇒ einfach hin; belegt ⇒ die Teile dazwischen rücken nach (wie Tauschen bei gleich hohen Teilen) */
 function ecRkPlan(s,id,np){ const T=ecSchrTeile(s).map(x=>({...x})), t=T.find(x=>x.id===id), N=ecSchrHe(s); if(!t) return null; const he=t.he;
@@ -1133,6 +1258,7 @@ document.addEventListener("change",e=>{ const el=e.target;
   if(/^f_zu_/.test(el.id)&&el.value){ const pr=ecPr(), g=ecGeb(pr.ortId), st=g.stellen.find(s=>s.id===el.id.slice(5)); if(st){ ecWerteLesen(); st.skId=el.value; ecLetzterSk=el.value; ecGebSpeichern(g); const r=ecDlg&&ecDlg.raumMess; render(); if(r) ecRaumMessDlg(r); } return; }
   if(el.dataset&&el.dataset.ec){ const pr=ecPr(); if(!pr||pr.status==="fertig") return; const [a,b]=el.dataset.ec.split("."); if(a==="pruefart") pr.pruefartGesetzt=true; if(b){ pr[a]=Object.assign({},pr[a]||{},{[b]:el.value.trim()}); } else pr[a]=el.value.trim(); saveRec("echecks",pr); } });
 document.addEventListener("input",e=>{ const el=e.target; if(!el.dataset) return;
+  if(ecEtp&&el.closest&&el.closest("#dlg .ec-etp")){ ecEtpLesen(); if(el.id==="f_etpAnz"){ const m=document.getElementById("etpMult"); if(m) m.innerHTML=ecEtpMultHtml(ecEtp.w); } ecEtpVorschau(); return; }
   if(el.id==="f_ppStart"){ ecPpFuellen(); return; }
   if(el.id==="f_ecName"&&ecDlg&&"ebeneHand" in ecDlg&&!ecDlg.ebeneHand){ const s2=document.getElementById("f_ecEbene"), v=ecEbeneRaten(el.value); if(s2) s2.value=v==null?"":String(v); return; }
   if(el.dataset.mw&&el.dataset.gsk){ const f=el.closest(".ec-feld"); if(!f) return; const st=ecWertStand(EC_GW[el.dataset.mw].gw(el.dataset.gsk),el.value); f.classList.remove("ok","bad"); if(st) f.classList.add(st); return; }
@@ -1174,6 +1300,8 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     L=L.includes(b.dataset.id)?L.filter(x=>x!==b.dataset.id):[...L,b.dataset.id]; if(!L.length){ toast("Mindestens ein Verteiler gehört zur Prüfung"); return; }
     pr.umfang=alle.every(x=>L.includes(x))?null:{vIds:L}; saveRec("echecks",pr); render(); return; }
   case "ecWahl": { const gr=b.dataset.g; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+    if(gr==="etiProf"||gr==="etiFmt"){ ecEti[gr==="etiProf"?"prof":"fmt"]=b.dataset.v; ecEtiMerken(); ecEtiDlg(); return; }
+    if(gr==="etpBand"||gr==="etpTrenn"||gr==="etpFrei"){ ecEtpLesen(); const v=b.dataset.v; ecEtp.w[{etpBand:"band",etpTrenn:"trenn",etpFrei:"frei"}[gr]]=gr==="etpBand"?+v:v; ecEtiProfDlg(ecEtp.id); return; }
     if(gr==="etiArt"||gr==="etiInh"||gr==="etiS"){ ecEti[{etiArt:"art",etiInh:"inh",etiS:"sId"}[gr]]=b.dataset.v; ecEtiDlg(); return; }
     if(ecDlg&&"geplant" in ecDlg&&["vor","bauart","he","breite","tiefe","farbe","pfAnz","pfPorts"].includes(gr)){ const v=b.dataset.v; ecSchrLesen();
       if(gr==="vor"){ const p=EC_RKVOR[+v]; Object.assign(ecDlg.w,{bauart:p[0],he:String(p[1]),breite:String(p[2]),tiefe:String(p[3])}); ecSchrDlg(); return; }
@@ -1276,6 +1404,12 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecGer": ecGerDlg(b.dataset.id); return;
   /* Beschriftung (Brother Pro Label Tool) */
   case "ecEti": ecEtiDlg(b.dataset.id||""); return;
+  case "ecEtiProf": ecEtp=null; ecEtiProfDlg(b.dataset.id||""); return;
+  case "ecEtpSeg": { ecEtpLesen(); ecEtp.w[b.dataset.k]=b.dataset.v==="v"||b.dataset.v==="j"; ecEtiProfDlg(ecEtp.id); return; }
+  case "ecEtpMuster": { const i=document.getElementById("f_etpMuster"); if(i){ i.value=b.dataset.v; i.parentElement.classList.add("fl"); } ecEtpLesen(); ecEtpVorschau(); return; }
+  case "ecEtpOk": ecEtpOk(); return;
+  case "ecEtpZurueck": ecEtp=null; ecEtiDlg(); return;
+  case "ecEtpDel": { const id=ecEtp&&ecEtp.id, L=ecEtiProfile().filter(p=>p.id!==id); if(!id||!L.length) return; ecEtiProfileSpeichern(L); if(ecEti.prof===id){ ecEti.prof=L[0].id; ecEtiMerken(); } ecEtp=null; toast("Profil gelöscht"); ecEtiDlg(); return; }
   case "ecEtiLaden": ecEtiAusgeben(false); return;
   case "ecEtiTeilen": ecEtiAusgeben(true); return;
   case "ecEtiApp": location.href="intent://#Intent;package=com.brother.ptouch.mobilecablelabeltool2;end"; return;
