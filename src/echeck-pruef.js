@@ -201,7 +201,7 @@ function ecListeView(art){
   if(!L.length) return h+`<div class="empty">${icon(art==="geraete"?"ecStecker":"home")}<h2>${art==="geraete"?"Noch keine Geräteprüfung":"Noch keine Installationsprüfung"}</h2><p>${art==="geraete"
       ?"Ortsveränderliche Geräte (DGUV V3, DIN VDE 0701-0702): Geräte je Kunde erfassen, prüfen, Prüffrist setzen – das Protokoll landet in der Bibliothek."
       :"Hausinstallationen und Anlagen (DIN VDE 0100-600 / 0105-100): Räume, Verteiler, Stromkreise und Steckdosen anlegen, besichtigen, messen – das Protokoll landet in der Bibliothek."}</p></div></div>`;
-  return h+`${searchBar("Ort, Kunde, Prüfer oder Datum suchen",fKnopf("ec_"+art))}<div id="res">${ecListeInhalt(art)}</div></div>`; }
+  return h+`${art==="netz"?`<div class="kat-einstieg">${ecListe([ecLi({act:"ecKatalog",lead:icon("book"),ton:"plus",kopf:"Netzwerk-Katalog",text:`${EC_RKKAT.length} Geräte mit Frontansicht – Patchfelder, Switches, Gateways, NAS`})])}</div>`:""}${searchBar("Ort, Kunde, Prüfer oder Datum suchen",fKnopf("ec_"+art))}<div id="res">${ecListeInhalt(art)}</div></div>`; }
 /* Abschnitt in der Kunden-/Standortansicht */
 function ecBeiKunde(kind,r){ const L=ecAlle().filter(p=>kind==="kunden"?p.kundeId===r.id:p.standortId===r.id).sort((a,b)=>String(b.datum||"").localeCompare(String(a.datum||"")));
   return kdKopf("Prüfungen","ecNeuHier","Prüfung anlegen",` data-kind="${kind}" data-id="${esc(r.id)}"`)+(L.length?listOf(L.map(ecItem)):`<p class="meta">Noch keine Prüfung.</p>`); }
@@ -748,6 +748,19 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
     <div class="rk-inhalt rk-${tab}">${inhalt}</div>
     ${zu||tab!=="ansicht"?"":`<button class="fab rk-fab" data-act="ecRkWahl">${icon("add")}<span>Teil einsetzen</span></button>`}</div>`; }
 let ecRkTab="ansicht";
+/* ---- Netzwerk-Katalog (Prospekt): alle Modelle mit Frontansicht – zum Nachschlagen und um Kunden zu zeigen, wie es aussehen kann ---- */
+const EC_KATGR=[["alle","Alle"],["patch","Patchfelder"],["switch","Switches"],["router","Gateways"],["nas","NAS und Rekorder"],["boden","Router auf Fachboden"]];
+let ecKatFilter="alle";
+function ecRkFrontSvg(K){ const t={id:"k",typ:K.typ,pos:1,he:K.he,ports:K.ports,nr:1,kat:K.id,name:K.kurz||"",poe:!!K.poe,voll:true};
+  const html=ecRkTeilHtml(null,null,null,t,new Map()), a=html.indexOf("<svg"), b=html.lastIndexOf("</svg>")+6, H=K.he*RK_U;
+  return html.slice(a,b).replace('class="rk-svg"','class="kat-svg"').replace('preserveAspectRatio="none"',`preserveAspectRatio="xMidYMid meet" style="aspect-ratio:${RK_B}/${H.toFixed(2)}"`); }
+function ecKatalogView(){ const f=ecKatFilter, L=EC_RKKAT.filter(K=>f==="alle"||K.typ===f);
+  const chips=`<div class="ec-filter">${EC_KATGR.map(([v,t])=>{ const n=v==="alle"?EC_RKKAT.length:EC_RKKAT.filter(K=>K.typ===v).length; return n?`<button type="button" class="m3-filter" data-act="ecKatFilter" data-v="${v}" aria-pressed="${f===v}">${t} ${n}</button>`:""; }).join("")}</div>`;
+  const karte=K=>{ const fakten=[`${K.he} HE`,K.ports&&K.typ!=="router"&&K.typ!=="boden"?`${K.ports} Ports`:"",K.poe?"PoE":"",K.tiefe?`${K.tiefe} mm tief`:"",K.info||""].filter(Boolean);
+    return `<section class="card kat-karte"><div class="kat-kopf"><div><h3>${esc(ecRkKatName(K))}</h3><p class="meta">${esc([K.hersteller,ecRkKatNr(K)].filter(Boolean).join(" · "))}</p></div><span class="kat-art">${esc(EC_RK[K.typ]||"")}</span></div>
+      <div class="kat-bild">${ecRkFrontSvg(K)}</div><div class="kat-fakten">${fakten.map(x=>`<span>${esc(x)}</span>`).join("")}</div>
+      ${K.keystone?`<p class="m3-hinweis">Keystone: ${esc(K.keystone.name)} – Art.-Nr. ${esc(K.keystone.artnr)}</p>`:""}${K.geschaetzt?`<p class="m3-hinweis">Raster wie beim Edelstahl angenommen, noch nicht nachgemessen.</p>`:""}</section>`; };
+  return `<div class="narrow">${ecRkDefs()}<p class="meta" style="margin:0 2px 12px">Geräte, die der Schrankplaner kennt – mit echten Maßen und Frontansicht. Im Schrank unter „Teil einsetzen“ wählbar.</p>${chips}<div class="ec-spalte">${L.map(karte).join("")}</div></div>`; }
 /* Seitenansicht: Farbe wie die Front (Edelstahl, UniFi-Alu, schwarz, weiße FRITZ!Box), Tiefe maßstäblich zur Schranktiefe */
 function ecRkFarbe(t){ const K=ecRkKat(t.kat);
   if(K){ if(t.typ==="patch") return K.farbe==="edelstahl"?"inox":K.farbe==="hell"?"hell":"schwarz"; if(K.silber) return "silber"; return "schwarz"; }
@@ -828,16 +841,28 @@ const EC_RKKAT=[
   {id:"uni-promax24poe",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Pro Max 24 PoE",kurz:"USW-Pro-Max-24-PoE",sku:"USW-Pro-Max-24-PoE",he:1,ports:24,poe:true,silber:true,zeichnung:"uniSwitch",bild:{rj:24,sfp:2,lcd:true,schnell:8},info:"16 × 1 G, 8 × 2,5 G"},
   {id:"uni-promax48poe",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Pro Max 48 PoE",kurz:"USW-Pro-Max-48-PoE",sku:"USW-Pro-Max-48-PoE",he:1,ports:48,poe:true,silber:true,zeichnung:"uniSwitch",bild:{rj:48,sfp:4,lcd:true,schnell:16},info:"32 × 1 G, 16 × 2,5 G"},
   {id:"uni-24poe",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch 24 PoE",kurz:"USW-24-PoE",sku:"USW-24-PoE",he:1,ports:24,poe:true,silber:true,zeichnung:"uniSwitch",bild:{rj:24,sfp:2,lcd:true}},
+  {id:"uni-48poe",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch 48 PoE",kurz:"USW-48-PoE",sku:"USW-48-PoE",he:1,ports:48,poe:true,silber:true,zeichnung:"uniSwitch",bild:{rj:48,sfp:4,lcd:true},info:"32 Ports mit PoE"},
+  {id:"uni-24",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch 24",kurz:"USW-24",sku:"USW-24",he:1,ports:24,silber:true,zeichnung:"uniSwitch",bild:{rj:24,sfp:2,lcd:true},info:"ohne PoE"},
+  {id:"uni-48",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch 48",kurz:"USW-48",sku:"USW-48",he:1,ports:48,silber:true,zeichnung:"uniSwitch",bild:{rj:48,sfp:4,lcd:true},info:"ohne PoE"},
+  {id:"uni-prohd24poe",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Pro HD 24 PoE",kurz:"USW-Pro-HD-24-PoE",sku:"USW-Pro-HD-24-PoE",he:1,ports:24,poe:true,silber:true,zeichnung:"uniSwitch",bild:{rj:24,sfp:4,lcd:true,schnell:24},info:"2,5 G und 10 G, 4 × SFP+"},
+  {id:"uni-proagg",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Pro Aggregation",kurz:"USW-Pro-Aggregation",sku:"USW-Pro-Aggregation",he:1,ports:32,silber:true,zeichnung:"uniSwitch",bild:{rj:0,sfp:32,lcd:true},info:"28 × SFP+, 4 × SFP28"},
   {id:"uni-agg",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Aggregation",kurz:"USW-Aggregation",sku:"USW-Aggregation",he:1,ports:8,silber:true,zeichnung:"uniSwitch",bild:{rj:0,sfp:8,lcd:false},info:"8 × SFP+ 10 G"},
   {id:"udm-pro",typ:"router",hersteller:"Ubiquiti",modell:"UniFi Dream Machine Pro",kurz:"UDM-Pro",sku:"UDM-Pro",he:1,tiefe:286,silber:true,zeichnung:"uniGateway",bild:{hdd:1}},
   {id:"udm-se",typ:"router",hersteller:"Ubiquiti",modell:"UniFi Dream Machine SE",kurz:"UDM-SE",sku:"UDM-SE",he:1,silber:true,zeichnung:"uniGateway",bild:{hdd:1,poe:8},info:"8 Ports mit PoE"},
   {id:"udm-promax",typ:"router",hersteller:"Ubiquiti",modell:"UniFi Dream Machine Pro Max",kurz:"UDM-Pro-Max",sku:"UDM-Pro-Max",he:1,silber:true,zeichnung:"uniGateway",bild:{hdd:2}},
+  {id:"uxg-pro",typ:"router",hersteller:"Ubiquiti",modell:"UniFi Next-Gen Gateway Pro",kurz:"UXG-Pro",sku:"UXG-Pro",he:1,silber:true,zeichnung:"uniGateway",bild:{hdd:0,lan:2},info:"Gateway ohne Controller"},
+  {id:"uni-unaspro",typ:"nas",hersteller:"Ubiquiti",modell:"UniFi UNAS Pro",kurz:"UNAS-Pro",sku:"UNAS-Pro",he:1,silber:true,zeichnung:"uniNvr",bild:{schaechte:7},info:"7 Festplatten, Netzwerkspeicher"},
+  {id:"uni-unvrpro",typ:"nas",hersteller:"Ubiquiti",modell:"UniFi Network Video Recorder Pro",kurz:"UNVR-Pro",sku:"UNVR-Pro",he:2,silber:true,zeichnung:"uniNvr",bild:{schaechte:7},info:"7 Festplatten, Videoüberwachung"},
   {id:"uni-unvr",typ:"nas",hersteller:"Ubiquiti",modell:"UniFi Network Video Recorder",kurz:"UNVR",sku:"UNVR",he:1,silber:true,zeichnung:"uniNvr",info:"4 Festplatten, Videoüberwachung"},
   /* Synology RackStation */
   {id:"syno-rs822",typ:"nas",hersteller:"Synology",modell:"RackStation RS822+",kurz:"RS822+",sku:"RS822+",he:1,zeichnung:"synoRack",info:"4 Festplatten"},
+  {id:"syno-rs422",typ:"nas",hersteller:"Synology",modell:"RackStation RS422+",kurz:"RS422+",sku:"RS422+",he:1,zeichnung:"synoRack",info:"4 Festplatten"},
+  {id:"syno-rs2423",typ:"nas",hersteller:"Synology",modell:"RackStation RS2423+",kurz:"RS2423+",sku:"RS2423+",he:2,zeichnung:"synoRack",bild:{reihen:3},info:"12 Festplatten"},
   {id:"syno-rs1221",typ:"nas",hersteller:"Synology",modell:"RackStation RS1221+",kurz:"RS1221+",sku:"RS1221+",he:2,zeichnung:"synoRack",info:"8 Festplatten"},
   /* AVM FRITZ!Box – liegt auf einem Fachboden (2 HE) */
   {id:"fritz-5590",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 5590 Fiber",kurz:"FRITZ!Box 5590 Fiber",sku:"5590 Fiber",he:2,zeichnung:"fritz",bild:{leds:["Power","Fiber","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden"},
+  {id:"fritz-6690",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 6690 Cable",kurz:"FRITZ!Box 6690 Cable",sku:"6690 Cable",he:2,zeichnung:"fritz",bild:{leds:["Power","Cable","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden, Kabelanschluss"},
+  {id:"fritz-5690pro",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 5690 Pro",kurz:"FRITZ!Box 5690 Pro",sku:"5690 Pro",he:2,zeichnung:"fritz",bild:{leds:["Power","Fiber","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden, Glasfaser und DSL"},
   {id:"fritz-7590ax",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7590 AX",kurz:"FRITZ!Box 7590 AX",sku:"7590 AX",he:2,zeichnung:"fritz",bild:{rot:true,leds:["Power","DSL","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden"}];
 const ecRkKat=id=>id&&EC_RKKAT.find(k=>k.id===id)||null;
 const ecRkKatName=K=>K.modell.startsWith(K.hersteller.split(" ")[0])?K.modell:`${K.hersteller} ${K.modell}`;
@@ -913,20 +938,20 @@ const RK_ZEICH={
     for(let i=0;i<sfp;i++) h+=rkSfp(rechts+3+Math.floor(i/2)*15.4,i%2?H/2+1.1:H/2-11.7,13.8,10.6);
     return h+rkText(Z.lcd?40:24,H-2.6,K.kurz||K.modell,{fs:3.4,fw:600,fill:"#8E949B",anchor:Z.lcd?"middle":"start"}); },
   /* UniFi-Gateway (UDM Pro / SE / Pro Max): Display, 8 LAN + WAN + 2 SFP+, rechts HDD-Schacht */
-  uniGateway:(K,t,H)=>{ const Z=K.bild, b=Z.hdd||1; let h=rkKoerper(H,"url(#rkgUni)")+rkUniLcd(24,H/2-12.5,32,25)+rkUniLogo(26,4.2,"#8E949B");
-    h+=rkUniFeld(68,H,8,4,14.4,{farbe:nr=>Z.poe&&nr<=Z.poe?"#F5C451":null}).h;
-    const xw=68+4*14.4+8; h+=rkUniRj(xw,H/2-11.7,13,10.6,true,"#7FB2FF")+rkSfp(xw+16,H/2-11.7,13.8,10.6)+rkSfp(xw+16,H/2+1.1,13.8,10.6)
+  uniGateway:(K,t,H)=>{ const Z=K.bild, b=Z.hdd==null?1:Z.hdd, lan=Z.lan==null?8:Z.lan; let h=rkKoerper(H,"url(#rkgUni)")+rkUniLcd(24,H/2-12.5,32,25)+rkUniLogo(26,4.2,"#8E949B");
+    const F=lan?rkUniFeld(68,H,lan,4,14.4,{farbe:nr=>Z.poe&&nr<=Z.poe?"#F5C451":null}):{h:"",w:0}; h+=F.h;
+    const xw=68+(lan?F.w+8:0); h+=rkUniRj(xw,H/2-11.7,13,10.6,true,"#7FB2FF")+rkSfp(xw+16,H/2-11.7,13.8,10.6)+rkSfp(xw+16,H/2+1.1,13.8,10.6)
       +rkText(xw+6.5,H/2+8.4,"WAN",{fs:3.2,fw:700,fill:"#8E949B",anchor:"middle"});
-    const bx0=Z.hdd>1?250:300, bw=(466.1-8-bx0-(b-1)*4)/b;
+    const bx0=b>1?250:300, bw=(466.1-8-bx0-(b-1)*4)/b;
     for(let i=0;i<b;i++){ const x=bx0+i*(bw+4), y=6, hh=H-12; h+=`<rect x="${x}" y="${y}" width="${bw}" height="${hh}" rx="2.2" fill="#E3E6E9" stroke="#AEB4BA" stroke-width=".5"/><rect x="${x+3}" y="${y+3}" width="${bw-26}" height="${hh-6}" rx="1.4" fill="url(#rkpSchlitz)"/>`
       +`<rect x="${x+bw-19}" y="${y+hh/2-6}" width="14" height="12" rx="2" fill="#CDD2D7" stroke="#9AA1A8" stroke-width=".5"/><rect x="${x+bw-15}" y="${y+hh/2-1}" width="6" height="2" rx="1" fill="#7C838B"/>`; }
     return h+rkText(40,H-2.6,K.kurz||K.modell,{fs:3.4,fw:600,fill:"#8E949B",anchor:"middle"}); },
   /* UniFi UNVR: Display, 4 Festplatten-Schächte */
-  uniNvr:(K,t,H)=>{ let h=rkKoerper(H,"url(#rkgUni)")+rkUniLcd(24,H/2-12.5,32,25)+rkUniLogo(26,4.2,"#8E949B"); const x0=66, bw=(466.1-8-x0-9)/4;
-    for(let i=0;i<4;i++){ const x=x0+i*(bw+3), y=5, hh=H-10; h+=`<rect x="${x}" y="${y}" width="${bw}" height="${hh}" rx="2" fill="#E3E6E9" stroke="#AEB4BA" stroke-width=".5"/><rect x="${x+4}" y="${y+4}" width="${bw-24}" height="${hh-8}" rx="1.2" fill="url(#rkpSchlitz)"/><rect x="${x+bw-16}" y="${y+hh/2-5}" width="11" height="10" rx="1.8" fill="#CDD2D7" stroke="#9AA1A8" stroke-width=".5"/>`+rkLed(x+bw-12,y+4,true,"#4FA8FF"); }
+  uniNvr:(K,t,H)=>{ const nb=(K.bild&&K.bild.schaechte)||4, rr=t.he>1?2:1, sp=Math.ceil(nb/rr); let h=rkKoerper(H,"url(#rkgUni)")+rkUniLcd(24,H/2-12.5,32,25)+rkUniLogo(26,4.2,"#8E949B"); const x0=66, bw=(466.1-8-x0-(sp-1)*3)/sp;
+    for(let i=0;i<nb;i++){ const col=i%sp, row=Math.floor(i/sp), hh0=(H-10-(rr-1)*3)/rr; const x=x0+col*(bw+3), y=5+row*(hh0+3), hh=hh0; h+=`<rect x="${x}" y="${y}" width="${bw}" height="${hh}" rx="2" fill="#E3E6E9" stroke="#AEB4BA" stroke-width=".5"/><rect x="${x+4}" y="${y+4}" width="${Math.max(4,bw-24)}" height="${hh-8}" rx="1.2" fill="url(#rkpSchlitz)"/><rect x="${x+bw-16}" y="${y+hh/2-5}" width="11" height="10" rx="1.8" fill="#CDD2D7" stroke="#9AA1A8" stroke-width=".5"/>`+rkLed(x+bw-12,y+4,true,"#4FA8FF"); }
     return h+rkText(40,H-2.6,K.kurz||K.modell,{fs:3.4,fw:600,fill:"#8E949B",anchor:"middle"}); },
   /* Synology RackStation: schwarz, links Taster und LEDs, Laufwerksträger mit Lochmuster */
-  synoRack:(K,t,H)=>{ const r=Math.max(1,t.he>1?2:1), c=4, x0=82, bw=(466.1-8-x0-(c-1)*3)/c, bh=(H-10-(r-1)*3)/r;
+  synoRack:(K,t,H)=>{ const r=(K.bild&&K.bild.reihen)||Math.max(1,t.he>1?2:1), c=4, x0=82, bw=(466.1-8-x0-(c-1)*3)/c, bh=(H-10-(r-1)*3)/r;
     let h=rkKoerper(H,"url(#rkgSyno)")+rkText(24,10.5,"Synology",{fs:5.2,fw:700,fill:"#D7DADE"})+rkText(24,15.6,K.kurz||K.modell,{fs:3.4,fw:600,fill:"#8E939B"})
       +`<circle cx="31" cy="${H-11}" r="4.6" fill="#2A2C30" stroke="#5D6168" stroke-width=".6"/><circle cx="31" cy="${H-11}" r="2.2" fill="none" stroke="#4FA8FF" stroke-width=".8" style="filter:drop-shadow(0 0 .8px #4FA8FF)"/>`
       +["#3DDC84","#3DDC84","#F2B233","#3A3D42"].map((f,i)=>`<circle cx="${45+i*6.5}" cy="${H-11}" r="1.4" fill="${f}"/>`).join("");
@@ -956,7 +981,8 @@ function ecRkTeilHtml(pr,g,s,t,M){
   else if(KP&&KP.raster&&Math.max(1,+t.ports||24)<=24){ const n=Math.max(1,+t.ports||24), R=KP.raster, gr=Math.ceil(n/R.gruppe), W=n*R.key+(n-gr)*R.abstand+(gr-1)*R.gl, x0=(482.6-W)/2, ph=Math.min(17,H-15), y=H-ph-6;
     const body=KP.farbe==="edelstahl"?"url(#rkgInox)":KP.farbe==="schwarz"?"url(#rkgBlk)":"url(#rkgHell)", tc=KP.farbe==="schwarz"?"#C9CDD2":"#2A2C30", loch=KP.farbe==="schwarz"?"#060607":"#141517";
     h+=rkKoerper(H,body)+(KP.farbe==="edelstahl"?`<rect x="16.5" y=".6" width="449.6" height="${H-1.2}" rx="1.2" fill="url(#rkpInox)"/>`:"")+rkText(19.5,7.6,`P${t.nr}`,{fs:5.4,fw:800,fill:tc});
-    for(let i=0;i<n;i++){ const nr=i+1, gx=Math.floor(i/R.gruppe), x=x0+i*(R.key+R.abstand)+gx*(R.gl-R.abstand), L=M.get(`${t.nr}.${nr}`);
+    for(let i=0;i<n;i++){ const nr=i+1, gx=Math.floor(i/R.gruppe), x=x0+i*(R.key+R.abstand)+gx*(R.gl-R.abstand), L=t.voll?null:M.get(`${t.nr}.${nr}`);
+      if(t.voll){ h+=rkText(x+R.key/2,y-1.8,nr,{fs:5.2,fw:700,fill:tc,anchor:"middle"})+`<rect x="${x}" y="${y}" width="${R.key}" height="${ph}" rx=".8" fill="url(#rkgSil)" stroke="#7E8389" stroke-width=".35"/>${rkRj(x+2,y+2.2,R.key-4,ph-5,"#4A4E54")}<rect x="${x+3}" y="${y+ph-2}" width="${R.key-6}" height=".8" rx=".4" fill="#9AA0A6"/>`; continue; }
       h+=rkText(x+R.key/2,y-1.8,nr,{fs:5.2,fw:700,fill:tc,anchor:"middle"});
       if(!L){ h+=`<g><title>${t.nr}.${nr} frei</title><rect x="${x}" y="${y}" width="${R.key}" height="${ph}" rx=".8" fill="${loch}"/><rect x="${x}" y="${y}" width="${R.key}" height="1.2" fill="rgba(0,0,0,.35)"/></g>`; continue; }
       const st=ecNetStand(pr,L[0]), kl=L.length>1?"bad":st==="ok"?"ok":st==="bad"?"bad":"belegt";
@@ -1636,6 +1662,8 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecRkGriff": return;
   case "ecRkWahl": ecRkWahlDlg(); return;
   case "ecNetFilter": ecNetFilter=b.dataset.v; render(); return;
+  case "ecKatFilter": ecKatFilter=b.dataset.v; render(); return;
+  case "ecKatalog": go({v:"netzkatalog"}); return;
   case "ecRkTab": ecRkTab=b.dataset.v; closeOverlays(); render(); scrollTo(0,0); return;
   case "ecRkSpick": ecRkSpickAuf(b); return;
   case "ecRkHilfe": ecRkHilfeDlg(); return;
