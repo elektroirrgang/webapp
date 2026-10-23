@@ -1011,6 +1011,32 @@ body.kopf-oben .edk-platz{display:none!important}
 .ec-ik-t .ec-snr,.ec-snr{font-style:normal;line-height:1;display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;margin-right:8px;border-radius:11px;background:var(--primary);color:#fff;font-size:13px;font-weight:700;vertical-align:2px}
 .ec-beschr{margin:0 0 14px;padding:12px 14px;border-radius:16px;background:var(--sc-low)}.ec-beschr .meta{margin:8px 2px 0}
 .ec-hinweis{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:12px 14px;border-radius:16px;background:var(--sc-high);font-size:14px;line-height:1.4}.ec-hinweis span{flex:1}.ec-hinweis .btn-tonal{flex:none}
+/* ---- M3-Liste (ecLi) ---- */
+.m3-list{display:flex;flex-direction:column;margin:0 -8px}
+.m3-li{display:flex;align-items:center;gap:16px;min-height:56px;padding:8px;border-radius:14px;color:var(--on-surface);text-align:left}
+.m3-li.tap{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.m3-li.tap:hover{background:color-mix(in srgb,var(--on-surface) 6%,transparent)}.m3-li.tap:active{background:color-mix(in srgb,var(--on-surface) 10%,transparent)}
+.m3-li>.ic{flex:none;width:24px;height:24px;color:var(--on-sv)}
+.m3-lead{flex:none;width:40px;height:40px;border-radius:20px;display:grid;place-items:center;background:var(--sc-highest);color:var(--on-surface);font-size:14px;font-weight:600;white-space:nowrap}
+.m3-lead.breit{width:auto;min-width:40px;padding:0 10px;border-radius:12px}
+.m3-lead .ic{width:20px;height:20px}
+.m3-lead.ok{background:var(--ok-c);color:var(--on-ok-c)}.m3-lead.bad{background:var(--err-c);color:var(--on-err-c)}.m3-lead.wip{background:var(--wip-c);color:var(--on-wip-c)}
+.m3-dot{display:block;width:12px;height:12px;border-radius:50%;background:currentColor}
+.m3-t{flex:1;min-width:0;display:flex;flex-direction:column}
+.m3-h{font-size:16px;line-height:24px;overflow-wrap:anywhere}.m3-s{font-size:14px;line-height:20px;color:var(--on-sv);overflow-wrap:anywhere}
+.m3-r{flex:none;font-size:14px;color:var(--on-sv);text-align:right}
+.m3-st{font-size:14px;font-weight:600;white-space:nowrap}.m3-st.ok{color:var(--ok)}.m3-st.bad{color:var(--err)}.m3-st.wip{color:var(--wip)}.m3-st.open{color:var(--on-sv);font-weight:500}
+.m3-neben{font-size:14px;font-weight:500;color:var(--on-sv);margin-left:6px}
+.m3-hinweis{margin:12px 0 0;font-size:14px;line-height:20px;color:var(--on-sv)}
+/* Schrankseite in M3: Kopf mit Aktionen, Zeichnung in einer Karte, Teil einsetzen über den FAB */
+.rk-akt{flex:none;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px 0 12px;border:0;border-radius:20px;background:var(--sec-c);color:var(--on-sec-c);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.rk-akt .ic{width:20px;height:20px}
+@media (max-width:599px){.rk-akt{width:40px;padding:0;justify-content:center}.rk-akt span{display:none}}
+.rk-zeich .rk-bau{margin-top:4px}
+@media (max-width:599px){.rk-zeich .rk-bau{grid-template-columns:minmax(0,1fr)}.rk-zeich .rk-side,.rk-zeich .m3-neben{display:none}.rk-zeich{background:none;padding:0;border-radius:0}.rk-zeich h3,.rk-zeich .m3-hinweis{margin-left:4px;margin-right:4px}}
+.m3-lead.breit{min-width:56px}
+.rk-fab{z-index:40}
+.rk-inhalt{padding-bottom:104px!important}
 .ec-baender{display:flex;flex-direction:column;gap:10px;max-height:300px;overflow:auto;padding:12px;border-radius:14px;background:var(--sc-high)}
 .ec-bd-k{font-size:12.5px;font-weight:600;color:var(--on-sv);margin:0 0 4px 2px}
 .ec-bd-s{overflow-x:auto;padding:2px 0 4px;scrollbar-width:thin}
@@ -1489,6 +1515,7 @@ const IC={
   lock:"M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z",
   sync:"M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z",
   edit:"M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
+  ziehen:"M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",
   move:"M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 12v-3h-4v-4h4V8l5 5-5 5z",
   logout:"M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z",
   menu:"M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z",

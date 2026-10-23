@@ -161,6 +161,14 @@ function ecErgebnis(pr){
   const B=ecGeraeteAm(pr.ortId).map(b=>ecGerStand(pr,b)); if(B.includes("bad")) return "bad"; return ecFehlt(pr).length?"open":"ok"; }
 const EC_PILL={ok:["ok","i. O."],bad:["bad","Mangel"],wip:["wip","teilweise"],open:["open","offen"],ng:["open","nicht gemessen"],opt:["open","optional"]};
 const ecPill=s=>pill(EC_PILL[s][0],EC_PILL[s][1]);
+/* ---- M3-Liste: ein Baustein für alle Listen ----
+   lead: Inhalt der runden Fläche links (Symbol, Kurztext) · ton: ok|bad|wip|open|tipp färbt die Fläche · kopf/text: Überschrift und Zusatzzeile · rechts: Wert/Status rechts
+   act/id: macht die Zeile antippbar (Pfeil rechts nur, wenn nichts anderes rechts steht) */
+const ecLi=o=>{ const tap=!!o.act;
+  return `<div class="m3-li${tap?" tap":""}"${tap?` role="button" tabindex="0" data-act="${o.act}"${o.id!=null?` data-id="${esc(o.id)}"`:""}${o.extra||""}`:""}>${o.lead!=null?`<span class="m3-lead${o.ton?" "+o.ton:""}${o.breit?" breit":""}">${o.lead}</span>`:""}<span class="m3-t"><span class="m3-h">${o.kopf}</span>${o.text?`<span class="m3-s">${o.text}</span>`:""}</span>${o.rechts!=null?`<span class="m3-r">${o.rechts}</span>`:tap?icon("chev"):""}</div>`; };
+const ecListe=Z=>`<div class="m3-list">${Z.join("")}</div>`;
+/* Status als farbiger Text rechts (statt Pille) */
+const ecSt=st=>{ const x=EC_PILL[st]||EC_PILL.open; return `<span class="m3-st ${x[0]}">${esc(x[1])}</span>`; };
 
 /* ---- Listen ---- */
 function ecItem(pr){ const o=ecOrt(pr.ortId), erg=ecErgebnis(pr), fertig=pr.status==="fertig";
@@ -692,7 +700,7 @@ function ecRkPlanung(pr,g,s){ const T=ecSchrTeile(s), N=ecSchrHe(s), belegtHe=T.
   if((SW.length||T.some(t=>t.typ==="router"))&&!T.some(t=>t.typ==="pdu")) H.push(["tipp","Tipp: Noch keine Steckdosenleiste für Switch und Router geplant."]);
   return {H,N,frei,B,ports,swPorts}; }
 function ecRkStueck(g,s){ const T=ecSchrTeile(s), G=new Map();
-  T.filter(t=>t.typ!=="blind").forEach(t=>{ const k=[EC_RK[t.typ],t.ports&&(t.typ==="patch"||t.typ==="switch")?`${t.ports} Port`:"",t.poe?"PoE":"",`${t.he} HE`].filter(Boolean).join(", ")+(t.name&&t.typ!=="patch"?` – ${t.name}`:""); G.set(k,(G.get(k)||0)+1); });
+  T.filter(t=>t.typ!=="blind").forEach(t=>{ const k=[EC_RK[t.typ],t.ports&&(t.typ==="patch"||t.typ==="switch")?`${t.ports} Port`:"",t.poe?"PoE":"",`${t.he} HE`].filter(Boolean).join(", ")+(t.name&&t.typ!=="patch"&&t.name!==EC_RK[t.typ]?` – ${t.name}`:""); G.set(k,(G.get(k)||0)+1); });
   const L=[[1,`${s.bauart==="stand"?"Standschrank":"Wandschrank"} 19", ${ecSchrHe(s)} HE, ${ecSchrBreite(s)} × ${ecSchrTiefe(s)} mm (B × T)`],...[...G].map(([k,n])=>[n,k])], {M}=ecRkLinks(g,s), D=g.dosen.filter(d=>d.sId===s.id), fr=ecSchrHe(s)-T.reduce((a,t)=>a+t.he,0);
   if(M.size){ L.push([M.size,"Keystone-Module (Patchfeld)"]); L.push([M.size,"Patchkabel"]); }
   const DG=new Map(); D.forEach(d=>{ const k=`Datendose ${d.ports||1}-fach`; DG.set(k,(DG.get(k)||0)+1); }); DG.forEach((n,k)=>L.push([n,k]));
@@ -702,21 +710,32 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
   T.forEach(t=>{ for(let i=t.pos;i<t.pos+t.he;i++) belegt.add(i); });
   const nr=i=>`<span class="rk-he" style="grid-row:${i}">${i}</span><span class="rk-he r" style="grid-row:${i}">${i}</span>`;
   const leer=i=>belegt.has(i)?"":`<button type="button" class="rk-leer" data-act="ecRkLeer" data-pos="${i}" style="grid-row:${i}" ${zu?"disabled":""} aria-label="HE ${i} frei – Teil einsetzen"><span>+</span></button>`;
-  const ic={ok:"done",bad:"warn",wip:"warn",tipp:"info"};
-  const zeile=p=>`<div class="ec-vz sk" role="button" tabindex="0" data-act="ecRkPort" data-id="${esc(p.d.id)}"><span class="nr">${esc(p.pp||"–")}</span><span class="t">${esc(ecLinkOrt(g,p))}<small>${esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · "))}</small></span>${ecPill(ecNetStand(pr,p))}</div>`;
-  const Lk=ecNetListe({},g).filter(p=>p.d.sId===s.id);
-  return `<div class="rk-seite"><div class="rk-kopf"><button class="icon-btn" data-act="ecRkZu" aria-label="Zurück zur Infrastruktur" title="Zurück zur Infrastruktur">${icon("back")}</button><div class="rk-kt"><h2>${esc(s.name)}</h2><p>${esc([ecOrt(pr.ortId).titel,ecSchrText(s),ecRaumName(g,s.raumId)].filter(Boolean).join(" · "))}</p></div>
-      <button class="btn-tonal" data-act="ecEti" data-id="${esc(s.id)}">${icon("tag")}Beschriften</button>${zu?"":`<button class="btn-tonal" data-act="ecSchrEdit" data-id="${esc(s.id)}">${icon("edit")}Bearbeiten</button>`}</div>
-    <div class="rk-inhalt"><div class="rk-zwei"><div>
-      ${zu?"":`<div class="chips rk-pal">${["patch","switch","kabel","boden","router","pdu","usv","luefter","blind"].map(t2=>`<button type="button" class="chip" data-act="ecRkNeu" data-t="${t2}">${icon("add")}${EC_RK[t2]}</button>`).join("")}</div>`}
-      ${ecRkDefs()}<div class="rk-bau ${ecSchrFarbe(s)}"><div class="rk-front"><div class="rk-ks">Vorderansicht</div><div class="rk-geh ${s.bauart==="stand"?"stand":"wand"}${ecSchrBreite(s)>=800?" b800":""}"><div class="rk-dach"></div><div class="rk" style="--n:${N}"><span class="rk-schiene l"></span><span class="rk-schiene r"></span>${Array.from({length:N},(_,i)=>nr(i+1)+leer(i+1)).join("")}${T.map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div><div class="rk-sockel"></div></div></div>
-        <div class="rk-side"><div class="rk-ks">Seite · ${ecSchrTiefe(s)} mm</div><div class="rk-sv" style="--n:${N}"><i class="rk-nb" style="left:${Math.round(ecSchrNutzbar(s)/ecSchrTiefe(s)*100)}%" title="nutzbar etwa ${ecSchrNutzbar(s)} mm"></i>
+  const Lk=ecNetListe({},g).filter(p=>p.d.sId===s.id), ST=ecRkStueck(g,s), sym={ok:"",bad:icon("warn"),wip:icon("warn"),tipp:icon("info")};
+  const planung=ecListe(P.H.map(([k,t2])=>ecLi({lead:k==="ok"?'<i class="m3-dot"></i>':sym[k],ton:k,kopf:esc(t2)})));
+  const stueck=ST.length?ecListe(ST.map(([n,t2])=>{ const [a,...b2]=t2.split(" – "); return ecLi({lead:`${n}×`,breit:true,kopf:esc(a),text:b2.length?esc(b2.join(" – ")):""}); })):`<p class="meta">Noch nichts geplant.</p>`;
+  const beleg=Lk.length?ecListe(Lk.map(p=>ecLi({act:"ecRkPort",id:p.d.id,lead:esc(p.pp||"–"),breit:true,kopf:esc(ecLinkOrt(g,p)),text:esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · ")),rechts:ecSt(ecNetStand(pr,p))}))):`<p class="meta">Noch keine Dose an diesem Schrank. Dosen legst du unter „Gebäude“ in den Räumen an.</p>`;
+  return `<div class="rk-seite"><div class="rk-kopf"><button class="icon-btn" data-act="ecRkZu" aria-label="Zurück zur Infrastruktur" title="Zurück zur Infrastruktur">${icon("back")}</button><div class="rk-kt"><h2>${esc(s.name)}</h2><p>${esc([ecSchrText(s),ecRaumName(g,s.raumId)].filter(Boolean).join(" · "))}</p></div>
+      <button class="rk-akt" data-act="ecEti" data-id="${esc(s.id)}" title="Beschriften mit Brother">${icon("tag")}<span>Beschriften</span></button>${zu?"":`<button class="rk-akt" data-act="ecSchrEdit" data-id="${esc(s.id)}" title="Schrank bearbeiten">${icon("edit")}<span>Bearbeiten</span></button>`}<button class="icon-btn" data-act="ecRkHilfe" title="So bedienst du den Planer" aria-label="Hilfe">${icon("info")}</button></div>
+    <div class="rk-inhalt"><div class="rk-zwei"><section class="card rk-zeich"><h3>Vorderansicht <span class="m3-neben">Seite · ${ecSchrTiefe(s)} mm</span></h3>
+      ${ecRkDefs()}<div class="rk-bau ${ecSchrFarbe(s)}"><div class="rk-front"><div class="rk-geh ${s.bauart==="stand"?"stand":"wand"}${ecSchrBreite(s)>=800?" b800":""}"><div class="rk-dach"></div><div class="rk" style="--n:${N}"><span class="rk-schiene l"></span><span class="rk-schiene r"></span>${Array.from({length:N},(_,i)=>nr(i+1)+leer(i+1)).join("")}${T.map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div><div class="rk-sockel"></div></div></div>
+        <div class="rk-side"><div class="rk-sv" style="--n:${N}"><i class="rk-nb" style="left:${Math.round(ecSchrNutzbar(s)/ecSchrTiefe(s)*100)}%" title="nutzbar etwa ${ecSchrNutzbar(s)} mm"></i>
           ${T.map(t=>{ const tf2=ecRkTiefe(s,t), zu2=tf2>ecSchrNutzbar(s); return `<span class="rk-sb rk-${t.typ}${+t.tiefe?"":" geschaetzt"}${zu2?" zutief":""}" style="grid-row:${t.pos} / span ${t.he};width:${Math.min(100,Math.round(tf2/ecSchrTiefe(s)*100))}%" title="${esc(`${ecRkName(t)}: ${tf2} mm${+t.tiefe?"":" (typisch)"}`)}"></span>`; }).join("")}</div></div></div>
-      <p class="hint">Teil antippen zum Bearbeiten. Verschieben: mit der Maus das Teil ziehen, am Handy am Griff links – ist die Stelle belegt, rücken die Teile dazwischen nach. Freie HE antippen, um dort etwas einzusetzen. Im Patchfeld: grau = belegt, grün = gemessen i. O., rot = Mangel. Seitenansicht: Einbautiefe der Teile, Strich = nutzbare Tiefe; blass = typischer Wert, solange keine Tiefe eingetragen ist.</p></div>
-    <div class="rk-rechts"><section class="card"><h3>Planung</h3><ul class="rk-hw">${P.H.map(([k,t2])=>`<li class="${k}">${icon(ic[k])}<span>${esc(t2)}</span></li>`).join("")}</ul></section>
-      <section class="card"><h3>Stückliste</h3>${(()=>{ const L=ecRkStueck(g,s); return L.length?`<ul class="rk-sl">${L.map(([n,t2])=>`<li><b>${n}×</b><span>${esc(t2)}</span></li>`).join("")}</ul>`:`<p class="meta">Noch nichts geplant.</p>`; })()}
-        <p class="meta">Keystones und Patchkabel = belegte Ports; Längen der Patchkabel nach Abstand Patchfeld–Switch wählen.</p></section>
-      <section class="card rk-bel"><h3>Belegung · ${Lk.length} Port${Lk.length===1?"":"s"}</h3>${Lk.length?`<div class="list">${Lk.map(zeile).join("")}</div>`:`<p class="meta">Noch keine Dose an diesem Schrank. Dosen legst du unter „Gebäude“ in den Räumen an.</p>`}</section></div></div></div></div>`; }
+      <p class="m3-hinweis">${zu?"Prüfung abgeschlossen – nur Ansicht.":"Antippen zum Bearbeiten · ziehen zum Verschieben · freie HE antippen zum Einsetzen"}</p></section>
+    <div class="rk-rechts"><section class="card"><h3>Planung</h3>${planung}</section>
+      <section class="card"><h3>Stückliste</h3>${stueck}<p class="m3-hinweis">Keystones und Patchkabel = belegte Ports</p></section>
+      <section class="card rk-bel"><h3>Belegung <span class="m3-neben">${Lk.length} Port${Lk.length===1?"":"s"}</span></h3>${beleg}</section></div></div></div>
+    ${zu?"":`<button class="fab rk-fab" data-act="ecRkWahl">${icon("add")}<span>Teil einsetzen</span></button>`}</div>`; }
+/* Teil einsetzen: Auswahl als Liste (statt neun Chips über dem Schrank) */
+function ecRkWahlDlg(){ const pr=ecPr(), g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x.id===nav.schr); if(!s) return;
+  const info={patch:"Keystones, je Port eine Dose",switch:"verteilt die Ports ins Netz",kabel:"Bürste oder Bügel zwischen den Feldern",boden:"für Router, NAS, Glasfaser-Box",router:"Firewall, Gateway",pdu:"Strom für die Geräte im Schrank",usv:"überbrückt Stromausfall",luefter:"zieht warme Luft ab",blind:"verschließt freie HE"};
+  dialog("Teil einsetzen",ecListe(["patch","switch","kabel","boden","router","pdu","usv","luefter","blind"].map(t2=>ecLi({act:"ecRkNeu",lead:`${(EC_RKSTD[t2]||{he:1}).he} HE`,breit:true,kopf:esc(EC_RK[t2]),text:esc(info[t2]),extra:` data-t="${t2}"`}))),`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button>`); }
+function ecRkHilfeDlg(){ dialog("So bedienst du den Planer",ecListe([
+    ecLi({lead:icon("edit"),kopf:"Teil antippen",text:"öffnet Art, Position, Höhe und Ports"}),
+    ecLi({lead:icon("ziehen"),kopf:"Teil ziehen",text:"mit der Maus direkt, am Handy am Griff links. Ist die Stelle belegt, rücken die Teile dazwischen nach."}),
+    ecLi({lead:icon("add"),kopf:"Freie HE antippen",text:"setzt dort ein neues Teil ein"}),
+    ecLi({lead:'<i class="m3-dot"></i>',ton:"ok",kopf:"Patchport grün",text:"gemessen und in Ordnung; grau = belegt, rot = Mangel"}),
+    ecLi({lead:icon("info"),kopf:"Seitenansicht",text:"Einbautiefe je Teil, Strich = nutzbare Tiefe. Blass = typischer Wert, solange keine Tiefe eingetragen ist."})]),
+    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Verstanden</button>`); }
 /* Teil bearbeiten */
 function ecRkDlg(z){ const pr=ecPr(), g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x.id===nav.schr); if(!s) return; ecDlg={rk:z}; const N=ecSchrHe(s), mitPorts=z.typ==="patch"||z.typ==="switch";
   dialog(z.id?`${ecRkName(z)} bearbeiten`:`${EC_RK[z.typ]} einsetzen`,`<div class="lbl">Art</div>${ecChips("rkTyp",Object.entries(EC_RK),z.typ)}
@@ -1441,6 +1460,8 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecRkAuf": nav.schr=b.dataset.id; closeOverlays(); render(); scrollTo(0,0); return;
   case "ecRkZu": nav.schr=null; render(); scrollTo(0,0); return;
   case "ecRkGriff": return;
+  case "ecRkWahl": ecRkWahlDlg(); return;
+  case "ecRkHilfe": ecRkHilfeDlg(); return;
   case "ecRkNeu": case "ecRkLeer": { if(!nichtZu()) return; const s2=g.schraenke.find(x=>x.id===nav.schr); if(!s2) return; const r=ecRkNeuZ(s2,b.dataset.t||"patch",b.dataset.pos);
     if(!r.platz){ toast("Kein Platz mehr frei – Schrank größer wählen oder etwas entfernen"); return; } ecRkDlg(r.z); return; }
   case "ecRkTeil": { if(!nichtZu()) return; const s2=g.schraenke.find(x=>x.id===nav.schr), t=s2&&ecSchrTeile(s2).find(x=>x.id===b.dataset.id); if(t) ecRkDlg({...t}); return; }
