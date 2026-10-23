@@ -377,6 +377,7 @@ function ecInfraView(pr){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", S=g.
   return `<div class="ec-kz">${k(S.length,`Netzwerkschr${S.length===1?"ank":"änke"}`)}${k(`${B} / ${T}`,"Patchports belegt",T?B/T:0)}${k(SW,"Switch-Ports")}${k(bad||hw,bad?"Probleme":"Hinweise",null,bad>0)}</div>
     <div class="ec-spalte ec-infra">
     <section class="card"><h3>Internetanschluss</h3>${ecListe(ecAnZeilen(g,zu))}</section>
+    <section class="card"><h3>Patchkabel-Farben</h3>${ecListe(ecPkZeilen(g,zu))}</section>
     <section class="card">${karteKopf("Netzwerkschränke",zu?"":"ecSchrNeu","Schrank hinzufügen")}${S.length?ecListe(S.map((s2,i)=>zeile(s2,P[i]))):`<p class="meta">${zu?"Kein Netzwerkschrank angelegt.":"Noch kein Netzwerkschrank – mit + anlegen, z. B. den Hauptschrank im Technikraum."}</p>`}
       ${S.length&&!zu?`<p class="m3-hinweis">Bearbeiten: Rechtsklick, am Handy lange drücken</p>`:""}</section>
     ${ohne.length?`<section class="card"><h3>Datendosen ohne Schrank <span class="m3-neben">${ohne.length} Port${ohne.length>1?"s":""}</span></h3>${ecListe(ohne.map(p=>ecLi({act:"ecDose",id:p.d.id,lead:icon("ecNetz"),ton:"wip",kopf:esc(ecLinkName(g,p)),text:esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · "))})))}</section>`:""}
@@ -663,7 +664,7 @@ function ecDoseDlg(dId,raumId){ const pr=ecPr(), g=ecGeb(pr.ortId), d=dId&&g.dos
     <div class="fg1" style="margin-top:16px">${sf("ecSchr","Netzwerkschrank",v.sId||"",[["","– noch offen –"],...g.schraenke.map(s=>[s.id,s.name])],{form:true})}</div>
     <div id="ecPfZeile">${ecPfChips(g,v.sId,pf)}</div>
     <div class="fg1" style="margin-top:12px">${tf("ppStart","Port im Patchfeld (erster Port der Dose)",String(start),{form:true,ph:"z. B. 13"})}
-      <div class="ec-pp">${[1,2,3,4].map(i=>`<div data-pp="${i}" ${i>n?"hidden":""}>${tf("pp"+i,`Beschriftung Port ${i} (Dose = Patchfeld)`,pp(i),{form:true,ph:"z. B. 1.13"})}</div>`).join("")}</div>
+      <div class="ec-pp">${[1,2,3,4].map(i=>`<div data-pp="${i}" ${i>n?"hidden":""} class="ec-pp-z">${tf("pp"+i,`Beschriftung Port ${i} (Dose = Patchfeld)`,pp(i),{form:true,ph:"z. B. 1.13"})}${sf("nz"+i,`Verwendung Port ${i}`,(v.nutz||{})[i]||"",[["","– offen –"],...EC_PK_ZWECK.map(([zw,t])=>{ const f=ecPkFarbe(g,zw); return [zw,f?`${t} · ${f[1]}`:t]; })],{form:true})}</div>`).join("")}</div>
       ${tf("ecLage","Lage (optional)",v.lage||"",{form:true,ph:"z. B. Schreibtisch"})}</div>
     ${ecChips("nlage",EC_NLAGE.map(x=>[x,x]),"")}
     <p class="meta" style="margin-top:8px">${ecBeschr(g)==="pp"?"Beschriftung = Patchfeld.Port, z. B. 1.13 – so steht es auf der Dose und am Keystone im Patchfeld.":`Hier nur Patchfeld.Port eintragen, z. B. 1.13 – den Schrank setzt die App nach eurem Schema davor (${esc(EC_BESCHR.find(x=>x[0]===ecBeschr(g))[1])}).`}${d?"":" Bei mehreren Dosen zählt die App die Ports weiter."}${g.schraenke.length?"":" Netzwerkschränke legst du unter „Gebäude“ rechts an – zuordnen geht auch später."}</p>`,
@@ -733,9 +734,14 @@ function ecRkStueck(g,s){ const T=ecSchrTeile(s), G=new Map();
   T.filter(t=>t.typ!=="blind").forEach(t=>{ const K=ecRkKat(t.kat); if(K){ const k=`${EC_RK[t.typ]} ${ecRkKatName(K)}, ${K.he} HE – ${ecRkKatNr(K)}`; G.set(k,(G.get(k)||0)+1); return; } const k=[EC_RK[t.typ],t.ports&&(t.typ==="patch"||t.typ==="switch")?`${t.ports} Port`:"",t.poe?"PoE":"",`${t.he} HE`].filter(Boolean).join(", ")+(t.name&&t.typ!=="patch"&&t.name!==EC_RK[t.typ]?` – ${t.name}`:""); G.set(k,(G.get(k)||0)+1); });
   const L=[[1,`${s.bauart==="stand"?"Standschrank":"Wandschrank"} 19", ${ecSchrHe(s)} HE, ${ecSchrBreite(s)} × ${ecSchrTiefe(s)} mm (B × T)`],...[...G].map(([k,n])=>[n,k])], {M}=ecRkLinks(g,s), D=g.dosen.filter(d=>d.sId===s.id), fr=ecSchrHe(s)-T.reduce((a,t)=>a+t.he,0);
   if(M.size){ const KS=new Map(); [...M.keys()].forEach(k=>{ const pf=T.find(t=>t.typ==="patch"&&String(t.nr)===k.split(".")[0]), K=pf&&ecRkKat(pf.kat), n=K&&K.keystone?`Keystone-Module ${K.keystone.name} – Art.-Nr. ${K.keystone.artnr}`:"Keystone-Module (Patchfeld)"; KS.set(n,(KS.get(n)||0)+1); });
-    KS.forEach((n,k)=>L.push([n,k])); L.push([M.size,"Patchkabel"]); }
+    KS.forEach((n,k)=>L.push([n,k]));
+    const PK=new Map(); [...M.values()].forEach(Lp=>{ const k=ecPkPort(g,Lp[0].d,Lp[0].i), t=k.f?`Patchkabel ${k.f[1].toLowerCase()} – ${ecPkZweckName(k.zw)}`:"Patchkabel"; PK.set(t,(PK.get(t)||0)+1); });
+    [...PK].sort((a,b)=>(a[0]==="Patchkabel")-(b[0]==="Patchkabel")||b[1]-a[1]).forEach(([t,n])=>L.push([n,t])); }
   const DG=new Map(); D.forEach(d=>{ const k=`Datendose ${d.ports||1}-fach`; DG.set(k,(DG.get(k)||0)+1); }); DG.forEach((n,k)=>L.push([n,k]));
   if(fr>0) L.push([fr,"Blindblende 1 HE (für die freien HE)"]); return L; }
+/* Patchkabel-Stecker in der Farbe des Schemas (Knickschutz + Rastnase) */
+const ecPkStecker=(g,p,x,y,w,h)=>{ const k=ecPkPort(g,p.d,p.i); if(!k.f) return ""; const c=k.f[2];
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="1" fill="${c}" stroke="rgba(0,0,0,.35)" stroke-width=".3"/><rect x="${x+w*.3}" y="${y+h*.15}" width="${w*.4}" height="${h*.22}" rx=".4" fill="rgba(255,255,255,.35)"/>`; };
 /* Zeichnung */
 function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=ecSchrHe(s), T=ecSchrTeile(s), {M}=ecRkLinks(g,s), P=ecRkPlanung(pr,g,s), belegt=new Set();
   T.forEach(t=>{ for(let i=t.pos;i<t.pos+t.he;i++) belegt.add(i); });
@@ -744,7 +750,7 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
   const Lk=ecNetListe({},g).filter(p=>p.d.sId===s.id), ST=ecRkStueck(g,s), sym={ok:"",bad:icon("warn"),wip:icon("warn"),tipp:icon("info")};
   const planung=ecListe(P.H.map(([k,t2])=>ecLi({lead:k==="ok"?'<i class="m3-dot"></i>':sym[k],ton:k,kopf:esc(t2)})));
   const stueck=ST.length?ecListe(ST.map(([n,t2])=>{ const [a,...b2]=t2.split(" – "); return ecLi({lead:`${n}×`,breit:true,kopf:esc(a),text:b2.length?esc(b2.join(" – ")):""}); })):`<p class="meta">Noch nichts geplant.</p>`;
-  const beleg=Lk.length?ecListe(Lk.map(p=>ecLi({act:"ecRkPort",id:p.d.id,lead:esc(p.pp||"–"),breit:true,kopf:esc(ecLinkOrt(g,p)),text:esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · ")),rechts:ecSt(ecNetStand(pr,p))}))):`<p class="meta">Noch keine Dose an diesem Schrank. Dosen legst du unter „Gebäude“ in den Räumen an.</p>`;
+  const beleg=Lk.length?ecListe(Lk.map(p=>{ const k=ecPkPort(g,p.d,p.i); return ecLi({act:"ecRkPort",id:p.d.id,lead:esc(p.pp||"–"),breit:true,kopf:esc(ecLinkOrt(g,p)),text:(k.f?ecPkDot(k.f[2]):"")+esc([k.zw?ecPkZweckName(k.zw):"",ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · ")),rechts:ecSt(ecNetStand(pr,p))}); })):`<p class="meta">Noch keine Dose an diesem Schrank. Dosen legst du unter „Gebäude“ in den Räumen an.</p>`;
   const nB=P.H.filter(h=>h[0]==="bad").length, nW=P.H.filter(h=>h[0]==="wip").length, tab=["ansicht","belegung","stueck","planung"].includes(ecRkTab)?ecRkTab:"ansicht";
   const TABS=[["ansicht","Ansicht",""],["belegung","Belegung",String(Lk.length)],["stueck","Stückliste",""],["planung","Planung",nB?`<i class="sd bad"></i>`:nW?`<i class="sd wip"></i>`:""]];
   const ansicht=`<section class="card rk-zeich"><div class="rk-zk"><h3>${ecRkSeiteAn()?"Vorderansicht und Seite":"Vorderansicht"}</h3></div>
@@ -788,6 +794,23 @@ function ecAnDlg(){ const pr=ecPr(), g=ecGeb(pr.ortId); if(!ecDlg||!ecDlg.an) ec
     `${g.anschluss?`<button class="btn-text danger" data-act="ecAnWeg">Entfernen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecAnOk">Speichern</button>`,{breit:true}); }
 function ecAnLesen(){ if(!ecDlg||!ecDlg.an) return; const F=formVals(), W=ecDlg.w;
   if(F.anAnbieter!=null) W.anbieter=F.anAnbieter; if(F.anRaum!=null) W.raumId=F.anRaum; if(F.anRouter!=null) W.routerKat=F.anRouter; if(F.anRouterText!=null) W.routerText=F.anRouterText; if(F.anRouterOrt!=null) W.routerOrt=F.anRouterOrt; if(F.anNotiz!=null) W.notiz=F.anNotiz; }
+/* ---- Patchkabel-Farben: je Gebäude ein Farbschema nach Verwendung des Ports (g.pkFarben={an,z:{zweck:farbe}}); Verwendung je Port in der Dose (d.nutz={port:zweck}) ---- */
+const EC_PK_ZWECK=[["arbeitsplatz","Arbeitsplatz / PC"],["ap","WLAN-Access-Point"],["kamera","Kamera"],["telefon","Telefon"],["tv","TV / Multimedia"],["smart","Smart Home / Haustechnik"],["drucker","Drucker"],["uplink","Uplink, Router, Server"]];
+const EC_PK_FARBE=[["blau","Blau","#1E6FD9"],["gelb","Gelb","#F2C200"],["gruen","Grün","#2E9E4F"],["rot","Rot","#D7263D"],["orange","Orange","#F07F1A"],["violett","Violett","#7B4FC9"],["pink","Pink","#E05AA8"],["grau","Grau","#8C9096"],["schwarz","Schwarz","#22252A"],["weiss","Weiß","#F4F5F6"]];
+const EC_PK_STD={arbeitsplatz:"blau",ap:"gelb",kamera:"schwarz",telefon:"gruen",tv:"weiss",smart:"orange",drucker:"violett",uplink:"rot"};
+const ecPkFarbe=(g,zw)=>{ const P=g.pkFarben; if(!P||!P.an||!zw) return null; const f=(P.z||{})[zw]; return f?EC_PK_FARBE.find(x=>x[0]===f)||null:null; };
+const ecPkZweckName=zw=>(EC_PK_ZWECK.find(x=>x[0]===zw)||[,""])[1];
+const ecPkDot=(hex,gross)=>`<i class="pk-dot${gross?" gross":""}" style="background:${hex}"></i>`;
+/* Verwendung und Farbe eines Ports (für Belegung, Stückliste, Zeichnung) */
+const ecPkPort=(g,d,i)=>{ const zw=d&&d.nutz&&d.nutz[i]||""; return {zw,f:ecPkFarbe(g,zw)}; };
+function ecPkZeilen(g,zu){ const P=g.pkFarben, A=ecNetAlle(g);
+  if(!P||!P.an) return [ecLi({act:zu?null:"ecPkDlg",lead:icon("palette"),ton:"plus",kopf:"Farbschema festlegen",text:"z. B. blau für Arbeitsplätze, gelb für WLAN, rot für Uplinks – erscheint in Belegung, Stückliste und Schrankansicht"})];
+  return EC_PK_ZWECK.filter(([zw])=>(P.z||{})[zw]).map(([zw,t])=>{ const f=ecPkFarbe(g,zw), n=A.filter(p=>(p.d.nutz||{})[p.i]===zw).length;
+    return ecLi({act:zu?null:"ecPkDlg",lead:ecPkDot(f[2],true),kopf:esc(t),text:esc(`${f[1]}${n?` · ${n} Port${n>1?"s":""}`:" · noch kein Port"}`)}); }); }
+function ecPkDialog(){ const pr=ecPr(), g=ecGeb(pr.ortId); if(!ecDlg||!ecDlg.pk) ecDlg={pk:true,z:{...((g.pkFarben&&g.pkFarben.an&&g.pkFarben.z)||EC_PK_STD)}}; const Z=ecDlg.z;
+  dialog("Patchkabel-Farben",`<p class="meta" style="margin:0 2px 12px">Welche Farbe bekommt das Patchkabel – je nach dem, was an der Dose hängt? Die Verwendung legst du bei jeder Datendose fest.</p>
+    <div class="pk-liste">${EC_PK_ZWECK.map(([zw,t])=>`<div class="pk-zeile"><span class="pk-t">${esc(t)}</span><span class="pk-wahl">${EC_PK_FARBE.map(([f,ft,hex])=>`<button type="button" class="pk-sw${Z[zw]===f?" an":""}" data-act="ecPkWahl" data-z="${zw}" data-f="${f}" style="background:${hex}" aria-label="${esc(`${t}: ${ft}`)}" title="${esc(ft)}"></button>`).join("")}<button type="button" class="pk-sw keine${Z[zw]?"":" an"}" data-act="ecPkWahl" data-z="${zw}" data-f="" aria-label="${esc(`${t}: keine Farbe`)}" title="keine Vorgabe">–</button></span></div>`).join("")}</div>`,
+    `${g.pkFarben&&g.pkFarben.an?`<button class="btn-text danger" data-act="ecPkAus">Ausschalten</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecPkOk">Speichern</button>`,{breit:true}); }
 /* ---- Netzwerk-Katalog (Prospekt): alle Modelle mit Frontansicht – zum Nachschlagen und um Kunden zu zeigen, wie es aussehen kann ---- */
 const EC_KATGR=[["alle","Alle"],["patch","Patchfelder"],["switch","Switches"],["router","Gateways und Router"],["modem","Modems"],["nas","NAS und Rekorder"],["zubehoer","Strom und Zubehör"],["boden","Auf Fachboden"]];
 let ecKatFilter="alle";
@@ -991,7 +1014,7 @@ const EC_RKKAT=[
   {id:"ugreen-dxp4800p",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP4800 Plus",kurz:"DXP4800 Plus",sku:"DXP4800 Plus",he:5,zeichnung:"ugreen",bild:{schaechte:4,breite:256,hoehe:178,lan10:true},geraetTiefe:260,info:"4 Festplatten, 10 GbE",bildUrl:"https://static01.galaxus.com/productimages/7/7/2/3/5/6/1/4/8/5/3/6/7/0/1/7/2/2/8/18df5a12-5248-4e41-9ac4-b08425b81193_cropped.jpg_720.jpeg"},
   {id:"ugreen-dxp4800",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP4800",kurz:"DXP4800",sku:"DXP4800",he:5,zeichnung:"ugreen",bild:{schaechte:4,breite:256,hoehe:178},geraetTiefe:260,info:"4 Festplatten",bildUrl:"https://www.dateks.lv/images/pic/1200/1200/472/1868.jpg"},
   {id:"ugreen-dxp6800pro",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP6800 Pro",kurz:"DXP6800 Pro",sku:"DXP6800 Pro",he:5,zeichnung:"ugreen",bild:{schaechte:6,breite:300,hoehe:178,lan10:true},geraetTiefe:260,info:"6 Festplatten, 2 × 10 GbE – Maße geschätzt",bildUrl:"https://static01.galaxus.com/productimages/2/8/0/1/9/9/1/8/3/9/2/9/9/6/2/5/9/6/1/9294657d-a22f-414c-b2a2-cacebded00f6_cropped.jpg_720.jpeg"},
-  {id:"ugreen-dxp8800plus",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP8800 Plus",kurz:"DXP8800 Plus",sku:"DXP8800 Plus",he:5,zeichnung:"ugreen",bild:{schaechte:8,breite:345,hoehe:205,lan10:true},geraetTiefe:260,info:"8 Festplatten, 2 × 10 GbE – Maße geschätzt",bildUrl:"https://www.scan.co.uk/images/products/3733565-a.jpg"},
+  {id:"ugreen-dxp8800plus",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP8800 Plus",kurz:"DXP8800 Plus",sku:"DXP8800 Plus",he:5,zeichnung:"ugreen",bild:{schaechte:8,breite:345,hoehe:205,lan10:true},geraetTiefe:260,info:"8 Festplatten, 2 × 10 GbE – Maße geschätzt",bildUrl:"https://static01.galaxus.com/productimages/7/2/4/1/9/4/5/9/6/4/7/5/5/5/3/5/3/0/3/64baa33b-7159-4dda-b804-7eca99cdb2a9_cropped.jpg_720.jpeg"},
   {id:"ugreen-dxp480tplus",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP480T Plus",kurz:"DXP480T Plus",sku:"DXP480T Plus",he:2,zeichnung:"ugreen",bild:{schaechte:0,breite:178,hoehe:42,lan10:true},geraetTiefe:150,info:"Nur SSD (4 × M.2), flach – Maße geschätzt",bildUrl:"https://static01.galaxus.com/productimages/8/7/2/5/3/7/2/6/9/9/7/8/6/6/7/3/7/3/b43a995c-8f2e-4363-83c2-c7e69c6a28c6_cropped.jpg_720.jpeg"},
   {id:"fritz-6690",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 6690 Cable",kurz:"FRITZ!Box 6690 Cable",sku:"6690 Cable",he:2,zeichnung:"fritz",bild:{rot:true,breite:250,hoehe:48,leds:["Power","Cable","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden, Kabelanschluss",bildUrl:"https://static01.galaxus.com/productimages/6/6/9/7/1/8/8/8/5/7/6/2/5/5/1/0/9/5341b2cb-3fa7-40fb-bfb6-b2d057953ba0_cropped.jpg_720.jpeg"},
   {id:"fritz-5690pro",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 5690 Pro",kurz:"FRITZ!Box 5690 Pro",sku:"5690 Pro",he:2,zeichnung:"fritz",bild:{rot:true,breite:254,hoehe:63,leds:["Power","Fiber","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden, Glasfaser und DSL",bildUrl:"https://static01.galaxus.com/productimages/5/7/1/5/2/1/9/3/1/2/3/5/1/9/0/8/6/7/5/01982037-d83c-70aa-b64a-3acc40dd81a7_720.jpeg"},
@@ -1270,7 +1293,7 @@ function ecRkTeilHtml(pr,g,s,t,M){
       h+=rkText(x+R.key/2,y-1.8,nr,{fs:5.2,fw:700,fill:tc,anchor:"middle"});
       if(!L){ h+=`<g><title>${t.nr}.${nr} frei</title><rect x="${x}" y="${y}" width="${R.key}" height="${ph}" rx=".8" fill="${loch}"/><rect x="${x}" y="${y}" width="${R.key}" height="1.2" fill="rgba(0,0,0,.35)"/></g>`; continue; }
       const st=ecNetStand(pr,L[0]), kl=L.length>1?"bad":st==="ok"?"ok":st==="bad"?"bad":"belegt";
-      h+=`<g class="rk-pg ${kl}" data-act="ecRkPort" data-id="${esc(L[0].d.id)}"><title>${esc(`${t.nr}.${nr} · ${ecRaumName(g,L[0].raumId)}${L.length>1?" · doppelt vergeben":""}`)}</title><rect x="${x}" y="${y}" width="${R.key}" height="${ph}" rx=".8" fill="url(#rkgSil)" stroke="#7E8389" stroke-width=".35"/>${rkRj(x+2,y+2.2,R.key-4,ph-5,"#4A4E54")}<rect x="${x+3}" y="${y+ph-2}" width="${R.key-6}" height=".8" rx=".4" fill="#9AA0A6"/>${kl!=="belegt"?`<rect x="${x}" y="${y+ph+1}" width="${R.key}" height="1.8" rx=".5" fill="${kl==="ok"?"#3DDC84":"#FF5A5F"}"/>`:""}</g>`; } }
+      h+=`<g class="rk-pg ${kl}" data-act="ecRkPort" data-id="${esc(L[0].d.id)}"><title>${esc(`${t.nr}.${nr} · ${ecRaumName(g,L[0].raumId)}${L.length>1?" · doppelt vergeben":""}`)}</title><rect x="${x}" y="${y}" width="${R.key}" height="${ph}" rx=".8" fill="url(#rkgSil)" stroke="#7E8389" stroke-width=".35"/>${rkRj(x+2,y+2.2,R.key-4,ph-5,"#4A4E54")}<rect x="${x+3}" y="${y+ph-2}" width="${R.key-6}" height=".8" rx=".4" fill="#9AA0A6"/>${ecPkStecker(g,L[0],x+2.4,y+3,R.key-4.8,ph-6)}${kl!=="belegt"?`<rect x="${x}" y="${y+ph+1}" width="${R.key}" height="1.8" rx=".5" fill="${kl==="ok"?"#3DDC84":"#FF5A5F"}"/>`:""}</g>`; } }
   else if(t.typ==="patch"){ const n=Math.max(1,+t.ports||24), zwei=n>24, pro=zwei?Math.ceil(n/2):n, gruppe=6, gruppen=Math.ceil(pro/gruppe), x0=42, breit=466.1-6-x0, luecke=6, pw=Math.min(14.2,(breit-(gruppen-1)*luecke)/pro-1.4);
     h+=rkKoerper(H,"url(#rkgBlk)")+`<rect x="20" y="${H/2-7}" width="19" height="14" rx="1" fill="#F2F1EC"/>`+rkText(29.5,H/2+2.6,`P${t.nr}`,{fs:7,fw:800,fill:"#1E1F22",anchor:"middle"});
     for(let r=0;r<(zwei?2:1);r++) for(let i=0;i<pro;i++){ const nr=zwei?(i*2+r+1):(i+1); if(nr>n) continue;
@@ -1278,7 +1301,7 @@ function ecRkTeilHtml(pr,g,s,t,M){
       if(!zwei) h+=rkText(x+pw/2,11.4,nr,{fs:pw>12?5:4.2,fw:700,fill:"#A9AEB5",anchor:"middle"});
       if(!L){ h+=`<g><title>${t.nr}.${nr} frei</title><rect x="${x}" y="${y}" width="${pw}" height="${ph}" rx=".8" fill="#202226" stroke="#34373C" stroke-width=".5"/></g>`; continue; }
       const st=ecNetStand(pr,L[0]), kl=L.length>1?"bad":st==="ok"?"ok":st==="bad"?"bad":"belegt";
-      h+=`<g class="rk-pg ${kl}" data-act="ecRkPort" data-id="${esc(L[0].d.id)}"><title>${esc(`${t.nr}.${nr} · ${ecRaumName(g,L[0].raumId)}${L.length>1?" · doppelt vergeben":""}`)}</title><rect x="${x-.6}" y="${y-.6}" width="${pw+1.2}" height="${ph+1.2}" rx="1" fill="url(#rkgKey)"/>${rkRj(x+1.1,y+1.2,pw-2.2,ph-2.6)}${kl!=="belegt"?`<rect x="${x}" y="${y+ph+(zwei?.4:1)}" width="${pw}" height="${zwei?1.1:1.8}" rx=".5" fill="${kl==="ok"?"#3DDC84":"#FF5A5F"}"/>`:""}</g>`; } }
+      h+=`<g class="rk-pg ${kl}" data-act="ecRkPort" data-id="${esc(L[0].d.id)}"><title>${esc(`${t.nr}.${nr} · ${ecRaumName(g,L[0].raumId)}${L.length>1?" · doppelt vergeben":""}`)}</title><rect x="${x-.6}" y="${y-.6}" width="${pw+1.2}" height="${ph+1.2}" rx="1" fill="url(#rkgKey)"/>${rkRj(x+1.1,y+1.2,pw-2.2,ph-2.6)}${ecPkStecker(g,L[0],x+1.5,y+1.8,pw-3,ph-3.6)}${kl!=="belegt"?`<rect x="${x}" y="${y+ph+(zwei?.4:1)}" width="${pw}" height="${zwei?1.1:1.8}" rx=".5" fill="${kl==="ok"?"#3DDC84":"#FF5A5F"}"/>`:""}</g>`; } }
   else if(t.typ==="switch"||t.typ==="router"){ const n=t.typ==="router"?8:Math.max(1,+t.ports||24), body=silber?"url(#rkgSil)":"url(#rkgBlk)", txt=silber?"#3A3D42":"#C9CDD2", rahmen=silber?"#2A2C30":"#0A0B0C";
     const zwei=n>8, pro=zwei?Math.ceil(n/2):n, blk=n>16?6:4, bl=Math.ceil(pro/blk), sfp=t.typ==="router"?2:n>=24?4:2, sc=zwei?Math.ceil(sfp/2):Math.min(sfp,2), rechts=466.1-8-sc*15.6-10;
     const links=t.typ==="router"?140:118, pt=Math.min(12.8,(rechts-links-(bl-1)*5)/pro), pw=pt-1.2, x0=t.typ==="router"?links:Math.max(links,rechts-(pro*pt+(bl-1)*5));
@@ -1961,6 +1984,11 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecKatVerbaut": { const o=b.dataset.o, P=live("echecks").filter(x=>String(x.ortId)===o&&x.art==="netz").sort((x,y)=>String(y.datum||"").localeCompare(String(x.datum||"")));
     if(!P.length){ toast("Keine Netzwerkprüfung zu diesem Gebäude"); return; } ecRkTab="ansicht"; go({v:"ec",id:P[0].id,tab:"infra",schr:b.dataset.s}); return; }
   case "ecKatalog": query=""; go({v:"netzkatalog"}); return;
+  case "ecPkDlg": { if(!nichtZu()) return; ecDlg=null; ecPkDialog(); return; }
+  case "ecPkWahl": { if(!ecDlg||!ecDlg.pk) return; const zw=b.dataset.z, f=b.dataset.f; if(f) ecDlg.z[zw]=f; else delete ecDlg.z[zw];
+    b.parentNode.querySelectorAll(".pk-sw").forEach(x=>x.classList.toggle("an",x===b)); return; }
+  case "ecPkOk": { if(!ecDlg||!ecDlg.pk) return; const g0=ecGeb(pr.ortId); g0.pkFarben={an:true,z:{...ecDlg.z}}; ecGebSpeichern(g0); ecDlg=null; closeOverlays(); render(); toast("Farbschema gespeichert"); return; }
+  case "ecPkAus": { const g0=ecGeb(pr.ortId); g0.pkFarben={...(g0.pkFarben||{}),an:false}; ecGebSpeichern(g0); ecDlg=null; closeOverlays(); render(); return; }
   case "ecAnschluss": { if(!nichtZu()) return; ecDlg=null; ecAnDlg(); return; }
   case "ecAnOk": { ecAnLesen(); const W=ecDlg&&ecDlg.w; if(!W) return; const g0=ecGeb(pr.ortId); if(W.routerKat) W.routerText=""; g0.anschluss={...W}; ecGebSpeichern(g0); ecDlg=null; closeOverlays(); render(); return; }
   case "ecAnWeg": { const g0=ecGeb(pr.ortId); delete g0.anschluss; ecGebSpeichern(g0); ecDlg=null; closeOverlays(); render(); return; }
@@ -2011,7 +2039,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecDose": if(!nichtZu()) return; ecDoseDlg(b.dataset.id); return;
   case "ecDoseAusMess": { ecNetLesen(); if(!nichtZu()) return; const zur=ecDlg&&ecDlg.netMess; ecDoseDlg(b.dataset.id); ecDlg.netMessZurueck=zur; return; }
   case "ecDoseOk": { const F=formVals(), W=ecDlg.w, raumId=ecDlg.raumId, n=+W.ports||1, anz=ecDlg.dose?1:(+W.anz||1), pp1=[1,2,3,4].map(i=>(F["pp"+i]||"").trim());
-    const nurErster=pp1[0]&&!pp1.slice(1,n).some(Boolean), basis={ports:n,lage:(F.ecLage||"").trim(),sId:F.ecSchr||""}; ecLetzterSchr=basis.sId;
+    const nurErster=pp1[0]&&!pp1.slice(1,n).some(Boolean), basis={ports:n,lage:(F.ecLage||"").trim(),sId:F.ecSchr||"",nutz:Object.fromEntries([1,2,3,4].filter(i=>i<=n&&F["nz"+i]).map(i=>[i,F["nz"+i]]))}; ecLetzterSchr=basis.sId;
     const ppFuer=k=>{ const o={}; for(let i=1;i<=n;i++){ const v=nurErster?(k===0&&i===1?pp1[0]:ecPpPlus(pp1[0],k*n+i-1)):(k===0?pp1[i-1]:ecPpPlus(pp1[i-1],k*n)); if(v) o[i]=v; } return o; };
     if(ecDlg.dose) Object.assign(g.dosen.find(d=>d.id===ecDlg.dose),basis,{pp:ppFuer(0)});
     else { let ord=Math.max(0,...g.dosen.filter(d=>d.raumId===raumId).map(d=>d.ord||0)); for(let k=0;k<anz;k++) g.dosen.push({id:uid(),raumId,ord:++ord,...basis,pp:ppFuer(k)}); }

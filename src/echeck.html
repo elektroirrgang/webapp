@@ -1056,7 +1056,13 @@ body.kopf-oben .edk-platz{display:none!important}
 .ec-filter{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
 .ec-an-weg .chips{flex-direction:column;align-items:stretch}.ec-an-weg .chip{justify-content:flex-start;text-align:left;height:auto;min-height:40px;padding:8px 14px;white-space:normal}
 .ktile-bild .kat-svg,.kat-kopf .kat-bild .foto .kat-svg{position:absolute;top:10px;left:10px;width:calc(100% - 20px);height:calc(100% - 20px)}
-.kat-svg{display:block}.ktile-bild .kat-foto,.kat-kopf .kat-bild .foto .kat-foto{position:absolute;inset:0;width:100%;height:100%;padding:10px;box-sizing:border-box;object-fit:contain;background:#fff}
+.kat-svg{display:block}
+.pk-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 6px -1px 0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}.pk-dot.gross{width:22px;height:22px;margin:0}
+.pk-liste{display:flex;flex-direction:column;gap:10px}.pk-zeile{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;border-radius:14px;background:var(--feld-dlg)}
+.pk-t{flex:1 1 170px;font-size:14px;font-weight:600}.pk-wahl{display:flex;gap:6px;flex-wrap:wrap}
+.pk-sw{width:28px;height:28px;border-radius:50%;border:0;padding:0;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2);font-weight:700;color:var(--on-sv)}
+.pk-sw.keine{background:var(--sc-high)}.pk-sw.an{box-shadow:0 0 0 2px var(--dlg-bg),0 0 0 4px var(--primary)}
+.ec-pp-z{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media (max-width:599px){.ec-pp-z{grid-template-columns:1fr}}.ktile-bild .kat-foto,.kat-kopf .kat-bild .foto .kat-foto{position:absolute;inset:0;width:100%;height:100%;padding:10px;box-sizing:border-box;object-fit:contain;background:#fff}
 .kat-gross.foto img{display:block;width:100%;max-height:60vh;object-fit:contain}.ec-katv{margin-top:28px;align-items:center}.ec-katv .sec-lbl{margin:0 4px!important}
 .ec-katv-w{container-type:inline-size}.ec-katv-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.ec-katv-g > :nth-child(n+5){display:none}
 @container (min-width:640px){.ec-katv-g{grid-template-columns:repeat(4,minmax(0,1fr))}}
@@ -1524,6 +1530,7 @@ function applyTheme(t){
   document.querySelector('meta[name="theme-color"]').setAttribute("content", dark?"#131314":"#FCFCFD"); if(window.sbFarbe) sbFarbe();
 }
 const IC={
+  palette:"M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z",
   steckdose:"M16 7V3h-2v4h-4V3H8v4h-.01C6.9 7 6 7.9 6 8.99v5.49L9.5 18v3h5v-3l3.5-3.51v-5.5c0-1.1-.9-1.99-2-1.99z",
   notiz:"M19 3H4.99C3.89 3 3 3.9 3 5l.01 14c0 1.1.89 2 1.99 2h10l6-6V5c0-1.1-.9-2-2-2zM7 8h10v2H7V8zm5 6H7v-2h5v2zm2 5.5V14h5.5L14 19.5z",
   stift:"M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 0 0 0-1.41z",

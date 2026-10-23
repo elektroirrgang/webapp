@@ -179,8 +179,9 @@ function demoHaus(r,P,vor,tag){
     ["og2","Arbeitszimmer",2,"Schreibtisch",4],["og2","Arbeitszimmer",2,"Schreibtisch",4],["og2","Musikzimmer",2,"neben Tür",4],["og2","Gästezimmer",2,"TV",4],["og2","Flur 2. OG",1,"Decke (WLAN-AP)",4],
     ["dg","Galerie",2,"TV",4],["dg","Galerie",1,"Decke (WLAN-AP)",4],["dg","Dachterrasse",1,"Außen (Kamera)",4]];
   const frei={}, dosen=[], dord={}; DO.forEach(([e,n,ports,lage,pf],i)=>{ const raumId=raum(e,n), pp={}; for(let p=1;p<=ports;p++){ frei[pf]=(frei[pf]||0)+1; pp[p]=`${pf===4?1:pf}.${frei[pf]}`; }
-    dord[raumId]=(dord[raumId]||0)+1; dosen.push({id:`dh-d-${i+1}`,raumId,ord:dord[raumId],ports,lage,sId:pf===4?"dh-s2":"dh-s1",pp}); });
-  const g=r({id:"g-k_demo-k6",ortId:"k:demo-k6",etagen,verteiler,rcds,stromkreise,stellen,schraenke,dosen,beschr:"nr",anschluss:{art:"glasfaser",anbieter:"Deutsche Glasfaser",raumId:raum("kg","Technikraum"),ont:"box",weg:"glas_zum_schrank",routerKat:"fritz-5590",routerOrt:"s:dh-s1",notiz:"Glasfaser im Leerrohr vom Hausübergabepunkt bis in den Serverschrank, GF-TA im Schrank"}},P.mp,vor(6));
+    dord[raumId]=(dord[raumId]||0)+1; const zw=/WLAN/.test(lage)?"ap":/Kamera/.test(lage)?"kamera":/TV/.test(lage)?"tv":/Wärmepumpe|Wallbox/.test(lage)?"smart":"arbeitsplatz", nutz={}; for(let p=1;p<=ports;p++) nutz[p]=zw==="arbeitsplatz"&&p===2&&/Schreibtisch/.test(lage)?"telefon":zw;
+    dosen.push({id:`dh-d-${i+1}`,raumId,ord:dord[raumId],ports,lage,sId:pf===4?"dh-s2":"dh-s1",pp,nutz}); });
+  const g=r({id:"g-k_demo-k6",ortId:"k:demo-k6",etagen,verteiler,rcds,stromkreise,stellen,schraenke,dosen,beschr:"nr",pkFarben:{an:true,z:{arbeitsplatz:"blau",ap:"gelb",kamera:"schwarz",telefon:"gruen",tv:"weiss",smart:"orange",drucker:"violett",uplink:"rot"}},anschluss:{art:"glasfaser",anbieter:"Deutsche Glasfaser",raumId:raum("kg","Technikraum"),ont:"box",weg:"glas_zum_schrank",routerKat:"fritz-5590",routerOrt:"s:dh-s1",notiz:"Glasfaser im Leerrohr vom Hausübergabepunkt bis in den Serverschrank, GF-TA im Schrank"}},P.mp,vor(6));
   /* Netzwerkprüfung (läuft): fast alles gemessen, ein paar typische Fehler, 2. OG teilweise offen */
   const nw={}; let li=0;
   dosen.forEach(d=>{ for(let p=1;p<=d.ports;p++){ const id=`${d.id}.${p}`, et=Object.keys(R).find(k=>R[k]===d.raumId).split(":")[0], i=li++;
