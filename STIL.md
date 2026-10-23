@@ -22,11 +22,12 @@ Gilt für alle Apps (Übersicht, EVSE, Baustelle, E-Check). Vorbild ist EVSE. Go
 - Darunter ein Hinweis in Klein, was Rechtsklick/lange drücken macht.
 
 ## Abschnittskopf
-- Titel links (roter `sec-lbl`), rechts höchstens:
+- Titel links (roter `sec-lbl`, 16 px fett), rechts höchstens:
   - **„Alle n“** als Textknopf, wenn der Abschnitt gekürzt ist,
   - **runder, gefüllter Knopf** (`+`, Kamera …) zum direkten Anlegen in diesem Abschnitt.
 - Den `+` gibt es nur, wenn die Seite **keinen FAB für dasselbe** hat – sonst zwei Knöpfe für eine Sache. Beispiel: Baustelle → Notizen und Übergaben je mit `+`; Prüfungsliste → FAB, kein `+` im Abschnitt.
 - Nachschlage-Abschnitte (z. B. „Aus dem Katalog“) bekommen kein `+`, nur „Alle n“.
+- Die Knöpfe rechts stehen in der Flucht der Pfeile (›) der Listenzeilen darunter.
 - Code: außerhalb von Karten `kdKopf(titel, aktion, label)`, in Karten `karteKopf(titel, aktion, label)` (beide in `kunde.js`). Aussehen in `felder.css`.
 - Keine „… hinzufügen“-Zeilen am Ende einer Liste mehr – das macht der `+` im Kopf. Leere Abschnitte sagen in einem Satz, was hier hinkommt.
 

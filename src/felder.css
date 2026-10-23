@@ -421,6 +421,12 @@ button.vg-z{cursor:pointer;-webkit-tap-highlight-color:transparent} button.vg-z:
 .plus-k:active,.sec-row .ab-ic:active,.card-kopf .ab-ic:active{background:color-mix(in srgb,var(--primary) 14%,var(--sc-high))}
 .plus-k .ic,.sec-row .ab-ic .ic,.card-kopf .ab-ic .ic{width:22px;height:22px}
 .card-kopf{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:-8px -8px 10px 0}.card-kopf h3{margin:0!important}
+/* Knöpfe rechts in der Flucht der Pfeile (›) der Listen darunter: Mitte = Innenabstand der Zeile + halbes Symbol */
+.sec-row .ab-btns,.sec-row > .plus-k,.sec-row .sk-akt{margin-right:6px!important}
+@media (min-width:744px){.sec-row .ab-btns,.sec-row > .plus-k,.sec-row .sk-akt{margin-right:10px!important}}
+/* Abschnittstitel etwas größer, damit sie zu den runden Knöpfen passen und die Seite gliedern */
+.sec-lbl{font-size:16px!important;letter-spacing:0!important}
+#dlg .sec-lbl,.fpop .sec-lbl{font-size:14px!important}
 
 /* Filter in der Suchleiste */
 .search.mit-f{padding-right:6px}
