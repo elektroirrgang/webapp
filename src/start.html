@@ -2153,7 +2153,7 @@ const GER_ART=[["mess","Messgerät"],["adapter","Prüfadapter"],["sonst","Sonsti
 function gerKalBis(t){ t=String(t||"").trim(); let m;
   if((m=t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/))) return new Date(+m[3],+m[2]-1,+m[1]);
   if((m=t.match(/^(\d{1,2})[./](\d{4})$/))) return new Date(+m[2],+m[1],0); return null; }
-function gerKal(g){ if(!g.kal) return g.art==="mess"?{s:"leer",t:"Kalibrierung fehlt"}:null; const b=gerKalBis(g.kal); if(!b) return {s:"form",t:"Datum prüfen (MM.JJJJ)"};
+function gerKal(g){ if(!g.kal) return g.art==="mess"?{s:"leer",t:"Kalibrierung fehlt"}:null; const b=gerKalBis(g.kal); if(!b) return {s:"form",t:"Datum prüfen (TT.MM.JJJJ oder MM.JJJJ)"};
   const rest=Math.floor((b-new Date())/864e5); return rest<0?{s:"ab",t:`abgelaufen seit ${g.kal}`}:rest<=60?{s:"bald",t:`läuft ab ${g.kal}`}:{s:"ok",t:`kalibriert bis ${g.kal}`}; }
 const gerName=g=>[g.hersteller,g.modell].filter(Boolean).join(" ")||"Gerät";
 /* Kurzname unterscheidet gleiche Geräte (z. B. zwei MFT one: „MFT 1“, „MFT 2“) – überall vorangestellt */
@@ -2174,14 +2174,19 @@ const GER_VORLAGE=[{id:"ger-wiha-mft-one-1",art:"mess",kurz:"MFT 1",hersteller:"
 const GER_SIGNALTEK="https://www.trend-networks.com/wp-content/uploads/2019/04/signaltek-ct-01.jpg";
 const GER_VORLAGE_NETZ=[{id:"ger-trend-signaltek-alt",art:"mess",kurz:"SignalTEK alt",hersteller:"Trend Networks",modell:"SignalTEK (ältere Version)",einsatz:"netzwerk",bildUrl:GER_SIGNALTEK,notiz:"Platzhalter – genaues Modell und Seriennummer ergänzen"},
   {id:"ger-trend-signaltek-ct",art:"mess",kurz:"SignalTEK CT",hersteller:"Trend Networks",modell:"SignalTEK CT (R156006)",einsatz:"netzwerk",bildUrl:GER_SIGNALTEK,notiz:"Platzhalter – Seriennummer und Kalibrierung ergänzen"}];
+/* abgelesen am 23.10.2026 (Geräteinfo bzw. Typenschild) – füllt nur leere Felder */
+const GER_DATEN={"ger-wiha-mft-one-1":{sn:"S260400105",fw:"V1.312",kalAm:"31.03.2026",kal:"31.03.2027"},
+  "ger-wiha-mft-one-2":{sn:"S260400136",fw:"V1.312",kalAm:"01.04.2026",kal:"01.04.2027"},
+  "ger-fluke-fev300-1":{sn:"68510013"}};
 function gerVorlagen(){ if(!ME.admin) return;
   if(!META.gerBild2){ for(const g of DB.geraete.values()){ const n=GER_BILD_ALT[g.bildUrl]; if(n){ g.bildUrl=n; saveRec("geraete",g); } } META.gerBild2=1; metaSave(); }
   if(!META.gerKurz&&DB.geraete.size){ for(const v of GER_VORLAGE){ const g=DB.geraete.get(v.id); if(g&&!g.kurz&&!g.deleted){ g.kurz=v.kurz; saveRec("geraete",g); } } META.gerKurz=1; metaSave(); }
   if(!META.gerNetzBild){ for(const v of GER_VORLAGE_NETZ){ const g=DB.geraete.get(v.id); if(g&&!g.deleted&&!g.bild&&!g.bildUrl){ g.bildUrl=v.bildUrl; saveRec("geraete",g); } } if(DB.geraete.has(GER_VORLAGE_NETZ[0].id)){ META.gerNetzBild=1; metaSave(); } }
   if(!META.gerNetz){ for(const v of GER_VORLAGE_NETZ){ if(DB.geraete.has(v.id)) continue; const r=saveRec("geraete",Object.assign({sn:"",kal:"",bei:""},v),true); r.created=r.updated=1; dbPut("geraete",r); } META.gerNetz=1; metaSave(); }
-  if(META.gerVorlage) return;
-  for(const v of GER_VORLAGE){ if(DB.geraete.has(v.id)) continue; const r=saveRec("geraete",Object.assign({sn:"",kal:"",bei:""},v),true); r.created=r.updated=1; dbPut("geraete",r); }
-  META.gerVorlage=1; metaSave(); }
+  if(!META.gerVorlage){ for(const v of GER_VORLAGE){ if(DB.geraete.has(v.id)) continue; const r=saveRec("geraete",Object.assign({sn:"",kal:"",bei:""},v),true); r.created=r.updated=1; dbPut("geraete",r); }
+    META.gerVorlage=1; metaSave(); }
+  if(!META.gerDaten1&&DB.geraete.has("ger-wiha-mft-one-1")){ for(const [id,d] of Object.entries(GER_DATEN)){ const g=DB.geraete.get(id); if(!g||g.deleted) continue; let neu=false;
+      for(const [k,v] of Object.entries(d)) if(!g[k]){ g[k]=v; neu=true; } if(neu) saveRec("geraete",g); } META.gerDaten1=1; metaSave(); } }
 /* eigenes Foto (bild, klein im Datensatz) vor Herstellerbild (bildUrl); lädt das Herstellerbild nicht, bleibt das Symbol sichtbar */
 const gerAv=g=>{ const u=g.bild||GER_BILD_ALT[g.bildUrl]||g.bildUrl; return u?`<span class="av av-img ger-av">${icon("geraet")}<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></span>`:`<span class="av">${icon("geraet")}</span>`; };
 /* Gruppen in der Liste: Messgeräte nach Einsatz, dazu Prüfadapter und Sonstiges */
@@ -2209,11 +2214,12 @@ async function gerFotoLaden(f){
 function gerFotoNeu(){ const el=document.getElementById("gerFoto"); if(!el||!gerForm) return; const r=gerForm.id?DB.geraete.get(gerForm.id):{}; const u=document.querySelector('#dlg [data-f="bildUrl"]'); el.innerHTML=gerFotoHtml(Object.assign({},r,{bildUrl:u?u.value.trim():r.bildUrl})); }
 function gerDialog(g){
   gerForm={id:g&&g.id,bild:g&&g.bild||""}; const r=g||{art:"mess"}, T=team().filter(m=>m.mail);
-  if(!ME.admin){ const k=gerKal(r); dialog(gerName(r),`<p>${esc([GER_ART.find(x=>x[0]===r.art)?.[1],r.sn&&`Seriennr. ${r.sn}`,k&&k.t].filter(Boolean).join(" · "))}</p>${r.notiz?`<p class="meta">${esc(r.notiz)}</p>`:""}`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return; }
+  if(!ME.admin){ const k=gerKal(r); dialog(gerName(r),`<p>${esc([GER_ART.find(x=>x[0]===r.art)?.[1],r.sn&&`Seriennr. ${r.sn}`,r.fw&&`Firmware ${r.fw}`,r.kalAm&&`kalibriert am ${r.kalAm}`,k&&k.t].filter(Boolean).join(" · "))}</p>${r.notiz?`<p class="meta">${esc(r.notiz)}</p>`:""}`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return; }
   dialog(g?"Messgerät bearbeiten":"Neues Messgerät",`<div class="fg1">
     <div class="ger-bildzeile"><div class="ger-foto" id="gerFoto">${gerFotoHtml(r)}</div>${tf("bildUrl","Herstellerbild (Internetadresse, optional)",GER_BILD_ALT[r.bildUrl]||r.bildUrl,{form:true,type:"url"})}</div>
     <div class="reihe3">${sf("art","Art",r.art||"mess",GER_ART,{form:true})}${tf("hersteller","Hersteller",r.hersteller,{form:true,ph:"z. B. Wiha"})}${tf("modell","Modell",r.modell,{form:true,ph:"z. B. MFT one"})}</div>
-    <div class="reihe3">${tf("kurz","Kurzname",r.kurz,{form:true,ph:"z. B. MFT 1 oder Bertha"})}${tf("sn","Seriennummer",r.sn,{form:true})}${tf("kal","Kalibrierung gültig bis",r.kal,{form:true,ph:"MM.JJJJ"})}</div>
+    <div class="reihe3">${tf("kurz","Kurzname",r.kurz,{form:true,ph:"z. B. MFT 1 oder Bertha"})}${tf("sn","Seriennummer",r.sn,{form:true})}${tf("kal","Kalibrierung gültig bis",r.kal,{form:true,ph:"TT.MM.JJJJ"})}</div>
+    <div class="reihe2">${tf("kalAm","Kalibriert am",r.kalAm,{form:true,ph:"TT.MM.JJJJ"})}${tf("fw","Firmware",r.fw,{form:true,ph:"z. B. V1.312"})}</div>
     <div class="reihe2">${sf("einsatz","Einsatz",r.einsatz||(/\bPAT\b/i.test(r.modell||"")?"geraete":/signaltek|lantek|navitek|netzwerk|kabeltester|ethernet/i.test(`${r.hersteller||""} ${r.modell||""}`)?"netzwerk":"installation"),[["installation","Installation und EVSE"],["geraete","Geräteprüfung"],["beide","Installation und Geräteprüfung"],["netzwerk","Netzwerk (Datenverkabelung)"]],{form:true})}${sf("bei","Zugeteilt an",r.bei||"",[["","niemand / Firma"],...T.map(m=>[m.mail,m.name])],{form:true})}</div>
     <p class="sup" style="margin:0 4px">Der Kurzname steht in allen Apps vor dem Gerät – damit man gleiche Geräte auseinanderhält.</p>
     <div class="ger-notiz">${ta("notiz","Notiz",r.notiz,{form:true,ph:"z. B. liegt im Sprinter, Kalibrierung bei …"})}</div></div><input type="file" id="gerDatei" accept="image/*" hidden>`,
@@ -2397,7 +2403,7 @@ document.addEventListener("click",async ev=>{
   case "gerFotoWeg": if(gerForm){ gerForm.bild=""; gerFotoNeu(); } return;
   case "gerEdit": gerDialog(DB.geraete.get(b.dataset.id)); return;
   case "gerSave": { if(!ME.admin||!gerForm) return; const F=formVals(); if(!F.modell&&!F.hersteller&&!F.sn){ toast("Bitte mindestens Modell oder Seriennummer eintragen"); return; }
-    const r=gerForm.id?DB.geraete.get(gerForm.id):{id:uid()}; Object.assign(r,{art:F.art,hersteller:F.hersteller,modell:F.modell,kurz:(F.kurz||"").trim(),einsatz:F.einsatz||"",sn:F.sn,kal:F.kal,bei:F.bei,notiz:F.notiz,bildUrl:F.bildUrl,bild:gerForm.bild||""}); saveRec("geraete",r,!gerForm.id); gerForm=null; closeOverlays(); render(); return; }
+    const r=gerForm.id?DB.geraete.get(gerForm.id):{id:uid()}; Object.assign(r,{art:F.art,hersteller:F.hersteller,modell:F.modell,kurz:(F.kurz||"").trim(),einsatz:F.einsatz||"",sn:F.sn,kal:F.kal,kalAm:F.kalAm||"",fw:F.fw||"",bei:F.bei,notiz:F.notiz,bildUrl:F.bildUrl,bild:gerForm.bild||""}); saveRec("geraete",r,!gerForm.id); gerForm=null; closeOverlays(); render(); return; }
   case "gerAus": { const r=gerForm&&DB.geraete.get(gerForm.id); if(!r||!ME.admin) return; r.aus=!r.aus; saveRec("geraete",r); gerForm=null; closeOverlays(); render(); toast(r.aus?"Ausgemustert – in EVSE nicht mehr auswählbar":"Wieder aktiv"); return; }
   case "teamEdit": teamDialog(teamAlle().find(m=>m.mail===b.dataset.mail)); return;
   case "teamStatus": if(teamForm){ if(teamForm.alt===ME.mail&&b.dataset.v==="weg"){ toast("Dich selbst kannst du nicht austragen"); return; } teamForm.status=b.dataset.v; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;
