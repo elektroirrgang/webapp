@@ -736,11 +736,11 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
   const beleg=Lk.length?ecListe(Lk.map(p=>ecLi({act:"ecRkPort",id:p.d.id,lead:esc(p.pp||"–"),breit:true,kopf:esc(ecLinkOrt(g,p)),text:esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · ")),rechts:ecSt(ecNetStand(pr,p))}))):`<p class="meta">Noch keine Dose an diesem Schrank. Dosen legst du unter „Gebäude“ in den Räumen an.</p>`;
   const nB=P.H.filter(h=>h[0]==="bad").length, nW=P.H.filter(h=>h[0]==="wip").length, tab=["ansicht","belegung","stueck","planung"].includes(ecRkTab)?ecRkTab:"ansicht";
   const TABS=[["ansicht","Ansicht",""],["belegung","Belegung",String(Lk.length)],["stueck","Stückliste",""],["planung","Planung",nB?`<i class="sd bad"></i>`:nW?`<i class="sd wip"></i>`:""]];
-  const ansicht=`<section class="card rk-zeich"><div class="rk-zk"><h3>Vorderansicht</h3><button type="button" class="m3-filter" data-act="ecRkSeite" aria-pressed="${ecRkSeiteAn()}">Seitenansicht${ecRkSeiteAn()?` · ${ecSchrTiefe(s)} mm`:""}</button></div>
+  const ansicht=`<section class="card rk-zeich"><div class="rk-zk"><h3>${ecRkSeiteAn()?"Vorderansicht und Seite":"Vorderansicht"}</h3></div>
       ${ecRkDefs()}<div class="rk-bau gross${ecRkSeiteAn()?" seite":""}${ecSchrBreite(s)>=800?" b800":""} ${ecSchrFarbe(s)}"><div class="rk-front"><div class="rk-geh ${s.bauart==="stand"?"stand":"wand"}${ecSchrBreite(s)>=800?" b800":""}"><div class="rk-dach"></div><div class="rk" style="--n:${N}"><span class="rk-schiene l"></span><span class="rk-schiene r"></span>${Array.from({length:N},(_,i)=>nr(i+1)+leer(i+1)).join("")}${T.map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div><div class="rk-sockel"></div></div></div>
-        <div class="rk-side"><div class="rk-sgeh ${s.bauart==="stand"?"stand":"wand"}"><div class="rk-sdach"></div><div class="rk-sv" style="--n:${N}"><i class="rk-sfr"></i><i class="rk-nb" style="left:calc(${(ecSchrNutzbar(s)/ecSchrTiefe(s)*100).toFixed(1)}% - 2px)" title="hintere Schiene – nutzbar etwa ${ecSchrNutzbar(s)} mm"></i>
+        <div class="rk-side"><div class="rk-sgeh ${s.bauart==="stand"?"stand":"wand"}"><div class="rk-sdach"></div><div class="rk-sv" style="--n:${N}"><i class="rk-stuer" title="Tür"></i><i class="rk-swand" title="Rückwand"></i><i class="rk-sfr" style="left:calc(${(ecRkVorn(s)/ecSchrTiefe(s)*100).toFixed(2)}% - 3px)" title="vordere Schiene"></i><i class="rk-nb" style="left:calc(${((ecRkVorn(s)+ecSchrNutzbar(s))/ecSchrTiefe(s)*100).toFixed(2)}% - 3px)" title="hintere Schiene – nutzbar etwa ${ecSchrNutzbar(s)} mm"></i>
           ${T.map(t=>ecRkSeiteTeil(s,t)).join("")}</div><div class="rk-ssockel"></div></div><div class="rk-smass"><span>vorne</span><span>${ecSchrTiefe(s)} mm</span><span>hinten</span></div></div></div>
-      <p class="m3-hinweis">${zu?"Prüfung abgeschlossen – nur Ansicht.":"Antippen zum Bearbeiten · ziehen zum Verschieben · freie HE antippen zum Einsetzen"}</p></section>`;
+</section>`;
   const inhalt=tab==="belegung"?`<section class="card"><h3>Belegung <span class="m3-neben">${Lk.length} Port${Lk.length===1?"":"s"}</span></h3>${beleg}</section>`
     :tab==="stueck"?`<section class="card"><h3>Stückliste</h3>${stueck}<p class="m3-hinweis">Keystones und Patchkabel = belegte Ports</p></section>`
     :tab==="planung"?`<section class="card"><h3>Planung</h3>${planung}</section>`:ansicht;
@@ -752,8 +752,10 @@ let ecRkTab="ansicht";
 function ecRkFarbe(t){ const K=ecRkKat(t.kat);
   if(K){ if(t.typ==="patch") return K.farbe==="edelstahl"?"inox":K.farbe==="hell"?"hell":"schwarz"; if(K.silber) return "silber"; return "schwarz"; }
   if((t.typ==="switch"||t.typ==="router")&&/unifi|ubiquiti|ubnt/i.test(t.name||"")) return "silber"; return t.typ==="blind"?"blind":"schwarz"; }
-function ecRkSeiteTeil(s,t){ const tf2=ecRkTiefe(s,t), T=ecSchrTiefe(s), zu2=tf2>ecSchrNutzbar(s), w=Math.min(100,tf2/T*100).toFixed(1), K=ecRkKat(t.kat);
-  const tit=esc(`${ecRkName(t)}: ${tf2} mm${+t.tiefe?"":" (typisch)"}${zu2?" – zu tief":""}`), st=`grid-row:${t.pos} / span ${t.he};width:${w}%`;
+/* Schnitt: vorn Tür, dann die vordere Schiene (Abstand ~50 mm), die Geräte hängen an ihr und ragen nach hinten; hintere Schiene am Ende der nutzbaren Tiefe */
+const ecRkVorn=s=>Math.min(50,Math.max(0,(ecSchrTiefe(s)-ecSchrNutzbar(s))/2));
+function ecRkSeiteTeil(s,t){ const tf2=ecRkTiefe(s,t), T=ecSchrTiefe(s), v=ecRkVorn(s), zu2=tf2>ecSchrNutzbar(s), w=Math.min(100-v/T*100,tf2/T*100).toFixed(2), K=ecRkKat(t.kat);
+  const tit=esc(`${ecRkName(t)}: ${tf2} mm${+t.tiefe?"":" (typisch)"}${zu2?" – zu tief":""}`), st=`grid-row:${t.pos} / span ${t.he};width:${w}%;margin-left:${(v/T*100).toFixed(2)}%`;
   if(t.typ==="boden"){ const gt=K&&K.geraetTiefe; return `<span class="rk-sb rk-boden" style="${st}" title="${tit}">${gt?`<i class="rk-sbg${K.bild&&K.bild.rot?" rot":""}" style="width:${Math.min(100,gt/tf2*100).toFixed(1)}%" title="${esc(`${ecRkName(t)}: etwa ${gt} mm tief`)}"></i>`:""}</span>`; }
   return `<span class="rk-sb rk-${t.typ} f-${ecRkFarbe(t)}${+t.tiefe||K&&K.tiefe?"":" geschaetzt"}${zu2?" zutief":""}" style="${st}" title="${tit}"></span>`; }
 /* Schrank offen? – dann wie die Ladestation in EVSE: Titel = Schrank, Bereiche als Tabs (Handy) bzw. Auswahl rechts im Kopf (breit), Aktionen im ⋮-Menü */
@@ -771,7 +773,8 @@ function ecRkMenuInhalt(){ const pr=ecPr(), zu=pr.status==="fertig", id=nav.schr
   $("#menu").innerHTML=it.map(x=>`<button class="mi" role="menuitem" data-act="${x[0]}" data-id="${esc(id)}">${icon(x[2])}<span>${x[1]}</span></button>`).join("");
   $("#menu").hidden=false; $("#scrim").hidden=false; $("#menuBtn").setAttribute("aria-expanded","true"); }
 /* Seitenansicht ein/aus – merkt sich jedes Gerät selbst; Standard: am PC an, am Handy aus */
-const ecRkSeiteAn=()=>{ try{ const v=localStorage.getItem("irrgang_rk_seite"); if(v!=null) return v==="1"; }catch(e){} return matchMedia("(min-width:600px)").matches; };
+/* Seitenansicht immer am PC/iPad, am Handy nicht (zu schmal) – kein eigener Schalter */
+const ecRkSeiteAn=()=>WIDE.matches;
 /* Teil einsetzen: Auswahl als Liste (statt neun Chips über dem Schrank) */
 function ecRkWahlDlg(){ const pr=ecPr(), g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x.id===nav.schr); if(!s) return;
   const info={nas:"Netzwerkspeicher oder Videorekorder",patch:"Keystones, je Port eine Dose",switch:"verteilt die Ports ins Netz",kabel:"Bürste oder Bügel zwischen den Feldern",boden:"für Router, NAS, Glasfaser-Box",router:"Firewall, Gateway",pdu:"Strom für die Geräte im Schrank",usv:"überbrückt Stromausfall",luefter:"zieht warme Luft ab",blind:"verschließt freie HE"};
@@ -1635,7 +1638,6 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecNetFilter": ecNetFilter=b.dataset.v; render(); return;
   case "ecRkTab": ecRkTab=b.dataset.v; closeOverlays(); render(); scrollTo(0,0); return;
   case "ecRkSpick": ecRkSpickAuf(b); return;
-  case "ecRkSeite": { const an=!ecRkSeiteAn(); try{ localStorage.setItem("irrgang_rk_seite",an?"1":"0"); }catch(e){} render(); return; }
   case "ecRkHilfe": ecRkHilfeDlg(); return;
   case "ecRkKatAendern": { if(!ecDlg||!ecDlg.rk) return; ecRkLesen(); ecRkKatModus={neu:false,typ:ecDlg.rk.typ}; ecRkKatDlg(); return; }
   case "ecRkKatZurueck": if(ecDlg&&ecDlg.rk) ecRkDlg(ecDlg.rk); return;

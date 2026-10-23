@@ -1167,9 +1167,10 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .rk-sdach{height:var(--rk-dach);margin:0 -6px;border-radius:8px 8px 0 0;background:linear-gradient(var(--rk-rahmen),var(--rk-rahmen2))}
 .rk-ssockel{height:12px;margin:0 -6px;border-radius:0 0 8px 8px;background:linear-gradient(var(--rk-rahmen),var(--rk-rahmen2))}
 .rk-sgeh.stand .rk-ssockel{height:26px;background:linear-gradient(90deg,#111 0 18%,transparent 18% 82%,#111 82%) bottom/100% 8px no-repeat,linear-gradient(var(--rk-rahmen2),#1A1B1D)}
-.rk-sv{position:relative;display:grid;grid-template-rows:repeat(var(--n),var(--he));padding:var(--rk-pad) 0 var(--rk-pad) 7px;background:repeating-linear-gradient(to bottom,transparent 0 calc(var(--he) - 1px),rgba(0,0,0,.18) calc(var(--he) - 1px) var(--he)) 0 var(--rk-pad)/100% calc(100% - var(--rk-pad)*2) no-repeat,var(--rk-innen);box-shadow:inset 0 6px 10px rgba(0,0,0,.35),inset 0 -6px 10px rgba(0,0,0,.25)}
+.rk-sv{position:relative;display:grid;grid-template-rows:repeat(var(--n),var(--he));padding:var(--rk-pad) 0;background:repeating-linear-gradient(to bottom,transparent 0 calc(var(--he) - 1px),rgba(0,0,0,.18) calc(var(--he) - 1px) var(--he)) 0 var(--rk-pad)/100% calc(100% - var(--rk-pad)*2) no-repeat,var(--rk-innen);box-shadow:inset 0 6px 10px rgba(0,0,0,.35),inset 0 -6px 10px rgba(0,0,0,.25)}
 .rk-sfr,.rk-nb{position:absolute;top:0;bottom:0;width:6px;pointer-events:none;background:repeating-linear-gradient(to bottom,var(--rk-rail) 0 4px,var(--rk-loch) 4px 6px,var(--rk-rail) 6px calc(var(--he)/3)),var(--rk-rail);box-shadow:inset 1px 0 0 var(--rk-rail3),inset -1px 0 0 var(--rk-rail2)}
-.rk-sfr{left:0}.rk-nb{z-index:1;opacity:.95}
+.rk-nb{z-index:1;opacity:.95}
+.rk-stuer,.rk-swand{position:absolute;top:0;bottom:0;width:3px;pointer-events:none;background:var(--rk-rahmen2)}.rk-stuer{left:0;background:linear-gradient(90deg,rgba(180,200,215,.55),rgba(120,140,155,.35))}.rk-swand{right:0}
 .rk-sb{position:relative;z-index:2;display:block;height:calc(100% - 2px);margin-top:1px;border-radius:0 2px 2px 0;background:linear-gradient(#34373C,#1D1F22);box-shadow:inset 3px 0 0 rgba(255,255,255,.08),0 1px 2px rgba(0,0,0,.4)}
 .rk-sb.f-silber{background:linear-gradient(#FAFBFC,#E3E6E9 15%,#D3D7DB 85%,#AEB3B9);box-shadow:inset 3px 0 0 #C3C8CD,inset -2px 0 0 rgba(0,0,0,.18),0 1px 2px rgba(0,0,0,.4)}
 .rk-sb.f-inox{background:repeating-linear-gradient(to bottom,rgba(255,255,255,.18) 0 1px,transparent 1px 3px),linear-gradient(#E6E8EA,#C6CACD 60%,#9EA3A8)}

@@ -260,11 +260,11 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
 const istEntwickler=()=>{ try{ return typeof meineRollen==="function"&&meineRollen().includes("Entwickler"); }catch(e){ return false; } };
 function entwicklerBereich(){ if(!istEntwickler()) return ""; const z=[typeof mlDiagZeile==="function"&&ME.mail?mlDiagZeile():"",typeof mlTestZeile==="function"&&ME.mail?mlTestZeile():"",typeof simZeile==="function"&&ME.mail?simZeile():""].join("").trim();
   return z?`<div class="sec-lbl">Entwickler</div><div class="list">${z}</div>`:""; }
-/* Hinweis oben, solange die Demo läuft */
-function demoMarke(){ const row=document.querySelector("#topbar .tb-row"); if(!row) return; let m=document.getElementById("demoMarke");
-  if(!demoAn()){ if(m) m.remove(); return; }
-  if(!m){ m=document.createElement("span"); m.id="demoMarke"; m.className="demo-marke"; m.textContent="Demo"; m.title="Demo-Vorschau: Beispieldaten in allen Apps. Ausschalten unter Mehr → Demo-Vorschau."; }
-  const vor=document.getElementById("glBtn")||document.getElementById("avBtn"); if(vor&&m.nextSibling!==vor) row.insertBefore(m,vor); }
+/* Demo an: gelber Ring ums Profilbild statt eines Schildchens in der Kopfzeile (das saß je nach Gerät schief) */
+function demoMarke(){ document.getElementById("demoMarke")?.remove(); const an=demoAn(); document.body.classList.toggle("demo-an",an);
+  if(!document.getElementById("demoStil")){ const st=document.createElement("style"); st.id="demoStil";
+    st.textContent="body.demo-an #avBtn{border-radius:50%;box-shadow:0 0 0 2px var(--surface,#fff),0 0 0 4.5px #F2C14E}"; document.head.appendChild(st); }
+  const av=document.getElementById("avBtn"); if(av){ if(an) av.title="Demo-Vorschau ist an – Beispieldaten"; else if((av.title||"").startsWith("Demo")) av.removeAttribute("title"); } }
 
 /* ===== Beispiel-PDFs und -Bilder für die Demo (ohne Bibliothek, läuft in allen Apps) ===== */
 const DEMO_WIN={"–":"\x96","—":"\x97","„":"\x84","“":"\x93","”":"\x94","‚":"\x82","‘":"\x91","’":"\x92","€":"\x80","…":"\x85","•":"\x95","Ω":"Ohm","≥":">=","≤":"<=","→":"->","›":">"};
