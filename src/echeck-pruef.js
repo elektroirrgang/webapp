@@ -366,6 +366,7 @@ function ecInfraView(pr){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", S=g.
   const A=ecNetAlle(g), ohne=A.filter(p=>!p.d.sId||!S.some(s=>s.id===p.d.sId));
   return `<div class="ec-kz">${k(S.length,`Netzwerkschr${S.length===1?"ank":"änke"}`)}${k(`${B} / ${T}`,"Patchports belegt",T?B/T:0)}${k(SW,"Switch-Ports")}${k(bad||hw,bad?"Probleme":"Hinweise",null,bad>0)}</div>
     <div class="ec-spalte ec-infra">
+    <section class="card"><h3>Internetanschluss</h3>${ecListe(ecAnZeilen(g,zu))}</section>
     <section class="card"><h3>Netzwerkschränke</h3>${S.length||!zu?ecListe([...S.map((s2,i)=>zeile(s2,P[i])),...(zu?[]:[ecLi({act:"ecSchrNeu",lead:icon("add"),ton:"plus",kopf:"Schrank hinzufügen",text:S.length?"z. B. Unterverteiler auf einer Etage":"z. B. Hauptschrank im Technikraum"})])]):`<p class="meta">Kein Netzwerkschrank angelegt.</p>`}
       ${S.length&&!zu?`<p class="m3-hinweis">Bearbeiten: Rechtsklick, am Handy lange drücken</p>`:""}</section>
     ${ohne.length?`<section class="card"><h3>Datendosen ohne Schrank <span class="m3-neben">${ohne.length} Port${ohne.length>1?"s":""}</span></h3>${ecListe(ohne.map(p=>ecLi({act:"ecDose",id:p.d.id,lead:icon("ecNetz"),ton:"wip",kopf:esc(ecLinkName(g,p)),text:esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · "))})))}</section>`:""}
@@ -748,8 +749,37 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
     <div class="rk-inhalt rk-${tab}">${inhalt}</div>
     ${zu||tab!=="ansicht"?"":`<button class="fab rk-fab" data-act="ecRkWahl">${icon("add")}<span>Teil einsetzen</span></button>`}</div>`; }
 let ecRkTab="ansicht";
+/* ---- Internetanschluss des Gebäudes: Art, Übergabepunkt, Modem, Weg bis zum Netzwerkschrank, Router ----
+   g.anschluss={art,anbieter,raumId,ont,weg,routerKat,routerText,routerOrt,notiz} – gilt für das Gebäude, nicht nur für eine Prüfung */
+const EC_AN_ART=[["glasfaser","Glasfaser"],["dsl","DSL"],["kabel","Kabel"],["mobil","Mobilfunk"],["keiner","kein Anschluss"]];
+const EC_AN_DOSE={glasfaser:"Glasfaser-Anschlussdose (GF-TA)",dsl:"TAE-Dose",kabel:"Multimediadose",mobil:"",keiner:""};
+const EC_AN_ONT=[["ont","eigenes Glasfaser-Modem (ONT)"],["box","im Router eingebaut (z. B. FRITZ!Box Fiber)"]];
+const EC_AN_WEG=[["router_am_anschluss","Router am Hausanschluss, Netzwerkkabel zum Schrank"],["lan_zum_schrank","Netzwerkkabel vom Modem zum Router im Schrank"],["glas_zum_schrank","Glasfaser bis in den Schrank, Modem und Router im Schrank"],["im_schrank","Hausanschluss direkt im Schrank"]];
+const ecAnRouter=()=>EC_RKKAT.filter(K=>K.typ==="router"||K.zeichnung==="fritz");
+function ecAnZeilen(g,zu){ const A=g.anschluss;
+  if(!A||!A.art) return [ecLi({act:zu?null:"ecAnschluss",lead:icon("globe"),ton:"plus",kopf:"Internetanschluss festlegen",text:"Glasfaser, DSL oder Kabel – wo er ankommt und wie er in den Schrank kommt"})];
+  const art=(EC_AN_ART.find(x=>x[0]===A.art)||[,""])[1], K=ecRkKat(A.routerKat), router=K?ecRkKatName(K):A.routerText||"", ort=A.routerOrt?(A.routerOrt.startsWith("s:")?ecSchrName(g,A.routerOrt.slice(2)):ecRaumName(g,A.routerOrt.slice(2))):"";
+  const Z=[ecLi({act:zu?null:"ecAnschluss",lead:icon("globe"),kopf:esc([art,A.anbieter].filter(Boolean).join(" · ")),text:esc([EC_AN_DOSE[A.art]&&`Übergabe: ${EC_AN_DOSE[A.art]}`,A.raumId&&ecRaumName(g,A.raumId),A.art==="glasfaser"&&A.ont?(A.ont==="box"?"Modem im Router":"eigenes Modem (ONT)"):""].filter(Boolean).join(" · "))})];
+  if(A.weg) Z.push(ecLi({act:zu?null:"ecAnschluss",lead:icon("route"),kopf:esc((EC_AN_WEG.find(x=>x[0]===A.weg)||[,""])[1]),text:A.art==="glasfaser"&&A.weg==="glas_zum_schrank"?"Glasfaser im Leerrohr bis zum Schrank, Spleiß bzw. Anschlussdose dort":""}));
+  if(router||ort) Z.push(ecLi({act:zu?null:"ecAnschluss",lead:icon("ecNetz"),kopf:esc(router||"Router"),text:esc(ort?`steht in: ${ort}`:"Standort offen")}));
+  if(A.notiz) Z.push(ecLi({act:zu?null:"ecAnschluss",lead:icon("notes"),kopf:"Notiz",text:esc(A.notiz)}));
+  return Z; }
+function ecAnDlg(){ const pr=ecPr(), g=ecGeb(pr.ortId); if(!ecDlg||!ecDlg.an) ecDlg={an:true,w:{...(g.anschluss||{art:"glasfaser"})}}; const W=ecDlg.w;
+  const orte=[["","– offen –"],...g.schraenke.map(x=>["s:"+x.id,`Schrank: ${x.name}`]),...ecRaeume(g).map(x=>["r:"+x.id,x.titel])];
+  dialog("Internetanschluss",`<div class="lbl">Anschluss</div>${ecChips("anArt",EC_AN_ART,W.art||"")}
+    ${W.art&&W.art!=="keiner"?`<div class="fg1" style="margin-top:14px">${tf("anAnbieter","Anbieter (optional)",W.anbieter||"",{form:true,ph:"z. B. Telekom, Deutsche Glasfaser, Vodafone"})}
+      ${EC_AN_DOSE[W.art]?sf("anRaum",`Raum der ${EC_AN_DOSE[W.art]}`,W.raumId||"",[["","– offen –"],...ecRaeume(g).map(x=>[x.id,x.titel])],{form:true}):""}</div>
+      ${W.art==="glasfaser"?`<div class="lbl" style="margin-top:14px">Glasfaser-Modem</div>${ecChips("anOnt",EC_AN_ONT,W.ont||"")}`:""}
+      ${W.art!=="mobil"?`<div class="lbl" style="margin-top:14px">Weg zum Netzwerkschrank</div><div class="ec-an-weg">${ecChips("anWeg",EC_AN_WEG,W.weg||"")}</div>`:""}
+      <div class="fg1" style="margin-top:14px">${sf("anRouter","Router",W.routerKat||"",[["","– anderer, unten eintragen –"],...ecAnRouter().map(K=>[K.id,ecRkKatName(K)])],{form:true})}
+        ${W.routerKat?"":tf("anRouterText","Router (Text)",W.routerText||"",{form:true,ph:"z. B. Speedport Smart 4, Genexis-Modem"})}
+        ${sf("anRouterOrt","Router steht in",W.routerOrt||"",orte,{form:true})}
+        ${ta("anNotiz","Notiz (optional)",W.notiz||"",{form:true,ph:"z. B. Leerrohr vom HÜP zum Schrank, Glasfaser gespleißt"})}</div>`:""}`,
+    `${g.anschluss?`<button class="btn-text danger" data-act="ecAnWeg">Entfernen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecAnOk">Speichern</button>`,{breit:true}); }
+function ecAnLesen(){ if(!ecDlg||!ecDlg.an) return; const F=formVals(), W=ecDlg.w;
+  if(F.anAnbieter!=null) W.anbieter=F.anAnbieter; if(F.anRaum!=null) W.raumId=F.anRaum; if(F.anRouter!=null) W.routerKat=F.anRouter; if(F.anRouterText!=null) W.routerText=F.anRouterText; if(F.anRouterOrt!=null) W.routerOrt=F.anRouterOrt; if(F.anNotiz!=null) W.notiz=F.anNotiz; }
 /* ---- Netzwerk-Katalog (Prospekt): alle Modelle mit Frontansicht – zum Nachschlagen und um Kunden zu zeigen, wie es aussehen kann ---- */
-const EC_KATGR=[["alle","Alle"],["patch","Patchfelder"],["switch","Switches"],["router","Gateways"],["nas","NAS und Rekorder"],["boden","Router auf Fachboden"]];
+const EC_KATGR=[["alle","Alle"],["patch","Patchfelder"],["switch","Switches"],["router","Gateways"],["nas","NAS und Rekorder"],["boden","Auf Fachboden"]];
 let ecKatFilter="alle";
 function ecRkFrontSvg(K){ const t={id:"k",typ:K.typ,pos:1,he:K.he,ports:K.ports,nr:1,kat:K.id,name:K.kurz||"",poe:!!K.poe,voll:true};
   const html=ecRkTeilHtml(null,null,null,t,new Map()), a=html.indexOf("<svg"), b=html.lastIndexOf("</svg>")+6, H=K.he*RK_U;
@@ -861,6 +891,12 @@ const EC_RKKAT=[
   {id:"syno-rs1221",typ:"nas",hersteller:"Synology",modell:"RackStation RS1221+",kurz:"RS1221+",sku:"RS1221+",he:2,zeichnung:"synoRack",info:"8 Festplatten"},
   /* AVM FRITZ!Box – liegt auf einem Fachboden (2 HE) */
   {id:"fritz-5590",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 5590 Fiber",kurz:"FRITZ!Box 5590 Fiber",sku:"5590 Fiber",he:2,zeichnung:"fritz",bild:{leds:["Power","Fiber","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden"},
+  /* Tisch-NAS auf Fachboden – Höhe in HE so, dass das Gerät auf den Boden passt */
+  {id:"syno-ds923",typ:"boden",hersteller:"Synology",modell:"DiskStation DS923+",kurz:"DS923+",sku:"DS923+",he:4,zeichnung:"desk",bild:{schaechte:4,farbe:"schwarz",breite:199,hoehe:166},geraetTiefe:223,info:"4 Festplatten, auf Fachboden"},
+  {id:"syno-ds224",typ:"boden",hersteller:"Synology",modell:"DiskStation DS224+",kurz:"DS224+",sku:"DS224+",he:4,zeichnung:"desk",bild:{schaechte:2,farbe:"schwarz",breite:108,hoehe:165},geraetTiefe:232,info:"2 Festplatten, auf Fachboden"},
+  {id:"syno-ds223j",typ:"boden",hersteller:"Synology",modell:"DiskStation DS223j (weiß)",kurz:"DS223j",sku:"DS223j",he:4,zeichnung:"desk",bild:{schaechte:2,farbe:"weiss",breite:100,hoehe:166},geraetTiefe:225,info:"2 Festplatten, weiß, auf Fachboden"},
+  {id:"ugreen-dxp2800",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP2800",kurz:"DXP2800",sku:"DXP2800",he:5,zeichnung:"desk",bild:{schaechte:2,marke:"ugreen",breite:126,hoehe:178},geraetTiefe:240,info:"2 Festplatten, auf Fachboden"},
+  {id:"ugreen-dxp4800p",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP4800 Plus",kurz:"DXP4800 Plus",sku:"DXP4800 Plus",he:5,zeichnung:"desk",bild:{schaechte:4,marke:"ugreen",breite:256,hoehe:178},geraetTiefe:260,info:"4 Festplatten, auf Fachboden"},
   {id:"fritz-6690",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 6690 Cable",kurz:"FRITZ!Box 6690 Cable",sku:"6690 Cable",he:2,zeichnung:"fritz",bild:{leds:["Power","Cable","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden, Kabelanschluss"},
   {id:"fritz-5690pro",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 5690 Pro",kurz:"FRITZ!Box 5690 Pro",sku:"5690 Pro",he:2,zeichnung:"fritz",bild:{leds:["Power","Fiber","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden, Glasfaser und DSL"},
   {id:"fritz-7590ax",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7590 AX",kurz:"FRITZ!Box 7590 AX",sku:"7590 AX",he:2,zeichnung:"fritz",bild:{rot:true,leds:["Power","DSL","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden"}];
@@ -884,7 +920,8 @@ const ecRkDefs=()=>`<svg class="rk-defs" width="0" height="0" aria-hidden="true"
   <linearGradient id="rkgUni" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBFBFC"/><stop offset=".1" stop-color="#EEF0F2"/><stop offset=".88" stop-color="#DDE0E3"/><stop offset="1" stop-color="#B7BCC1"/></linearGradient>
   <linearGradient id="rkgUniLcd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14243F"/><stop offset="1" stop-color="#070C16"/></linearGradient>
   <linearGradient id="rkgSyno" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34373C"/><stop offset=".1" stop-color="#25272B"/><stop offset=".9" stop-color="#1B1C1F"/><stop offset="1" stop-color="#0E0F11"/></linearGradient>
-  <linearGradient id="rkgFritz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".7" stop-color="#F1F2F3"/><stop offset="1" stop-color="#D9DCDF"/></linearGradient>
+  <linearGradient id="rkgFritz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".55" stop-color="#F4F5F6"/><stop offset=".9" stop-color="#E2E4E7"/><stop offset="1" stop-color="#C9CDD1"/></linearGradient>
+  <linearGradient id="rkgUgreen" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4A4E54"/><stop offset=".08" stop-color="#5E6369"/><stop offset=".92" stop-color="#585D63"/><stop offset="1" stop-color="#3F4348"/></linearGradient>
   <pattern id="rkpSchlitz" width="4" height="6" patternUnits="userSpaceOnUse"><rect width="4" height="6" fill="#D5D9DD"/><rect x=".8" y=".8" width="2.4" height="4.4" rx="1.2" fill="#8E959C"/></pattern>
   <linearGradient id="rkgHell" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ECEDEA"/><stop offset=".12" stop-color="#DEE0DC"/><stop offset=".9" stop-color="#CDD0CB"/><stop offset="1" stop-color="#A9ADA8"/></linearGradient>
   <linearGradient id="rkgBlk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34363B"/><stop offset=".08" stop-color="#26282C"/><stop offset=".92" stop-color="#1A1B1E"/><stop offset="1" stop-color="#0E0F10"/></linearGradient>
@@ -915,10 +952,13 @@ const rkLed=(x,y,an,farbe)=>`<rect x="${x}" y="${y}" width="2.6" height="1.6" rx
 const rkText=(x,y,t,o={})=>`<text x="${x}" y="${y}" font-size="${o.fs||4.4}" font-weight="${o.fw||600}" fill="${o.fill||"#C9CDD2"}" text-anchor="${o.anchor||"start"}" letter-spacing=".2">${esc(t)}</text>`;
 /* ---- Gerätezeichnungen aus dem Katalog (Frontansicht, Maße in mm; 19" = 482,6 mm, 1 HE = 44,45 mm) ----
    Je Modell eine Bauart: UniFi-Switch, UniFi-Gateway, UNVR, Synology RackStation, FRITZ!Box auf Fachboden. Aufbau nach Herstellerfotos, Maße angenähert. */
-const rkUniLcd=(x,y,w,h)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="1.8" fill="#0A0B0D"/><rect x="${x+1.3}" y="${y+1.3}" width="${w-2.6}" height="${h-2.6}" rx="1.1" fill="url(#rkgUniLcd)"/>`
-  +`<rect x="${x+3.2}" y="${y+3.4}" width="${(w-6.4)*.55}" height="1.6" rx=".8" fill="#EAF2FF" opacity=".92"/><rect x="${x+3.2}" y="${y+6.6}" width="${(w-6.4)*.35}" height="1.2" rx=".6" fill="#9EC2FF" opacity=".8"/>`
-  +`<rect x="${x+3.2}" y="${y+h-6.4}" width="${w-6.4}" height="2.6" rx="1.3" fill="#2A2F38"/><rect x="${x+3.2}" y="${y+h-6.4}" width="${(w-6.4)*.62}" height="2.6" rx="1.3" fill="#1F6FEB"/>`;
-const rkUniLogo=(x,y,f)=>`<path d="M${x} ${y}v3.4a2.6 2.6 0 0 0 5.2 0V${y}" fill="none" stroke="${f||"#9AA0A6"}" stroke-width=".9" stroke-linecap="round"/>`;
+/* UniFi-Touchdisplay: quadratisch (1,3"), schwarzes Glas; zeigt Name, IP, Portübersicht und Last */
+const rkUniLcd=(x,y,w)=>{ const q=w, g=q-4; let h=`<rect x="${x}" y="${y}" width="${q}" height="${q}" rx="2" fill="#050608" stroke="#2A2D33" stroke-width=".5"/><rect x="${x+.8}" y="${y+.8}" width="${q-1.6}" height="${q-1.6}" rx="1.4" fill="url(#rkgUniLcd)"/>`
+    +`<rect x="${x+2.4}" y="${y+2.6}" width="${g*.62}" height="1.5" rx=".75" fill="#F2F6FF"/><rect x="${x+2.4}" y="${y+5.3}" width="${g*.42}" height="1" rx=".5" fill="#8EA6C8"/>`;
+  for(let r=0;r<2;r++) for(let c=0;c<6;c++){ const an=(r*6+c)%4!==3; h+=`<rect x="${x+2.4+c*(g/6)}" y="${y+q*.42+r*3.1}" width="${g/6-.8}" height="2.2" rx=".4" fill="${an?"#2FBF71":"#2A2F38"}"/>`; }
+  return h+`<rect x="${x+2.4}" y="${y+q-5}" width="${g}" height="1.8" rx=".9" fill="#1F2733"/><rect x="${x+2.4}" y="${y+q-5}" width="${g*.58}" height="1.8" rx=".9" fill="#1F6FEB"/>`
+    +`<path d="M${x+1} ${y+1}h${q*.55}l-${q*.35} ${q*.5}H${x+1}z" fill="rgba(255,255,255,.05)"/>`; };
+const rkUniLogo=()=>"";
 /* RJ45 der UniFi-Geräte: schwarze Buchse in hellem Rahmen, LED-Streifen oben */
 const rkUniRj=(x,y,w,h,an,farbe)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx=".7" fill="#1B1D21"/><rect x="${x+.9}" y="${y+1.6}" width="${w-1.8}" height="${h-3.6}" rx=".3" fill="#050506"/><rect x="${x+w/2-2}" y="${y+h-2.3}" width="4" height="1.5" fill="#050506"/><rect x="${x+1.8}" y="${y+2.2}" width="${w-3.6}" height=".6" fill="#A88A3D"/>`
   +`<rect x="${x+.8}" y="${y+.35}" width="${w-1.6}" height=".7" rx=".35" fill="${an?(farbe||"#E9F3FF"):"#3A3D42"}" opacity="${an?.95:.7}"/>`;
@@ -933,23 +973,23 @@ const RK_ZEICH={
   uniSwitch:(K,t,H)=>{ const Z=K.bild, n=Z.rj, sfp=Z.sfp||0, sc=Math.ceil(sfp/2), rechts=466.1-7-sc*15.4, links=Z.lcd?64:34;
     const gruppe=Z.gruppe||(n>24?8:6), sp=Math.ceil(n/2), gl=Math.floor((sp-1)/gruppe)*3.6, pitch=Math.min(14.6,(rechts-6-links-gl)/sp);
     const F=rkUniFeld(0,H,n,gruppe,pitch), x0=links+Math.max(0,(rechts-6-links-F.w)/2);
-    let h=rkKoerper(H,"url(#rkgUni)")+(Z.lcd?rkUniLcd(24,H/2-12.5,32,25):"")+rkUniLogo(Z.lcd?26:24,4.2,"#8E949B")
+    let h=rkKoerper(H,"url(#rkgUni)")+(Z.lcd?rkUniLcd(25,H/2-11.5,23):"")+rkUniLogo(Z.lcd?26:24,4.2,"#8E949B")
       +rkUniFeld(x0,H,n,gruppe,pitch,{farbe:nr=>Z.schnell&&nr>n-Z.schnell?"#7FB2FF":null}).h;
     for(let i=0;i<sfp;i++) h+=rkSfp(rechts+3+Math.floor(i/2)*15.4,i%2?H/2+1.1:H/2-11.7,13.8,10.6);
-    return h+rkText(Z.lcd?40:24,H-2.6,K.kurz||K.modell,{fs:3.4,fw:600,fill:"#8E949B",anchor:Z.lcd?"middle":"start"}); },
+    return h; },
   /* UniFi-Gateway (UDM Pro / SE / Pro Max): Display, 8 LAN + WAN + 2 SFP+, rechts HDD-Schacht */
-  uniGateway:(K,t,H)=>{ const Z=K.bild, b=Z.hdd==null?1:Z.hdd, lan=Z.lan==null?8:Z.lan; let h=rkKoerper(H,"url(#rkgUni)")+rkUniLcd(24,H/2-12.5,32,25)+rkUniLogo(26,4.2,"#8E949B");
+  uniGateway:(K,t,H)=>{ const Z=K.bild, b=Z.hdd==null?1:Z.hdd, lan=Z.lan==null?8:Z.lan; let h=rkKoerper(H,"url(#rkgUni)")+rkUniLcd(25,H/2-11.5,23)+rkUniLogo(26,4.2,"#8E949B");
     const F=lan?rkUniFeld(68,H,lan,4,14.4,{farbe:nr=>Z.poe&&nr<=Z.poe?"#F5C451":null}):{h:"",w:0}; h+=F.h;
     const xw=68+(lan?F.w+8:0); h+=rkUniRj(xw,H/2-11.7,13,10.6,true,"#7FB2FF")+rkSfp(xw+16,H/2-11.7,13.8,10.6)+rkSfp(xw+16,H/2+1.1,13.8,10.6)
       +rkText(xw+6.5,H/2+8.4,"WAN",{fs:3.2,fw:700,fill:"#8E949B",anchor:"middle"});
     const bx0=b>1?250:300, bw=(466.1-8-bx0-(b-1)*4)/b;
     for(let i=0;i<b;i++){ const x=bx0+i*(bw+4), y=6, hh=H-12; h+=`<rect x="${x}" y="${y}" width="${bw}" height="${hh}" rx="2.2" fill="#E3E6E9" stroke="#AEB4BA" stroke-width=".5"/><rect x="${x+3}" y="${y+3}" width="${bw-26}" height="${hh-6}" rx="1.4" fill="url(#rkpSchlitz)"/>`
       +`<rect x="${x+bw-19}" y="${y+hh/2-6}" width="14" height="12" rx="2" fill="#CDD2D7" stroke="#9AA1A8" stroke-width=".5"/><rect x="${x+bw-15}" y="${y+hh/2-1}" width="6" height="2" rx="1" fill="#7C838B"/>`; }
-    return h+rkText(40,H-2.6,K.kurz||K.modell,{fs:3.4,fw:600,fill:"#8E949B",anchor:"middle"}); },
+    return h; },
   /* UniFi UNVR: Display, 4 Festplatten-Schächte */
-  uniNvr:(K,t,H)=>{ const nb=(K.bild&&K.bild.schaechte)||4, rr=t.he>1?2:1, sp=Math.ceil(nb/rr); let h=rkKoerper(H,"url(#rkgUni)")+rkUniLcd(24,H/2-12.5,32,25)+rkUniLogo(26,4.2,"#8E949B"); const x0=66, bw=(466.1-8-x0-(sp-1)*3)/sp;
+  uniNvr:(K,t,H)=>{ const nb=(K.bild&&K.bild.schaechte)||4, rr=t.he>1?2:1, sp=Math.ceil(nb/rr); let h=rkKoerper(H,"url(#rkgUni)")+rkUniLcd(25,H/2-11.5,23)+rkUniLogo(26,4.2,"#8E949B"); const x0=66, bw=(466.1-8-x0-(sp-1)*3)/sp;
     for(let i=0;i<nb;i++){ const col=i%sp, row=Math.floor(i/sp), hh0=(H-10-(rr-1)*3)/rr; const x=x0+col*(bw+3), y=5+row*(hh0+3), hh=hh0; h+=`<rect x="${x}" y="${y}" width="${bw}" height="${hh}" rx="2" fill="#E3E6E9" stroke="#AEB4BA" stroke-width=".5"/><rect x="${x+4}" y="${y+4}" width="${Math.max(4,bw-24)}" height="${hh-8}" rx="1.2" fill="url(#rkpSchlitz)"/><rect x="${x+bw-16}" y="${y+hh/2-5}" width="11" height="10" rx="1.8" fill="#CDD2D7" stroke="#9AA1A8" stroke-width=".5"/>`+rkLed(x+bw-12,y+4,true,"#4FA8FF"); }
-    return h+rkText(40,H-2.6,K.kurz||K.modell,{fs:3.4,fw:600,fill:"#8E949B",anchor:"middle"}); },
+    return h; },
   /* Synology RackStation: schwarz, links Taster und LEDs, Laufwerksträger mit Lochmuster */
   synoRack:(K,t,H)=>{ const r=(K.bild&&K.bild.reihen)||Math.max(1,t.he>1?2:1), c=4, x0=82, bw=(466.1-8-x0-(c-1)*3)/c, bh=(H-10-(r-1)*3)/r;
     let h=rkKoerper(H,"url(#rkgSyno)")+rkText(24,10.5,"Synology",{fs:5.2,fw:700,fill:"#D7DADE"})+rkText(24,15.6,K.kurz||K.modell,{fs:3.4,fw:600,fill:"#8E939B"})
@@ -960,15 +1000,38 @@ const RK_ZEICH={
         +`<rect x="${x+bw-25}" y="${y+bh/2-4}" width="15" height="8" rx="4" fill="#3A3E44" stroke="#55595F" stroke-width=".5"/>`+`<circle cx="${x+bw-6}" cy="${y+bh/2-3}" r="1.2" fill="#3DDC84"/><circle cx="${x+bw-6}" cy="${y+bh/2+2}" r="1.2" fill="${(i+j)%2?"#3DDC84":"#2E3135"}"/>`; }
     return h; },
   /* FRITZ!Box liegend auf einem Fachboden */
-  fritz:(K,t,H)=>{ const Z=K.bild, dw=Z.breite||226, dh=Math.min(H-10,Z.hoehe||46), dx=(RK_B-dw)/2, dy=H-6-dh;
-    let h=`<rect x="16.5" y="${H-6}" width="449.6" height="5" rx="1" fill="url(#rkgTray)"/><rect x="16.5" y="${H-6}" width="449.6" height=".8" fill="rgba(255,255,255,.18)"/>`
-      +`<rect x="${dx}" y="${dy}" width="${dw}" height="${dh}" rx="6" fill="url(#rkgFritz)"/><rect x="${dx}" y="${dy+dh-2.4}" width="${dw}" height="2.4" rx="1.2" fill="rgba(0,0,0,.18)"/>`
-      +(Z.rot?`<rect x="${dx}" y="${dy}" width="${dw}" height="4.2" rx="2.1" fill="#E2001A"/>`:"")
-      +`<text x="${dx+10}" y="${dy+dh/2+3.4}" font-size="9.5" font-weight="900" font-style="italic" fill="#E2001A" letter-spacing="-.2">FRITZ!</text>`;
-    const L=Z.leds||["Power","Fiber","WLAN","Fon","Info"], lx=dx+dw-12-L.length*17;
-    L.forEach((l,i)=>{ const x=lx+i*17; h+=`<rect x="${x}" y="${dy+dh/2-3.6}" width="5" height="1.8" rx=".9" fill="${i<3?"#3DDC84":"#C9CDD2"}" style="${i<3?"filter:drop-shadow(0 0 .8px #3DDC84)":""}"/>`+rkText(x+2.5,dy+dh/2+3.2,l,{fs:2.6,fw:600,fill:"#7A7F86",anchor:"middle"}); });
-    return h+rkText(dx+dw/2,dy+dh-4.6,K.kurz||K.modell,{fs:3.2,fw:600,fill:"#9AA0A6",anchor:"middle"}); }
+  /* FRITZ!Box liegend: gewölbte weiße Front, Lüftungsschlitze, rotes Logo, LED-Reihe mit Beschriftung, Tasten; 7590 mit rotem Deckel */
+  fritz:(K,t,H)=>{ const Z=K.bild, dw=Z.breite||226, dh=Math.min(H-11,Z.hoehe||46), dx=(RK_B-dw)/2, dy=H-6-dh-2.4;
+    let h=rkBoden(H)+`<rect x="${dx+12}" y="${dy+dh}" width="10" height="2.6" rx="1" fill="#2A2C30"/><rect x="${dx+dw-22}" y="${dy+dh}" width="10" height="2.6" rx="1" fill="#2A2C30"/>`
+      +`<rect x="${dx}" y="${dy}" width="${dw}" height="${dh}" rx="7" fill="url(#rkgFritz)" stroke="#C9CDD1" stroke-width=".4"/>`
+      +`<rect x="${dx+2}" y="${dy+1.2}" width="${dw-4}" height="${dh*.18}" rx="5" fill="rgba(255,255,255,.75)"/><rect x="${dx}" y="${dy+dh-5}" width="${dw}" height="5" rx="2.5" fill="rgba(0,0,0,.09)"/>`
+      +(Z.rot?`<path d="M${dx+7} ${dy}h${dw-14}a7 7 0 0 1 7 7v1.6h-${dw}V${dy+7}a7 7 0 0 1 7-7z" fill="#E2001A"/><rect x="${dx}" y="${dy+7.2}" width="${dw}" height="1.2" fill="#B00014"/>`:"");
+    for(let i=0;i<26;i++) h+=`<rect x="${dx+dw*.34+i*3.1}" y="${dy+dh-9.5}" width="1.4" height="3.2" rx=".7" fill="#D3D6D9"/>`;
+    h+=`<text x="${dx+11}" y="${dy+dh*.52+3.6}" font-size="10.5" font-weight="900" font-style="italic" fill="#E2001A" letter-spacing="-.3" font-family="Arial Black,Arial,sans-serif">FRITZ!</text>`
+      +rkText(dx+12,dy+dh*.52+8.6,K.kurz.replace(/^FRITZ!Box\s*/,"FRITZ!Box "),{fs:3,fw:600,fill:"#8E939A"});
+    const L=Z.leds||["Power","Fiber","WLAN","Fon","Info"], lx=dx+dw-14-L.length*18, ly=dy+dh*.44;
+    L.forEach((l,i)=>{ const x=lx+i*18, an=i<3; h+=`<rect x="${x}" y="${ly}" width="6" height="2" rx="1" fill="${an?"#33D17A":"#D7DADD"}" ${an?'style="filter:drop-shadow(0 0 1px #33D17A)"':""}/>`+rkText(x+3,ly+6.2,l,{fs:2.7,fw:600,fill:"#7A7F86",anchor:"middle"}); });
+    h+=`<rect x="${lx-26}" y="${ly-1.4}" width="16" height="5" rx="2.5" fill="#ECEEF0" stroke="#C3C7CB" stroke-width=".4"/>`+rkText(lx-18,ly+7.4,"Connect",{fs:2.5,fw:600,fill:"#9AA0A6",anchor:"middle"});
+    return h; },
+  /* Tischgerät auf dem Fachboden: Synology DiskStation (schwarz oder weiß) und UGREEN NASync */
+  desk:(K,t,H)=>{ const Z=K.bild, sw=Z.schaechte||2, dw=Z.breite||(sw>2?200:108), dh=Math.min(H-10,Z.hoehe||166), dx=(RK_B-dw)/2, dy=H-6-dh-1.6, weiss=Z.farbe==="weiss", ug=Z.marke==="ugreen";
+    const grund=ug?"url(#rkgUgreen)":weiss?"url(#rkgFritz)":"url(#rkgSyno)", schrift=weiss?"#5F6368":"#C9CDD2";
+    let h=rkBoden(H)+`<rect x="${dx+6}" y="${dy+dh}" width="12" height="1.8" rx=".9" fill="#2A2C30"/><rect x="${dx+dw-18}" y="${dy+dh}" width="12" height="1.8" rx=".9" fill="#2A2C30"/>`
+      +`<rect x="${dx}" y="${dy}" width="${dw}" height="${dh}" rx="${ug?5:4}" fill="${grund}" stroke="${weiss?"#C9CDD1":"#0E0F11"}" stroke-width=".6"/>`;
+    if(weiss&&!Z.schaechteSichtbar){ /* DiskStation „j“: geschlossene weiße Front */
+      h+=`<rect x="${dx+6}" y="${dy+8}" width="${dw-12}" height="${dh-30}" rx="3" fill="rgba(0,0,0,.035)"/>`+rkText(dx+dw/2,dy+dh*.42,"Synology",{fs:7,fw:700,fill:"#4A4F55",anchor:"middle"})
+        +["STATUS","LAN","DISK 1","DISK 2"].map((l,i)=>`<circle cx="${dx+14+i*((dw-28)/3)}" cy="${dy+dh-16}" r="1.5" fill="${i<3?"#33D17A":"#C9CDD2"}"/>`+rkText(dx+14+i*((dw-28)/3),dy+dh-11.5,l,{fs:2.6,fw:600,fill:"#8E939A",anchor:"middle"})).join("")
+        +`<circle cx="${dx+dw/2}" cy="${dy+dh-26}" r="3.6" fill="#F4F5F6" stroke="#9AA0A6" stroke-width=".7"/><circle cx="${dx+dw/2}" cy="${dy+dh-26}" r="1.6" fill="none" stroke="#4FA8FF" stroke-width=".6"/>`;
+      return h; }
+    const leiste=ug?22:18, bx=dx+leiste, bw=(dw-leiste-6-(sw-1)*2.4)/sw, by=dy+(ug?12:6), bh=dh-(ug?18:12);
+    for(let i=0;i<sw;i++){ const x=bx+i*(bw+2.4);
+      h+=ug?`<rect x="${x}" y="${by}" width="${bw}" height="${bh}" rx="2" fill="#2A2D31" stroke="#121315" stroke-width=".5"/><rect x="${x+bw/2-3}" y="${by+6}" width="6" height="${bh*.5}" rx="3" fill="#3B3F45"/><rect x="${x+bw/2-1.2}" y="${by+bh-10}" width="2.4" height="5" rx="1.2" fill="#33D17A"/>`
+        :`<rect x="${x}" y="${by}" width="${bw}" height="${bh}" rx="1.6" fill="${weiss?"#ECEDEE":"#2B2E33"}" stroke="${weiss?"#BFC3C7":"#0E0F11"}" stroke-width=".6"/><rect x="${x+3}" y="${by+4}" width="${bw-6}" height="${bh*.62}" rx="1" fill="url(#rkpHex)" opacity="${weiss?.25:1}"/><rect x="${x+bw/2-4}" y="${by+bh*.62+9}" width="8" height="14" rx="4" fill="${weiss?"#D5D8DB":"#3A3E44"}"/><circle cx="${x+bw/2}" cy="${by+bh-6}" r="1.3" fill="#33D17A"/>`; }
+    h+=ug?rkText(dx+leiste/2,dy+7.6,"UGREEN",{fs:3.6,fw:800,fill:"#E8EAED",anchor:"middle"})+`<circle cx="${dx+leiste/2}" cy="${dy+dh-14}" r="3.4" fill="#26282C" stroke="#55C1FF" stroke-width=".7"/>`+`<rect x="${dx+leiste/2-3}" y="${dy+dh-30}" width="6" height="3" rx="1" fill="#0E0F11"/><rect x="${dx+leiste/2-2}" y="${dy+dh-24}" width="4" height="2.2" rx="1" fill="#0E0F11"/>`
+      :`<text transform="translate(${dx+leiste/2+1.3},${dy+52}) rotate(-90)" font-size="4" font-weight="700" fill="${schrift}" text-anchor="middle" letter-spacing=".3">Synology</text>`+`<circle cx="${dx+leiste/2}" cy="${dy+dh-12}" r="3.2" fill="${weiss?"#F4F5F6":"#26282C"}" stroke="#4FA8FF" stroke-width=".7"/>`+[0,1,2].map(i=>`<circle cx="${dx+leiste/2}" cy="${dy+24+i*6}" r="1.2" fill="${i<2?"#33D17A":"#F2B233"}"/>`).join("");
+    return h; }
 };
+const rkBoden=H=>`<rect x="16.5" y="${H-6}" width="449.6" height="5" rx="1" fill="url(#rkgTray)"/><rect x="16.5" y="${H-6}" width="449.6" height=".8" fill="rgba(255,255,255,.18)"/>`;
 /* gebürsteter Edelstahl: feine waagrechte Striche, einmal erzeugt (feste Zufallsfolge, damit es bei jedem Zeichnen gleich aussieht) */
 const RK_INOX=(()=>{ let s=11; const rnd=()=>(s=(s*16807)%2147483647)/2147483647; let o="";
   for(let i=0;i<280;i++){ const y=(rnd()*14).toFixed(2), x=(rnd()*520-30).toFixed(1), w=(20+rnd()*300).toFixed(1), hh=(.04+rnd()*.16).toFixed(2), a=(.08+rnd()*.26).toFixed(3); o+=`<rect x="${x}" y="${y}" width="${w}" height="${hh}" fill="${rnd()<.55?"#FFFFFF":"#4E5359"}" opacity="${a}"/>`; }
@@ -1497,6 +1560,7 @@ document.addEventListener("change",e=>{ const el=e.target;
   if(/^f_zu_/.test(el.id)&&el.value){ const pr=ecPr(), g=ecGeb(pr.ortId), st=g.stellen.find(s=>s.id===el.id.slice(5)); if(st){ ecWerteLesen(); st.skId=el.value; ecLetzterSk=el.value; ecGebSpeichern(g); const r=ecDlg&&ecDlg.raumMess; render(); if(r) ecRaumMessDlg(r); } return; }
   if(el.dataset&&el.dataset.ec){ const pr=ecPr(); if(!pr||pr.status==="fertig") return; const [a,b]=el.dataset.ec.split("."); if(a==="pruefart") pr.pruefartGesetzt=true; if(b){ pr[a]=Object.assign({},pr[a]||{},{[b]:el.value.trim()}); } else pr[a]=el.value.trim(); saveRec("echecks",pr); } });
 document.addEventListener("input",e=>{ const el=e.target; if(!el.dataset) return;
+  if(el.id==="f_anRouter"&&ecDlg&&ecDlg.an){ ecAnLesen(); ecAnDlg(); return; }
   if(ecEtp&&el.closest&&el.closest("#dlg .ec-etp")){ ecEtpLesen(); if(el.id==="f_etpAnz"){ const m=document.getElementById("etpMult"); if(m) m.innerHTML=ecEtpMultHtml(ecEtp.w); } ecEtpVorschau(); return; }
   if(el.id==="f_ppStart"){ ecPpFuellen(); return; }
   if(el.id==="f_ecName"&&ecDlg&&"ebeneHand" in ecDlg&&!ecDlg.ebeneHand){ const s2=document.getElementById("f_ecEbene"), v=ecEbeneRaten(el.value); if(s2) s2.value=v==null?"":String(v); return; }
@@ -1542,6 +1606,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     L=L.includes(b.dataset.id)?L.filter(x=>x!==b.dataset.id):[...L,b.dataset.id]; if(!L.length){ toast("Mindestens ein Verteiler gehört zur Prüfung"); return; }
     pr.umfang=alle.every(x=>L.includes(x))?null:{vIds:L}; saveRec("echecks",pr); render(); return; }
   case "ecWahl": { const gr=b.dataset.g; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+    if(ecDlg&&ecDlg.an&&["anArt","anOnt","anWeg"].includes(gr)){ ecAnLesen(); ecDlg.w[{anArt:"art",anOnt:"ont",anWeg:"weg"}[gr]]=b.dataset.v; ecAnDlg(); return; }
     if(gr==="beschr"&&false){ const g0=ecGeb(ecPr().ortId); g0.beschr=b.dataset.v; ecGebSpeichern(g0); render(); return; }
     if(gr==="etiProf"||gr==="etiFmt"){ ecEti[gr==="etiProf"?"prof":"fmt"]=b.dataset.v; ecEtiMerken(); ecEtiDlg(); return; }
     if(gr==="etpBand"||gr==="etpTrenn"||gr==="etpFrei"){ ecEtpLesen(); const v=b.dataset.v; ecEtp.w[{etpBand:"band",etpTrenn:"trenn",etpFrei:"frei"}[gr]]=gr==="etpBand"?+v:v; ecEtiProfDlg(ecEtp.id); return; }
@@ -1664,6 +1729,9 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecNetFilter": ecNetFilter=b.dataset.v; render(); return;
   case "ecKatFilter": ecKatFilter=b.dataset.v; render(); return;
   case "ecKatalog": go({v:"netzkatalog"}); return;
+  case "ecAnschluss": { if(!nichtZu()) return; ecDlg=null; ecAnDlg(); return; }
+  case "ecAnOk": { ecAnLesen(); const W=ecDlg&&ecDlg.w; if(!W) return; const g0=ecGeb(pr.ortId); if(W.routerKat) W.routerText=""; g0.anschluss={...W}; ecGebSpeichern(g0); ecDlg=null; closeOverlays(); render(); return; }
+  case "ecAnWeg": { const g0=ecGeb(pr.ortId); delete g0.anschluss; ecGebSpeichern(g0); ecDlg=null; closeOverlays(); render(); return; }
   case "ecRkTab": ecRkTab=b.dataset.v; closeOverlays(); render(); scrollTo(0,0); return;
   case "ecRkSpick": ecRkSpickAuf(b); return;
   case "ecRkHilfe": ecRkHilfeDlg(); return;
