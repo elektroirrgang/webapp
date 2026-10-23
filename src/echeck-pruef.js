@@ -716,8 +716,8 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
   const beleg=Lk.length?ecListe(Lk.map(p=>ecLi({act:"ecRkPort",id:p.d.id,lead:esc(p.pp||"–"),breit:true,kopf:esc(ecLinkOrt(g,p)),text:esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · ")),rechts:ecSt(ecNetStand(pr,p))}))):`<p class="meta">Noch keine Dose an diesem Schrank. Dosen legst du unter „Gebäude“ in den Räumen an.</p>`;
   return `<div class="rk-seite"><div class="rk-kopf"><button class="icon-btn" data-act="ecRkZu" aria-label="Zurück zur Infrastruktur" title="Zurück zur Infrastruktur">${icon("back")}</button><div class="rk-kt"><h2>${esc(s.name)}</h2><p>${esc([ecSchrText(s),ecRaumName(g,s.raumId)].filter(Boolean).join(" · "))}</p></div>
       <button class="rk-akt" data-act="ecEti" data-id="${esc(s.id)}" title="Beschriften mit Brother">${icon("tag")}<span>Beschriften</span></button>${zu?"":`<button class="rk-akt" data-act="ecSchrEdit" data-id="${esc(s.id)}" title="Schrank bearbeiten">${icon("edit")}<span>Bearbeiten</span></button>`}<button class="icon-btn" data-act="ecRkHilfe" title="So bedienst du den Planer" aria-label="Hilfe">${icon("info")}</button></div>
-    <div class="rk-inhalt"><div class="rk-zwei"><section class="card rk-zeich"><h3>Vorderansicht <span class="m3-neben">Seite · ${ecSchrTiefe(s)} mm</span></h3>
-      ${ecRkDefs()}<div class="rk-bau ${ecSchrFarbe(s)}"><div class="rk-front"><div class="rk-geh ${s.bauart==="stand"?"stand":"wand"}${ecSchrBreite(s)>=800?" b800":""}"><div class="rk-dach"></div><div class="rk" style="--n:${N}"><span class="rk-schiene l"></span><span class="rk-schiene r"></span>${Array.from({length:N},(_,i)=>nr(i+1)+leer(i+1)).join("")}${T.map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div><div class="rk-sockel"></div></div></div>
+    <div class="rk-inhalt"><div class="rk-zwei"><section class="card rk-zeich"><div class="rk-zk"><h3>Vorderansicht</h3><button type="button" class="m3-filter" data-act="ecRkSeite" aria-pressed="${ecRkSeiteAn()}">Seitenansicht${ecRkSeiteAn()?` · ${ecSchrTiefe(s)} mm`:""}</button></div>
+      ${ecRkDefs()}<div class="rk-bau gross${ecRkSeiteAn()?" seite":""}${ecSchrBreite(s)>=800?" b800":""} ${ecSchrFarbe(s)}"><div class="rk-front"><div class="rk-geh ${s.bauart==="stand"?"stand":"wand"}${ecSchrBreite(s)>=800?" b800":""}"><div class="rk-dach"></div><div class="rk" style="--n:${N}"><span class="rk-schiene l"></span><span class="rk-schiene r"></span>${Array.from({length:N},(_,i)=>nr(i+1)+leer(i+1)).join("")}${T.map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div><div class="rk-sockel"></div></div></div>
         <div class="rk-side"><div class="rk-sv" style="--n:${N}"><i class="rk-nb" style="left:${Math.round(ecSchrNutzbar(s)/ecSchrTiefe(s)*100)}%" title="nutzbar etwa ${ecSchrNutzbar(s)} mm"></i>
           ${T.map(t=>{ const tf2=ecRkTiefe(s,t), zu2=tf2>ecSchrNutzbar(s); return `<span class="rk-sb rk-${t.typ}${+t.tiefe?"":" geschaetzt"}${zu2?" zutief":""}" style="grid-row:${t.pos} / span ${t.he};width:${Math.min(100,Math.round(tf2/ecSchrTiefe(s)*100))}%" title="${esc(`${ecRkName(t)}: ${tf2} mm${+t.tiefe?"":" (typisch)"}`)}"></span>`; }).join("")}</div></div></div>
       <p class="m3-hinweis">${zu?"Prüfung abgeschlossen – nur Ansicht.":"Antippen zum Bearbeiten · ziehen zum Verschieben · freie HE antippen zum Einsetzen"}</p></section>
@@ -725,6 +725,8 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
       <section class="card"><h3>Stückliste</h3>${stueck}<p class="m3-hinweis">Keystones und Patchkabel = belegte Ports</p></section>
       <section class="card rk-bel"><h3>Belegung <span class="m3-neben">${Lk.length} Port${Lk.length===1?"":"s"}</span></h3>${beleg}</section></div></div></div>
     ${zu?"":`<button class="fab rk-fab" data-act="ecRkWahl">${icon("add")}<span>Teil einsetzen</span></button>`}</div>`; }
+/* Seitenansicht ein/aus – merkt sich jedes Gerät selbst; Standard: am PC an, am Handy aus */
+const ecRkSeiteAn=()=>{ try{ const v=localStorage.getItem("irrgang_rk_seite"); if(v!=null) return v==="1"; }catch(e){} return matchMedia("(min-width:600px)").matches; };
 /* Teil einsetzen: Auswahl als Liste (statt neun Chips über dem Schrank) */
 function ecRkWahlDlg(){ const pr=ecPr(), g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x.id===nav.schr); if(!s) return;
   const info={patch:"Keystones, je Port eine Dose",switch:"verteilt die Ports ins Netz",kabel:"Bürste oder Bügel zwischen den Feldern",boden:"für Router, NAS, Glasfaser-Box",router:"Firewall, Gateway",pdu:"Strom für die Geräte im Schrank",usv:"überbrückt Stromausfall",luefter:"zieht warme Luft ab",blind:"verschließt freie HE"};
@@ -1031,7 +1033,7 @@ let ecRkZug=null;
 document.addEventListener("pointerdown",e=>{ if(e.button) return; const el=e.target.closest&&e.target.closest(".rk:not(.mini) .rk-t"); if(!el) return; const pr=ecPr(); if(!pr||pr.status==="fertig") return;
   const griff=e.target.closest("[data-drag]"); if(e.pointerType!=="mouse"&&!griff) return;
   const g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x.id===nav.schr), t=s&&ecSchrTeile(s).find(x=>x.id===el.dataset.rk); if(!t) return;
-  const rk=el.closest(".rk"), schritt=parseFloat(getComputedStyle(rk).getPropertyValue("--he"))+(parseFloat(getComputedStyle(rk).rowGap)||0);
+  const rk=el.closest(".rk"), schritt=parseFloat(getComputedStyle(rk).gridTemplateRows)+(parseFloat(getComputedStyle(rk).rowGap)||0);
   ecRkZug={id:t.id,y0:e.clientY,el,rk,s,schritt,pos0:t.pos,he:t.he,aktiv:false,plan:null,pid:e.pointerId};
   if(griff){ e.preventDefault(); ecRkStart(); } });
 function ecRkStart(){ const z=ecRkZug; z.aktiv=true; try{ z.el.setPointerCapture(z.pid); }catch(_){} z.el.classList.add("zieh"); document.body.classList.add("rk-zieht");
@@ -1461,6 +1463,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecRkZu": nav.schr=null; render(); scrollTo(0,0); return;
   case "ecRkGriff": return;
   case "ecRkWahl": ecRkWahlDlg(); return;
+  case "ecRkSeite": { const an=!ecRkSeiteAn(); try{ localStorage.setItem("irrgang_rk_seite",an?"1":"0"); }catch(e){} render(); return; }
   case "ecRkHilfe": ecRkHilfeDlg(); return;
   case "ecRkNeu": case "ecRkLeer": { if(!nichtZu()) return; const s2=g.schraenke.find(x=>x.id===nav.schr); if(!s2) return; const r=ecRkNeuZ(s2,b.dataset.t||"patch",b.dataset.pos);
     if(!r.platz){ toast("Kein Platz mehr frei – Schrank größer wählen oder etwas entfernen"); return; } ecRkDlg(r.z); return; }

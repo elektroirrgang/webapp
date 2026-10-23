@@ -1033,7 +1033,14 @@ body.kopf-oben .edk-platz{display:none!important}
 .rk-akt .ic{width:20px;height:20px}
 @media (max-width:599px){.rk-akt{width:40px;padding:0;justify-content:center}.rk-akt span{display:none}}
 .rk-zeich .rk-bau{margin-top:4px}
-@media (max-width:599px){.rk-zeich .rk-bau{grid-template-columns:minmax(0,1fr)}.rk-zeich .rk-side,.rk-zeich .m3-neben{display:none}.rk-zeich{background:none;padding:0;border-radius:0}.rk-zeich h3,.rk-zeich .m3-hinweis{margin-left:4px;margin-right:4px}}
+/* große Zeichnung: HE-Höhe aus der verfügbaren Breite (Containerbreite), damit nichts über den Rand oder in die Seitenansicht läuft */
+.rk-bau.gross{container-type:inline-size;--rk-x:64px}.rk-bau.gross.b800{--rk-x:116px}.rk-bau.gross.seite{--rk-x:190px}.rk-bau.gross.seite.b800{--rk-x:242px}
+.rk-bau.gross>*{--he:max(14px,min(40px,calc((100cqi - var(--rk-x)) / 10.86)))}
+.rk-bau.gross:not(.seite){grid-template-columns:minmax(0,1fr)}.rk-bau.gross:not(.seite) .rk-side{display:none}
+.rk-zk{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}.rk-zk h3{margin:0;flex:1}
+.m3-filter{height:32px;padding:0 16px;border:0;border-radius:8px;background:var(--sc-highest);color:var(--on-sv);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.m3-filter[aria-pressed="true"]{background:var(--sec-c);color:var(--on-sec-c)}
+@media (max-width:599px){.rk-bau.gross{--rk-x:56px}.rk-bau.gross.b800{--rk-x:80px}.rk-bau.gross.seite{--rk-x:112px}.rk-bau.gross.seite.b800{--rk-x:136px}.rk-zeich{background:none;padding:0;border-radius:0}.rk-zeich h3,.rk-zeich .m3-hinweis{margin-left:4px;margin-right:4px}}
 .m3-lead.breit{min-width:56px}
 .rk-fab{z-index:40}
 .rk-inhalt{padding-bottom:104px!important}
