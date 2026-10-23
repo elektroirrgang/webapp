@@ -334,7 +334,7 @@ function ecInfraView(pr){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", S=g.
   const A=ecNetAlle(g), ohne=A.filter(p=>!p.d.sId||!S.some(s=>s.id===p.d.sId));
   return `${ecRkDefs()}<div class="ec-kz">${k(S.length,`Netzwerkschr${S.length===1?"ank":"änke"}`)}${k(`${B} / ${T}`,"Patchports belegt",T?B/T:0)}${k(SW,"Switch-Ports")}${k(bad||hw,bad?"Probleme":"Hinweise",null,bad>0)}</div>
     ${kdKopf("Netzwerkschränke",zu?"":"ecSchrNeu","Schrank hinzufügen")}
-    ${S.length?`<div class="ec-iks">${S.map((s,i)=>karte(s,P[i])).join("")}</div><p class="meta" style="margin:8px 4px 0">Antippen öffnet den Schrank. Bearbeiten: Rechtsklick, am Handy lange drücken.</p>`
+    ${S.length?`<div class="ec-iks">${S.map((s,i)=>karte(s,P[i])).join("")}</div><p class="meta" style="margin:8px 4px 0">Antippen öffnet den Schrank. Bearbeiten: Rechtsklick, am Handy lange drücken.</p><div class="ec-knoepfe" style="margin-top:12px"><button class="btn-tonal" data-act="ecEti" data-id="">${icon("tag")}Beschriften mit Brother</button></div>`
       :`<div class="empty">${icon("ecNetz")}<h2>Noch kein Netzwerkschrank</h2><p>Leg den Hauptschrank an – z. B. im Technikraum – und, falls vorhanden, Unterverteiler auf den Etagen. Patchfelder, Switches und alles Weitere planst du im Schrank.</p></div>`}
     ${ohne.length?`<div class="sec-lbl" style="margin-top:20px">Datendosen ohne Schrank · ${ohne.length} Port${ohne.length>1?"s":""}</div><div class="list">${ohne.map(p=>`<div class="li" role="button" tabindex="0" data-act="ecDose" data-id="${esc(p.d.id)}"><span class="av">${icon("ecNetz")}</span><span class="lt"><span class="h">${esc(ecLinkName(g,p))}</span><span class="s">${esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · "))}</span></span>${icon("chev")}</div>`).join("")}</div>`:""}
     ${ecWeiter("messen","Weiter zum Messen")}`; }
@@ -686,7 +686,7 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
   const zeile=p=>`<div class="ec-vz sk" role="button" tabindex="0" data-act="ecRkPort" data-id="${esc(p.d.id)}"><span class="nr">${esc(p.pp||"–")}</span><span class="t">${esc(ecLinkOrt(g,p))}<small>${esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · "))}</small></span>${ecPill(ecNetStand(pr,p))}</div>`;
   const Lk=ecNetListe({},g).filter(p=>p.d.sId===s.id);
   return `<div class="rk-seite"><div class="rk-kopf"><button class="icon-btn" data-act="ecRkZu" aria-label="Zurück zur Infrastruktur" title="Zurück zur Infrastruktur">${icon("back")}</button><div class="rk-kt"><h2>${esc(s.name)}</h2><p>${esc([ecOrt(pr.ortId).titel,ecSchrText(s),ecRaumName(g,s.raumId)].filter(Boolean).join(" · "))}</p></div>
-      ${zu?"":`<button class="btn-tonal" data-act="ecSchrEdit" data-id="${esc(s.id)}">${icon("edit")}Bearbeiten</button>`}</div>
+      <button class="btn-tonal" data-act="ecEti" data-id="${esc(s.id)}">${icon("tag")}Beschriften</button>${zu?"":`<button class="btn-tonal" data-act="ecSchrEdit" data-id="${esc(s.id)}">${icon("edit")}Bearbeiten</button>`}</div>
     <div class="rk-inhalt"><div class="rk-zwei"><div>
       ${zu?"":`<div class="chips rk-pal">${["patch","switch","kabel","boden","router","pdu","usv","luefter","blind"].map(t2=>`<button type="button" class="chip" data-act="ecRkNeu" data-t="${t2}">${icon("add")}${EC_RK[t2]}</button>`).join("")}</div>`}
       ${ecRkDefs()}<div class="rk-bau ${ecSchrFarbe(s)}"><div class="rk-front"><div class="rk-ks">Vorderansicht</div><div class="rk-geh ${s.bauart==="stand"?"stand":"wand"}${ecSchrBreite(s)>=800?" b800":""}"><div class="rk-dach"></div><div class="rk" style="--n:${N}"><span class="rk-schiene l"></span><span class="rk-schiene r"></span>${Array.from({length:N},(_,i)=>nr(i+1)+leer(i+1)).join("")}${T.map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div><div class="rk-sockel"></div></div></div>
@@ -801,6 +801,52 @@ function ecRkTeilHtml(pr,g,s,t,M){
   else h+=`<rect x="0" y="${H-6}" width="16.5" height="5" fill="url(#rkgEar)"/><rect x="${RK_B-16.5}" y="${H-6}" width="16.5" height="5" fill="url(#rkgEar)"/>`;
   return `<div class="rk-t rk-${t.typ}" data-act="ecRkTeil" data-id="${esc(t.id)}" data-rk="${esc(t.id)}" style="grid-row:${t.pos} / span ${he}" title="${esc(ecRkName(t))}">
     <svg class="rk-svg" viewBox="0 0 ${RK_B} ${H}" preserveAspectRatio="none" aria-hidden="true">${h}</svg><span class="rk-griff" data-act="ecRkGriff" data-drag="${esc(t.id)}" aria-label="verschieben"></span></div>`; }
+
+/* ---- Beschriftung mit dem Brother P-touch (Pro Label Tool) ----
+   Die App liest CSV-Dateien als Datenbank („Datenbankdatei verbinden/serialisieren“); jede Zeile füllt ein Etikett bzw. ein Feld
+   im Verteiler-Streifen. Wir erzeugen pro Etikettenart eine CSV in Reihenfolge (Patchfeld von Port 1 an, Dosen nach Raum usw.). */
+const EC_ETI={patch:["Patchfeld-Streifen","je Port eine Zeile – für die Vorlage „Verteiler“"],dosen:["Datendosen","je Dose ein Etikett, z. B. „1.13 / 1.14“"],kabel:["Kabel-Fähnchen","je Link zwei Fähnchen: Schrankseite und Dosenseite"],geraete:["Geräte im Schrank","je Teil ein Etikett mit HE und Name"]};
+const EC_ETI_INH=[["nr","nur Nummer"],["nr_raum","Nummer + Raum"],["raum","nur Raum"]];
+let ecEti={art:"patch",inh:"nr",sId:""};
+/* ohne Sonderzeichen wie „·“ und „→“ – nicht jede Schrift im Drucker hat sie */
+const ecEtiRaum=(g,raumId)=>ecRaumName(g,raumId).replace(/\s*·\s*/g," ");
+function ecEtiZeilen(pr,g){ const S=ecEti.sId?g.schraenke.filter(s=>s.id===ecEti.sId):g.schraenke, inh=ecEti.inh, Z=[];
+  const text=(nr,raum)=>inh==="raum"?raum:inh==="nr_raum"?[nr,raum].filter(Boolean).join(" "):nr;
+  if(ecEti.art==="patch"){ Z.push(["Schrank","Patchfeld","Port","Etikett","Raum","Lage"]);
+    S.forEach(s=>{ const {M}=ecRkLinks(g,s); ecPfListe(s).forEach(pf=>{ for(let p=1;p<=pf.ports;p++){ const L=M.get(`${pf.nr}.${p}`), raum=L?ecEtiRaum(g,L[0].raumId):"";
+      Z.push([s.name,`P${pf.nr}`,String(p),L?text(`${pf.nr}.${p}`,raum):"",raum,L?L[0].d.lage||"":""]); } }); }); }
+  else if(ecEti.art==="dosen"){ Z.push(["Schrank","Raum","Dose","Etikett","Lage"]);
+    ecRaeume(g).forEach(r=>{ g.dosen.filter(d=>d.raumId===r.id&&(!ecEti.sId||d.sId===ecEti.sId)).sort((a,b)=>(a.ord||0)-(b.ord||0)).forEach(d=>{ const n=Math.max(1,+d.ports||1), pp=Array.from({length:n},(_,i)=>((d.pp||{})[i+1]||"").trim()).filter(Boolean), raum=ecEtiRaum(g,r.id);
+      Z.push([ecSchrName(g,d.sId),raum,pp.join(" / "),text(pp.join(" / "),raum),d.lage||""]); }); }); }
+  else if(ecEti.art==="kabel"){ Z.push(["Schrank","Port","Seite","Etikett","Gegenstelle"]);
+    S.forEach(s=>{ ecNetListe({},g).filter(p=>p.d.sId===s.id&&p.pp).forEach(p=>{ const raum=ecEtiRaum(g,p.raumId);
+      Z.push([s.name,p.pp,"Schrank",text(p.pp,raum),`zu ${raum}${p.d.lage?` (${p.d.lage})`:""}`]); Z.push([s.name,p.pp,"Dose",text(p.pp,raum),`zu ${s.name} P${String(p.pp).split(".")[0]}`]); }); }); }
+  else { Z.push(["Schrank","HE","Etikett","Art"]);
+    S.forEach(s=>ecSchrTeile(s).filter(t=>!["blind","kabel"].includes(t.typ)).forEach(t=>Z.push([s.name,String(t.pos),`HE ${t.pos} ${ecRkName(t)}`,EC_RK[t.typ]||""]))); }
+  return Z; }
+const ecCsv=Z=>"﻿"+Z.map(r=>r.map(v=>{ v=String(v??""); return /[",;\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v; }).join(",")).join("\r\n")+"\r\n";
+function ecEtiDlg(sId){ if(sId!==undefined) ecEti.sId=sId; const pr=ecPr(), g=ecGeb(pr.ortId), Z=ecEtiZeilen(pr,g), D=Z.slice(1), ki=Z[0].indexOf("Etikett"), mitText=D.filter(r=>r[ki]).length;
+  const andr=/android/i.test(navigator.userAgent);
+  dialog("Beschriften mit Brother",`<p class="ec-sub">CSV für die <b>Brother Pro Label Tool</b>-App (P-touch, z. B. PT-E560BT).</p>
+    <div class="lbl">Was beschriften?</div>${ecChips("etiArt",Object.entries(EC_ETI).map(([k,v])=>[k,v[0]]),ecEti.art)}
+    <p class="meta" style="margin:6px 4px 0">${esc(EC_ETI[ecEti.art][1])}</p>
+    ${ecEti.art!=="geraete"?`<div class="lbl" style="margin-top:12px">Text auf dem Etikett</div>${ecChips("etiInh",EC_ETI_INH,ecEti.inh)}`:""}
+    ${g.schraenke.length>1?`<div class="lbl" style="margin-top:12px">Schrank</div>${ecChips("etiS",[["","alle"],...g.schraenke.map(s=>[s.id,s.name])],ecEti.sId)}`:""}
+    <div class="lbl" style="margin-top:14px">Vorschau · ${D.length} Zeile${D.length===1?"":"n"}${mitText<D.length?` (${D.length-mitText} leer = freier Port)`:""}</div>
+    <div class="ec-eti-v">${D.slice(0,24).map(r=>`<span class="ec-eti${r[ki]?"":" leer"}" title="${esc(r.join(" · "))}">${esc(r[ki]||"–")}</span>`).join("")}${D.length>24?`<span class="ec-eti mehr">+${D.length-24}</span>`:""}</div>
+    <details class="ec-eti-hilfe"><summary>So druckst du in der App</summary><ol>
+      <li>CSV teilen oder herunterladen (landet in „Downloads“).</li>
+      <li>Pro Label Tool öffnen, Vorlage wählen – ${ecEti.art==="patch"?"„Verteiler“ für den Patchfeld-Streifen":ecEti.art==="kabel"?"„Fähnchen“ für Kabel":"„Selbstlaminierend“ oder ein Standard-Etikett"}.</li>
+      <li>Im Bearbeiten-Bildschirm „Datenbankdatei verbinden/serialisieren“ → die CSV wählen → „Erste Zeile als Kopfzeile“ an.</li>
+      <li>Im Feld „Etikett“ zuordnen und drucken.</li></ol>
+      <p class="meta">Für den Drucker allein (ohne Handy): in der App unter Einstellungen „CSV-Datei übertragen“.</p></details>`,
+    `${andr?`<button class="btn-text" data-act="ecEtiApp">App öffnen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button><button class="btn-text" data-act="ecEtiLaden">Herunterladen</button><button class="btn-text" data-act="ecEtiTeilen">Teilen</button>`,{breit:true}); }
+async function ecEtiAusgeben(teilen){ const pr=ecPr(), g=ecGeb(pr.ortId), Z=ecEtiZeilen(pr,g); if(Z.length<2){ toast("Nichts zu beschriften"); return; }
+  const s=ecEti.sId&&g.schraenke.find(x=>x.id===ecEti.sId), name=bbFs(`Etiketten ${EC_ETI[ecEti.art][0]}${s?" "+s.name:""} ${ecOrt(pr.ortId).titel}`)+".csv";
+  const blob=new Blob([ecCsv(Z)],{type:"text/csv;charset=utf-8"}), f=new File([blob],name,{type:"text/csv"});
+  if(teilen&&navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f],title:name}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
+  toast(teilen?"Teilen geht hier nicht – CSV wurde heruntergeladen":"CSV heruntergeladen"); }
 
 /* Verschieben: Ziel frei ⇒ einfach hin; belegt ⇒ die Teile dazwischen rücken nach (wie Tauschen bei gleich hohen Teilen) */
 function ecRkPlan(s,id,np){ const T=ecSchrTeile(s).map(x=>({...x})), t=T.find(x=>x.id===id), N=ecSchrHe(s); if(!t) return null; const he=t.he;
@@ -1128,6 +1174,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     L=L.includes(b.dataset.id)?L.filter(x=>x!==b.dataset.id):[...L,b.dataset.id]; if(!L.length){ toast("Mindestens ein Verteiler gehört zur Prüfung"); return; }
     pr.umfang=alle.every(x=>L.includes(x))?null:{vIds:L}; saveRec("echecks",pr); render(); return; }
   case "ecWahl": { const gr=b.dataset.g; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+    if(gr==="etiArt"||gr==="etiInh"||gr==="etiS"){ ecEti[{etiArt:"art",etiInh:"inh",etiS:"sId"}[gr]]=b.dataset.v; ecEtiDlg(); return; }
     if(ecDlg&&"geplant" in ecDlg&&["vor","bauart","he","breite","tiefe","farbe","pfAnz","pfPorts"].includes(gr)){ const v=b.dataset.v; ecSchrLesen();
       if(gr==="vor"){ const p=EC_RKVOR[+v]; Object.assign(ecDlg.w,{bauart:p[0],he:String(p[1]),breite:String(p[2]),tiefe:String(p[3])}); ecSchrDlg(); return; }
       ecDlg.w[gr]=v; if(gr==="bauart"){ const T=EC_RKTIEFEN[v]; if(!T.includes(+ecDlg.w.tiefe)) ecDlg.w.tiefe=String(v==="stand"?800:450); ecSchrDlg(); } return; }
@@ -1227,6 +1274,11 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     closeOverlays(); render(); return; }
   case "ecBmDel": { const bm=DB.betriebsmittel.get(ecDlg.bm); if(bm){ bm.deleted=true; saveRec("betriebsmittel",bm); } closeOverlays(); render(); return; }
   case "ecGer": ecGerDlg(b.dataset.id); return;
+  /* Beschriftung (Brother Pro Label Tool) */
+  case "ecEti": ecEtiDlg(b.dataset.id||""); return;
+  case "ecEtiLaden": ecEtiAusgeben(false); return;
+  case "ecEtiTeilen": ecEtiAusgeben(true); return;
+  case "ecEtiApp": location.href="intent://#Intent;package=com.brother.ptouch.mobilecablelabeltool2;end"; return;
   /* Schrankplaner */
   case "ecRkAuf": nav.schr=b.dataset.id; closeOverlays(); render(); scrollTo(0,0); return;
   case "ecRkZu": nav.schr=null; render(); scrollTo(0,0); return;

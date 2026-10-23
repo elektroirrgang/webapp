@@ -1004,6 +1004,11 @@ body.kopf-oben .edk-platz{display:none!important}
 .ec-sk:hover:not(.h){background:color-mix(in srgb,var(--on-surface) 4%,transparent)}
 .ec-sk.h{background:var(--sc-high);color:var(--on-sv);font-weight:700;font-size:12px;border:0;cursor:default}
 .ec-sk .lbm{display:none}
+/* Beschriftung: Vorschau wie Schriftband */
+.ec-eti-v{display:flex;flex-wrap:wrap;gap:6px;max-height:190px;overflow:auto;padding:12px;border-radius:14px;background:var(--sc-high)}
+.ec-eti{background:#FFF;color:#111;font-weight:700;font-size:13px;line-height:1;padding:7px 10px;border-radius:2px;box-shadow:0 1px 2px rgba(0,0,0,.25);white-space:nowrap}
+.ec-eti.leer{opacity:.35}.ec-eti.mehr{background:transparent;color:var(--on-sv);box-shadow:none}
+.ec-eti-hilfe{margin-top:14px;padding:10px 14px;border-radius:14px;background:var(--sc-low)}.ec-eti-hilfe summary{cursor:pointer;font-weight:600}.ec-eti-hilfe ol{margin:8px 0 6px;padding-left:20px;line-height:1.5;font-size:14px}
 /* Infrastruktur: Schrankkarten mit kleiner Vorschau */
 .ec-iks{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:16px}
 @media (max-width:599px){.ec-iks{grid-template-columns:minmax(0,1fr)}}
