@@ -159,16 +159,16 @@ function demoHaus(r,P,vor,tag){
     St.forEach(([e,n,art,fach,lage])=>{ const raumId=raum(e,n); ord[raumId]=(ord[raumId]||0)+1; stellen.push({id:`dh-st-${++si}`,raumId,ord:ord[raumId],art,fach,lage,skId:id}); }); });
   /* Netzwerk: Serverschrank KG (Patchfeld 1–3), Mini-Verteiler 2. OG (Patchfeld 4) */
   const schraenke=[
-    {id:"dh-s1",nr:1,name:"Serverschrank KG",raumId:raum("kg","Technikraum"),he:42,bauart:"stand",breite:800,tiefe:1000,farbe:"auto",teile:[
+    {id:"dh-s1",nr:1,name:"Serverschrank",raumId:raum("kg","Technikraum"),he:42,bauart:"stand",breite:800,tiefe:1000,farbe:"auto",teile:[
       {id:"t1",typ:"luefter",pos:1,he:1,name:"Lüftereinschub"},{id:"t2",typ:"patch",pos:2,he:1,ports:24,nr:1},{id:"t3",typ:"kabel",pos:3,he:1},{id:"t4",typ:"patch",pos:4,he:1,ports:24,nr:2},{id:"t5",typ:"kabel",pos:5,he:1},
       {id:"t6",typ:"patch",pos:6,he:1,ports:24,nr:3},{id:"t7",typ:"kabel",pos:7,he:1},{id:"t8",typ:"switch",pos:8,he:1,ports:48,poe:true,name:"UniFi USW-Pro-48-PoE",tiefe:400},{id:"t9",typ:"kabel",pos:9,he:1},
       {id:"t10",typ:"switch",pos:10,he:1,ports:8,name:"UniFi USW-Aggregation (SFP+)",tiefe:200},{id:"t11",typ:"router",pos:12,he:1,name:"UniFi Dream Machine Pro",tiefe:285},
       {id:"t12",typ:"boden",pos:13,he:2,name:"FRITZ!Box 5590 Fiber + Glasfaser-Abschluss"},{id:"t13",typ:"sonst",pos:16,he:2,name:"NAS Synology RS1221+",tiefe:560},
       {id:"t14",typ:"sonst",pos:19,he:2,name:"Home-Server (Proxmox, Home Assistant)",tiefe:650},{id:"t15",typ:"boden",pos:22,he:2,name:"KNX-IP-Router und Smart-Home-Gateways"},
       {id:"t16",typ:"pdu",pos:38,he:1,name:"Steckdosenleiste 8-fach, schaltbar"},{id:"t17",typ:"usv",pos:40,he:2,name:"APC Smart-UPS 1500 RM",tiefe:480}]},
-    {id:"dh-s2",nr:2,name:"Mini-Verteiler 2. OG",raumId:raum("og2","Abstellraum (Netzwerk)"),he:9,bauart:"wand",breite:600,tiefe:450,farbe:"auto",teile:[
+    {id:"dh-s2",nr:2,name:"Mini-Verteiler",raumId:raum("og2","Abstellraum (Netzwerk)"),he:9,bauart:"wand",breite:600,tiefe:450,farbe:"auto",teile:[
       {id:"m1",typ:"patch",pos:1,he:1,ports:24,nr:1},{id:"m2",typ:"kabel",pos:2,he:1},{id:"m3",typ:"switch",pos:3,he:1,ports:16,poe:true,name:"UniFi USW-Lite-16-PoE",tiefe:220},
-      {id:"m4",typ:"boden",pos:5,he:2,name:"Uplink: Glasfaser vom Serverschrank KG"},{id:"m5",typ:"pdu",pos:9,he:1,name:"Steckdosenleiste 6-fach"}]}];
+      {id:"m4",typ:"boden",pos:5,he:2,name:"Uplink: Glasfaser vom Serverschrank"},{id:"m5",typ:"pdu",pos:9,he:1,name:"Steckdosenleiste 6-fach"}]}];
   /* Datendosen: [Etage, Raum, Ports, Lage, Patchfeld] – Ports im Patchfeld werden der Reihe nach vergeben; 4 = Patchfeld 1 im Mini-Verteiler.
      Zwei Schränke ⇒ Schema „Schranknummer.Patchfeld.Port“ (beschr:"nr"): angezeigt als 1.1.13 / 2.1.5, gespeichert 1.13 / 1.5 */
   const DO=[["kg","Heimkino",2,"TV",1],["kg","Heizungsraum",1,"Wärmepumpe (Modbus)",1],["kg","Werkstatt",2,"Arbeitsfläche",1],["kg","Flur KG",1,"Decke (WLAN-AP)",1],

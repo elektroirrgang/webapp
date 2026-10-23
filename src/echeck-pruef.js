@@ -726,16 +726,24 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
   const inhalt=tab==="belegung"?`<section class="card"><h3>Belegung <span class="m3-neben">${Lk.length} Port${Lk.length===1?"":"s"}</span></h3>${beleg}</section>`
     :tab==="stueck"?`<section class="card"><h3>Stückliste</h3>${stueck}<p class="m3-hinweis">Keystones und Patchkabel = belegte Ports</p></section>`
     :tab==="planung"?`<section class="card"><h3>Planung</h3>${planung}</section>`:ansicht;
-  return `<div class="rk-seite"><div class="rk-oben"><div class="rk-kopf"><div class="rk-kt"><h2>${esc(s.name)}</h2><p>${esc([ecSchrText(s),ecRaumName(g,s.raumId)].filter(Boolean).join(" · "))}</p></div>
-      <button class="icon-btn" data-act="ecRkMenu" aria-label="Weitere Aktionen" title="Weitere Aktionen">${icon("more")}</button></div>
-    <div class="rk-tabs" role="tablist">${TABS.map(([v,t2,z])=>`<button class="tab" role="tab" data-act="ecRkTab" data-v="${v}" aria-selected="${v===tab}"><span class="tl">${t2}${z&&!z.startsWith("<")?`<span class="rk-tz">${z}</span>`:z}</span></button>`).join("")}</div></div>
+  return `<div class="rk-seite">
     <div class="rk-inhalt rk-${tab}">${inhalt}</div>
     ${zu||tab!=="ansicht"?"":`<button class="fab rk-fab" data-act="ecRkWahl">${icon("add")}<span>Teil einsetzen</span></button>`}</div>`; }
 let ecRkTab="ansicht";
-function ecRkMenuAuf(b){ const pr=ecPr(), zu=pr.status==="fertig", id=nav.schr, m=$("#menu"), r=b.getBoundingClientRect();
+/* Schrank offen? – dann wie die Ladestation in EVSE: Titel = Schrank, Bereiche als Tabs (Handy) bzw. Auswahl rechts im Kopf (breit), Aktionen im ⋮-Menü */
+const ecRkOffen=()=>{ const p=nav.v==="ec"&&nav.schr&&DB.echecks.get(nav.id); if(!p||p.deleted||!ecNz(p)||ecTab(p)!=="infra") return null; return ecGeb(p.ortId).schraenke.find(x=>x.id===nav.schr)||null; };
+function ecRkBereiche(){ const pr=ecPr(), g=ecGeb(pr.ortId), s=ecRkOffen(); if(!s) return []; const P=ecRkPlanung(pr,g,s), nB=P.H.some(h=>h[0]==="bad"), nW=P.H.some(h=>h[0]==="wip");
+  return [["ansicht","Ansicht",null],["belegung","Belegung",null],["stueck","Stückliste",null],["planung","Planung",nB?"bad":nW?"wip":"ok"]]; }
+const ecRkTabsHtml=()=>ecRkBereiche().map(([k,l,st])=>`<button class="tab" role="tab" data-act="ecRkTab" data-v="${k}" aria-selected="${k===ecRkTab}"><span class="tl">${l}${st?`<i class="sd ${st}"></i>`:""}</span></button>`).join("");
+const skRechts=()=>{ if(!WIDE.matches||!ecRkOffen()) return ""; const L=ecRkBereiche(), a=L.find(x=>x[0]===ecRkTab)||L[0];
+  return `<button class="spick" data-act="ecRkSpick" aria-haspopup="menu" aria-label="Bereich wählen">${a[2]?`<i class="sd ${a[2]}"></i>`:`<span class="spick-ic">${icon("ecNetz")}</span>`}<span class="spick-t">${a[1]}</span><span class="spick-p">${icon("chev")}</span></button>`; };
+function ecRkSpickAuf(b){ const m=$("#menu"), r=b.getBoundingClientRect();
+  m.innerHTML=ecRkBereiche().map(([k,l,st])=>`<button class="mi spick-mi${k===ecRkTab?" an":""}" role="menuitem" data-act="ecRkTab" data-v="${k}">${st?`<i class="sd ${st}"></i>`:`<span class="spick-ic">${icon("ecNetz")}</span>`}<span>${l}</span></button>`).join("");
+  m.style.top=(r.bottom+6)+"px"; m.style.right=(innerWidth-r.right)+"px"; m.style.left="auto"; m.style.minWidth=Math.max(240,r.width)+"px"; m.hidden=false; $("#scrim").hidden=false; }
+function ecRkMenuInhalt(){ const pr=ecPr(), zu=pr.status==="fertig", id=nav.schr;
   const it=[...(zu?[]:[["ecSchrEdit","Schrank bearbeiten","edit"]]),["ecEti","Beschriften mit Brother","tag"],["ecRkHilfe","So bedienst du den Planer","info"]];
-  m.innerHTML=it.map(x=>`<button class="mi" role="menuitem" data-act="${x[0]}" data-id="${esc(id)}">${icon(x[2])}<span>${x[1]}</span></button>`).join("");
-  m.style.top=(r.bottom+4)+"px"; m.style.right=Math.max(8,innerWidth-r.right)+"px"; m.style.left="auto"; m.hidden=false; $("#scrim").hidden=false; }
+  $("#menu").innerHTML=it.map(x=>`<button class="mi" role="menuitem" data-act="${x[0]}" data-id="${esc(id)}">${icon(x[2])}<span>${x[1]}</span></button>`).join("");
+  $("#menu").hidden=false; $("#scrim").hidden=false; $("#menuBtn").setAttribute("aria-expanded","true"); }
 /* Seitenansicht ein/aus – merkt sich jedes Gerät selbst; Standard: am PC an, am Handy aus */
 const ecRkSeiteAn=()=>{ try{ const v=localStorage.getItem("irrgang_rk_seite"); if(v!=null) return v==="1"; }catch(e){} return matchMedia("(min-width:600px)").matches; };
 /* Teil einsetzen: Auswahl als Liste (statt neun Chips über dem Schrank) */
@@ -1474,8 +1482,8 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecRkZu": nav.schr=null; render(); scrollTo(0,0); return;
   case "ecRkGriff": return;
   case "ecRkWahl": ecRkWahlDlg(); return;
-  case "ecRkTab": ecRkTab=b.dataset.v; render();  return;
-  case "ecRkMenu": ecRkMenuAuf(b); return;
+  case "ecRkTab": ecRkTab=b.dataset.v; closeOverlays(); render(); scrollTo(0,0); return;
+  case "ecRkSpick": ecRkSpickAuf(b); return;
   case "ecRkSeite": { const an=!ecRkSeiteAn(); try{ localStorage.setItem("irrgang_rk_seite",an?"1":"0"); }catch(e){} render(); return; }
   case "ecRkHilfe": ecRkHilfeDlg(); return;
   case "ecRkNeu": case "ecRkLeer": { if(!nichtZu()) return; const s2=g.schraenke.find(x=>x.id===nav.schr); if(!s2) return; const r=ecRkNeuZ(s2,b.dataset.t||"patch",b.dataset.pos);
