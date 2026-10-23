@@ -2179,9 +2179,9 @@ const GER_DATEN={"ger-wiha-mft-one-1":{sn:"S260400105",fw:"V1.312",kalAm:"31.03.
   "ger-wiha-mft-one-2":{sn:"S260400136",fw:"V1.312",kalAm:"01.04.2026",kal:"01.04.2027"},
   "ger-fluke-fev300-1":{sn:"68510013"},
   "ger-wiha-pat-one-1":{sn:"25050058"},
-  "ger-trend-signaltek-alt":{hersteller:"IDEAL Industries Networks",sn:"15610106/02289",notiz:"Baujahr 01/2013 · Netzteil 12 V / 2 A · Aufdruck T4991DV"},
+  "ger-trend-signaltek-alt":{hersteller:"IDEAL Industries Networks",sn:"15610106/02289",snR:"15610407/01288",notiz:"Baujahr 01/2013 · Netzteil 12 V / 2 A · Aufdruck T4991DV"},
   "ger-trend-signaltek-ct":{sn:"156129C10/04187",notiz:"Baujahr 12/2023 · Netzteil 12 V / 2 A (liegt bei) · Remote-Einheit im Koffer"}};
-const GER_DATEN_V=3;
+const GER_DATEN_V=4;
 function gerVorlagen(){ if(!ME.admin) return;
   if(!META.gerBild2){ for(const g of DB.geraete.values()){ const n=GER_BILD_ALT[g.bildUrl]; if(n){ g.bildUrl=n; saveRec("geraete",g); } } META.gerBild2=1; metaSave(); }
   if(!META.gerKurz&&DB.geraete.size){ for(const v of GER_VORLAGE){ const g=DB.geraete.get(v.id); if(g&&!g.kurz&&!g.deleted){ g.kurz=v.kurz; saveRec("geraete",g); } } META.gerKurz=1; metaSave(); }
@@ -2221,12 +2221,12 @@ async function gerFotoLaden(f){
 function gerFotoNeu(){ const el=document.getElementById("gerFoto"); if(!el||!gerForm) return; const r=gerForm.id?DB.geraete.get(gerForm.id):{}; const u=document.querySelector('#dlg [data-f="bildUrl"]'); el.innerHTML=gerFotoHtml(Object.assign({},r,{bildUrl:u?u.value.trim():r.bildUrl})); }
 function gerDialog(g){
   gerForm={id:g&&g.id,bild:g&&g.bild||""}; const r=g||{art:"mess"}, T=team().filter(m=>m.mail);
-  if(!ME.admin){ const k=gerKal(r); dialog(gerName(r),`<p>${esc([GER_ART.find(x=>x[0]===r.art)?.[1],r.sn&&`Seriennr. ${r.sn}`,r.fw&&`Firmware ${r.fw}`,r.kalAm&&`kalibriert am ${r.kalAm}`,k&&k.t].filter(Boolean).join(" · "))}</p>${r.notiz?`<p class="meta">${esc(r.notiz)}</p>`:""}`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return; }
+  if(!ME.admin){ const k=gerKal(r); dialog(gerName(r),`<p>${esc([GER_ART.find(x=>x[0]===r.art)?.[1],r.sn&&`Seriennr. ${r.sn}`,r.snR&&`Gegenstelle ${r.snR}`,r.fw&&`Firmware ${r.fw}`,r.kalAm&&`kalibriert am ${r.kalAm}`,k&&k.t].filter(Boolean).join(" · "))}</p>${r.notiz?`<p class="meta">${esc(r.notiz)}</p>`:""}`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return; }
   dialog(g?"Messgerät bearbeiten":"Neues Messgerät",`<div class="fg1">
     <div class="ger-bildzeile"><div class="ger-foto" id="gerFoto">${gerFotoHtml(r)}</div>${tf("bildUrl","Herstellerbild (Internetadresse, optional)",GER_BILD_ALT[r.bildUrl]||r.bildUrl,{form:true,type:"url"})}</div>
     <div class="reihe3">${sf("art","Art",r.art||"mess",GER_ART,{form:true})}${tf("hersteller","Hersteller",r.hersteller,{form:true,ph:"z. B. Wiha"})}${tf("modell","Modell",r.modell,{form:true,ph:"z. B. MFT one"})}</div>
     <div class="reihe3">${tf("kurz","Kurzname",r.kurz,{form:true,ph:"z. B. MFT 1 oder Bertha"})}${tf("sn","Seriennummer",r.sn,{form:true})}${tf("kal","Kalibrierung gültig bis",r.kal,{form:true,ph:"TT.MM.JJJJ"})}</div>
-    <div class="reihe2">${tf("kalAm","Kalibriert am",r.kalAm,{form:true,ph:"TT.MM.JJJJ"})}${tf("fw","Firmware",r.fw,{form:true,ph:"z. B. V1.312"})}</div>
+    <div class="reihe3">${tf("kalAm","Kalibriert am",r.kalAm,{form:true,ph:"TT.MM.JJJJ"})}${tf("fw","Firmware",r.fw,{form:true,ph:"z. B. V1.312"})}${tf("snR","Seriennr. Gegenstelle",r.snR,{form:true,ph:"Remote-Einheit, falls vorhanden"})}</div>
     <div class="reihe2">${sf("einsatz","Einsatz",r.einsatz||(/\bPAT\b/i.test(r.modell||"")?"geraete":/signaltek|lantek|navitek|netzwerk|kabeltester|ethernet/i.test(`${r.hersteller||""} ${r.modell||""}`)?"netzwerk":"installation"),[["installation","Installation und EVSE"],["geraete","Geräteprüfung"],["beide","Installation und Geräteprüfung"],["netzwerk","Netzwerk (Datenverkabelung)"]],{form:true})}${sf("bei","Zugeteilt an",r.bei||"",[["","niemand / Firma"],...T.map(m=>[m.mail,m.name])],{form:true})}</div>
     <p class="sup" style="margin:0 4px">Der Kurzname steht in allen Apps vor dem Gerät – damit man gleiche Geräte auseinanderhält.</p>
     <div class="ger-notiz">${ta("notiz","Notiz",r.notiz,{form:true,ph:"z. B. liegt im Sprinter, Kalibrierung bei …"})}</div></div><input type="file" id="gerDatei" accept="image/*" hidden>`,
@@ -2410,7 +2410,7 @@ document.addEventListener("click",async ev=>{
   case "gerFotoWeg": if(gerForm){ gerForm.bild=""; gerFotoNeu(); } return;
   case "gerEdit": gerDialog(DB.geraete.get(b.dataset.id)); return;
   case "gerSave": { if(!ME.admin||!gerForm) return; const F=formVals(); if(!F.modell&&!F.hersteller&&!F.sn){ toast("Bitte mindestens Modell oder Seriennummer eintragen"); return; }
-    const r=gerForm.id?DB.geraete.get(gerForm.id):{id:uid()}; Object.assign(r,{art:F.art,hersteller:F.hersteller,modell:F.modell,kurz:(F.kurz||"").trim(),einsatz:F.einsatz||"",sn:F.sn,kal:F.kal,kalAm:F.kalAm||"",fw:F.fw||"",bei:F.bei,notiz:F.notiz,bildUrl:F.bildUrl,bild:gerForm.bild||""}); saveRec("geraete",r,!gerForm.id); gerForm=null; closeOverlays(); render(); return; }
+    const r=gerForm.id?DB.geraete.get(gerForm.id):{id:uid()}; Object.assign(r,{art:F.art,hersteller:F.hersteller,modell:F.modell,kurz:(F.kurz||"").trim(),einsatz:F.einsatz||"",sn:F.sn,kal:F.kal,kalAm:F.kalAm||"",fw:F.fw||"",snR:F.snR||"",bei:F.bei,notiz:F.notiz,bildUrl:F.bildUrl,bild:gerForm.bild||""}); saveRec("geraete",r,!gerForm.id); gerForm=null; closeOverlays(); render(); return; }
   case "gerAus": { const r=gerForm&&DB.geraete.get(gerForm.id); if(!r||!ME.admin) return; r.aus=!r.aus; saveRec("geraete",r); gerForm=null; closeOverlays(); render(); toast(r.aus?"Ausgemustert – in EVSE nicht mehr auswählbar":"Wieder aktiv"); return; }
   case "teamEdit": teamDialog(teamAlle().find(m=>m.mail===b.dataset.mail)); return;
   case "teamStatus": if(teamForm){ if(teamForm.alt===ME.mail&&b.dataset.v==="weg"){ toast("Dich selbst kannst du nicht austragen"); return; } teamForm.status=b.dataset.v; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;
