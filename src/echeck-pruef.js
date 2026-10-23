@@ -808,8 +808,9 @@ const ecKatFakten=K=>[`${K.he} HE`,K.ports&&K.typ!=="router"&&K.typ!=="boden"?`$
 /* Echte Fotos im Katalog: je Gerät ein Datensatz „nkfoto-<id>“ in den Einstellungen (wird mit allen geteilt) –
    eigenes Foto (verkleinert, im Datensatz) oder Bild-Link. Ohne Foto bleibt die Zeichnung; im Schrankplaner immer die Zeichnung. */
 const ecKatFotoRec=id=>{ const r=DB.einstellungen&&DB.einstellungen.get("nkfoto-"+id); return r&&!r.deleted&&(r.foto||r.url)?r:null; };
-const ecKatFotoSrc=K=>{ const r=ecKatFotoRec(K.id); return r?(r.foto||r.url):""; };
-const ecKatBildHtml=K=>{ const src=ecKatFotoSrc(K); return src?`<img class="kat-foto" src="${esc(src)}" alt="" referrerpolicy="no-referrer" loading="lazy">`:ecRkKachelSvg(K); };
+/* Reihenfolge: eigenes Foto > eigener Bild-Link > Herstellerbild aus dem Katalog (bildUrl). Lädt ein Bild nicht, bleibt die Zeichnung darunter sichtbar. */
+const ecKatFotoSrc=K=>{ const r=ecKatFotoRec(K.id); return r?(r.foto||r.url):(K.bildUrl||""); };
+const ecKatBildHtml=K=>{ const src=ecKatFotoSrc(K); return ecRkKachelSvg(K)+(src?`<img class="kat-foto" src="${esc(src)}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()">`:""); };
 function ecKatFotoSpeichern(id,w){ const key="nkfoto-"+id, neu=!DB.einstellungen.has(key), r=DB.einstellungen.get(key)||{id:key,katId:id}; Object.assign(r,w,{by:who(),at:Date.now()}); r.deleted=!(r.foto||r.url); saveRec("einstellungen",r,neu); }
 function ecKatFotoVerkleinern(file){ return new Promise((res,rej)=>{ const url=URL.createObjectURL(file), img=new Image();
   img.onload=()=>{ const f=Math.min(1,900/Math.max(img.naturalWidth,img.naturalHeight)), c=document.createElement("canvas"); c.width=Math.round(img.naturalWidth*f); c.height=Math.round(img.naturalHeight*f);
@@ -819,8 +820,8 @@ function ecKatFotoWaehlen(id){ const i=document.createElement("input"); i.type="
   i.addEventListener("change",async()=>{ const f=i.files&&i.files[0]; i.remove(); if(!f) return;
     try{ ecKatFotoSpeichern(id,{foto:await ecKatFotoVerkleinern(f)}); closeOverlays(); render(); toast("Foto gespeichert – sehen alle im Katalog"); }catch(e){ toast("Das Bild ließ sich nicht öffnen"); } });
   i.click(); }
-function ecKatBildDlg(K){ const r=ecKatFotoRec(K.id), src=r?(r.foto||r.url):"", darf=r&&(ME.admin||!r.by||!r.by.mail||r.by.mail===ME.mail);
-  dialog(ecRkKatName(K),`${ecRkDefs()}${src?`<div class="kat-gross foto"><img src="${esc(src)}" alt="" referrerpolicy="no-referrer"></div><p class="sup" style="margin:8px 0 14px">${r.foto?"Eigenes Foto":"Bild über Link"}${r.by&&r.by.name?` · ${esc(r.by.name)}`:""}</p><div class="lbl">Zeichnung im Schrankplaner</div>`:""}
+function ecKatBildDlg(K){ const r=ecKatFotoRec(K.id), src=ecKatFotoSrc(K), darf=r&&(ME.admin||!r.by||!r.by.mail||r.by.mail===ME.mail);
+  dialog(ecRkKatName(K),`${ecRkDefs()}${src?`<div class="kat-gross foto"><img src="${esc(src)}" alt="" referrerpolicy="no-referrer" onerror="this.closest('.kat-gross').remove()"></div><p class="sup" style="margin:8px 0 14px">${!r?"Herstellerbild – vor Ort gilt das Typschild":r.foto?"Eigenes Foto":"Bild über Link"}${r&&r.by&&r.by.name?` · ${esc(r.by.name)}`:""}</p><div class="lbl">Zeichnung im Schrankplaner</div>`:""}
     <div class="kat-gross">${ecRkFrontSvg(K)}</div><p class="sup" style="margin:8px 0 0">${src?"Die Zeichnung bleibt für den Schrank – maßstäblich nach Herstellerangaben.":"Noch kein Foto. Ein Foto vom Gerät (oder ein Bild-Link vom Hersteller) ersetzt die Zeichnung in Katalog und Steckbrief."}</p>`,
     `${src&&darf?`<button class="btn-text danger" data-act="ecKatFotoWeg">Entfernen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="ecKatLink">Bild-Link</button><button class="btn-text" data-act="ecKatFotoNeu">${r&&r.foto?"Foto ersetzen":"Foto"}</button><button class="btn-text" data-act="cancel">Schließen</button>`,{breit:true}); }
 /* Katalog 1:1 wie in EVSE: Suche, nach Hersteller gruppierte Kacheln (weißes Bildfeld), Steckbrief-Seite */
@@ -863,7 +864,7 @@ function ecKatModellView(K){ const z=(l,v)=>v?`<div class="iz"><span>${l}</span>
     z("Keystone",K.keystone?`${K.keystone.name} – Art.-Nr. ${K.keystone.artnr}`:""),
     z(K.artnr?"Artikelnummer":"Typ",K.artnr||K.sku),z("Notiz",K.info)].join("");
   let h=`<div class="narrow">${ecRkDefs()}<div class="sec-row"><div class="sec-lbl">Steckbrief</div></div>
-    <div class="infok kat-kopf"><div class="kat-bild"><button class="foto kat-zeich" data-act="ecKatBild" aria-label="Bild groß ansehen">${ecKatBildHtml(K)}</button><span class="kat-bild-q">${ecKatFotoSrc(K)?"Foto":"Zeichnung · Foto hinzufügen"}</span></div>
+    <div class="infok kat-kopf"><div class="kat-bild"><button class="foto kat-zeich" data-act="ecKatBild" aria-label="Bild groß ansehen">${ecKatBildHtml(K)}</button><span class="kat-bild-q">${ecKatFotoRec(K.id)?"Eigenes Foto":K.bildUrl?"Bild: Hersteller":"Zeichnung · Foto hinzufügen"}</span></div>
     <div class="kat-daten">${stb}<div class="by">${K.geschaetzt?"Raster wie beim Edelstahl angenommen, noch nicht nachgemessen. ":""}Maße angenähert, Zeichnung nach Herstellerangaben.</div></div></div>`;
   const V=ecKatVerbaut(K);
   if(V.length) h+=`<details class="kat-gepr"><summary>${icon("ecNetz")}<span>Bei uns verbaut: ${V.reduce((a,x)=>a+x.n,0)}× in ${V.length} Schrank${V.length>1?"en":""}</span>${icon("drop")}</summary>${listOf(V.map(({g,sc,n})=>`<div class="li" role="button" tabindex="0" data-act="ecKatVerbaut" data-o="${esc(g.ortId)}" data-s="${esc(sc.id)}"><span class="av">${icon("ecNetz")}</span><span class="lt"><span class="h">${esc(sc.name||"Netzwerkschrank")}</span><span class="s">${esc(`${ecOrt(g.ortId).titel}${n>1?` · ${n}×`:""}`)}</span></span>${icon("chev")}</div>`))}</details>`;
