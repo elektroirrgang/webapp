@@ -1055,7 +1055,16 @@ body.kopf-oben .edk-platz{display:none!important}
 .rk-zk{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}.rk-zk h3{margin:0;flex:1}
 .ec-filter{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
 .ec-an-weg .chips{flex-direction:column;align-items:stretch}.ec-an-weg .chip{justify-content:flex-start;text-align:left;height:auto;min-height:40px;padding:8px 14px;white-space:normal}
-.kat-einstieg{margin:0 0 12px;padding:4px 12px;border-radius:20px;background:var(--sc-low)}
+.nk .search{margin-bottom:12px}.nk-filter{margin-bottom:4px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.nk-filter::-webkit-scrollbar{display:none}.nk-filter .m3-filter{flex:none}
+.katgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+@media (min-width:600px){.katgrid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}}
+.ktile{display:flex;flex-direction:column;text-align:left;border:0;padding:0;border-radius:20px;background:var(--sc-low);color:var(--on-surface);overflow:hidden;min-width:0;cursor:pointer;font:inherit}
+.ktile:active{background:var(--sc-high)}
+.nk-bild{display:flex;align-items:center;justify-content:center;aspect-ratio:16/10;background:#1C1D20;padding:12px}
+.nk-bild .kat-svg{max-height:100%;width:100%;filter:drop-shadow(0 3px 6px rgba(0,0,0,.4))}
+.ktile-t{display:flex;flex-direction:column;gap:2px;padding:10px 12px 12px;min-width:0}
+.ktile-t b{font-size:14px;line-height:1.25;overflow-wrap:anywhere}.ktile-t span{font-size:13px}.ktile-t small{font-size:12px;color:var(--on-sv)}
+.nk-gross{padding:20px;border-radius:20px;background:#1C1D20;margin:0 0 8px}.nk-gross .kat-svg{filter:drop-shadow(0 3px 6px rgba(0,0,0,.4))}
 .kat-kopf{display:flex;align-items:flex-start;gap:12px;justify-content:space-between}.kat-kopf h3{margin:0 0 2px!important}.kat-kopf .meta{margin:0}
 .kat-art{flex:none;font-size:12px;font-weight:600;padding:4px 10px;border-radius:8px;background:var(--sc-highest);color:var(--on-sv)}
 .kat-bild{margin:16px 0 12px;padding:16px;border-radius:14px;background:#1C1D20}.kat-svg{display:block;width:100%;height:auto;filter:drop-shadow(0 3px 6px rgba(0,0,0,.35))}
@@ -1713,7 +1722,7 @@ applyTheme(theme);
 WIDE.addEventListener?.("change",()=>{ if(typeof render==="function"&&nav) render(); });
 
 const APP_VERSION="<!--VERSION-->";
-const TOPDEST=[["anlagen","Installation","home"],["geraete","Geräte","ecStecker"],["netzwerk","Netzwerk","ecNetz"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
+const TOPDEST=[["anlagen","Installation","home"],["geraete","Geräte","ecStecker"],["netzwerk","Netzwerk","ecNetz"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"],["netzkatalog","Katalog","book"]];
 const TOP=TOPDEST.map(x=>x[0]), MEHR_SUB={team:"Mitarbeiter",impressum:"Impressum",about:"Über die App"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
 const KIND_NAME={kunden:"Kunde",standorte:"Standort"};
@@ -1890,23 +1899,25 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   document.body.classList.toggle("is-list",nav.v==="anlagen"||login);
   document.body.classList.toggle("is-login",login);
   document.body.classList.toggle("has-nav",!login);
-  $("#backBtn").hidden=top||login; $("#navbar").hidden=login; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]);
+  const katV=nav.v==="netzkatalog"||nav.v==="netzkatmodell", katMehr=katV&&!WIDE.matches;   /* Katalog: breit eigenes Ziel in der Leiste, mobil unter Mehr (wie EVSE) */
+  $("#backBtn").hidden=(top&&!katMehr)||login; $("#navbar").hidden=login; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]||katMehr);
   const rkS=nav.v==="ec"&&!login?ecRkOffen():null;   /* Netzwerkschrank offen: eigene Ebene wie die Ladestation in EVSE */
   $("#menuBtn").hidden=!VIEW_KIND[nav.v]&&!rkS;
   if(rkS&&!WIDE.matches){ $("#tabs").innerHTML=ecRkTabsHtml(); $("#tabs").hidden=false; }
-  const active=top?nav.v:nav.v==="netzkatalog"?"netzwerk":(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]?"kunden":nav.v==="ec"?ecListeV((DB.echecks.get(nav.id)||{}).art):"anlagen";
+  const active=katV?(katMehr?"mehr":"netzkatalog"):top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]?"kunden":nav.v==="ec"?ecListeV((DB.echecks.get(nav.id)||{}).art):"anlagen";
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
     +(()=>{ const P=nav.v==="ec"&&DB.echecks.get(nav.id); if(P&&!P.deleted){ const T=ecSchritte(P), a=ecTab(P); /* in der Prüfung: Schritte wie in EVSE */
         return T.map(([k,t,i,gesperrt])=>`<button class="nav-item${gesperrt?" gesperrt":""}" data-act="ecTab" data-v="${k}" ${k===a?'aria-current="page"':""} ${gesperrt?'aria-disabled="true"':""}><span class="ind">${icon(gesperrt?"lock":i)}</span><span>${t}</span></button>`
 ).join(""); }
-      return TOPDEST.map(([k,t,i])=>`<button class="nav-item${k==="mehr"?" nav-end":""}" data-act="nav" data-v="${k}" ${k===active?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join(""); })();
+      return TOPDEST.filter(d=>d[0]!=="netzkatalog"||WIDE.matches).map(([k,t,i])=>`<button class="nav-item${k==="mehr"?" nav-end":""}" data-act="nav" data-v="${k}" ${k===active?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join(""); })();
   let title="", sub="", fab=null, body="";
   if(login) body=loginView();
   else if(nav.v==="anlagen"){ title="Installation"; body=ecListeView("anlage"); fab=["ecNeuA","Prüfung","add"]; }
   else if(nav.v==="geraete"){ title="Geräte"; body=ecListeView("geraete"); fab=["ecNeuG","Prüfung","add"]; }
   else if(nav.v==="netzwerk"){ title="Netzwerk"; body=ecListeView("netz"); fab=["ecNeuN","Prüfung","add"]; }
-  else if(nav.v==="netzkatalog"){ title="Netzwerk-Katalog"; sub="Geräte für den Netzwerkschrank"; body=ecKatalogView(); }
+  else if(nav.v==="netzkatalog"){ title="Netzwerk-Katalog"; sub=`${EC_RKKAT.length} Geräte für den Netzwerkschrank`; body=ecKatalogView(); }
+  else if(nav.v==="netzkatmodell"){ const K=ecRkKat(nav.id); if(!K){ nav={v:"netzkatalog"}; return render(); } title=K.kurz||K.modell; sub=K.hersteller; body=ecKatModellView(K); }
   else if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); if(!p||p.deleted){ nav={v:"anlagen"}; return render(); }
     title=ecOrt(p.ortId).titel; sub=`${EC_ART[p.art||"anlage"]} · ${ecDatum(p.datum)}`; if(rkS){ sub=`Netzwerkschrank · ${title}`; title=rkS.name; } body=ecView(p); }
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=["newKunde","Kunde","add"]; }
@@ -2025,6 +2036,7 @@ function mehrView(){
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}`)):""}
       ${row("nav:team","person","Mitarbeiter",esc(META.profil.name||""))}
       ${row("theme","theme","Darstellung",TH_LABEL[theme])}${demoZeile()}</div>
+    ${WIDE.matches?"":`<div class="sec-lbl">Wissen</div><div class="list">${row("nav:netzkatalog","book","Netzwerk-Katalog",`${EC_RKKAT.length} Geräte · Patchfelder, Switches, NAS, Router`)}</div>`}
     <div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../evse/","ev","EVSE","Prüfung von Wallboxen und Ladesäulen")}${link("../baustelle/","baustelle","Baustelle","Tagesstand, offene Punkte und Material")}</div></div>
     <div class="sec-lbl">Rechtliches und Info</div><div class="list">
       ${row("nav:impressum","paragraph","Impressum","")}
@@ -2076,12 +2088,13 @@ function zurueck(){
   if(nav.v==="standort"){ const s=standortOf(nav.id); go(s?{v:"kunde",id:s.kundeId}:{v:"kunden"}); return; }
   if(nav.v==="kunde"){ go({v:"kunden"}); return; }
   if(MEHR_SUB[nav.v]){ go({v:"mehr"}); return; }
-  if(nav.v==="netzkatalog"){ go({v:"netzwerk"}); return; }
+  if(nav.v==="netzkatmodell"){ go({v:"netzkatalog"}); return; }
+  if(nav.v==="netzkatalog"){ go({v:"mehr"}); return; }
   if(nav.v==="ec"&&nav.schr){ nav.schr=null; render(); scrollTo(0,0); return; }   /* erst aus dem Schrank zurück zur Infrastruktur */
   if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); go({v:ecListeV(p&&p.art)}); return; }
   go({v:"anlagen"});
 }
-document.addEventListener("input",ev=>{ if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():EC_LISTE_ART[nav.v]?ecListeInhalt(EC_LISTE_ART[nav.v]):kundenListe(); } });
+document.addEventListener("input",ev=>{ if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="netzkatalog"?ecKatListe():nav.v==="bibliothek"?bibListe():EC_LISTE_ART[nav.v]?ecListeInhalt(EC_LISTE_ART[nav.v]):kundenListe(); } });
 document.addEventListener("change",ev=>{ const el=ev.target;
   if(el.id==="f_tlWer"){ const pw=($("#f_tlPw")||{}).value||""; tlSel=el.value||null; render(); const e=$("#f_tlPw"); if(e){ e.value=pw; } (tlSel==="__andere"?$("#f_tlMail"):e)?.focus(); } });
 document.addEventListener("click",ev=>{

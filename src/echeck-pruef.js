@@ -201,7 +201,7 @@ function ecListeView(art){
   if(!L.length) return h+`<div class="empty">${icon(art==="geraete"?"ecStecker":"home")}<h2>${art==="geraete"?"Noch keine Geräteprüfung":"Noch keine Installationsprüfung"}</h2><p>${art==="geraete"
       ?"Ortsveränderliche Geräte (DGUV V3, DIN VDE 0701-0702): Geräte je Kunde erfassen, prüfen, Prüffrist setzen – das Protokoll landet in der Bibliothek."
       :"Hausinstallationen und Anlagen (DIN VDE 0100-600 / 0105-100): Räume, Verteiler, Stromkreise und Steckdosen anlegen, besichtigen, messen – das Protokoll landet in der Bibliothek."}</p></div></div>`;
-  return h+`${art==="netz"?`<div class="kat-einstieg">${ecListe([ecLi({act:"ecKatalog",lead:icon("book"),ton:"plus",kopf:"Netzwerk-Katalog",text:`${EC_RKKAT.length} Geräte mit Frontansicht – Patchfelder, Switches, Gateways, NAS`})])}</div>`:""}${searchBar("Ort, Kunde, Prüfer oder Datum suchen",fKnopf("ec_"+art))}<div id="res">${ecListeInhalt(art)}</div></div>`; }
+  return h+`${searchBar("Ort, Kunde, Prüfer oder Datum suchen",fKnopf("ec_"+art))}<div id="res">${ecListeInhalt(art)}</div></div>`; }
 /* Abschnitt in der Kunden-/Standortansicht */
 function ecBeiKunde(kind,r){ const L=ecAlle().filter(p=>kind==="kunden"?p.kundeId===r.id:p.standortId===r.id).sort((a,b)=>String(b.datum||"").localeCompare(String(a.datum||"")));
   return kdKopf("Prüfungen","ecNeuHier","Prüfung anlegen",` data-kind="${kind}" data-id="${esc(r.id)}"`)+(L.length?listOf(L.map(ecItem)):`<p class="meta">Noch keine Prüfung.</p>`); }
@@ -781,16 +781,44 @@ function ecAnLesen(){ if(!ecDlg||!ecDlg.an) return; const F=formVals(), W=ecDlg.
 /* ---- Netzwerk-Katalog (Prospekt): alle Modelle mit Frontansicht – zum Nachschlagen und um Kunden zu zeigen, wie es aussehen kann ---- */
 const EC_KATGR=[["alle","Alle"],["patch","Patchfelder"],["switch","Switches"],["router","Gateways"],["nas","NAS und Rekorder"],["boden","Auf Fachboden"]];
 let ecKatFilter="alle";
+/* Kachelbild: Rackgerät ohne Ohren, Gerät auf dem Fachboden eng um das Gerät */
+function ecRkKachelSvg(K){ const v=ecRkFrontSvg(K), H=K.he*RK_U; let x=16.5, w=449.6, y=0, h=H;
+  if(K.typ==="boden"&&K.bild){ const dw=K.bild.breite||(K.zeichnung==="fritz"?226:(K.bild.schaechte||2)>2?200:108), dh=Math.min(H-10,K.bild.hoehe||(K.zeichnung==="fritz"?46:166)), p=Math.max(14,dw*.12);
+    x=(RK_B-dw)/2-p; w=dw+2*p; y=Math.max(0,H-8-dh-p*.6); h=H-y; }
+  return v.replace(`viewBox="0 0 ${RK_B} ${H}"`,`viewBox="${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}"`).replace(/style="aspect-ratio:[^"]*"/,`style="aspect-ratio:${(w/h).toFixed(3)}"`); }
 function ecRkFrontSvg(K){ const t={id:"k",typ:K.typ,pos:1,he:K.he,ports:K.ports,nr:1,kat:K.id,name:K.kurz||"",poe:!!K.poe,voll:true};
   const html=ecRkTeilHtml(null,null,null,t,new Map()), a=html.indexOf("<svg"), b=html.lastIndexOf("</svg>")+6, H=K.he*RK_U;
   return html.slice(a,b).replace('class="rk-svg"','class="kat-svg"').replace('preserveAspectRatio="none"',`preserveAspectRatio="xMidYMid meet" style="aspect-ratio:${RK_B}/${H.toFixed(2)}"`); }
-function ecKatalogView(){ const f=ecKatFilter, L=EC_RKKAT.filter(K=>f==="alle"||K.typ===f);
-  const chips=`<div class="ec-filter">${EC_KATGR.map(([v,t])=>{ const n=v==="alle"?EC_RKKAT.length:EC_RKKAT.filter(K=>K.typ===v).length; return n?`<button type="button" class="m3-filter" data-act="ecKatFilter" data-v="${v}" aria-pressed="${f===v}">${t} ${n}</button>`:""; }).join("")}</div>`;
-  const karte=K=>{ const fakten=[`${K.he} HE`,K.ports&&K.typ!=="router"&&K.typ!=="boden"?`${K.ports} Ports`:"",K.poe?"PoE":"",K.tiefe?`${K.tiefe} mm tief`:"",K.info||""].filter(Boolean);
-    return `<section class="card kat-karte"><div class="kat-kopf"><div><h3>${esc(ecRkKatName(K))}</h3><p class="meta">${esc([K.hersteller,ecRkKatNr(K)].filter(Boolean).join(" · "))}</p></div><span class="kat-art">${esc(EC_RK[K.typ]||"")}</span></div>
-      <div class="kat-bild">${ecRkFrontSvg(K)}</div><div class="kat-fakten">${fakten.map(x=>`<span>${esc(x)}</span>`).join("")}</div>
-      ${K.keystone?`<p class="m3-hinweis">Keystone: ${esc(K.keystone.name)} – Art.-Nr. ${esc(K.keystone.artnr)}</p>`:""}${K.geschaetzt?`<p class="m3-hinweis">Raster wie beim Edelstahl angenommen, noch nicht nachgemessen.</p>`:""}</section>`; };
-  return `<div class="narrow">${ecRkDefs()}<p class="meta" style="margin:0 2px 12px">Geräte, die der Schrankplaner kennt – mit echten Maßen und Frontansicht. Im Schrank unter „Teil einsetzen“ wählbar.</p>${chips}<div class="ec-spalte">${L.map(karte).join("")}</div></div>`; }
+const ecKatArt=K=>K.typ==="boden"?(K.zeichnung==="fritz"?"Router auf Fachboden":"NAS auf Fachboden"):EC_RK[K.typ]||"";
+const ecKatFakten=K=>[`${K.he} HE`,K.ports&&K.typ!=="router"&&K.typ!=="boden"?`${K.ports} Ports`:"",K.poe?"PoE":""].filter(Boolean).join(" · ");
+function ecKatKachel(K){ return `<button class="ktile nk-tile" data-act="nav" data-v="netzkatmodell" data-id="${esc(K.id)}"><span class="nk-bild">${ecRkKachelSvg(K)}</span>
+  <span class="ktile-t"><b>${esc(K.kurz||K.modell)}</b><span>${esc(ecKatArt(K))}</span><small>${esc(ecKatFakten(K))}</small></span></button>`; }
+function ecKatListe(){ const f=ecKatFilter, q=String(query||"").trim().toLowerCase();
+  const L=EC_RKKAT.filter(K=>(f==="alle"||K.typ===f)&&(!q||[K.hersteller,K.modell,K.kurz,K.artnr,K.sku,EC_RK[K.typ]].filter(Boolean).join(" ").toLowerCase().includes(q)));
+  if(!L.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:"Keine Geräte in dieser Gruppe."}</p>`;
+  const grp={}; L.forEach(K=>(grp[K.hersteller]=grp[K.hersteller]||[]).push(K));
+  return Object.keys(grp).sort((x,y)=>x.localeCompare(y,"de")).map(h=>`<div class="sec-lbl">${esc(h)}</div><div class="katgrid">${grp[h].map(ecKatKachel).join("")}</div>`).join(""); }
+function ecKatalogView(){ const f=ecKatFilter;
+  const chips=`<div class="ec-filter nk-filter">${EC_KATGR.map(([v,t])=>{ const n=v==="alle"?EC_RKKAT.length:EC_RKKAT.filter(K=>K.typ===v).length; return n?`<button type="button" class="m3-filter" data-act="ecKatFilter" data-v="${v}" aria-pressed="${f===v}">${t}</button>`:""; }).join("")}</div>`;
+  return `<div class="narrow nk">${ecRkDefs()}${searchBar("Hersteller, Modell, Art.-Nr.")}${chips}<div id="res">${ecKatListe()}</div></div>`; }
+/* Wo ist das Gerät verbaut? (Schränke aller Gebäude) */
+function ecKatVerbaut(K){ const out=[];
+  for(const g0 of live("gebaeude")){ const g=ecGebNorm(g0); for(const sc of g.schraenke||[]){ const n=ecSchrTeile(sc).filter(t=>t.kat===K.id).length; if(n) out.push({g,sc,n}); } }
+  return out; }
+function ecKatModellView(K){ const z=(l,v)=>v?`<div class="iz"><span>${l}</span><b>${esc(v)}</b></div>`:"", R=K.raster, Z=K.bild||{};
+  const masse=K.typ==="boden"&&Z.breite?`${Z.breite} × ${Z.hoehe||"?"} mm${K.geraetTiefe?` × ${K.geraetTiefe} mm tief`:""} (B × H × T)`:"";
+  const stb=[z("Hersteller",K.hersteller),z("Modell",K.modell),z(K.artnr?"Artikelnummer":"Typ",K.artnr||K.sku),z("Art",ecKatArt(K)),
+    z("Höhe",K.typ==="boden"?`${K.he} HE inkl. Fachboden`:`${K.he} HE (${(K.he*RK_U).toFixed(2).replace(".",",")} mm)`),
+    z("Ports",K.ports&&K.typ!=="boden"?`${K.ports}${K.poe?" · PoE":""}`:""),z("Gerätemaße",masse),
+    z("Einbautiefe",K.tiefe?`${K.tiefe} mm`:K.geraetTiefe&&K.typ!=="boden"?`${K.geraetTiefe} mm`:""),
+    z("Raster",R?`Keystone ${R.key} mm, Abstand ${R.abstand} mm, alle ${R.gruppe} Ports ${R.gl} mm Lücke`:""),
+    z("Keystone",K.keystone?`${K.keystone.name} – Art.-Nr. ${K.keystone.artnr}`:""),z("Hinweis",K.info)].join("");
+  const V=ecKatVerbaut(K);
+  const vl=V.length?ecListe(V.map(({g,sc,n})=>ecLi({act:"ecKatVerbaut",extra:` data-o="${esc(g.ortId)}" data-s="${esc(sc.id)}"`,lead:icon("ecNetz"),kopf:esc(sc.name||"Netzwerkschrank"),text:esc(`${ecOrt(g.ortId).titel}${n>1?` · ${n}×`:""}`)}))):`<p class="meta">In noch keinem Schrank eingesetzt.</p>`;
+  return `<div class="narrow nk">${ecRkDefs()}<div class="nk-gross">${ecRkFrontSvg(K)}</div>
+    <div class="sec-lbl">Steckbrief</div><div class="infok">${stb}<div class="by">${K.geschaetzt?"Raster wie beim Edelstahl angenommen, noch nicht nachgemessen. ":""}Maße angenähert, Zeichnung nach Herstellerangaben.</div></div>
+    <div class="sec-lbl">Verbaut in</div>${vl}
+    <p class="hint">Einsetzen im Schrank über „Teil einsetzen“ und dann das Modell wählen.</p></div>`; }
 /* Seitenansicht: Farbe wie die Front (Edelstahl, UniFi-Alu, schwarz, weiße FRITZ!Box), Tiefe maßstäblich zur Schranktiefe */
 function ecRkFarbe(t){ const K=ecRkKat(t.kat);
   if(K){ if(t.typ==="patch") return K.farbe==="edelstahl"?"inox":K.farbe==="hell"?"hell":"schwarz"; if(K.silber) return "silber"; return "schwarz"; }
@@ -1727,7 +1755,9 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecRkGriff": return;
   case "ecRkWahl": ecRkWahlDlg(); return;
   case "ecNetFilter": ecNetFilter=b.dataset.v; render(); return;
-  case "ecKatFilter": ecKatFilter=b.dataset.v; render(); return;
+  case "ecKatFilter": { ecKatFilter=b.dataset.v; const r0=$("#res"); if(r0){ r0.innerHTML=ecKatListe(); document.querySelectorAll(".nk-filter .m3-filter").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===ecKatFilter)); } else render(); return; }
+  case "ecKatVerbaut": { const o=b.dataset.o, P=live("echecks").filter(x=>String(x.ortId)===o&&x.art==="netz").sort((x,y)=>String(y.datum||"").localeCompare(String(x.datum||"")));
+    if(!P.length){ toast("Keine Netzwerkprüfung zu diesem Gebäude"); return; } ecRkTab="ansicht"; go({v:"ec",id:P[0].id,tab:"infra",schr:b.dataset.s}); return; }
   case "ecKatalog": go({v:"netzkatalog"}); return;
   case "ecAnschluss": { if(!nichtZu()) return; ecDlg=null; ecAnDlg(); return; }
   case "ecAnOk": { ecAnLesen(); const W=ecDlg&&ecDlg.w; if(!W) return; const g0=ecGeb(pr.ortId); if(W.routerKat) W.routerText=""; g0.anschluss={...W}; ecGebSpeichern(g0); ecDlg=null; closeOverlays(); render(); return; }
