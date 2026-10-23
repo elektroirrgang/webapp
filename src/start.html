@@ -2177,7 +2177,10 @@ const GER_VORLAGE_NETZ=[{id:"ger-trend-signaltek-alt",art:"mess",kurz:"SignalTEK
 /* abgelesen am 23.10.2026 (Geräteinfo bzw. Typenschild) – füllt nur leere Felder */
 const GER_DATEN={"ger-wiha-mft-one-1":{sn:"S260400105",fw:"V1.312",kalAm:"31.03.2026",kal:"31.03.2027"},
   "ger-wiha-mft-one-2":{sn:"S260400136",fw:"V1.312",kalAm:"01.04.2026",kal:"01.04.2027"},
-  "ger-fluke-fev300-1":{sn:"68510013"}};
+  "ger-fluke-fev300-1":{sn:"68510013"},
+  "ger-trend-signaltek-alt":{hersteller:"IDEAL Industries Networks",sn:"15610106/02289",notiz:"Baujahr 01/2013 · Netzteil 12 V / 2 A · Aufdruck T4991DV"},
+  "ger-trend-signaltek-ct":{sn:"156129C10/04187",notiz:"Baujahr 12/2023 · Netzteil 12 V / 2 A (liegt bei) · Remote-Einheit im Koffer"}};
+const GER_DATEN_V=2;
 function gerVorlagen(){ if(!ME.admin) return;
   if(!META.gerBild2){ for(const g of DB.geraete.values()){ const n=GER_BILD_ALT[g.bildUrl]; if(n){ g.bildUrl=n; saveRec("geraete",g); } } META.gerBild2=1; metaSave(); }
   if(!META.gerKurz&&DB.geraete.size){ for(const v of GER_VORLAGE){ const g=DB.geraete.get(v.id); if(g&&!g.kurz&&!g.deleted){ g.kurz=v.kurz; saveRec("geraete",g); } } META.gerKurz=1; metaSave(); }
@@ -2185,8 +2188,11 @@ function gerVorlagen(){ if(!ME.admin) return;
   if(!META.gerNetz){ for(const v of GER_VORLAGE_NETZ){ if(DB.geraete.has(v.id)) continue; const r=saveRec("geraete",Object.assign({sn:"",kal:"",bei:""},v),true); r.created=r.updated=1; dbPut("geraete",r); } META.gerNetz=1; metaSave(); }
   if(!META.gerVorlage){ for(const v of GER_VORLAGE){ if(DB.geraete.has(v.id)) continue; const r=saveRec("geraete",Object.assign({sn:"",kal:"",bei:""},v),true); r.created=r.updated=1; dbPut("geraete",r); }
     META.gerVorlage=1; metaSave(); }
-  if(!META.gerDaten1&&DB.geraete.has("ger-wiha-mft-one-1")){ for(const [id,d] of Object.entries(GER_DATEN)){ const g=DB.geraete.get(id); if(!g||g.deleted) continue; let neu=false;
-      for(const [k,v] of Object.entries(d)) if(!g[k]){ g[k]=v; neu=true; } if(neu) saveRec("geraete",g); } META.gerDaten1=1; metaSave(); } }
+  /* leere Felder füllen – oder Felder, die noch genau den Platzhaltertext der Vorlage tragen */
+  if((META.gerDatenV||0)<GER_DATEN_V&&DB.geraete.has("ger-wiha-mft-one-1")){ const V=Object.fromEntries([...GER_VORLAGE,...GER_VORLAGE_NETZ].map(v=>[v.id,v]));
+    for(const [id,d] of Object.entries(GER_DATEN)){ const g=DB.geraete.get(id); if(!g||g.deleted) continue; let neu=false;
+      for(const [k,v] of Object.entries(d)) if(g[k]!==v&&(!g[k]||(V[id]&&g[k]===V[id][k]))){ g[k]=v; neu=true; } if(neu) saveRec("geraete",g); }
+    META.gerDatenV=GER_DATEN_V; metaSave(); } }
 /* eigenes Foto (bild, klein im Datensatz) vor Herstellerbild (bildUrl); lädt das Herstellerbild nicht, bleibt das Symbol sichtbar */
 const gerAv=g=>{ const u=g.bild||GER_BILD_ALT[g.bildUrl]||g.bildUrl; return u?`<span class="av av-img ger-av">${icon("geraet")}<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></span>`:`<span class="av">${icon("geraet")}</span>`; };
 /* Gruppen in der Liste: Messgeräte nach Einsatz, dazu Prüfadapter und Sonstiges */
