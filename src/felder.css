@@ -412,6 +412,16 @@ button.vg-z{cursor:pointer;-webkit-tap-highlight-color:transparent} button.vg-z:
 .ab-ic:active{background:color-mix(in srgb,var(--primary) 15%,transparent)}
 .sec-row .ab-btns{gap:2px;margin-right:-4px}
 
+/* Abschnittskopf – gleich in allen Apps (siehe STIL.md):
+   Titel links (rot), rechts höchstens „Alle n“ (Textknopf) und runde, gefüllte Knöpfe zum direkten Anlegen. In Karten genauso (.card-kopf). */
+.sec-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sk-akt{display:flex;align-items:center;gap:4px}
+.plus-k,.sec-row .ab-ic,.card-kopf .ab-ic{width:40px;height:40px;border:0;border-radius:50%;background:var(--sc-high);color:var(--on-surface);display:grid;place-items:center;padding:0;cursor:pointer;flex:none}
+.plus-k:hover,.sec-row .ab-ic:hover,.card-kopf .ab-ic:hover{background:var(--sc-highest)}
+.plus-k:active,.sec-row .ab-ic:active,.card-kopf .ab-ic:active{background:color-mix(in srgb,var(--primary) 14%,var(--sc-high))}
+.plus-k .ic,.sec-row .ab-ic .ic,.card-kopf .ab-ic .ic{width:22px;height:22px}
+.card-kopf{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:-8px -8px 10px 0}.card-kopf h3{margin:0!important}
+
 /* Filter in der Suchleiste */
 .search.mit-f{padding-right:6px}
 .search input{flex:1;min-width:0}

@@ -377,7 +377,7 @@ function ecInfraView(pr){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", S=g.
   return `<div class="ec-kz">${k(S.length,`Netzwerkschr${S.length===1?"ank":"änke"}`)}${k(`${B} / ${T}`,"Patchports belegt",T?B/T:0)}${k(SW,"Switch-Ports")}${k(bad||hw,bad?"Probleme":"Hinweise",null,bad>0)}</div>
     <div class="ec-spalte ec-infra">
     <section class="card"><h3>Internetanschluss</h3>${ecListe(ecAnZeilen(g,zu))}</section>
-    <section class="card"><h3>Netzwerkschränke</h3>${S.length||!zu?ecListe([...S.map((s2,i)=>zeile(s2,P[i])),...(zu?[]:[ecLi({act:"ecSchrNeu",lead:icon("add"),ton:"plus",kopf:"Schrank hinzufügen",text:S.length?"z. B. Unterverteiler auf einer Etage":"z. B. Hauptschrank im Technikraum"})])]):`<p class="meta">Kein Netzwerkschrank angelegt.</p>`}
+    <section class="card">${karteKopf("Netzwerkschränke",zu?"":"ecSchrNeu","Schrank hinzufügen")}${S.length?ecListe(S.map((s2,i)=>zeile(s2,P[i]))):`<p class="meta">${zu?"Kein Netzwerkschrank angelegt.":"Noch kein Netzwerkschrank – mit + anlegen, z. B. den Hauptschrank im Technikraum."}</p>`}
       ${S.length&&!zu?`<p class="m3-hinweis">Bearbeiten: Rechtsklick, am Handy lange drücken</p>`:""}</section>
     ${ohne.length?`<section class="card"><h3>Datendosen ohne Schrank <span class="m3-neben">${ohne.length} Port${ohne.length>1?"s":""}</span></h3>${ecListe(ohne.map(p=>ecLi({act:"ecDose",id:p.d.id,lead:icon("ecNetz"),ton:"wip",kopf:esc(ecLinkName(g,p)),text:esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · "))})))}</section>`:""}
     ${S.length?`<section class="card"><h3>Etiketten</h3>${ecListe([ecLi({act:"ecEti",id:"",lead:icon("tag"),kopf:"Beschriften mit Brother",text:"Patchfeld-Streifen, Schilder, Dosen und Kabel"})])}</section>`:""}

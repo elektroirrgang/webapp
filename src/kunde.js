@@ -183,6 +183,7 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{ con
 /* Seitenkopf der Kundenansicht: Eckdaten und Karte nebeneinander (ab 900 px), darunter einspaltig */
 const kdOben=(r,kind,ss)=>`<div class="kd-oben">${infoKarte(r,kind)}${karteView(r,ss||[])}</div>`;
 /* Abschnittskopf mit rundem Plus rechts – wie in der Übersicht */
+const karteKopf=(t,act,label,extra)=>`<div class="card-kopf"><h3>${t}</h3>${act?`<span class="ab-btns"><button class="ab-ic" data-act="${act}"${extra||""} aria-label="${esc(label)}" title="${esc(label)}">${icon("add")}</button></span>`:""}</div>`;
 const kdKopf=(t,act,label,extra)=>`<div class="sec-row"><div class="sec-lbl">${t}</div>${act?`<span class="ab-btns"><button class="ab-ic" data-act="${act}"${extra||""} aria-label="${esc(label)}" title="${esc(label)}">${icon("add")}</button></span>`:""}</div>`;
 
 /* Klicks der Kundenansicht – eigene Abfangung, die Apps brauchen dafür nichts im eigenen switch */
