@@ -97,14 +97,6 @@ body.is-list .tb-title{visibility:hidden}
   body.rail-open .nav-item .ind{width:24px;height:24px;background:transparent!important}
   body.rail-open .nav-item[aria-current="page"]{background:var(--sec-c);color:var(--on-sec-c)}
   body.rail-open .nav-item.nav-end{margin-top:auto}
-  /* Unterpunkte (z. B. Bereiche eines Netzwerkschranks unter „Infrastruktur“): schmaler und eingerückt */
-  .nav-sub{display:none}
-  body.rail-open .nav-sub{display:flex;align-items:center;gap:10px;height:40px;margin:0 12px 0 40px;padding:0 14px;border:0;border-radius:20px;background:transparent;color:var(--on-sv);font:inherit;font-size:14px;font-weight:600;text-align:left;cursor:pointer}
-  body.rail-open .nav-sub:hover{background:color-mix(in srgb,var(--on-surface) 6%,transparent)}
-  body.rail-open .nav-sub[aria-current="page"]{background:var(--sec-c);color:var(--on-sec-c)}
-  body.rail-open .nav-sub span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  body.rail-open .nav-sub .sd{flex:none}
-  body.rail-open .nav-subkopf{margin:6px 12px 2px 54px;font-size:12px;font-weight:600;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   body.rail-open.has-nav .topbar, body.rail-open.has-nav main{margin-left:232px}
 }
 @media (max-width:743.98px){.nav-head{display:none}}
@@ -1061,6 +1053,7 @@ body.kopf-oben .edk-platz{display:none!important}
 .rk-bau.gross>*{--he:max(14px,min(40px,calc((100cqi - var(--rk-x)) / 10.86)))}
 .rk-bau.gross:not(.seite){grid-template-columns:minmax(0,1fr)}.rk-bau.gross:not(.seite) .rk-side{display:none}
 .rk-zk{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}.rk-zk h3{margin:0;flex:1}
+.ec-filter{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
 .m3-filter{height:32px;padding:0 16px;border:0;border-radius:8px;background:var(--sc-highest);color:var(--on-sv);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .m3-filter[aria-pressed="true"]{background:var(--sec-c);color:var(--on-sec-c)}
 @media (max-width:599px){.rk-bau.gross{--rk-x:56px}.rk-bau.gross.b800{--rk-x:80px}.rk-bau.gross.seite{--rk-x:112px}.rk-bau.gross.seite.b800{--rk-x:136px}.rk-zeich{background:none;padding:0;border-radius:0}.rk-zeich h3,.rk-zeich .m3-hinweis{margin-left:4px;margin-right:4px}}
@@ -1879,8 +1872,8 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
     +(()=>{ const P=nav.v==="ec"&&DB.echecks.get(nav.id); if(P&&!P.deleted){ const T=ecSchritte(P), a=ecTab(P); /* in der Prüfung: Schritte wie in EVSE */
-        return T.map(([k,t,i,gesperrt])=>`<button class="nav-item${gesperrt?" gesperrt":""}" data-act="ecTab" data-v="${k}" ${k===a&&!(k==="infra"&&rkS&&railOpen)?'aria-current="page"':""} ${gesperrt?'aria-disabled="true"':""}><span class="ind">${icon(gesperrt?"lock":i)}</span><span>${t}</span></button>`
-          +(k==="infra"&&rkS&&railOpen&&WIDE.matches?ecRkRailHtml(rkS):"")).join(""); }
+        return T.map(([k,t,i,gesperrt])=>`<button class="nav-item${gesperrt?" gesperrt":""}" data-act="ecTab" data-v="${k}" ${k===a?'aria-current="page"':""} ${gesperrt?'aria-disabled="true"':""}><span class="ind">${icon(gesperrt?"lock":i)}</span><span>${t}</span></button>`
+).join(""); }
       return TOPDEST.map(([k,t,i])=>`<button class="nav-item${k==="mehr"?" nav-end":""}" data-act="nav" data-v="${k}" ${k===active?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join(""); })();
   let title="", sub="", fab=null, body="";
   if(login) body=loginView();
@@ -2060,7 +2053,7 @@ function zurueck(){
   if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); go({v:ecListeV(p&&p.art)}); return; }
   go({v:"anlagen"});
 }
-document.addEventListener("input",ev=>{ if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():kundenListe(); } });
+document.addEventListener("input",ev=>{ if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():EC_LISTE_ART[nav.v]?ecListeInhalt(EC_LISTE_ART[nav.v]):kundenListe(); } });
 document.addEventListener("change",ev=>{ const el=ev.target;
   if(el.id==="f_tlWer"){ const pw=($("#f_tlPw")||{}).value||""; tlSel=el.value||null; render(); const e=$("#f_tlPw"); if(e){ e.value=pw; } (tlSel==="__andere"?$("#f_tlMail"):e)?.focus(); } });
 document.addEventListener("click",ev=>{

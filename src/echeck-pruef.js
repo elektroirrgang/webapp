@@ -172,12 +172,27 @@ const ecSt=st=>{ const x=EC_PILL[st]||EC_PILL.open; return `<span class="m3-st $
 
 /* ---- Listen ---- */
 function ecItem(pr){ const o=ecOrt(pr.ortId), erg=ecErgebnis(pr), fertig=pr.status==="fertig";
-  return `<div class="li" role="button" tabindex="0" data-act="ecOeffnen" data-id="${esc(pr.id)}"><span class="av">${icon(pr.art==="geraete"?"ecStecker":pr.art==="netz"?"ecNetz":"home")}</span>
+  return `<div class="li" role="button" tabindex="0" data-act="ecOeffnen" data-id="${esc(pr.id)}" data-ctx="ecPrCtx"><span class="av">${icon(pr.art==="geraete"?"ecStecker":pr.art==="netz"?"ecNetz":"home")}</span>
     <span class="lt"><span class="h">${esc(o.titel)}</span><span class="s">${esc([ecDatum(pr.datum),pr.pruefart,pr.bez,o.standort?"":o.name,pr.pruefer].filter(Boolean).join(" · "))}</span>
     <span class="st">${fertig?pill(erg==="bad"?"bad":"ok",erg==="bad"?"Mängel":"abgeschlossen"):pill("wip","in Arbeit")}</span></span>${icon("chev")}</div>`; }
+/* Prüfungslisten: Suchleiste und Filter wie bei den Kunden (filter.js), Rechtsklick/lange drücken = löschen */
+const EC_LISTE_ART={anlagen:"anlage",geraete:"geraete",netzwerk:"netz"};
+["anlage","geraete","netz"].forEach(art=>{ FDEF["ec_"+art]={std:{sort:"neu",status:"alle",wer:"alle"},sort:[["neu","Neueste zuerst"],["alt","Älteste zuerst"],["az","Ort A–Z"]],
+  gruppen:[{k:"status",t:"Status",opts:[["alle","Alle"],["arbeit","In Arbeit"],["fertig","Abgeschlossen"],["maengel","Mit Mängeln"]]},{k:"wer",t:"Prüfer",opts:[["alle","Alle"],["meine","Meine"]]}],
+  liste:()=>ecListeInhalt(art)}; });
+function ecListeInhalt(art){ const n="ec_"+art, q=query.trim().toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q), st=fW(n,"status"), wer=fW(n,"wer"), so=fW(n,"sort");
+  let L=ecAlle().filter(p=>(p.art||"anlage")===art);
+  if(q) L=L.filter(p=>{ const o=ecOrt(p.ortId); return H(o.titel)||H(o.name)||H(p.bez)||H(p.pruefer)||H(p.pruefart)||H(p.auftragsnr)||H(ecDatum(p.datum)); });
+  if(st==="arbeit") L=L.filter(p=>p.status!=="fertig"); else if(st==="fertig") L=L.filter(p=>p.status==="fertig"); else if(st==="maengel") L=L.filter(p=>ecErgebnis(p)==="bad");
+  if(wer==="meine") L=L.filter(p=>p.pruefer===who().name||(p.createdBy&&p.createdBy.mail===ME.mail));
+  const dt=(a,b)=>String(b.datum||"").localeCompare(String(a.datum||""))||(b.updated||0)-(a.updated||0);
+  L.sort(so==="alt"?(a,b)=>dt(b,a):so==="az"?(a,b)=>ecOrt(a.ortId).titel.localeCompare(ecOrt(b.ortId).titel,"de"):dt);
+  const auf=L.filter(p=>p.status!=="fertig"), fertig=L.filter(p=>p.status==="fertig");
+  if(!L.length) return `${fInfo(n,0,"Prüfung","Prüfungen")}<p class="meta">Keine Prüfung gefunden.</p>`;
+  return `${fInfo(n,L.length,"Prüfung","Prüfungen")}${auf.length?`<div class="sec-lbl">In Arbeit</div>${listOf(auf.map(ecItem))}`:""}${fertig.length?`<div class="sec-lbl">Abgeschlossen</div>${listOf(fertig.map(ecItem))}`:""}
+    <p class="hint">Rechtsklick oder lange drücken: Prüfung löschen</p>`; }
 function ecListeView(art){
-  const L=ecAlle().filter(p=>(p.art||"anlage")===art).sort((a,b)=>String(b.datum||"").localeCompare(String(a.datum||""))||(b.updated||0)-(a.updated||0));
-  const auf=L.filter(p=>p.status!=="fertig"), fertig=L.filter(p=>p.status==="fertig"); let h=`<div class="narrow">`;
+  const L=ecAlle().filter(p=>(p.art||"anlage")===art); let h=`<div class="narrow">`;
   if(art==="geraete"){ const bis=ecPlus(ecHeute(),1), F=live("betriebsmittel").filter(b=>b.naechste&&b.naechste<=bis).sort((a,b)=>a.naechste.localeCompare(b.naechste));
     if(F.length){ const M=new Map(); F.forEach(b=>{ if(!M.has(b.ortId)) M.set(b.ortId,[]); M.get(b.ortId).push(b); });
       h+=`<div class="sec-lbl">Fällig in den nächsten 4 Wochen</div>${listOf([...M].map(([o,G])=>`<div class="li" role="button" tabindex="0" data-act="ecNeuOrt" data-art="geraete" data-ort="${esc(o)}"><span class="av">${icon("warn")}</span>
@@ -186,9 +201,7 @@ function ecListeView(art){
   if(!L.length) return h+`<div class="empty">${icon(art==="geraete"?"ecStecker":"home")}<h2>${art==="geraete"?"Noch keine Geräteprüfung":"Noch keine Installationsprüfung"}</h2><p>${art==="geraete"
       ?"Ortsveränderliche Geräte (DGUV V3, DIN VDE 0701-0702): Geräte je Kunde erfassen, prüfen, Prüffrist setzen – das Protokoll landet in der Bibliothek."
       :"Hausinstallationen und Anlagen (DIN VDE 0100-600 / 0105-100): Räume, Verteiler, Stromkreise und Steckdosen anlegen, besichtigen, messen – das Protokoll landet in der Bibliothek."}</p></div></div>`;
-  if(auf.length) h+=`<div class="sec-lbl">In Arbeit</div>${listOf(auf.map(ecItem))}`;
-  if(fertig.length) h+=`<div class="sec-lbl">Abgeschlossen</div>${listOf(fertig.map(ecItem))}`;
-  return h+`</div>`; }
+  return h+`${searchBar("Ort, Kunde, Prüfer oder Datum suchen",fKnopf("ec_"+art))}<div id="res">${ecListeInhalt(art)}</div></div>`; }
 /* Abschnitt in der Kunden-/Standortansicht */
 function ecBeiKunde(kind,r){ const L=ecAlle().filter(p=>kind==="kunden"?p.kundeId===r.id:p.standortId===r.id).sort((a,b)=>String(b.datum||"").localeCompare(String(a.datum||"")));
   return kdKopf("Prüfungen","ecNeuHier","Prüfung anlegen",` data-kind="${kind}" data-id="${esc(r.id)}"`)+(L.length?listOf(L.map(ecItem)):`<p class="meta">Noch keine Prüfung.</p>`); }
@@ -234,7 +247,11 @@ function ecKennzahlen(pr){ const k=(z,t,bar,rot)=>`<div class="ec-k"><b${rot?' c
   const P=ecAllePunkte(g).filter(p=>ecImUmfang(pr,ecSkVon(g,p))&&ecPflicht(p.st)), pn=P.filter(p=>["ok","bad","ng"].includes(ecPunktStand(pr,g,p))).length;
   const m=st.filter(x=>x==="bad").length+Object.values(pr.sicht||{}).filter(v=>v==="nok").length, si=ecSichtZahl(pr);
   return `<div class="ec-kz">${k(`${n} / ${S.length}`,"Stromkreise fertig",S.length?n/S.length:0)}${k(`${pn} / ${P.length}`,"Messpunkte",P.length?pn/P.length:0)}${k(m,"Mängel",null,m>0)}${ecKMg(pr)}</div>`; }
-function ecView(pr){ const tab=ecTab(pr), zu=pr.status==="fertig";
+/* zuletzt geöffneter Bereich je Prüfung – beim Öffnen geht es dort weiter (statt immer „Messen“) */
+let ecPrWeg="";
+const ecTabGemerkt=id=>{ try{ return (JSON.parse(localStorage.getItem("irrgang_ec_tab")||"{}"))[id]||""; }catch(e){ return ""; } };
+const ecTabMerken=(id,t)=>{ try{ const m=JSON.parse(localStorage.getItem("irrgang_ec_tab")||"{}"); if(m[id]===t) return; m[id]=t; const k=Object.keys(m); if(k.length>200) delete m[k[0]]; localStorage.setItem("irrgang_ec_tab",JSON.stringify(m)); }catch(e){} };
+function ecView(pr){ const tab=ecTab(pr), zu=pr.status==="fertig"; ecTabMerken(pr.id,tab);
   const schr=tab==="infra"&&ecNz(pr)&&nav.schr&&ecGeb(pr.ortId).schraenke.find(x=>x.id===nav.schr);
   const body=schr?ecRackView(pr,schr):tab==="auftrag"?ecAuftragView(pr):tab==="gebaeude"?ecGebView(pr):tab==="infra"?ecInfraView(pr):tab==="sicht"?ecSichtView(pr):tab==="messen"?(ecNz(pr)?ecNetMessView(pr):ecMessView(pr)):tab==="geraete"?ecGerListe(pr):ecAbschlussView(pr);
   return `<div class="narrow ec">${zu?`<div class="robanner">${icon("lock")}<span>Abgeschlossen am ${esc(ecDatum(pr.fertigAm||pr.datum))} – zum Ändern unter „Abschluss“ wieder öffnen.</span></div>`:""}
@@ -735,9 +752,7 @@ const ecRkOffen=()=>{ const p=nav.v==="ec"&&nav.schr&&DB.echecks.get(nav.id); if
 function ecRkBereiche(){ const pr=ecPr(), g=ecGeb(pr.ortId), s=ecRkOffen(); if(!s) return []; const P=ecRkPlanung(pr,g,s), nB=P.H.some(h=>h[0]==="bad"), nW=P.H.some(h=>h[0]==="wip");
   return [["ansicht","Ansicht",null],["belegung","Belegung",null],["stueck","Stückliste",null],["planung","Planung",nB?"bad":nW?"wip":"ok"]]; }
 const ecRkTabsHtml=()=>ecRkBereiche().map(([k,l,st])=>`<button class="tab" role="tab" data-act="ecRkTab" data-v="${k}" aria-selected="${k===ecRkTab}"><span class="tl">${l}${st?`<i class="sd ${st}"></i>`:""}</span></button>`).join("");
-/* Seitenleiste ausgeklappt: Bereiche als Unterpunkte unter „Infrastruktur“ – dann braucht es die Auswahl im Kopf nicht */
-const ecRkRailHtml=s=>`<div class="nav-subkopf">${esc(s.name)}</div>`+ecRkBereiche().map(([k,l,st])=>`<button class="nav-sub" data-act="ecRkTab" data-v="${k}" ${k===ecRkTab?'aria-current="page"':""}><span>${l}</span>${st&&st!=="ok"?`<i class="sd ${st}"></i>`:""}</button>`).join("");
-const skRechts=()=>{ if(!WIDE.matches||!ecRkOffen()||railOpen) return ""; const L=ecRkBereiche(), a=L.find(x=>x[0]===ecRkTab)||L[0];
+const skRechts=()=>{ if(!WIDE.matches||!ecRkOffen()) return ""; const L=ecRkBereiche(), a=L.find(x=>x[0]===ecRkTab)||L[0];
   return `<button class="spick" data-act="ecRkSpick" aria-haspopup="menu" aria-label="Bereich wählen">${a[2]?`<i class="sd ${a[2]}"></i>`:`<span class="spick-ic">${icon("ecNetz")}</span>`}<span class="spick-t">${a[1]}</span><span class="spick-p">${icon("chev")}</span></button>`; };
 function ecRkSpickAuf(b){ const m=$("#menu"), r=b.getBoundingClientRect();
   m.innerHTML=ecRkBereiche().map(([k,l,st])=>`<button class="mi spick-mi${k===ecRkTab?" an":""}" role="menuitem" data-act="ecRkTab" data-v="${k}">${st?`<i class="sd ${st}"></i>`:`<span class="spick-ic">${icon("ecNetz")}</span>`}<span>${l}</span></button>`).join("");
@@ -1073,16 +1088,20 @@ document.addEventListener("pointerup",ecRkLos); document.addEventListener("point
 
 
 /* Messen */
-function ecNetMessView(pr){ const g=ecGeb(pr.ortId), L=ecNetListe(pr,g), fertig=L.filter(p=>!["open","wip"].includes(ecNetStand(pr,p))).length;
-  let h=`<p class="meta">${fertig} von ${L.length} Links fertig</p>`;
-  if(!L.length) return h+`<p class="meta">Noch nichts zu messen. Unter „Gebäude“ einen Netzwerkschrank anlegen und in den Räumen die Datendosen.</p>`+ecWeiter("abschluss","Weiter zum Abschluss");
-  const zeile=p=>{ const w=ecW(pr,p.id), st=ecNetStand(pr,p), v=ecNetV(w);
-    return `<div class="ec-sk" role="button" tabindex="0" data-act="ecNetMess" data-id="${esc(p.id)}"><span class="nr">${esc(p.pp||"–")}</span><span class="bz">${esc(ecLinkOrt(g,p))}<small>${esc(w.ng?`nicht gemessen: ${w.ng}`:[ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · "))}</small></span>
-      <span class="sz"><span class="lbm">Belegung </span>${w.wm==="ok"?"i. O.":w.wm==="nok"?'<b class="rot">Fehler</b>':"–"}${w.wm==="nok"&&w.wmF?`<small>${esc(w.wmF)}</small>`:""}</span>${ecMw(w.len,"m",ecWertStand(EC_NLEN,w.len),"Länge")}${ecMw(v?v.t:"","",v?v.st:"","Übertr.")}${ecMw(w.poe&&w.poe!=="na"?(w.poe==="ok"?"i. O.":"Fehler"):w.poe==="na"?"entf.":"","",w.poe==="ok"?"ok":w.poe==="nok"?"bad":"","PoE")}<span class="er">${ecPill(st)}</span></div>`; };
-  h+=`<div class="list ec-tab"><div class="ec-sk h"><span>Port</span><span>Datendose</span><span>Belegung</span><span>Länge</span><span>Übertragung</span><span>PoE</span><span>Ergebnis</span></div>`;
-  [...g.schraenke,{id:"",name:"Ohne Schrank"}].forEach(s=>{ const T=L.filter(p=>s.id?p.d.sId===s.id:(!p.d.sId||!g.schraenke.some(x=>x.id===p.d.sId))); if(!T.length) return;
-    h+=`<div class="ec-rk">${esc(s.name)}</div>${T.map(zeile).join("")}`; });
-  return h+`</div><p class="hint">Link antippen: Belegung, Länge, Übertragung und PoE eintragen. „Weiter“ springt zum nächsten Port im Schrank.</p>`+ecWeiter("abschluss","Weiter zum Abschluss"); }
+/* Messen (Netzwerk): je Schrank eine Karte mit der M3-Liste, oben Filter; Antippen öffnet die Messwerte */
+let ecNetFilter="alle";
+function ecNetMessView(pr){ const g=ecGeb(pr.ortId), L=ecNetListe(pr,g);
+  if(!L.length) return `${ecKennzahlen(pr)}<div class="ec-spalte"><section class="card"><h3>Messen</h3><p class="meta">Noch nichts zu messen. Unter „Gebäude“ die Datendosen anlegen und unter „Infrastruktur“ den Netzwerkschrank.</p></section></div>`+ecWeiter("abschluss","Weiter zum Abschluss");
+  const ST=new Map(L.map(p=>[p.id,ecNetStand(pr,p)])), nOffen=L.filter(p=>["open","wip"].includes(ST.get(p.id))).length, nBad=L.filter(p=>ST.get(p.id)==="bad").length;
+  const f=ecNetFilter, passt=p=>f==="offen"?["open","wip"].includes(ST.get(p.id)):f==="maengel"?ST.get(p.id)==="bad":true;
+  const werte=(w,p)=>{ if(w.ng) return `nicht gemessen: ${w.ng}`; const v=ecNetV(w), t=[w.wm==="nok"?`Belegung Fehler${w.wmF?` (${w.wmF})`:""}`:w.wm==="ok"?"Belegung i. O.":"",w.len?`${w.len} m`:"",v?v.t.replace(" M"," Mbit/s").replace(" G"," Gbit/s"):"",w.poe==="ok"?"PoE i. O.":w.poe==="nok"?"PoE Fehler":""].filter(Boolean);
+    return t.length?t.join(" · "):[ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · "); };
+  const zeile=p=>{ const w=ecW(pr,p.id); return ecLi({act:"ecNetMess",id:p.id,lead:esc(p.pp||"–"),breit:true,ton:ST.get(p.id)==="bad"?"bad":"",kopf:esc(ecLinkOrt(g,p)),text:esc(werte(w,p)),rechts:ecSt(ST.get(p.id))}); };
+  const chips=`<div class="ec-filter">${[["alle",`Alle ${L.length}`],["offen",`Offen ${nOffen}`],["maengel",`Mängel ${nBad}`]].map(([v,t])=>`<button type="button" class="m3-filter" data-act="ecNetFilter" data-v="${v}" aria-pressed="${f===v}">${t}</button>`).join("")}</div>`;
+  const karten=[...g.schraenke,{id:"",name:"Ohne Schrank"}].map(s=>{ const T=L.filter(p=>s.id?p.d.sId===s.id:(!p.d.sId||!g.schraenke.some(x=>x.id===p.d.sId))), V=T.filter(passt); if(!T.length) return "";
+    const fe=T.filter(p=>!["open","wip"].includes(ST.get(p.id))).length;
+    return `<section class="card"><h3>${esc(s.name)} <span class="m3-neben">${fe} von ${T.length} gemessen</span></h3>${V.length?ecListe(V.map(zeile)):`<p class="meta">${f==="maengel"?"Keine Mängel.":"Alles gemessen."}</p>`}</section>`; }).join("");
+  return `${ecKennzahlen(pr)}${chips}<div class="ec-spalte">${karten}</div><p class="m3-hinweis">Link antippen: Belegung, Länge, Übertragung und PoE eintragen. „Weiter“ springt zum nächsten Port.</p>`+ecWeiter("abschluss","Weiter zum Abschluss"); }
 function ecNetMessDlg(id){ const pr=ecPr(), g=ecGeb(pr.ortId), L=ecNetListe(pr,g), i=L.findIndex(p=>p.id===id), p=L[i]||ecNetAlle(g).find(x=>x.id===id); if(!p) return;
   const w=ecW(pr,p.id), wm0=ecWmLesen(w.wmap); ecDlg={netMess:p.id,wm:{m:wm0||ecWmGerade(),s:w.wmS||ecWmSchirmStd(pr),sel:null,leer:!wm0&&w.wm!=="ok",auto:wm0?ecWmText(wm0,w.wmS||""):""}};
   const zu=pr.status==="fertig", vor=L[i-1], nach=L[i+1], lenSt=ecWertStand(EC_NLEN,w.len);
@@ -1343,7 +1362,10 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     dialog("Welche Prüfung?",`<div class="list">${[["anlage","Installationsprüfung","Hausinstallation oder Anlage – Räume, Verteiler, Stromkreise, Steckdosen","home"],["geraete","Geräteprüfung","Ortsveränderliche Geräte nach DGUV V3","ecStecker"],["netz","Netzwerkprüfung","Datenverkabelung – Netzwerkschrank, Datendosen, Links","ecNetz"]].map(([v,t,s,i])=>`<div class="li" role="button" tabindex="0" data-act="ecNeuWahl" data-art="${v}" data-k="${esc(kid)}" data-ort="${esc(ort)}"><span class="av">${icon(i)}</span><span class="lt"><span class="h">${t}</span><span class="s">${s}</span></span>${icon("chev")}</div>`).join("")}</div>`,`<button class="btn-text" data-act="cancel">Abbrechen</button>`); return; }
   case "ecNeuWahl": closeOverlays(); ecNeuDialog(b.dataset.art,b.dataset.k,b.dataset.ort); return;
   case "ecNeuOk": ecNeuOk(); return;
-  case "ecOeffnen": { const p=DB.echecks.get(b.dataset.id); if(p) go({v:"ec",id:p.id,tab:p.status==="fertig"?"abschluss":p.status==="offen"?"auftrag":p.art==="geraete"?"geraete":"messen"}); return; }
+  case "ecOeffnen": { const p=DB.echecks.get(b.dataset.id); if(p){ nav.schr=null; go({v:"ec",id:p.id,tab:p.status==="fertig"?"abschluss":ecTabGemerkt(p.id)||"auftrag"}); } return; }
+  case "ecPrCtx": { const p=DB.echecks.get(b.dataset.id); if(!p) return; if(SYNC_ON&&!canEdit(p)&&!p.demo){ toast("Diese Prüfung darf nur der Ersteller oder ein Admin löschen"); return; } ecPrWeg=p.id;
+    confirmDlg("Prüfung löschen?",`${ecOrt(p.ortId).titel} · ${ecDatum(p.datum)} – die Prüfung wird in allen Apps entfernt. Gebäude, Räume, Schränke und Dosen bleiben erhalten.`,"Löschen","ecPrWeg"); return; }
+  case "ecPrWeg": { const p=DB.echecks.get(ecPrWeg); closeOverlays(); if(!p) return; p.deleted=true; saveRec("echecks",p); render(); toast("Prüfung gelöscht"); return; }
   case "ecTab": { if(!pr) return; const T=ecSchritte(pr).find(x=>x[0]===b.dataset.v);
     if(T&&T[3]){ toast(`Abschluss erst, wenn alles fertig ist – noch offen: ${ecFehlt(pr).join(", ")}`); if(typeof navIndSetzen==="function") navIndSetzen(); return; }
     nav.tab=b.dataset.v; nav.schr=null; closeOverlays(); render(); scrollTo(0,0); return; }
@@ -1484,6 +1506,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecRkZu": nav.schr=null; render(); scrollTo(0,0); return;
   case "ecRkGriff": return;
   case "ecRkWahl": ecRkWahlDlg(); return;
+  case "ecNetFilter": ecNetFilter=b.dataset.v; render(); return;
   case "ecRkTab": ecRkTab=b.dataset.v; closeOverlays(); render(); scrollTo(0,0); return;
   case "ecRkSpick": ecRkSpickAuf(b); return;
   case "ecRkSeite": { const an=!ecRkSeiteAn(); try{ localStorage.setItem("irrgang_rk_seite",an?"1":"0"); }catch(e){} render(); return; }
