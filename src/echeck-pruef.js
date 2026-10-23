@@ -197,11 +197,11 @@ function ecListeView(art){
     if(F.length){ const M=new Map(); F.forEach(b=>{ if(!M.has(b.ortId)) M.set(b.ortId,[]); M.get(b.ortId).push(b); });
       h+=`<div class="sec-lbl">Fällig in den nächsten 4 Wochen</div>${listOf([...M].map(([o,G])=>`<div class="li" role="button" tabindex="0" data-act="ecNeuOrt" data-art="geraete" data-ort="${esc(o)}"><span class="av">${icon("warn")}</span>
         <span class="lt"><span class="h">${esc(ecOrt(o).titel)}</span><span class="s">${G.length} Gerät${G.length>1?"e":""} · ab ${esc(ecDatum(G[0].naechste))}</span></span>${pill(G[0].naechste<ecHeute()?"bad":"wip",G[0].naechste<ecHeute()?"überfällig":"bald fällig")}</div>`))}`; } }
-  if(!L.length&&art==="netz") return h+`<div class="empty">${icon("ecNetz")}<h2>Noch keine Netzwerkprüfung</h2><p>Datenverkabelung qualifizieren (z. B. mit dem SignalTEK NT): Netzwerkschrank und Datendosen anlegen, jeden Link messen – das Protokoll landet in der Bibliothek.</p></div></div>`;
+  if(!L.length&&art==="netz") return h+`<div class="empty">${icon("ecNetz")}<h2>Noch keine Netzwerkprüfung</h2><p>Datenverkabelung qualifizieren (z. B. mit dem SignalTEK NT): Netzwerkschrank und Datendosen anlegen, jeden Link messen – das Protokoll landet in der Bibliothek.</p></div>${ecRkDefs()}${ecKatVorschau()}</div>`;
   if(!L.length) return h+`<div class="empty">${icon(art==="geraete"?"ecStecker":"home")}<h2>${art==="geraete"?"Noch keine Geräteprüfung":"Noch keine Installationsprüfung"}</h2><p>${art==="geraete"
       ?"Ortsveränderliche Geräte (DGUV V3, DIN VDE 0701-0702): Geräte je Kunde erfassen, prüfen, Prüffrist setzen – das Protokoll landet in der Bibliothek."
       :"Hausinstallationen und Anlagen (DIN VDE 0100-600 / 0105-100): Räume, Verteiler, Stromkreise und Steckdosen anlegen, besichtigen, messen – das Protokoll landet in der Bibliothek."}</p></div></div>`;
-  return h+`${searchBar("Ort, Kunde, Prüfer oder Datum suchen",fKnopf("ec_"+art))}<div id="res">${ecListeInhalt(art)}</div></div>`; }
+  return h+`${searchBar("Ort, Kunde, Prüfer oder Datum suchen",fKnopf("ec_"+art))}<div id="res">${ecListeInhalt(art)}</div>${art==="netz"?ecRkDefs()+ecKatVorschau():""}</div>`; }
 /* Abschnitt in der Kunden-/Standortansicht */
 function ecBeiKunde(kind,r){ const L=ecAlle().filter(p=>kind==="kunden"?p.kundeId===r.id:p.standortId===r.id).sort((a,b)=>String(b.datum||"").localeCompare(String(a.datum||"")));
   return kdKopf("Prüfungen","ecNeuHier","Prüfung anlegen",` data-kind="${kind}" data-id="${esc(r.id)}"`)+(L.length?listOf(L.map(ecItem)):`<p class="meta">Noch keine Prüfung.</p>`); }
@@ -792,14 +792,30 @@ function ecRkFrontSvg(K){ const t={id:"k",typ:K.typ,pos:1,he:K.he,ports:K.ports,
 const ecKatArt=K=>K.typ==="boden"?(K.zeichnung==="fritz"?"Router auf Fachboden":"NAS auf Fachboden"):EC_RK[K.typ]||"";
 const ecKatFakten=K=>[`${K.he} HE`,K.ports&&K.typ!=="router"&&K.typ!=="boden"?`${K.ports} Ports`:"",K.poe?"PoE":""].filter(Boolean).join(" · ");
 /* Katalog 1:1 wie in EVSE: Suche, nach Hersteller gruppierte Kacheln (weißes Bildfeld), Steckbrief-Seite */
-function ecKatKachel(K){ return `<button class="ktile" data-act="nav" data-v="netzkatmodell" data-id="${esc(K.id)}"><span class="ktile-bild">${ecRkKachelSvg(K)}</span>
+function ecKatKachel(K,von){ return `<button class="ktile" data-act="ecKatAuf" data-id="${esc(K.id)}"${von?` data-von="${von}"`:""}><span class="ktile-bild">${ecRkKachelSvg(K)}</span>
   <span class="ktile-t"><b>${esc(K.kurz||K.modell)}</b><span>${esc(ecKatFakten(K))}</span><small>${esc(ecKatArt(K))}</small></span></button>`; }
-function ecKatListe(){ const q=String(query||"").trim().toLowerCase();
-  const L=EC_RKKAT.filter(K=>!q||[K.hersteller,K.modell,K.kurz,K.artnr,K.sku,ecKatArt(K)].filter(Boolean).join(" ").toLowerCase().includes(q));
-  if(!L.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:"Noch keine Geräte."}</p>`;
-  const grp={}; L.forEach(K=>(grp[K.hersteller]=grp[K.hersteller]||[]).push(K));
-  return Object.keys(grp).sort((x,y)=>x.localeCompare(y,"de")).map(h=>`<div class="sec-lbl">${esc(h)}</div><div class="katgrid">${grp[h].map(ecKatKachel).join("")}</div>`).join(""); }
-function ecKatalogView(){ return `<div class="narrow">${ecRkDefs()}${searchBar("Hersteller, Modell, Art.-Nr.")}<div id="res">${ecKatListe()}</div></div>`; }
+/* Filter/Sortieren an der Suchleiste (gleiches Fenster wie bei den Prüfungslisten) */
+FDEF.ec_kat={std:{sort:"hersteller",typ:"alle",hst:"alle"},sort:[["hersteller","Nach Hersteller"],["typ","Nach Gerätegruppe"],["az","Modell A–Z"]],
+  gruppen:[{k:"typ",t:"Gerätegruppe",opts:EC_KATGR},{k:"hst",t:"Hersteller",get opts(){ return [["alle","Alle"],...[...new Set(EC_RKKAT.map(K=>K.hersteller))].sort((x,y)=>x.localeCompare(y,"de")).map(h=>[h,h])]; }}],
+  liste:()=>ecKatListe()};
+function ecKatListe(){ const n="ec_kat", q=String(query||"").trim().toLowerCase(), typ=fW(n,"typ"), hst=fW(n,"hst"), so=fW(n,"sort");
+  const L=EC_RKKAT.filter(K=>(typ==="alle"||K.typ===typ)&&(hst==="alle"||K.hersteller===hst)&&(!q||[K.hersteller,K.modell,K.kurz,K.artnr,K.sku,ecKatArt(K)].filter(Boolean).join(" ").toLowerCase().includes(q)));
+  if(!L.length) return `${fInfo(n,0,"Gerät","Geräte")}<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:"Keine Geräte für diesen Filter."}</p>`;
+  const nm=K=>K.kurz||K.modell, info=fInfo(n,L.length,"Gerät","Geräte");
+  if(so==="az") return info+`<div class="katgrid">${[...L].sort((x,y)=>nm(x).localeCompare(nm(y),"de")).map(ecKatKachel).join("")}</div>`;
+  const grp=new Map(), key=so==="typ"?K=>(EC_KATGR.find(g=>g[0]===K.typ)||[,"Sonstiges"])[1]:K=>K.hersteller;
+  (so==="typ"?EC_KATGR.slice(1).flatMap(g=>L.filter(K=>K.typ===g[0])):[...L].sort((x,y)=>x.hersteller.localeCompare(y.hersteller,"de"))).forEach(K=>{ const k=key(K); if(!grp.has(k)) grp.set(k,[]); grp.get(k).push(K); });
+  return info+[...grp].map(([h,G])=>`<div class="sec-lbl">${esc(h)}</div><div class="katgrid">${G.map(ecKatKachel).join("")}</div>`).join(""); }
+function ecKatalogView(){ return `<div class="narrow">${ecRkDefs()}${searchBar("Hersteller, Modell, Art.-Nr.",fKnopf("ec_kat"))}<div id="res">${ecKatListe()}</div></div>`; }
+/* Vorschau auf der Netzwerk-Startseite: was bei uns am meisten verbaut ist, aufgefüllt mit je einem Gerät pro Gruppe */
+function ecKatVorschau(){ const cnt=new Map();
+  for(const g0 of live("gebaeude")) for(const sc of ecGebNorm(g0).schraenke||[]) for(const t of ecSchrTeile(sc)) if(t.kat&&ecRkKat(t.kat)) cnt.set(t.kat,(cnt.get(t.kat)||0)+1);
+  const ids=[...cnt].sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+  for(const id of ["metz-130921","uni-pro48poe","udm-pro","syno-ds923","fritz-5590"]) if(!ids.includes(id)&&ecRkKat(id)) ids.push(id);
+  const L=[], typen=new Set(); for(const id of ids){ const K=ecRkKat(id); if(L.length<4&&!typen.has(K.typ)){ L.push(K); typen.add(K.typ); } }
+  for(const id of ids){ const K=ecRkKat(id); if(L.length<4&&!L.includes(K)) L.push(K); }
+  return `<div class="sec-row ec-katv"><div class="sec-lbl">Aus dem Katalog</div><button class="btn-text" data-act="ecKatalog">Alle ${EC_RKKAT.length} Geräte</button></div>
+    <div class="katgrid">${L.map(K=>ecKatKachel(K,"netzwerk")).join("")}</div>`; }
 /* Wo ist das Gerät verbaut? (Schränke aller Gebäude) */
 function ecKatVerbaut(K){ const out=[];
   for(const g0 of live("gebaeude")){ const g=ecGebNorm(g0); for(const sc of g.schraenke||[]){ const n=ecSchrTeile(sc).filter(t=>t.kat===K.id).length; if(n) out.push({g,sc,n}); } }
@@ -1756,10 +1772,11 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecRkWahl": ecRkWahlDlg(); return;
   case "ecNetFilter": ecNetFilter=b.dataset.v; render(); return;
   case "ecKatFilter": { ecKatFilter=b.dataset.v; const r0=$("#res"); if(r0){ r0.innerHTML=ecKatListe(); document.querySelectorAll(".nk-filter .m3-filter").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===ecKatFilter)); } else render(); return; }
+  case "ecKatAuf": query=""; go({v:"netzkatmodell",id:b.dataset.id,von:b.dataset.von||""}); return;
   case "ecKatBild": { const K=ecRkKat(nav.id); if(!K) return; dialog(ecRkKatName(K),`${ecRkDefs()}<div class="kat-gross">${ecRkFrontSvg(K)}</div><p class="sup" style="margin:8px 0 0">Zeichnung nach Herstellerangaben, Maße angenähert. Vor Ort gilt das Typschild.</p>`,`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`,{breit:true}); return; }
   case "ecKatVerbaut": { const o=b.dataset.o, P=live("echecks").filter(x=>String(x.ortId)===o&&x.art==="netz").sort((x,y)=>String(y.datum||"").localeCompare(String(x.datum||"")));
     if(!P.length){ toast("Keine Netzwerkprüfung zu diesem Gebäude"); return; } ecRkTab="ansicht"; go({v:"ec",id:P[0].id,tab:"infra",schr:b.dataset.s}); return; }
-  case "ecKatalog": go({v:"netzkatalog"}); return;
+  case "ecKatalog": query=""; go({v:"netzkatalog"}); return;
   case "ecAnschluss": { if(!nichtZu()) return; ecDlg=null; ecAnDlg(); return; }
   case "ecAnOk": { ecAnLesen(); const W=ecDlg&&ecDlg.w; if(!W) return; const g0=ecGeb(pr.ortId); if(W.routerKat) W.routerText=""; g0.anschluss={...W}; ecGebSpeichern(g0); ecDlg=null; closeOverlays(); render(); return; }
   case "ecAnWeg": { const g0=ecGeb(pr.ortId); delete g0.anschluss; ecGebSpeichern(g0); ecDlg=null; closeOverlays(); render(); return; }

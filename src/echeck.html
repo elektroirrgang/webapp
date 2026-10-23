@@ -1056,7 +1056,7 @@ body.kopf-oben .edk-platz{display:none!important}
 .ec-filter{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
 .ec-an-weg .chips{flex-direction:column;align-items:stretch}.ec-an-weg .chip{justify-content:flex-start;text-align:left;height:auto;min-height:40px;padding:8px 14px;white-space:normal}
 .ktile-bild .kat-svg,.kat-kopf .kat-bild .foto .kat-svg{position:absolute;top:10px;left:10px;width:calc(100% - 20px);height:calc(100% - 20px)}
-.kat-svg{display:block}.rk-defs{position:absolute;width:0;height:0;overflow:hidden}.kat-kopf .kat-bild .foto.kat-zeich{background:#fff!important;border:0!important}.kat-gross{background:#fff;border-radius:12px;padding:12px}.kat-gross .kat-svg{width:100%;height:auto}
+.kat-svg{display:block}.ec-katv{margin-top:28px;align-items:center}.ec-katv .sec-lbl{margin:0 4px!important}.rk-defs{position:absolute;width:0;height:0;overflow:hidden}.kat-kopf .kat-bild .foto.kat-zeich{background:#fff!important;border:0!important}.kat-gross{background:#fff;border-radius:12px;padding:12px}.kat-gross .kat-svg{width:100%;height:auto}
 .m3-filter{height:32px;padding:0 16px;border:0;border-radius:8px;background:var(--sc-highest);color:var(--on-sv);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .m3-filter[aria-pressed="true"]{background:var(--sec-c);color:var(--on-sec-c)}
 @media (max-width:599px){.rk-bau.gross{--rk-x:56px}.rk-bau.gross.b800{--rk-x:80px}.rk-bau.gross.seite{--rk-x:160px}.rk-bau.gross.seite.b800{--rk-x:184px}.rk-zeich{background:none;padding:0;border-radius:0}.rk-zeich h3,.rk-zeich .m3-hinweis{margin-left:4px;margin-right:4px}}
@@ -1710,7 +1710,7 @@ applyTheme(theme);
 WIDE.addEventListener?.("change",()=>{ if(typeof render==="function"&&nav) render(); });
 
 const APP_VERSION="<!--VERSION-->";
-const TOPDEST=[["anlagen","Installation","home"],["geraete","Geräte","ecStecker"],["netzwerk","Netzwerk","ecNetz"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"],["netzkatalog","Katalog","book"]];
+const TOPDEST=[["anlagen","Installation","home"],["geraete","Geräte","ecStecker"],["netzwerk","Netzwerk","ecNetz"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
 const TOP=TOPDEST.map(x=>x[0]), MEHR_SUB={team:"Mitarbeiter",impressum:"Impressum",about:"Über die App"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
 const KIND_NAME={kunden:"Kunde",standorte:"Standort"};
@@ -1730,8 +1730,8 @@ function pfadTeile(){
   if(nav.v==="standort"){ const s=standortOf(nav.id); return kette(s&&s.kundeId); }
   if(nav.v==="kunde") return kette();
   if(MEHR_SUB[nav.v]) return [["Mehr",{v:"mehr"}]];
-  if(nav.v==="netzkatalog"&&!WIDE.matches) return [["Mehr",{v:"mehr"}]];
-  if(nav.v==="netzkatmodell") return [["Katalog",{v:"netzkatalog"}]];
+  if(nav.v==="netzkatalog") return [["Netzwerk",{v:"netzwerk"}]];
+  if(nav.v==="netzkatmodell") return nav.von==="netzwerk"?[["Netzwerk",{v:"netzwerk"}]]:[["Katalog",{v:"netzkatalog"}]];
   if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); const v=ecListeV(p&&p.art); return [[{geraete:"Geräte",netzwerk:"Netzwerk"}[v]||"Installation",{v}]]; }
   return [];
 }
@@ -1889,24 +1889,24 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   document.body.classList.toggle("is-list",nav.v==="anlagen"||login);
   document.body.classList.toggle("is-login",login);
   document.body.classList.toggle("has-nav",!login);
-  const katV=nav.v==="netzkatalog"||nav.v==="netzkatmodell", katMehr=katV&&!WIDE.matches;   /* Katalog: breit eigenes Ziel in der Leiste, mobil unter Mehr (wie EVSE) */
-  $("#backBtn").hidden=(top&&!katMehr)||login; $("#navbar").hidden=login; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]||katMehr);
+  const katV=nav.v==="netzkatalog"||nav.v==="netzkatmodell";   /* Netzwerk-Katalog gehört zum Bereich Netzwerk (Einstieg unten auf der Netzwerkseite) */
+  $("#backBtn").hidden=top||login; $("#navbar").hidden=login; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]);
   const rkS=nav.v==="ec"&&!login?ecRkOffen():null;   /* Netzwerkschrank offen: eigene Ebene wie die Ladestation in EVSE */
   $("#menuBtn").hidden=!VIEW_KIND[nav.v]&&!rkS;
   if(rkS&&!WIDE.matches){ $("#tabs").innerHTML=ecRkTabsHtml(); $("#tabs").hidden=false; }
-  const active=katV?(katMehr?"mehr":"netzkatalog"):top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]?"kunden":nav.v==="ec"?ecListeV((DB.echecks.get(nav.id)||{}).art):"anlagen";
+  const active=katV?"netzwerk":top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]?"kunden":nav.v==="ec"?ecListeV((DB.echecks.get(nav.id)||{}).art):"anlagen";
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
     +(()=>{ const P=nav.v==="ec"&&DB.echecks.get(nav.id); if(P&&!P.deleted){ const T=ecSchritte(P), a=ecTab(P); /* in der Prüfung: Schritte wie in EVSE */
         return T.map(([k,t,i,gesperrt])=>`<button class="nav-item${gesperrt?" gesperrt":""}" data-act="ecTab" data-v="${k}" ${k===a?'aria-current="page"':""} ${gesperrt?'aria-disabled="true"':""}><span class="ind">${icon(gesperrt?"lock":i)}</span><span>${t}</span></button>`
 ).join(""); }
-      return TOPDEST.filter(d=>d[0]!=="netzkatalog"||WIDE.matches).map(([k,t,i])=>`<button class="nav-item${k==="mehr"?" nav-end":""}" data-act="nav" data-v="${k}" ${k===active?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join(""); })();
+      return TOPDEST.map(([k,t,i])=>`<button class="nav-item${k==="mehr"?" nav-end":""}" data-act="nav" data-v="${k}" ${k===active?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join(""); })();
   let title="", sub="", fab=null, body="";
   if(login) body=loginView();
   else if(nav.v==="anlagen"){ title="Installation"; body=ecListeView("anlage"); fab=["ecNeuA","Prüfung","add"]; }
   else if(nav.v==="geraete"){ title="Geräte"; body=ecListeView("geraete"); fab=["ecNeuG","Prüfung","add"]; }
   else if(nav.v==="netzwerk"){ title="Netzwerk"; body=ecListeView("netz"); fab=["ecNeuN","Prüfung","add"]; }
-  else if(nav.v==="netzkatalog"){ title="Katalog"; body=ecKatalogView(); }
+  else if(nav.v==="netzkatalog"){ title="Netzwerk-Katalog"; body=ecKatalogView(); }
   else if(nav.v==="netzkatmodell"){ const K=ecRkKat(nav.id); if(!K){ nav={v:"netzkatalog"}; return render(); } title=K.kurz||K.modell; sub=K.hersteller; body=ecKatModellView(K); }
   else if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); if(!p||p.deleted){ nav={v:"anlagen"}; return render(); }
     title=ecOrt(p.ortId).titel; sub=`${EC_ART[p.art||"anlage"]} · ${ecDatum(p.datum)}`; if(rkS){ sub=`Netzwerkschrank · ${title}`; title=rkS.name; } body=ecView(p); }
@@ -2026,7 +2026,6 @@ function mehrView(){
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}`)):""}
       ${row("nav:team","person","Mitarbeiter",esc(META.profil.name||""))}
       ${row("theme","theme","Darstellung",TH_LABEL[theme])}${demoZeile()}</div>
-    ${WIDE.matches?"":`<div class="sec-lbl">Wissen</div><div class="list">${row("nav:netzkatalog","book","Katalog",`${EC_RKKAT.length} Geräte · Netzwerkschrank`)}</div>`}
     <div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../evse/","ev","EVSE","Prüfung von Wallboxen und Ladesäulen")}${link("../baustelle/","baustelle","Baustelle","Tagesstand, offene Punkte und Material")}</div></div>
     <div class="sec-lbl">Rechtliches und Info</div><div class="list">
       ${row("nav:impressum","paragraph","Impressum","")}
@@ -2078,8 +2077,8 @@ function zurueck(){
   if(nav.v==="standort"){ const s=standortOf(nav.id); go(s?{v:"kunde",id:s.kundeId}:{v:"kunden"}); return; }
   if(nav.v==="kunde"){ go({v:"kunden"}); return; }
   if(MEHR_SUB[nav.v]){ go({v:"mehr"}); return; }
-  if(nav.v==="netzkatmodell"){ go({v:"netzkatalog"}); return; }
-  if(nav.v==="netzkatalog"){ go({v:"mehr"}); return; }
+  if(nav.v==="netzkatmodell"){ go({v:nav.von==="netzwerk"?"netzwerk":"netzkatalog"}); return; }
+  if(nav.v==="netzkatalog"){ go({v:"netzwerk"}); return; }
   if(nav.v==="ec"&&nav.schr){ nav.schr=null; render(); scrollTo(0,0); return; }   /* erst aus dem Schrank zurück zur Infrastruktur */
   if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); go({v:ecListeV(p&&p.art)}); return; }
   go({v:"anlagen"});
