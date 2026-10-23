@@ -170,7 +170,7 @@ function demoHaus(r,P,vor,tag){
       {id:"m1",typ:"patch",pos:1,he:1,ports:24,nr:1},{id:"m2",typ:"kabel",pos:2,he:1},{id:"m3",typ:"switch",pos:3,he:1,ports:16,poe:true,name:"UniFi USW-Lite-16-PoE",tiefe:220},
       {id:"m4",typ:"boden",pos:5,he:2,name:"Uplink: Glasfaser vom Serverschrank KG"},{id:"m5",typ:"pdu",pos:9,he:1,name:"Steckdosenleiste 6-fach"}]}];
   /* Datendosen: [Etage, Raum, Ports, Lage, Patchfeld] – Ports im Patchfeld werden der Reihe nach vergeben; 4 = Patchfeld 1 im Mini-Verteiler.
-     Zwei Schränke ⇒ Beschriftung Schrank.Patchfeld.Port (1.1.13 / 2.1.5) */
+     Zwei Schränke ⇒ Schema „Schranknummer.Patchfeld.Port“ (beschr:"nr"): angezeigt als 1.1.13 / 2.1.5, gespeichert 1.13 / 1.5 */
   const DO=[["kg","Heimkino",2,"TV",1],["kg","Heizungsraum",1,"Wärmepumpe (Modbus)",1],["kg","Werkstatt",2,"Arbeitsfläche",1],["kg","Flur KG",1,"Decke (WLAN-AP)",1],
     ["eg","Diele",2,"Eingang",1],["eg","Büro",2,"Schreibtisch",1],["eg","Büro",2,"Schreibtisch",1],["eg","Wohnen / Essen",2,"TV",1],["eg","Wohnen / Essen",1,"Decke (WLAN-AP)",1],
     ["eg","Küche",1,"neben Tür",1],["eg","Wintergarten",1,"Decke (WLAN-AP)",1],["eg","Terrasse",1,"Außen (Kamera)",1],
@@ -178,9 +178,9 @@ function demoHaus(r,P,vor,tag){
     ["og1","Schlafen",2,"TV",2],["og1","Kind 1",2,"Schreibtisch",2],["og1","Kind 2",2,"Schreibtisch",2],["og1","Flur OG",1,"Decke (WLAN-AP)",2],["og1","Balkon",1,"Außen (Kamera)",3],
     ["og2","Arbeitszimmer",2,"Schreibtisch",4],["og2","Arbeitszimmer",2,"Schreibtisch",4],["og2","Musikzimmer",2,"neben Tür",4],["og2","Gästezimmer",2,"TV",4],["og2","Flur 2. OG",1,"Decke (WLAN-AP)",4],
     ["dg","Galerie",2,"TV",4],["dg","Galerie",1,"Decke (WLAN-AP)",4],["dg","Dachterrasse",1,"Außen (Kamera)",4]];
-  const frei={}, dosen=[], dord={}; DO.forEach(([e,n,ports,lage,pf],i)=>{ const raumId=raum(e,n), pp={}; for(let p=1;p<=ports;p++){ frei[pf]=(frei[pf]||0)+1; pp[p]=pf===4?`2.1.${frei[pf]}`:`1.${pf}.${frei[pf]}`; }
+  const frei={}, dosen=[], dord={}; DO.forEach(([e,n,ports,lage,pf],i)=>{ const raumId=raum(e,n), pp={}; for(let p=1;p<=ports;p++){ frei[pf]=(frei[pf]||0)+1; pp[p]=`${pf===4?1:pf}.${frei[pf]}`; }
     dord[raumId]=(dord[raumId]||0)+1; dosen.push({id:`dh-d-${i+1}`,raumId,ord:dord[raumId],ports,lage,sId:pf===4?"dh-s2":"dh-s1",pp}); });
-  const g=r({id:"g-k_demo-k6",ortId:"k:demo-k6",etagen,verteiler,rcds,stromkreise,stellen,schraenke,dosen},P.mp,vor(6));
+  const g=r({id:"g-k_demo-k6",ortId:"k:demo-k6",etagen,verteiler,rcds,stromkreise,stellen,schraenke,dosen,beschr:"nr"},P.mp,vor(6));
   /* Netzwerkprüfung (läuft): fast alles gemessen, ein paar typische Fehler, 2. OG teilweise offen */
   const nw={}; let li=0;
   dosen.forEach(d=>{ for(let p=1;p<=d.ports;p++){ const id=`${d.id}.${p}`, et=Object.keys(R).find(k=>R[k]===d.raumId).split(":")[0], i=li++;
