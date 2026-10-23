@@ -189,8 +189,18 @@ function ecListeInhalt(art){ const n="ec_"+art, q=query.trim().toLowerCase(), H=
   L.sort(so==="alt"?(a,b)=>dt(b,a):so==="az"?(a,b)=>ecOrt(a.ortId).titel.localeCompare(ecOrt(b.ortId).titel,"de"):dt);
   const auf=L.filter(p=>p.status!=="fertig"), fertig=L.filter(p=>p.status==="fertig");
   if(!L.length) return `${fInfo(n,0,"Prüfung","Prüfungen")}<p class="meta">Keine Prüfung gefunden.</p>`;
-  return `${fInfo(n,L.length,"Prüfung","Prüfungen")}${auf.length?`<div class="sec-lbl">In Arbeit</div>${listOf(auf.map(ecItem))}`:""}${fertig.length?`<div class="sec-lbl">Abgeschlossen</div>${listOf(fertig.map(ecItem))}`:""}
-    <p class="hint">Rechtsklick oder lange drücken: Prüfung löschen</p>`; }
+  const hint=`<p class="hint">Rechtsklick oder lange drücken: anpinnen oder löschen</p>`;
+  if(!q&&!fAktiv(n)&&L.length>EC_KURZ&&!ecListeAlle[n]){ const P=ecPins(), pin=P.map(id=>L.find(p=>p.id===id)).filter(Boolean).slice(0,EC_KURZ);
+    const rest=L.filter(p=>!pin.includes(p)).sort((a,b)=>(b.updated||0)-(a.updated||0)||String(b.datum||"").localeCompare(String(a.datum||""))).slice(0,EC_KURZ-pin.length);
+    const alle=`<button class="btn-text" data-act="ecListeAlle" data-n="${n}">Alle ${L.length}</button>`;
+    return (pin.length?`<div class="sec-row"><div class="sec-lbl">Angepinnt</div>${rest.length?"":alle}</div>${listOf(pin.map(ecItem))}`:"")
+      +(rest.length?`<div class="sec-row"><div class="sec-lbl">Zuletzt bearbeitet</div>${alle}</div>${listOf(rest.map(ecItem))}`:"")+hint; }
+  const zu=!q&&!fAktiv(n)&&L.length>EC_KURZ?`<button class="btn-text" data-act="ecListeAlle" data-n="${n}">Nur die letzten ${EC_KURZ}</button>`:"";
+  return `${fInfo(n,L.length,"Prüfung","Prüfungen")}${auf.length?`<div class="sec-row"><div class="sec-lbl">In Arbeit</div>${zu}</div>${listOf(auf.map(ecItem))}`:""}${fertig.length?`<div class="sec-row"><div class="sec-lbl">Abgeschlossen</div>${auf.length?"":zu}</div>${listOf(fertig.map(ecItem))}`:""}${hint}`; }
+/* Angepinnte Prüfungen (je Gerät, wie die Pins in EVSE); Kurzliste zeigt höchstens 5 */
+const EC_KURZ=5, ecListeAlle={};
+const ecPins=()=>Array.isArray(META.ecPins)?META.ecPins:[];
+function ecPinUm(id){ const P=[...ecPins()], i=P.indexOf(id); if(i>=0) P.splice(i,1); else P.unshift(id); META.ecPins=P; metaSave(); render(); toast(i<0?"Angepinnt – steht oben in der Liste":"Nicht mehr angepinnt"); }
 function ecListeView(art){
   const L=ecAlle().filter(p=>(p.art||"anlage")===art); let h=`<div class="narrow">`;
   if(art==="geraete"){ const bis=ecPlus(ecHeute(),1), F=live("betriebsmittel").filter(b=>b.naechste&&b.naechste<=bis).sort((a,b)=>a.naechste.localeCompare(b.naechste));
@@ -812,10 +822,11 @@ function ecKatVorschau(){ const cnt=new Map();
   for(const g0 of live("gebaeude")) for(const sc of ecGebNorm(g0).schraenke||[]) for(const t of ecSchrTeile(sc)) if(t.kat&&ecRkKat(t.kat)) cnt.set(t.kat,(cnt.get(t.kat)||0)+1);
   const ids=[...cnt].sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
   for(const id of ["metz-130921","uni-pro48poe","udm-pro","syno-ds923","fritz-5590"]) if(!ids.includes(id)&&ecRkKat(id)) ids.push(id);
-  const L=[], typen=new Set(); for(const id of ids){ const K=ecRkKat(id); if(L.length<4&&!typen.has(K.typ)){ L.push(K); typen.add(K.typ); } }
-  for(const id of ids){ const K=ecRkKat(id); if(L.length<4&&!L.includes(K)) L.push(K); }
+  for(const id of ["metz-130920","uni-24poe","syno-rs1221","uni-agg","ugreen-dxp4800p"]) if(!ids.includes(id)&&ecRkKat(id)) ids.push(id);
+  const L=[], typen=new Set(); for(const id of ids){ const K=ecRkKat(id); if(L.length<6&&!typen.has(K.typ)){ L.push(K); typen.add(K.typ); } }
+  for(const id of ids){ const K=ecRkKat(id); if(L.length<6&&!L.includes(K)) L.push(K); }
   return `<div class="sec-row ec-katv"><div class="sec-lbl">Aus dem Katalog</div><button class="btn-text" data-act="ecKatalog">Alle ${EC_RKKAT.length} Geräte</button></div>
-    <div class="katgrid">${L.map(K=>ecKatKachel(K,"netzwerk")).join("")}</div>`; }
+    <div class="ec-katv-w"><div class="ec-katv-g">${L.map(K=>ecKatKachel(K,"netzwerk")).join("")}</div></div>`; }
 /* Wo ist das Gerät verbaut? (Schränke aller Gebäude) */
 function ecKatVerbaut(K){ const out=[];
   for(const g0 of live("gebaeude")){ const g=ecGebNorm(g0); for(const sc of g.schraenke||[]){ const n=ecSchrTeile(sc).filter(t=>t.kat===K.id).length; if(n) out.push({g,sc,n}); } }
@@ -891,9 +902,10 @@ function ecRkNeuZ(s,typ,pos){ const d=EC_RKSTD[typ]||{he:1}, he=d.he, p=pos&&ecR
 function ecRkLesen(){ const z=ecDlg&&ecDlg.rk; if(!z) return; const F=formVals(); if(F.rkName!=null) z.name=String(F.rkName).trim(); if(F.rkPos) z.pos=+F.rkPos; if(F.rkNr!=null&&String(F.rkNr).trim()) z.nr=+F.rkNr; if(F.rkTiefe!=null) z.tiefe=parseInt(F.rkTiefe,10)||0; }
 /* Rechtsklick bzw. lange drücken (Handy) auf [data-ctx] löst die dort genannte Aktion aus, z. B. Schrank bearbeiten */
 let ecCtxZeit=0, ecCtxT=null, ecCtxSchlucken=false;
+let ecCtxX=0, ecCtxY=0;
 function ecCtx(el){ if(Date.now()-ecCtxZeit<800) return; ecCtxZeit=Date.now(); const b=document.createElement("button"); b.hidden=true; b.dataset.act=el.dataset.ctx; b.dataset.id=el.dataset.id||""; document.body.appendChild(b); b.click(); b.remove(); }
-document.addEventListener("contextmenu",e=>{ const el=e.target.closest&&e.target.closest("[data-ctx]"); if(!el) return; e.preventDefault(); ecCtx(el); });
-document.addEventListener("pointerdown",e=>{ if(e.pointerType!=="touch") return; const el=e.target.closest&&e.target.closest("[data-ctx]"); if(!el) return; const x=e.clientX, y=e.clientY; clearTimeout(ecCtxT);
+document.addEventListener("contextmenu",e=>{ const el=e.target.closest&&e.target.closest("[data-ctx]"); if(!el) return; e.preventDefault(); ecCtxX=e.clientX; ecCtxY=e.clientY; ecCtx(el); });
+document.addEventListener("pointerdown",e=>{ if(e.pointerType!=="touch") return; const el=e.target.closest&&e.target.closest("[data-ctx]"); if(!el) return; const x=e.clientX, y=e.clientY; ecCtxX=x; ecCtxY=y; clearTimeout(ecCtxT);
   ecCtxT=setTimeout(()=>{ ecCtxSchlucken=true; ecCtx(el); if(navigator.vibrate) try{ navigator.vibrate(15); }catch(_){} },550);
   const ab=ev=>{ if(ev.type==="pointermove"&&Math.hypot(ev.clientX-x,ev.clientY-y)<10) return; clearTimeout(ecCtxT); document.removeEventListener("pointermove",ab); document.removeEventListener("pointerup",ab); document.removeEventListener("pointercancel",ab); };
   document.addEventListener("pointermove",ab); document.addEventListener("pointerup",ab); document.addEventListener("pointercancel",ab); });
@@ -1626,7 +1638,10 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecNeuWahl": closeOverlays(); ecNeuDialog(b.dataset.art,b.dataset.k,b.dataset.ort); return;
   case "ecNeuOk": ecNeuOk(); return;
   case "ecOeffnen": { const p=DB.echecks.get(b.dataset.id); if(p){ nav.schr=null; go({v:"ec",id:p.id,tab:p.status==="fertig"?"abschluss":ecTabGemerkt(p.id)||"auftrag"}); } return; }
-  case "ecPrCtx": { const p=DB.echecks.get(b.dataset.id); if(!p) return; if(SYNC_ON&&!canEdit(p)&&!p.demo){ toast("Diese Prüfung darf nur der Ersteller oder ein Admin löschen"); return; } ecPrWeg=p.id;
+  case "ecPrCtx": { const p=DB.echecks.get(b.dataset.id); if(!p) return; const an=ecPins().includes(p.id), id=p.id;
+    kontextMenu(ecCtxX,ecCtxY,[{t:an?"Nicht mehr anpinnen":"Anpinnen",ic:an?"pinOff":"pin",fn:()=>ecPinUm(id)},"-",{t:"Löschen",ic:"del",gefahr:true,fn:()=>{ const x=document.createElement("button"); x.hidden=true; x.dataset.act="ecPrLoeschen"; x.dataset.id=id; document.body.appendChild(x); x.click(); x.remove(); }}]); return; }
+  case "ecListeAlle": ecListeAlle[b.dataset.n]=!ecListeAlle[b.dataset.n]; fNeu(b.dataset.n); return;
+  case "ecPrLoeschen": { const p=DB.echecks.get(b.dataset.id); if(!p) return; if(SYNC_ON&&!canEdit(p)&&!p.demo){ toast("Diese Prüfung darf nur der Ersteller oder ein Admin löschen"); return; } ecPrWeg=p.id;
     confirmDlg("Prüfung löschen?",`${ecOrt(p.ortId).titel} · ${ecDatum(p.datum)} – die Prüfung wird in allen Apps entfernt. Gebäude, Räume, Schränke und Dosen bleiben erhalten.`,"Löschen","ecPrWeg"); return; }
   case "ecPrWeg": { const p=DB.echecks.get(ecPrWeg); closeOverlays(); if(!p) return; p.deleted=true; saveRec("echecks",p); render(); toast("Prüfung gelöscht"); return; }
   case "ecTab": { if(!pr) return; const T=ecSchritte(pr).find(x=>x[0]===b.dataset.v);
