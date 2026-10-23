@@ -719,9 +719,10 @@ function ecRkPlanung(pr,g,s){ const T=ecSchrTeile(s), N=ecSchrHe(s), belegtHe=T.
   if((SW.length||T.some(t=>t.typ==="router"))&&!T.some(t=>t.typ==="pdu")) H.push(["tipp","Tipp: Noch keine Steckdosenleiste für Switch und Router geplant."]);
   return {H,N,frei,B,ports,swPorts}; }
 function ecRkStueck(g,s){ const T=ecSchrTeile(s), G=new Map();
-  T.filter(t=>t.typ!=="blind").forEach(t=>{ const k=[EC_RK[t.typ],t.ports&&(t.typ==="patch"||t.typ==="switch")?`${t.ports} Port`:"",t.poe?"PoE":"",`${t.he} HE`].filter(Boolean).join(", ")+(t.name&&t.typ!=="patch"&&t.name!==EC_RK[t.typ]?` – ${t.name}`:""); G.set(k,(G.get(k)||0)+1); });
+  T.filter(t=>t.typ!=="blind").forEach(t=>{ const K=ecRkKat(t.kat); if(K){ const k=`${EC_RK[t.typ]} ${ecRkKatName(K)}, ${K.he} HE – Art.-Nr. ${K.artnr}`; G.set(k,(G.get(k)||0)+1); return; } const k=[EC_RK[t.typ],t.ports&&(t.typ==="patch"||t.typ==="switch")?`${t.ports} Port`:"",t.poe?"PoE":"",`${t.he} HE`].filter(Boolean).join(", ")+(t.name&&t.typ!=="patch"&&t.name!==EC_RK[t.typ]?` – ${t.name}`:""); G.set(k,(G.get(k)||0)+1); });
   const L=[[1,`${s.bauart==="stand"?"Standschrank":"Wandschrank"} 19", ${ecSchrHe(s)} HE, ${ecSchrBreite(s)} × ${ecSchrTiefe(s)} mm (B × T)`],...[...G].map(([k,n])=>[n,k])], {M}=ecRkLinks(g,s), D=g.dosen.filter(d=>d.sId===s.id), fr=ecSchrHe(s)-T.reduce((a,t)=>a+t.he,0);
-  if(M.size){ L.push([M.size,"Keystone-Module (Patchfeld)"]); L.push([M.size,"Patchkabel"]); }
+  if(M.size){ const KS=new Map(); [...M.keys()].forEach(k=>{ const pf=T.find(t=>t.typ==="patch"&&String(t.nr)===k.split(".")[0]), K=pf&&ecRkKat(pf.kat), n=K&&K.keystone?`Keystone-Module ${K.keystone.name} – Art.-Nr. ${K.keystone.artnr}`:"Keystone-Module (Patchfeld)"; KS.set(n,(KS.get(n)||0)+1); });
+    KS.forEach((n,k)=>L.push([n,k])); L.push([M.size,"Patchkabel"]); }
   const DG=new Map(); D.forEach(d=>{ const k=`Datendose ${d.ports||1}-fach`; DG.set(k,(DG.get(k)||0)+1); }); DG.forEach((n,k)=>L.push([n,k]));
   if(fr>0) L.push([fr,"Blindblende 1 HE (für die freien HE)"]); return L; }
 /* Zeichnung */
@@ -776,11 +777,13 @@ function ecRkHilfeDlg(){ dialog("So bedienst du den Planer",ecListe([
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Verstanden</button>`); }
 /* Teil bearbeiten */
 function ecRkDlg(z){ const pr=ecPr(), g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x.id===nav.schr); if(!s) return; ecDlg={rk:z}; const N=ecSchrHe(s), mitPorts=z.typ==="patch"||z.typ==="switch";
+  const K=ecRkKat(z.kat), hatKat=EC_RKKAT.some(k=>k.typ===z.typ);
   dialog(z.id?`${ecRkName(z)} bearbeiten`:`${EC_RK[z.typ]} einsetzen`,`<div class="lbl">Art</div>${ecChips("rkTyp",Object.entries(EC_RK),z.typ)}
+    ${hatKat?`<div class="lbl" style="margin-top:14px">Modell</div>${ecListe([ecLi({act:"ecRkKatAendern",lead:K?`${K.he} HE`:icon("book"),breit:!!K,ton:K?"plus":"",kopf:esc(K?ecRkKatName(K):"Ohne Modell"),text:esc(K?`Art.-Nr. ${K.artnr}${K.keystone?` · ${K.keystone.name}`:""}`:"aus dem Katalog wählen – Maße und Optik stimmen dann")})])}`:""}
     <div class="fg1" style="margin-top:14px">${tf("rkName",z.typ==="patch"?"Bezeichnung (optional)":"Bezeichnung / Modell (optional)",z.name||"",{form:true,ph:{switch:"z. B. UniFi USW-24-PoE",router:"z. B. FRITZ!Box 7590",boden:"z. B. für FRITZ!Box und NAS",usv:"z. B. APC Smart-UPS 750"}[z.typ]||""})}
       <div class="reihe2">${sf("rkPos","Position (HE von oben)",String(z.pos),Array.from({length:N},(_,i)=>[String(i+1),`HE ${i+1}${ecRkFrei(s,i+1,+z.he||1,z.id)?"":" – belegt"}`]),{form:true})}${z.typ==="patch"?tf("rkNr","Patchfeld-Nummer",String(z.nr||""),{form:true,ph:"1"}):tf("rkTiefe","Einbautiefe in mm (optional)",z.tiefe?String(z.tiefe):"",{form:true,ph:`typisch ${EC_RKT[z.typ]||200}`})}</div></div>
     <div class="lbl" style="margin-top:12px">Höhe</div>${ecChips("rkHe",[["1","1 HE"],["2","2 HE"],["3","3 HE"],["4","4 HE"]],String(z.he||1))}
-    ${mitPorts?`<div class="lbl" style="margin-top:12px">Ports</div>${ecChips("rkPorts",[["8","8"],["12","12"],["16","16"],["24","24"],["48","48"]],String(z.ports||24))}`:""}
+    ${mitPorts&&!K?`<div class="lbl" style="margin-top:12px">Ports</div>${ecChips("rkPorts",[["8","8"],["12","12"],["16","16"],["24","24"],["48","48"]],String(z.ports||24))}`:""}
     ${z.typ==="switch"?`<div class="lbl" style="margin-top:12px">PoE</div>${ecChips("rkPoe",[["0","ohne PoE"],["1","mit PoE"]],z.poe?"1":"0")}`:""}
     ${z.typ==="patch"?`<p class="meta" style="margin-top:10px">Die Nummer steht vorn in der Beschriftung der Dosen (1.13 = Patchfeld 1, Port 13) und bleibt beim Verschieben gleich.</p>`:""}`,
     `${z.id?`<button class="btn-text danger" data-act="ecRkDel">Entfernen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecRkOk">Speichern</button>`,{breit:true}); }
@@ -802,7 +805,27 @@ document.addEventListener("click",e=>{ if(ecCtxSchlucken){ ecCtxSchlucken=false;
 const ecRkKurz=n=>String(n||"").slice(0,34);
 const RK_B=482.6, RK_U=44.45;
 /* Farbverläufe einmal pro Seite (in der Schrank- und der Infrastruktur-Ansicht eingebunden) */
+/* ---- Katalog für den Schrankplaner: Modelle mit echten Maßen (Raster in mm: Keystone-Breite, Abstand, Ports je Gruppe, Gruppenlücke) ----
+   Metz Connect laut Beipackzettel „Modulare Patchfelder unbestückt“ (G353, 2025-06-25) und Messung von Max am 130921-00-E. */
+const EC_RKKAT=[
+  {id:"metz-130921",typ:"patch",hersteller:"Metz Connect",modell:"Modulträger 1 HE 24 Port Edelstahl",artnr:"130921-00-E",he:1,ports:24,farbe:"edelstahl",raster:{key:15,abstand:2,gruppe:6,gl:10},keystone:{name:"Metz Connect E-DAT modul Cat.6A",artnr:"130910KI"}},
+  {id:"metz-130920",typ:"patch",hersteller:"Metz Connect",modell:"Modulträger 1 HE 24 Port",artnr:"130920-00-E",he:1,ports:24,farbe:"hell",raster:{key:15,abstand:2,gruppe:6,gl:10},keystone:{name:"Metz Connect E-DAT modul Cat.6A",artnr:"130910KI"},geschaetzt:true},
+  {id:"metz-130920bk",typ:"patch",hersteller:"Metz Connect",modell:"Modulträger 1 HE 24 Port schwarz",artnr:"130920-BK-E",he:1,ports:24,farbe:"schwarz",raster:{key:15,abstand:2,gruppe:6,gl:10},keystone:{name:"Metz Connect E-DAT modul Cat.6A",artnr:"130910KI"},geschaetzt:true}];
+const ecRkKat=id=>id&&EC_RKKAT.find(k=>k.id===id)||null;
+const ecRkKatName=K=>`${K.hersteller} ${K.modell}`;
+const ecRkKatLetzt=typ=>{ try{ return (JSON.parse(localStorage.getItem("irrgang_rk_kat")||"{}"))[typ]||""; }catch(e){ return ""; } };
+const ecRkKatMerken=(typ,id)=>{ try{ const m=JSON.parse(localStorage.getItem("irrgang_rk_kat")||"{}"); m[typ]=id||""; localStorage.setItem("irrgang_rk_kat",JSON.stringify(m)); }catch(e){} };
+const ecRkKatAnwenden=(z,K)=>{ if(K){ z.kat=K.id; z.he=K.he; z.ports=K.ports; } else z.kat=""; return z; };
+let ecRkKatModus=null;   /* {neu:true,typ,pos} beim Einsetzen, {neu:false} beim Ändern im Teil-Dialog */
+function ecRkKatDlg(){ const m=ecRkKatModus; if(!m) return; const typ=m.typ, L=EC_RKKAT.filter(k=>k.typ===typ), letzt=ecRkKatLetzt(typ), akt=m.neu?letzt:(ecDlg&&ecDlg.rk&&ecDlg.rk.kat)||"";
+  const S=[...L].sort((a,b)=>(b.id===letzt)-(a.id===letzt));
+  dialog(`${EC_RK[typ]} – Modell`,ecListe([...S.map(K=>ecLi({act:"ecRkKatSet",id:K.id,lead:`${K.he} HE`,breit:true,ton:K.id===akt?"plus":"",kopf:esc(ecRkKatName(K)),
+      text:esc([`Art.-Nr. ${K.artnr}`,`${K.ports} Ports`,K.raster?`je ${K.raster.gruppe} in Gruppen`:"",K.keystone?`für ${K.keystone.name}`:"",K.id===letzt?"zuletzt benutzt":""].filter(Boolean).join(" · "))})),
+    ecLi({act:"ecRkKatSet",id:"",lead:icon("edit"),kopf:"Ohne Modell",text:"Ports und Höhe selbst festlegen"})])
+    +(L.some(K=>K.geschaetzt)?`<p class="m3-hinweis">Raster beim hellen und schwarzen Modulträger wie beim Edelstahl angenommen – noch nicht nachgemessen.</p>`:""),
+    `<span style="flex:1"></span><button class="btn-text" data-act="${m.neu?"cancel":"ecRkKatZurueck"}">${m.neu?"Abbrechen":"Zurück"}</button>`); }
 const ecRkDefs=()=>`<svg class="rk-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs>
+  <linearGradient id="rkgHell" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ECEDEA"/><stop offset=".12" stop-color="#DEE0DC"/><stop offset=".9" stop-color="#CDD0CB"/><stop offset="1" stop-color="#A9ADA8"/></linearGradient>
   <linearGradient id="rkgBlk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34363B"/><stop offset=".08" stop-color="#26282C"/><stop offset=".92" stop-color="#1A1B1E"/><stop offset="1" stop-color="#0E0F10"/></linearGradient>
   <linearGradient id="rkgSil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FAFBFC"/><stop offset=".1" stop-color="#E9ECEF"/><stop offset=".9" stop-color="#D3D7DC"/><stop offset="1" stop-color="#AEB3B9"/></linearGradient>
   <linearGradient id="rkgEar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#18191B"/><stop offset=".5" stop-color="#2C2E32"/><stop offset="1" stop-color="#1E1F22"/></linearGradient>
@@ -832,7 +855,16 @@ const rkText=(x,y,t,o={})=>`<text x="${x}" y="${y}" font-size="${o.fs||4.4}" fon
 function ecRkTeilHtml(pr,g,s,t,M){
   const he=t.he||1, H=he*RK_U, N=String(t.name||""), silber=/unifi|ubiquiti|ubnt/i.test(N)&&["switch","router"].includes(t.typ);
   let h="";
-  if(t.typ==="patch"){ const n=Math.max(1,+t.ports||24), zwei=n>24, pro=zwei?Math.ceil(n/2):n, gruppe=6, gruppen=Math.ceil(pro/gruppe), x0=42, breit=466.1-6-x0, luecke=6, pw=Math.min(14.2,(breit-(gruppen-1)*luecke)/pro-1.4);
+  const KP=t.typ==="patch"&&ecRkKat(t.kat);
+  if(KP&&KP.raster&&Math.max(1,+t.ports||24)<=24){ const n=Math.max(1,+t.ports||24), R=KP.raster, gr=Math.ceil(n/R.gruppe), W=n*R.key+(n-gr)*R.abstand+(gr-1)*R.gl, x0=(482.6-W)/2, ph=Math.min(17,H-15), y=H-ph-6;
+    const body=KP.farbe==="edelstahl"?"url(#rkgSil)":KP.farbe==="schwarz"?"url(#rkgBlk)":"url(#rkgHell)", tc=KP.farbe==="schwarz"?"#C9CDD2":"#2A2C30", loch=KP.farbe==="schwarz"?"#060607":"#141517";
+    h+=rkKoerper(H,body)+rkText(19.5,7.6,`P${t.nr}`,{fs:5.4,fw:800,fill:tc});
+    for(let i=0;i<n;i++){ const nr=i+1, gx=Math.floor(i/R.gruppe), x=x0+i*(R.key+R.abstand)+gx*(R.gl-R.abstand), L=M.get(`${t.nr}.${nr}`);
+      h+=rkText(x+R.key/2,y-1.8,nr,{fs:5.2,fw:700,fill:tc,anchor:"middle"});
+      if(!L){ h+=`<g><title>${t.nr}.${nr} frei</title><rect x="${x}" y="${y}" width="${R.key}" height="${ph}" rx=".8" fill="${loch}"/><rect x="${x}" y="${y}" width="${R.key}" height="1.2" fill="rgba(0,0,0,.35)"/></g>`; continue; }
+      const st=ecNetStand(pr,L[0]), kl=L.length>1?"bad":st==="ok"?"ok":st==="bad"?"bad":"belegt";
+      h+=`<g class="rk-pg ${kl}" data-act="ecRkPort" data-id="${esc(L[0].d.id)}"><title>${esc(`${t.nr}.${nr} · ${ecRaumName(g,L[0].raumId)}${L.length>1?" · doppelt vergeben":""}`)}</title><rect x="${x}" y="${y}" width="${R.key}" height="${ph}" rx=".8" fill="url(#rkgSil)" stroke="#7E8389" stroke-width=".35"/>${rkRj(x+2,y+2.2,R.key-4,ph-5,"#4A4E54")}<rect x="${x+3}" y="${y+ph-2}" width="${R.key-6}" height=".8" rx=".4" fill="#9AA0A6"/>${kl!=="belegt"?`<rect x="${x}" y="${y+ph+1}" width="${R.key}" height="1.8" rx=".5" fill="${kl==="ok"?"#3DDC84":"#FF5A5F"}"/>`:""}</g>`; } }
+  else if(t.typ==="patch"){ const n=Math.max(1,+t.ports||24), zwei=n>24, pro=zwei?Math.ceil(n/2):n, gruppe=6, gruppen=Math.ceil(pro/gruppe), x0=42, breit=466.1-6-x0, luecke=6, pw=Math.min(14.2,(breit-(gruppen-1)*luecke)/pro-1.4);
     h+=rkKoerper(H,"url(#rkgBlk)")+`<rect x="20" y="${H/2-7}" width="19" height="14" rx="1" fill="#F2F1EC"/>`+rkText(29.5,H/2+2.6,`P${t.nr}`,{fs:7,fw:800,fill:"#1E1F22",anchor:"middle"});
     for(let r=0;r<(zwei?2:1);r++) for(let i=0;i<pro;i++){ const nr=zwei?(i*2+r+1):(i+1); if(nr>n) continue;
       const gx=Math.floor(i/gruppe), x=x0+i*(pw+1.4)+gx*luecke, y=zwei?(r?24:7.5):15.5, ph=zwei?12:14.5, L=M.get(`${t.nr}.${nr}`);
@@ -874,7 +906,7 @@ function ecRkTeilHtml(pr,g,s,t,M){
     h+=rkKoerper(H,"url(#rkgBlk)")+rkText(24,14,ecRkKurz(N).replace(/\s*\(.*$/,""),{fs:7.5,fw:700})+`<circle cx="34" cy="${H-12}" r="5" fill="#26282C" stroke="#3DDC84" stroke-width="1.2"/>`+[0,1,2,3].map(i=>rkLed(46+i*6,H-12.8,i!==2)).join("");
     for(let i=0;i<c;i++){ const x=150+i*(bw+2.4), y=6; h+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="1.2" fill="#2C2F34" stroke="#121315" stroke-width=".7"/><rect x="${x+bw/2-2}" y="${y+5}" width="4" height="${bh-16}" rx="2" fill="#1A1C1F"/>`+rkLed(x+bw/2-1.3,y+bh-7,i<c-2); } }
   else { h+=rkKoerper(H,"url(#rkgBlk)")+rkText(24,H/2+2.4,ecRkKurz(N||EC_RK[t.typ]||"Gerät"),{fs:7,fw:700})+`<rect x="300" y="${H*.25}" width="155" height="${H*.5}" fill="url(#rkpHex)"/>`+rkLed(285,H/2-.8,true); }
-  if(t.typ!=="boden") h+=rkOhr(0,H,silber)+rkOhr(RK_B-16.5,H,silber);
+  if(t.typ!=="boden"){ const sO=silber||!!(KP&&KP.farbe!=="schwarz"); h+=rkOhr(0,H,sO)+rkOhr(RK_B-16.5,H,sO); }
   else h+=`<rect x="0" y="${H-6}" width="16.5" height="5" fill="url(#rkgEar)"/><rect x="${RK_B-16.5}" y="${H-6}" width="16.5" height="5" fill="url(#rkgEar)"/>`;
   return `<div class="rk-t rk-${t.typ}" data-act="ecRkTeil" data-id="${esc(t.id)}" data-rk="${esc(t.id)}" style="grid-row:${t.pos} / span ${he}" title="${esc(ecRkName(t))}">
     <svg class="rk-svg" viewBox="0 0 ${RK_B} ${H}" preserveAspectRatio="none" aria-hidden="true">${h}</svg><span class="rk-griff" data-act="ecRkGriff" data-drag="${esc(t.id)}" aria-label="verschieben"></span></div>`; }
@@ -1395,7 +1427,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
       if(gr==="vor"){ const p=EC_RKVOR[+v]; Object.assign(ecDlg.w,{bauart:p[0],he:String(p[1]),breite:String(p[2]),tiefe:String(p[3])}); ecSchrDlg(); return; }
       ecDlg.w[gr]=v; if(gr==="bauart"){ const T=EC_RKTIEFEN[v]; if(!T.includes(+ecDlg.w.tiefe)) ecDlg.w.tiefe=String(v==="stand"?800:450); ecSchrDlg(); } return; }
     if(ecDlg&&ecDlg.rk&&/^rk/.test(gr)){ const z=ecDlg.rk, v=b.dataset.v; ecRkLesen();
-      if(gr==="rkTyp"){ const s2=g&&g.schraenke.find(x=>x.id===nav.schr), d=EC_RKSTD[v]||{he:1}; z.typ=v; z.he=d.he; z.ports=d.ports||0; if(v==="patch"&&!z.nr&&s2) z.nr=Math.max(0,...ecPfListe(s2).map(x=>x.nr))+1; ecRkDlg(z); return; }
+      if(gr==="rkTyp"){ const s2=g&&g.schraenke.find(x=>x.id===nav.schr), d=EC_RKSTD[v]||{he:1}; z.typ=v; z.kat=""; z.he=d.he; z.ports=d.ports||0; if(v==="patch"&&!z.nr&&s2) z.nr=Math.max(0,...ecPfListe(s2).map(x=>x.nr))+1; ecRkDlg(z); return; }
       if(gr==="rkHe") z.he=+v; if(gr==="rkPorts") z.ports=+v; if(gr==="rkPoe") z.poe=v==="1"; return; }
     if(gr==="lage"||gr==="nlage"||gr==="schutz"||gr==="leitung"){ const i=document.getElementById({lage:"f_ecLage",nlage:"f_ecLage",schutz:"f_skSchutz",leitung:"f_skLeitung"}[gr]); if(i){ i.value=b.dataset.v; i.parentElement.classList.add("fl"); } return; }
     if(/^impTyp\d+$/.test(gr)&&ecImp){ ecImportLesen(); const d=ecImp.docs[+gr.slice(6)]; if(d){ d.typ=b.dataset.v; ecImportZiele(); ecImportDlg(); } return; }
@@ -1511,7 +1543,15 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecRkSpick": ecRkSpickAuf(b); return;
   case "ecRkSeite": { const an=!ecRkSeiteAn(); try{ localStorage.setItem("irrgang_rk_seite",an?"1":"0"); }catch(e){} render(); return; }
   case "ecRkHilfe": ecRkHilfeDlg(); return;
-  case "ecRkNeu": case "ecRkLeer": { if(!nichtZu()) return; const s2=g.schraenke.find(x=>x.id===nav.schr); if(!s2) return; const r=ecRkNeuZ(s2,b.dataset.t||"patch",b.dataset.pos);
+  case "ecRkKatAendern": { if(!ecDlg||!ecDlg.rk) return; ecRkLesen(); ecRkKatModus={neu:false,typ:ecDlg.rk.typ}; ecRkKatDlg(); return; }
+  case "ecRkKatZurueck": if(ecDlg&&ecDlg.rk) ecRkDlg(ecDlg.rk); return;
+  case "ecRkKatSet": { const K=ecRkKat(b.dataset.id), m=ecRkKatModus; if(!m) return; ecRkKatMerken(m.typ,K?K.id:"");
+    if(!m.neu){ if(ecDlg&&ecDlg.rk) ecRkDlg(ecRkKatAnwenden(ecDlg.rk,K)); return; }
+    const s2=g.schraenke.find(x=>x.id===nav.schr); if(!s2) return; const r=ecRkNeuZ(s2,m.typ,m.pos); if(!r.platz){ toast("Kein Platz mehr frei – Schrank größer wählen oder etwas entfernen"); return; }
+    ecRkKatAnwenden(r.z,K); if(K&&!ecRkFrei(s2,r.z.pos,r.z.he)){ const p2=ecRkErsterFrei(s2,r.z.he); if(!p2){ toast(`Für ${K.he} HE ist kein Platz frei`); return; } r.z.pos=p2; } ecRkDlg(r.z); return; }
+  case "ecRkNeu": case "ecRkLeer": { if(!nichtZu()) return; const s2=g.schraenke.find(x=>x.id===nav.schr); if(!s2) return;
+    if(a==="ecRkNeu"&&EC_RKKAT.some(k=>k.typ===(b.dataset.t||"patch"))){ ecRkKatModus={neu:true,typ:b.dataset.t||"patch",pos:b.dataset.pos}; ecRkKatDlg(); return; }
+    const r=ecRkNeuZ(s2,b.dataset.t||"patch",b.dataset.pos); if(r.z.typ==="patch"&&ecRkKatLetzt("patch")&&r.platz) ecRkKatAnwenden(r.z,ecRkKat(ecRkKatLetzt("patch")));
     if(!r.platz){ toast("Kein Platz mehr frei – Schrank größer wählen oder etwas entfernen"); return; } ecRkDlg(r.z); return; }
   case "ecRkTeil": { if(!nichtZu()) return; const s2=g.schraenke.find(x=>x.id===nav.schr), t=s2&&ecSchrTeile(s2).find(x=>x.id===b.dataset.id); if(t) ecRkDlg({...t}); return; }
   case "ecRkPort": { if(!nichtZu()) return; ecDoseDlg(b.dataset.id); if(ecDlg) ecDlg.ausRack=true; return; }
@@ -1519,7 +1559,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     let nachruecken=null; if(!ecRkFrei(s2,z.pos,z.he,z.id)){ const alt=z.id&&ecSchrTeile(s2).find(x=>x.id===z.id); nachruecken=alt&&alt.he===z.he?ecRkPlan(s2,z.id,z.pos):null;
       if(!nachruecken){ toast(`Ab HE ${z.pos} ist nicht genug Platz für ${z.he} HE`); return; } z.pos=nachruecken.pos; }
     if(z.typ==="patch"){ if(!(z.nr>0)){ toast("Bitte eine Patchfeld-Nummer angeben"); return; } if(ecPfListe(s2).some(x=>x.nr===z.nr&&x.id!==z.id)){ toast(`Patchfeld ${z.nr} gibt es schon`); return; } }
-    const t={id:z.id||uid(),typ:z.typ,pos:z.pos,he:z.he}; if(z.name) t.name=z.name; if(z.typ==="patch"||z.typ==="switch") t.ports=z.ports||24; if(z.typ==="patch") t.nr=z.nr; if(z.typ==="switch"&&z.poe) t.poe=true; if(z.tiefe&&z.typ!=="patch") t.tiefe=z.tiefe;
+    const t={id:z.id||uid(),typ:z.typ,pos:z.pos,he:z.he}; if(z.name) t.name=z.name; if(z.typ==="patch"||z.typ==="switch") t.ports=z.ports||24; if(z.typ==="patch") t.nr=z.nr; if(z.typ==="switch"&&z.poe) t.poe=true; if(z.kat) t.kat=z.kat; if(z.tiefe&&z.typ!=="patch") t.tiefe=z.tiefe;
     const L=(nachruecken?nachruecken.teile:ecSchrTeile(s2)).filter(x=>x.id!==t.id); s2.teile=[...L,t].sort((a2,b2)=>a2.pos-b2.pos); sp(); closeOverlays(); render(); return; }
   case "ecRkDel": { const s2=g.schraenke.find(x=>x.id===nav.schr); if(!s2||!ecDlg||!ecDlg.rk) return; const z=ecDlg.rk;
     if(z.typ==="patch"&&!b.dataset.ok){ const n=[...ecRkLinks(g,s2).M.keys()].filter(k=>ecPpTeile(k).pf===z.nr).length; if(n){ b.dataset.ok="1"; b.textContent=`Trotzdem entfernen (${n} Port${n>1?"s":""} belegt)`; return; } }
