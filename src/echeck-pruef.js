@@ -168,7 +168,7 @@ const ecLi=o=>{ const tap=!!o.act;
   return `<div class="m3-li${tap?" tap":""}"${tap?` role="button" tabindex="0" data-act="${o.act}"${o.id!=null?` data-id="${esc(o.id)}"`:""}${o.extra||""}`:""}>${o.lead!=null?`<span class="m3-lead${o.ton?" "+o.ton:""}${o.breit?" breit":""}">${o.lead}</span>`:""}<span class="m3-t"><span class="m3-h">${o.kopf}</span>${o.text?`<span class="m3-s">${o.text}</span>`:""}</span>${o.rechts!=null?`<span class="m3-r">${o.rechts}</span>`:tap?icon("chev"):""}</div>`; };
 const ecListe=Z=>`<div class="m3-list">${Z.join("")}</div>`;
 /* Status als farbiger Text rechts (statt Pille) */
-const ecSt=st=>{ const x=EC_PILL[st]||EC_PILL.open; return `<span class="m3-st ${x[0]}">${esc(x[1])}</span>`; };
+const ecSt=st=>{ const x=EC_PILL[st]||EC_PILL.open; return `<span class="m3-st ${x[0]}">${esc(st==="ng"?"n. gem.":x[1])}</span>`; };
 
 /* ---- Listen ---- */
 function ecItem(pr){ const o=ecOrt(pr.ortId), erg=ecErgebnis(pr), fertig=pr.status==="fertig";
@@ -273,7 +273,7 @@ function ecAuftragView(pr){ const o=ecOrt(pr.ortId), an=ecAn(pr), nz=ecNz(pr), N
   const sg=(l,act,cur,opts)=>`<div class="ec-sgz"><span class="lbl">${l}</span>${ecZSeg(act,cur,opts,zu)}</div>`;
   const pruef=`<section class="card"><h3>Prüfung</h3><div class="ec-fg">${ecWahlSel(pr,"pruefart","Prüfart",pr.pruefart,EC_PA[pr.art||"anlage"]||EC_PRUEFART)}
       ${nz?`${ecFeld(pr,"kabel","Verkabelung",pr.kabel,{ph:"z. B. Cat 7 Verlegekabel, Cat 6A Module"})}${zu?"":`<div class="chips ec-wahl">${EC_KABEL.map(x=>`<button type="button" class="chip" data-act="ecPickSet" data-w="kabel" data-v="${esc(x)}" aria-pressed="${x===pr.kabel}">${esc(x)}</button>`).join("")}</div>`}
-        ${sg("Belegung","ecBelegStd",ecWmStd(pr),[["T568A","T568A"],["T568B","T568B"]])}${sg("Schirm","ecSchirmStd",pr.schirm==="nein"?"nein":"ja",[["ja","geschirmt"],["nein","ungeschirmt"]])}`
+        ${sg("Belegung","ecBelegStd",ecWmStd(pr),[["T568A","T568A"],["T568B","T568B"]])}${sg("Schirm","ecSchirmStd",pr.schirm==="nein"?"nein":"ja",[["ja","geschirmt"],["nein","ungeschirmt"]])}${sg("Beschriftung","ecBeschrSet",ecBeschr(g),EC_BESCHR.map(x=>[x[0],x[1]]))}`
       :an?`${sg("Netzform","ecNetz",N.form||"TN-C-S",[["TN-C-S","TN-C-S"],["TN-S","TN-S"],["TT","TT"]])}${ecFeld(pr,"netz.hak","Hausanschluss (z. B. 63 A)",N.hak)}`:""}</div>
     <p class="meta" style="margin:10px 4px 0">${nz?"Übertragungsprüfung (Qualifizierung) nach IEEE 802.3 – keine Zertifizierung nach DIN EN 50173; dafür braucht es ein Zertifizierungs-Messgerät.":an?"Nach DIN VDE 0100-600 (Erstprüfung) bzw. DIN VDE 0105-100 (Wiederholungsprüfung).":"Nach DIN VDE 0701-0702 und DGUV Vorschrift 3."}</p></section>`;
   let umf="";
@@ -341,17 +341,19 @@ function ecBeschrKarte(g,zu){ const b=ecBeschr(g), ohneK=b==="kennung"?g.schraen
 function ecInfraView(pr){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", S=g.schraenke, P=S.map(s=>ecRkPlanung(pr,g,s)); if(!zu&&ecPpNormal(g)) ecGebSpeichern(g);
   const B=P.reduce((a,x)=>a+x.B,0), T=P.reduce((a,x)=>a+x.ports,0), SW=P.reduce((a,x)=>a+x.swPorts,0), bad=P.reduce((a,x)=>a+x.H.filter(h=>h[0]==="bad").length,0), hw=P.reduce((a,x)=>a+x.H.filter(h=>h[0]==="wip").length,0);
   const k=(z,t,bar,rot)=>`<div class="ec-k"><b${rot?' class="rot"':""}>${z}</b><small>${t}</small>${bar!=null?`<span class="ec-bar"><i style="width:${Math.round(bar*100)}%"></i></span>`:""}</div>`;
-  const karte=(s,PL)=>{ const T2=ecSchrTeile(s), haupt=T2.filter(t=>["switch","router","usv"].includes(t.typ)).map(ecRkName), b2=PL.H.filter(h=>h[0]==="bad").length, h2=PL.H.filter(h=>h[0]==="wip").length;
-    return `<div class="ec-ik" role="button" tabindex="0" data-act="ecRkAuf" data-id="${esc(s.id)}" data-ctx="ecSchrEdit">${ecRkMini(pr,g,s)}<div class="ec-ik-t"><b>${ecBeschr(g)==="nr"?`<i class="ec-snr">${ecSchrNr(g,s)}</i>`:ecBeschr(g)==="kennung"&&String(s.kennung||"").trim()?`<i class="ec-snr">${esc(s.kennung)}</i>`:""}${esc(s.name)}</b><span>${esc([ecSchrText(s),ecRaumName(g,s.raumId)].filter(Boolean).join(" · "))}</span>
-      <span>${PL.B} von ${PL.ports} Patchports belegt · ${PL.frei} HE frei</span>${haupt.length?`<span class="ec-ik-g">${esc(haupt.join(" · "))}</span>`:""}
-      <span class="ec-ik-p">${b2?pill("bad",`${b2} Problem${b2>1?"e":""}`):h2?pill("wip",`${h2} Hinweis${h2>1?"e":""}`):pill("ok","Planung passt")}${ecNetImUmfang(pr,{sId:s.id})?"":pill("open","nicht im Prüfumfang")}</span></div>${icon("chev")}</div>`; };
+  const lead=s2=>{ const b=ecBeschr(g); return b==="nr"?String(ecSchrNr(g,s2)):b==="kennung"&&String(s2.kennung||"").trim()?esc(s2.kennung):icon("ecNetz"); };
+  const zeile=(s2,PL)=>{ const b2=PL.H.filter(h=>h[0]==="bad").length, h2=PL.H.filter(h=>h[0]==="wip").length, ein=ecNetImUmfang(pr,{sId:s2.id});
+    return ecLi({act:"ecRkAuf",id:s2.id,extra:' data-ctx="ecSchrEdit"',lead:lead(s2),breit:ecBeschr(g)==="kennung"&&!!String(s2.kennung||"").trim(),ton:b2?"bad":"",kopf:esc(s2.name),
+      text:esc([[`${ecSchrHe(s2)} HE`,s2.bauart==="stand"?"Standschrank":"Wandschrank",ecRaumName(g,s2.raumId)].filter(Boolean).join(" · "),`${PL.B} von ${PL.ports} Ports belegt · ${PL.frei} HE frei${ein?"":" · nicht im Prüfumfang"}`].join("\n")).replace("\n","<br>"),
+      rechts:b2?`<span class="m3-st bad">${b2} Problem${b2>1?"e":""}</span>`:h2?`<span class="m3-st wip">${h2} Hinweis${h2>1?"e":""}</span>`:`<span class="m3-st ok">passt</span>`}); };
   const A=ecNetAlle(g), ohne=A.filter(p=>!p.d.sId||!S.some(s=>s.id===p.d.sId));
-  return `${ecRkDefs()}<div class="ec-kz">${k(S.length,`Netzwerkschr${S.length===1?"ank":"änke"}`)}${k(`${B} / ${T}`,"Patchports belegt",T?B/T:0)}${k(SW,"Switch-Ports")}${k(bad||hw,bad?"Probleme":"Hinweise",null,bad>0)}</div>
-    ${kdKopf("Netzwerkschränke",zu?"":"ecSchrNeu","Schrank hinzufügen")}
-    ${S.length?ecBeschrKarte(g,zu):""}
-    ${S.length?`<div class="ec-iks">${S.map((s,i)=>karte(s,P[i])).join("")}</div><p class="meta" style="margin:8px 4px 0">Antippen öffnet den Schrank. Bearbeiten: Rechtsklick, am Handy lange drücken.</p><div class="ec-knoepfe" style="margin-top:12px"><button class="btn-tonal" data-act="ecEti" data-id="">${icon("tag")}Beschriften mit Brother</button></div>`
-      :`<div class="empty">${icon("ecNetz")}<h2>Noch kein Netzwerkschrank</h2><p>Leg den Hauptschrank an – z. B. im Technikraum – und, falls vorhanden, Unterverteiler auf den Etagen. Patchfelder, Switches und alles Weitere planst du im Schrank.</p></div>`}
-    ${ohne.length?`<div class="sec-lbl" style="margin-top:20px">Datendosen ohne Schrank · ${ohne.length} Port${ohne.length>1?"s":""}</div><div class="list">${ohne.map(p=>`<div class="li" role="button" tabindex="0" data-act="ecDose" data-id="${esc(p.d.id)}"><span class="av">${icon("ecNetz")}</span><span class="lt"><span class="h">${esc(ecLinkName(g,p))}</span><span class="s">${esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · "))}</span></span>${icon("chev")}</div>`).join("")}</div>`:""}
+  return `<div class="ec-kz">${k(S.length,`Netzwerkschr${S.length===1?"ank":"änke"}`)}${k(`${B} / ${T}`,"Patchports belegt",T?B/T:0)}${k(SW,"Switch-Ports")}${k(bad||hw,bad?"Probleme":"Hinweise",null,bad>0)}</div>
+    <div class="ec-spalte ec-infra">
+    <section class="card"><h3>Netzwerkschränke</h3>${S.length||!zu?ecListe([...S.map((s2,i)=>zeile(s2,P[i])),...(zu?[]:[ecLi({act:"ecSchrNeu",lead:icon("add"),ton:"plus",kopf:"Schrank hinzufügen",text:S.length?"z. B. Unterverteiler auf einer Etage":"z. B. Hauptschrank im Technikraum"})])]):`<p class="meta">Kein Netzwerkschrank angelegt.</p>`}
+      ${S.length&&!zu?`<p class="m3-hinweis">Bearbeiten: Rechtsklick, am Handy lange drücken</p>`:""}</section>
+    ${ohne.length?`<section class="card"><h3>Datendosen ohne Schrank <span class="m3-neben">${ohne.length} Port${ohne.length>1?"s":""}</span></h3>${ecListe(ohne.map(p=>ecLi({act:"ecDose",id:p.d.id,lead:icon("ecNetz"),ton:"wip",kopf:esc(ecLinkName(g,p)),text:esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · "))})))}</section>`:""}
+    ${S.length?`<section class="card"><h3>Etiketten</h3>${ecListe([ecLi({act:"ecEti",id:"",lead:icon("tag"),kopf:"Beschriften mit Brother",text:"Patchfeld-Streifen, Schilder, Dosen und Kabel"})])}</section>`:""}
+    </div>
     ${ecWeiter("messen","Weiter zum Messen")}`; }
 /* Besichtigung */
 function ecSichtView(pr){ const S=pr.sicht||{}, tri=(k)=>`<span class="ec-tri">${[["ok","i. O."],["nok","n. i. O."],["na","entfällt"]].map(([v,t])=>`<button data-act="ecSicht" data-k="${k}" data-v="${v}" aria-pressed="${S[k]===v}" class="${v}">${t}</button>`).join("")}</span>`;
@@ -583,7 +585,7 @@ const ecPpTeile=t=>{ const m=String(t||"").trim().match(/^P?(\d+)\s*[.\-/]\s*(\d
 const ecSchrMehr=g=>g.schraenke.length>1;
 const ecSchrNr=(g,s)=>!s?0:+s.nr>0?+s.nr:g.schraenke.indexOf(s)+1;
 /* Beschriftungsschema je Gebäude, vorher festlegen: pp = 1.13 · nr = 1.1.13 (Schranknummer vorn) · kennung = „ZVERT 2.2 1.13“ (Kennung des Schranks vorn) */
-const EC_BESCHR=[["pp","1.13","Patchfeld.Port"],["nr","1.1.13","Schranknummer.Patchfeld.Port"],["kennung","ZVERT 2.2 1.13","Kennung des Schranks + Patchfeld.Port"]];
+const EC_BESCHR=[["pp","1.13","Patchfeld.Port"],["nr","1.1.13","Schranknummer.Patchfeld.Port"],["kennung","Kennung 1.13","Kennung des Schranks + Patchfeld.Port"]];
 const ecBeschr=g=>g.beschr||(ecSchrMehr(g)?"nr":"pp");
 /* Gespeichert wird an der Dose nur Patchfeld.Port (und der Schrank) – die volle Beschriftung entsteht hier aus dem Schema */
 function ecPpVoll(g,sId,roh){ const x=ecPpTeile(roh); if(!x) return String(roh||"").trim(); const sch=sId&&g.schraenke.find(v=>v.id===sId), b=ecBeschr(g), k=`${x.pf}.${x.port}`;
@@ -714,17 +716,26 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
   const planung=ecListe(P.H.map(([k,t2])=>ecLi({lead:k==="ok"?'<i class="m3-dot"></i>':sym[k],ton:k,kopf:esc(t2)})));
   const stueck=ST.length?ecListe(ST.map(([n,t2])=>{ const [a,...b2]=t2.split(" – "); return ecLi({lead:`${n}×`,breit:true,kopf:esc(a),text:b2.length?esc(b2.join(" – ")):""}); })):`<p class="meta">Noch nichts geplant.</p>`;
   const beleg=Lk.length?ecListe(Lk.map(p=>ecLi({act:"ecRkPort",id:p.d.id,lead:esc(p.pp||"–"),breit:true,kopf:esc(ecLinkOrt(g,p)),text:esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · ")),rechts:ecSt(ecNetStand(pr,p))}))):`<p class="meta">Noch keine Dose an diesem Schrank. Dosen legst du unter „Gebäude“ in den Räumen an.</p>`;
-  return `<div class="rk-seite"><div class="rk-kopf"><button class="icon-btn" data-act="ecRkZu" aria-label="Zurück zur Infrastruktur" title="Zurück zur Infrastruktur">${icon("back")}</button><div class="rk-kt"><h2>${esc(s.name)}</h2><p>${esc([ecSchrText(s),ecRaumName(g,s.raumId)].filter(Boolean).join(" · "))}</p></div>
-      <button class="rk-akt" data-act="ecEti" data-id="${esc(s.id)}" title="Beschriften mit Brother">${icon("tag")}<span>Beschriften</span></button>${zu?"":`<button class="rk-akt" data-act="ecSchrEdit" data-id="${esc(s.id)}" title="Schrank bearbeiten">${icon("edit")}<span>Bearbeiten</span></button>`}<button class="icon-btn" data-act="ecRkHilfe" title="So bedienst du den Planer" aria-label="Hilfe">${icon("info")}</button></div>
-    <div class="rk-inhalt"><div class="rk-zwei"><section class="card rk-zeich"><div class="rk-zk"><h3>Vorderansicht</h3><button type="button" class="m3-filter" data-act="ecRkSeite" aria-pressed="${ecRkSeiteAn()}">Seitenansicht${ecRkSeiteAn()?` · ${ecSchrTiefe(s)} mm`:""}</button></div>
+  const nB=P.H.filter(h=>h[0]==="bad").length, nW=P.H.filter(h=>h[0]==="wip").length, tab=["ansicht","belegung","stueck","planung"].includes(ecRkTab)?ecRkTab:"ansicht";
+  const TABS=[["ansicht","Ansicht",""],["belegung","Belegung",String(Lk.length)],["stueck","Stückliste",""],["planung","Planung",nB?`<i class="sd bad"></i>`:nW?`<i class="sd wip"></i>`:""]];
+  const ansicht=`<section class="card rk-zeich"><div class="rk-zk"><h3>Vorderansicht</h3><button type="button" class="m3-filter" data-act="ecRkSeite" aria-pressed="${ecRkSeiteAn()}">Seitenansicht${ecRkSeiteAn()?` · ${ecSchrTiefe(s)} mm`:""}</button></div>
       ${ecRkDefs()}<div class="rk-bau gross${ecRkSeiteAn()?" seite":""}${ecSchrBreite(s)>=800?" b800":""} ${ecSchrFarbe(s)}"><div class="rk-front"><div class="rk-geh ${s.bauart==="stand"?"stand":"wand"}${ecSchrBreite(s)>=800?" b800":""}"><div class="rk-dach"></div><div class="rk" style="--n:${N}"><span class="rk-schiene l"></span><span class="rk-schiene r"></span>${Array.from({length:N},(_,i)=>nr(i+1)+leer(i+1)).join("")}${T.map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div><div class="rk-sockel"></div></div></div>
         <div class="rk-side"><div class="rk-sv" style="--n:${N}"><i class="rk-nb" style="left:${Math.round(ecSchrNutzbar(s)/ecSchrTiefe(s)*100)}%" title="nutzbar etwa ${ecSchrNutzbar(s)} mm"></i>
           ${T.map(t=>{ const tf2=ecRkTiefe(s,t), zu2=tf2>ecSchrNutzbar(s); return `<span class="rk-sb rk-${t.typ}${+t.tiefe?"":" geschaetzt"}${zu2?" zutief":""}" style="grid-row:${t.pos} / span ${t.he};width:${Math.min(100,Math.round(tf2/ecSchrTiefe(s)*100))}%" title="${esc(`${ecRkName(t)}: ${tf2} mm${+t.tiefe?"":" (typisch)"}`)}"></span>`; }).join("")}</div></div></div>
-      <p class="m3-hinweis">${zu?"Prüfung abgeschlossen – nur Ansicht.":"Antippen zum Bearbeiten · ziehen zum Verschieben · freie HE antippen zum Einsetzen"}</p></section>
-    <div class="rk-rechts"><section class="card"><h3>Planung</h3>${planung}</section>
-      <section class="card"><h3>Stückliste</h3>${stueck}<p class="m3-hinweis">Keystones und Patchkabel = belegte Ports</p></section>
-      <section class="card rk-bel"><h3>Belegung <span class="m3-neben">${Lk.length} Port${Lk.length===1?"":"s"}</span></h3>${beleg}</section></div></div></div>
-    ${zu?"":`<button class="fab rk-fab" data-act="ecRkWahl">${icon("add")}<span>Teil einsetzen</span></button>`}</div>`; }
+      <p class="m3-hinweis">${zu?"Prüfung abgeschlossen – nur Ansicht.":"Antippen zum Bearbeiten · ziehen zum Verschieben · freie HE antippen zum Einsetzen"}</p></section>`;
+  const inhalt=tab==="belegung"?`<section class="card"><h3>Belegung <span class="m3-neben">${Lk.length} Port${Lk.length===1?"":"s"}</span></h3>${beleg}</section>`
+    :tab==="stueck"?`<section class="card"><h3>Stückliste</h3>${stueck}<p class="m3-hinweis">Keystones und Patchkabel = belegte Ports</p></section>`
+    :tab==="planung"?`<section class="card"><h3>Planung</h3>${planung}</section>`:ansicht;
+  return `<div class="rk-seite"><div class="rk-oben"><div class="rk-kopf"><button class="icon-btn" data-act="ecRkZu" aria-label="Zurück zur Infrastruktur" title="Zurück">${icon("back")}</button><div class="rk-kt"><h2>${esc(s.name)}</h2><p>${esc([ecSchrText(s),ecRaumName(g,s.raumId)].filter(Boolean).join(" · "))}</p></div>
+      <button class="icon-btn" data-act="ecRkMenu" aria-label="Weitere Aktionen" title="Weitere Aktionen">${icon("more")}</button></div>
+    <div class="rk-tabs" role="tablist">${TABS.map(([v,t2,z])=>`<button class="tab" role="tab" data-act="ecRkTab" data-v="${v}" aria-selected="${v===tab}"><span class="tl">${t2}${z&&!z.startsWith("<")?`<span class="rk-tz">${z}</span>`:z}</span></button>`).join("")}</div></div>
+    <div class="rk-inhalt rk-${tab}">${inhalt}</div>
+    ${zu||tab!=="ansicht"?"":`<button class="fab rk-fab" data-act="ecRkWahl">${icon("add")}<span>Teil einsetzen</span></button>`}</div>`; }
+let ecRkTab="ansicht";
+function ecRkMenuAuf(b){ const pr=ecPr(), zu=pr.status==="fertig", id=nav.schr, m=$("#menu"), r=b.getBoundingClientRect();
+  const it=[...(zu?[]:[["ecSchrEdit","Schrank bearbeiten","edit"]]),["ecEti","Beschriften mit Brother","tag"],["ecRkHilfe","So bedienst du den Planer","info"]];
+  m.innerHTML=it.map(x=>`<button class="mi" role="menuitem" data-act="${x[0]}" data-id="${esc(id)}">${icon(x[2])}<span>${x[1]}</span></button>`).join("");
+  m.style.top=(r.bottom+4)+"px"; m.style.right=Math.max(8,innerWidth-r.right)+"px"; m.style.left="auto"; m.hidden=false; $("#scrim").hidden=false; }
 /* Seitenansicht ein/aus – merkt sich jedes Gerät selbst; Standard: am PC an, am Handy aus */
 const ecRkSeiteAn=()=>{ try{ const v=localStorage.getItem("irrgang_rk_seite"); if(v!=null) return v==="1"; }catch(e){} return matchMedia("(min-width:600px)").matches; };
 /* Teil einsetzen: Auswahl als Liste (statt neun Chips über dem Schrank) */
@@ -1344,7 +1355,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     L=L.includes(b.dataset.id)?L.filter(x=>x!==b.dataset.id):[...L,b.dataset.id]; if(!L.length){ toast("Mindestens ein Verteiler gehört zur Prüfung"); return; }
     pr.umfang=alle.every(x=>L.includes(x))?null:{vIds:L}; saveRec("echecks",pr); render(); return; }
   case "ecWahl": { const gr=b.dataset.g; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
-    if(gr==="beschr"){ const g0=ecGeb(ecPr().ortId); g0.beschr=b.dataset.v; ecGebSpeichern(g0); render(); return; }
+    if(gr==="beschr"&&false){ const g0=ecGeb(ecPr().ortId); g0.beschr=b.dataset.v; ecGebSpeichern(g0); render(); return; }
     if(gr==="etiProf"||gr==="etiFmt"){ ecEti[gr==="etiProf"?"prof":"fmt"]=b.dataset.v; ecEtiMerken(); ecEtiDlg(); return; }
     if(gr==="etpBand"||gr==="etpTrenn"||gr==="etpFrei"){ ecEtpLesen(); const v=b.dataset.v; ecEtp.w[{etpBand:"band",etpTrenn:"trenn",etpFrei:"frei"}[gr]]=gr==="etpBand"?+v:v; ecEtiProfDlg(ecEtp.id); return; }
     if(gr==="etiArt"||gr==="etiInh"||gr==="etiS"){ ecEti[{etiArt:"art",etiInh:"inh",etiS:"sId"}[gr]]=b.dataset.v; ecEtiDlg(); return; }
@@ -1459,10 +1470,12 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecEtiTeilen": ecEtiAusgeben(true); return;
   case "ecEtiApp": location.href="intent://#Intent;package=com.brother.ptouch.mobilecablelabeltool2;end"; return;
   /* Schrankplaner */
-  case "ecRkAuf": nav.schr=b.dataset.id; closeOverlays(); render(); scrollTo(0,0); return;
+  case "ecRkAuf": ecRkTab="ansicht"; nav.schr=b.dataset.id; closeOverlays(); render(); scrollTo(0,0); return;
   case "ecRkZu": nav.schr=null; render(); scrollTo(0,0); return;
   case "ecRkGriff": return;
   case "ecRkWahl": ecRkWahlDlg(); return;
+  case "ecRkTab": ecRkTab=b.dataset.v; render(); { const sc=document.querySelector(".rk-seite"); if(sc) sc.scrollTop=0; } return;
+  case "ecRkMenu": ecRkMenuAuf(b); return;
   case "ecRkSeite": { const an=!ecRkSeiteAn(); try{ localStorage.setItem("irrgang_rk_seite",an?"1":"0"); }catch(e){} render(); return; }
   case "ecRkHilfe": ecRkHilfeDlg(); return;
   case "ecRkNeu": case "ecRkLeer": { if(!nichtZu()) return; const s2=g.schraenke.find(x=>x.id===nav.schr); if(!s2) return; const r=ecRkNeuZ(s2,b.dataset.t||"patch",b.dataset.pos);
@@ -1526,6 +1539,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecWmVorlage": { const z=ecDlg&&ecDlg.wm; if(!z) return; z.m=ecWmLesen(b.dataset.v); z.sel=null; ecWmNeu(pr); return; }
   case "ecWmSchirm": { const z=ecDlg&&ecDlg.wm; if(!z) return; z.s=b.dataset.v; ecWmNeu(pr); return; }
   case "ecBelegStd": { if(!nichtZu()) return; pr.belegung=b.dataset.v; saveRec("echecks",pr); render(); return; }
+  case "ecBeschrSet": { if(!nichtZu()) return; const g0=ecGeb(pr.ortId); g0.beschr=b.dataset.v; ecGebSpeichern(g0); render(); return; }
   case "ecSchirmStd": { if(!nichtZu()) return; pr.schirm=b.dataset.v; saveRec("echecks",pr); render(); return; }
   case "ecNetGeh": { ecNetLesen(); const L=ecNetListe(pr,g), i=L.findIndex(p=>p.id===(ecDlg&&ecDlg.netMess)), d=+b.dataset.d; if(d&&L[i+d]){ render(); ecNetMessDlg(L[i+d].id); return; } closeOverlays(); ecDlg=null; render(); return; }
   case "ecGerTri": { b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b&&x.getAttribute("aria-pressed")!=="true"))); return; }

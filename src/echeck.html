@@ -1029,6 +1029,16 @@ body.kopf-oben .edk-platz{display:none!important}
 .m3-neben{font-size:14px;font-weight:500;color:var(--on-sv);margin-left:6px}
 .m3-hinweis{margin:12px 0 0;font-size:14px;line-height:20px;color:var(--on-sv)}
 /* Schrankseite in M3: Kopf mit Aktionen, Zeichnung in einer Karte, Teil einsetzen über den FAB */
+.rk-oben{position:sticky;top:0;z-index:3;background:var(--surface);box-shadow:0 1px 0 var(--outline-v)}
+.rk-oben .rk-kopf{position:static;box-shadow:none}
+.rk-tabs{display:flex;justify-content:center;overflow-x:auto;scrollbar-width:none;padding:0 8px}.rk-tabs::-webkit-scrollbar{display:none}
+.rk-tabs .tab{flex:0 1 auto;max-width:none;min-width:96px;padding:0 16px;cursor:pointer}
+@media (max-width:599px){.rk-tabs{justify-content:flex-start}.rk-tabs .tab{min-width:0;padding:0 14px}}
+.rk-tz{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--sc-highest);color:var(--on-sv);font-size:12px;font-weight:700;display:inline-grid;place-items:center}
+.tab[aria-selected="true"] .rk-tz{background:var(--primary);color:var(--on-primary)}
+.rk-inhalt{max-width:880px!important}
+.m3-lead.plus{background:var(--pc);color:var(--on-pc)}
+
 .rk-akt{flex:none;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px 0 12px;border:0;border-radius:20px;background:var(--sec-c);color:var(--on-sec-c);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .rk-akt .ic{width:20px;height:20px}
 @media (max-width:599px){.rk-akt{width:40px;padding:0;justify-content:center}.rk-akt span{display:none}}
@@ -2020,6 +2030,7 @@ async function testAnmelden(){
 }
 document.addEventListener("submit",ev=>{ if(ev.target.id==="tlForm"){ ev.preventDefault(); testAnmelden(); } });
 function openMenu(){
+  ["top","left","right","width","maxWidth"].forEach(k=>$("#menu").style[k]="");
   const kind=VIEW_KIND[nav.v]; if(!kind) return; const r=DB[kind].get(nav.id); if(!kdDarf(r)) return;
   const it=[["editLoc",`${KIND_NAME[kind]} bearbeiten`,"edit"],...(ME.admin?[["locDelAsk",`${KIND_NAME[kind]} löschen`,"del","danger"]]:[])];
   $("#menu").innerHTML=it.map(x=>`<button class="mi ${x[3]||""}" role="menuitem" data-act="${x[0]}">${icon(x[2])}<span>${x[1]}</span></button>`).join("");
