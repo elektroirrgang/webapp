@@ -789,11 +789,11 @@ function ecAnDlg(){ const pr=ecPr(), g=ecGeb(pr.ortId); if(!ecDlg||!ecDlg.an) ec
 function ecAnLesen(){ if(!ecDlg||!ecDlg.an) return; const F=formVals(), W=ecDlg.w;
   if(F.anAnbieter!=null) W.anbieter=F.anAnbieter; if(F.anRaum!=null) W.raumId=F.anRaum; if(F.anRouter!=null) W.routerKat=F.anRouter; if(F.anRouterText!=null) W.routerText=F.anRouterText; if(F.anRouterOrt!=null) W.routerOrt=F.anRouterOrt; if(F.anNotiz!=null) W.notiz=F.anNotiz; }
 /* ---- Netzwerk-Katalog (Prospekt): alle Modelle mit Frontansicht – zum Nachschlagen und um Kunden zu zeigen, wie es aussehen kann ---- */
-const EC_KATGR=[["alle","Alle"],["patch","Patchfelder"],["switch","Switches"],["router","Gateways"],["nas","NAS und Rekorder"],["boden","Auf Fachboden"]];
+const EC_KATGR=[["alle","Alle"],["patch","Patchfelder"],["switch","Switches"],["router","Gateways und Router"],["modem","Modems"],["nas","NAS und Rekorder"],["zubehoer","Strom und Zubehör"],["boden","Auf Fachboden"]];
 let ecKatFilter="alle";
 /* Kachelbild: Rackgerät ohne Ohren, Gerät auf dem Fachboden eng um das Gerät */
 function ecRkKachelSvg(K){ const v=ecRkFrontSvg(K), H=K.he*RK_U; let x=16.5, w=449.6, y=0, h=H;
-  if(K.typ==="boden"&&K.bild){ const dw=K.bild.breite||(K.zeichnung==="fritz"?226:(K.bild.schaechte||2)>2?200:108), dh=Math.min(H-10,K.bild.hoehe||(K.zeichnung==="fritz"?46:166)), p=Math.max(14,dw*.12);
+  if(K.typ==="boden"&&K.bild){ const dw=K.bild.breite||(K.zeichnung==="fritz"?226:K.zeichnung==="ugreen"?256:(K.bild.schaechte||2)>2?200:108), dh=Math.min(H-10,K.bild.hoehe||(K.zeichnung==="fritz"?46:166)), p=Math.max(14,dw*.12);
     x=(RK_B-dw)/2-p; w=dw+2*p; y=Math.max(0,H-8-dh-p*.6); h=H-y; }
   return v.replace(`viewBox="0 0 ${RK_B} ${H}"`,`viewBox="${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}"`).replace(/style="aspect-ratio:[^"]*"/,`style="aspect-ratio:${(w/h).toFixed(3)}"`); }
 function ecRkFrontSvg(K){ const t={id:"k",typ:K.typ,pos:1,he:K.he,ports:K.ports,nr:1,kat:K.id,name:K.kurz||"",poe:!!K.poe,voll:true};
@@ -801,9 +801,9 @@ function ecRkFrontSvg(K){ const t={id:"k",typ:K.typ,pos:1,he:K.he,ports:K.ports,
   return html.slice(a,b).replace('class="rk-svg"','class="kat-svg"').replace('preserveAspectRatio="none"',`preserveAspectRatio="xMidYMid meet" style="aspect-ratio:${RK_B}/${H.toFixed(2)}"`); }
 const ecKatIstRouter=K=>K.typ==="router"||K.zeichnung==="fritz"||!!(K.bild&&K.bild.art==="router");
 /* Gerätegruppen: Gateways und NAS gibt es im Rack und als Tischgerät auf dem Fachboden */
-const ecKatHaupt=K=>ecKatIstRouter(K)?"router":K.typ==="nas"||K.zeichnung==="desk"?"nas":K.typ;
+const ecKatHaupt=K=>{ const a=K.bild&&K.bild.art; return ecKatIstRouter(K)?"router":a==="modem"?"modem":a==="switch"?"switch":K.typ==="nas"||K.zeichnung==="desk"||K.zeichnung==="ugreen"?"nas":["pdu","usv","kabel","blind","luefter"].includes(K.typ)?"zubehoer":K.typ; };
 const ecKatIn=(K,g)=>g==="boden"?K.typ==="boden":ecKatHaupt(K)===g;
-const ecKatArt=K=>K.typ==="boden"?(ecKatIstRouter(K)?"Router auf Fachboden":"NAS auf Fachboden"):EC_RK[K.typ]||"";
+const ecKatArt=K=>{ if(K.typ!=="boden") return EC_RK[K.typ]||""; const a=K.bild&&K.bild.art; return (ecKatIstRouter(K)?"Router":a==="modem"?"Modem":a==="switch"?"Switch":"NAS")+" auf Fachboden"; };
 const ecKatFakten=K=>[`${K.he} HE`,K.ports&&K.typ!=="router"&&K.typ!=="boden"?`${K.ports} Ports`:"",K.poe?"PoE":""].filter(Boolean).join(" · ");
 /* Katalog 1:1 wie in EVSE: Suche, nach Hersteller gruppierte Kacheln (weißes Bildfeld), Steckbrief-Seite */
 function ecKatKachel(K,von){ return `<button class="ktile" data-act="ecKatAuf" data-id="${esc(K.id)}"${von?` data-von="${von}"`:""}><span class="ktile-bild">${ecRkKachelSvg(K)}</span>
@@ -968,11 +968,59 @@ const EC_RKKAT=[
   {id:"syno-ds923",typ:"boden",hersteller:"Synology",modell:"DiskStation DS923+",kurz:"DS923+",sku:"DS923+",he:4,zeichnung:"desk",bild:{schaechte:4,farbe:"schwarz",breite:199,hoehe:166},geraetTiefe:223,info:"4 Festplatten, auf Fachboden"},
   {id:"syno-ds224",typ:"boden",hersteller:"Synology",modell:"DiskStation DS224+",kurz:"DS224+",sku:"DS224+",he:4,zeichnung:"desk",bild:{schaechte:2,farbe:"schwarz",breite:108,hoehe:165},geraetTiefe:232,info:"2 Festplatten, auf Fachboden"},
   {id:"syno-ds223j",typ:"boden",hersteller:"Synology",modell:"DiskStation DS223j (weiß)",kurz:"DS223j",sku:"DS223j",he:4,zeichnung:"desk",bild:{schaechte:2,farbe:"weiss",breite:100,hoehe:166},geraetTiefe:225,info:"2 Festplatten, weiß, auf Fachboden"},
-  {id:"ugreen-dxp2800",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP2800",kurz:"DXP2800",sku:"DXP2800",he:5,zeichnung:"desk",bild:{schaechte:2,marke:"ugreen",breite:126,hoehe:178},geraetTiefe:240,info:"2 Festplatten, auf Fachboden"},
-  {id:"ugreen-dxp4800p",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP4800 Plus",kurz:"DXP4800 Plus",sku:"DXP4800 Plus",he:5,zeichnung:"desk",bild:{schaechte:4,marke:"ugreen",breite:256,hoehe:178},geraetTiefe:260,info:"4 Festplatten, auf Fachboden"},
+  {id:"ugreen-dxp2800",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP2800",kurz:"DXP2800",sku:"DXP2800",he:5,zeichnung:"ugreen",bild:{schaechte:2,breite:126,hoehe:178},geraetTiefe:240,info:"2 Festplatten, auf Fachboden"},
+  {id:"ugreen-dxp4800p",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP4800 Plus",kurz:"DXP4800 Plus",sku:"DXP4800 Plus",he:5,zeichnung:"ugreen",bild:{schaechte:4,breite:256,hoehe:178,lan10:true},geraetTiefe:260,info:"4 Festplatten, 10 GbE"},
+  {id:"ugreen-dxp4800",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP4800",kurz:"DXP4800",sku:"DXP4800",he:5,zeichnung:"ugreen",bild:{schaechte:4,breite:256,hoehe:178},geraetTiefe:260,info:"4 Festplatten"},
+  {id:"ugreen-dxp6800pro",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP6800 Pro",kurz:"DXP6800 Pro",sku:"DXP6800 Pro",he:5,zeichnung:"ugreen",bild:{schaechte:6,breite:300,hoehe:178,lan10:true},geraetTiefe:260,info:"6 Festplatten, 2 × 10 GbE – Maße geschätzt"},
+  {id:"ugreen-dxp8800plus",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP8800 Plus",kurz:"DXP8800 Plus",sku:"DXP8800 Plus",he:5,zeichnung:"ugreen",bild:{schaechte:8,breite:345,hoehe:205,lan10:true},geraetTiefe:260,info:"8 Festplatten, 2 × 10 GbE – Maße geschätzt"},
+  {id:"ugreen-dxp480tplus",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP480T Plus",kurz:"DXP480T Plus",sku:"DXP480T Plus",he:2,zeichnung:"ugreen",bild:{schaechte:0,breite:178,hoehe:42,lan10:true},geraetTiefe:150,info:"Nur SSD (4 × M.2), flach – Maße geschätzt"},
   {id:"fritz-6690",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 6690 Cable",kurz:"FRITZ!Box 6690 Cable",sku:"6690 Cable",he:2,zeichnung:"fritz",bild:{leds:["Power","Cable","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden, Kabelanschluss"},
   {id:"fritz-5690pro",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 5690 Pro",kurz:"FRITZ!Box 5690 Pro",sku:"5690 Pro",he:2,zeichnung:"fritz",bild:{leds:["Power","Fiber","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden, Glasfaser und DSL"},
-  {id:"fritz-7590ax",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7590 AX",kurz:"FRITZ!Box 7590 AX",sku:"7590 AX",he:2,zeichnung:"fritz",bild:{rot:true,leds:["Power","DSL","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden"}];
+  {id:"fritz-7590ax",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7590 AX",kurz:"FRITZ!Box 7590 AX",sku:"7590 AX",he:2,zeichnung:"fritz",bild:{rot:true,leds:["Power","DSL","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden"},
+  /* --- UniFi: weitere Switches (Rack) --- */
+  {id:"uni-pro24",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Pro 24",kurz:"USW-Pro-24",sku:"USW-Pro-24",he:1,ports:24,silber:true,zeichnung:"uniSwitch",bild:{rj:24,sfp:2,lcd:true}},
+  {id:"uni-pro48",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Pro 48",kurz:"USW-Pro-48",sku:"USW-Pro-48",he:1,ports:48,silber:true,zeichnung:"uniSwitch",bild:{rj:48,sfp:4,lcd:true}},
+  {id:"uni-promax24",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Pro Max 24",kurz:"USW-Pro-Max-24",sku:"USW-Pro-Max-24",he:1,ports:24,silber:true,zeichnung:"uniSwitch",bild:{rj:24,sfp:2,lcd:true}},
+  {id:"uni-promax48",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Pro Max 48",kurz:"USW-Pro-Max-48",sku:"USW-Pro-Max-48",he:1,ports:48,silber:true,zeichnung:"uniSwitch",bild:{rj:48,sfp:4,lcd:true}},
+  {id:"uni-proxg24poe",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Pro XG 24 PoE",kurz:"USW-Pro-XG-24-PoE",sku:"USW-Pro-XG-24-PoE",he:1,ports:24,poe:true,silber:true,zeichnung:"uniSwitch",bild:{rj:24,sfp:2,lcd:true},info:"10 GbE an allen Ports"},
+  {id:"uni-proxg48poe",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Pro XG 48 PoE",kurz:"USW-Pro-XG-48-PoE",sku:"USW-Pro-XG-48-PoE",he:1,ports:48,poe:true,silber:true,zeichnung:"uniSwitch",bild:{rj:48,sfp:4,lcd:true},info:"10 GbE an allen Ports"},
+  {id:"uni-ent24poe",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Enterprise 24 PoE",kurz:"USW-Enterprise-24-PoE",sku:"USW-Enterprise-24-PoE",he:1,ports:24,poe:true,silber:true,zeichnung:"uniSwitch",bild:{rj:24,sfp:2,lcd:true},info:"2,5 GbE"},
+  {id:"uni-ent48poe",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Enterprise 48 PoE",kurz:"USW-Enterprise-48-PoE",sku:"USW-Enterprise-48-PoE",he:1,ports:48,poe:true,silber:true,zeichnung:"uniSwitch",bild:{rj:48,sfp:4,lcd:true},info:"2,5 GbE"},
+  {id:"uni-entxg24",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Enterprise XG 24",kurz:"USW-EnterpriseXG-24",sku:"USW-EnterpriseXG-24",he:1,ports:24,silber:true,zeichnung:"uniSwitch",bild:{rj:24,sfp:2,lcd:true},info:"10 GbE"},
+  {id:"uni-ecs24poe",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Enterprise Campus 24 PoE",kurz:"ECS-24-PoE",sku:"ECS-24-PoE",he:1,ports:24,poe:true,silber:true,zeichnung:"uniSwitch",bild:{rj:24,sfp:4,lcd:true},info:"1050 W PoE"},
+  {id:"uni-ecsagg",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Enterprise Campus Aggregation",kurz:"ECS-Aggregation",sku:"ECS-Aggregation",he:1,ports:32,silber:true,zeichnung:"uniSwitch",bild:{rj:0,sfp:32,lcd:true},info:"Glasfaser-Verteiler (SFP28/QSFP28)"},
+  {id:"uni-proxgagg",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Pro XG Aggregation",kurz:"USW-Pro-XG-Aggregation",sku:"USW-Pro-XG-Aggregation",he:1,ports:32,silber:true,zeichnung:"uniSwitch",bild:{rj:0,sfp:32,lcd:true},info:"32 × 25G SFP28"},
+  {id:"uni-16poe",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch 16 PoE",kurz:"USW-16-PoE",sku:"USW-16-PoE",he:1,ports:16,poe:true,silber:true,zeichnung:"uniSwitch",bild:{rj:16,sfp:2,lcd:false}},
+  /* --- UniFi: Tisch-Switches auf dem Fachboden --- */
+  {id:"uni-lite16poe",typ:"boden",hersteller:"Ubiquiti",modell:"UniFi Switch Lite 16 PoE",kurz:"USW-Lite-16-PoE",sku:"USW-Lite-16-PoE",he:2,zeichnung:"uniDesk",bild:{art:"switch",form:"flach",ports:16,breite:192,hoehe:44},geraetTiefe:185,info:"Maße geschätzt"},
+  {id:"uni-lite8poe",typ:"boden",hersteller:"Ubiquiti",modell:"UniFi Switch Lite 8 PoE",kurz:"USW-Lite-8-PoE",sku:"USW-Lite-8-PoE",he:2,zeichnung:"uniDesk",bild:{art:"switch",form:"flach",ports:8,breite:200,hoehe:31},geraetTiefe:119,info:"Maße geschätzt"},
+  {id:"uni-flexmini",typ:"boden",hersteller:"Ubiquiti",modell:"UniFi Switch Flex Mini",kurz:"USW-Flex-Mini",sku:"USW-Flex-Mini",he:1,zeichnung:"uniDesk",bild:{art:"switch",form:"flach",ports:5,breite:108,hoehe:21},geraetTiefe:70,info:"Maße geschätzt"},
+  /* --- UniFi: Speicher und Video --- */
+  {id:"uni-unaspro8",typ:"nas",hersteller:"Ubiquiti",modell:"UniFi UNAS Pro 8",kurz:"UNAS-Pro-8",sku:"UNAS-Pro-8",he:2,silber:true,zeichnung:"uniNvr",bild:{schaechte:8},info:"8 Festplatten"},
+  {id:"uni-unaspro4",typ:"nas",hersteller:"Ubiquiti",modell:"UniFi UNAS Pro 4",kurz:"UNAS-Pro-4",sku:"UNAS-Pro-4",he:1,silber:true,zeichnung:"uniNvr",bild:{schaechte:4},info:"4 Festplatten"},
+  {id:"uni-envr",typ:"nas",hersteller:"Ubiquiti",modell:"UniFi Enterprise NVR",kurz:"ENVR",sku:"ENVR",he:2,silber:true,zeichnung:"uniNvr",bild:{schaechte:16},info:"Großer Videorekorder – Schächte vereinfacht"},
+  /* --- UniFi: Strom und Rack-Zubehör --- */
+  {id:"uni-pdupro",typ:"pdu",hersteller:"Ubiquiti",modell:"UniFi Power Distribution Pro",kurz:"USP-PDU-Pro",sku:"USP-PDU-Pro",he:2,silber:true,zeichnung:"uniZub",bild:{art:"pdu",dosen:16},info:"Einzeln schaltbare Dosen, per UniFi überwacht – Steckdosenart der EU-Ausführung prüfen"},
+  {id:"uni-ups2upro",typ:"usv",hersteller:"Ubiquiti",modell:"UniFi UPS 2U Pro",kurz:"UPS 2U Pro",he:2,silber:true,zeichnung:"uniZub",bild:{art:"ups"},info:"Art.-Nr. und Leistung noch prüfen"},
+  {id:"uni-rps",typ:"pdu",hersteller:"Ubiquiti",modell:"UniFi Redundant Power System",kurz:"USP-RPS",sku:"USP-RPS",he:1,silber:true,zeichnung:"uniZub",bild:{art:"rps"},info:"Ersatz-Stromversorgung für UniFi-Geräte"},
+  {id:"uni-patchblank24",typ:"patch",hersteller:"Ubiquiti",modell:"UniFi Keystone-Patchfeld 24 (leer)",kurz:"Keystone-Patchfeld 24",sku:"UACC-Rack-Panel-Patch-Blank-24",he:1,ports:24,farbe:"silber",raster:{key:15,abstand:2.4,gruppe:12,gl:8},geschaetzt:true,info:"Leerer Keystone-Träger, silber – Keystones nach Wahl"},
+  {id:"uni-patch24",typ:"patch",hersteller:"Ubiquiti",modell:"UniFi Patchfeld 24 Cat6",kurz:"Patchfeld 24 Cat6",sku:"UACC-Rack-Panel-Patch-24",he:1,ports:24,farbe:"silber",raster:{key:15,abstand:2.4,gruppe:12,gl:8},geschaetzt:true,info:"Bestückt – Art.-Nr. noch prüfen"},
+  {id:"uni-blind1",typ:"blind",hersteller:"Ubiquiti",modell:"UniFi Blindblende 1 HE",kurz:"Blindblende 1 HE",sku:"UACC-Rack-Panel-Blank-1U",he:1,silber:true,zeichnung:"uniZub",bild:{art:"blind"},info:"Art.-Nr. noch prüfen"},
+  {id:"uni-blind2",typ:"blind",hersteller:"Ubiquiti",modell:"UniFi Blindblende 2 HE",kurz:"Blindblende 2 HE",sku:"UACC-Rack-Panel-Blank-2U",he:2,silber:true,zeichnung:"uniZub",bild:{art:"blind"},info:"Art.-Nr. noch prüfen"},
+  {id:"uni-kabel1",typ:"kabel",hersteller:"Ubiquiti",modell:"UniFi Kabelführung 1 HE",kurz:"Kabelführung 1 HE",he:1,silber:true,zeichnung:"uniZub",bild:{art:"kabel"},info:"Bürstenleiste – Art.-Nr. noch prüfen"},
+  /* --- AVM: weitere FRITZ!Boxen --- */
+  {id:"fritz-7690",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7690",kurz:"FRITZ!Box 7690",sku:"7690",he:2,zeichnung:"fritz",bild:{rot:true,leds:["Power","DSL","WLAN","Fon","Info"]},geraetTiefe:180,info:"DSL, WLAN 7"},
+  {id:"fritz-7530ax",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7530 AX",kurz:"FRITZ!Box 7530 AX",sku:"7530 AX",he:2,zeichnung:"fritz",bild:{breite:210,leds:["Power","DSL","WLAN","Fon","Info"]},geraetTiefe:150,info:"DSL"},
+  {id:"fritz-7682",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7682",kurz:"FRITZ!Box 7682",sku:"7682",he:2,zeichnung:"fritz",bild:{leds:["Power","DSL","WLAN","Fon","Info"]},geraetTiefe:180,info:"DSL inkl. G.fast"},
+  {id:"fritz-6670",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 6670 Cable",kurz:"FRITZ!Box 6670 Cable",sku:"6670 Cable",he:2,zeichnung:"fritz",bild:{leds:["Power","Cable","WLAN","Fon","Info"]},geraetTiefe:180,info:"Kabel (DOCSIS 3.1), WLAN 7"},
+  {id:"fritz-6660",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 6660 Cable",kurz:"FRITZ!Box 6660 Cable",sku:"6660 Cable",he:2,zeichnung:"fritz",bild:{breite:210,leds:["Power","Cable","WLAN","Fon","Info"]},geraetTiefe:150,info:"Kabel (DOCSIS 3.1)"},
+  {id:"fritz-5530",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 5530 Fiber",kurz:"FRITZ!Box 5530 Fiber",sku:"5530 Fiber",he:2,zeichnung:"fritz",bild:{breite:210,leds:["Power","Fiber","WLAN","Fon","Info"]},geraetTiefe:150,info:"Glasfaser"},
+  {id:"fritz-4690",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 4690",kurz:"FRITZ!Box 4690",sku:"4690",he:2,zeichnung:"fritz",bild:{leds:["Power","Internet","WLAN","Fon","Info"]},geraetTiefe:180,info:"Router hinter Glasfaser- oder Kabelmodem, 10-GbE-Port"},
+  {id:"fritz-4060",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 4060",kurz:"FRITZ!Box 4060",sku:"4060",he:2,zeichnung:"fritz",bild:{leds:["Power","Internet","WLAN","Fon","Info"]},geraetTiefe:180,info:"Router hinter Modem, 2,5-GbE-WAN"},
+  /* --- Modems: DSL und Glasfaser (ONT) --- */
+  {id:"draytek-167",typ:"boden",hersteller:"DrayTek",modell:"Vigor 167",kurz:"Vigor 167",sku:"Vigor 167",he:2,zeichnung:"kiste",bild:{art:"modem",farbe:"schwarz",breite:176,hoehe:37,leds:["PWR","ACT","DSL","LAN"],logo:"DrayTek"},geraetTiefe:110,info:"VDSL-Modem (Supervectoring) – Router dahinter per Netzwerkkabel"},
+  {id:"genexis-fibertwist",typ:"boden",hersteller:"Genexis",modell:"FiberTwist P2410",kurz:"FiberTwist",sku:"P2410",he:2,zeichnung:"kiste",bild:{art:"modem",farbe:"weiss",breite:117,hoehe:34,leds:["Power","Fiber","LAN"],logo:"GENEXIS"},geraetTiefe:117,info:"Glasfaser-Modem (ONT), u. a. Deutsche Glasfaser – Maße geschätzt"},
+  {id:"telekom-gfm2",typ:"boden",hersteller:"Telekom",modell:"Glasfaser-Modem 2",kurz:"Glasfaser-Modem 2",he:2,zeichnung:"kiste",bild:{art:"modem",farbe:"weiss",breite:140,hoehe:34,leds:["Power","Fiber","LAN"],logo:"T"},geraetTiefe:130,info:"Glasfaser-Modem (ONT) der Telekom – Maße geschätzt"}];
 const ecRkKat=id=>id&&EC_RKKAT.find(k=>k.id===id)||null;
 const ecRkKatName=K=>K.modell.startsWith(K.hersteller.split(" ")[0])?K.modell:`${K.hersteller} ${K.modell}`;
 const ecRkKatNr=K=>K.artnr?`Art.-Nr. ${K.artnr}`:K.sku?`Typ ${K.sku}`:"";
@@ -1084,8 +1132,57 @@ const RK_ZEICH={
     else if(f==="wuerfel"){ h+=led(dx+dw/2-12,dy+dh-6,24); }
     else if(f==="industrie"){ for(let i=0;i<14;i++) h+=`<rect x="${dx+dw*.32+i*((dw*.62)/14)}" y="${dy+5}" width="3" height="${dh-10}" rx="1" fill="#1F2124" stroke="#3A3D42" stroke-width=".4"/>`;
       h+=["#3DDC84","#3DDC84","#5AB4FF"].map((c2,i)=>`<circle cx="${dx+12+i*7}" cy="${dy+dh/2}" r="1.6" fill="${c2}"/>`).join("")+rkText(dx+10,dy+9,"UniFi",{fs:4,fw:700,fill:"#C9CDD2"}); }
+    else if(Z.ports){ const n=Z.ports, pw=Math.min(12,(dw-30)/n-1.4), ph=Math.min(10,dh-10); for(let i=0;i<n;i++) h+=rkUniRj(dx+14+i*(pw+1.4),dy+dh/2-ph/2,pw,ph,false,null);
+      h+=led(dx+4,dy+dh/2-.8,6); }
     else { const q=Math.min(dh-8,20); if(Z.display) h+=rkUniLcd(dx+10,dy+dh/2-q/2,q);
       h+=led(dx+dw-34,dy+dh/2-.8,22); }
+    return h; },
+  /* UGREEN NASync: Aluminium dunkelgrau, links Leiste mit Ein-Taste (Lichtring), Status-LEDs, USB-C, USB-A, SD; rechts Laufwerksträger mit Lüftungsrippen, Laufwerks-LED und Entriegelung */
+  ugreen:(K,t,H)=>{ const Z=K.bild, sw=Z.schaechte||0, dw=Z.breite||256, dh=Math.min(H-10,Z.hoehe||178), dx=(RK_B-dw)/2, dy=H-6-dh-1.6, flach=!sw;
+    let h=rkBoden(H)+`<rect x="${dx+8}" y="${dy+dh}" width="14" height="1.6" rx=".8" fill="#1E2023"/><rect x="${dx+dw-22}" y="${dy+dh}" width="14" height="1.6" rx=".8" fill="#1E2023"/>`
+      +`<rect x="${dx}" y="${dy}" width="${dw}" height="${dh}" rx="6" fill="url(#rkgUgreen)" stroke="#2A2D31" stroke-width=".6"/>`
+      +`<rect x="${dx+1.5}" y="${dy+1}" width="${dw-3}" height="2.4" rx="1.2" fill="rgba(255,255,255,.28)"/><rect x="${dx}" y="${dy+dh-4}" width="${dw}" height="4" rx="2" fill="rgba(0,0,0,.25)"/>`;
+    if(flach){ h+=rkText(dx+12,dy+dh/2+2,"UGREEN",{fs:6,fw:800,fill:"#E6E8EA"})+`<circle cx="${dx+dw-16}" cy="${dy+dh/2}" r="4.2" fill="#2B2E32" stroke="#8FD1FF" stroke-width=".9" style="filter:drop-shadow(0 0 1px #8FD1FF)"/>`
+        +[0,1,2,3].map(i=>`<rect x="${dx+dw-44+i*6}" y="${dy+dh/2-.8}" width="3.6" height="1.6" rx=".8" fill="${i<3?"#3DDC84":"#4A4E54"}"/>`).join(""); return h; }
+    const L=Math.min(30,dw*.14), lx=dx+5, ly=dy+8, lh=dh-16;
+    h+=`<rect x="${lx}" y="${ly}" width="${L}" height="${lh}" rx="3" fill="rgba(0,0,0,.18)"/>`
+      +`<text transform="translate(${lx+L/2+1.6},${ly+lh*.32}) rotate(-90)" font-size="5.2" font-weight="800" fill="#E6E8EA" text-anchor="middle" letter-spacing=".6">UGREEN</text>`
+      +`<circle cx="${lx+L/2}" cy="${ly+lh*.62}" r="5.2" fill="#2B2E32" stroke="#8FD1FF" stroke-width="1" style="filter:drop-shadow(0 0 1.2px #8FD1FF)"/><circle cx="${lx+L/2}" cy="${ly+lh*.62}" r="2" fill="none" stroke="#C9CDD2" stroke-width=".6"/>`
+      +["#3DDC84","#3DDC84","#4A4E54"].map((c,i)=>`<rect x="${lx+L/2-5+i*4}" y="${ly+lh*.62+9}" width="2.4" height="1.4" rx=".7" fill="${c}"/>`).join("")
+      +`<rect x="${lx+L/2-3}" y="${ly+lh-26}" width="6" height="2.6" rx="1.3" fill="#121315" stroke="#5A5F66" stroke-width=".4"/>`
+      +`<rect x="${lx+L/2-4}" y="${ly+lh-19}" width="8" height="3.6" rx=".6" fill="#121315" stroke="#5A5F66" stroke-width=".4"/><rect x="${lx+L/2-3}" y="${ly+lh-18}" width="6" height="1.2" fill="#2F6BFF"/>`
+      +`<rect x="${lx+L/2-4.5}" y="${ly+lh-11}" width="9" height="1.4" rx=".7" fill="#121315" stroke="#5A5F66" stroke-width=".3"/>`;
+    const bx=lx+L+5, bw=(dx+dw-6-bx-(sw-1)*2.2)/sw, by=dy+8, bh=dh-16;
+    h+=`<rect x="${bx-1.5}" y="${by-1.5}" width="${dx+dw-6-bx+3}" height="${bh+3}" rx="3" fill="#15171A"/>`;
+    for(let i=0;i<sw;i++){ const x=bx+i*(bw+2.2);
+      h+=`<rect x="${x}" y="${by}" width="${bw}" height="${bh}" rx="2" fill="#2C2F34" stroke="#3E4248" stroke-width=".5"/>`;
+      const n=Math.max(3,Math.floor((bw-8)/3.2)); for(let j=0;j<n;j++) h+=`<rect x="${x+4+j*3.2}" y="${by+6}" width="1.4" height="${bh*.42}" rx=".7" fill="#1C1E21"/>`;
+      h+=`<rect x="${x+bw/2-4}" y="${by+3}" width="8" height="1.2" rx=".6" fill="#3DDC84" style="filter:drop-shadow(0 0 .8px #3DDC84)"/>`
+        +`<rect x="${x+3}" y="${by+bh-22}" width="${bw-6}" height="15" rx="2.5" fill="#383C42" stroke="#4C5157" stroke-width=".4"/><rect x="${x+bw/2-5}" y="${by+bh-15.5}" width="10" height="2" rx="1" fill="#22252A"/>`
+        +rkText(x+bw/2,by+bh-3,String(i+1),{fs:3.2,fw:700,fill:"#80868D",anchor:"middle"}); }
+    return h; },
+  /* Kleine Kiste auf dem Fachboden (Modem, ONT): Farbe, Logo, LED-Reihe mit Beschriftung */
+  kiste:(K,t,H)=>{ const Z=K.bild, dw=Z.breite||140, dh=Math.min(H-10,Z.hoehe||34), dx=(RK_B-dw)/2, dy=H-6-dh-1.6, w=Z.farbe==="weiss", L=Z.leds||[];
+    let h=rkBoden(H)+`<rect x="${dx+8}" y="${dy+dh}" width="10" height="1.6" rx=".8" fill="#2A2C30"/><rect x="${dx+dw-18}" y="${dy+dh}" width="10" height="1.6" rx=".8" fill="#2A2C30"/>`
+      +`<rect x="${dx}" y="${dy}" width="${dw}" height="${dh}" rx="5" fill="${w?"url(#rkgFritz)":"url(#rkgSyno)"}" stroke="${w?"#C9CDD1":"#0E0F11"}" stroke-width=".5"/>`
+      +`<rect x="${dx+2}" y="${dy+1}" width="${dw-4}" height="3" rx="1.5" fill="${w?"rgba(255,255,255,.8)":"rgba(255,255,255,.12)"}"/>`
+      +(Z.logo==="T"?`<rect x="${dx+9}" y="${dy+dh/2-5}" width="10" height="10" rx="1.5" fill="#E20074"/>`+rkText(dx+14,dy+dh/2+3.2,"T",{fs:8,fw:900,fill:"#FFF",anchor:"middle"})
+        :rkText(dx+9,dy+dh/2+2,Z.logo||"",{fs:5,fw:800,fill:w?"#4A4F55":"#D7DADE"}));
+    const sx=Math.min(16,(dw*.5)/Math.max(1,L.length)), x0=dx+dw-10-sx*(L.length-1);
+    L.forEach((l,i)=>{ const x=x0+i*sx; h+=`<circle cx="${x}" cy="${dy+dh/2-2}" r="1.4" fill="${i<L.length-1?"#33D17A":"#4A4E54"}"/>`+rkText(x,dy+dh/2+4.2,l,{fs:2.4,fw:600,fill:w?"#7A7F86":"#9AA0A6",anchor:"middle"}); });
+    return h; },
+  /* UniFi-Zubehör im Rack (silber): Blindblende, Kabelführung, Steckdosenleiste Pro, USV, Redundante Stromversorgung */
+  uniZub:(K,t,H)=>{ const a=(K.bild||{}).art; let h=rkKoerper(H,"url(#rkgUni)");
+    if(a==="blind"){ for(let r=0;r<Math.max(1,Math.round(H/14));r++) for(let c=0;c<40;c++) h+=`<circle cx="${70+c*8.6}" cy="${H/2+(r-(Math.round(H/14)-1)/2)*8}" r="1" fill="#C4C9CE"/>`; return h; }
+    if(a==="kabel"){ return h+`<rect x="30" y="${H*.28}" width="422" height="${H*.44}" rx="${H*.22}" fill="#2A2D31"/><rect x="34" y="${H*.48}" width="414" height=".8" fill="#4A4E54"/>`; }
+    h+=rkUniLcd(25,H/2-11.5,23);
+    if(a==="pdu"){ const n=(K.bild||{}).dosen||16, rows=t.he>1?2:1, per=Math.ceil(n/rows), x0=62, dxp=(466.1-12-x0)/per, hh=(H-12-(rows-1)*4)/rows;
+      for(let r=0;r<rows;r++) for(let c=0;c<per;c++){ const x=x0+c*dxp, y=6+r*(hh+4); h+=`<rect x="${x+2}" y="${y}" width="${dxp-4}" height="${hh}" rx="3" fill="#E7EAED" stroke="#AEB4BA" stroke-width=".5"/><circle cx="${x+dxp/2-2.5}" cy="${y+hh/2}" r="1.4" fill="#2A2D31"/><circle cx="${x+dxp/2+2.5}" cy="${y+hh/2}" r="1.4" fill="#2A2D31"/><circle cx="${x+dxp-5}" cy="${y+3.4}" r=".9" fill="#3DDC84"/>`; }
+      return h; }
+    if(a==="ups"){ h+=`<rect x="60" y="6" width="250" height="${H-12}" rx="2" fill="url(#rkpVent)" opacity=".55"/>`;
+      for(let i=0;i<4;i++) h+=`<rect x="${325+i*9}" y="${H/2-1}" width="6" height="2" rx="1" fill="${i<3?"#3DDC84":"#C4C9CE"}"/>`;
+      return h+`<circle cx="440" cy="${H/2}" r="5" fill="#E7EAED" stroke="#9AA1A8" stroke-width=".7"/><circle cx="440" cy="${H/2}" r="2" fill="none" stroke="#3B8BEB" stroke-width=".8"/>`; }
+    if(a==="rps"){ for(let i=0;i<6;i++) h+=`<rect x="${70+i*30}" y="${H/2-6}" width="22" height="12" rx="3" fill="#2A2D31"/><circle cx="${81+i*30}" cy="${H/2}" r="2.4" fill="#5A5F66"/>`; return h; }
     return h; },
   /* FRITZ!Box liegend auf einem Fachboden */
   /* FRITZ!Box liegend: gewölbte weiße Front, Lüftungsschlitze, rotes Logo, LED-Reihe mit Beschriftung, Tasten; 7590 mit rotem Deckel */
@@ -1130,7 +1227,7 @@ function ecRkTeilHtml(pr,g,s,t,M){
   const KP=t.typ==="patch"&&ecRkKat(t.kat), KZ=ecRkKat(t.kat), ZF=KZ&&KZ.zeichnung&&RK_ZEICH[KZ.zeichnung];
   if(ZF) h+=ZF(KZ,t,H);
   else if(KP&&KP.raster&&Math.max(1,+t.ports||24)<=24){ const n=Math.max(1,+t.ports||24), R=KP.raster, gr=Math.ceil(n/R.gruppe), W=n*R.key+(n-gr)*R.abstand+(gr-1)*R.gl, x0=(482.6-W)/2, ph=Math.min(17,H-15), y=H-ph-6;
-    const body=KP.farbe==="edelstahl"?"url(#rkgInox)":KP.farbe==="schwarz"?"url(#rkgBlk)":"url(#rkgHell)", tc=KP.farbe==="schwarz"?"#C9CDD2":"#2A2C30", loch=KP.farbe==="schwarz"?"#060607":"#141517";
+    const body=KP.farbe==="edelstahl"?"url(#rkgInox)":KP.farbe==="schwarz"?"url(#rkgBlk)":KP.farbe==="silber"?"url(#rkgUni)":"url(#rkgHell)", tc=KP.farbe==="schwarz"?"#C9CDD2":"#2A2C30", loch=KP.farbe==="schwarz"?"#060607":"#141517";
     h+=rkKoerper(H,body)+(KP.farbe==="edelstahl"?`<rect x="16.5" y=".6" width="449.6" height="${H-1.2}" rx="1.2" fill="url(#rkpInox)"/>`:"")+rkText(19.5,7.6,`P${t.nr}`,{fs:5.4,fw:800,fill:tc});
     for(let i=0;i<n;i++){ const nr=i+1, gx=Math.floor(i/R.gruppe), x=x0+i*(R.key+R.abstand)+gx*(R.gl-R.abstand), L=t.voll?null:M.get(`${t.nr}.${nr}`);
       if(t.voll){ h+=rkText(x+R.key/2,y-1.8,nr,{fs:5.2,fw:700,fill:tc,anchor:"middle"})+`<rect x="${x}" y="${y}" width="${R.key}" height="${ph}" rx=".8" fill="url(#rkgSil)" stroke="#7E8389" stroke-width=".35"/>${rkRj(x+2,y+2.2,R.key-4,ph-5,"#4A4E54")}<rect x="${x+3}" y="${y+ph-2}" width="${R.key-6}" height=".8" rx=".4" fill="#9AA0A6"/>`; continue; }
