@@ -1117,6 +1117,9 @@ html::after{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-
 /* Aufnahmeprotokoll */
 .b-tabs{margin:0;flex:1;min-width:0}.b-tabs .seg{width:100%;max-width:none!important}
 .b-zeile{display:flex;align-items:center;gap:12px;margin:0 0 16px} .b-zeile .bs-pick{flex:none}
+.b-stift{flex:none;width:44px;height:44px;border:0;border-radius:50%;background:var(--sc-high);color:var(--on-surface);display:grid;place-items:center;padding:0;cursor:pointer}
+.b-stift:hover{background:var(--sc-highest)}.b-stift .ic{width:22px;height:22px}
+.b-stift{margin-right:4px}@media (min-width:744px){.b-stift{margin-right:8px}}   /* Mitte in der Flucht der Abschnitts-Plus */
 @media (max-width:599px){ .b-zeile{gap:8px} .b-zeile .seg button{font-size:13.5px;padding:0 4px;white-space:nowrap} .b-zeile .bs-pick{padding-left:12px;padding-right:12px;min-width:0} .b-zeile .bs-pick .spick-p{display:none} }
 .spick.nur{cursor:default}
 .bk-karte{display:flex;align-items:center;gap:14px;width:100%;margin:0 0 12px;padding:12px 14px 12px 12px;border:0;border-radius:20px;background:var(--sc-low);color:var(--on-surface);font:inherit;text-align:left;cursor:pointer}
@@ -2260,7 +2263,7 @@ function render(){ profilAnwenden();
   document.body.classList.toggle("is-login",login);
   document.body.classList.toggle("has-nav",!login&&!ed);
   $("#backBtn").hidden=top||login; $("#navbar").hidden=login||ed; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]);
-  $("#menuBtn").hidden=!(nav.v==="baustelle"||VIEW_KIND[nav.v]); kdKopfKnopf();
+  $("#menuBtn").hidden=true;   /* Baustelle, Kunde, Standort: Bearbeiten auf der Seite, Löschen im Bearbeiten-Fenster – kein ⋮ */
   const active=top?nav.v:nav.v==="notiz"?"notizen":(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]?"kunden":"start";
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
@@ -2396,7 +2399,7 @@ function baustelleView(b){
     <span class="bkk-t"><b>${esc(kdB?kdB.name:s.name)}</b><small>${esc([s&&kdB?s.name:"",adr].filter(Boolean).join(" · ")||"Kunde öffnen")}</small></span>${icon("chev")}</button>`;
   const [an,am]=afGesamt(b);
   h+=`<div class="b-zeile"><div class="b-tabs">${seg("bTab",nav.tab||"uebergaben",[["aufnahme",`Aufnahme${an?` · ${Math.round(an/am*100)} %`:""}`],["uebergaben",`Übergaben${E.length?` · ${E.length}`:""}`]])}</div>
-    ${canEdit(b)?bStatusKnopf(b):`<span class="spick bs-pick nur"><i class="bs-dot ${b.status||"aktiv"}"></i><span class="spick-t">${STATUS_TXT[b.status||"aktiv"]}</span></span>`}</div>
+    ${canEdit(b)?bStatusKnopf(b):`<span class="spick bs-pick nur"><i class="bs-dot ${b.status||"aktiv"}"></i><span class="spick-t">${STATUS_TXT[b.status||"aktiv"]}</span></span>`}${canEdit(b)?`<button class="b-stift" data-act="bEdit" aria-label="Baustelle bearbeiten" title="Baustelle bearbeiten">${icon("edit")}</button>`:""}</div>
     ${b.notiz?`<p class="bk-notiz">${esc(b.notiz)}</p>`:""}`;
   if(nav.tab==="aufnahme") return h+aufnahmeView(b)+`</div>`;
   const NZ=notizenAlle().filter(n=>n.baustelleId===b.id&&!n.archiv);
@@ -2540,7 +2543,7 @@ function bDialog(o){
     ${tf("name","Baustelle",P.name,{form:true,ph:"z. B. Elektroinstallation EFH Müller"})}
     ${tf("auftragsnr","Auftragsnummer (optional)",P.auftragsnr,{form:true})}
     ${ta("notiz","Notiz (optional)",P.notiz,{form:true,ph:"z. B. Schlüssel beim Nachbarn"})}</div>`,
-    `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="bSave">${bearb?"Speichern":"Anlegen"}</button>`);
+    `${bearb&&nav.v==="baustelle"&&nav.id===P.id&&canEdit(DB.baustellen.get(P.id))?`<button class="btn-text danger" data-act="bDelAsk">Löschen</button><span style="flex:1"></span>`:""}<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="bSave">${bearb?"Speichern":"Anlegen"}</button>`);
 }
 function bLesen(){ Object.assign(nb,formVals()); }
 function bSpeichern(){

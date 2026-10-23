@@ -765,7 +765,7 @@ const EC_AN_ART=[["glasfaser","Glasfaser"],["dsl","DSL"],["kabel","Kabel"],["mob
 const EC_AN_DOSE={glasfaser:"Glasfaser-Anschlussdose (GF-TA)",dsl:"TAE-Dose",kabel:"Multimediadose",mobil:"",keiner:""};
 const EC_AN_ONT=[["ont","eigenes Glasfaser-Modem (ONT)"],["box","im Router eingebaut (z. B. FRITZ!Box Fiber)"]];
 const EC_AN_WEG=[["router_am_anschluss","Router am Hausanschluss, Netzwerkkabel zum Schrank"],["lan_zum_schrank","Netzwerkkabel vom Modem zum Router im Schrank"],["glas_zum_schrank","Glasfaser bis in den Schrank, Modem und Router im Schrank"],["im_schrank","Hausanschluss direkt im Schrank"]];
-const ecAnRouter=()=>EC_RKKAT.filter(K=>K.typ==="router"||K.zeichnung==="fritz");
+const ecAnRouter=()=>EC_RKKAT.filter(K=>ecKatIstRouter(K));
 function ecAnZeilen(g,zu){ const A=g.anschluss;
   if(!A||!A.art) return [ecLi({act:zu?null:"ecAnschluss",lead:icon("globe"),ton:"plus",kopf:"Internetanschluss festlegen",text:"Glasfaser, DSL oder Kabel – wo er ankommt und wie er in den Schrank kommt"})];
   const art=(EC_AN_ART.find(x=>x[0]===A.art)||[,""])[1], K=ecRkKat(A.routerKat), router=K?ecRkKatName(K):A.routerText||"", ort=A.routerOrt?(A.routerOrt.startsWith("s:")?ecSchrName(g,A.routerOrt.slice(2)):ecRaumName(g,A.routerOrt.slice(2))):"";
@@ -799,7 +799,11 @@ function ecRkKachelSvg(K){ const v=ecRkFrontSvg(K), H=K.he*RK_U; let x=16.5, w=4
 function ecRkFrontSvg(K){ const t={id:"k",typ:K.typ,pos:1,he:K.he,ports:K.ports,nr:1,kat:K.id,name:K.kurz||"",poe:!!K.poe,voll:true};
   const html=ecRkTeilHtml(null,null,null,t,new Map()), a=html.indexOf("<svg"), b=html.lastIndexOf("</svg>")+6, H=K.he*RK_U;
   return html.slice(a,b).replace('class="rk-svg"','class="kat-svg"').replace('preserveAspectRatio="none"',`preserveAspectRatio="xMidYMid meet" style="aspect-ratio:${RK_B}/${H.toFixed(2)}"`); }
-const ecKatArt=K=>K.typ==="boden"?(K.zeichnung==="fritz"?"Router auf Fachboden":"NAS auf Fachboden"):EC_RK[K.typ]||"";
+const ecKatIstRouter=K=>K.typ==="router"||K.zeichnung==="fritz"||!!(K.bild&&K.bild.art==="router");
+/* Gerätegruppen: Gateways und NAS gibt es im Rack und als Tischgerät auf dem Fachboden */
+const ecKatHaupt=K=>ecKatIstRouter(K)?"router":K.typ==="nas"||K.zeichnung==="desk"?"nas":K.typ;
+const ecKatIn=(K,g)=>g==="boden"?K.typ==="boden":ecKatHaupt(K)===g;
+const ecKatArt=K=>K.typ==="boden"?(ecKatIstRouter(K)?"Router auf Fachboden":"NAS auf Fachboden"):EC_RK[K.typ]||"";
 const ecKatFakten=K=>[`${K.he} HE`,K.ports&&K.typ!=="router"&&K.typ!=="boden"?`${K.ports} Ports`:"",K.poe?"PoE":""].filter(Boolean).join(" · ");
 /* Katalog 1:1 wie in EVSE: Suche, nach Hersteller gruppierte Kacheln (weißes Bildfeld), Steckbrief-Seite */
 function ecKatKachel(K,von){ return `<button class="ktile" data-act="ecKatAuf" data-id="${esc(K.id)}"${von?` data-von="${von}"`:""}><span class="ktile-bild">${ecRkKachelSvg(K)}</span>
@@ -809,12 +813,12 @@ FDEF.ec_kat={std:{sort:"hersteller",typ:"alle",hst:"alle"},sort:[["hersteller","
   gruppen:[{k:"typ",t:"Gerätegruppe",opts:EC_KATGR},{k:"hst",t:"Hersteller",get opts(){ return [["alle","Alle"],...[...new Set(EC_RKKAT.map(K=>K.hersteller))].sort((x,y)=>x.localeCompare(y,"de")).map(h=>[h,h])]; }}],
   liste:()=>ecKatListe()};
 function ecKatListe(){ const n="ec_kat", q=String(query||"").trim().toLowerCase(), typ=fW(n,"typ"), hst=fW(n,"hst"), so=fW(n,"sort");
-  const L=EC_RKKAT.filter(K=>(typ==="alle"||K.typ===typ)&&(hst==="alle"||K.hersteller===hst)&&(!q||[K.hersteller,K.modell,K.kurz,K.artnr,K.sku,ecKatArt(K)].filter(Boolean).join(" ").toLowerCase().includes(q)));
+  const L=EC_RKKAT.filter(K=>(typ==="alle"||ecKatIn(K,typ))&&(hst==="alle"||K.hersteller===hst)&&(!q||[K.hersteller,K.modell,K.kurz,K.artnr,K.sku,ecKatArt(K)].filter(Boolean).join(" ").toLowerCase().includes(q)));
   if(!L.length) return `${fInfo(n,0,"Gerät","Geräte")}<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:"Keine Geräte für diesen Filter."}</p>`;
   const nm=K=>K.kurz||K.modell, info=fInfo(n,L.length,"Gerät","Geräte");
   if(so==="az") return info+`<div class="katgrid">${[...L].sort((x,y)=>nm(x).localeCompare(nm(y),"de")).map(ecKatKachel).join("")}</div>`;
-  const grp=new Map(), key=so==="typ"?K=>(EC_KATGR.find(g=>g[0]===K.typ)||[,"Sonstiges"])[1]:K=>K.hersteller;
-  (so==="typ"?EC_KATGR.slice(1).flatMap(g=>L.filter(K=>K.typ===g[0])):[...L].sort((x,y)=>x.hersteller.localeCompare(y.hersteller,"de"))).forEach(K=>{ const k=key(K); if(!grp.has(k)) grp.set(k,[]); grp.get(k).push(K); });
+  const grp=new Map(), key=so==="typ"?K=>(EC_KATGR.find(g=>g[0]===ecKatHaupt(K))||[,"Sonstiges"])[1]:K=>K.hersteller;
+  (so==="typ"?EC_KATGR.slice(1).flatMap(g=>L.filter(K=>ecKatHaupt(K)===g[0])):[...L].sort((x,y)=>x.hersteller.localeCompare(y.hersteller,"de"))).forEach(K=>{ const k=key(K); if(!grp.has(k)) grp.set(k,[]); grp.get(k).push(K); });
   return info+[...grp].map(([h,G])=>`<div class="sec-lbl">${esc(h)}</div><div class="katgrid">${G.map(ecKatKachel).join("")}</div>`).join(""); }
 function ecKatalogView(){ return `<div class="narrow">${ecRkDefs()}${searchBar("Hersteller, Modell, Art.-Nr.",fKnopf("ec_kat"))}<div id="res">${ecKatListe()}</div></div>`; }
 /* Vorschau auf der Netzwerk-Startseite: was bei uns am meisten verbaut ist, aufgefüllt mit je einem Gerät pro Gruppe */
@@ -937,6 +941,19 @@ const EC_RKKAT=[
   {id:"udm-se",typ:"router",hersteller:"Ubiquiti",modell:"UniFi Dream Machine SE",kurz:"UDM-SE",sku:"UDM-SE",he:1,silber:true,zeichnung:"uniGateway",bild:{hdd:1,poe:8},info:"8 Ports mit PoE"},
   {id:"udm-promax",typ:"router",hersteller:"Ubiquiti",modell:"UniFi Dream Machine Pro Max",kurz:"UDM-Pro-Max",sku:"UDM-Pro-Max",he:1,silber:true,zeichnung:"uniGateway",bild:{hdd:2}},
   {id:"uxg-pro",typ:"router",hersteller:"Ubiquiti",modell:"UniFi Next-Gen Gateway Pro",kurz:"UXG-Pro",sku:"UXG-Pro",he:1,silber:true,zeichnung:"uniGateway",bild:{hdd:0,lan:2},info:"Gateway ohne Controller"},
+  {id:"efg",typ:"router",hersteller:"Ubiquiti",modell:"UniFi Enterprise Fortress Gateway",kurz:"EFG",sku:"EFG",he:1,silber:true,zeichnung:"uniGateway",bild:{hdd:0,lan:2},info:"Gateway für große Netze – Ports vereinfacht dargestellt"},
+  /* Tischgeräte von UniFi auf dem Fachboden – Maße angenähert (Breite × Höhe der Front, Tiefe) */
+  {id:"ucg-max",typ:"boden",hersteller:"Ubiquiti",modell:"UniFi Cloud Gateway Max",kurz:"UCG-Max",sku:"UCG-Max",he:2,zeichnung:"uniDesk",bild:{art:"router",form:"flach",display:true,breite:212,hoehe:30},geraetTiefe:128,info:"5 × 2,5 GbE, Platz für NVMe (Protect) – Maße geschätzt"},
+  {id:"ucg-fiber",typ:"boden",hersteller:"Ubiquiti",modell:"UniFi Cloud Gateway Fiber",kurz:"UCG-Fiber",sku:"UCG-Fiber",he:2,zeichnung:"uniDesk",bild:{art:"router",form:"flach",display:true,breite:212,hoehe:30},geraetTiefe:128,info:"10G SFP+ und 10GbE, 4 × 2,5 GbE – Maße geschätzt"},
+  {id:"ucg-ultra",typ:"boden",hersteller:"Ubiquiti",modell:"UniFi Cloud Gateway Ultra",kurz:"UCG-Ultra",sku:"UCG-Ultra",he:2,zeichnung:"uniDesk",bild:{art:"router",form:"flach",breite:142,hoehe:30},geraetTiefe:128,info:"Kompakt, 4 × GbE + 2,5 GbE WAN – Maße geschätzt"},
+  {id:"ucg-industrial",typ:"boden",hersteller:"Ubiquiti",modell:"UniFi Cloud Gateway Industrial",kurz:"UCG-Industrial",sku:"UCG-Industrial",he:2,zeichnung:"uniDesk",bild:{art:"router",form:"industrie",breite:200,hoehe:45},geraetTiefe:130,info:"Lüfterlos, für raue Umgebung – Maße geschätzt"},
+  {id:"udr7",typ:"boden",hersteller:"Ubiquiti",modell:"UniFi Dream Router 7",kurz:"UDR7",sku:"UDR7",he:5,zeichnung:"uniDesk",bild:{art:"router",form:"turm",display:true,breite:110,hoehe:184},geraetTiefe:110,info:"Gateway mit WLAN 7 – Maße geschätzt"},
+  {id:"udr-5g-max",typ:"boden",hersteller:"Ubiquiti",modell:"UniFi Dream Router 5G Max",kurz:"UDR-5G-Max",sku:"UDR-5G-Max",he:5,zeichnung:"uniDesk",bild:{art:"router",form:"turm",display:true,breite:120,hoehe:196},geraetTiefe:120,info:"Gateway mit 5G und WLAN – Maße geschätzt"},
+  {id:"udr",typ:"boden",hersteller:"Ubiquiti",modell:"UniFi Dream Router",kurz:"UDR",sku:"UDR",he:5,zeichnung:"uniDesk",bild:{art:"router",form:"turm",display:true,breite:110,hoehe:184},geraetTiefe:110,info:"Gateway mit WLAN 6 – Maße geschätzt"},
+  {id:"ux7",typ:"boden",hersteller:"Ubiquiti",modell:"UniFi Express 7",kurz:"UX7",sku:"UX7",he:2,zeichnung:"uniDesk",bild:{art:"router",form:"wuerfel",breite:117,hoehe:42},geraetTiefe:117,info:"Kleines Gateway mit WLAN 7 – Maße geschätzt"},
+  {id:"ux",typ:"boden",hersteller:"Ubiquiti",modell:"UniFi Express",kurz:"UX",sku:"UX",he:2,zeichnung:"uniDesk",bild:{art:"router",form:"wuerfel",breite:98,hoehe:30},geraetTiefe:98,info:"Kleines Gateway mit WLAN 6 – Maße geschätzt"},
+  {id:"uxg-max",typ:"boden",hersteller:"Ubiquiti",modell:"UniFi Next-Gen Gateway Max",kurz:"UXG-Max",sku:"UXG-Max",he:2,zeichnung:"uniDesk",bild:{art:"router",form:"flach",breite:142,hoehe:30},geraetTiefe:128,info:"Gateway ohne Controller – Maße geschätzt"},
+  {id:"uxg-lite",typ:"boden",hersteller:"Ubiquiti",modell:"UniFi Next-Gen Gateway Lite",kurz:"UXG-Lite",sku:"UXG-Lite",he:2,zeichnung:"uniDesk",bild:{art:"router",form:"wuerfel",breite:98,hoehe:30},geraetTiefe:98,info:"Gateway ohne Controller – Maße geschätzt"},
   {id:"uni-unaspro",typ:"nas",hersteller:"Ubiquiti",modell:"UniFi UNAS Pro",kurz:"UNAS-Pro",sku:"UNAS-Pro",he:1,silber:true,zeichnung:"uniNvr",bild:{schaechte:7},info:"7 Festplatten, Netzwerkspeicher"},
   {id:"uni-unvrpro",typ:"nas",hersteller:"Ubiquiti",modell:"UniFi Network Video Recorder Pro",kurz:"UNVR-Pro",sku:"UNVR-Pro",he:2,silber:true,zeichnung:"uniNvr",bild:{schaechte:7},info:"7 Festplatten, Videoüberwachung"},
   {id:"uni-unvr",typ:"nas",hersteller:"Ubiquiti",modell:"UniFi Network Video Recorder",kurz:"UNVR",sku:"UNVR",he:1,silber:true,zeichnung:"uniNvr",info:"4 Festplatten, Videoüberwachung"},
@@ -1054,6 +1071,21 @@ const RK_ZEICH={
     for(let j=0;j<r;j++) for(let i=0;i<c;i++){ const x=x0+i*(bw+3), y=5+j*(bh+3);
       h+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="1.4" fill="#2B2E33" stroke="#0E0F11" stroke-width=".8"/><rect x="${x+3}" y="${y+3}" width="${bw-30}" height="${bh-6}" rx="1" fill="url(#rkpHex)"/>`
         +`<rect x="${x+bw-25}" y="${y+bh/2-4}" width="15" height="8" rx="4" fill="#3A3E44" stroke="#55595F" stroke-width=".5"/>`+`<circle cx="${x+bw-6}" cy="${y+bh/2-3}" r="1.2" fill="#3DDC84"/><circle cx="${x+bw-6}" cy="${y+bh/2+2}" r="1.2" fill="${(i+j)%2?"#3DDC84":"#2E3135"}"/>`; }
+    return h; },
+  /* UniFi-Tischgerät auf dem Fachboden: flach (Cloud Gateway), Turm (Dream Router), Würfel (Express), Industrie (dunkles Metall mit Rippen) */
+  uniDesk:(K,t,H)=>{ const Z=K.bild, f=Z.form||"flach", dw=Z.breite||140, dh=Math.min(H-10,Z.hoehe||30), dx=(RK_B-dw)/2, dy=H-6-dh-1.6, dk=f==="industrie", rx=f==="turm"?10:f==="wuerfel"?6:4;
+    const led=(x,y,w)=>`<rect x="${x}" y="${y}" width="${w}" height="1.6" rx=".8" fill="#5AB4FF" style="filter:drop-shadow(0 0 1.2px #5AB4FF)"/>`;
+    let h=rkBoden(H)+`<rect x="${dx+8}" y="${dy+dh}" width="10" height="1.6" rx=".8" fill="#2A2C30"/><rect x="${dx+dw-18}" y="${dy+dh}" width="10" height="1.6" rx=".8" fill="#2A2C30"/>`
+      +`<rect x="${dx}" y="${dy}" width="${dw}" height="${dh}" rx="${rx}" fill="${dk?"url(#rkgSyno)":"url(#rkgFritz)"}" stroke="${dk?"#0E0F11":"#C9CDD1"}" stroke-width=".5"/>`
+      +(dk?"":`<rect x="${dx+2}" y="${dy+1}" width="${dw-4}" height="${Math.min(6,dh*.15)}" rx="${Math.max(1,rx-2)}" fill="rgba(255,255,255,.8)"/>`);
+    if(f==="turm"){ const q=Math.min(20,dw*.2); if(Z.display) h+=rkUniLcd(dx+dw/2-q/2,dy+16,q);
+      for(let r=0;r<9;r++) for(let c=0;c<7;c++) h+=`<circle cx="${dx+dw/2-24+c*8}" cy="${dy+dh*.48+r*7}" r="1.5" fill="#D5D9DD"/>`;
+      h+=led(dx+dw/2-9,dy+dh-12,18); }
+    else if(f==="wuerfel"){ h+=led(dx+dw/2-12,dy+dh-6,24); }
+    else if(f==="industrie"){ for(let i=0;i<14;i++) h+=`<rect x="${dx+dw*.32+i*((dw*.62)/14)}" y="${dy+5}" width="3" height="${dh-10}" rx="1" fill="#1F2124" stroke="#3A3D42" stroke-width=".4"/>`;
+      h+=["#3DDC84","#3DDC84","#5AB4FF"].map((c2,i)=>`<circle cx="${dx+12+i*7}" cy="${dy+dh/2}" r="1.6" fill="${c2}"/>`).join("")+rkText(dx+10,dy+9,"UniFi",{fs:4,fw:700,fill:"#C9CDD2"}); }
+    else { const q=Math.min(dh-8,20); if(Z.display) h+=rkUniLcd(dx+10,dy+dh/2-q/2,q);
+      h+=led(dx+dw-34,dy+dh/2-.8,22); }
     return h; },
   /* FRITZ!Box liegend auf einem Fachboden */
   /* FRITZ!Box liegend: gewölbte weiße Front, Lüftungsschlitze, rotes Logo, LED-Reihe mit Beschriftung, Tasten; 7590 mit rotem Deckel */
