@@ -195,7 +195,7 @@ function demoHaus(r,P,vor,tag){
   const hz=dose("Heizungsraum"); nw[hz.id+".1"]={ng:"Wärmepumpe angeschlossen, Port nicht abgeklemmt"};
   const netz=r({id:"demo-ec-netz",art:"netz",kundeId:"demo-k6",standortId:"",ortId:"k:demo-k6",datum:tag(-1),pruefart:"Abnahme",pruefer:P.mp.name,status:"laeuft",
     kabel:"Cat 7 Verlegekabel S/FTP, Cat 6A Module",belegung:"T568A",schirm:"ja",sicht:{},werte:nw,netz:{},umfang:null,
-    geraet:{mess:"Trend Networks SignalTEK CT",kurz:"SignalTEK",sn:"R156006-DEMO",kal:""}},P.mp,vor(1));
+    geraet:{mess:"Trend Networks SignalTEK NT",kurz:"SignalTEK NT",sn:"DEMO-0001",kal:""}},P.mp,vor(1));
   /* Installationsprüfung (E-CHECK, läuft): Keller, EG und Garage gemessen, OG noch offen; Mangel an der Terrasse */
   const iw={}; let zi=0; const zs=()=>(0.42+((zi++*0.137)%0.9)).toFixed(2).replace(".",",");
   rcds.filter(x=>!/og/.test(x.id)).forEach((x,i)=>{ iw[x.id]={t1:String(16+i*3),t5:String(8+i),idelta:String(19+i),ub:"0,"+(5+i)}; });

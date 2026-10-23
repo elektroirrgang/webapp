@@ -174,7 +174,7 @@ function ecListeView(art){
     if(F.length){ const M=new Map(); F.forEach(b=>{ if(!M.has(b.ortId)) M.set(b.ortId,[]); M.get(b.ortId).push(b); });
       h+=`<div class="sec-lbl">Fällig in den nächsten 4 Wochen</div>${listOf([...M].map(([o,G])=>`<div class="li" role="button" tabindex="0" data-act="ecNeuOrt" data-art="geraete" data-ort="${esc(o)}"><span class="av">${icon("warn")}</span>
         <span class="lt"><span class="h">${esc(ecOrt(o).titel)}</span><span class="s">${G.length} Gerät${G.length>1?"e":""} · ab ${esc(ecDatum(G[0].naechste))}</span></span>${pill(G[0].naechste<ecHeute()?"bad":"wip",G[0].naechste<ecHeute()?"überfällig":"bald fällig")}</div>`))}`; } }
-  if(!L.length&&art==="netz") return h+`<div class="empty">${icon("ecNetz")}<h2>Noch keine Netzwerkprüfung</h2><p>Datenverkabelung qualifizieren (z. B. mit dem SignalTEK CT): Netzwerkschrank und Datendosen anlegen, jeden Link messen – das Protokoll landet in der Bibliothek.</p></div></div>`;
+  if(!L.length&&art==="netz") return h+`<div class="empty">${icon("ecNetz")}<h2>Noch keine Netzwerkprüfung</h2><p>Datenverkabelung qualifizieren (z. B. mit dem SignalTEK NT): Netzwerkschrank und Datendosen anlegen, jeden Link messen – das Protokoll landet in der Bibliothek.</p></div></div>`;
   if(!L.length) return h+`<div class="empty">${icon(art==="geraete"?"ecStecker":"home")}<h2>${art==="geraete"?"Noch keine Geräteprüfung":"Noch keine Installationsprüfung"}</h2><p>${art==="geraete"
       ?"Ortsveränderliche Geräte (DGUV V3, DIN VDE 0701-0702): Geräte je Kunde erfassen, prüfen, Prüffrist setzen – das Protokoll landet in der Bibliothek."
       :"Hausinstallationen und Anlagen (DIN VDE 0100-600 / 0105-100): Räume, Verteiler, Stromkreise und Steckdosen anlegen, besichtigen, messen – das Protokoll landet in der Bibliothek."}</p></div></div>`;
@@ -199,7 +199,7 @@ function ecNeuDialog(art,kundeId,ort){ ecNeuArt=art; const K=live("kunden").sort
 function ecNeuOk(){ const F=formVals(); if(!F.ecKunde){ toast("Bitte einen Kunden wählen"); return; }
   const ortId=F.ecOrt||"k:"+F.ecKunde, art=ecNeuArt, vorher=ecAlle().filter(p=>p.ortId===ortId&&(p.art||"anlage")===art).sort((a,b)=>String(b.datum).localeCompare(String(a.datum)))[0];
   const MG=ecMessgeraete(art), zuletzt=ecAlle().filter(p=>(p.art||"anlage")===art&&p.geraet&&p.geraet.mgId).sort((a,b)=>(b.updated||0)-(a.updated||0))[0];
-  const mg=MG.find(m=>m.bei&&m.bei===ME.mail)||(zuletzt&&MG.find(m=>m.id===zuletzt.geraet.mgId))||MG.find(m=>/\bCT\b/.test(m.modell||""))||MG[0]; /* zugeteilt > zuletzt benutzt > neuerer Tester */
+  const mg=MG.find(m=>m.bei&&m.bei===ME.mail)||(zuletzt&&MG.find(m=>m.id===zuletzt.geraet.mgId))||MG.find(m=>/\b(NT|CT)\b/.test(m.modell||""))||MG[0]; /* zugeteilt > zuletzt benutzt > neuerer Tester */
   const pr={id:uid(),art,kundeId:F.ecKunde,standortId:ortId.startsWith("k:")?"":ortId,ortId,datum:ecHeute(),pruefart:vorher?"Wiederholungsprüfung":(art==="anlage"?"Erstprüfung":art==="netz"?"Abnahme":"Wiederholungsprüfung"),pruefer:ecStdPruefer(),status:"offen",
     sicht:{},werte:{},netz:vorher&&vorher.netz?{...vorher.netz}:{form:"TN-C-S"},geraet:mg?ecMgDaten(mg):{},umfang:vorher&&vorher.umfang?{...vorher.umfang}:null,fristM:vorher&&vorher.fristM||(art==="anlage"?48:12)};
   saveRec("echecks",pr,true);
@@ -216,7 +216,7 @@ const ecWeiter=(v,t)=>`<div class="ec-weiter"><button class="btn-filled" data-ac
 /* ---- Prüfung ---- */
 /* Kachel „Messgerät“ in der Leiste: Bild, Kurzname, Kalibrierstatus – antippen öffnet die Auswahl */
 function ecKMg(pr){ const M=ecMgAktuell(pr), kal=M.mess?ecKal(M.kal):null, zu=pr.status==="fertig";
-  return `<button type="button" class="ec-k ec-kmg" data-act="ecPick" data-w="mg" ${zu?"disabled":""} title="Messgerät wählen">${ecMgBild(M.bild)}<span class="ec-kmg-t"><b>${esc(M.mess?(M.kurz||M.mess):"wählen")}</b><small>${M.mess?`<i class="sd ${kal.s==="ok"?"ok":kal.s==="wip"?"wip":"bad"}"></i>${esc(kal.s==="ok"?"kalibriert":kal.s==="wip"?"Kalibrierung läuft ab":"Kalibrierung fehlt")}`:"Messgerät"}</small></span></button>`; }
+  return `<button type="button" class="ec-k ec-kmg" data-act="ecPick" data-w="mg" ${zu?"disabled":""} title="Messgerät wählen">${ecMgBild(M.bild)}<span class="ec-kmg-t"><b>${esc(M.mess?(M.kurz||M.mess):"wählen")}</b><small>${M.mess&&ecNz(pr)&&!M.kal?esc(M.sn?`SN ${M.sn}`:"Messgerät"):M.mess?`<i class="sd ${kal.s==="ok"?"ok":kal.s==="wip"?"wip":"bad"}"></i>${esc(kal.s==="ok"?"kalibriert":kal.s==="wip"?"Kalibrierung läuft ab":"Kalibrierung fehlt")}`:"Messgerät"}</small></span></button>`; }
 function ecKennzahlen(pr){ const k=(z,t,bar,rot)=>`<div class="ec-k"><b${rot?' class="rot"':""}>${z}</b><small>${t}</small>${bar!=null?`<span class="ec-bar"><i style="width:${Math.round(bar*100)}%"></i></span>`:""}</div>`;
   if(ecNz(pr)){ const g=ecGeb(pr.ortId), L=ecNetListe(pr,g), st=L.map(p=>ecNetStand(pr,p)), n=st.filter(x=>["ok","bad","ng"].includes(x)).length, m=st.filter(x=>x==="bad").length, D=new Set(L.map(p=>p.d.id)).size;
     return `<div class="ec-kz">${k(`${n} / ${L.length}`,"Links gemessen",L.length?n/L.length:0)}${k(D,`Datendose${D===1?"":"n"}`)}${k(m,"Mängel",null,m>0)}${ecKMg(pr)}</div>`; }
@@ -261,7 +261,7 @@ function ecAuftragView(pr){ const o=ecOrt(pr.ortId), an=ecAn(pr), nz=ecNz(pr), N
   /* Messgerät: nur auswählen – Seriennummer und Kalibrierung kommen aus „Messgeräte“ */
   const MG=ecMessgeraete(pr.art||"anlage"), G=pr.geraet||{}, hand=M.mess&&!G.mgId;
   const mg=`<section class="card"><h3>Messgerät</h3><div class="ec-fg"><div class="tf fl"><select id="f_ecMg" ${zu?"disabled":""}>${!G.mgId&&!hand?`<option value="" selected>– wählen –</option>`:""}${MG.map(m=>`<option value="${esc(m.id)}" ${m.id===G.mgId?"selected":""}>${esc(ecMgLabel(m))}</option>`).join("")}${hand?`<option value="__hand" selected>${esc(M.mess)} (von Hand)</option>`:""}<option value="__neu">Von Hand eintragen …</option></select><label for="f_ecMg">Messgerät</label><span class="arr">${icon("drop")}</span></div></div>
-    ${M.mess?`<div class="ec-mginfo">${ecMgBild(M.bild)}<span>${esc(M.sn?`Seriennummer ${M.sn}${M.snR?` · Gegenstelle ${M.snR}`:""}`:"Seriennummer fehlt")}</span>${pill(kal.s,kal.t)}</div>`:MG.length?"":`<p class="meta" style="margin:10px 4px 0">Noch kein passendes Messgerät – in der Übersicht unter „Messgeräte“ anlegen${nz?" (Einsatz „Netzwerk“)":""}.</p>`}</section>`;
+    ${M.mess?`<div class="ec-mginfo">${ecMgBild(M.bild)}<span>${esc(M.sn?`Seriennummer ${M.sn}${M.snR?` · Gegenstelle ${M.snR}`:""}`:"Seriennummer fehlt")}</span>${nz&&!M.kal?"":pill(kal.s,kal.t)}</div>`:MG.length?"":`<p class="meta" style="margin:10px 4px 0">Noch kein passendes Messgerät – in der Übersicht unter „Messgeräte“ anlegen${nz?" (Einsatz „Netzwerk“)":""}.</p>`}</section>`;
   const sg=(l,act,cur,opts)=>`<div class="ec-sgz"><span class="lbl">${l}</span>${ecZSeg(act,cur,opts,zu)}</div>`;
   const pruef=`<section class="card"><h3>Prüfung</h3><div class="ec-fg">${ecWahlSel(pr,"pruefart","Prüfart",pr.pruefart,EC_PA[pr.art||"anlage"]||EC_PRUEFART)}
       ${nz?`${ecFeld(pr,"kabel","Verkabelung",pr.kabel,{ph:"z. B. Cat 7 Verlegekabel, Cat 6A Module"})}${zu?"":`<div class="chips ec-wahl">${EC_KABEL.map(x=>`<button type="button" class="chip" data-act="ecPickSet" data-w="kabel" data-v="${esc(x)}" aria-pressed="${x===pr.kabel}">${esc(x)}</button>`).join("")}</div>`}
@@ -285,7 +285,7 @@ function ecPickDlg(w){ const pr=ecPr(); if(!pr) return; const knopf=`<span style
       <div class="fg1" style="margin-top:12px">${tf("ecPrName","Andere Person",L.some(m=>m.name===pr.pruefer)?"":pr.pruefer||"",{form:true})}</div>${ecPrueferListe().length?"":`<p class="meta" style="margin-top:8px">Wer prüfen darf, legst du in der Übersicht unter Mitarbeiter fest.</p>`}`,
       `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecPickPrName">Übernehmen</button>`); }
   if(w==="mg"){ const MG=ecMessgeraete(pr.art||"anlage"), G=pr.geraet||{};
-    return dialog("Messgerät",MG.length?`<div class="ec-wl">${MG.map(m=>{ const k=ecKal(m.kal); return ecWahlZ("ecPickSet","mg",m.id,ecMgLabel(m),`${esc(m.sn?`SN ${m.sn}`:"Seriennummer fehlt")} ${pill(k.s,k.t)}`,m.id===G.mgId,ecMgBild(m.bild||m.bildUrl,true)); }).join("")}</div>`
+    return dialog("Messgerät",MG.length?`<div class="ec-wl">${MG.map(m=>{ const k=ecKal(m.kal); return ecWahlZ("ecPickSet","mg",m.id,ecMgLabel(m),`${esc(m.sn?`SN ${m.sn}`:"Seriennummer fehlt")} ${ecNz(pr)&&!m.kal?"":pill(k.s,k.t)}`,m.id===G.mgId,ecMgBild(m.bild||m.bildUrl,true)); }).join("")}</div>`
       :`<p class="meta">Noch kein passendes Messgerät. In der Übersicht unter „Messgeräte“ anlegen${ecNz(pr)?" – Einsatz „Netzwerk“":""}.</p>`,
       `<button class="btn-text" data-act="ecPickMgHand">Von Hand eintragen</button>${knopf}`,{breit:true}); }
   if(w==="kabel") return dialog("Kabel",`<div class="ec-wl">${EC_KABEL.map(x=>ecWahlZ("ecPickSet","kabel",x,x,"",x===pr.kabel)).join("")}</div>
@@ -520,7 +520,7 @@ function ecMaengelText(pr){ const L=[];
     if(!w.ng&&(f.length||w.sicht==="nok"||w.funktion==="nok"||w.mangel)) L.push(`${b.bez||"Gerät"}${b.inv?` (Inv. ${b.inv})`:""}: ${[w.sicht==="nok"&&"Sichtprüfung nicht in Ordnung",...f.map(k=>`${EC_GW[k].kurz} ${w[k]} ${EC_GW[k].e}`),w.funktion==="nok"&&"Funktion nicht in Ordnung",w.mangel].filter(Boolean).join("; ")}.`); });
   return L.join("\n"); }
 
-/* ---- Netzwerkprüfung (Datenverkabelung, z. B. mit dem Trend Networks SignalTEK CT) ----
+/* ---- Netzwerkprüfung (Datenverkabelung, z. B. mit dem Trend Networks SignalTEK NT) ----
    Gebäude wie bei der Installation (Etagen, Räume); dazu
      schraenke:[{id,name,raumId}]  Netzwerkschrank / Patchfeld
      dosen:[{id,raumId,ord,ports,lage,sId,pp:{"1":"A01","2":"A02"}}]  Datendose mit 1–4 Ports, je Port der Patchport im Schrank
@@ -1196,7 +1196,7 @@ async function ecPdf(pr){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",f
     fuss:[k&&k.name,o.standort&&o.standort.name,pr.auftragsnr&&`Auftrag ${pr.auftragsnr}`,`Prüfdatum ${ecDatum(pr.datum)}`].filter(Boolean).join(" | ")});
   S.kopf(); S.abschnitt("Auftragsdaten");
   S.werte([["Auftraggeber",adr(k)],["Auftragsnr.",pr.auftragsnr],["Kundennr.",k&&k.kdnr],["Ansprechpartner",k&&k.ansprech],["Prüfort",o.standort?adr(o.standort):"wie Auftraggeber"],["Art der Prüfung",pr.pruefart],
-    ["Prüfdatum",ecDatum(pr.datum)],["Prüfer",pr.pruefer],["Messgerät",G.mess],["Seriennr.",[G.sn,G.snR&&"Gegenstelle "+G.snR].filter(Boolean).join(" | ")],["Kal. gültig bis",G.kal],nz?["Verkabelung",[pr.kabel,ecWmStd(pr),pr.schirm==="nein"?"ungeschirmt":"geschirmt"].filter(Boolean).join(" | ")]:an?["Netzform",`${N.form||"-"} | 230/400 V${N.hak?` | HAK ${N.hak}`:""}`]:["Anzahl Geräte",String(ecGeraeteAm(pr.ortId).filter(b=>!["open","ng"].includes(ecGerStand(pr,b))).length)],
+    ["Prüfdatum",ecDatum(pr.datum)],["Prüfer",pr.pruefer],["Messgerät",G.mess],["Seriennr.",[G.sn,G.snR&&"Gegenstelle "+G.snR].filter(Boolean).join(" | ")],...(nz&&!G.kal?[]:[["Kal. gültig bis",G.kal]]),nz?["Verkabelung",[pr.kabel,ecWmStd(pr),pr.schirm==="nein"?"ungeschirmt":"geschirmt"].filter(Boolean).join(" | ")]:an?["Netzform",`${N.form||"-"} | 230/400 V${N.hak?` | HAK ${N.hak}`:""}`]:["Anzahl Geräte",String(ecGeraeteAm(pr.ortId).filter(b=>!["open","ng"].includes(ecGerStand(pr,b))).length)],
     ...(pr.bez?[["Bezeichnung",pr.bez]]:[])]);
   if(nz) ecNetPdf(pr,S,pl);
   else if(an){ const g=ecGeb(pr.ortId), SK=ecSkListe(g).filter(s=>ecImUmfang(pr,s));

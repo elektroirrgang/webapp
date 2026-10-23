@@ -2153,7 +2153,8 @@ const GER_ART=[["mess","Messgerät"],["adapter","Prüfadapter"],["sonst","Sonsti
 function gerKalBis(t){ t=String(t||"").trim(); let m;
   if((m=t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/))) return new Date(+m[3],+m[2]-1,+m[1]);
   if((m=t.match(/^(\d{1,2})[./](\d{4})$/))) return new Date(+m[2],+m[1],0); return null; }
-function gerKal(g){ if(!g.kal) return g.art==="mess"?{s:"leer",t:"Kalibrierung fehlt"}:null; const b=gerKalBis(g.kal); if(!b) return {s:"form",t:"Datum prüfen (TT.MM.JJJJ oder MM.JJJJ)"};
+/* Netzwerktester: keine Kalibrierung vorgesehen (es gibt keinen Schein) – dann auch kein Hinweis */
+function gerKal(g){ if(!g.kal) return g.art==="mess"&&gerEinsatz(g)!=="netzwerk"?{s:"leer",t:"Kalibrierung fehlt"}:null; const b=gerKalBis(g.kal); if(!b) return {s:"form",t:"Datum prüfen (TT.MM.JJJJ oder MM.JJJJ)"};
   const rest=Math.floor((b-new Date())/864e5); return rest<0?{s:"ab",t:`abgelaufen seit ${g.kal}`}:rest<=60?{s:"bald",t:`läuft ab ${g.kal}`}:{s:"ok",t:`kalibriert bis ${g.kal}`}; }
 const gerName=g=>[g.hersteller,g.modell].filter(Boolean).join(" ")||"Gerät";
 /* Kurzname unterscheidet gleiche Geräte (z. B. zwei MFT one: „MFT 1“, „MFT 2“) – überall vorangestellt */
@@ -2173,15 +2174,17 @@ const GER_VORLAGE=[{id:"ger-wiha-mft-one-1",art:"mess",kurz:"MFT 1",hersteller:"
 /* Netzwerktester: zwei Platzhalter (ältere und neuere Version) – Modell, Seriennummer und Kalibrierung trägt man nach */
 const GER_SIGNALTEK="https://www.trend-networks.com/wp-content/uploads/2019/04/signaltek-ct-01.jpg";
 const GER_VORLAGE_NETZ=[{id:"ger-trend-signaltek-alt",art:"mess",kurz:"SignalTEK alt",hersteller:"Trend Networks",modell:"SignalTEK (ältere Version)",einsatz:"netzwerk",bildUrl:GER_SIGNALTEK,notiz:"Platzhalter – genaues Modell und Seriennummer ergänzen"},
-  {id:"ger-trend-signaltek-ct",art:"mess",kurz:"SignalTEK CT",hersteller:"Trend Networks",modell:"SignalTEK CT (R156006)",einsatz:"netzwerk",bildUrl:GER_SIGNALTEK,notiz:"Platzhalter – Seriennummer und Kalibrierung ergänzen"}];
+  {id:"ger-trend-signaltek-ct",art:"mess",kurz:"SignalTEK NT",hersteller:"Trend Networks",modell:"SignalTEK NT",einsatz:"netzwerk",bildUrl:GER_SIGNALTEK,notiz:"Platzhalter – Seriennummer und Kalibrierung ergänzen"}];
 /* abgelesen am 23.10.2026 (Geräteinfo bzw. Typenschild) – füllt nur leere Felder */
 const GER_DATEN={"ger-wiha-mft-one-1":{sn:"S260400105",fw:"V1.312",kalAm:"31.03.2026",kal:"31.03.2027"},
   "ger-wiha-mft-one-2":{sn:"S260400136",fw:"V1.312",kalAm:"01.04.2026",kal:"01.04.2027"},
   "ger-fluke-fev300-1":{sn:"68510013"},
   "ger-wiha-pat-one-1":{sn:"25050058"},
   "ger-trend-signaltek-alt":{hersteller:"IDEAL Industries Networks",sn:"15610106/02289",snR:"15610407/01288",notiz:"Baujahr 01/2013 · Netzteil 12 V / 2 A · Aufdruck T4991DV"},
-  "ger-trend-signaltek-ct":{sn:"156129C10/04187",snR:"15612409/01813",notiz:"Baujahr 12/2023 · Netzteil 12 V / 2 A (liegt bei)"}};
-const GER_DATEN_V=5;
+  "ger-trend-signaltek-ct":{kurz:"SignalTEK NT",modell:"SignalTEK NT",sn:"156129C10/04187",snR:"15612409/01813",fw:"1.0.39 (05.10.2023)",notiz:"Baujahr 12/2023 · Netzteil 12 V / 2 A (liegt bei) · ESN 001606-88A6C0 · Hardware 1.0"}};
+/* Werte, die frühere Fassungen automatisch eingetragen haben – dürfen ersetzt werden (von Hand Geändertes bleibt) */
+const GER_DATEN_ALT=["SignalTEK CT","SignalTEK CT (R156006)","Platzhalter – Seriennummer und Kalibrierung ergänzen","Baujahr 12/2023 · Netzteil 12 V / 2 A (liegt bei) · Remote-Einheit im Koffer","Baujahr 12/2023 · Netzteil 12 V / 2 A (liegt bei)"];
+const GER_DATEN_V=6;
 function gerVorlagen(){ if(!ME.admin) return;
   if(!META.gerBild2){ for(const g of DB.geraete.values()){ const n=GER_BILD_ALT[g.bildUrl]; if(n){ g.bildUrl=n; saveRec("geraete",g); } } META.gerBild2=1; metaSave(); }
   if(!META.gerKurz&&DB.geraete.size){ for(const v of GER_VORLAGE){ const g=DB.geraete.get(v.id); if(g&&!g.kurz&&!g.deleted){ g.kurz=v.kurz; saveRec("geraete",g); } } META.gerKurz=1; metaSave(); }
@@ -2192,7 +2195,7 @@ function gerVorlagen(){ if(!ME.admin) return;
   /* leere Felder füllen – oder Felder, die noch genau den Platzhaltertext der Vorlage tragen */
   if((META.gerDatenV||0)<GER_DATEN_V&&DB.geraete.has("ger-wiha-mft-one-1")){ const V=Object.fromEntries([...GER_VORLAGE,...GER_VORLAGE_NETZ].map(v=>[v.id,v]));
     for(const [id,d] of Object.entries(GER_DATEN)){ const g=DB.geraete.get(id); if(!g||g.deleted) continue; let neu=false;
-      for(const [k,v] of Object.entries(d)) if(g[k]!==v&&(!g[k]||(V[id]&&g[k]===V[id][k]))){ g[k]=v; neu=true; } if(neu) saveRec("geraete",g); }
+      for(const [k,v] of Object.entries(d)) if(g[k]!==v&&(!g[k]||(V[id]&&g[k]===V[id][k])||GER_DATEN_ALT.includes(g[k]))){ g[k]=v; neu=true; } if(neu) saveRec("geraete",g); }
     META.gerDatenV=GER_DATEN_V; metaSave(); } }
 /* eigenes Foto (bild, klein im Datensatz) vor Herstellerbild (bildUrl); lädt das Herstellerbild nicht, bleibt das Symbol sichtbar */
 const gerAv=g=>{ const u=g.bild||GER_BILD_ALT[g.bildUrl]||g.bildUrl; return u?`<span class="av av-img ger-av">${icon("geraet")}<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></span>`:`<span class="av">${icon("geraet")}</span>`; };
