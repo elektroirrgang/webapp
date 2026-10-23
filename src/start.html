@@ -1832,7 +1832,7 @@ function render(){ profilAnwenden();
   document.body.classList.toggle("is-login",login);
   document.body.classList.toggle("has-nav",!login);
   $("#backBtn").hidden=top||login; $("#navbar").hidden=login; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]);
-  $("#menuBtn").hidden=!(VIEW_KIND[nav.v]&&kdDarf());
+  $("#menuBtn").hidden=!(VIEW_KIND[nav.v]&&kdDarf()); kdKopfKnopf();
   const active=top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":"kunden";
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
@@ -2139,7 +2139,7 @@ function locDialog(kind,rec,parentId){
   const felder=kind==="kunden"?`<div class="kd-nr2">${tf("name","Firma / Name",r.name,{form:true,ph:"z. B. Musterfirma GmbH"})}${tf("kdnr","Kundennummer",r.kdnr,{form:true})}</div>`+adr
       +`<div class="reihe3">${tf("tel","Telefon",r.tel,{form:true,type:"tel"})+tf("mail","E-Mail",r.mail,{form:true,type:"email"})+tf("web","Webseite",r.web,{form:true,type:"url",ph:"z. B. musterfirma.de"})}</div>`+ta("notiz","Notiz",r.notiz,{form:true})
     :tf("name","Bezeichnung",r.name,{form:true,ph:"z. B. Hauptsitz"})+adr+tf("tel","Telefon vor Ort",r.tel,{form:true,type:"tel"})+ta("notiz","Notiz (z. B. Zufahrt, Schlüssel)",r.notiz,{form:true});
-  dialog(`${KIND_NAME[kind]} ${rec?"bearbeiten":"anlegen"}`,`<div class="fg1">${felder}</div>`,`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="saveLoc">${rec?"Speichern":"Anlegen"}</button>`,{breit:true});
+  dialog(`${KIND_NAME[kind]} ${rec?"bearbeiten":"anlegen"}`,`<div class="fg1">${felder}</div>`,`${kdLoeschKnopf(rec,kdDarf(rec))}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="saveLoc">${rec?"Speichern":"Anlegen"}</button>`,{breit:true});
 }
 function bezugZahl(kind,id){
   const ids=kind==="kunden"?[id,...standorteVon(id).map(s=>s.id)]:[id];

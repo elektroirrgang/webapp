@@ -2678,7 +2678,6 @@ function openMenu(){
     if(canEdit(r)) it.push(["katDelAsk","Modell löschen","del","danger"]);
   } else if(kind){
     const r=DB[kind].get(nav.id), ok=canEdit(r), pinned=META.pins.includes(r.id);
-    if(ok) it.push(["editLoc",`${KIND_NAME[kind]} bearbeiten`,"edit"]);
     if(kind==="standorte") it.push(["newLadepark","Ladepark hinzufügen","add"]);
     it.push(["pinLocCur",pinned?"Nicht mehr anpinnen":"Anpinnen",pinned?"pinOff":"pin"]);
     if(ok) it.push(["delLocAsk",`${KIND_NAME[kind]} löschen`,"del","danger"]);

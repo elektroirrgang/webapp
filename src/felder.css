@@ -424,6 +424,9 @@ button.vg-z{cursor:pointer;-webkit-tap-highlight-color:transparent} button.vg-z:
 /* Knöpfe rechts in der Flucht der Pfeile (›) der Listen darunter: Mitte = Innenabstand der Zeile + halbes Symbol */
 .sec-row .ab-btns,.sec-row > .plus-k,.sec-row .sk-akt{margin-right:6px!important}
 @media (min-width:744px){.sec-row .ab-btns,.sec-row > .plus-k,.sec-row .sk-akt{margin-right:10px!important}}
+/* Kopfleiste rechts: Profilbild 40 px, Knopf daneben mit Abstand, beide mittig */
+@media (min-width:744px){#avBtn.avatar{width:40px!important;height:40px!important;font-size:15px!important}}
+.tb-row #menuBtn{margin-right:8px}.tb-row #avBtn{align-self:center}
 /* Abschnittstitel etwas größer, damit sie zu den runden Knöpfen passen und die Seite gliedern */
 .sec-lbl{font-size:16px!important;letter-spacing:0!important}
 #dlg .sec-lbl,.fpop .sec-lbl{font-size:14px!important}
@@ -610,7 +613,8 @@ body:has(.vg-bar) .snackbar{bottom:96px!important}
 .kd-oben .qa-row{justify-content:space-around;gap:8px}.kd-oben .qa{flex:1 1 0;width:auto;max-width:112px}
 /* Kartenknöpfe: matt, gefüllt (M3), alle in einer Flucht am rechten Rand – oben Zoom, unten Zurück-zum-Ort und ⓘ */
 .kd-karte{--kk:var(--sc-high);--kk-i:var(--on-surface)}
-.kd-karte .maplibregl-ctrl-top-right,.kd-karte .maplibregl-ctrl-bottom-right{right:12px;z-index:4}
+.kd-karte .maplibregl-ctrl-top-right,.kd-karte .maplibregl-ctrl-bottom-right{right:6px;z-index:4}
+@media (min-width:744px){.kd-karte .maplibregl-ctrl-top-right,.kd-karte .maplibregl-ctrl-bottom-right{right:10px}}
 .kd-karte .maplibregl-marker{z-index:1} .kd-karte .kd-pin{z-index:2}
 .kd-karte .maplibregl-ctrl-top-right{top:12px} .kd-karte .maplibregl-ctrl-bottom-right{bottom:12px}
 .kd-karte .maplibregl-ctrl-top-right .maplibregl-ctrl,.kd-karte .maplibregl-ctrl-bottom-right .maplibregl-ctrl{margin:0}

@@ -1988,7 +1988,7 @@ function go(n){ nav=n; closeOverlays(); render(); window.scrollTo(0,0); }
 const KOPF_START="Baustellen";
 const bStatusKnopf=b=>`<button class="spick bs-pick" data-act="bStatusPick" aria-label="Status ändern"><i class="bs-dot ${b.status||"aktiv"}"></i><span class="spick-t">${STATUS_TXT[b.status||"aktiv"]}</span><span class="spick-p">${icon("chev")}</span></button>`;
 const stiftKnopf=()=>`<button class="sk-stift" data-act="editLoc" aria-label="Daten bearbeiten" title="Daten bearbeiten">${icon("edit")}</button>`;
-const skRechts=()=>{ if(VIEW_KIND[nav.v]){ const r=DB[VIEW_KIND[nav.v]].get(nav.id); return r&&canEdit(r)?stiftKnopf():""; } return ""; };
+const skRechts=()=>"";
 function seitenKopf(t,s,f){ t=t||(f?KOPF_START:""); if(!t&&!f) return "";
   const T=pfadTeile(); if(!t&&!f&&typeof skRechts==="function"&&skRechts()) t=KOPF_START; if(s&&s.includes("›")) s=s.split(/\s*›\s*/).pop(); 
   const pf="";
@@ -2260,7 +2260,7 @@ function render(){ profilAnwenden();
   document.body.classList.toggle("is-login",login);
   document.body.classList.toggle("has-nav",!login&&!ed);
   $("#backBtn").hidden=top||login; $("#navbar").hidden=login||ed; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]);
-  $("#menuBtn").hidden=!(nav.v==="baustelle"||VIEW_KIND[nav.v]);
+  $("#menuBtn").hidden=!(nav.v==="baustelle"||VIEW_KIND[nav.v]); kdKopfKnopf();
   const active=top?nav.v:nav.v==="notiz"?"notizen":(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]?"kunden":"start";
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
@@ -2507,14 +2507,14 @@ function kundenView(){
 }
 function kundeView(k){
   const ss=standorteVon(k.id), bs=live("baustellen").filter(b=>b.kundeId===k.id).sort((a,b)=>aktiv(b)-aktiv(a));
-  return `<div class="narrow kd-seite">${!WIDE.matches&&canEdit(k)?`<div class="kopf-rechts">${stiftKnopf()}</div>`:""}${kdOben(k,"kunden",ss)}${kontakteView("kunden",k)}
+  return `<div class="narrow kd-seite">${kdOben(k,"kunden",ss)}${kontakteView("kunden",k)}
     ${kdKopf("Baustellen","neueBaustelleKunde","Baustelle anlegen")}${bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle bei diesem Kunden.</p>`}
     ${kdKopf("Standorte",kdDarf(k)&&"newStandort","Standort hinzufügen")}${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager) – sonst gilt die Adresse des Kunden.</p>`}
     ${ablageView("kunden",k)}</div>`;
 }
 function standortView(s){
   const bs=live("baustellen").filter(b=>b.standortId===s.id).sort((a,b)=>aktiv(b)-aktiv(a));
-  return `<div class="narrow kd-seite">${!WIDE.matches&&canEdit(s)?`<div class="kopf-rechts">${stiftKnopf()}</div>`:""}${kdOben(s,"standorte")}${kontakteView("standorte",s)}
+  return `<div class="narrow kd-seite">${kdOben(s,"standorte")}${kontakteView("standorte",s)}
     ${kdKopf("Baustellen","neueBaustelleHier","Baustelle anlegen")}${bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle an diesem Standort.</p>`}
     ${ablageView("standorte",s)}</div>`;
 }

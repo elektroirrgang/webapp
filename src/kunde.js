@@ -5,7 +5,8 @@ function infoKarte(r,kind){
   const adr=adrText(r), tel=r.tel&&r.tel.replace(/[^\d+]/g,""), vorschlag=kind==="kunden"&&!r.web?webVorschlag(r):"";
   const qa=(href,ic,t,act)=>`<${href?`a href="${href}"${/^https/.test(href)?' target="_blank" rel="noopener"':""}`:`button type="button" data-act="${act}"`} class="qa"><span class="qa-ic">${icon(ic)}</span><span>${t}</span></${href?"a":"button"}>`;
   const aktionen=[tel&&qa("tel:"+tel,"phone","Anrufen"),r.mail&&qa("mailto:"+r.mail,"mail","E-Mail"),adr&&qa(mapsHref(adr),"route","Route"),
-    kind==="kunden"&&(r.web?qa(webHref(r.web),"globe","Webseite"):vorschlag?qa(webHref(vorschlag),"globe","Webseite"):canEdit(r)?qa("","search","Webseite suchen","webSuchen"):"")].filter(Boolean);
+    kind==="kunden"&&(r.web?qa(webHref(r.web),"globe","Webseite"):vorschlag?qa(webHref(vorschlag),"globe","Webseite"):canEdit(r)?qa("","search","Webseite suchen","webSuchen"):""),
+    typeof nav!=="undefined"&&nav.id===r.id&&kdDarf(r)&&qa("","edit","Bearbeiten","editLoc")].filter(Boolean);
   /* Eckdaten nur zum Lesen – Anrufen, E-Mail, Route und Webseite gibt es oben als Knöpfe */
   const z=(ic,l,v)=>v?`<div class="dz"><span class="dz-ic">${icon(ic)}</span><span class="dz-t"><small>${l}</small><span>${esc(v)}</span></span></div>`:"";
   const zeilen=[z("tag","Kundennummer",r.kdnr),z("ort","Adresse",adr),
@@ -183,6 +184,9 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{ con
 /* Seitenkopf der Kundenansicht: Eckdaten und Karte nebeneinander (ab 900 px), darunter einspaltig */
 const kdOben=(r,kind,ss)=>`<div class="kd-oben">${infoKarte(r,kind)}${karteView(r,ss||[])}</div>`;
 /* Abschnittskopf mit rundem Plus rechts – wie in der Übersicht */
+/* Kunde/Standort: kein ⋮ – Bearbeiten steht als Schnellaktion in der Kontaktkarte, Löschen im Bearbeiten-Fenster */
+function kdKopfKnopf(){ const b=document.getElementById("menuBtn"); if(b&&typeof VIEW_KIND!=="undefined"&&VIEW_KIND[nav.v]) b.hidden=true; }
+const kdLoeschKnopf=(rec,darf)=>rec&&darf&&typeof nav!=="undefined"&&nav.id===rec.id?`<button class="btn-text danger" data-act="locDelAsk">Löschen</button>`:"";
 const karteKopf=(t,act,label,extra)=>`<div class="card-kopf"><h3>${t}</h3>${act?`<span class="ab-btns"><button class="ab-ic" data-act="${act}"${extra||""} aria-label="${esc(label)}" title="${esc(label)}">${icon("add")}</button></span>`:""}</div>`;
 const kdKopf=(t,act,label,extra)=>`<div class="sec-row"><div class="sec-lbl">${t}</div>${act?`<span class="ab-btns"><button class="ab-ic" data-act="${act}"${extra||""} aria-label="${esc(label)}" title="${esc(label)}">${icon("add")}</button></span>`:""}</div>`;
 
