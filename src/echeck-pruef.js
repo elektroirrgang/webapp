@@ -735,7 +735,9 @@ const ecRkOffen=()=>{ const p=nav.v==="ec"&&nav.schr&&DB.echecks.get(nav.id); if
 function ecRkBereiche(){ const pr=ecPr(), g=ecGeb(pr.ortId), s=ecRkOffen(); if(!s) return []; const P=ecRkPlanung(pr,g,s), nB=P.H.some(h=>h[0]==="bad"), nW=P.H.some(h=>h[0]==="wip");
   return [["ansicht","Ansicht",null],["belegung","Belegung",null],["stueck","Stückliste",null],["planung","Planung",nB?"bad":nW?"wip":"ok"]]; }
 const ecRkTabsHtml=()=>ecRkBereiche().map(([k,l,st])=>`<button class="tab" role="tab" data-act="ecRkTab" data-v="${k}" aria-selected="${k===ecRkTab}"><span class="tl">${l}${st?`<i class="sd ${st}"></i>`:""}</span></button>`).join("");
-const skRechts=()=>{ if(!WIDE.matches||!ecRkOffen()) return ""; const L=ecRkBereiche(), a=L.find(x=>x[0]===ecRkTab)||L[0];
+/* Seitenleiste ausgeklappt: Bereiche als Unterpunkte unter „Infrastruktur“ – dann braucht es die Auswahl im Kopf nicht */
+const ecRkRailHtml=s=>`<div class="nav-subkopf">${esc(s.name)}</div>`+ecRkBereiche().map(([k,l,st])=>`<button class="nav-sub" data-act="ecRkTab" data-v="${k}" ${k===ecRkTab?'aria-current="page"':""}><span>${l}</span>${st&&st!=="ok"?`<i class="sd ${st}"></i>`:""}</button>`).join("");
+const skRechts=()=>{ if(!WIDE.matches||!ecRkOffen()||railOpen) return ""; const L=ecRkBereiche(), a=L.find(x=>x[0]===ecRkTab)||L[0];
   return `<button class="spick" data-act="ecRkSpick" aria-haspopup="menu" aria-label="Bereich wählen">${a[2]?`<i class="sd ${a[2]}"></i>`:`<span class="spick-ic">${icon("ecNetz")}</span>`}<span class="spick-t">${a[1]}</span><span class="spick-p">${icon("chev")}</span></button>`; };
 function ecRkSpickAuf(b){ const m=$("#menu"), r=b.getBoundingClientRect();
   m.innerHTML=ecRkBereiche().map(([k,l,st])=>`<button class="mi spick-mi${k===ecRkTab?" an":""}" role="menuitem" data-act="ecRkTab" data-v="${k}">${st?`<i class="sd ${st}"></i>`:`<span class="spick-ic">${icon("ecNetz")}</span>`}<span>${l}</span></button>`).join("");
