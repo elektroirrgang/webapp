@@ -48,3 +48,8 @@
 
 - Aus der App je eine Verteiler-Datei: Band 6, 18, 24 mm; Trennzeichen Markierungspunkte, Gedankenstrich, Fett, Rahmen, Kein; eine Kombi-Datei (vertikal, Umkehren, Block 3 = 2,0).
 - Bestätigt: App öffnet unsere .lbxs (9 mm, Linie, 24 × 18 mm).
+
+## Handy: weniger Funktionen (Wunsch von Max, 23.10.2026)
+
+- Am Handy nur, was man vor Ort tippt (Dosen anlegen, messen, Mängel, Fotos). Planen wie den Netzwerkschrank bestücken gehört an den PC/das iPad.
+- Offen: was genau rausfliegt und ob das Handy die Schrankansicht nur noch zum Anschauen zeigt. „Mobil“ heißt bei Max iPad und Handy – Grenze also eher Handy-Breite (< 600 px), nicht iPad.

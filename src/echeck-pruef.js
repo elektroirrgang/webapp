@@ -726,7 +726,7 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
   const inhalt=tab==="belegung"?`<section class="card"><h3>Belegung <span class="m3-neben">${Lk.length} Port${Lk.length===1?"":"s"}</span></h3>${beleg}</section>`
     :tab==="stueck"?`<section class="card"><h3>Stückliste</h3>${stueck}<p class="m3-hinweis">Keystones und Patchkabel = belegte Ports</p></section>`
     :tab==="planung"?`<section class="card"><h3>Planung</h3>${planung}</section>`:ansicht;
-  return `<div class="rk-seite"><div class="rk-oben"><div class="rk-kopf"><button class="icon-btn" data-act="ecRkZu" aria-label="Zurück zur Infrastruktur" title="Zurück">${icon("back")}</button><div class="rk-kt"><h2>${esc(s.name)}</h2><p>${esc([ecSchrText(s),ecRaumName(g,s.raumId)].filter(Boolean).join(" · "))}</p></div>
+  return `<div class="rk-seite"><div class="rk-oben"><div class="rk-kopf"><div class="rk-kt"><h2>${esc(s.name)}</h2><p>${esc([ecSchrText(s),ecRaumName(g,s.raumId)].filter(Boolean).join(" · "))}</p></div>
       <button class="icon-btn" data-act="ecRkMenu" aria-label="Weitere Aktionen" title="Weitere Aktionen">${icon("more")}</button></div>
     <div class="rk-tabs" role="tablist">${TABS.map(([v,t2,z])=>`<button class="tab" role="tab" data-act="ecRkTab" data-v="${v}" aria-selected="${v===tab}"><span class="tl">${t2}${z&&!z.startsWith("<")?`<span class="rk-tz">${z}</span>`:z}</span></button>`).join("")}</div></div>
     <div class="rk-inhalt rk-${tab}">${inhalt}</div>
@@ -1474,7 +1474,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecRkZu": nav.schr=null; render(); scrollTo(0,0); return;
   case "ecRkGriff": return;
   case "ecRkWahl": ecRkWahlDlg(); return;
-  case "ecRkTab": ecRkTab=b.dataset.v; render(); { const sc=document.querySelector(".rk-seite"); if(sc) sc.scrollTop=0; } return;
+  case "ecRkTab": ecRkTab=b.dataset.v; render();  return;
   case "ecRkMenu": ecRkMenuAuf(b); return;
   case "ecRkSeite": { const an=!ecRkSeiteAn(); try{ localStorage.setItem("irrgang_rk_seite",an?"1":"0"); }catch(e){} render(); return; }
   case "ecRkHilfe": ecRkHilfeDlg(); return;
