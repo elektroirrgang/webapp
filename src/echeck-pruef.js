@@ -793,7 +793,7 @@ const EC_KATGR=[["alle","Alle"],["patch","Patchfelder"],["switch","Switches"],["
 let ecKatFilter="alle";
 /* Kachelbild: Rackgerät ohne Ohren, Gerät auf dem Fachboden eng um das Gerät */
 function ecRkKachelSvg(K){ const v=ecRkFrontSvg(K), H=K.he*RK_U; let x=16.5, w=449.6, y=0, h=H;
-  if(K.typ==="boden"&&K.bild){ const dw=K.bild.breite||(K.zeichnung==="fritz"?226:K.zeichnung==="ugreen"?256:(K.bild.schaechte||2)>2?200:108), dh=Math.min(H-10,K.bild.hoehe||(K.zeichnung==="fritz"?46:166)), p=Math.max(14,dw*.12);
+  if(K.typ==="boden"&&K.bild){ const dw=K.bild.breite||(K.zeichnung==="fritz"?226:K.zeichnung==="ugreen"?256:(K.bild.schaechte||2)>2?200:108), dh=Math.min(H-10,(K.bild.hoehe||(K.zeichnung==="fritz"?46:166))+(K.zeichnung==="fritz"?22:0)), p=Math.max(14,dw*.12);
     x=(RK_B-dw)/2-p; w=dw+2*p; y=Math.max(0,H-8-dh-p*.6); h=H-y; }
   return v.replace(`viewBox="0 0 ${RK_B} ${H}"`,`viewBox="${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}"`).replace(/style="aspect-ratio:[^"]*"/,`style="aspect-ratio:${(w/h).toFixed(3)}"`); }
 function ecRkFrontSvg(K){ const t={id:"k",typ:K.typ,pos:1,he:K.he,ports:K.ports,nr:1,kat:K.id,name:K.kurz||"",poe:!!K.poe,voll:true};
@@ -963,7 +963,7 @@ const EC_RKKAT=[
   {id:"syno-rs2423",typ:"nas",hersteller:"Synology",modell:"RackStation RS2423+",kurz:"RS2423+",sku:"RS2423+",he:2,zeichnung:"synoRack",bild:{reihen:3},info:"12 Festplatten"},
   {id:"syno-rs1221",typ:"nas",hersteller:"Synology",modell:"RackStation RS1221+",kurz:"RS1221+",sku:"RS1221+",he:2,zeichnung:"synoRack",info:"8 Festplatten"},
   /* AVM FRITZ!Box – liegt auf einem Fachboden (2 HE) */
-  {id:"fritz-5590",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 5590 Fiber",kurz:"FRITZ!Box 5590 Fiber",sku:"5590 Fiber",he:2,zeichnung:"fritz",bild:{leds:["Power","Fiber","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden"},
+  {id:"fritz-5590",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 5590 Fiber",kurz:"FRITZ!Box 5590 Fiber",sku:"5590 Fiber",he:2,zeichnung:"fritz",bild:{rot:true,breite:250,hoehe:48,leds:["Power","Fiber","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden"},
   /* Tisch-NAS auf Fachboden – Höhe in HE so, dass das Gerät auf den Boden passt */
   {id:"syno-ds923",typ:"boden",hersteller:"Synology",modell:"DiskStation DS923+",kurz:"DS923+",sku:"DS923+",he:4,zeichnung:"desk",bild:{schaechte:4,farbe:"schwarz",breite:199,hoehe:166},geraetTiefe:223,info:"4 Festplatten, auf Fachboden"},
   {id:"syno-ds224",typ:"boden",hersteller:"Synology",modell:"DiskStation DS224+",kurz:"DS224+",sku:"DS224+",he:4,zeichnung:"desk",bild:{schaechte:2,farbe:"schwarz",breite:108,hoehe:165},geraetTiefe:232,info:"2 Festplatten, auf Fachboden"},
@@ -974,9 +974,9 @@ const EC_RKKAT=[
   {id:"ugreen-dxp6800pro",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP6800 Pro",kurz:"DXP6800 Pro",sku:"DXP6800 Pro",he:5,zeichnung:"ugreen",bild:{schaechte:6,breite:300,hoehe:178,lan10:true},geraetTiefe:260,info:"6 Festplatten, 2 × 10 GbE – Maße geschätzt"},
   {id:"ugreen-dxp8800plus",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP8800 Plus",kurz:"DXP8800 Plus",sku:"DXP8800 Plus",he:5,zeichnung:"ugreen",bild:{schaechte:8,breite:345,hoehe:205,lan10:true},geraetTiefe:260,info:"8 Festplatten, 2 × 10 GbE – Maße geschätzt"},
   {id:"ugreen-dxp480tplus",typ:"boden",hersteller:"UGREEN",modell:"NASync DXP480T Plus",kurz:"DXP480T Plus",sku:"DXP480T Plus",he:2,zeichnung:"ugreen",bild:{schaechte:0,breite:178,hoehe:42,lan10:true},geraetTiefe:150,info:"Nur SSD (4 × M.2), flach – Maße geschätzt"},
-  {id:"fritz-6690",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 6690 Cable",kurz:"FRITZ!Box 6690 Cable",sku:"6690 Cable",he:2,zeichnung:"fritz",bild:{leds:["Power","Cable","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden, Kabelanschluss"},
-  {id:"fritz-5690pro",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 5690 Pro",kurz:"FRITZ!Box 5690 Pro",sku:"5690 Pro",he:2,zeichnung:"fritz",bild:{leds:["Power","Fiber","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden, Glasfaser und DSL"},
-  {id:"fritz-7590ax",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7590 AX",kurz:"FRITZ!Box 7590 AX",sku:"7590 AX",he:2,zeichnung:"fritz",bild:{rot:true,leds:["Power","DSL","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden"},
+  {id:"fritz-6690",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 6690 Cable",kurz:"FRITZ!Box 6690 Cable",sku:"6690 Cable",he:2,zeichnung:"fritz",bild:{rot:true,breite:250,hoehe:48,leds:["Power","Cable","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden, Kabelanschluss"},
+  {id:"fritz-5690pro",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 5690 Pro",kurz:"FRITZ!Box 5690 Pro",sku:"5690 Pro",he:2,zeichnung:"fritz",bild:{rot:true,breite:254,hoehe:63,leds:["Power","Fiber","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden, Glasfaser und DSL"},
+  {id:"fritz-7590ax",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7590 AX",kurz:"FRITZ!Box 7590 AX",sku:"7590 AX",he:2,zeichnung:"fritz",bild:{rot:true,breite:250,hoehe:48,leds:["Power","DSL","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden"},
   /* --- UniFi: weitere Switches (Rack) --- */
   {id:"uni-pro24",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Pro 24",kurz:"USW-Pro-24",sku:"USW-Pro-24",he:1,ports:24,silber:true,zeichnung:"uniSwitch",bild:{rj:24,sfp:2,lcd:true}},
   {id:"uni-pro48",typ:"switch",hersteller:"Ubiquiti",modell:"UniFi Switch Pro 48",kurz:"USW-Pro-48",sku:"USW-Pro-48",he:1,ports:48,silber:true,zeichnung:"uniSwitch",bild:{rj:48,sfp:4,lcd:true}},
@@ -1009,14 +1009,14 @@ const EC_RKKAT=[
   {id:"uni-blind2",typ:"blind",hersteller:"Ubiquiti",modell:"UniFi Blindblende 2 HE",kurz:"Blindblende 2 HE",sku:"UACC-Rack-Panel-Blank-2U",he:2,silber:true,zeichnung:"uniZub",bild:{art:"blind"},info:"Art.-Nr. noch prüfen"},
   {id:"uni-kabel1",typ:"kabel",hersteller:"Ubiquiti",modell:"UniFi Kabelführung 1 HE",kurz:"Kabelführung 1 HE",he:1,silber:true,zeichnung:"uniZub",bild:{art:"kabel"},info:"Bürstenleiste – Art.-Nr. noch prüfen"},
   /* --- AVM: weitere FRITZ!Boxen --- */
-  {id:"fritz-7690",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7690",kurz:"FRITZ!Box 7690",sku:"7690",he:2,zeichnung:"fritz",bild:{rot:true,leds:["Power","DSL","WLAN","Fon","Info"]},geraetTiefe:180,info:"DSL, WLAN 7"},
-  {id:"fritz-7530ax",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7530 AX",kurz:"FRITZ!Box 7530 AX",sku:"7530 AX",he:2,zeichnung:"fritz",bild:{breite:210,leds:["Power","DSL","WLAN","Fon","Info"]},geraetTiefe:150,info:"DSL"},
-  {id:"fritz-7682",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7682",kurz:"FRITZ!Box 7682",sku:"7682",he:2,zeichnung:"fritz",bild:{leds:["Power","DSL","WLAN","Fon","Info"]},geraetTiefe:180,info:"DSL inkl. G.fast"},
-  {id:"fritz-6670",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 6670 Cable",kurz:"FRITZ!Box 6670 Cable",sku:"6670 Cable",he:2,zeichnung:"fritz",bild:{leds:["Power","Cable","WLAN","Fon","Info"]},geraetTiefe:180,info:"Kabel (DOCSIS 3.1), WLAN 7"},
-  {id:"fritz-6660",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 6660 Cable",kurz:"FRITZ!Box 6660 Cable",sku:"6660 Cable",he:2,zeichnung:"fritz",bild:{breite:210,leds:["Power","Cable","WLAN","Fon","Info"]},geraetTiefe:150,info:"Kabel (DOCSIS 3.1)"},
-  {id:"fritz-5530",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 5530 Fiber",kurz:"FRITZ!Box 5530 Fiber",sku:"5530 Fiber",he:2,zeichnung:"fritz",bild:{breite:210,leds:["Power","Fiber","WLAN","Fon","Info"]},geraetTiefe:150,info:"Glasfaser"},
-  {id:"fritz-4690",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 4690",kurz:"FRITZ!Box 4690",sku:"4690",he:2,zeichnung:"fritz",bild:{leds:["Power","Internet","WLAN","Fon","Info"]},geraetTiefe:180,info:"Router hinter Glasfaser- oder Kabelmodem, 10-GbE-Port"},
-  {id:"fritz-4060",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 4060",kurz:"FRITZ!Box 4060",sku:"4060",he:2,zeichnung:"fritz",bild:{leds:["Power","Internet","WLAN","Fon","Info"]},geraetTiefe:180,info:"Router hinter Modem, 2,5-GbE-WAN"},
+  {id:"fritz-7690",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7690",kurz:"FRITZ!Box 7690",sku:"7690",he:2,zeichnung:"fritz",bild:{rot:true,breite:254,hoehe:63,leds:["Power","DSL","WLAN","Fon","Info"]},geraetTiefe:180,info:"DSL, WLAN 7"},
+  {id:"fritz-7530ax",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7530 AX",kurz:"FRITZ!Box 7530 AX",sku:"7530 AX",he:2,zeichnung:"fritz",bild:{breite:210,hoehe:42,leds:["Power","DSL","WLAN","Fon","Info"]},geraetTiefe:150,info:"DSL"},
+  {id:"fritz-7682",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7682",kurz:"FRITZ!Box 7682",sku:"7682",he:2,zeichnung:"fritz",bild:{rot:true,breite:254,hoehe:63,leds:["Power","DSL","WLAN","Fon","Info"]},geraetTiefe:180,info:"DSL inkl. G.fast"},
+  {id:"fritz-6670",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 6670 Cable",kurz:"FRITZ!Box 6670 Cable",sku:"6670 Cable",he:2,zeichnung:"fritz",bild:{rot:true,breite:254,hoehe:63,leds:["Power","Cable","WLAN","Fon","Info"]},geraetTiefe:180,info:"Kabel (DOCSIS 3.1), WLAN 7"},
+  {id:"fritz-6660",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 6660 Cable",kurz:"FRITZ!Box 6660 Cable",sku:"6660 Cable",he:2,zeichnung:"fritz",bild:{breite:210,hoehe:42,leds:["Power","Cable","WLAN","Fon","Info"]},geraetTiefe:150,info:"Kabel (DOCSIS 3.1)"},
+  {id:"fritz-5530",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 5530 Fiber",kurz:"FRITZ!Box 5530 Fiber",sku:"5530 Fiber",he:2,zeichnung:"fritz",bild:{breite:210,hoehe:42,leds:["Power","Fiber","WLAN","Fon","Info"]},geraetTiefe:150,info:"Glasfaser"},
+  {id:"fritz-4690",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 4690",kurz:"FRITZ!Box 4690",sku:"4690",he:2,zeichnung:"fritz",bild:{rot:true,breite:254,hoehe:63,leds:["Power","Internet","WLAN","Fon","Info"]},geraetTiefe:180,info:"Router hinter Glasfaser- oder Kabelmodem, 10-GbE-Port"},
+  {id:"fritz-4060",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 4060",kurz:"FRITZ!Box 4060",sku:"4060",he:2,zeichnung:"fritz",bild:{breite:210,hoehe:42,leds:["Power","Internet","WLAN","Fon","Info"]},geraetTiefe:180,info:"Router hinter Modem, 2,5-GbE-WAN"},
   /* --- Modems: DSL und Glasfaser (ONT) --- */
   {id:"draytek-167",typ:"boden",hersteller:"DrayTek",modell:"Vigor 167",kurz:"Vigor 167",sku:"Vigor 167",he:2,zeichnung:"kiste",bild:{art:"modem",farbe:"schwarz",breite:176,hoehe:37,leds:["PWR","ACT","DSL","LAN"],logo:"DrayTek"},geraetTiefe:110,info:"VDSL-Modem (Supervectoring) – Router dahinter per Netzwerkkabel"},
   {id:"genexis-fibertwist",typ:"boden",hersteller:"Genexis",modell:"FiberTwist P2410",kurz:"FiberTwist",sku:"P2410",he:2,zeichnung:"kiste",bild:{art:"modem",farbe:"weiss",breite:117,hoehe:34,leds:["Power","Fiber","LAN"],logo:"GENEXIS"},geraetTiefe:117,info:"Glasfaser-Modem (ONT), u. a. Deutsche Glasfaser – Maße geschätzt"},
@@ -1186,17 +1186,24 @@ const RK_ZEICH={
     return h; },
   /* FRITZ!Box liegend auf einem Fachboden */
   /* FRITZ!Box liegend: gewölbte weiße Front, Lüftungsschlitze, rotes Logo, LED-Reihe mit Beschriftung, Tasten; 7590 mit rotem Deckel */
-  fritz:(K,t,H)=>{ const Z=K.bild, dw=Z.breite||226, dh=Math.min(H-11,Z.hoehe||46), dx=(RK_B-dw)/2, dy=H-6-dh-2.4;
-    let h=rkBoden(H)+`<rect x="${dx+12}" y="${dy+dh}" width="10" height="2.6" rx="1" fill="#2A2C30"/><rect x="${dx+dw-22}" y="${dy+dh}" width="10" height="2.6" rx="1" fill="#2A2C30"/>`
-      +`<rect x="${dx}" y="${dy}" width="${dw}" height="${dh}" rx="7" fill="url(#rkgFritz)" stroke="#C9CDD1" stroke-width=".4"/>`
-      +`<rect x="${dx+2}" y="${dy+1.2}" width="${dw-4}" height="${dh*.18}" rx="5" fill="rgba(255,255,255,.75)"/><rect x="${dx}" y="${dy+dh-5}" width="${dw}" height="5" rx="2.5" fill="rgba(0,0,0,.09)"/>`
-      +(Z.rot?`<path d="M${dx+7} ${dy}h${dw-14}a7 7 0 0 1 7 7v1.6h-${dw}V${dy+7}a7 7 0 0 1 7-7z" fill="#E2001A"/><rect x="${dx}" y="${dy+7.2}" width="${dw}" height="1.2" fill="#B00014"/>`:"");
-    for(let i=0;i<26;i++) h+=`<rect x="${dx+dw*.34+i*3.1}" y="${dy+dh-9.5}" width="1.4" height="3.2" rx=".7" fill="#D3D6D9"/>`;
-    h+=`<text x="${dx+11}" y="${dy+dh*.52+3.6}" font-size="10.5" font-weight="900" font-style="italic" fill="#E2001A" letter-spacing="-.3" font-family="Arial Black,Arial,sans-serif">FRITZ!</text>`
-      +rkText(dx+12,dy+dh*.52+8.6,K.kurz.replace(/^FRITZ!Box\s*/,"FRITZ!Box "),{fs:3,fw:600,fill:"#8E939A"});
-    const L=Z.leds||["Power","Fiber","WLAN","Fon","Info"], lx=dx+dw-14-L.length*18, ly=dy+dh*.44;
-    L.forEach((l,i)=>{ const x=lx+i*18, an=i<3; h+=`<rect x="${x}" y="${ly}" width="6" height="2" rx="1" fill="${an?"#33D17A":"#D7DADD"}" ${an?'style="filter:drop-shadow(0 0 1px #33D17A)"':""}/>`+rkText(x+3,ly+6.2,l,{fs:2.7,fw:600,fill:"#7A7F86",anchor:"middle"}); });
-    h+=`<rect x="${lx-26}" y="${ly-1.4}" width="16" height="5" rx="2.5" fill="#ECEEF0" stroke="#C3C7CB" stroke-width=".4"/>`+rkText(lx-18,ly+7.4,"Connect",{fs:2.5,fw:600,fill:"#9AA0A6",anchor:"middle"});
+  fritz:(K,t,H)=>{ const Z=K.bild, dw=Z.breite||250, fh=Math.min(H-22,Z.hoehe||48), tp=Math.max(8,Math.min(22,H-10-fh)), dx=(RK_B-dw)/2, dy=H-6-fh-tp-1.2, fy=dy+tp, rot=!!Z.rot, ins=Math.min(14,dw*.05);
+    const L=Z.leds||["Power","Fiber","WLAN","Fon","Info"], tg=`fz${K.id.replace(/[^a-z0-9]/gi,"")}`;
+    let h=rkBoden(H)+`<defs><linearGradient id="${tg}t" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${rot?"#B80016":"#E9EBEE"}"/><stop offset="1" stop-color="${rot?"#E3001B":"#FAFBFC"}"/></linearGradient>
+      <linearGradient id="${tg}f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".7" stop-color="#F1F2F4"/><stop offset="1" stop-color="#D9DCE0"/></linearGradient></defs>`
+      +`<ellipse cx="${dx+dw/2}" cy="${H-6}" rx="${dw*.48}" ry="2.2" fill="rgba(0,0,0,.35)"/>`
+      /* Oberseite in leichter Draufsicht – bei den großen Modellen rot */
+      +`<path d="M${dx+ins} ${dy}H${dx+dw-ins}L${dx+dw} ${fy}H${dx}Z" fill="url(#${tg}t)" stroke="${rot?"#9E0013":"#C9CDD1"}" stroke-width=".4" stroke-linejoin="round"/>`
+      +`<text x="${dx+ins+10}" y="${dy+tp*.68}" font-size="${Math.min(10,tp*.62)}" font-weight="900" font-style="italic" fill="${rot?"#FFFFFF":"#E2001A"}" letter-spacing="-.3" font-family="Arial Black,Arial,sans-serif">FRITZ!</text>`
+      /* Vorderseite: weiß, unten gerundet, Kante oben hell */
+      +`<path d="M${dx} ${fy}H${dx+dw}V${fy+fh-6}Q${dx+dw} ${fy+fh} ${dx+dw-6} ${fy+fh}H${dx+6}Q${dx} ${fy+fh} ${dx} ${fy+fh-6}Z" fill="url(#${tg}f)" stroke="#C3C7CB" stroke-width=".4"/>`
+      +`<rect x="${dx+.6}" y="${fy}" width="${dw-1.2}" height="1.1" fill="${rot?"#FF4D5E":"#FFFFFF"}" opacity=".9"/>`;
+    /* LED-Reihe mit Beschriftung, Tasten links davon */
+    const sp=Math.min(20,(dw*.52)/L.length), lx=dx+dw-16-sp*(L.length-1), ly=fy+fh*.34;
+    L.forEach((l,i)=>{ const x=lx+i*sp, an=i<3; h+=`<rect x="${x-3.4}" y="${ly}" width="6.8" height="2.2" rx="1.1" fill="${an?"#3DDC84":"#D3D7DB"}"${an?' style="filter:drop-shadow(0 0 1.2px #3DDC84)"':""}/>`+rkText(x,ly+7,l,{fs:2.8,fw:600,fill:"#80868D",anchor:"middle"}); });
+    ["Connect","WLAN"].forEach((l,i)=>{ const x=dx+18+i*24; h+=`<rect x="${x}" y="${ly-1.6}" width="18" height="5.4" rx="2.7" fill="#F7F8F9" stroke="#BFC4C9" stroke-width=".5"/>`+rkText(x+9,ly+9,l,{fs:2.6,fw:600,fill:"#9AA0A6",anchor:"middle"}); });
+    /* Lüftungsschlitze unten */
+    const n=Math.floor((dw-40)/3.4); for(let i=0;i<n;i++) h+=`<rect x="${dx+20+i*3.4}" y="${fy+fh-11}" width="1.5" height="4" rx=".75" fill="#D8DBDF"/>`;
+    h+=rkText(dx+dw-14,fy+fh-15,K.kurz.replace(/^FRITZ!Box\s*/,""),{fs:3,fw:700,fill:"#A3A8AE",anchor:"end"});
     return h; },
   /* Tischgerät auf dem Fachboden: Synology DiskStation (schwarz oder weiß) und UGREEN NASync */
   desk:(K,t,H)=>{ const Z=K.bild, sw=Z.schaechte||2, dw=Z.breite||(sw>2?200:108), dh=Math.min(H-10,Z.hoehe||166), dx=(RK_B-dw)/2, dy=H-6-dh-1.6, weiss=Z.farbe==="weiss", ug=Z.marke==="ugreen";
