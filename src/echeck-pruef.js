@@ -738,8 +738,8 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
   const TABS=[["ansicht","Ansicht",""],["belegung","Belegung",String(Lk.length)],["stueck","Stückliste",""],["planung","Planung",nB?`<i class="sd bad"></i>`:nW?`<i class="sd wip"></i>`:""]];
   const ansicht=`<section class="card rk-zeich"><div class="rk-zk"><h3>Vorderansicht</h3><button type="button" class="m3-filter" data-act="ecRkSeite" aria-pressed="${ecRkSeiteAn()}">Seitenansicht${ecRkSeiteAn()?` · ${ecSchrTiefe(s)} mm`:""}</button></div>
       ${ecRkDefs()}<div class="rk-bau gross${ecRkSeiteAn()?" seite":""}${ecSchrBreite(s)>=800?" b800":""} ${ecSchrFarbe(s)}"><div class="rk-front"><div class="rk-geh ${s.bauart==="stand"?"stand":"wand"}${ecSchrBreite(s)>=800?" b800":""}"><div class="rk-dach"></div><div class="rk" style="--n:${N}"><span class="rk-schiene l"></span><span class="rk-schiene r"></span>${Array.from({length:N},(_,i)=>nr(i+1)+leer(i+1)).join("")}${T.map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div><div class="rk-sockel"></div></div></div>
-        <div class="rk-side"><div class="rk-sv" style="--n:${N}"><i class="rk-nb" style="left:${Math.round(ecSchrNutzbar(s)/ecSchrTiefe(s)*100)}%" title="nutzbar etwa ${ecSchrNutzbar(s)} mm"></i>
-          ${T.map(t=>{ const tf2=ecRkTiefe(s,t), zu2=tf2>ecSchrNutzbar(s); return `<span class="rk-sb rk-${t.typ}${+t.tiefe?"":" geschaetzt"}${zu2?" zutief":""}" style="grid-row:${t.pos} / span ${t.he};width:${Math.min(100,Math.round(tf2/ecSchrTiefe(s)*100))}%" title="${esc(`${ecRkName(t)}: ${tf2} mm${+t.tiefe?"":" (typisch)"}`)}"></span>`; }).join("")}</div></div></div>
+        <div class="rk-side"><div class="rk-sgeh ${s.bauart==="stand"?"stand":"wand"}"><div class="rk-sdach"></div><div class="rk-sv" style="--n:${N}"><i class="rk-sfr"></i><i class="rk-nb" style="left:calc(${(ecSchrNutzbar(s)/ecSchrTiefe(s)*100).toFixed(1)}% - 2px)" title="hintere Schiene – nutzbar etwa ${ecSchrNutzbar(s)} mm"></i>
+          ${T.map(t=>ecRkSeiteTeil(s,t)).join("")}</div><div class="rk-ssockel"></div></div><div class="rk-smass"><span>vorne</span><span>${ecSchrTiefe(s)} mm</span><span>hinten</span></div></div></div>
       <p class="m3-hinweis">${zu?"Prüfung abgeschlossen – nur Ansicht.":"Antippen zum Bearbeiten · ziehen zum Verschieben · freie HE antippen zum Einsetzen"}</p></section>`;
   const inhalt=tab==="belegung"?`<section class="card"><h3>Belegung <span class="m3-neben">${Lk.length} Port${Lk.length===1?"":"s"}</span></h3>${beleg}</section>`
     :tab==="stueck"?`<section class="card"><h3>Stückliste</h3>${stueck}<p class="m3-hinweis">Keystones und Patchkabel = belegte Ports</p></section>`
@@ -748,6 +748,14 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
     <div class="rk-inhalt rk-${tab}">${inhalt}</div>
     ${zu||tab!=="ansicht"?"":`<button class="fab rk-fab" data-act="ecRkWahl">${icon("add")}<span>Teil einsetzen</span></button>`}</div>`; }
 let ecRkTab="ansicht";
+/* Seitenansicht: Farbe wie die Front (Edelstahl, UniFi-Alu, schwarz, weiße FRITZ!Box), Tiefe maßstäblich zur Schranktiefe */
+function ecRkFarbe(t){ const K=ecRkKat(t.kat);
+  if(K){ if(t.typ==="patch") return K.farbe==="edelstahl"?"inox":K.farbe==="hell"?"hell":"schwarz"; if(K.silber) return "silber"; return "schwarz"; }
+  if((t.typ==="switch"||t.typ==="router")&&/unifi|ubiquiti|ubnt/i.test(t.name||"")) return "silber"; return t.typ==="blind"?"blind":"schwarz"; }
+function ecRkSeiteTeil(s,t){ const tf2=ecRkTiefe(s,t), T=ecSchrTiefe(s), zu2=tf2>ecSchrNutzbar(s), w=Math.min(100,tf2/T*100).toFixed(1), K=ecRkKat(t.kat);
+  const tit=esc(`${ecRkName(t)}: ${tf2} mm${+t.tiefe?"":" (typisch)"}${zu2?" – zu tief":""}`), st=`grid-row:${t.pos} / span ${t.he};width:${w}%`;
+  if(t.typ==="boden"){ const gt=K&&K.geraetTiefe; return `<span class="rk-sb rk-boden" style="${st}" title="${tit}">${gt?`<i class="rk-sbg${K.bild&&K.bild.rot?" rot":""}" style="width:${Math.min(100,gt/tf2*100).toFixed(1)}%" title="${esc(`${ecRkName(t)}: etwa ${gt} mm tief`)}"></i>`:""}</span>`; }
+  return `<span class="rk-sb rk-${t.typ} f-${ecRkFarbe(t)}${+t.tiefe||K&&K.tiefe?"":" geschaetzt"}${zu2?" zutief":""}" style="${st}" title="${tit}"></span>`; }
 /* Schrank offen? – dann wie die Ladestation in EVSE: Titel = Schrank, Bereiche als Tabs (Handy) bzw. Auswahl rechts im Kopf (breit), Aktionen im ⋮-Menü */
 const ecRkOffen=()=>{ const p=nav.v==="ec"&&nav.schr&&DB.echecks.get(nav.id); if(!p||p.deleted||!ecNz(p)||ecTab(p)!=="infra") return null; return ecGeb(p.ortId).schraenke.find(x=>x.id===nav.schr)||null; };
 function ecRkBereiche(){ const pr=ecPr(), g=ecGeb(pr.ortId), s=ecRkOffen(); if(!s) return []; const P=ecRkPlanung(pr,g,s), nB=P.H.some(h=>h[0]==="bad"), nW=P.H.some(h=>h[0]==="wip");
@@ -826,8 +834,8 @@ const EC_RKKAT=[
   {id:"syno-rs822",typ:"nas",hersteller:"Synology",modell:"RackStation RS822+",kurz:"RS822+",sku:"RS822+",he:1,zeichnung:"synoRack",info:"4 Festplatten"},
   {id:"syno-rs1221",typ:"nas",hersteller:"Synology",modell:"RackStation RS1221+",kurz:"RS1221+",sku:"RS1221+",he:2,zeichnung:"synoRack",info:"8 Festplatten"},
   /* AVM FRITZ!Box – liegt auf einem Fachboden (2 HE) */
-  {id:"fritz-5590",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 5590 Fiber",kurz:"FRITZ!Box 5590 Fiber",sku:"5590 Fiber",he:2,zeichnung:"fritz",bild:{leds:["Power","Fiber","WLAN","Fon","Info"]},info:"auf Fachboden"},
-  {id:"fritz-7590ax",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7590 AX",kurz:"FRITZ!Box 7590 AX",sku:"7590 AX",he:2,zeichnung:"fritz",bild:{rot:true,leds:["Power","DSL","WLAN","Fon","Info"]},info:"auf Fachboden"}];
+  {id:"fritz-5590",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 5590 Fiber",kurz:"FRITZ!Box 5590 Fiber",sku:"5590 Fiber",he:2,zeichnung:"fritz",bild:{leds:["Power","Fiber","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden"},
+  {id:"fritz-7590ax",typ:"boden",hersteller:"AVM",modell:"FRITZ!Box 7590 AX",kurz:"FRITZ!Box 7590 AX",sku:"7590 AX",he:2,zeichnung:"fritz",bild:{rot:true,leds:["Power","DSL","WLAN","Fon","Info"]},geraetTiefe:180,info:"auf Fachboden"}];
 const ecRkKat=id=>id&&EC_RKKAT.find(k=>k.id===id)||null;
 const ecRkKatName=K=>K.modell.startsWith(K.hersteller.split(" ")[0])?K.modell:`${K.hersteller} ${K.modell}`;
 const ecRkKatNr=K=>K.artnr?`Art.-Nr. ${K.artnr}`:K.sku?`Typ ${K.sku}`:"";
