@@ -22,3 +22,29 @@
 - Prüfungen / Messungen später je Raum erfassen.
 - Offen: wie das im Prüfprotokoll dargestellt wird (nach Etage und Raum gegliedert?), und in welcher App (E-Check / Erstprüfung).
 - Vorgehen wie bei den Haftnotizen: erst Entwürfe zeigen, dann bauen.
+
+## Netzwerkprüfung: Inhalt des PDF-Berichts wählbar (Wunsch von Max, 23.10.2026)
+
+- Beim Erstellen des Berichts per Schalter festlegen, was hineinkommt. Mögliche Teile:
+  - Auftragsdaten, Messgerät, Verkabelung (immer)
+  - Messergebnisse je Link als Tabelle
+  - Wiremap-Bild je Link
+  - Mängelliste
+  - Netzwerkschrank als Zeichnung (Vorderansicht wie in „Infrastruktur“)
+  - Bestückungs- bzw. Stückliste des Schranks
+  - Patchfeld-Belegung (Port → Dose/Raum)
+  - Dosenliste je Etage/Raum
+- Auswahl je Bericht merken; dazu eine Firmen-Vorgabe (wie die Etiketten-Profile).
+- Vorher in Ruhe die Oberfläche der Netzwerkprüfung neu anordnen (Max am Laptop), Etiketten-Editor bekommt dabei einen festen Platz.
+
+## Netzwerkprüfung: Import aus dem SignalTEK (nächste Woche)
+
+- SignalTEK II liefert CSV (nur bestanden/nicht bestanden) und PDF (je Seite ein Link: Länge, Paarlängen, Skew, Kabeltyp, Geschwindigkeit, Duplex, Tx/Rx/Fehler). Text aus dem PDF lässt sich auslesen, pdf.js liegt schon in vendor/.
+- Fehlt noch: ein Bericht vom SignalTEK NT (per USB-Stick), am besten mit Bildern.
+- Offen: Tests am Gerät nach Dosen benennen („1.13“) oder Zuordnung beim Import in der App.
+- Uhr am SignalTEK II ist falsch gestellt (Berichte zeigen 2010).
+
+## Brother-Etiketten: Musterdateien fehlen noch
+
+- Aus der App je eine Verteiler-Datei: Band 6, 18, 24 mm; Trennzeichen Markierungspunkte, Gedankenstrich, Fett, Rahmen, Kein; eine Kombi-Datei (vertikal, Umkehren, Block 3 = 2,0).
+- Bestätigt: App öffnet unsere .lbxs (9 mm, Linie, 24 × 18 mm).
