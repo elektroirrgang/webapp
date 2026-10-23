@@ -1055,20 +1055,8 @@ body.kopf-oben .edk-platz{display:none!important}
 .rk-zk{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}.rk-zk h3{margin:0;flex:1}
 .ec-filter{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
 .ec-an-weg .chips{flex-direction:column;align-items:stretch}.ec-an-weg .chip{justify-content:flex-start;text-align:left;height:auto;min-height:40px;padding:8px 14px;white-space:normal}
-.nk .search{margin-bottom:12px}.nk-filter{margin-bottom:4px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.nk-filter::-webkit-scrollbar{display:none}.nk-filter .m3-filter{flex:none}
-.katgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-@media (min-width:600px){.katgrid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}}
-.ktile{display:flex;flex-direction:column;text-align:left;border:0;padding:0;border-radius:20px;background:var(--sc-low);color:var(--on-surface);overflow:hidden;min-width:0;cursor:pointer;font:inherit}
-.ktile:active{background:var(--sc-high)}
-.nk-bild{display:flex;align-items:center;justify-content:center;aspect-ratio:16/10;background:#1C1D20;padding:12px}
-.nk-bild .kat-svg{max-height:100%;width:100%;filter:drop-shadow(0 3px 6px rgba(0,0,0,.4))}
-.ktile-t{display:flex;flex-direction:column;gap:2px;padding:10px 12px 12px;min-width:0}
-.ktile-t b{font-size:14px;line-height:1.25;overflow-wrap:anywhere}.ktile-t span{font-size:13px}.ktile-t small{font-size:12px;color:var(--on-sv)}
-.nk-gross{padding:20px;border-radius:20px;background:#1C1D20;margin:0 0 8px}.nk-gross .kat-svg{filter:drop-shadow(0 3px 6px rgba(0,0,0,.4))}
-.kat-kopf{display:flex;align-items:flex-start;gap:12px;justify-content:space-between}.kat-kopf h3{margin:0 0 2px!important}.kat-kopf .meta{margin:0}
-.kat-art{flex:none;font-size:12px;font-weight:600;padding:4px 10px;border-radius:8px;background:var(--sc-highest);color:var(--on-sv)}
-.kat-bild{margin:16px 0 12px;padding:16px;border-radius:14px;background:#1C1D20}.kat-svg{display:block;width:100%;height:auto;filter:drop-shadow(0 3px 6px rgba(0,0,0,.35))}
-.kat-fakten{display:flex;flex-wrap:wrap;gap:6px}.kat-fakten span{font-size:13px;font-weight:600;padding:4px 10px;border-radius:8px;background:var(--sc-high);color:var(--on-surface)}
+.ktile-bild .kat-svg,.kat-kopf .kat-bild .foto .kat-svg{position:absolute;top:10px;left:10px;width:calc(100% - 20px);height:calc(100% - 20px)}
+.kat-svg{display:block}.rk-defs{position:absolute;width:0;height:0;overflow:hidden}.kat-kopf .kat-bild .foto.kat-zeich{background:#fff!important;border:0!important}.kat-gross{background:#fff;border-radius:12px;padding:12px}.kat-gross .kat-svg{width:100%;height:auto}
 .m3-filter{height:32px;padding:0 16px;border:0;border-radius:8px;background:var(--sc-highest);color:var(--on-sv);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .m3-filter[aria-pressed="true"]{background:var(--sec-c);color:var(--on-sec-c)}
 @media (max-width:599px){.rk-bau.gross{--rk-x:56px}.rk-bau.gross.b800{--rk-x:80px}.rk-bau.gross.seite{--rk-x:160px}.rk-bau.gross.seite.b800{--rk-x:184px}.rk-zeich{background:none;padding:0;border-radius:0}.rk-zeich h3,.rk-zeich .m3-hinweis{margin-left:4px;margin-right:4px}}
@@ -1742,6 +1730,8 @@ function pfadTeile(){
   if(nav.v==="standort"){ const s=standortOf(nav.id); return kette(s&&s.kundeId); }
   if(nav.v==="kunde") return kette();
   if(MEHR_SUB[nav.v]) return [["Mehr",{v:"mehr"}]];
+  if(nav.v==="netzkatalog"&&!WIDE.matches) return [["Mehr",{v:"mehr"}]];
+  if(nav.v==="netzkatmodell") return [["Katalog",{v:"netzkatalog"}]];
   if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); const v=ecListeV(p&&p.art); return [[{geraete:"Geräte",netzwerk:"Netzwerk"}[v]||"Installation",{v}]]; }
   return [];
 }
@@ -1916,7 +1906,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   else if(nav.v==="anlagen"){ title="Installation"; body=ecListeView("anlage"); fab=["ecNeuA","Prüfung","add"]; }
   else if(nav.v==="geraete"){ title="Geräte"; body=ecListeView("geraete"); fab=["ecNeuG","Prüfung","add"]; }
   else if(nav.v==="netzwerk"){ title="Netzwerk"; body=ecListeView("netz"); fab=["ecNeuN","Prüfung","add"]; }
-  else if(nav.v==="netzkatalog"){ title="Netzwerk-Katalog"; sub=`${EC_RKKAT.length} Geräte für den Netzwerkschrank`; body=ecKatalogView(); }
+  else if(nav.v==="netzkatalog"){ title="Katalog"; body=ecKatalogView(); }
   else if(nav.v==="netzkatmodell"){ const K=ecRkKat(nav.id); if(!K){ nav={v:"netzkatalog"}; return render(); } title=K.kurz||K.modell; sub=K.hersteller; body=ecKatModellView(K); }
   else if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); if(!p||p.deleted){ nav={v:"anlagen"}; return render(); }
     title=ecOrt(p.ortId).titel; sub=`${EC_ART[p.art||"anlage"]} · ${ecDatum(p.datum)}`; if(rkS){ sub=`Netzwerkschrank · ${title}`; title=rkS.name; } body=ecView(p); }
@@ -2036,7 +2026,7 @@ function mehrView(){
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}`)):""}
       ${row("nav:team","person","Mitarbeiter",esc(META.profil.name||""))}
       ${row("theme","theme","Darstellung",TH_LABEL[theme])}${demoZeile()}</div>
-    ${WIDE.matches?"":`<div class="sec-lbl">Wissen</div><div class="list">${row("nav:netzkatalog","book","Netzwerk-Katalog",`${EC_RKKAT.length} Geräte · Patchfelder, Switches, NAS, Router`)}</div>`}
+    ${WIDE.matches?"":`<div class="sec-lbl">Wissen</div><div class="list">${row("nav:netzkatalog","book","Katalog",`${EC_RKKAT.length} Geräte · Netzwerkschrank`)}</div>`}
     <div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../evse/","ev","EVSE","Prüfung von Wallboxen und Ladesäulen")}${link("../baustelle/","baustelle","Baustelle","Tagesstand, offene Punkte und Material")}</div></div>
     <div class="sec-lbl">Rechtliches und Info</div><div class="list">
       ${row("nav:impressum","paragraph","Impressum","")}
