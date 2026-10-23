@@ -323,7 +323,7 @@ function ecGebView(pr){ const g=ecGeb(pr.ortId), et=g.etagen.find(e=>e.id===nav.
     <p class="hint">${nz?"Raum antippen, um Datendosen in Laufreihenfolge anzulegen. Netzwerkschränke und Patchfelder kommen im nächsten Schritt „Infrastruktur“. Räume und Etagen teilt sich die Netzwerkprüfung mit der Installationsprüfung.":"Raum antippen, um Steckdosen und andere Anschlusspunkte in Laufreihenfolge anzulegen (Vorschlag: ab der Tür im Uhrzeigersinn). Alles bleibt für die nächste Prüfung erhalten."}</p>
     ${nz?ecWeiter("infra","Weiter zur Infrastruktur"):ecWeiter("sicht","Weiter zur Besichtigung")}`; }
 /* Infrastruktur (Netzwerk): Netzwerkschränke mit kleiner Vorschau, Kennzahlen, Dosen ohne Schrank */
-function ecRkMini(pr,g,s){ const {M}=ecRkLinks(g,s); return `<div class="rk-bau mini ${ecSchrFarbe(s)}"><div class="rk mini" style="--n:${ecSchrHe(s)}">${ecSchrTeile(s).map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div></div>`; }
+function ecRkMini(pr,g,s){ const {M}=ecRkLinks(g,s); return `<div class="rk-bau mini ${ecSchrFarbe(s)}"><div class="rk-geh ${s.bauart==="stand"?"stand":"wand"}"><div class="rk-dach"></div><div class="rk mini" style="--n:${ecSchrHe(s)}"><span class="rk-schiene l"></span><span class="rk-schiene r"></span>${ecSchrTeile(s).map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div><div class="rk-sockel"></div></div></div>`; }
 function ecInfraView(pr){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", S=g.schraenke, P=S.map(s=>ecRkPlanung(pr,g,s));
   const B=P.reduce((a,x)=>a+x.B,0), T=P.reduce((a,x)=>a+x.ports,0), SW=P.reduce((a,x)=>a+x.swPorts,0), bad=P.reduce((a,x)=>a+x.H.filter(h=>h[0]==="bad").length,0), hw=P.reduce((a,x)=>a+x.H.filter(h=>h[0]==="wip").length,0);
   const k=(z,t,bar,rot)=>`<div class="ec-k"><b${rot?' class="rot"':""}>${z}</b><small>${t}</small>${bar!=null?`<span class="ec-bar"><i style="width:${Math.round(bar*100)}%"></i></span>`:""}</div>`;
@@ -332,7 +332,7 @@ function ecInfraView(pr){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", S=g.
       <span>${PL.B} von ${PL.ports} Patchports belegt · ${PL.frei} HE frei</span>${haupt.length?`<span class="ec-ik-g">${esc(haupt.join(" · "))}</span>`:""}
       <span class="ec-ik-p">${b2?pill("bad",`${b2} Problem${b2>1?"e":""}`):h2?pill("wip",`${h2} Hinweis${h2>1?"e":""}`):pill("ok","Planung passt")}${ecNetImUmfang(pr,{sId:s.id})?"":pill("open","nicht im Prüfumfang")}</span></div>${icon("chev")}</div>`; };
   const A=ecNetAlle(g), ohne=A.filter(p=>!p.d.sId||!S.some(s=>s.id===p.d.sId));
-  return `<div class="ec-kz">${k(S.length,`Netzwerkschr${S.length===1?"ank":"änke"}`)}${k(`${B} / ${T}`,"Patchports belegt",T?B/T:0)}${k(SW,"Switch-Ports")}${k(bad||hw,bad?"Probleme":"Hinweise",null,bad>0)}</div>
+  return `${ecRkDefs()}<div class="ec-kz">${k(S.length,`Netzwerkschr${S.length===1?"ank":"änke"}`)}${k(`${B} / ${T}`,"Patchports belegt",T?B/T:0)}${k(SW,"Switch-Ports")}${k(bad||hw,bad?"Probleme":"Hinweise",null,bad>0)}</div>
     ${kdKopf("Netzwerkschränke",zu?"":"ecSchrNeu","Schrank hinzufügen")}
     ${S.length?`<div class="ec-iks">${S.map((s,i)=>karte(s,P[i])).join("")}</div><p class="meta" style="margin:8px 4px 0">Antippen öffnet den Schrank. Bearbeiten: Rechtsklick, am Handy lange drücken.</p>`
       :`<div class="empty">${icon("ecNetz")}<h2>Noch kein Netzwerkschrank</h2><p>Leg den Hauptschrank an – z. B. im Technikraum – und, falls vorhanden, Unterverteiler auf den Etagen. Patchfelder, Switches und alles Weitere planst du im Schrank.</p></div>`}
@@ -689,7 +689,7 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
       ${zu?"":`<button class="btn-tonal" data-act="ecSchrEdit" data-id="${esc(s.id)}">${icon("edit")}Bearbeiten</button>`}</div>
     <div class="rk-inhalt"><div class="rk-zwei"><div>
       ${zu?"":`<div class="chips rk-pal">${["patch","switch","kabel","boden","router","pdu","usv","luefter","blind"].map(t2=>`<button type="button" class="chip" data-act="ecRkNeu" data-t="${t2}">${icon("add")}${EC_RK[t2]}</button>`).join("")}</div>`}
-      <div class="rk-bau ${ecSchrFarbe(s)}"><div class="rk-front"><div class="rk-ks">Vorderansicht</div><div class="rk${ecSchrBreite(s)>=800?" b800":""}" style="--n:${N}"><span class="rk-schiene l"></span><span class="rk-schiene r"></span>${Array.from({length:N},(_,i)=>nr(i+1)+leer(i+1)).join("")}${T.map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div></div>
+      ${ecRkDefs()}<div class="rk-bau ${ecSchrFarbe(s)}"><div class="rk-front"><div class="rk-ks">Vorderansicht</div><div class="rk-geh ${s.bauart==="stand"?"stand":"wand"}${ecSchrBreite(s)>=800?" b800":""}"><div class="rk-dach"></div><div class="rk" style="--n:${N}"><span class="rk-schiene l"></span><span class="rk-schiene r"></span>${Array.from({length:N},(_,i)=>nr(i+1)+leer(i+1)).join("")}${T.map(t=>ecRkTeilHtml(pr,g,s,t,M)).join("")}</div><div class="rk-sockel"></div></div></div>
         <div class="rk-side"><div class="rk-ks">Seite · ${ecSchrTiefe(s)} mm</div><div class="rk-sv" style="--n:${N}"><i class="rk-nb" style="left:${Math.round(ecSchrNutzbar(s)/ecSchrTiefe(s)*100)}%" title="nutzbar etwa ${ecSchrNutzbar(s)} mm"></i>
           ${T.map(t=>{ const tf2=ecRkTiefe(s,t), zu2=tf2>ecSchrNutzbar(s); return `<span class="rk-sb rk-${t.typ}${+t.tiefe?"":" geschaetzt"}${zu2?" zutief":""}" style="grid-row:${t.pos} / span ${t.he};width:${Math.min(100,Math.round(tf2/ecSchrTiefe(s)*100))}%" title="${esc(`${ecRkName(t)}: ${tf2} mm${+t.tiefe?"":" (typisch)"}`)}"></span>`; }).join("")}</div></div></div>
       <p class="hint">Teil antippen zum Bearbeiten. Verschieben: mit der Maus das Teil ziehen, am Handy am Griff links – ist die Stelle belegt, rücken die Teile dazwischen nach. Freie HE antippen, um dort etwas einzusetzen. Im Patchfeld: grau = belegt, grün = gemessen i. O., rot = Mangel. Seitenansicht: Einbautiefe der Teile, Strich = nutzbare Tiefe; blass = typischer Wert, solange keine Tiefe eingetragen ist.</p></div>
@@ -720,34 +720,88 @@ document.addEventListener("pointerdown",e=>{ if(e.pointerType!=="touch") return;
   const ab=ev=>{ if(ev.type==="pointermove"&&Math.hypot(ev.clientX-x,ev.clientY-y)<10) return; clearTimeout(ecCtxT); document.removeEventListener("pointermove",ab); document.removeEventListener("pointerup",ab); document.removeEventListener("pointercancel",ab); };
   document.addEventListener("pointermove",ab); document.addEventListener("pointerup",ab); document.addEventListener("pointercancel",ab); });
 document.addEventListener("click",e=>{ if(ecCtxSchlucken){ ecCtxSchlucken=false; e.preventDefault(); e.stopImmediatePropagation(); } },true);
-/* Frontansicht der Teile – angelehnt an echte Geräte: 19"-Ohren mit Schrauben, Ports in 6er-Blöcken, Lüfter, USV mit Display usw. */
-const ecRkKurz=n=>String(n||"").replace(/^(UniFi|Ubiquiti|APC|Synology|FRITZ!Box)\s+/i,"$1 ").slice(0,28);
+/* Frontansicht der Teile als SVG in echten Maßen (mm): 19" = 482,6 mm, 1 HE = 44,45 mm, Ohren 16,5 mm, Lochabstand 465,1 mm.
+   So stimmen die Proportionen wie im echten Schrank; die Zeichnung skaliert mit der HE-Höhe. */
+const ecRkKurz=n=>String(n||"").slice(0,34);
+const RK_B=482.6, RK_U=44.45;
+/* Farbverläufe einmal pro Seite (in der Schrank- und der Infrastruktur-Ansicht eingebunden) */
+const ecRkDefs=()=>`<svg class="rk-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs>
+  <linearGradient id="rkgBlk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34363B"/><stop offset=".08" stop-color="#26282C"/><stop offset=".92" stop-color="#1A1B1E"/><stop offset="1" stop-color="#0E0F10"/></linearGradient>
+  <linearGradient id="rkgSil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FAFBFC"/><stop offset=".1" stop-color="#E9ECEF"/><stop offset=".9" stop-color="#D3D7DC"/><stop offset="1" stop-color="#AEB3B9"/></linearGradient>
+  <linearGradient id="rkgEar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#18191B"/><stop offset=".5" stop-color="#2C2E32"/><stop offset="1" stop-color="#1E1F22"/></linearGradient>
+  <linearGradient id="rkgEarS" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#C9CDD2"/><stop offset=".5" stop-color="#ECEFF2"/><stop offset="1" stop-color="#C2C7CC"/></linearGradient>
+  <radialGradient id="rkgScrew" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#F2F4F6"/><stop offset=".5" stop-color="#9AA0A7"/><stop offset="1" stop-color="#55595F"/></radialGradient>
+  <linearGradient id="rkgCage" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D9DDE1"/><stop offset="1" stop-color="#7F858C"/></linearGradient>
+  <linearGradient id="rkgLcd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#BFEAF5"/><stop offset="1" stop-color="#6FAFC6"/></linearGradient>
+  <linearGradient id="rkgKey" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D9DCDF"/></linearGradient>
+  <linearGradient id="rkgTray" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5A5E65"/><stop offset="1" stop-color="#2A2C30"/></linearGradient>
+  <linearGradient id="rkgDev" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".85" stop-color="#E6E8EB"/><stop offset="1" stop-color="#C8CCD1"/></linearGradient>
+  <linearGradient id="rkgDevD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3B3E44"/><stop offset="1" stop-color="#1C1D20"/></linearGradient>
+  <linearGradient id="rkgRed" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF6A5E"/><stop offset="1" stop-color="#B3261E"/></linearGradient>
+  <pattern id="rkpBrush" width="1.4" height="10" patternUnits="userSpaceOnUse"><rect width="1.4" height="10" fill="#0C0C0D"/><rect width=".5" height="10" fill="#34373C"/></pattern>
+  <pattern id="rkpVent" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="skewX(-20)"><rect width="5" height="5" fill="#16171A"/><rect x="0" y="0" width="2.4" height="5" fill="#050506"/></pattern>
+  <pattern id="rkpHex" width="6" height="5.2" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.3" r="1.1" fill="#0A0A0B"/><circle cx="4.5" cy="3.9" r="1.1" fill="#0A0A0B"/></pattern>
+  <pattern id="rkpHexL" width="6" height="5.2" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.3" r="1.1" fill="rgba(0,0,0,.28)"/><circle cx="4.5" cy="3.9" r="1.1" fill="rgba(0,0,0,.28)"/></pattern>
+</defs></svg>`;
+/* Bauteile */
+const rkOhr=(x,H,silber)=>{ let h=`<rect x="${x}" y=".4" width="16.5" height="${H-.8}" rx="1" fill="url(#${silber?"rkgEarS":"rkgEar"})"/>`;
+  for(let u=0;u*RK_U<H-1;u++) [6.35,38.1].forEach(o=>{ const y=u*RK_U+o; if(y>H-3) return; h+=`<rect x="${x+4.6}" y="${y-2.3}" width="7.3" height="4.6" rx="2.3" fill="#050506"/><circle cx="${x+8.25}" cy="${y}" r="2.7" fill="url(#rkgScrew)"/><path d="M${x+6.9} ${y}h2.7M${x+8.25} ${y-1.35}v2.7" stroke="#3A3D42" stroke-width=".6"/>`; });
+  return h; };
+const rkKoerper=(H,fill)=>`<rect x="16.5" y=".6" width="449.6" height="${H-1.2}" rx="1.2" fill="${fill}"/><rect x="16.5" y=".6" width="449.6" height=".8" fill="rgba(255,255,255,.12)"/>`;
+/* RJ45-Buchse: Rahmen, Öffnung, Rastnase, Kontakte */
+const rkRj=(x,y,w,h,rahmen)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx=".6" fill="${rahmen||"#0A0B0C"}"/><rect x="${x+1.1}" y="${y+1.1}" width="${w-2.2}" height="${h-3.4}" rx=".3" fill="#000"/><rect x="${x+w/2-2}" y="${y+h-2.4}" width="4" height="1.6" fill="#000"/><rect x="${x+2}" y="${y+1.6}" width="${w-4}" height=".7" fill="#A88A3D"/>`;
+const rkLed=(x,y,an,farbe)=>`<rect x="${x}" y="${y}" width="2.6" height="1.6" rx=".4" fill="${an?(farbe||"#3DDC84"):"#2E3135"}"/>`;
+const rkText=(x,y,t,o={})=>`<text x="${x}" y="${y}" font-size="${o.fs||4.4}" font-weight="${o.fw||600}" fill="${o.fill||"#C9CDD2"}" text-anchor="${o.anchor||"start"}" letter-spacing=".2">${esc(t)}</text>`;
 function ecRkTeilHtml(pr,g,s,t,M){
-  const he=t.he||1, name=ecRkName(t), N=String(t.name||"");
-  const port=(kl,titel,act,id)=>act?`<button type="button" class="rk-pt ${kl}" data-act="${act}" data-id="${esc(id)}" title="${esc(titel)}"></button>`:`<span class="rk-pt ${kl}"${titel?` title="${esc(titel)}"`:""}></span>`;
-  /* Ports in Reihen: bis 24 Ports eine Reihe, darüber zwei (oben ungerade, unten gerade wie am Switch) */
-  const reihen=(n,fn,block)=>{ const zwei=n>24, pro=zwei?Math.ceil(n/2):n, R=[];
-    for(let r=0;r<(zwei?2:1);r++){ const L=[]; for(let i=0;i<pro;i++){ const nr=zwei?(i*2+r+1):(i+1); if(nr<=n) L.push(fn(nr)); }
-      const B=[]; for(let i=0;i<L.length;i+=block) B.push(`<span class="rk-blk">${L.slice(i,i+block).join("")}</span>`); R.push(`<span class="rk-reihe2">${B.join("")}</span>`); }
-    return `<span class="rk-ports2${zwei?" zwei":""}">${R.join("")}</span>`; };
-  let innen="";
-  if(t.typ==="patch"){ const n=Math.max(1,+t.ports||24);
-    innen=`<span class="rk-lab">P${esc(t.nr)}</span>${reihen(n,p=>{ const L=M.get(`${t.nr}.${p}`); if(!L) return port("frei",`${t.nr}.${p} frei`);
-      const st=ecNetStand(pr,L[0]), kl=L.length>1?"bad":st==="ok"?"ok":st==="bad"?"bad":"belegt"; return port(kl,`${t.nr}.${p} · ${ecRaumName(g,L[0].raumId)}${L.length>1?" · doppelt":""}`,"ecRkPort",L[0].d.id); },6)}`; }
-  else if(t.typ==="switch"){ const n=Math.max(1,+t.ports||24);
-    innen=`<span class="rk-lab klein">${esc(ecRkKurz(N||"Switch"))}${t.poe?`<i class="rk-poe">PoE</i>`:""}</span>${reihen(n,()=>`<span class="rk-pt sw"><i></i></span>`,n>16?6:4)}<span class="rk-sfps">${`<span class="rk-sfp2"></span>`.repeat(n>=24?4:2)}</span><span class="rk-con"></span><span class="rk-led2 an"></span>`; }
-  else if(t.typ==="router") innen=`<span class="rk-lab klein">${esc(ecRkKurz(N||"Router / Firewall"))}</span><span class="rk-lcd mini"><i></i></span>${reihen(8,()=>`<span class="rk-pt sw"><i></i></span>`,4)}<span class="rk-sfps"><span class="rk-sfp2"></span><span class="rk-sfp2"></span></span><span class="rk-led2 an"></span>`;
-  else if(t.typ==="luefter") innen=`<span class="rk-lab klein">${esc(N||"Lüftereinschub")}</span><span class="rk-fans">${`<span class="rk-fan2"><i></i></span>`.repeat(4)}</span><span class="rk-thermo">24 °C</span><span class="rk-wippe"></span>`;
-  else if(t.typ==="usv") innen=`<span class="rk-vent"></span><span class="rk-usvm"><span class="rk-lcd"><b>230 V</b><small>Last 34 % · Akku 100 %</small></span><span class="rk-tasten"><i></i><i></i><i></i></span><span class="rk-pwr2"></span></span><span class="rk-lab rechts">${esc(ecRkKurz(N||"USV"))}</span>`;
-  else if(t.typ==="pdu"){ const k=he>1?12:8; innen=`<span class="rk-lab klein">${esc(ecRkKurz(N||"Steckdosenleiste"))}</span><span class="rk-schukos">${`<span class="rk-schuko"><i></i></span>`.repeat(k)}</span><span class="rk-wippe rot"></span>`; }
-  else if(t.typ==="kabel") innen=`<span class="rk-buerste"></span>`;
-  else if(t.typ==="blind") innen=`<span class="rk-blindl"></span>`;
-  else if(t.typ==="boden"){ const weiss=/fritz|speedport|router|modem|glasfaser|ont/i.test(N); innen=`<span class="rk-box${weiss?" weiss":""}"><span>${esc(ecRkKurz(N||"Fachboden"))}</span><i class="rk-led2 an"></i><i class="rk-led2 an"></i><i class="rk-led2"></i></span>`; }
-  else if(/nas|synology|qnap|storage/i.test(N)) innen=`<span class="rk-lab">${esc(ecRkKurz(N))}</span><span class="rk-bays" style="--b:${he>1?4:4};--r:${he>1?2:1}">${`<span class="rk-bay"><i></i></span>`.repeat(he>1?8:4)}</span><span class="rk-pwr2 klein"></span>`;
-  else if(/server|proxmox|esx|hyper/i.test(N)) innen=`<span class="rk-lab">${esc(ecRkKurz(N))}</span><span class="rk-bays" style="--b:6;--r:${he>1?2:1}">${`<span class="rk-bay"><i></i></span>`.repeat(he>1?12:6)}</span><span class="rk-leds"><i class="an"></i><i class="an"></i><i></i></span><span class="rk-pwr2 klein"></span>`;
-  else innen=`<span class="rk-lab">${esc(ecRkKurz(N||name))}</span><span class="rk-vent kurz"></span>`;
-  return `<div class="rk-t rk-${t.typ} he${Math.min(he,4)}${/unifi|ubiquiti|ubnt/i.test(N)&&["switch","router"].includes(t.typ)?" rk-silber":""}" data-act="ecRkTeil" data-id="${esc(t.id)}" data-rk="${esc(t.id)}" style="grid-row:${t.pos} / span ${he}" title="${esc(name)}">
-    <span class="rk-ohr"><i></i>${he>1?"<i></i>":""}</span><span class="rk-griff" data-act="ecRkGriff" data-drag="${esc(t.id)}" aria-label="verschieben"></span><span class="rk-fr">${innen}</span><span class="rk-ohr"><i></i>${he>1?"<i></i>":""}</span></div>`; }
+  const he=t.he||1, H=he*RK_U, N=String(t.name||""), silber=/unifi|ubiquiti|ubnt/i.test(N)&&["switch","router"].includes(t.typ);
+  let h="";
+  if(t.typ==="patch"){ const n=Math.max(1,+t.ports||24), zwei=n>24, pro=zwei?Math.ceil(n/2):n, gruppe=6, gruppen=Math.ceil(pro/gruppe), x0=42, breit=466.1-6-x0, luecke=6, pw=Math.min(14.2,(breit-(gruppen-1)*luecke)/pro-1.4);
+    h+=rkKoerper(H,"url(#rkgBlk)")+`<rect x="20" y="${H/2-7}" width="19" height="14" rx="1" fill="#F2F1EC"/>`+rkText(29.5,H/2+2.6,`P${t.nr}`,{fs:7,fw:800,fill:"#1E1F22",anchor:"middle"});
+    for(let r=0;r<(zwei?2:1);r++) for(let i=0;i<pro;i++){ const nr=zwei?(i*2+r+1):(i+1); if(nr>n) continue;
+      const gx=Math.floor(i/gruppe), x=x0+i*(pw+1.4)+gx*luecke, y=zwei?(r?24:7.5):15.5, ph=zwei?12:14.5, L=M.get(`${t.nr}.${nr}`);
+      if(!zwei) h+=rkText(x+pw/2,11.4,nr,{fs:pw>12?5:4.2,fw:700,fill:"#A9AEB5",anchor:"middle"});
+      if(!L){ h+=`<g><title>${t.nr}.${nr} frei</title><rect x="${x}" y="${y}" width="${pw}" height="${ph}" rx=".8" fill="#202226" stroke="#34373C" stroke-width=".5"/></g>`; continue; }
+      const st=ecNetStand(pr,L[0]), kl=L.length>1?"bad":st==="ok"?"ok":st==="bad"?"bad":"belegt";
+      h+=`<g class="rk-pg ${kl}" data-act="ecRkPort" data-id="${esc(L[0].d.id)}"><title>${esc(`${t.nr}.${nr} · ${ecRaumName(g,L[0].raumId)}${L.length>1?" · doppelt vergeben":""}`)}</title><rect x="${x-.6}" y="${y-.6}" width="${pw+1.2}" height="${ph+1.2}" rx="1" fill="url(#rkgKey)"/>${rkRj(x+1.1,y+1.2,pw-2.2,ph-2.6)}${kl!=="belegt"?`<rect x="${x}" y="${y+ph+(zwei?.4:1)}" width="${pw}" height="${zwei?1.1:1.8}" rx=".5" fill="${kl==="ok"?"#3DDC84":"#FF5A5F"}"/>`:""}</g>`; } }
+  else if(t.typ==="switch"||t.typ==="router"){ const n=t.typ==="router"?8:Math.max(1,+t.ports||24), body=silber?"url(#rkgSil)":"url(#rkgBlk)", txt=silber?"#3A3D42":"#C9CDD2", rahmen=silber?"#2A2C30":"#0A0B0C";
+    const zwei=n>8, pro=zwei?Math.ceil(n/2):n, blk=n>16?6:4, bl=Math.ceil(pro/blk), sfp=t.typ==="router"?2:n>=24?4:2, sc=zwei?Math.ceil(sfp/2):Math.min(sfp,2), rechts=466.1-8-sc*15.6-10;
+    const links=t.typ==="router"?140:118, pt=Math.min(12.8,(rechts-links-(bl-1)*5)/pro), pw=pt-1.2, x0=t.typ==="router"?links:Math.max(links,rechts-(pro*pt+(bl-1)*5));
+    h+=rkKoerper(H,body)+rkText(22,H/2-1,ecRkKurz(N||EC_RK[t.typ]).replace(/^(UniFi|Ubiquiti)\s+/i,""),{fs:7,fw:700,fill:txt})+(t.poe?`<rect x="22" y="${H/2+3}" width="17" height="7.5" rx="1.2" fill="#F2C14E"/>`+rkText(30.5,H/2+8.6,"PoE",{fs:5.4,fw:800,fill:"#1E2024",anchor:"middle"}):"")+rkLed(t.poe?43:22,H/2+5.6,true,"#4FA8FF");
+    if(t.typ==="router") h+=`<rect x="98" y="${H/2-8}" width="30" height="16" rx="1.5" fill="#0B0C0E"/><rect x="100" y="${H/2-6}" width="26" height="12" rx="1" fill="url(#rkgLcd)" opacity=".9"/>`+rkText(113,H/2+1.6,"WAN ok",{fs:3.2,fw:700,fill:"#0B2533",anchor:"middle"});
+    for(let r=0;r<(zwei?2:1);r++) for(let i=0;i<pro;i++){ const nr=zwei?(i*2+r+1):(i+1); if(nr>n) continue; const x=x0+i*pt+Math.floor(i/blk)*5, y=zwei?(r?23.2:8.4):16;
+      h+=rkRj(x,y,pw,10.6,rahmen)+rkLed(x+.8,zwei?(r?34.6:5.6):13.4,(nr*7)%5!==0,(nr%3===0&&t.poe)?"#F2B233":"#3DDC84"); }
+    for(let i=0;i<(zwei?sfp:sc);i++){ const x=rechts+10+(zwei?Math.floor(i/2):i)*15.6, y=zwei?(i%2?23.2:8.4):16; h+=`<rect x="${x}" y="${y}" width="13.8" height="10.6" rx=".5" fill="url(#rkgCage)"/><rect x="${x+1.4}" y="${y+2.2}" width="11" height="6.2" fill="#0A0B0C"/>`; }
+    if(t.typ==="switch") h+=`<rect x="${rechts-2}" y="${H/2-4}" width="7" height="6" rx=".8" fill="${rahmen}"/>`; }
+  else if(t.typ==="luefter"){ h+=rkKoerper(H,"url(#rkgBlk)")+rkText(22,H/2+2.4,"FAN",{fs:7,fw:800,fill:"#8E939B"});
+    [130,200,270,340].forEach(cx=>{ const cy=H/2, r=Math.min(18,H/2-3); h+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#0B0C0D" stroke="#3E4247" stroke-width="1"/>${[.82,.6,.38].map(f=>`<circle cx="${cx}" cy="${cy}" r="${r*f}" fill="none" stroke="#3A3D42" stroke-width=".8"/>`).join("")}<path d="M${cx-r*.7} ${cy-r*.7}L${cx+r*.7} ${cy+r*.7}M${cx+r*.7} ${cy-r*.7}L${cx-r*.7} ${cy+r*.7}" stroke="#3A3D42" stroke-width=".9"/><circle cx="${cx}" cy="${cy}" r="${r*.18}" fill="#3A3D42"/>`; });
+    h+=`<rect x="392" y="${H/2-5.5}" width="26" height="11" rx="1" fill="#06140C"/>`+rkText(405,H/2+2,"24 °C",{fs:5,fw:700,fill:"#5EF29A",anchor:"middle"})+`<rect x="430" y="${H/2-7}" width="8" height="14" rx="1.2" fill="#111"/><rect x="430.8" y="${H/2-6.2}" width="6.4" height="6" rx=".8" fill="#2E3135"/>`; }
+  else if(t.typ==="usv"){ const m=H/2; h+=rkKoerper(H,"url(#rkgBlk)")+`<rect x="24" y="5" width="${he>1?220:150}" height="${H-10}" rx="2" fill="url(#rkpVent)"/>`;
+    const px=he>1?258:186, pw2=466.1-8-px, py=he>1?14:5, ph2=H-py*2;
+    h+=`<rect x="${px}" y="${py}" width="${pw2}" height="${ph2}" rx="3" fill="#202226" stroke="#34373C" stroke-width=".6"/><rect x="${px+10}" y="${m-9}" width="64" height="18" rx="1.5" fill="url(#rkgLcd)"/>`+rkText(px+14,m-1,"230 V  50 Hz",{fs:4.4,fw:700,fill:"#0B2533"})+rkText(px+14,m+5.5,"Last 34 %  Akku 100 %",{fs:3.4,fw:600,fill:"#173B4A"})
+      +[0,1,2,3].map(i=>`<circle cx="${px+88+i*9}" cy="${m}" r="3" fill="#33363B" stroke="#4A4E54" stroke-width=".5"/>`).join("")
+      +`<circle cx="${px+pw2-18}" cy="${m}" r="6.5" fill="#26282C" stroke="#3DDC84" stroke-width="1.6" style="filter:drop-shadow(0 0 1.2px #3DDC84)"/><path d="M${px+pw2-18} ${m-3.6}v3.2" stroke="#9AA0A6" stroke-width="1.1"/>`
+      +(he>1?rkText(px+pw2-6,py+ph2-4,ecRkKurz(N||"USV"),{fs:6.5,fw:700,fill:"#A9AEB5",anchor:"end"}):""); }
+  else if(t.typ==="pdu"){ const k=he>1?12:8, x0=58, dx=(466.1-14-x0)/k; h+=rkKoerper(H,"url(#rkgBlk)")+`<rect x="26" y="${H/2-8}" width="11" height="16" rx="1.5" fill="#111"/><rect x="27" y="${H/2-7}" width="9" height="8" rx="1" fill="url(#rkgRed)" style="filter:drop-shadow(0 0 1.5px #FF5A4E)"/>`;
+    for(let i=0;i<k;i++){ const cx=x0+dx*(i+.5), cy=H/2, r=Math.min(15,dx/2-2,H/2-4); h+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#2B2E33" stroke="#3E4247" stroke-width=".8"/><circle cx="${cx}" cy="${cy}" r="${r*.78}" fill="#17181B"/><circle cx="${cx-r*.36}" cy="${cy}" r="${r*.12}" fill="#000"/><circle cx="${cx+r*.36}" cy="${cy}" r="${r*.12}" fill="#000"/><rect x="${cx-r*.22}" y="${cy-r*.8}" width="${r*.44}" height="${r*.14}" fill="#A9AEB4"/><rect x="${cx-r*.22}" y="${cy+r*.66}" width="${r*.44}" height="${r*.14}" fill="#A9AEB4"/>`; } }
+  else if(t.typ==="kabel") h+=rkKoerper(H,"url(#rkgBlk)")+`<rect x="30" y="${H*.27}" width="422" height="${H*.46}" rx="2" fill="url(#rkpBrush)" stroke="#000" stroke-width=".8"/><rect x="30" y="${H*.27}" width="422" height="${H*.08}" fill="rgba(0,0,0,.45)"/>`;
+  else if(t.typ==="blind") h+=`<rect x="16.5" y=".6" width="449.6" height="${H-1.2}" rx="1" style="fill:var(--rk-blind)"/><rect x="60" y="${H*.3}" width="362" height="${H*.4}" fill="url(#rkpHexL)"/>`;
+  else if(t.typ==="boden"){ const weiss=/fritz|speedport|easybox|vodafone|telekom|o2|modem|glasfaser|ont/i.test(N), dh=Math.min(H-9,he>1?40:30), dw=weiss?210:240, dx=(RK_B-dw)/2, dy=H-6-dh;
+    h+=`<rect x="16.5" y="${H-6}" width="449.6" height="5" rx="1" fill="url(#rkgTray)"/><rect x="16.5" y="${H-6}" width="449.6" height=".8" fill="rgba(255,255,255,.18)"/>`
+      +`<rect x="${dx}" y="${dy}" width="${dw}" height="${dh}" rx="${weiss?5:2.5}" fill="url(#${weiss?"rkgDev":"rkgDevD"})"/><rect x="${dx}" y="${dy+dh-2}" width="${dw}" height="2" rx="1" fill="rgba(0,0,0,.25)"/>`
+      +[0,1,2,3,4].map(i=>rkLed(dx+12+i*7,dy+dh/2-.8,i<3,weiss?"#3DDC84":"#4FA8FF")).join("")
+      +rkText(dx+dw-8,dy+dh/2+2.4,ecRkKurz(N||"Fachboden").replace(/\s*\+.*$/,""),{fs:6.5,fw:700,fill:weiss?"#5F6368":"#C9CDD2",anchor:"end"}); }
+  else if(/nas|synology|qnap|storage/i.test(N)){ const r=he>1?2:1, c=4, bw=78, bh=(H-12-(r-1)*3)/r, x0=466.1-8-c*bw-(c-1)*3;
+    h+=rkKoerper(H,"url(#rkgBlk)")+rkText(24,14,ecRkKurz(N).replace(/^(Synology|QNAP)\s+/i,""),{fs:7.5,fw:700})+`<circle cx="34" cy="${H-12}" r="5" fill="#26282C" stroke="#4FA8FF" stroke-width="1.2" style="filter:drop-shadow(0 0 1px #4FA8FF)"/>`+[0,1,2].map(i=>rkLed(46+i*6,H-12.8,i<2)).join("");
+    for(let j=0;j<r;j++) for(let i=0;i<c;i++){ const x=x0+i*(bw+3), y=6+j*(bh+3); h+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="1.5" fill="#2C2F34" stroke="#121315" stroke-width=".8"/><rect x="${x+4}" y="${y+bh/2-2.5}" width="${bw-24}" height="5" rx="2.5" fill="#1A1C1F"/>`+rkLed(x+bw-14,y+bh/2-3,true)+rkLed(x+bw-14,y+bh/2+1.2,false); } }
+  else if(/server|proxmox|esx|hyper|host/i.test(N)){ const c=he>1?12:8, bw=(466.1-150)/c-2.4, bh=H-12;
+    h+=rkKoerper(H,"url(#rkgBlk)")+rkText(24,14,ecRkKurz(N).replace(/\s*\(.*$/,""),{fs:7.5,fw:700})+`<circle cx="34" cy="${H-12}" r="5" fill="#26282C" stroke="#3DDC84" stroke-width="1.2"/>`+[0,1,2,3].map(i=>rkLed(46+i*6,H-12.8,i!==2)).join("");
+    for(let i=0;i<c;i++){ const x=150+i*(bw+2.4), y=6; h+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="1.2" fill="#2C2F34" stroke="#121315" stroke-width=".7"/><rect x="${x+bw/2-2}" y="${y+5}" width="4" height="${bh-16}" rx="2" fill="#1A1C1F"/>`+rkLed(x+bw/2-1.3,y+bh-7,i<c-2); } }
+  else { h+=rkKoerper(H,"url(#rkgBlk)")+rkText(24,H/2+2.4,ecRkKurz(N||EC_RK[t.typ]||"Gerät"),{fs:7,fw:700})+`<rect x="300" y="${H*.25}" width="155" height="${H*.5}" fill="url(#rkpHex)"/>`+rkLed(285,H/2-.8,true); }
+  if(t.typ!=="boden") h+=rkOhr(0,H,silber)+rkOhr(RK_B-16.5,H,silber);
+  else h+=`<rect x="0" y="${H-6}" width="16.5" height="5" fill="url(#rkgEar)"/><rect x="${RK_B-16.5}" y="${H-6}" width="16.5" height="5" fill="url(#rkgEar)"/>`;
+  return `<div class="rk-t rk-${t.typ}" data-act="ecRkTeil" data-id="${esc(t.id)}" data-rk="${esc(t.id)}" style="grid-row:${t.pos} / span ${he}" title="${esc(ecRkName(t))}">
+    <svg class="rk-svg" viewBox="0 0 ${RK_B} ${H}" preserveAspectRatio="none" aria-hidden="true">${h}</svg><span class="rk-griff" data-act="ecRkGriff" data-drag="${esc(t.id)}" aria-label="verschieben"></span></div>`; }
+
 /* Verschieben: Ziel frei ⇒ einfach hin; belegt ⇒ die Teile dazwischen rücken nach (wie Tauschen bei gleich hohen Teilen) */
 function ecRkPlan(s,id,np){ const T=ecSchrTeile(s).map(x=>({...x})), t=T.find(x=>x.id===id), N=ecSchrHe(s); if(!t) return null; const he=t.he;
   np=Math.max(1,Math.min(N-he+1,np)); if(np===t.pos) return {teile:T,art:"gleich",pos:np,n:0};
@@ -764,7 +818,7 @@ let ecRkZug=null;
 document.addEventListener("pointerdown",e=>{ if(e.button) return; const el=e.target.closest&&e.target.closest(".rk:not(.mini) .rk-t"); if(!el) return; const pr=ecPr(); if(!pr||pr.status==="fertig") return;
   const griff=e.target.closest("[data-drag]"); if(e.pointerType!=="mouse"&&!griff) return;
   const g=ecGeb(pr.ortId), s=g.schraenke.find(x=>x.id===nav.schr), t=s&&ecSchrTeile(s).find(x=>x.id===el.dataset.rk); if(!t) return;
-  const rk=el.closest(".rk"), schritt=parseFloat(getComputedStyle(rk).getPropertyValue("--he"))+2;
+  const rk=el.closest(".rk"), schritt=parseFloat(getComputedStyle(rk).getPropertyValue("--he"))+(parseFloat(getComputedStyle(rk).rowGap)||0);
   ecRkZug={id:t.id,y0:e.clientY,el,rk,s,schritt,pos0:t.pos,he:t.he,aktiv:false,plan:null,pid:e.pointerId};
   if(griff){ e.preventDefault(); ecRkStart(); } });
 function ecRkStart(){ const z=ecRkZug; z.aktiv=true; try{ z.el.setPointerCapture(z.pid); }catch(_){} z.el.classList.add("zieh"); document.body.classList.add("rk-zieht");
