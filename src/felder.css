@@ -747,14 +747,14 @@ body:has(.vg-bar) .snackbar{bottom:96px!important}
 /* ===== PC: Einstellungen, Benachrichtigungen, ich – unten in der Seitenleiste (kopf.js), Zeilen wie die Bereiche darüber ===== */
 .sf{position:fixed;left:0;bottom:0;width:248px;z-index:31;box-sizing:border-box;display:flex;flex-direction:column;gap:4px;padding:8px 12px calc(16px + env(safe-area-inset-bottom,0px));background:var(--sc-low)}
 .sf[hidden],.sf-z[hidden]{display:none}
-.sf-z{display:flex;align-items:center;gap:14px;height:52px;padding:0 12px 0 18px;border-radius:26px;font-size:15px;font-weight:650;color:var(--on-sv);cursor:pointer;-webkit-user-select:none;user-select:none}
+.sf-z{display:flex;align-items:center;gap:14px;height:52px;padding:0 12px 0 14px;border-radius:26px;font-size:15px;font-weight:650;color:var(--on-sv);cursor:pointer;-webkit-user-select:none;user-select:none}
 .sf-z:hover{background:color-mix(in srgb,var(--on-surface) 7%,transparent)}
 .sf-z.an{background:var(--sec-c);color:var(--on-sec-c)}
 .sf-ic{position:relative;width:24px;height:24px;display:grid;place-items:center;flex:none}.sf-ic .ic{width:24px;height:24px}
 .sf-l{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sf-n{flex:none;min-width:24px;height:24px;padding:0 7px;box-sizing:border-box;border-radius:12px;background:var(--sc-highest);color:var(--on-surface);font-size:12px;font-weight:750;display:grid;place-items:center}
 .sf-z.an .sf-n{background:color-mix(in srgb,var(--on-sec-c) 14%,transparent);color:inherit}
-.sf-ich{padding-left:14px}
+.sf-ich{padding-left:10px;gap:10px}
 .sf-av{flex:none;display:grid;width:32px;height:32px;place-items:center}
 .sf #avBtn.avatar{width:32px!important;height:32px!important;margin:0!important;font-size:12px!important}
 .sf #avBtn.avatar::after{width:10px;height:10px}
@@ -768,3 +768,5 @@ body.sf-an nav.navbar.navbar{padding-bottom:200px!important}
 .ml-seite .ml-fuss{padding:10px 4px}
 .sf-ic .sf-n{position:absolute;top:-7px;right:-9px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--primary);color:#fff;font-size:11px;box-shadow:0 0 0 2px var(--sc-low)}
 .sf-z.an .sf-ic .sf-n{background:var(--primary);color:#fff;box-shadow:0 0 0 2px var(--sec-c)}
+/* PC-Seitenleiste: alle Symbole auf einer Linie (Mitte 38 px), das Profilbild ringsum gleich weit vom Rand seiner Pille (10 px) */
+@media (min-width:1024px) and (hover:hover) and (pointer:fine){ :root body nav.navbar.navbar .nav-item{padding:0 14px!important} }
