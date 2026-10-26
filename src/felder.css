@@ -717,3 +717,6 @@ body:has(.vg-bar) .snackbar{bottom:96px!important}
 .bk-los{display:flex;justify-content:flex-end;margin:14px 0 4px}
 .bk-los .btn-filled{display:inline-flex;align-items:center;gap:8px}
 .bk-los .btn-filled .ic{width:20px;height:20px}
+@media (max-width:599px){.nur-breit{display:none!important}}
+@media (min-width:600px){.nur-schmal{display:none!important}}
+.ein-chips{margin:0}

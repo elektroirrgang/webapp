@@ -2111,7 +2111,7 @@ function kundeView(k){
     <div class="sec-row"><div class="sec-lbl">Standorte</div>${darf?`<span class="ab-btns"><button class="ab-ic" data-act="newStandort" aria-label="Standort hinzufügen" title="Standort hinzufügen">${icon("add")}</button></span>`:""}</div>
     ${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Noch kein Standort.</p>`}
     ${bezugListen("kunden",k.id,{bauPlus:ME.admin})}
-    ${ME.admin&&live("kunden").length>1?`<button class="btn-text kz-manuell" data-act="kzManuell">${icon("firma")}Mit anderem Kunden zusammenführen</button>`:""}</div>`;
+</div>`;
 }
 function standortView(s){ return `<div class="narrow kd-seite"><div class="kd-oben">${infoKarte(s,"standorte")}${karteView(s,[])}</div>${kontakteView("standorte",s)}${ablageView("standorte",s)}${bezugListen("standorte",s.id,{bauPlus:ME.admin})}</div>`; }
 
@@ -2140,7 +2140,7 @@ function locDialog(kind,rec,parentId){
   const felder=kind==="kunden"?`<div class="kd-nr2">${tf("name","Firma / Name",r.name,{form:true,ph:"z. B. Musterfirma GmbH"})}${tf("kdnr","Kundennummer",r.kdnr,{form:true})}</div>`+adr
       +`<div class="reihe3">${tf("tel","Telefon",r.tel,{form:true,type:"tel"})+tf("mail","E-Mail",r.mail,{form:true,type:"email"})+tf("web","Webseite",r.web,{form:true,type:"url",ph:"z. B. musterfirma.de"})}</div>`+ta("notiz","Notiz",r.notiz,{form:true})
     :tf("name","Bezeichnung",r.name,{form:true,ph:"z. B. Hauptsitz"})+adr+tf("tel","Telefon vor Ort",r.tel,{form:true,type:"tel"})+ta("notiz","Notiz (z. B. Zufahrt, Schlüssel)",r.notiz,{form:true});
-  dialog(`${KIND_NAME[kind]} ${rec?"bearbeiten":"anlegen"}`,`<div class="fg1">${felder}</div>`,`${kdLoeschKnopf(rec,kdDarf(rec))}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="saveLoc">${rec?"Speichern":"Anlegen"}</button>`,{breit:true});
+  dialog(`${KIND_NAME[kind]} ${rec?"bearbeiten":"anlegen"}`,`<div class="fg1">${felder}</div>${kind==="kunden"&&rec&&ME.admin&&nav.id===rec.id&&live("kunden").length>1?`<div class="nur-schmal" style="margin-top:8px"><button class="btn-text" data-act="kzManuell">Mit anderem Kunden zusammenführen</button></div>`:""}`,`${kdLoeschKnopf(rec,kdDarf(rec))}${kind==="kunden"&&rec&&ME.admin&&nav.id===rec.id&&live("kunden").length>1?`<button class="btn-text nur-breit" data-act="kzManuell">Zusammenführen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="saveLoc">${rec?"Speichern":"Anlegen"}</button>`,{breit:true});
 }
 function bezugZahl(kind,id){
   const ids=kind==="kunden"?[id,...standorteVon(id).map(s=>s.id)]:[id];
@@ -2268,11 +2268,11 @@ function mehrView(){
     <div class="sec-lbl">Konto und Darstellung</div><div class="list">
       ${SYNC_ON?row("konto","person","Konto",esc(ME.name)):""}
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}${ME.admin?" · Admin":""}`)):""}
-      ${row("theme","theme","Darstellung",TH_LABEL[theme])}
+      ${row("theme","theme","Darstellung",TH_LABEL[theme])}${einstZeilen()}
       ${ME.mail?mlGeraetZeile():""}
       ${demoZeile()}</div>
     ${ME.admin?`<div class="sec-lbl">Verwaltung</div><div class="list">
-      ${row("nav:team","person","Mitarbeiter und Rechte",`${team().length} aktiv · Protokolle an ${esc(mailAn())}`)}${bkZeile()}</div>`:""}
+      ${row("nav:team","person","Mitarbeiter und Rechte",`${team().length} aktiv · Protokolle an ${esc(mailAn())}`)}${bkZeile()}${kdoZeile()}</div>`:""}
     <div class="app-weiter"><div class="sec-lbl">Apps</div>${listOf(APPS.filter(a=>!a.geplant).map(a=>`<a class="li" href="${a.href}" style="text-decoration:none;color:inherit"><img class="app-mini" src="${a.ic}" alt=""><span class="lt"><span class="h">${a.name}</span><span class="s">${a.text}</span></span>${icon("chev")}</a>`))}</div>
     <div class="sec-lbl">Info</div><div class="list">
       ${row("nav:entwicklung","bulb","Entwicklung der Apps",`Stand ${ENTW_STAND}`)}
@@ -2452,7 +2452,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
 }
 (async()=>{
   await dataLoad(); loginSync(); await Auth.init(); setMe();
-  if(SYNC_ON&&!ME.signedIn) nav={v:"login"};
+  if(SYNC_ON&&!ME.signedIn) nav={v:"login"}; else startBereich();
   render(); protLaden().then(()=>{ if(nav.v==="bibliothek") render(); });
   if(SYNC_ON&&ME.signedIn){ syncNow(); setInterval(()=>{ if(document.visibilityState==="visible") syncNow(); },60000);
     document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&Date.now()-(META.sync.last||0)>15000) syncSoon(); }); }

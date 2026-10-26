@@ -2890,9 +2890,9 @@ function mehrView(){
     <div class="sec-lbl">Konto und Darstellung</div><div class="list">
       ${SYNC_ON?row("konto","person","Konto",esc(ME.name)):""}
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}`)):""}
-      ${row("theme","theme","Darstellung",TH_LABEL[theme])}
+      ${row("theme","theme","Darstellung",TH_LABEL[theme])}${einstZeilen()}
       ${ME.mail?mlGeraetZeile():""}${demoZeile()}</div>
-    ${(()=>{ const z=[row("nav:team","person","Mitarbeiter",esc(META.profil.name||"")),bkZeile()].join("").trim(); return z?`<div class="sec-lbl">Verwaltung</div><div class="list">${z}</div>`:""; })()}
+    ${(()=>{ const z=[row("nav:team","person","Mitarbeiter",esc(META.profil.name||"")),bkZeile(),kdoZeile()].join("").trim(); return z?`<div class="sec-lbl">Verwaltung</div><div class="list">${z}</div>`:""; })()}
     <div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${`<a class="li" href="../uebersicht/" style="text-decoration:none;color:inherit"><span class="av">${icon("home")}</span><span class="lt"><span class="h">Übersicht</span><span class="s">Startseite mit Statistik und Kunden</span></span>${icon("chev")}</a><a class="li" href="../evse/" style="text-decoration:none;color:inherit"><span class="av">${icon("ev")}</span><span class="lt"><span class="h">EVSE</span><span class="s">Prüfung von Wallboxen und Ladesäulen</span></span>${icon("chev")}</a><a class="li" href="../echeck/" style="text-decoration:none;color:inherit"><span class="av">${icon("home")}</span><span class="lt"><span class="h">E-Check</span><span class="s">Hausinstallation und Geräte · in Vorbereitung</span></span>${icon("chev")}</a>`}</div></div>
     <div class="sec-lbl">Rechtliches und Info</div><div class="list">
       ${row("nav:impressum","paragraph","Impressum","")}
@@ -3100,7 +3100,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
 }
 (async()=>{
   await dataLoad(); try{ matStammSeed(); }catch(e){} await einstLaden(); loginSync(); await Auth.init(); setMe();
-  if(SYNC_ON&&!ME.signedIn) nav={v:"login"};
+  if(SYNC_ON&&!ME.signedIn) nav={v:"login"}; else startBereich();
   render(); fotoInit(); protLaden().then(()=>{ if(nav.v==="bibliothek"||nav.v==="baustelle") softRender(); });
   if(SYNC_ON&&ME.signedIn){ syncNow(); setInterval(()=>{ if(document.visibilityState==="visible") syncNow(); },60000);
     document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&Date.now()-(META.sync.last||0)>15000) syncSoon(); }); }

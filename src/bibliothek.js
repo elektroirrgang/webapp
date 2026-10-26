@@ -220,7 +220,7 @@ function bbOrdner(L,zeile){
   const tag=t=>t?new Date(t).toLocaleDateString("de-DE"):"";
   const mappe=(attrs,name,art,n,t,stil,menu)=>`<div class="bb-m" ${attrs}><button class="bb-mk" data-act="bbOrdner" ${attrs} aria-label="${esc(name)} öffnen">${bbOrdnerBild(stil.farbe,stil.sym)}</button>
       <div class="bb-mn"><button class="bb-mt" data-act="bbOrdner" ${attrs}>${esc(name)}</button>${menu!==false?`<button class="bb-mm" data-act="bbMenue" ${attrs} aria-label="Ordner-Menü" title="Öffnen, SharePoint, Eigenschaften"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>`:""}</div>
-      <small>${esc([art,n?`${n} ${n===1?"Datei":"Dateien"}`:"Leer",t&&tag(t)].filter(Boolean).join(" · "))}</small></div>`;
+      <small>${esc([art,n?`${n} ${n===1?"Eintrag":"Einträge"}`:"Leer",t&&tag(t)].filter(Boolean).join(" · "))}</small></div>`;
   const kStil=k=>{ const r=k!==BB_OHNE&&bbKunde(k), o=Object.assign({},(r&&r.ordner)||{}); if(r&&!o.sym) o.sym="kunde"; return o; };
   /* gleich heißende Kunden bleiben getrennte Ordner (Schlüssel ist der Kunde selbst); Reihenfolge dann nach Kundennummer */
   const kdnr=id=>String((bbKunde(id)||{}).kdnr||"");
@@ -255,12 +255,42 @@ function bbOrdner(L,zeile){
   const zeilen=[...F.map(zeile),...extra.map(spZeile)];
   return pfad+raster+(zeilen.length?(O.length?`<div class="sec-lbl">Dateien</div>`:"")+listOf(zeilen):O.length?"":`<p class="meta">${hier?"Noch nichts abgelegt. Dateien kommen über den Knopf oben rechts oder direkt in SharePoint hier hinein.":"Noch nichts abgelegt."}</p>`);
 }
+/* ===== Aufträge, Prüfungen und Baustellen im Kundenordner (nur Ordner-Ansicht) – auch ohne PDF =====
+   Jede App zeigt, was sie kennt: Übersicht Aufträge, EVSE-Prüfungen und Baustellen; EVSE Prüfungen; Baustelle Baustellen und Aufträge; E-Check E-Checks.
+   Hat eine Prüfung schon ein PDF, steht dort nur das PDF. Antippen öffnet den Eintrag in dieser App oder bietet die passende App an. */
+const bbSymIc=s=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${BB_SYM[s]||BB_SYM.auftrag}"/></svg>`;
+const bbZeile=x=>`<div class="li" role="button" tabindex="0" ${x.ziel}><span class="av">${x.sym?bbSymIc(x.sym):icon(BB_IC[x.art])}</span><span class="lt"><span class="h">${esc(x.titel)}</span><span class="s">${esc(x.info)}</span>${x.pill?`<span class="st">${x.pill}</span>`:""}</span>${icon("chev")}</div>`;
+function bbAuftraege(){
+  const L=[], demo=typeof demoAn==="function"&&demoAn(), ok=r=>r&&!r.deleted&&(!r.demo||demo)&&r.kundeId&&bbKunde(r.kundeId), kn=id=>(bbKunde(id)||{}).name||"";
+  const nm=(k,id)=>id&&DB[k]&&DB[k].get(id)?DB[k].get(id).name:"", dt=v=>v?bbDatum(String(v).slice(0,10)):"";
+  const mitPdf=new Set([...(DB.protokolle?DB.protokolle.values():[])].filter(r=>!r.deleted).flatMap(r=>[r.pruefungId,r.echeckId]).filter(Boolean));
+  BB_PROT.forEach(x=>{ if(x.pruefungId) mitPdf.add(x.pruefungId); if(x.echeckId) mitPdf.add(x.echeckId); });
+  const neu=(r,o)=>L.push(Object.assign({kundeId:r.kundeId,kunde:kn(r.kundeId),t:r.updated||r.created||0,file:"",item:"",pill:""},o));
+  if(DB.vorgaenge) for(const v of DB.vorgaenge.values()){ if(!ok(v)) continue; const st=typeof vgStufe==="function"?vgStufe(v):-1, nr=v.s&&v.s.auftrag&&v.s.auftrag.nr;
+    neu(v,{art:"auftrag",sym:"auftrag",ort:[kdKat("angebote")],titel:v.anliegen||"Auftrag",t:(v.s&&v.s.anruf&&v.s.anruf.at)||v.created||0,
+      info:["Auftrag",v.abgelehnt?"abgelehnt":typeof VG_T!=="undefined"&&st>=0?VG_T[st]:"",nr&&`SCC ${nr}`,v.created&&new Date(v.created).toLocaleDateString("de-DE")].filter(Boolean).join(" · "),
+      ziel:`data-act="bbAuf" data-k="vg" data-id="${esc(v.id)}"`}); }
+  if(DB.pruefungen) for(const p of DB.pruefungen.values()){ if(!ok(p)||p.pdfAblage||mitPdf.has(p.id)) continue; const pp=p.p||{};
+    neu(p,{art:"auftrag",sym:"blitz",ort:kdOrtProt({app:"evse",standortId:p.standortId,ladeparkId:p.ladeparkId}),titel:[pp.art||"Wallbox-Prüfung",nm("standorte",p.standortId)].filter(Boolean).join(" · "),
+      info:["EVSE-Prüfung",dt(pp.datum),pp.auftragsnr&&`Auftrag ${pp.auftragsnr}`].filter(Boolean).join(" · "),pill:pill("wip","ohne PDF"),ziel:`data-act="bbAuf" data-k="pr" data-id="${esc(p.id)}"`}); }
+  if(DB.echecks) for(const e of DB.echecks.values()){ if(!ok(e)||(e.pdf&&e.pdf.length)||mitPdf.has(e.id)) continue; const art=typeof EC_ART!=="undefined"&&EC_ART[e.art||"anlage"]||"E-Check";
+    neu(e,{art:"auftrag",sym:"haus",ort:kdOrtProt({app:"echeck",standortId:e.standortId}),titel:[e.titel||art,nm("standorte",e.standortId)].filter(Boolean).join(" · "),
+      info:[art,dt(e.datum),e.status==="fertig"?"abgeschlossen":"in Arbeit",e.auftragsnr&&`Auftrag ${e.auftragsnr}`].filter(Boolean).join(" · "),pill:pill("wip","ohne PDF"),ziel:`data-act="bbAuf" data-k="ec" data-id="${esc(e.id)}"`}); }
+  if(DB.baustellen) for(const b of DB.baustellen.values()){ if(!ok(b)) continue;
+    neu(b,{art:"auftrag",sym:"baustelle",ort:[kdKat("berichte"),bbFs(b.name||"Baustelle")],titel:b.name||"Baustelle",info:["Baustelle",b.status==="fertig"?"abgeschlossen":"läuft"].join(" · "),ziel:`data-act="bbAuf" data-k="bau" data-id="${esc(b.id)}"`}); }
+  return L; }
+function bbAufOeffnen(k,id){
+  const weiter=(app,pfad,t)=>toast(`${t} liegt in der App ${app}`,`${app} öffnen`,()=>{ location.href=pfad; });
+  if(k==="vg"){ const v=DB.vorgaenge&&DB.vorgaenge.get(id); if(!v) return; if(typeof vgOpen==="function") return vgOpen(v); return weiter("Übersicht","../uebersicht/","Der Auftrag"); }
+  if(k==="pr"){ if(typeof oeffne==="function"&&typeof EDITOR!=="undefined") return oeffne(id); return weiter("EVSE","../evse/","Die Prüfung"); }
+  if(k==="ec"){ const e=DB.echecks&&DB.echecks.get(id); if(e) return go({v:"ec",id,tab:e.status==="fertig"?"abschluss":"auftrag"}); return weiter("E-Check","../echeck/","Die Prüfung"); }
+  if(k==="bau"){ if(typeof baustelleView==="function"&&DB.baustellen&&DB.baustellen.get(id)) return go({v:"baustelle",id}); return weiter("Baustelle","../baustelle/","Die Baustelle"); } }
 function bibListe(){
   if(!bbGeladen){ bbLaden(); return ""; }
   const art=bbW("art"), ku=bbW("kunde"), so=bbW("sort"), q=String(query||"").toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
   const A=bbEintraege(), zahl=a=>a==="alle"?A.length:A.filter(x=>x.art===a).length;
   const nurOrdner=!A.length&&bbAnsicht()==="ordner"&&!q&&DB.kunden&&[...DB.kunden.values()].some(k=>!k.deleted); /* Kundenordner gibt es auch ohne Dateien */
-  if(nurOrdner) return bbOrdner([],()=>"");
+  if(nurOrdner) return bbOrdner(bbAuftraege().filter(x=>ku==="alle"||x.kundeId===ku),bbZeile);
   if(!A.length) return `<div class="empty bib-leer">${icon("folder")}<h2>Noch nichts in der Bibliothek</h2><p>Hier landen fertige Prüfprotokolle aus EVSE, Berichte aus Baustelle sowie Dokumente und Fotos aus den Kundenablagen.</p></div>`;
   const chips=`<div class="chips bib-chips">${BB_ART.filter(([a])=>a==="alle"||zahl(a)).map(([a,t])=>`<button class="chip" data-act="bbArt" data-v="${a}" aria-pressed="${art===a}">${esc(t)}<span class="chip-n">${zahl(a)}</span></button>`).join("")}</div>`;
   const L=A.filter(x=>(art==="alle"||x.art===art)&&(ku==="alle"||x.kundeId===ku)&&(!q||H(x.titel)||H(x.kunde)||H(x.info)||H((bbKunde(x.kundeId)||{}).kdnr)));
@@ -268,13 +298,13 @@ function bibListe(){
   const info=bbAktiv()?`<p class="meta f-info">${L.length} ${L.length===1?"Eintrag":"Einträge"}${ku!=="alle"?` · ${esc((bbKunde(ku)||{}).name||"")}`:""} <button class="btn-text inl" data-act="bbReset">Filter aufheben</button></p>`:"";
   if(!L.length) return chips+info+`<div class="empty bib-leer klein">${icon("search")}<h2>Nichts gefunden</h2><p>Andere Suche oder anderen Filter versuchen.</p></div>`;
   const tag=x=>x.ziel.startsWith("data-href")?"a":"div", attr=x=>x.ziel.startsWith("data-href")?`href="${x.ziel.slice(11,-1)}" style="text-decoration:none;color:inherit"`:`role="button" tabindex="0" ${x.ziel}`;
-  const zeile=x=>`<${tag(x)} class="li" ${attr(x)}>${x.bild?`<span class="av bib-thumb"><img data-datei="${esc(x.bild)}" alt=""></span>`:`<span class="av">${icon(BB_IC[x.art])}</span>`}
+  const zeile=x=>`<${tag(x)} class="li" ${attr(x)}>${x.bild?`<span class="av bib-thumb"><img data-datei="${esc(x.bild)}" alt=""></span>`:`<span class="av">${x.sym?bbSymIc(x.sym):icon(BB_IC[x.art])}</span>`}
     <span class="lt"><span class="h">${esc(x.titel)}</span><span class="s">${esc(x.info)}</span>${x.pill?`<span class="st">${x.pill}</span>`:""}</span>${icon("chev")}</${tag(x)}>`;
   const pid=x=>{ const m=/data-act="bbOeffnen" data-id="([^"]+)"/.exec(x.ziel); return m?m[1]:""; };
   const kachel=x=>`<${tag(x)} class="bib-k" ${attr(x)}><span class="bib-kb${x.bild?" foto":""}${pid(x)?" pdf":""}" ${pid(x)?`data-pdf="${esc(pid(x))}"`:""}>${x.bild?`<img data-datei="${esc(x.bild)}" alt="">`:BB_VORSCHAU.get(pid(x))?`<img src="${BB_VORSCHAU.get(pid(x))}" alt="">`:icon(BB_IC[x.art])}</span>
     <span class="bib-kt"><b>${esc(x.titel)}</b><small>${esc(x.info)}</small>${x.pill?`<span class="st">${x.pill}</span>`:""}</span></${tag(x)}>`;
   setTimeout(()=>{ if(typeof bilderFuellen==="function") bilderFuellen(); bbVorschauen(); },0);
-  if(bbAnsicht()==="ordner"&&!q) return chips+info+bbOrdner(L,zeile);
+  if(bbAnsicht()==="ordner"&&!q) return chips+info+bbOrdner(art==="alle"?[...L,...bbAuftraege().filter(x=>ku==="alle"||x.kundeId===ku)]:L,zeile);
   const inhalt=bbAnsicht()==="kacheln"?`<div class="bib-raster">${L.map(kachel).join("")}</div>`
     :so==="name"?bbGruppe(L,x=>x.titel,zeile):so==="kunde"?bbGruppe(L,x=>x.kunde||"#",zeile):bbMonate(L,zeile);
   return chips+info+inhalt;
@@ -348,6 +378,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="bbReset"){ bbSet("sort","neu"); bbSet("kunde","alle"); }
   else if(a==="bbOrdner"){ BB_ORT={k:b.dataset.k||null,p:bbPDec(b.dataset.p)}; const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); scrollTo(0,0); }
   else if(a==="bbSp") bbSpOeffnen(b.dataset.id);
+  else if(a==="bbAuf") bbAufOeffnen(b.dataset.k,b.dataset.id);
   else if(a==="bbWeb"){ if(b.dataset.u) window.open(b.dataset.u,"_blank","noopener"); }
   else if(a==="bbHier"){ if(typeof ablageStart==="function") ablageStart("kunden",b.dataset.k,b.dataset.v==="fotos",b.dataset.v==="fotos"?null:b.dataset.v||""); }
   else if(a==="bbStil") bbStilFenster(b,b.dataset.k);

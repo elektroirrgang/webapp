@@ -152,3 +152,71 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="bkErstellen") bkErstellen();
   else if(a==="bkLaden"){ let i=document.getElementById("sicherungDatei"); if(!i){ i=document.createElement("input"); i.type="file"; i.id="sicherungDatei"; i.accept=".json,application/json"; i.hidden=true; document.body.appendChild(i);
       i.addEventListener("change",()=>{ const f=i.files[0]; i.value=""; if(f) sicherungEinlesen(f); }); } i.click(); } },true);
+
+/* ===== Weitere Einstellungen auf der Konto-Seite – gemeinsam für alle Apps =====
+   Start mit (je App und Gerät, META.startV) · Textgröße (für alle Apps auf diesem Gerät, localStorage „irrgang_text“)
+   · Speicher auf diesem Gerät (anzeigen, sichere Kopien aufräumen) · Stand Kundenordner (nur Chef/Entwickler) */
+Object.assign(IC,{einTxt:IC.einTxt||"M9 4v3h5v12h3V7h5V4H9zm-6 8h3v7h3v-7h3V9H3v3z",einSp:IC.einSp||"M2 20h20v-4H2v4zm2-3h2v2H4v-2zM2 4v4h20V4H2zm4 3H4V5h2v2zm-4 7h20v-4H2v4zm2-3h2v2H4v-2z",
+  einStart:IC.einStart||"M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"});
+const TXT_GR=[["normal","Normal",1],["gross","Groß",1.12],["sehrgross","Sehr groß",1.25]];
+const txtGr=()=>{ try{ return localStorage.getItem("irrgang_text")||"normal"; }catch(e){ return "normal"; } };
+function txtAnwenden(){ const f=(TXT_GR.find(x=>x[0]===txtGr())||TXT_GR[0])[2]; document.documentElement.style.zoom=f===1?"":String(f); }
+txtAnwenden();
+const einTop=()=>typeof topdest==="function"?topdest():typeof TOPDEST!=="undefined"?TOPDEST:[];
+function startBereich(){ const v=META.startV; if(v&&einTop().some(x=>x[0]===v)) nav={v}; }
+const einZ=(act,ic,t,sub)=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(ic)}</span><span class="lt"><span class="h">${t}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}</span>${icon("chev")}</div>`;
+function einstZeilen(){ const T=einTop(), st=T.find(x=>x[0]===META.startV)||T[0];
+  return einZ("einStartDlg","einStart","Start mit",st?st[1]:"")+einZ("einTextDlg","einTxt","Textgröße",(TXT_GR.find(x=>x[0]===txtGr())||TXT_GR[0])[1]+" · für alle Apps auf diesem Gerät")+einZ("einSpeicher","einSp","Speicher auf diesem Gerät","Belegung anzeigen und aufräumen"); }
+const einChips=(act,L,an)=>`<div class="chips ein-chips">${L.map(([v,t])=>`<button type="button" class="chip" data-act="${act}" data-v="${esc(v)}" aria-pressed="${v===an}">${esc(t)}</button>`).join("")}</div>`;
+/* Speicher: PDFs (evse_protokolle), Dateien (irrgang_dateien), Fotos (Gerätespeicher der App) */
+async function einIdb(name,store){ return new Promise(res=>{ try{ const r=indexedDB.open(name); r.onsuccess=()=>{ const d=r.result; if(!d.objectStoreNames.contains(store)){ d.close(); return res(null); } res(d); }; r.onerror=()=>res(null); }catch(e){ res(null); } }); }
+async function einBlobs(name,store){ const d=await einIdb(name,store); if(!d) return []; const out=[];
+  await new Promise(ok=>{ const c=d.transaction(store).objectStore(store).openCursor(); c.onsuccess=()=>{ const x=c.result; if(!x){ ok(); return; } out.push([x.key,(x.value&&x.value.size)||0]); x.continue(); }; c.onerror=()=>ok(); }); d.close(); return out; }
+const mb=n=>n>=1048576?`${(n/1048576).toFixed(1).replace(".",",")} MB`:`${Math.max(0,Math.round(n/1024))} kB`;
+const EIN_TAGE=60;
+async function einAufraeumbar(){
+  const P=await einBlobs("evse_protokolle","blob"), D=await einBlobs("irrgang_dateien","d"), grenze=Date.now()-EIN_TAGE*864e5, q=META.sync||{};
+  const pOk=([id])=>{ const r=DB.protokolle&&DB.protokolle.get(id), m=(typeof BB_PROT!=="undefined"?BB_PROT:[]).find(x=>x.id===id); return !!(r&&!r.deleted&&r.item&&!(q.protQueue||[]).includes(id)&&m&&(m.created||0)<grenze); };
+  const dOk=([id])=>{ const d=DB.dateien&&DB.dateien.get(id); return !!(d&&d.item&&!(q.dateiQueue||[]).includes(id)&&(d.created||0)<grenze); };
+  return {P,D,pW:P.filter(pOk),dW:D.filter(dOk)}; }
+async function einSpeicher(){
+  const est=navigator.storage&&navigator.storage.estimate?await navigator.storage.estimate().catch(()=>null):null, A=await einAufraeumbar();
+  const sum=L=>L.reduce((s,x)=>s+x[1],0), fotoB=typeof fotoCache!=="undefined"?[...fotoCache.values()].reduce((s,v)=>s+(typeof v==="string"?v.length*.75:0),0):0;
+  const z=(t,v)=>`<div class="bb-ez"><small>${esc(t)}</small><span>${esc(v)}</span></div>`, frei=sum(A.pW)+sum(A.dW);
+  dialog("Speicher auf diesem Gerät",`<div class="bb-el">
+      ${est?z("Belegt",`${mb(est.usage||0)}${est.quota?` von ${mb(est.quota)} möglich`:""}`):""}
+      ${z("PDFs (Protokolle, Berichte)",`${A.P.length} · ${mb(sum(A.P))}`)}${z("Dokumente und Fotos aus Kundenablagen",`${A.D.length} · ${mb(sum(A.D))}`)}
+      ${fotoB?z("Fotos dieser App",mb(fotoB)):""}</div>
+    <p class="meta" style="margin:12px 0 0">${frei?`Aufräumen entfernt ${A.pW.length+A.dW.length} lokale Kopien (${mb(frei)}), die älter als ${EIN_TAGE} Tage sind und sicher in SharePoint liegen. Beim nächsten Öffnen werden sie wieder geladen – dafür braucht es dann Internet.`:"Gerade gibt es nichts aufzuräumen: Lokale Kopien werden erst entfernt, wenn sie älter als "+EIN_TAGE+" Tage sind und sicher in SharePoint liegen."}</p>`,
+    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>${frei?`<button class="btn-text" data-act="einAufr">Aufräumen</button>`:""}`); }
+async function einAufraeumen(){ const A=await einAufraeumbar(); let n=0, b=0;
+  if(A.pW.length){ const d=await einIdb("evse_protokolle","blob"); if(d){ const tx=d.transaction(["meta","blob"],"readwrite"); A.pW.forEach(([id,s])=>{ tx.objectStore("meta").delete(id); tx.objectStore("blob").delete(id); n++; b+=s; }); await new Promise(ok=>{ tx.oncomplete=ok; tx.onerror=ok; }); d.close();
+      const weg=new Set(A.pW.map(x=>x[0])); if(typeof BB_PROT!=="undefined") BB_PROT=BB_PROT.filter(x=>!weg.has(x.id)); if(typeof PROT!=="undefined") PROT=PROT.filter(x=>!weg.has(x.id)); } }
+  if(A.dW.length){ A.dW.forEach(([id,s])=>{ if(typeof dateiDel==="function"){ dateiDel(id); n++; b+=s; } }); }
+  closeOverlays(); render(); toast(n?`${n} Kopien entfernt · ${mb(b)} frei`:"Nichts zum Aufräumen"); }
+/* Stand der Kundenordner (ablage.js) – nur Chef/Entwickler */
+function kdoZeile(){ if(!ME.admin||typeof kdoRec!=="function"||!SYNC_ON) return ""; const K=[...DB.kunden.values()].filter(k=>!k.deleted&&!k.demo), n=K.filter(k=>kdoRec(k.id)).length;
+  return einZ("kdoStand","folder","Kundenordner in SharePoint",`${n} von ${K.length} Kunden angelegt${typeof KD_FEHLT!=="undefined"&&KD_FEHLT.size?` · ${KD_FEHLT.size} Hinweise`:""}`); }
+function kdoStand(){
+  const K=[...DB.kunden.values()].filter(k=>!k.deleted&&!k.demo), kOk=K.filter(k=>kdoRec(k.id)).length;
+  const P=[...DB.protokolle.values()].filter(r=>!r.deleted&&!r.demo&&bbKunde(r.kundeId)), pOk=P.filter(r=>r.bib==="kd"&&r.item).length;
+  const D=DB.dateien?[...DB.dateien.values()].filter(d=>!d.deleted&&!d.demo&&kdDateiKunde(d)&&bbKunde(kdDateiKunde(d))):[], dOk=D.filter(d=>d.item).length;
+  const z=(t,a,b)=>`<div class="bb-ez"><small>${esc(t)}</small><span>${a} von ${b}${a<b?` · ${b-a} offen`:""}</span></div>`;
+  dialog("Kundenordner in SharePoint",`<p class="meta" style="margin:0 0 10px">Kundendaten › ${KD_WURZEL} › Kundennummer und Name. Neues landet direkt dort, Älteres zieht beim Abgleich nach und nach um (höchstens 20 Schritte je Abgleich).</p>
+    <div class="bb-el">${z("Kundenordner angelegt",kOk,K.length)}${z("Protokolle und Berichte im Kundenordner",pOk,P.length)}${z("Dokumente und Fotos im Kundenordner",dOk,D.length)}
+      ${KD_FEHLT.size?`<div class="bb-ez"><small>Hinweise</small><span>${KD_FEHLT.size} Einträge gingen in dieser Sitzung nicht – meist fehlt die Datei schon an der alten Stelle. „Weitermachen“ versucht es erneut.</span></div>`:""}</div>`,
+    `<button class="btn-text" data-act="kdoWeb">In SharePoint öffnen</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button><button class="btn-text" data-act="kdoWeiter">Weitermachen</button>`); }
+document.addEventListener("click",async e=>{ const b=e.target.closest&&e.target.closest('[data-act^="ein"],[data-act^="kdo"]'); if(!b) return; const a=b.dataset.act;
+  if(!["einStartDlg","einStart","einTextDlg","einText","einSpeicher","einAufr","kdoStand","kdoWeiter","kdoWeb"].includes(a)) return; e.stopPropagation(); e.preventDefault();
+  if(a==="einStartDlg"){ const T=einTop(); dialog("Start mit",`<p class="meta" style="margin:0 0 12px">Mit dieser Seite öffnet die App auf diesem Gerät.</p>${einChips("einStart",T.map(x=>[x[0],x[1]]),META.startV||T[0][0])}`,`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Fertig</button>`); }
+  else if(a==="einStart"){ META.startV=b.dataset.v; metaSave(); b.parentElement.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",String(c===b))); render(); }
+  else if(a==="einTextDlg") dialog("Textgröße",`<p class="meta" style="margin:0 0 12px">Gilt für alle Apps auf diesem Gerät.</p>${einChips("einText",TXT_GR.map(x=>[x[0],x[1]]),txtGr())}`,`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Fertig</button>`);
+  else if(a==="einText"){ try{ localStorage.setItem("irrgang_text",b.dataset.v); }catch(_){} txtAnwenden(); b.parentElement.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",String(c===b))); render(); }
+  else if(a==="einSpeicher") einSpeicher();
+  else if(a==="einAufr") einAufraeumen();
+  else if(!ME.admin) return;
+  else if(a==="kdoStand") kdoStand();
+  else if(a==="kdoWeiter"){ KD_FEHLT.clear(); closeOverlays(); if(!navigator.onLine){ toast("Kein Internet"); return; } toast("Kundenordner: es geht weiter"); syncNow(true); }
+  else if(a==="kdoWeb"){ const w=window.open("about:blank","_blank"); try{ await syncRoot(); const id=(await folderId(KD_WURZEL,BIB.kunden)).split("/items/")[1], it=await gj(`/drives/${kdDrive()}/items/${id}`); if(w) w.location.href=it.webUrl; }catch(_){ if(w) w.close(); toast("SharePoint ist gerade nicht erreichbar"); } }
+},true);
+window.addEventListener("storage",e=>{ if(e.key==="irrgang_text") txtAnwenden(); });

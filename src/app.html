@@ -2154,8 +2154,8 @@ function mehrView(){
     <div class="sec-lbl">Konto und Darstellung</div><div class="list">
       ${SYNC_ON?row("konto","person","Konto",esc(ME.name)):""}
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}`)):""}
-      ${row("theme","theme","Darstellung",TH_LABEL[theme])}${demoZeile()}</div>
-    ${(()=>{ const z=[row("nav:team","person",SYNC_ON?"Mitarbeiter und Mail":"Ich bin · Mitarbeiter und Mail",esc(SYNC_ON?`Protokolle an ${mailAn()}`:[META.profil.name||"noch nicht ausgewählt",`Protokolle an ${mailAn()}`].join(" · "))),bkZeile()].join("").trim(); return z?`<div class="sec-lbl">Verwaltung</div><div class="list">${z}</div>`:""; })()}
+      ${row("theme","theme","Darstellung",TH_LABEL[theme])}${einstZeilen()}${demoZeile()}</div>
+    ${(()=>{ const z=[row("nav:team","person",SYNC_ON?"Mitarbeiter und Mail":"Ich bin · Mitarbeiter und Mail",esc(SYNC_ON?`Protokolle an ${mailAn()}`:[META.profil.name||"noch nicht ausgewählt",`Protokolle an ${mailAn()}`].join(" · "))),bkZeile(),kdoZeile()].join("").trim(); return z?`<div class="sec-lbl">Verwaltung</div><div class="list">${z}</div>`:""; })()}
     ${WIDE.matches?"":`<div class="sec-lbl">Wissen</div><div class="list">${row("nav:katalog","book","Wallbox-Katalog",`${live("katalog").length} Modelle · Hinweise und Fotos`)}</div>`}
     <div class="sec-lbl">Daten</div><div class="list">
       ${row("nav:archiv","archive","Archiv",nArch?`${nArch} Prüfung${nArch>1?"en":""}`:"leer")}
@@ -3647,7 +3647,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
 }
 (async()=>{
   await dataLoad(); await einstLaden(); loginSync(); await Auth.init(); setMe();
-  if(SYNC_ON&&!ME.signedIn) nav={v:"login"};
+  if(SYNC_ON&&!ME.signedIn) nav={v:"login"}; else startBereich();
   render(); protLaden().then(()=>{ if(nav.v==="bibliothek") render(); }); fotoInit(); anhInit().then(()=>{ if(nav.v==="katmodell") render(); });
   if(SYNC_ON&&ME.signedIn){ syncNow(); setInterval(()=>{ if(document.visibilityState==="visible") syncNow(); },60000);
     document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&Date.now()-(META.sync.last||0)>15000) syncSoon(); }); }
