@@ -45,7 +45,7 @@ function seitenFuss(){
   let f=document.getElementById("seitenFuss");
   if(!f){ f=document.createElement("div"); f.id="seitenFuss"; f.className="sf"; f.hidden=true;
     f.innerHTML=`<div class="sf-z sf-einst" data-act="nav" data-v="mehr" role="button" tabindex="0"><span class="sf-ic">${sfSvg("einst")}</span><span class="sf-l">Einstellungen</span><span class="sf-n" hidden></span></div>
-      <div class="sf-z sf-gl" data-act="mlAuf" role="button" tabindex="0" hidden><span class="sf-ic">${sfSvg("glocke")}</span><span class="sf-l">Benachrichtigungen</span><span class="sf-n" hidden></span></div>
+      <div class="sf-z sf-gl" data-act="mlAuf" role="button" tabindex="0" hidden><span class="sf-ic">${sfSvg("glocke")}<span class="sf-n" hidden></span></span><span class="sf-l">Benachrichtigungen</span></div>
       <div class="sf-z sf-ich" data-act="nav" data-v="konto" role="button" tabindex="0"><span class="sf-av"></span><span class="sf-l"></span></div>`;
     document.body.appendChild(f); }
   const pc=KOPF_PC.matches&&!av.hidden;
@@ -60,7 +60,7 @@ function seitenFussText(){ const f=document.getElementById("seitenFuss"); if(!f|
   const n=f.querySelector(".sf-ich .sf-l"); if(n) n.textContent=(typeof ME!=="undefined"&&(ME.ruf||ME.name))||"Konto";
   /* Benachrichtigungen: Zeile nur, wo die App eine Glocke hat; Zahl wie an der Glocke */
   const gl=document.getElementById("glBtn"), z=document.getElementById("glN"), r=f.querySelector(".sf-gl"), rn=r&&r.querySelector(".sf-n");
-  if(r){ r.hidden=!gl||!(typeof ME!=="undefined"&&ME.mail); if(rn){ rn.hidden=!z||z.hidden; rn.textContent=z?z.textContent:""; } r.classList.toggle("an",!!document.getElementById("mlPop")); } }
+  if(r){ r.hidden=!gl||!(typeof ME!=="undefined"&&ME.mail); if(rn){ rn.hidden=!z||z.hidden; rn.textContent=z?z.textContent:""; } r.classList.toggle("an",v==="meldungen"); } }
 /* Kopf bündig mit der Inhaltsspalte */
 function kopfAusrichten(){
   const slot=document.getElementById("tbKopf"), sk=slot&&slot.querySelector(".sk, .edk"); if(!sk||slot.hidden) return;

@@ -13,7 +13,7 @@ Gilt für alle Apps (Übersicht, EVSE, Baustelle, E-Check). Vorbild ist EVSE. Go
 - **Bereiche einer Unterseite:** mobil als Tabs unter dem Kopf, breit als Auswahl rechts im Kopf (`spick`).
 - **Aktionen zur Seite:** im ⋮-Menü der App, nicht als Knöpfe im Inhalt. Hat das Menü nur „Bearbeiten“ (und „Löschen“), gibt es **kein ⋮**: Bearbeiten steht als Schnellaktion auf der Seite (Kunde/Standort: fünfter Knopf neben Anrufen, E-Mail, Route, Webseite), Löschen unten links im Bearbeiten-Fenster.
 - **Kopfleiste rechts:** Profilbild 40 px; Knöpfe davor mit 8 px Abstand, alle mittig auf einer Linie (Handy und iPad).
-- **PC (Seitenleiste, 248 px):** unten wie bei Home Assistant drei Zeilen – „Einstellungen“ (früher „Mehr“), „Benachrichtigungen“ (mit Zahl, öffnet das Fenster nach oben rechts) und das eigene Profilbild mit Rufnamen (öffnet „Konto“). Oben rechts steht am PC dann nichts davon.
+- **PC (Seitenleiste, 248 px):** unten wie bei Home Assistant drei Zeilen – „Einstellungen“ (früher „Mehr“), „Benachrichtigungen“ (Zahl am Glocken-Symbol, öffnet die eigene Seite „Benachrichtigungen“ – auch auf Handy und iPad über die Glocke) und das eigene Profilbild mit Rufnamen (öffnet „Konto“). Oben rechts steht am PC dann nichts davon.
 - **Knöpfe auf Karten** (z. B. Zoom und Info auf der Kundenkarte) stehen in derselben Flucht wie die Abschnittsknöpfe und Listenpfeile.
 - **Hauptaktion:** der rote Knopf unten rechts (FAB), z. B. „+ Prüfung“, „+ Baustelle“. Höchstens einer pro Seite.
 - **Seitenleiste / Tab-Leiste:** nur die großen Bereiche der App. Nachschlagewerke (Katalog) hängen an ihrem Bereich, nicht als eigener Punkt.

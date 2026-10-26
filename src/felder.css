@@ -750,7 +750,7 @@ body:has(.vg-bar) .snackbar{bottom:96px!important}
 .sf-z{display:flex;align-items:center;gap:14px;height:52px;padding:0 12px 0 18px;border-radius:26px;font-size:15px;font-weight:650;color:var(--on-sv);cursor:pointer;-webkit-user-select:none;user-select:none}
 .sf-z:hover{background:color-mix(in srgb,var(--on-surface) 7%,transparent)}
 .sf-z.an{background:var(--sec-c);color:var(--on-sec-c)}
-.sf-ic{width:24px;height:24px;display:grid;place-items:center;flex:none}.sf-ic .ic{width:24px;height:24px}
+.sf-ic{position:relative;width:24px;height:24px;display:grid;place-items:center;flex:none}.sf-ic .ic{width:24px;height:24px}
 .sf-l{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sf-n{flex:none;min-width:24px;height:24px;padding:0 7px;box-sizing:border-box;border-radius:12px;background:var(--sc-highest);color:var(--on-surface);font-size:12px;font-weight:750;display:grid;place-items:center}
 .sf-z.an .sf-n{background:color-mix(in srgb,var(--on-sec-c) 14%,transparent);color:inherit}
@@ -760,3 +760,11 @@ body:has(.vg-bar) .snackbar{bottom:96px!important}
 .sf #avBtn.avatar::after{width:10px;height:10px}
 body.sf-an #glBtn{display:none!important}
 body.sf-an nav.navbar.navbar{padding-bottom:200px!important}
+/* Benachrichtigungen als eigene Seite (anforderung.js) */
+.ml-seite .ml-kopf{display:flex;align-items:center;justify-content:space-between;padding:0 4px 10px}
+.ml-seite .ml-kopf b{font-size:14px;font-weight:650;color:var(--on-sv)}
+.ml-seite .ml-liste{max-height:none!important;overflow:visible!important;padding:0}
+.ml-seite .ml-leer{padding:56px 16px}
+.ml-seite .ml-fuss{padding:10px 4px}
+.sf-ic .sf-n{position:absolute;top:-7px;right:-9px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--primary);color:#fff;font-size:11px;box-shadow:0 0 0 2px var(--sc-low)}
+.sf-z.an .sf-ic .sf-n{background:var(--primary);color:#fff;box-shadow:0 0 0 2px var(--sec-c)}
