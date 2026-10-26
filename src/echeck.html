@@ -845,7 +845,7 @@ html,body{overscroll-behavior-y:none}
 
 /* PC (Maus/Trackpad, ab 1024 px): Seitenleiste statt Tab-Leiste oben */
 @media (min-width:1024px) and (hover:hover) and (pointer:fine){
-  :root body nav.navbar,:root body.rail-open nav.navbar{position:fixed!important;top:0!important;left:0!important;bottom:0!important;right:auto!important;transform:none!important;width:204px!important;height:auto!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:4px!important;padding:18px 12px 20px!important;border-radius:0!important;background:var(--sc-low)!important;box-shadow:none!important;z-index:30;scale:1!important}
+  :root body nav.navbar,:root body.rail-open nav.navbar{position:fixed!important;top:0!important;left:0!important;bottom:0!important;right:auto!important;transform:none!important;width:248px!important;height:auto!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:4px!important;padding:18px 12px 20px!important;border-radius:0!important;background:var(--sc-low)!important;box-shadow:none!important;z-index:30;scale:1!important}
   :root body nav.navbar .nav-head{display:flex!important;align-items:center;height:56px;margin:0 0 14px;padding:0 14px;justify-content:flex-start}
   :root body nav.navbar .nav-tog{display:none!important}
   :root body nav.navbar .nav-head .nav-logo{height:26px;width:auto}
@@ -857,13 +857,13 @@ html,body{overscroll-behavior-y:none}
   :root body nav.navbar .nav-item[aria-current="page"]{background:var(--sec-c)!important;color:var(--on-sec-c)!important}
   :root body nav.navbar .nav-item > span:last-child{white-space:nowrap}
   .nav-ind{display:none!important}
-  .topbar{left:204px!important;margin-left:0!important}
+  .topbar{left:248px!important;margin-left:0!important}
   .topbar .logo{display:none!important}
   .tb-row{height:64px!important}
-  main,body.has-nav main,body.rail-open.has-nav main{margin-left:204px!important}
+  main,body.has-nav main,body.rail-open.has-nav main{margin-left:248px!important}
   body.is-login main{margin-left:0!important}
   .wrap,.narrow{max-width:1160px}.narrow.lesen{max-width:960px}
-  .snackbar,body.has-fab .snackbar{left:calc(50% + 102px)!important}
+  .snackbar,body.has-fab .snackbar{left:calc(50% + 124px)!important}
   .pv{left:0}
 }
 @media (min-width:1024px) and (hover:hover) and (pointer:fine) and (prefers-color-scheme: dark){:root:not([data-theme="light"]) body nav.navbar .nav-head .nav-logo.l-hell{display:none!important}:root:not([data-theme="light"]) body nav.navbar .nav-head .nav-logo.l-dunkel{display:block!important}:root:not([data-theme="light"]) body nav.navbar .nav-item[aria-current="page"]{background:var(--sec-c)!important;color:var(--on-sec-c)!important}}
@@ -1741,7 +1741,7 @@ function pfadVerlassen(){}
 function pfadTeile(){
   if(nav.v==="standort"){ const s=standortOf(nav.id); return kette(s&&s.kundeId); }
   if(nav.v==="kunde") return kette();
-  if(MEHR_SUB[nav.v]) return [["Mehr",{v:"mehr"}]];
+  if(MEHR_SUB[nav.v]) return [["Einstellungen",{v:"mehr"}]];
   if(nav.v==="netzkatalog") return [["Netzwerk",{v:"netzwerk"}]];
   if(nav.v==="netzkatmodell") return nav.von==="netzwerk"?[["Netzwerk",{v:"netzwerk"}]]:[["Katalog",{v:"netzkatalog"}]];
   if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); const v=ecListeV(p&&p.art); return [[{geraete:"Geräte",netzwerk:"Netzwerk"}[v]||"Installation",{v}]]; }
@@ -1924,7 +1924,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
     title=ecOrt(p.ortId).titel; sub=`${EC_ART[p.art||"anlage"]} · ${ecDatum(p.datum)}`; if(rkS){ sub=`Netzwerkschrank · ${title}`; title=rkS.name; } body=ecView(p); }
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=["newKunde","Kunde","add"]; }
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
-  else if(nav.v==="mehr"){ title="Mehr"; body=mehrView(); }
+  else if(nav.v==="mehr"){ title="Einstellungen"; body=mehrView(); }
   else if(KONTO_SEITEN[nav.v]){ title=KONTO_SEITEN[nav.v][0]; body=KONTO_SEITEN[nav.v][1](); }
   else if(nav.v==="team"){ title="Mitarbeiter"; body=teamView(); }
   else if(nav.v==="backup"){ title="Backup"; body=backupView(); }

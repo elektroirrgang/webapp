@@ -120,7 +120,7 @@ const mlNeu=()=>{ const S=mlSt(); return meldungen().filter(m=>!S.gel[m.id]).len
 function mlGlocke(){ setTimeout(()=>{ try{ mlMelden(); }catch(e){} },0); const b=document.getElementById("glBtn"); if(!b) return; const n=ME.mail?mlNeu():0;
   b.dataset.act="mlAuf"; b.removeAttribute("data-v");
   b.hidden=!ME.mail||nav.v==="login"; const z=document.getElementById("glN"); if(z){ z.textContent=n>9?"9+":String(n); z.hidden=!n; } b.setAttribute("aria-label",n?`${n} neue Benachrichtigungen`:"Benachrichtigungen");
-  if(document.getElementById("mlPop")) mlFuellen(); }
+  if(document.getElementById("mlPop")) mlFuellen(); if(typeof seitenFussText==="function") seitenFussText(); }
 function mlAv(m){
   if(!m.von) return `<span class="ml-av sys">${mlSvg("sys")}</span>`;
   const p=typeof profilVon==="function"&&profilVon(m.von.mail);
@@ -144,8 +144,8 @@ function mlAuf(){
   pop=document.createElement("div"); pop.id="mlPop"; pop.className="ml-pop"; pop.setAttribute("role","dialog"); pop.setAttribute("aria-label","Benachrichtigungen");
   document.body.appendChild(pop); mlFuellen(); mlPlatz();
 }
-function mlPlatz(){ const pop=document.getElementById("mlPop"), b=document.getElementById("glBtn"); if(!pop||!b) return; const r=b.getBoundingClientRect();
-  if(b.closest("#seitenFuss")){ /* PC: Glocke unten in der Seitenleiste – Fenster öffnet nach oben rechts daneben */
+function mlPlatz(){ const pop=document.getElementById("mlPop"), z=document.querySelector("#seitenFuss:not([hidden]) .sf-gl"), b=z||document.getElementById("glBtn"); if(!pop||!b) return; const r=b.getBoundingClientRect();
+  if(z){ /* PC: Zeile „Benachrichtigungen“ unten in der Seitenleiste – Fenster öffnet nach oben rechts daneben */
     pop.style.top="auto"; pop.style.right="auto"; pop.style.left=Math.round(r.right+12)+"px"; pop.style.bottom=Math.max(8,Math.round(innerHeight-r.bottom))+"px"; return; }
   pop.style.bottom=""; pop.style.left=""; pop.style.top=Math.round(r.bottom+8)+"px"; pop.style.right=Math.max(8,Math.round(innerWidth-r.right-8))+"px"; }
 function mlZu(){ const p=document.getElementById("mlPop"); if(p) p.remove(); }

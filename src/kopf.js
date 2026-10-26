@@ -34,28 +34,33 @@ function kopfEinhaengen(){
   else { slot.classList.remove("pc"); if(slot.parentNode!==tb||slot.previousElementSibling!==row) row.after(slot); }
   kopfAusrichten();
 }
-/* ===== PC: Profilbild und Glocke unten in der Seitenleiste (statt oben rechts) =====
-   Profilbild mit Name und Abgleich-Stand links (antippen = Konto-Seite), Glocke rechts daneben.
-   Die Knöpfe selbst werden nur umgehängt – ihre Klicks, der Abgleich-Punkt und die Zahl an der Glocke bleiben gleich. */
+/* ===== PC: unten in der Seitenleiste wie bei Home Assistant – Einstellungen, Benachrichtigungen, ich =====
+   „Einstellungen“ ist die bisherige Seite „Mehr“, „Benachrichtigungen“ öffnet das Fenster der Glocke, die eigene Zeile (Profilbild + Name)
+   öffnet das Konto. Das Profilbild (#avBtn) wird nur umgehängt – sein Abgleich-Punkt bleibt; die Glocke oben wird am PC ausgeblendet. */
+const SF_IC={einst:"M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z",
+  glocke:"M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"};
+const sfSvg=k=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${SF_IC[k]}"/></svg>`;
 function seitenFuss(){
   const av=document.getElementById("avBtn"), gl=document.getElementById("glBtn"), row=document.querySelector("#topbar .tb-row"); if(!av||!row) return;
   let f=document.getElementById("seitenFuss");
   if(!f){ f=document.createElement("div"); f.id="seitenFuss"; f.className="sf"; f.hidden=true;
-    f.innerHTML=`<div class="sf-k" data-act="nav" data-v="mehr" role="button" tabindex="0" title="Konto und Einstellungen"><span class="sf-av"></span><span class="sf-t"><b></b><small></small></span></div>`; document.body.appendChild(f); }
+    f.innerHTML=`<div class="sf-z sf-einst" data-act="nav" data-v="mehr" role="button" tabindex="0"><span class="sf-ic">${sfSvg("einst")}</span><span class="sf-l">Einstellungen</span><span class="sf-n" hidden></span></div>
+      <div class="sf-z sf-gl" data-act="mlAuf" role="button" tabindex="0" hidden><span class="sf-ic">${sfSvg("glocke")}</span><span class="sf-l">Benachrichtigungen</span><span class="sf-n" hidden></span></div>
+      <div class="sf-z sf-ich" data-act="nav" data-v="konto" role="button" tabindex="0"><span class="sf-av"></span><span class="sf-l"></span></div>`;
+    document.body.appendChild(f); }
   const pc=KOPF_PC.matches&&!av.hidden;
-  if(pc){ const slot=f.querySelector(".sf-av"); if(av.parentNode!==slot) slot.appendChild(av); if(gl&&gl.parentNode!==f) f.appendChild(gl);
+  if(pc){ const slot=f.querySelector(".sf-av"); if(av.parentNode!==slot) slot.appendChild(av); av.dataset.v="konto"; av.setAttribute("aria-label","Konto");
     f.hidden=false; document.body.classList.add("sf-an"); seitenFussText(); }
-  else { f.hidden=true; document.body.classList.remove("sf-an"); const m=document.getElementById("menuBtn");
-    if(av.parentNode!==row) row.insertBefore(av,m&&m.parentNode===row?m:null); if(gl&&gl.parentNode!==row) row.insertBefore(gl,av); } }
+  else { f.hidden=true; document.body.classList.remove("sf-an"); av.dataset.v="mehr"; av.setAttribute("aria-label","Konto und Einstellungen");
+    const m=document.getElementById("menuBtn"); if(av.parentNode!==row) row.insertBefore(av,m&&m.parentNode===row?m:null); } }
 function seitenFussText(){ const f=document.getElementById("seitenFuss"); if(!f||f.hidden) return;
-  const b=f.querySelector(".sf-t b"), sm=f.querySelector(".sf-t small"), k=f.querySelector(".sf-k");
-  if(b) b.textContent=(typeof ME!=="undefined"&&ME.name)||"Konto";
-  if(sm){ let t="Konto und Einstellungen";
-    if(typeof SYNC_ON!=="undefined"&&SYNC_ON&&typeof SY!=="undefined"){ const l=META.sync&&META.sync.last?new Date(META.sync.last):null, heute=l&&l.toDateString()===new Date().toDateString();
-      const z=l?(heute?l.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):l.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})):"";
-      t={ok:`Abgeglichen${z?" "+z:""}`,"läuft":"Wird abgeglichen …",offline:"Offline",fehler:"Abgleich fehlgeschlagen",anmelden:"Bitte neu anmelden"}[SY.state]||t; }
-    sm.textContent=t; }
-  if(k&&typeof nav!=="undefined") k.classList.toggle("an",nav.v==="mehr"||!!(typeof MEHR_SUB!=="undefined"&&MEHR_SUB[nav.v])); }
+  const v=typeof nav!=="undefined"?nav.v:"", unter=typeof MEHR_SUB!=="undefined"&&!!MEHR_SUB[v];
+  f.querySelector(".sf-einst").classList.toggle("an",v==="mehr"||(unter&&v!=="konto"));
+  f.querySelector(".sf-ich").classList.toggle("an",v==="konto");
+  const n=f.querySelector(".sf-ich .sf-l"); if(n) n.textContent=(typeof ME!=="undefined"&&(ME.ruf||ME.name))||"Konto";
+  /* Benachrichtigungen: Zeile nur, wo die App eine Glocke hat; Zahl wie an der Glocke */
+  const gl=document.getElementById("glBtn"), z=document.getElementById("glN"), r=f.querySelector(".sf-gl"), rn=r&&r.querySelector(".sf-n");
+  if(r){ r.hidden=!gl||!(typeof ME!=="undefined"&&ME.mail); if(rn){ rn.hidden=!z||z.hidden; rn.textContent=z?z.textContent:""; } r.classList.toggle("an",!!document.getElementById("mlPop")); } }
 /* Kopf bündig mit der Inhaltsspalte */
 function kopfAusrichten(){
   const slot=document.getElementById("tbKopf"), sk=slot&&slot.querySelector(".sk, .edk"); if(!sk||slot.hidden) return;
