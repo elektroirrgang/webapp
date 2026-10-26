@@ -13,7 +13,7 @@ let kopfLetzteSeite="";
 function kopfNeuZeichnen(){ const a=document.getElementById("app"); if(!a) return; const s=typeof nav!=="undefined"?nav.v+"|"+(nav.id||""):""; if(s===kopfLetzteSeite) return; kopfLetzteSeite=s;
   if(!KOPF_IOS) return; a.style.opacity=".999"; requestAnimationFrame(()=>requestAnimationFrame(()=>{ a.style.opacity=""; })); }
 function kopfEinhaengen(){
-  kopfNeuZeichnen();
+  kopfNeuZeichnen(); seitenFuss();
   const tb=document.getElementById("topbar"), row=tb&&tb.querySelector(".tb-row"); if(!row) return;
   let slot=document.getElementById("tbKopf");
   if(!slot){ slot=document.createElement("div"); slot.id="tbKopf"; slot.className="tb-kopf"; }
@@ -34,6 +34,28 @@ function kopfEinhaengen(){
   else { slot.classList.remove("pc"); if(slot.parentNode!==tb||slot.previousElementSibling!==row) row.after(slot); }
   kopfAusrichten();
 }
+/* ===== PC: Profilbild und Glocke unten in der Seitenleiste (statt oben rechts) =====
+   Profilbild mit Name und Abgleich-Stand links (antippen = Konto-Seite), Glocke rechts daneben.
+   Die Knöpfe selbst werden nur umgehängt – ihre Klicks, der Abgleich-Punkt und die Zahl an der Glocke bleiben gleich. */
+function seitenFuss(){
+  const av=document.getElementById("avBtn"), gl=document.getElementById("glBtn"), row=document.querySelector("#topbar .tb-row"); if(!av||!row) return;
+  let f=document.getElementById("seitenFuss");
+  if(!f){ f=document.createElement("div"); f.id="seitenFuss"; f.className="sf"; f.hidden=true;
+    f.innerHTML=`<div class="sf-k" data-act="nav" data-v="mehr" role="button" tabindex="0" title="Konto und Einstellungen"><span class="sf-av"></span><span class="sf-t"><b></b><small></small></span></div>`; document.body.appendChild(f); }
+  const pc=KOPF_PC.matches&&!av.hidden;
+  if(pc){ const slot=f.querySelector(".sf-av"); if(av.parentNode!==slot) slot.appendChild(av); if(gl&&gl.parentNode!==f) f.appendChild(gl);
+    f.hidden=false; document.body.classList.add("sf-an"); seitenFussText(); }
+  else { f.hidden=true; document.body.classList.remove("sf-an"); const m=document.getElementById("menuBtn");
+    if(av.parentNode!==row) row.insertBefore(av,m&&m.parentNode===row?m:null); if(gl&&gl.parentNode!==row) row.insertBefore(gl,av); } }
+function seitenFussText(){ const f=document.getElementById("seitenFuss"); if(!f||f.hidden) return;
+  const b=f.querySelector(".sf-t b"), sm=f.querySelector(".sf-t small"), k=f.querySelector(".sf-k");
+  if(b) b.textContent=(typeof ME!=="undefined"&&ME.name)||"Konto";
+  if(sm){ let t="Konto und Einstellungen";
+    if(typeof SYNC_ON!=="undefined"&&SYNC_ON&&typeof SY!=="undefined"){ const l=META.sync&&META.sync.last?new Date(META.sync.last):null, heute=l&&l.toDateString()===new Date().toDateString();
+      const z=l?(heute?l.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):l.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})):"";
+      t={ok:`Abgeglichen${z?" "+z:""}`,"läuft":"Wird abgeglichen …",offline:"Offline",fehler:"Abgleich fehlgeschlagen",anmelden:"Bitte neu anmelden"}[SY.state]||t; }
+    sm.textContent=t; }
+  if(k&&typeof nav!=="undefined") k.classList.toggle("an",nav.v==="mehr"||!!(typeof MEHR_SUB!=="undefined"&&MEHR_SUB[nav.v])); }
 /* Kopf bündig mit der Inhaltsspalte */
 function kopfAusrichten(){
   const slot=document.getElementById("tbKopf"), sk=slot&&slot.querySelector(".sk, .edk"); if(!sk||slot.hidden) return;
@@ -43,7 +65,7 @@ function kopfAusrichten(){
   const zp=KOPF_PC.matches&&sk.querySelector(".sk-zt"), min=zp?Math.max(0,zp.getBoundingClientRect().right-s.left+12):0, links=Math.max(min,a.left-s.left); sk.style.setProperty("margin-left",links+"px","important"); sk.style.setProperty("width",Math.max(0,Math.min(a.width,s.width-links))+"px","important");
 }
 addEventListener("resize",()=>{ clearTimeout(kopfAusrichten._t); kopfAusrichten._t=setTimeout(()=>{ if(KOPF_BREIT.matches&&!document.getElementById("tbKopf")?.hidden) kopfAusrichten(); },80); });
-[KOPF_PC,KOPF_BREIT].forEach(m=>m.addEventListener&&m.addEventListener("change",()=>setTimeout(kopfEinhaengen,0)));
+[KOPF_PC,KOPF_BREIT].forEach(m=>m.addEventListener&&m.addEventListener("change",()=>setTimeout(()=>{ kopfEinhaengen(); seitenFuss(); },0)));
 
 /* ===== PC: Hinweis-Blasen im App-Stil statt der grauen Browser-Tooltips =====
    Jedes title="…" wird beim Drüberfahren in data-tip umgewandelt und als eigene Blase gezeigt (nach kurzer Pause).

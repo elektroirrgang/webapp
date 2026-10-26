@@ -145,7 +145,9 @@ function mlAuf(){
   document.body.appendChild(pop); mlFuellen(); mlPlatz();
 }
 function mlPlatz(){ const pop=document.getElementById("mlPop"), b=document.getElementById("glBtn"); if(!pop||!b) return; const r=b.getBoundingClientRect();
-  pop.style.top=Math.round(r.bottom+8)+"px"; pop.style.right=Math.max(8,Math.round(innerWidth-r.right-8))+"px"; }
+  if(b.closest("#seitenFuss")){ /* PC: Glocke unten in der Seitenleiste – Fenster öffnet nach oben rechts daneben */
+    pop.style.top="auto"; pop.style.right="auto"; pop.style.left=Math.round(r.right+12)+"px"; pop.style.bottom=Math.max(8,Math.round(innerHeight-r.bottom))+"px"; return; }
+  pop.style.bottom=""; pop.style.left=""; pop.style.top=Math.round(r.bottom+8)+"px"; pop.style.right=Math.max(8,Math.round(innerWidth-r.right-8))+"px"; }
 function mlZu(){ const p=document.getElementById("mlPop"); if(p) p.remove(); }
 function mlStSpeichern(){ /* nur IDs behalten, die es noch gibt */ const S=mlSt(), da=new Set(meldungenRoh().map(m=>m.id)); ["gel","weg","pin"].forEach(k=>Object.keys(S[k]).forEach(id=>{ if(!da.has(id)) delete S[k][id]; })); metaSave(); }
 document.addEventListener("click",e=>{

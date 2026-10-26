@@ -744,3 +744,17 @@ body:has(.vg-bar) .snackbar{bottom:96px!important}
 .kdo-b{height:8px;border-radius:4px;background:var(--sc-highest);overflow:hidden}.kdo-b i{display:block;height:100%;border-radius:4px;background:var(--ok);transition:width .4s}
 .kdo-knoepfe{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
 .kdo-knoepfe button{display:inline-flex;align-items:center;gap:8px}.kdo-knoepfe .ic{width:20px;height:20px}
+/* ===== PC: Profilbild und Glocke unten in der Seitenleiste (kopf.js) ===== */
+.sf{position:fixed;left:0;bottom:0;width:204px;z-index:31;box-sizing:border-box;display:flex;align-items:center;gap:2px;padding:10px 10px calc(14px + env(safe-area-inset-bottom,0px));background:var(--sc-low)}
+.sf[hidden]{display:none}
+.sf-k{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:6px 8px 6px 6px;border-radius:26px;cursor:pointer}
+.sf-k:hover{background:color-mix(in srgb,var(--on-surface) 7%,transparent)}
+.sf-k.an{background:var(--sec-c);color:var(--on-sec-c)}
+.sf-av{flex:none;display:grid}
+.sf #avBtn.avatar{width:40px!important;height:40px!important;margin:0!important;font-size:14px!important}
+.sf-t{min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.sf-t b{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sf-t small{font-size:11.5px;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sf-k.an .sf-t small{color:inherit;opacity:.8}
+.sf .glocke{flex:none;margin:0!important}
+body.sf-an nav.navbar.navbar{padding-bottom:96px!important}

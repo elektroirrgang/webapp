@@ -12,7 +12,8 @@ Gilt für alle Apps (Übersicht, EVSE, Baustelle, E-Check). Vorbild ist EVSE. Go
 - **Kopf:** Titel, darunter optional ein Untertitel. Auf Unterseiten links der Zurück-Pfeil (breit: runder Knopf, mobil: Pfeil).
 - **Bereiche einer Unterseite:** mobil als Tabs unter dem Kopf, breit als Auswahl rechts im Kopf (`spick`).
 - **Aktionen zur Seite:** im ⋮-Menü der App, nicht als Knöpfe im Inhalt. Hat das Menü nur „Bearbeiten“ (und „Löschen“), gibt es **kein ⋮**: Bearbeiten steht als Schnellaktion auf der Seite (Kunde/Standort: fünfter Knopf neben Anrufen, E-Mail, Route, Webseite), Löschen unten links im Bearbeiten-Fenster.
-- **Kopfleiste rechts:** Profilbild 40 px; Knöpfe davor mit 8 px Abstand, alle mittig auf einer Linie.
+- **Kopfleiste rechts:** Profilbild 40 px; Knöpfe davor mit 8 px Abstand, alle mittig auf einer Linie (Handy und iPad).
+- **PC (Seitenleiste):** Profilbild mit Name und Abgleich-Stand und rechts daneben die Glocke stehen unten in der Seitenleiste; die Glocke öffnet ihr Fenster nach oben rechts.
 - **Knöpfe auf Karten** (z. B. Zoom und Info auf der Kundenkarte) stehen in derselben Flucht wie die Abschnittsknöpfe und Listenpfeile.
 - **Hauptaktion:** der rote Knopf unten rechts (FAB), z. B. „+ Prüfung“, „+ Baustelle“. Höchstens einer pro Seite.
 - **Seitenleiste / Tab-Leiste:** nur die großen Bereiche der App. Nachschlagewerke (Katalog) hängen an ihrem Bereich, nicht als eigener Punkt.

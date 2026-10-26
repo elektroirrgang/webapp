@@ -83,7 +83,7 @@ function syncAnzeige(s){
   clearTimeout(syncVerz); syncVerz=null;
   if(s==="läuft"){ syncSeit=Date.now(); setz(); }
   else { const rest=900-(Date.now()-syncSeit); if(war==="läuft"&&rest>0){ syncVerz=setTimeout(setz,rest); } else setz(); }
-  const e=document.getElementById("syncState"); if(e) e.textContent=syncText(); }
+  const e=document.getElementById("syncState"); if(e) e.textContent=syncText(); if(typeof seitenFussText==="function") setTimeout(seitenFussText,s==="läuft"?0:950); }
 /* was noch hochgeladen werden muss: geänderte Datensätze + wartende Fotos, Dateien, PDFs */
 function syncOffen(){ let n=0;
   try{ for(const k of Object.keys(DB)) for(const r of DB[k].values()) if(r&&r._dirty&&!r.demo) n++; }catch(e){}
