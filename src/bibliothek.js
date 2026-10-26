@@ -215,11 +215,14 @@ function bbStilFenster(btn,kid){
   const zu=()=>{ m.remove(); bg.remove(); removeEventListener("resize",zu); }; bg.addEventListener("click",zu); addEventListener("resize",zu);
 }
 const BB_OHNE="_ohne";
+/* Trennstellen für lange Ordnernamen – bricht dann sauber „Baustellen-berichte“ statt mitten im Wort */
+const BB_TRENN=[["Baustellenberichte","Baustellen\u00ADberichte"],["Prüfprotokolle","Prüf\u00ADprotokolle"],["Datenblätter","Daten\u00ADblätter"],["Handbücher","Hand\u00ADbücher"],["Schriftverkehr","Schrift\u00ADverkehr"]];
+const bbTrenn=n=>BB_TRENN.reduce((a,[x,y])=>a.split(x).join(y),String(n));
 function bbOrdner(L,zeile){
   const kn=id=>id===BB_OHNE?"Ohne Kunde":(bbKunde(id)||{}).name||"Unbekannter Kunde", kk=x=>x.kundeId||BB_OHNE;
   const tag=t=>t?new Date(t).toLocaleDateString("de-DE"):"";
   const mappe=(attrs,name,art,n,t,stil,menu)=>`<div class="bb-m" ${attrs}><button class="bb-mk" data-act="bbOrdner" ${attrs} aria-label="${esc(name)} öffnen">${bbOrdnerBild(stil.farbe,stil.sym)}</button>
-      <div class="bb-mn"><button class="bb-mt" data-act="bbOrdner" ${attrs}>${esc(name)}</button>${menu!==false?`<button class="bb-mm" data-act="bbMenue" ${attrs} aria-label="Ordner-Menü" title="Öffnen, SharePoint, Eigenschaften"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>`:""}</div>
+      <div class="bb-mn"><button class="bb-mt" data-act="bbOrdner" ${attrs}>${esc(bbTrenn(name))}</button>${menu!==false?`<button class="bb-mm" data-act="bbMenue" ${attrs} aria-label="Ordner-Menü" title="Öffnen, SharePoint, Eigenschaften"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>`:""}</div>
       <small>${esc([art,n?`${n} ${n===1?"Eintrag":"Einträge"}`:"Leer",t&&tag(t)].filter(Boolean).join(" · "))}</small></div>`;
   const kStil=k=>{ const r=k!==BB_OHNE&&bbKunde(k), o=Object.assign({},(r&&r.ordner)||{}); if(r&&!o.sym) o.sym="kunde"; return o; };
   /* gleich heißende Kunden bleiben getrennte Ordner (Schlüssel ist der Kunde selbst); Reihenfolge dann nach Kundennummer */
@@ -251,7 +254,7 @@ function bbOrdner(L,zeile){
     ${hier?`<span class="bb-pl"></span><button class="ab-ic" data-act="bbHier" data-k="${esc(k)}" data-v="${kat==="fotos"?"fotos":kat}" aria-label="Hier ablegen" title="${kat==="fotos"?"Foto hier ablegen":"Datei hier ablegen"}">${icon(kat==="fotos"?"cam":"add")}</button>`:""}</nav>`;
   const spZeile=f=>`<div class="li" role="button" tabindex="0" data-act="bbSp" data-id="${esc(f.id)}"><span class="av">${icon(/^image\//.test(f.mime)?"cam":"doc")}</span>
     <span class="lt"><span class="h">${esc(f.name)}</span><span class="s">${esc(["In SharePoint abgelegt",f.von,f.t&&tag(f.t)].filter(Boolean).join(" · "))}</span></span>${icon("chev")}</div>`;
-  const raster=O.length?`<div class="bb-oraster">${O.map(([n,o])=>mappe(`data-k="${esc(k)}" data-p="${bbPEnc([...p,n])}"`,n,"",o.n,o.t,{farbe:stil.farbe,sym:bbOrdSym(p,n)},true)).join("")}</div>`:"";
+  const raster=O.length?`<div class="bb-kw"><div class="bb-oraster${!p.length&&!ohne?" kat":""}">${O.map(([n,o])=>mappe(`data-k="${esc(k)}" data-p="${bbPEnc([...p,n])}"`,n,"",o.n,o.t,{farbe:stil.farbe,sym:bbOrdSym(p,n)},true)).join("")}</div></div>`:"";
   const zeilen=[...F.map(zeile),...extra.map(spZeile)];
   return pfad+raster+(zeilen.length?(O.length?`<div class="sec-lbl">Dateien</div>`:"")+listOf(zeilen):O.length?"":`<p class="meta">${hier?"Noch nichts abgelegt. Dateien kommen über den Knopf oben rechts oder direkt in SharePoint hier hinein.":"Noch nichts abgelegt."}</p>`);
 }
