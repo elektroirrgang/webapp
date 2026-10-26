@@ -353,10 +353,13 @@ function maStufe(m){ if(!m) return {k:"",t:""}; let k=m.stufe||maStufeAusText(m.
   if(k==="azubi"&&m.azubiBis&&m.azubiBis<heute){ k="geselle"; t="Geselle"; auto=true; }
   else if(k==="azubi"){ const lj=maLehrjahr(m); t=lj?`Azubi · ${lj}. Lehrjahr`:"Azubi"; }
   return {k,t,auto}; }
+/* Entwickler: in der Liste eingetragen ODER (beim eigenen Eintrag) die Microsoft-Rolle „Entwickler“ – sonst fällt die Pille zurück auf „Admin“ */
+function maEntw(m){ if(!m) return false; if(m.entwickler) return true; const ich=String((typeof ME!=="undefined"&&ME.mail)||"").toLowerCase();
+  return !!ich&&String(m.mail||"").toLowerCase()===ich&&meineRollen().includes("Entwickler"); }
 function maPillen(m){ const st=maStufe(m);
   /* Pille folgt den Rechten: „Mitarbeiter“ oder „Admin“. Entwickler ist die Ausnahme: arbeitet im Betrieb mit und entwickelt –
      daher „Mitarbeiter“ und „Entwickler“ (Rechte wie Admin plus Testwerkzeuge) */
-  return [st.t&&pill("stufe",st.t),m.entwickler?pill("open","Mitarbeiter")+pill("ok","Entwickler"):m.admin?pill("ok","Admin"):pill("open","Mitarbeiter"),m.pruefer&&pill("wip","Prüfer"),m.status==="weg"&&pill("open","ausgeschieden")].filter(Boolean).join(""); }
+  return [st.t&&pill("stufe",st.t),maEntw(m)?pill("open","Mitarbeiter")+pill("ok","Entwickler"):m.admin?pill("ok","Admin"):pill("open","Mitarbeiter"),m.pruefer&&pill("wip","Prüfer"),m.status==="weg"&&pill("open","ausgeschieden")].filter(Boolean).join(""); }
 /* Lehrjahr: normal aus „Ausbildung seit“ gerechnet. Weicht es ab (Betriebswechsel, Verkürzung, Wiederholung), wird es von Hand gesetzt
    (lj + ljAm) und zählt ab dann zu jedem Jahrestag des Ausbildungsbeginns (ohne Beginn: 1. August) eins weiter. */
 function maLehrjahr(m){ const n=new Date(), mon=(a,b)=>(b.getFullYear()-a.getFullYear())*12+b.getMonth()-a.getMonth()-(b.getDate()<a.getDate()?1:0);
