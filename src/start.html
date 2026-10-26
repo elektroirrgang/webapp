@@ -479,6 +479,7 @@ body.is-login .topbar{display:none}
 .vorher[open] summary > .ic:last-child{transform:rotate(180deg)}
 .vorher .ekarte{margin:0;border-radius:0;background:transparent}
 .gruss{font-size:26px;font-weight:800;letter-spacing:-.01em;margin:8px 4px 16px}
+.anker{display:block;height:0;scroll-margin-top:84px}
 .apps{display:grid;grid-template-columns:1fr;gap:12px}
 @media (min-width:700px){.apps{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .app-k{display:flex;align-items:center;gap:16px;min-height:88px;padding:14px 16px;border-radius:24px;background:var(--sc-low);color:var(--on-surface);text-decoration:none;border:1px solid var(--outline-v);min-width:0}
@@ -1849,7 +1850,7 @@ document.addEventListener("click",e=>{
 /*KOPF*/
 /*ANFORDERUNG*/
 /*VORGAENGE*/
-let maWieder=false;
+let maWieder=false; document.body.classList.add("hn"); /* Übersicht: Handy-Aufräumen (erst nur hier) */
 function render(){ profilAnwenden();
   const app=$("#app");
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
@@ -1992,7 +1993,7 @@ function dashboard(kacheln){
     auftraege:{ic:"board",v:"auftraege",sub:V.length?`${V.length} offen${vb?` · ${vb} beim Büro`:""}`:"Keine offenen Vorgänge",plus:["vgNeu","Vorgang anlegen"],
       s:()=>gross(V.length,vb?`offen · ${vb} beim Büro`:"offen"),
       m:g=>V.length?V.slice(0,anz(g)).map(v=>zeile(vgKunde(v),vgKurz(v.anliegen||"",60))).join(""):leer("Keine offenen Vorgänge.",true)},
-    pruefungen:{ic:"doc",v:"geraete",sub:ueber.length?`${ueber.length} überfällig`:fb.length?`${fb.length} fällig in 3 Monaten`:"Keine Fristen offen",warn:ueber.length>0||G.some(x=>x.k.s==="ab"),
+    pruefungen:{ic:"doc",v:istHandy()&&ME.admin?"uebersicht":"geraete",ziel:istHandy()&&ME.admin?"fristen":"",sub:ueber.length?`${ueber.length} überfällig`:fb.length?`${fb.length} fällig in 3 Monaten`:"Keine Fristen offen",warn:ueber.length>0||G.some(x=>x.k.s==="ab"),
       s:()=>gross(ueber.length,"überfällig",ueber.length>0),
       m:g=>`<div class="wg-kpis">${kpi(neu.length,"neue Protokolle")}${kpi(ueber.length,"überfällig",ueber.length?"warn":"")}${kpi(fb.length,"fällig in 3 Mon.")}</div>`
         +(g==="l"?([...G.slice(0,3).map(({g:x,k})=>zeile(gerName(x),k.t)),...ueber.slice(0,3).map(p=>zeile(pPfad(p),`fällig seit ${deDate(p.a.naechste)}`))].join("")||leer("Keine Fristen in Gefahr.")):"")},
@@ -2010,7 +2011,7 @@ function dashboard(kacheln){
   const PF=dbPflicht(), sicht=L.o.filter(k=>!L.aus.includes(k)||PF.includes(k));
   const kachel=(k,i)=>{ const w=W[k], g=L.gr[k], inhalt=g==="s"&&w.s?w.s():w.m(g), ganzKlick=!DB_ANP&&!w.app&&w.v;
     const grN=DB_GR[k][(DB_GR[k].indexOf(g)+1)%DB_GR[k].length];
-    return `<section class="wg wg-${g}${ganzKlick?" klick":""}" data-w="${k}" ${ganzKlick?`data-act="nav" data-v="${w.v}" role="button" tabindex="0"`:""}>
+    return `<section class="wg wg-${g}${ganzKlick?" klick":""}" data-w="${k}" ${ganzKlick?`data-act="nav" data-v="${w.v}"${w.ziel?` data-ziel="${w.ziel}"`:""} role="button" tabindex="0"`:""}>
       <div class="wg-k"><span class="wg-ic">${icon(w.ic)}</span><span class="wg-t"><b>${esc(k==="zahlen"&&istHandy()?"Statistik":DB_W[k])}</b>${w.sub&&g!=="s"?`<small class="${w.warn?"warn":""}">${esc(w.sub)}</small>`:""}</span>${w.plus&&!DB_ANP&&g!=="s"?`<button class="wg-plus" data-act="${w.plus[0]}" aria-label="${w.plus[1]}" title="${w.plus[1]}">${icon("add")}</button>`:""}</div>
       <div class="wg-b">${inhalt}</div>
       ${DB_ANP&&!PF.includes(k)?`<button class="wg-weg" data-act="dbAus" data-w="${k}" aria-label="${esc(DB_W[k])} ausblenden" title="Ausblenden">−</button>
@@ -2068,7 +2069,7 @@ function uebersichtView(){
     <section class="st-ab">${stKopf("ev","Prüfungen EVSE")}
       <div class="st-kacheln">${stK(pj.length,`Prüfungen ${jahr}`)}${stK(pj.reduce((s,p)=>s+lpZahl(p),0),`Ladepunkte ${jahr}`)}${stK(ps.filter(p=>["wip","open"].includes(pStand(p))).length,"in Arbeit")}${stK(ps.filter(p=>pStand(p)==="bad").length,"mit Mängeln",{warn:ps.some(p=>pStand(p)==="bad")})}</div>
       <div class="st-fl"><div class="st-t">Prüfungen der letzten 12 Monate</div>${stSaeulen(stMonate(),[{n:"Prüfungen",kl:"ein",w:monate.map(m=>m[1])}],i=>`${monate[i][1]} Prüfung${monate[i][1]===1?"":"en"}`)}</div>
-      ${fUeber.length?`<div class="sec-lbl">Überfällige Wiederholungsprüfungen</div>${listOf(fUeber.map(p=>fZeile(p,"bad","überfällig")))}`:""}
+      <span id="fristen" class="anker"></span>${fUeber.length?`<div class="sec-lbl">Überfällige Wiederholungsprüfungen</div>${listOf(fUeber.map(p=>fZeile(p,"bad","überfällig")))}`:""}
       ${fBald.length?`<div class="sec-lbl">Fällig in den nächsten 3 Monaten</div>${listOf(fBald.map(p=>fZeile(p,"wip","bald fällig")))}`:""}
       ${!fUeber.length&&!fBald.length?`<p class="meta">In den nächsten 3 Monaten ist keine Wiederholungsprüfung fällig.</p>`:""}</section>
     <section class="st-ab">${stKopf("firma","Kunden")}
@@ -2451,7 +2452,8 @@ document.addEventListener("click",async ev=>{
   case "bibSpeichern": closeOverlays(); bibPdf(b.dataset.id,false); return;
   case "menu": openMenu(); return;
   case "cancel": closeOverlays(); locForm=null; teamForm=null; return;
-  case "nav": { const v=b.dataset.v; if(v!==nav.v) query=""; go(b.dataset.id?{v,id:b.dataset.id}:{v}); return; }
+  case "nav": { const v=b.dataset.v, z=b.dataset.ziel; if(v!==nav.v) query=""; go(b.dataset.id?{v,id:b.dataset.id}:{v});
+    if(z) setTimeout(()=>{ const el=document.getElementById(z); if(el) el.scrollIntoView({block:"start",behavior:"smooth"}); },60); return; }
   case "railToggle": railOpen=!railOpen; $("#railBtn").innerHTML=icon(railOpen?"menuOpen":"menu"); try{ localStorage.setItem("evse_rail",railOpen?"1":"0"); }catch(e){} document.body.classList.toggle("rail-open",railOpen); render(); return;
   case "login": Auth.login(); return;
   case "relogin": Auth.relogin(); return;

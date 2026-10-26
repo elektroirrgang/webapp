@@ -100,10 +100,14 @@ document.addEventListener("mouseout",e=>{ if(tipZiel&&!(e.relatedTarget&&tipZiel
 
 /* ===== Rechtsklick-Menü (gemeinsam): kontextMenu(x,y,[{t,ic,fn,gefahr,kurz},"-",…]) ===== */
 let KM=[];
+/* Handy (Übersicht): Ansicht-Umschalter steckt als Knopf im Suchfeld – tippen öffnet die Ansichten als Menü */
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="ansMenue"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
+  const seg=b.closest(".bib-kopf")&&b.closest(".bib-kopf").querySelector(".ans-seg"); if(!seg) return; const r=b.getBoundingClientRect();
+  kontextMenu(r.right-200,r.bottom,[...seg.querySelectorAll("button")].map(x=>({t:x.title||x.dataset.v,svg:x.innerHTML,an:x.getAttribute("aria-pressed")==="true",fn:()=>x.click()}))); },true);
 function kontextMenu(x,y,items){
   const m=document.getElementById("menu"), sc=document.getElementById("scrim"); if(!m||!sc) return;
   items=items.filter(Boolean); if(!items.length) return; KM=items.filter(i=>i!=="-"); let n=0;
-  m.innerHTML=items.map(i=>i==="-"?"<hr>":`<button class="mi${i.gefahr?" danger":""}" role="menuitem" data-km="${n++}">${icon(i.ic)}<span>${esc(i.t)}</span>${i.kurz?`<kbd>${esc(i.kurz)}</kbd>`:""}</button>`).join("");
+  m.innerHTML=items.map(i=>i==="-"?"<hr>":`<button class="mi${i.gefahr?" danger":""}${i.an?" an":""}" role="menuitem" data-km="${n++}"${i.an?' aria-current="true"':""}>${i.svg||icon(i.ic)}<span>${esc(i.t)}</span>${i.kurz?`<kbd>${esc(i.kurz)}</kbd>`:""}</button>`).join("");
   m.style.right="auto"; m.hidden=false; sc.hidden=false; const w=m.offsetWidth, h=m.offsetHeight;
   m.style.left=Math.max(8,Math.min(innerWidth-w-8,x))+"px"; m.style.top=(y+4+h<innerHeight-8?y+4:Math.max(8,y-h-4))+"px";
   const f=m.querySelector(".mi"); if(f&&kontextMenu.tastatur) f.focus(); kontextMenu.tastatur=false;
