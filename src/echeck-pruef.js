@@ -279,7 +279,7 @@ function ecKalBis(t){ t=String(t||"").trim(); let m; if((m=t.match(/^(\d{1,2})\.
 function ecKal(kal){ if(!kal) return {s:"bad",t:"Kalibrierung fehlt"}; const b=ecKalBis(kal); if(!b) return {s:"wip",t:`kalibriert bis ${kal}`}; const rest=Math.floor((b-new Date())/864e5);
   return rest<0?{s:"bad",t:`Kalibrierung abgelaufen (${kal})`}:rest<=60?{s:"wip",t:`Kalibrierung läuft ab ${kal}`}:{s:"ok",t:`kalibriert bis ${kal}`}; }
 /* gewähltes Messgerät: aktuelle Daten aus „Messgeräte“, sonst die beim Auswählen gemerkten */
-function ecMgAktuell(pr){ const G=pr.geraet||{}, m=G.mgId&&DB.geraete&&DB.geraete.get(G.mgId); return m&&!m.deleted?{...ecMgDaten(m),bild:m.bild||m.bildUrl||""}:{...G}; }
+function ecMgAktuell(pr){ const G=pr.geraet||{}, m=G.mgId&&DB.geraete&&DB.geraete.get(G.mgId); return m&&!m.deleted?{...ecMgDaten(m),bild:m.bild||bildLokal(m.bildUrl)||""}:{...G}; }
 const ecMgBild=(u,gross)=>`<span class="ec-mgb${gross?" gross":""}">${icon("ecMess")}${u?`<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`:""}</span>`;
 const ecZ=(l,inhalt,o={})=>`<${o.act?"button type=\"button\"":"div"} class="ec-zl${o.act?" tap":""}"${o.act?` data-act="${o.act}"${o.w?` data-w="${o.w}"`:""}${o.dis?" disabled":""}`:""}><span class="ec-zl-l">${l}${o.s?`<small>${esc(o.s)}</small>`:""}</span>${inhalt}${o.act&&!o.dis&&!o.ohneChev?icon("chev"):""}</${o.act?"button":"div"}>`;
 const ecZWert=(v,ph)=>`<span class="ec-zl-w${v?"":" leer"}">${esc(v||ph||"–")}</span>`;
@@ -320,7 +320,7 @@ function ecPickDlg(w){ const pr=ecPr(); if(!pr) return; const knopf=`<span style
       <div class="fg1" style="margin-top:12px">${tf("ecPrName","Andere Person",L.some(m=>m.name===pr.pruefer)?"":pr.pruefer||"",{form:true})}</div>${ecPrueferListe().length?"":`<p class="meta" style="margin-top:8px">Wer prüfen darf, legst du in der Übersicht unter Mitarbeiter fest.</p>`}`,
       `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecPickPrName">Übernehmen</button>`); }
   if(w==="mg"){ const MG=ecMessgeraete(pr.art||"anlage"), G=pr.geraet||{};
-    return dialog("Messgerät",MG.length?`<div class="ec-wl">${MG.map(m=>{ const k=ecKal(m.kal); return ecWahlZ("ecPickSet","mg",m.id,ecMgLabel(m),`${esc(m.sn?`SN ${m.sn}`:"Seriennummer fehlt")} ${ecNz(pr)&&!m.kal?"":pill(k.s,k.t)}`,m.id===G.mgId,ecMgBild(m.bild||m.bildUrl,true)); }).join("")}</div>`
+    return dialog("Messgerät",MG.length?`<div class="ec-wl">${MG.map(m=>{ const k=ecKal(m.kal); return ecWahlZ("ecPickSet","mg",m.id,ecMgLabel(m),`${esc(m.sn?`SN ${m.sn}`:"Seriennummer fehlt")} ${ecNz(pr)&&!m.kal?"":pill(k.s,k.t)}`,m.id===G.mgId,ecMgBild(m.bild||bildLokal(m.bildUrl),true)); }).join("")}</div>`
       :`<p class="meta">Noch kein passendes Messgerät. In der Übersicht unter „Messgeräte“ anlegen${ecNz(pr)?" – Einsatz „Netzwerk“":""}.</p>`,
       `<button class="btn-text" data-act="ecPickMgHand">Von Hand eintragen</button>${knopf}`,{breit:true}); }
   if(w==="kabel") return dialog("Kabel",`<div class="ec-wl">${EC_KABEL.map(x=>ecWahlZ("ecPickSet","kabel",x,x,"",x===pr.kabel)).join("")}</div>
@@ -842,7 +842,7 @@ const ecKatFakten=K=>[`${K.he} HE`,K.ports&&K.typ!=="router"&&K.typ!=="boden"?`$
    eigenes Foto (verkleinert, im Datensatz) oder Bild-Link. Ohne Foto bleibt die Zeichnung; im Schrankplaner immer die Zeichnung. */
 const ecKatFotoRec=id=>{ const r=DB.einstellungen&&DB.einstellungen.get("nkfoto-"+id); return r&&!r.deleted&&(r.foto||r.url)?r:null; };
 /* Reihenfolge: eigenes Foto > eigener Bild-Link > Herstellerbild aus dem Katalog (bildUrl). Lädt ein Bild nicht, bleibt die Zeichnung darunter sichtbar. */
-const ecKatFotoSrc=K=>{ const r=ecKatFotoRec(K.id); return r?(r.foto||r.url):(K.bildUrl||""); };
+const ecKatFotoSrc=K=>{ const r=ecKatFotoRec(K.id); return r?(r.foto||r.url):(bildLokal(K.bildUrl)||""); };
 const ecKatBildHtml=K=>{ const src=ecKatFotoSrc(K); return ecRkKachelSvg(K)+(src?`<img class="kat-foto" src="${esc(src)}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()">`:""); };
 function ecKatFotoSpeichern(id,w){ const key="nkfoto-"+id, neu=!DB.einstellungen.has(key), r=DB.einstellungen.get(key)||{id:key,katId:id}; Object.assign(r,w,{by:who(),at:Date.now()}); r.deleted=!(r.foto||r.url); saveRec("einstellungen",r,neu); }
 function ecKatFotoVerkleinern(file){ return new Promise((res,rej)=>{ const url=URL.createObjectURL(file), img=new Image();

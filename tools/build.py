@@ -1,4 +1,4 @@
-import base64, datetime, pathlib, shutil, subprocess
+import base64, datetime, json, pathlib, shutil, subprocess
 
 root = pathlib.Path(__file__).resolve().parent.parent
 b64 = lambda p: base64.b64encode((root / p).read_bytes()).decode()
@@ -7,6 +7,11 @@ import hashlib, re
 V = (root / "VERSION").read_text(encoding="utf-8").strip()
 n = V
 version = f"{V} · {datetime.date.today().strftime('%d.%m.%Y')}"
+
+
+# Herstellerbilder vom eigenen Server: nur Einträge, deren Datei in bilder/ wirklich liegt (tools/bilder.py)
+_liste = root / "bilder" / "liste.json"
+BILDER = {u: n for u, n in (json.loads(_liste.read_text(encoding="utf-8")).items() if _liste.exists() else []) if (root / "bilder" / n).exists()}
 
 
 def baue(quelle, ziel, icon):
@@ -19,7 +24,7 @@ def baue(quelle, ziel, icon):
     html = html.replace("/*BIBLIOTHEK*/", (root / "src/bibliothek.js").read_text(encoding="utf-8") + "\n" + (root / "src/ablage.js").read_text(encoding="utf-8"))
     html = html.replace("/*DEMO*/", (root / "src/demo.js").read_text(encoding="utf-8"))
     html = html.replace("/*FELDER*/", (root / "src/felder.css").read_text(encoding="utf-8"))
-    html = html.replace("/*KOPF*/", (root / "src/kopf.js").read_text(encoding="utf-8"))
+    html = html.replace("/*KOPF*/", (root / "src/kopf.js").read_text(encoding="utf-8").replace("/*BILDER*/{}", json.dumps(BILDER, ensure_ascii=False)))
     html = html.replace("/*PROFIL*/", (root / "src/profil.js").read_text(encoding="utf-8"))
     html = html.replace("/*ANFORDERUNG*/", (root / "src/anforderung.js").read_text(encoding="utf-8"))
     html = html.replace("/*ABGLEICH*/", (root / "src/abgleich.js").read_text(encoding="utf-8"))

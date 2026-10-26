@@ -1,3 +1,7 @@
+/* Herstellerbilder liegen auf unserem eigenen Server (bilder/, geholt von tools/bilder.py per GitHub Action) – so geht keine IP-Adresse an Hersteller.
+   build.py setzt die Zuordnung Original-Adresse → Datei ein; fehlt ein Bild dort noch, bleibt die Original-Adresse. */
+const BILDER_LOKAL=/*BILDER*/{};
+const bildLokal=u=>u&&BILDER_LOKAL[u]?"../bilder/"+BILDER_LOKAL[u]:u;
 /* iPad/PC: Der Seitenkopf (Zurück, Titel, Knöpfe rechts) sitzt in der festen Kopfleiste statt als zweiter Kopf im Inhalt.
    PC mit Seitenleiste: in derselben Zeile wie Glocke und Profilbild. iPad (Tab-Leiste oben): als zweite Zeile direkt darunter,
    ohne Lücke – beides ist ein Element, scrollender Inhalt kann nicht mehr dazwischen durchscheinen. */

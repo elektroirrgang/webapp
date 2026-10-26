@@ -2202,7 +2202,7 @@ function gerVorlagen(){ if(!ME.admin) return;
       for(const [k,v] of Object.entries(d)) if(g[k]!==v&&(!g[k]||(V[id]&&g[k]===V[id][k])||GER_DATEN_ALT.includes(g[k]))){ g[k]=v; neu=true; } if(neu) saveRec("geraete",g); }
     META.gerDatenV=GER_DATEN_V; metaSave(); } }
 /* eigenes Foto (bild, klein im Datensatz) vor Herstellerbild (bildUrl); lädt das Herstellerbild nicht, bleibt das Symbol sichtbar */
-const gerAv=g=>{ const u=g.bild||GER_BILD_ALT[g.bildUrl]||g.bildUrl; return u?`<span class="av av-img ger-av">${icon("geraet")}<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></span>`:`<span class="av">${icon("geraet")}</span>`; };
+const gerAv=g=>{ const u=g.bild||bildLokal(GER_BILD_ALT[g.bildUrl]||g.bildUrl); return u?`<span class="av av-img ger-av">${icon("geraet")}<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></span>`:`<span class="av">${icon("geraet")}</span>`; };
 /* Gruppen in der Liste: Messgeräte nach Einsatz, dazu Prüfadapter und Sonstiges */
 const gerEinsatz=g=>g.einsatz||(/\bPAT\b/i.test(g.modell||"")?"geraete":/signaltek|lantek|navitek|netzwerk|kabeltester|ethernet/i.test(`${g.hersteller||""} ${g.modell||""}`)?"netzwerk":"installation");
 const GER_GRUPPEN=[["installation","Installationstester"],["geraete","Gerätetester"],["beide","Installations- und Gerätetester"],["netzwerk","Netzwerktester"],["adapter","Prüfadapter"],["sonst","Sonstiges"]];

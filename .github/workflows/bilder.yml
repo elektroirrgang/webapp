@@ -1,0 +1,34 @@
+# Holt Herstellerbilder auf den eigenen Server (bilder/), baut die Apps neu und veröffentlicht.
+# Läuft bei jeder Änderung in src/ und auf Knopfdruck (Actions → Bilder holen → Run workflow).
+name: Bilder holen
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["src/**", "tools/bilder.py"]
+permissions:
+  contents: write
+  pages: write
+concurrency: { group: bilder, cancel-in-progress: false }
+jobs:
+  holen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Bilder holen
+        run: python3 tools/bilder.py --holen
+      - name: Apps neu bauen und speichern
+        run: |
+          git config user.name "Bilder-Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add bilder
+          if git diff --cached --quiet; then echo "Keine neuen Bilder"; exit 0; fi
+          python3 tools/build.py
+          git add -A bilder uebersicht evse baustelle echeck
+          git commit -m "Herstellerbilder auf eigenen Server geholt"
+          git push
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" || true
+        env:
+          GH_TOKEN: ${{ github.token }}

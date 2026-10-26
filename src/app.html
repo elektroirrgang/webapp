@@ -2345,7 +2345,7 @@ function abschlussView(){
 }
 
 const KAT_DATEIEN=false, KAT_BILD=true;
-const katBildSrc=r=>(KAT_BILD&&r.bild&&fotoCache.get(r.bild))||r.bildUrl||"";
+const katBildSrc=r=>(KAT_BILD&&r.bild&&fotoCache.get(r.bild))||bildLokal(r.bildUrl)||"";
 const katImg=(r,cls)=>{ const src=katBildSrc(r); return src?`<img class="${cls||""}" src="${esc(src)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'kimg-leer'}))">`:`<span class="kimg-leer"></span>`; };
 const KAT_HINWEIS=["PE-Anschluss","Anschlussraum / Klemmen","Typschild","Einrichtung / Konfiguration","Fehlerstromschutz","Sonstiges"];
 const KAT_STAND=7, KAT_GEPRUEFT="16.10.2026";
