@@ -123,7 +123,7 @@
 .bb-mappe .ol{stroke:#fff;opacity:.35}
 .bb-mappe .os{fill:color-mix(in srgb,var(--o) 58%,#000);opacity:.8} .bb-mappe .osl{fill:#fff;opacity:.4}
 .bb-mn{display:flex;align-items:center;justify-content:center;max-width:100%;margin-top:6px}
-.bb-mt{border:0;background:none;padding:2px 0;font:inherit;font-size:15px;font-weight:650;color:var(--on-surface);cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bb-mt{border:0;background:none;padding:2px 0;font:inherit;font-size:15px;font-weight:650;color:var(--on-surface);cursor:pointer;min-width:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.25;text-align:center;overflow-wrap:anywhere}
 .bb-mm{flex:none;width:28px;height:28px;border:0;border-radius:50%;background:none;color:var(--on-sv);display:grid;place-items:center;cursor:pointer;margin-left:2px}
 .bb-mm svg{width:20px;height:20px;fill:currentColor} .bb-mm:active{background:var(--sc-high)}
 .bb-m small{font-size:12px;color:var(--on-sv);margin-top:1px}
@@ -139,6 +139,7 @@
 .bb-pfad b{color:var(--on-surface);font-weight:650}
 .bb-pt{border:0;background:none;padding:6px 4px;font:inherit;color:var(--primary);font-weight:600;cursor:pointer}
 .bb-ps{opacity:.6}
+.bb-pl{flex:1}
 .bb-zur{width:40px;height:40px;border:0;border-radius:50%;display:grid;place-items:center;background:var(--sc-high);color:var(--on-surface);cursor:pointer;margin-right:6px}
 .bb-zur .ic{width:22px;height:22px;transform:rotate(180deg)}
 @media (max-width:599px){.bib-kopf{gap:8px}.bib-kopf .seg.ans-seg button{flex-basis:42px!important;width:42px}}
@@ -416,10 +417,10 @@ button.vg-z{cursor:pointer;-webkit-tap-highlight-color:transparent} button.vg-z:
    Titel links (rot), rechts höchstens „Alle n“ (Textknopf) und runde, gefüllte Knöpfe zum direkten Anlegen. In Karten genauso (.card-kopf). */
 .sec-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .sk-akt{display:flex;align-items:center;gap:4px}
-.plus-k,.sec-row .ab-ic,.card-kopf .ab-ic{width:40px;height:40px;border:0;border-radius:50%;background:var(--sc-high);color:var(--on-surface);display:grid;place-items:center;padding:0;cursor:pointer;flex:none}
-.plus-k:hover,.sec-row .ab-ic:hover,.card-kopf .ab-ic:hover{background:var(--sc-highest)}
+.plus-k,.sec-row .ab-ic,.card-kopf .ab-ic,.bb-pfad .ab-ic{width:40px;height:40px;border:0;border-radius:50%;background:var(--sc-high);color:var(--on-surface);display:grid;place-items:center;padding:0;cursor:pointer;flex:none}
+.plus-k:hover,.sec-row .ab-ic:hover,.card-kopf .ab-ic:hover,.bb-pfad .ab-ic:hover{background:var(--sc-highest)}
 .plus-k:active,.sec-row .ab-ic:active,.card-kopf .ab-ic:active{background:color-mix(in srgb,var(--primary) 14%,var(--sc-high))}
-.plus-k .ic,.sec-row .ab-ic .ic,.card-kopf .ab-ic .ic{width:22px;height:22px}
+.plus-k .ic,.sec-row .ab-ic .ic,.card-kopf .ab-ic .ic,.bb-pfad .ab-ic .ic{width:22px;height:22px}
 .card-kopf{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:-8px -8px 10px 0}.card-kopf h3{margin:0!important}
 /* Knöpfe rechts in der Flucht der Pfeile (›) der Listen darunter: Mitte = Innenabstand der Zeile + halbes Symbol */
 .sec-row .ab-btns,.sec-row > .plus-k,.sec-row .sk-akt{margin-right:6px!important}

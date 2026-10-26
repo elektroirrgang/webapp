@@ -19,11 +19,12 @@ const bbAppName=a=>a==="baustelle"?"Baustelle":a==="echeck"?"E-Check":"EVSE";
 const BB_FELDER=["app","pruefungId","echeckId","kundeId","standortId","ladeparkId","baustelleId","name","titel","datum","art","auftragsnr","pruefer","ergebnis","nr","unterschrift","fassung","size","von","created"];
 const bbFs=v=>String(v||"").replace(/[\\/:*?"<>|#%\u0000-\u001f]/g,"-").replace(/\s+/g," ").trim().replace(/[. ]+$/,"").slice(0,80)||"Unbenannt";
 function bbZiel(x){ const k=bbKunde(x.kundeId), nm=(M,id)=>id&&M&&M.get(id)?M.get(id).name:"";
+  if(k&&!k.demo) return {bib:"kd",pfad:[KD_WURZEL,kdOrdName(k),...kdOrtProt(x)].join("/")+"/"+bbFs(x.name)+".pdf"}; /* Kundenordner (ablage.js) */
   if(x.app==="baustelle") return {bib:"baustellen",pfad:["Berichte",k?k.name:"Ohne Kunde",nm(DB.baustellen,x.baustelleId)||String(x.titel||"").split(" · ").pop()||"Baustelle"].map(bbFs).join("/")+"/"+bbFs(x.name)+".pdf"};
   const dir=[k&&k.name,nm(DB.standorte,x.standortId),nm(DB.ladeparks,x.ladeparkId)].filter(Boolean).map(bbFs).join("/")||"Ohne Zuordnung";
   return {bib:"pdf",pfad:dir+"/"+bbFs(x.name)+".pdf"}; }
 function bbProtMelden(x,opt){ if(!bbSync()||!x||x.demo||x.ausShare||DB.protokolle.has(x.id)) return; opt=opt||{};
-  const z=opt.pfad?{bib:opt.bib||"pdf",pfad:opt.pfad}:bbZiel(x), r={id:x.id,bib:z.bib,pfad:z.pfad};
+  const z=opt.pfad&&!bbKunde(x.kundeId)?{bib:opt.bib||"pdf",pfad:opt.pfad}:bbZiel(x), r={id:x.id,bib:z.bib,pfad:z.pfad};
   BB_FELDER.forEach(f=>{ if(x[f]!==undefined&&x[f]!=="") r[f]=x[f]; });
   saveRec("protokolle",r,true);
   if(typeof SYNC_ON!=="undefined"&&SYNC_ON){ META.sync.protQueue=[...new Set([...(META.sync.protQueue||[]),x.id])]; metaSave(); }
@@ -44,15 +45,17 @@ async function pushProtokolle(){
   /* Prüfungen, deren PDF schon in der Share liegt (auch von Geräten mit älterer App): ein Eintrag „pa-<Prüfung>“, damit Baustelle und E-Check sie ebenfalls zeigen */
   if(DB.pruefungen){ const mit=new Set([...DB.protokolle.values()].filter(r=>!r.deleted&&!String(r.id).startsWith("pa-")).map(r=>r.pruefungId).filter(Boolean));
     for(const pr of DB.pruefungen.values()){ if(pr.deleted||pr.demo||!pr.pdfAblage||mit.has(pr.id)) continue; const id="pa-"+pr.id, alt=DB.protokolle.get(id);
-      if(alt&&alt.pfad===pr.pdfAblage) continue;
+      if(alt&&(alt.pfad===pr.pdfAblage||alt.umzugVon===pr.pdfAblage)) continue;
       const k=bbKunde(pr.kundeId), st=pr.standortId&&DB.standorte?DB.standorte.get(pr.standortId):null, pp=pr.p||{};
-      const r=Object.assign(alt||{id},{app:"evse",bib:"pdf",pfad:pr.pdfAblage,pruefungId:pr.id,kundeId:pr.kundeId||"",standortId:pr.standortId||"",ladeparkId:pr.ladeparkId||"",
+      const r=Object.assign(alt||{id},{app:"evse",bib:String(pr.pdfAblage).startsWith(KD_WURZEL+"/")?"kd":"pdf",pfad:pr.pdfAblage,pruefungId:pr.id,kundeId:pr.kundeId||"",standortId:pr.standortId||"",ladeparkId:pr.ladeparkId||"",
         name:String(pr.pdfAblage).split("/").pop().replace(/\.pdf$/i,""),titel:[k&&k.name,st&&st.name].filter(Boolean).join(" · ")||"Prüfung",datum:pp.datum||"",art:pp.art||"",auftragsnr:pp.auftragsnr||"",pruefer:pp.pruefer||"",created:pr.updated||Date.now(),von:pr.updatedBy||null});
       if(typeof protoResult==="function") try{ r.ergebnis=protoResult(pr)==="bad"?"bad":"ok"; }catch(e){}
       delete r.deleted; saveRec("protokolle",r,!alt); } }
   for(const id of [...(META.sync.protQueue||[])]){
     const r=DB.protokolle.get(id); if(!r||r.deleted){ bbProtOben(id); continue; }
     const b=await bbBlob(id).catch(()=>null); if(!b){ bbProtOben(id); continue; }
+    if(r.bib!=="kd"&&!r.umzugVon&&bbKunde(r.kundeId)){ const z=bbZiel(r); if(z.bib==="kd"){ r.bib="kd"; r.pfad=z.pfad; saveRec("protokolle",r); } } /* Warteschlange von vor dem Umbau */
+    if(r.bib==="kd"){ const it=await kdHoch(r.kundeId,kdRest(r.pfad),b,"replace"); if(it){ if(r.item!==it.id){ r.item=it.id; saveRec("protokolle",r); } bbProtOben(id); continue; } r.bib="pdf"; r.pfad="Ohne Zuordnung/"+r.pfad.split("/").pop(); saveRec("protokolle",r); }
     await bbHoch(BIB[r.bib]||BIB.pdf,r.pfad,b); bbProtOben(id); }
 }
 /* PDF eines anderen Geräts holen, im Gerät ablegen und öffnen */
@@ -65,8 +68,8 @@ async function bbFern(id){
   if(!(typeof SYNC_ON!=="undefined"&&SYNC_ON&&ME.signedIn)){ toast("Das PDF liegt in der Share – dafür bitte anmelden"); return; }
   if(!navigator.onLine){ toast("Kein Internet – das PDF liegt in der Share"); return; }
   toast("PDF wird geladen …");
-  try{ await syncRoot(); const i=r.pfad.lastIndexOf("/"), fid=await folderId(r.pfad.slice(0,i),BIB[r.bib]||BIB.pdf);
-    const it=await gj(`/drives/${fid}:/${encodeURIComponent(r.pfad.slice(i+1))}`), blob=await (await readItem(it)).blob();
+  try{ await syncRoot(); const it=r.bib==="kd"?await kdItem(r.kundeId,kdRest(r.pfad),r.item):await kdAltItem(BIB[r.bib]||BIB.pdf,r.pfad);
+    if(!it) throw {status:404}; const blob=await (await readItem(it)).blob();
     const x={id:r.id}; BB_FELDER.forEach(f=>{ if(r[f]!==undefined) x[f]=r[f]; }); x.size=blob.size; x.vonGeraet=true;
     const d=await new Promise((res,rej)=>{ const q=indexedDB.open("evse_protokolle"); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); });
     const tx=d.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").put(x); tx.objectStore("blob").put(blob,x.id); await new Promise(ok=>{ tx.oncomplete=ok; tx.onerror=ok; }); d.close();
@@ -88,22 +91,23 @@ const bbDatum=d=>d?String(d).split("-").reverse().join("."):"";
 function bbEintraege(){
   const L=[], kn=id=>(bbKunde(id)||{}).name||"", P=bbSync()?[...DB.protokolle.values()]:[], weg=new Set(P.filter(r=>r.deleted).map(r=>r.id)), hier=new Set(BB_PROT.map(x=>x.id));
   const lokal=new Set([...BB_PROT,...P.filter(r=>!r.deleted)].map(x=>x.pruefungId).filter(Boolean));
-  const protE=(x,ziel,fern)=>({art:x.app==="baustelle"?"bericht":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
+  const ortP=x=>({ort:kdOrtProt(x),file:x.pfad?String(x.pfad).split("/").pop():bbFs(x.name)+".pdf",item:x.item||(DB.protokolle&&DB.protokolle.get(x.id)||{}).item||""});
+  const protE=(x,ziel,fern)=>({...ortP(x),art:x.app==="baustelle"?"bericht":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
     info:[bbAppName(x.app),x.art,bbDatum(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`,x.von&&x.von.name,fern&&"auf einem anderen Gerät erstellt"].filter(Boolean).join(" · "),
     pill:x.ergebnis?pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden"):"",ziel});
   const echt=new Set([...BB_PROT,...P.filter(r=>!r.deleted&&!String(r.id).startsWith("pa-"))].map(x=>x.pruefungId).filter(Boolean)); /* „pa-“ nur, solange es zur Prüfung kein richtiges Protokoll gibt */
   P.filter(r=>!r.deleted&&!hier.has(r.id)&&!(String(r.id).startsWith("pa-")&&echt.has(r.pruefungId))).forEach(r=>L.push(protE(r,`data-act="bbFern" data-id="${esc(r.id)}"`,!r.demo)));
   const demo=typeof demoAn==="function"&&demoAn();
-  BB_PROT.filter(x=>(!x.demo||(demo&&DB.protokolle&&DB.protokolle.has(x.id)))&&!weg.has(x.id)).forEach(x=>L.push({art:x.app==="baustelle"?"bericht":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
+  BB_PROT.filter(x=>(!x.demo||(demo&&DB.protokolle&&DB.protokolle.has(x.id)))&&!weg.has(x.id)).forEach(x=>L.push({...ortP(x),art:x.app==="baustelle"?"bericht":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
     info:[bbAppName(x.app),x.art,bbDatum(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`,x.von&&x.von.name].filter(Boolean).join(" · "),
     pill:x.ergebnis?pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden"):"",ziel:`data-act="bbOeffnen" data-id="${esc(x.id)}"`}));
   if(DB.pruefungen) [...DB.pruefungen.values()].filter(p=>!p.deleted&&p.pdfAblage&&!lokal.has(p.id)&&(!p.demo||(typeof demoAn==="function"&&demoAn()))).forEach(p=>{
     const s=p.standortId&&DB.standorte?DB.standorte.get(p.standortId):null;
-    L.push({art:"prot",titel:[kn(p.kundeId),s&&s.name].filter(Boolean).join(" › ")||"Prüfung",kundeId:p.kundeId||"",kunde:kn(p.kundeId),t:p.updated||0,st:p.standortId||"",
+    L.push({ort:kdOrtProt({app:"evse",standortId:p.standortId,ladeparkId:p.ladeparkId}),file:String(p.pdfAblage).split("/").pop(),art:"prot",titel:[kn(p.kundeId),s&&s.name].filter(Boolean).join(" › ")||"Prüfung",kundeId:p.kundeId||"",kunde:kn(p.kundeId),t:p.updated||0,st:p.standortId||"",
       info:["EVSE",p.p&&p.p.art,p.p&&bbDatum(p.p.datum),"PDF in der Share"].filter(Boolean).join(" · "),pill:"",
       ziel:`data-act="bbShare" data-id="${esc(p.id)}"`}); });
   if(DB.dateien) [...DB.dateien.values()].filter(d=>!d.deleted).forEach(d=>{ const st=d.bezugKind==="standorte"&&DB.standorte?DB.standorte.get(d.bezugId):null, vg=d.bezugKind==="vorgaenge"&&DB.vorgaenge?DB.vorgaenge.get(d.bezugId):null, k=bbKunde(d.bezugKind==="kunden"?d.bezugId:st?st.kundeId:vg&&vg.kundeId), bild=/^image\//.test(d.typ||"");
-    L.push({art:bild?"foto":"dok",titel:d.name||"Datei",kundeId:k?k.id:"",kunde:k?k.name:"",t:d.created||0,bild:bild?d.id:"",st:st?st.id:"",
+    L.push({ort:kdOrtDatei(d),file:d.ablage||kdDateiName(d),item:d.item||"",art:bild?"foto":"dok",titel:d.name||"Datei",kundeId:k?k.id:"",kunde:k?k.name:"",t:d.created||0,bild:bild?d.id:"",st:st?st.id:"",
       info:[k&&k.name,st&&st.name,d.created&&new Date(d.created).toLocaleDateString("de-DE")].filter(Boolean).join(" · "),pill:"",ziel:`data-act="dateiOeffnen" data-id="${esc(d.id)}"`}); });
   return L;
 }
@@ -113,7 +117,8 @@ function bbGruppe(L,name,item){ const gr=[], b=x=>{ const c=String(x||"").trim()
 function bbMonate(L,item){ let h="", m=null, g=[]; const fl=()=>{ if(g.length) h+=`<div class="sec-lbl">${esc(m)}</div>${listOf(g)}`; g=[]; };
   for(const x of L){ const mm=x.t?new Date(x.t).toLocaleDateString("de-DE",{month:"long",year:"numeric"}):"Ohne Datum"; if(mm!==m){ fl(); m=mm; } g.push(item(x)); } fl(); return h; }
 /* ===== Ordner-Ansicht: automatisch nach Kunde, darin Standorte und Baustellen – niemand muss einsortieren ===== */
-let BB_ORT={k:null,u:null};
+let BB_ORT={k:null,p:[]}; /* k: Kunde, p: Ordnerpfad im Kundenordner (z. B. ["Prüfprotokolle","Halle 2"]) */
+const bbPEnc=p=>encodeURIComponent(JSON.stringify(p||[])), bbPDec=v=>{ try{ const p=JSON.parse(decodeURIComponent(v||"")); return Array.isArray(p)?p.map(String):[]; }catch(e){ return []; } };
 /* Ordner wie in der Dateien-App/GoodNotes: Farbe und Symbol je Kunde (steht am Kunden, gilt also für alle Geräte und alle im Team) */
 const BB_FARBEN=[["papier","Papier","#E2C68C"],["rot","Rot","#E06A60"],["orange","Orange","#EE9F4C"],["gelb","Gelb","#E9C64A"],["gruen","Grün","#6DBB7B"],["tuerkis","Türkis","#4DB6AC"],["blau","Blau","#4FA6D8"],["violett","Violett","#9A80D2"],["rosa","Rosa","#E58FB4"],["grau","Grau","#A3A9B1"]];
 const BB_SYM={kunde:"M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z",stern:"M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z",
@@ -149,35 +154,40 @@ function bbOrdnerBild(farbe,sym){ const g="bbg"+(++BB_GID), f=BB_FARBEN.some(x=>
 IC.bbFarbe=IC.bbFarbe||"M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z";
 IC.bbOffen=IC.bbOffen||"M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z";
 IC.bbInfo=IC.bbInfo||"M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z";
+IC.bbWeb=IC.bbWeb||"M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z";
+const bbOrdWeb=(k,p)=>{ if(!p.length){ const r=kdoRec(k); return (r&&r.web)||""; } const c=BB_SP.get(bbSpKey(k,p.slice(0,-1))), f=c&&c.ordner.find(o=>o.name===p[p.length-1]); return (f&&f.web)||""; };
 function bbOrdnerMenue(el,x,y){
-  const k=el.dataset.k, u=el.dataset.u||"", kd=k&&k!==BB_OHNE?bbKunde(k):null, darf=!!(kd&&(typeof kdDarf==="function"?kdDarf(kd):typeof canEdit==="function"&&canEdit(kd)));
-  const oeffnen=()=>{ BB_ORT={k,u:u||null}; const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); scrollTo(0,0); };
-  const id=u.slice(2), hatBau=u[0]==="b"&&typeof baustelleView==="function"&&DB.baustellen&&DB.baustellen.get(id);
+  const k=el.dataset.k, p=bbPDec(el.dataset.p), kd=k&&k!==BB_OHNE?bbKunde(k):null, darf=!!(kd&&(typeof kdDarf==="function"?kdDarf(kd):typeof canEdit==="function"&&canEdit(kd)));
+  const oeffnen=()=>{ BB_ORT={k,p}; const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); scrollTo(0,0); };
+  const st=p.length>=2&&kd&&DB.standorte?[...DB.standorte.values()].find(s=>!s.deleted&&s.kundeId===k&&bbFs(s.name)===p[1]):null;
+  const bs=p.length>=2&&kd&&p[0]===kdKat("berichte")&&typeof baustelleView==="function"&&DB.baustellen?[...DB.baustellen.values()].find(b=>!b.deleted&&b.kundeId===k&&bbFs(b.name)===p[1]):null;
+  const web=bbOrdWeb(k,p);
   kontextMenu(x,y,[{t:"Öffnen",ic:"bbOffen",fn:oeffnen},"-",
-    !u&&kd&&{t:"Zum Kunden",ic:"firma",fn:()=>go({v:"kunde",id:kd.id})},
-    !u&&darf&&typeof locDialog==="function"&&{t:"Kunde bearbeiten",ic:"edit",fn:()=>locDialog("kunden",kd)},
-    !u&&darf&&{t:"Farbe und Symbol",ic:"bbFarbe",fn:()=>bbStilFenster(el.querySelector(".bb-mm")||el,kd.id)},
-    u[0]==="s"&&DB.standorte&&DB.standorte.get(id)&&{t:"Zum Standort",ic:"ort",fn:()=>go({v:"standort",id})},
-    hatBau&&{t:"Zur Baustelle",ic:"baustelle",fn:()=>go({v:"baustelle",id})},
-    {t:"Eigenschaften",ic:"bbInfo",fn:()=>bbEigenschaften(k,u)}]);
+    !p.length&&kd&&{t:"Zum Kunden",ic:"firma",fn:()=>go({v:"kunde",id:kd.id})},
+    !p.length&&darf&&typeof locDialog==="function"&&{t:"Kunde bearbeiten",ic:"edit",fn:()=>locDialog("kunden",kd)},
+    !p.length&&darf&&{t:"Farbe und Symbol",ic:"bbFarbe",fn:()=>bbStilFenster(el.querySelector(".bb-mm")||el,kd.id)},
+    st&&{t:"Zum Standort",ic:"ort",fn:()=>go({v:"standort",id:st.id})},
+    bs&&{t:"Zur Baustelle",ic:"baustelle",fn:()=>go({v:"baustelle",id:bs.id})},
+    web&&{t:"In SharePoint öffnen",ic:"bbWeb",fn:()=>window.open(web,"_blank","noopener")},
+    {t:"Eigenschaften",ic:"bbInfo",fn:()=>bbEigenschaften(k,p)}]);
 }
-function bbEigenschaften(k,u){
-  const kd=k&&k!==BB_OHNE?bbKunde(k):null, uKey=x=>x.bs?"b:"+x.bs:x.st?"s:"+x.st:"";
-  const A=bbEintraege().filter(x=>(x.kundeId||BB_OHNE)===k&&(!u||uKey(x)===u)), EINZ={prot:"Prüfprotokoll",bericht:"Baustellenbericht",dok:"Dokument",foto:"Foto"}, arten=BB_ART.filter(([a])=>a!=="alle").map(([a,t])=>{ const n=A.filter(x=>x.art===a).length; return [n===1?EINZ[a]:t,n]; }).filter(x=>x[1]);
-  const U=new Set(A.map(uKey).filter(Boolean)), nS=[...U].filter(x=>x[0]==="s").length, nB=[...U].filter(x=>x[0]==="b").length;
+const bbOrdSym=(p,name)=>!p.length?KD_SYM[kdKatVon(name)]||"":p[0]===kdKat("berichte")?"baustelle":p[0]===kdKat("prot")||p[0]===kdKat("fotos")?"ort":"";
+function bbEigenschaften(k,p){
+  const kd=k&&k!==BB_OHNE?bbKunde(k):null, unter=x=>p.every((s,i)=>x.ort[i]===s);
+  const A=bbEintraege().filter(x=>(x.kundeId||BB_OHNE)===k&&unter(x)), EINZ={prot:"Prüfprotokoll",bericht:"Baustellenbericht",dok:"Dokument",foto:"Foto"}, arten=BB_ART.filter(([a])=>a!=="alle").map(([a,t])=>{ const n=A.filter(x=>x.art===a).length; return [n===1?EINZ[a]:t,n]; }).filter(x=>x[1]);
+  const U=new Set(A.filter(x=>x.ort.length>p.length).map(x=>x.ort[p.length]));
   const t=A.length?Math.max(...A.map(x=>x.t||0)):0, tag=v=>v?new Date(v).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"}):"";
-  const id=u.slice(2), ziel=u[0]==="s"?(DB.standorte&&DB.standorte.get(id)):u[0]==="b"?(DB.baustellen&&DB.baustellen.get(id)):kd;
-  const name=u?(ziel&&ziel.name)||(u[0]==="b"?"Baustelle":"Standort"):kd?kd.name:"Ohne Kunde";
+  const name=p.length?p[p.length-1]:kd?kd.name:"Ohne Kunde", r=kd&&kdoRec(k);
   const z=(l,v)=>v?`<div class="bb-ez"><small>${esc(l)}</small><span>${esc(v)}</span></div>`:"";
-  const adr=ziel&&typeof adrText==="function"?adrText(ziel):"";
   const st=(kd&&kd.ordner)||{};
-  dialog(name,`<div class="bb-eig"><div class="bb-ebild">${bbOrdnerBild(st.farbe,u?(u[0]==="b"?"baustelle":"ort"):kd?(st.sym||"kunde"):"")}</div><div class="bb-el">
-      ${z("Art",u?(u[0]==="b"?"Baustelle":"Standort")+(kd?` von ${kd.name}`:""):"Kunden-Ordner")}
-      ${z("Kundennummer",kd&&kd.kdnr)}${z("Adresse",adr)}
+  dialog(name,`<div class="bb-eig"><div class="bb-ebild">${bbOrdnerBild(st.farbe,p.length?bbOrdSym(p.slice(0,-1),name):kd?(st.sym||"kunde"):"")}</div><div class="bb-el">
+      ${z("Art",p.length?(p.length===1?"Ordner":"Unterordner")+(kd?` von ${kd.name}`:""):"Kunden-Ordner")}
+      ${!p.length?z("Kundennummer",kd&&kd.kdnr)+z("Adresse",kd&&typeof adrText==="function"?adrText(kd):""):""}
       ${z("Inhalt",`${A.length} ${A.length===1?"Datei":"Dateien"}${arten.length?" – "+arten.map(([t,n])=>`${n} ${t}`).join(", "):""}`)}
-      ${!u?z("Unterordner",[nS&&`${nS} ${nS===1?"Standort":"Standorte"}`,nB&&`${nB} ${nB===1?"Baustelle":"Baustellen"}`].filter(Boolean).join(", ")):""}
+      ${z("Unterordner",U.size?String(U.size):"")}
+      ${z("In SharePoint",r&&r.name?["Kundendaten",KD_WURZEL,r.name,...p].join(" › "):"")}
       ${z("Zuletzt hinzugefügt",tag(t))}
-      ${z("Angelegt",ziel&&[tag(ziel.created),ziel.createdBy&&ziel.createdBy.name].filter(Boolean).join(" · "))}</div></div>`,
+      ${!p.length?z("Angelegt",kd&&[tag(kd.created),kd.createdBy&&kd.createdBy.name].filter(Boolean).join(" · ")):""}</div></div>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`);
 }
 /* lange drücken (Finger/Stift) */
@@ -208,29 +218,42 @@ const BB_OHNE="_ohne";
 function bbOrdner(L,zeile){
   const kn=id=>id===BB_OHNE?"Ohne Kunde":(bbKunde(id)||{}).name||"Unbekannter Kunde", kk=x=>x.kundeId||BB_OHNE;
   const tag=t=>t?new Date(t).toLocaleDateString("de-DE"):"";
-  const mappe=(attrs,name,art,G,stil,menuK)=>{ const t=Math.max(0,...G.map(x=>x.t||0));
-    return `<div class="bb-m" ${attrs}><button class="bb-mk" data-act="bbOrdner" ${attrs} aria-label="${esc(name)} öffnen">${bbOrdnerBild(stil.farbe,stil.sym)}</button>
-      <div class="bb-mn"><button class="bb-mt" data-act="bbOrdner" ${attrs}>${esc(name)}</button>${menuK!==false?`<button class="bb-mm" data-act="bbMenue" ${attrs} aria-label="Ordner-Menü" title="Bearbeiten, Farbe, Eigenschaften"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>`:""}</div>
-      <small>${esc([art,`${G.length} ${G.length===1?"Datei":"Dateien"}`,t&&tag(t)].filter(Boolean).join(" · "))}</small></div>`; };
-  const kStil=k=>{ const r=k!==BB_OHNE&&bbKunde(k), o=Object.assign({},(r&&r.ordner)||{}); if(r&&!o.sym) o.sym="kunde"; return {stil:o,darf:!!(r&&(typeof kdDarf==="function"?kdDarf(r):typeof canEdit==="function"&&canEdit(r)))}; };
+  const mappe=(attrs,name,art,n,t,stil,menu)=>`<div class="bb-m" ${attrs}><button class="bb-mk" data-act="bbOrdner" ${attrs} aria-label="${esc(name)} öffnen">${bbOrdnerBild(stil.farbe,stil.sym)}</button>
+      <div class="bb-mn"><button class="bb-mt" data-act="bbOrdner" ${attrs}>${esc(name)}</button>${menu!==false?`<button class="bb-mm" data-act="bbMenue" ${attrs} aria-label="Ordner-Menü" title="Öffnen, SharePoint, Eigenschaften"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>`:""}</div>
+      <small>${esc([art,n?`${n} ${n===1?"Datei":"Dateien"}`:"Leer",t&&tag(t)].filter(Boolean).join(" · "))}</small></div>`;
+  const kStil=k=>{ const r=k!==BB_OHNE&&bbKunde(k), o=Object.assign({},(r&&r.ordner)||{}); if(r&&!o.sym) o.sym="kunde"; return o; };
   /* gleich heißende Kunden bleiben getrennte Ordner (Schlüssel ist der Kunde selbst); Reihenfolge dann nach Kundennummer */
   const kdnr=id=>String((bbKunde(id)||{}).kdnr||"");
   const nach=(a,b)=>a[2].localeCompare(b[2],"de",{numeric:true})||kdnr(a[0]).localeCompare(kdnr(b[0]),"de",{numeric:true})||String(a[0]).localeCompare(String(b[0]));
-  if(!BB_ORT.k||!L.some(x=>kk(x)===BB_ORT.k)){ BB_ORT={k:null,u:null};
-    const M=new Map(); L.forEach(x=>{ const k=kk(x); if(!M.has(k)) M.set(k,[]); M.get(k).push(x); });
+  /* ohne Filter: jeder Kunde hat seinen Ordner, auch wenn noch nichts drin liegt */
+  const alle=bbW("art")==="alle"&&bbW("kunde")==="alle";
+  if(!BB_ORT.k||!(L.some(x=>kk(x)===BB_ORT.k)||(alle&&BB_ORT.k!==BB_OHNE&&bbKunde(BB_ORT.k)))){ BB_ORT={k:null,p:[]};
+    const M=new Map(); if(alle&&DB.kunden) [...DB.kunden.values()].filter(k=>!k.deleted).forEach(k=>M.set(k.id,[]));
+    L.forEach(x=>{ const k=kk(x); if(!M.has(k)) M.set(k,[]); M.get(k).push(x); });
     const O=[...M].map(([k,G])=>[k,G,kn(k)]).sort((a,b)=>(a[0]===BB_OHNE)-(b[0]===BB_OHNE)||nach(a,b));
-    return `<div class="bb-oraster">${O.map(([k,G,n])=>{ const S=kStil(k); return mappe(`data-k="${esc(k)}"`,n,"",G,S.stil,true); }).join("")}</div>`; }
-  const K=L.filter(x=>kk(x)===BB_ORT.k), uKey=x=>x.bs?"b:"+x.bs:x.st?"s:"+x.st:"", U=new Map();
-  K.forEach(x=>{ const u=uKey(x); if(!u) return; if(!U.has(u)) U.set(u,[]); U.get(u).push(x); });
-  const uName=u=>{ const id=u.slice(2); if(u[0]==="b"){ const b=typeof DB!=="undefined"&&DB.baustellen&&DB.baustellen.get(id); return (b&&b.name)||(K.find(x=>x.bs===id)||{}).bsName||"Baustelle"; }
-    const s=DB.standorte&&DB.standorte.get(id); return (s&&s.name)||"Standort"; };
-  if(BB_ORT.u&&!U.has(BB_ORT.u)) BB_ORT.u=null;
-  const pfad=`<nav class="bb-pfad" aria-label="Ordnerpfad"><button class="bb-zur" data-act="bbOrdner" data-k="${BB_ORT.u?esc(BB_ORT.k):""}" aria-label="Zurück" title="Zurück">${icon("chev")}</button>
-    <button class="bb-pt" data-act="bbOrdner" data-k="">Alle Kunden</button><span class="bb-ps">›</span>${BB_ORT.u?`<button class="bb-pt" data-act="bbOrdner" data-k="${esc(BB_ORT.k)}">${esc(kn(BB_ORT.k))}</button><span class="bb-ps">›</span><b>${esc(uName(BB_ORT.u))}</b>`:`<b>${esc(kn(BB_ORT.k))}</b>`}</nav>`;
-  if(BB_ORT.u) return pfad+listOf(U.get(BB_ORT.u).map(zeile));
-  const lose=K.filter(x=>!uKey(x)), O=[...U].map(([u,G])=>[u,G,uName(u)]).sort((a,b)=>(a[0][0]>b[0][0]?1:a[0][0]<b[0][0]?-1:0)||nach(a,b));
-  return pfad+(O.length?`<div class="bb-oraster">${O.map(([u,G,n])=>mappe(`data-k="${esc(BB_ORT.k)}" data-u="${esc(u)}"`,n,u[0]==="b"?"Baustelle":"Standort",G,{farbe:(kStil(BB_ORT.k).stil.farbe),sym:u[0]==="b"?"baustelle":"ort"},true)).join("")}</div>`:"")
-    +(lose.length?(O.length?`<div class="sec-lbl">Direkt beim Kunden</div>`:"")+listOf(lose.map(zeile)):"");
+    if(!O.length) return `<p class="meta">Noch keine Kunden.</p>`;
+    return `<div class="bb-oraster">${O.map(([k,G,n])=>mappe(`data-k="${esc(k)}"`,n,"",G.length,Math.max(0,...G.map(x=>x.t||0)),kStil(k),true)).join("")}</div>`; }
+  const k=BB_ORT.k, ohne=k===BB_OHNE, p=BB_ORT.p, K=L.filter(x=>kk(x)===k), gleich=x=>p.every((s,i)=>x.ort[i]===s);
+  const sub=new Map(), add=(n,c,t)=>{ const o=sub.get(n)||{n:0,t:0}; o.n+=c; o.t=Math.max(o.t,t||0); sub.set(n,o); };
+  K.filter(x=>x.ort.length>p.length&&gleich(x)).forEach(x=>add(x.ort[p.length],1,x.t));
+  if(!p.length&&!ohne) KD_ORD.forEach(([,n])=>add(n,0,0));
+  const sp=ohne?null:bbSpStand(k,p), bekannt=new Set(L.map(x=>x.item).filter(Boolean));
+  if(sp) sp.ordner.forEach(f=>{ const o=sub.get(f.name); if(!o) add(f.name,f.n,0); else if(f.n>o.n) o.n=f.n; });
+  const F=K.filter(x=>x.ort.length===p.length&&gleich(x)), namen=new Set(F.map(x=>x.file));
+  const extra=sp?sp.dateien.filter(f=>!bekannt.has(f.id)&&!namen.has(f.name)).sort((a,b)=>b.t-a.t):[];
+  const rang=n=>{ const i=KD_ORD.findIndex(x=>x[1]===n); return p.length||i<0?99:i; };
+  const O=[...sub].sort((a,b)=>rang(a[0])-rang(b[0])||a[0].localeCompare(b[0],"de",{numeric:true}));
+  const stil=kStil(k), zur=p.length?`data-k="${esc(k)}" data-p="${bbPEnc(p.slice(0,-1))}"`:`data-k=""`;
+  const kette=[[kn(k),[]],...p.map((s,i)=>[s,p.slice(0,i+1)])];
+  const kat=kdKatVon(p[0]), hier=!ohne&&p.length<=1&&(!p.length||KD_DOK.includes(kat)||kat==="fotos");
+  const pfad=`<nav class="bb-pfad" aria-label="Ordnerpfad"><button class="bb-zur" data-act="bbOrdner" ${zur} aria-label="Zurück" title="Zurück">${icon("chev")}</button>
+    <button class="bb-pt" data-act="bbOrdner" data-k="">Alle Kunden</button>${kette.map(([n,pp],i)=>`<span class="bb-ps">›</span>`+(i===kette.length-1?`<b>${esc(n)}</b>`:`<button class="bb-pt" data-act="bbOrdner" data-k="${esc(k)}" data-p="${bbPEnc(pp)}">${esc(n)}</button>`)).join("")}
+    ${hier?`<span class="bb-pl"></span><button class="ab-ic" data-act="bbHier" data-k="${esc(k)}" data-v="${kat==="fotos"?"fotos":kat}" aria-label="Hier ablegen" title="${kat==="fotos"?"Foto hier ablegen":"Datei hier ablegen"}">${icon(kat==="fotos"?"cam":"add")}</button>`:""}</nav>`;
+  const spZeile=f=>`<div class="li" role="button" tabindex="0" data-act="bbSp" data-id="${esc(f.id)}"><span class="av">${icon(/^image\//.test(f.mime)?"cam":"doc")}</span>
+    <span class="lt"><span class="h">${esc(f.name)}</span><span class="s">${esc(["In SharePoint abgelegt",f.von,f.t&&tag(f.t)].filter(Boolean).join(" · "))}</span></span>${icon("chev")}</div>`;
+  const raster=O.length?`<div class="bb-oraster">${O.map(([n,o])=>mappe(`data-k="${esc(k)}" data-p="${bbPEnc([...p,n])}"`,n,"",o.n,o.t,{farbe:stil.farbe,sym:bbOrdSym(p,n)},true)).join("")}</div>`:"";
+  const zeilen=[...F.map(zeile),...extra.map(spZeile)];
+  return pfad+raster+(zeilen.length?(O.length?`<div class="sec-lbl">Dateien</div>`:"")+listOf(zeilen):O.length?"":`<p class="meta">${hier?"Noch nichts abgelegt. Dateien kommen über den Knopf oben rechts oder direkt in SharePoint hier hinein.":"Noch nichts abgelegt."}</p>`);
 }
 function bibListe(){
   if(!bbGeladen){ bbLaden(); return ""; }
@@ -294,8 +317,10 @@ async function bbShare(pid){
   const da=BB_PROT.find(x=>x.pruefungId===pid); if(da) return bbOeffnen(da.id);
   if(!(typeof SYNC_ON!=="undefined"&&SYNC_ON&&typeof folderId==="function"&&typeof BIB!=="undefined"&&BIB.pdf)){ toast("PDF liegt in der Share – dafür bitte anmelden"); return; }
   toast("PDF wird geladen …");
-  try{ const pa=String(p.pdfAblage), i=pa.lastIndexOf("/"), dir=i>0?pa.slice(0,i):"", file=pa.slice(i+1);
-    await syncRoot(); const fid=await folderId(dir,BIB.pdf); const it=await gj(`/drives/${fid}:/${encodeURIComponent(file)}`); const blob=await (await readItem(it)).blob();
+  try{ const pa=String(p.pdfAblage), file=pa.slice(pa.lastIndexOf("/")+1);
+    await syncRoot(); let it=pa.startsWith(KD_WURZEL+"/")?await kdItem(p.kundeId,kdRest(pa)):await kdAltItem(BIB.pdf,pa);
+    if(!it){ const r=[...DB.protokolle.values()].find(x=>!x.deleted&&x.pruefungId===pid&&x.bib==="kd"); if(r) it=await kdItem(r.kundeId,kdRest(r.pfad),r.item); } /* schon in den Kundenordner umgezogen */
+    if(!it) throw {status:404}; const blob=await (await readItem(it)).blob();
     const k=bbKunde(p.kundeId), s=p.standortId&&DB.standorte?DB.standorte.get(p.standortId):null;
     const x={id:"share-"+p.id,pruefungId:p.id,kundeId:p.kundeId||"",standortId:p.standortId||"",name:file.replace(/\.pdf$/i,""),titel:[k&&k.name,s&&s.name].filter(Boolean).join(" · ")||file,
       datum:(p.p&&p.p.datum)||"",art:(p.p&&p.p.art)||"",auftragsnr:(p.p&&p.p.auftragsnr)||"",pruefer:(p.p&&p.p.pruefer)||"",created:p.updated||Date.now(),von:p.updatedBy||null,fassung:1,size:blob.size,ausShare:true};
@@ -319,7 +344,10 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="bbAnsicht"){ if(bbAnsicht()!==b.dataset.v){ META.bibAnsicht=b.dataset.v; metaSave(); render(); } }
   else if(a==="bbFilter") bbFilterFenster(b);
   else if(a==="bbReset"){ bbSet("sort","neu"); bbSet("kunde","alle"); }
-  else if(a==="bbOrdner"){ BB_ORT={k:b.dataset.k||null,u:b.dataset.u||null}; const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); scrollTo(0,0); }
+  else if(a==="bbOrdner"){ BB_ORT={k:b.dataset.k||null,p:bbPDec(b.dataset.p)}; const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); scrollTo(0,0); }
+  else if(a==="bbSp") bbSpOeffnen(b.dataset.id);
+  else if(a==="bbWeb"){ if(b.dataset.u) window.open(b.dataset.u,"_blank","noopener"); }
+  else if(a==="bbHier"){ if(typeof ablageStart==="function") ablageStart("kunden",b.dataset.k,b.dataset.v==="fotos",b.dataset.v==="fotos"?null:b.dataset.v||""); }
   else if(a==="bbStil") bbStilFenster(b,b.dataset.k);
   else if(a==="bbMenue"){ const m=b.closest(".bb-m"), r=b.getBoundingClientRect(); if(m) bbOrdnerMenue(m,r.left,r.bottom); }
   else if(a==="bbOeffnen") bbOeffnen(b.dataset.id);

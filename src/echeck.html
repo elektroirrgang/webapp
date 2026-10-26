@@ -1498,7 +1498,7 @@ async function syncNow(manual){
   if(!navigator.onLine){ setSync("offline"); return; }
   SY.running=true; setSync("läuft"); konflikte=[];
   try{
-    await syncRoot(); const c1=await push(); const c2=await pull(); einstSetzen([...DB.einstellungen.values()]); await pushFotos(); await pushDateien(); await pushProtokolle();
+    await syncRoot(); const c1=await push(); const c2=await pull(); einstSetzen([...DB.einstellungen.values()]); await pushFotos(); await pushDateien(); await pushProtokolle(); await kdPflege();
     META.sync.last=Date.now(); metaSave(); setSync("ok");
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
     if(c1||c2) softRender();

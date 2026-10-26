@@ -1441,7 +1441,10 @@ function pdfAblage(p){ const {k,s,l}=pfad(p);
           file:fsName(`${p.p.datum||today()} ${p.p.art}${p.p.auftragsnr?" "+p.p.auftragsnr:""}`)+".pdf"}; }
 async function pdfHochladen(p,blob,name){
   if(!SYNC_ON||!ME.signedIn) return null;
-  const {dir}=pdfAblage(p), file=name?fsName(name)+".pdf":pdfAblage(p).file; await syncRoot(); const fid=await folderId(dir,BIB.pdf);
+  const {dir}=pdfAblage(p), file=name?fsName(name)+".pdf":pdfAblage(p).file; await syncRoot();
+  const kd=p.kundeId&&DB.kunden.get(p.kundeId); /* Kundenordner (ablage.js): Kunden/<Kunde>/Prüfprotokolle/<Standort>/<Ladepark> */
+  if(kd&&!kd.deleted&&!kd.demo){ const ort=kdOrtProt({app:"evse",standortId:p.standortId,ladeparkId:p.ladeparkId}), it=await kdHoch(p.kundeId,[...ort,file],blob,"replace"); if(it) return [KD_WURZEL,kdOrdName(kd),...ort,file].join("/"); }
+  const fid=await folderId(dir,BIB.pdf);
   if(blob.size<3.5*1024*1024){
     const r=await g(`/drives/${fid}:/${encodeURIComponent(file)}:/content`,{method:"PUT",headers:{"Content-Type":"application/pdf"},body:blob});
     if(!r.ok) throw new Error(`PDF ablegen fehlgeschlagen (${r.status})`);
@@ -1466,7 +1469,7 @@ async function syncNow(manual){
   if(!navigator.onLine){ setSync("offline"); return; }
   SY.running=true; setSync("läuft"); konflikte=[];
   try{
-    await syncRoot(); const c1=await push(); const c2=await pull(); einstSetzen([...DB.einstellungen.values()]); fotoNachholen(); await pushFotos(); await pushDateien(); await pushProtokolle(); await pdfNachholen(); if(await katReparieren()) softRender();
+    await syncRoot(); const c1=await push(); const c2=await pull(); einstSetzen([...DB.einstellungen.values()]); fotoNachholen(); await pushFotos(); await pushDateien(); await pushProtokolle(); await pdfNachholen(); await kdPflege(); if(await katReparieren()) softRender();
     META.sync.last=Date.now(); metaSave(); setSync("ok");
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
     if(c1||c2) softRender();
@@ -2371,7 +2374,7 @@ function saeuleView(){
 function abschlussView(){
   const a=cur.a, g0=protoState(cur), g=g0==="wip"?"open":g0, US=umfangS(cur), nLP=US.reduce((n,s)=>n+s.lps,0);
   return `<div class="banner ${g}">${icon(g==="ok"?"done":g==="bad"?"warn":"pending")}<div><b>${g==="ok"?"Alle Ladepunkte bestanden":g==="bad"?"Mängel festgestellt":"Noch nicht alle Werte erfasst"}</b><span>${US.length} ${US.length>1?"Ladestationen":"Ladestation"} · ${nLP} Ladepunkt${nLP>1?"e":""}${US.length<cur.s.length?` · ${cur.s.length-US.length} nicht in dieser Prüfung`:""}</span></div></div>
-  ${SYNC_ON?`<p class="by-line" style="margin:0 0 16px">${cur.pdfAblage?`PDF abgelegt in: Prüfprotokolle/${esc(cur.pdfAblage)}`:"„PDF erstellen“ legt das PDF zusätzlich im Kundenordner der Share ab."}</p>`:""}
+  ${SYNC_ON?`<p class="by-line" style="margin:0 0 16px">${cur.pdfAblage?`PDF abgelegt in: ${String(cur.pdfAblage).startsWith(KD_WURZEL+"/")?"Kundendaten/":"Prüfprotokolle/"}${esc(cur.pdfAblage)}`:"„PDF erstellen“ legt das PDF zusätzlich im Kundenordner in SharePoint ab."}</p>`:""}
   <div class="cols">
     ${(()=>{ const off=umfangS(cur).map(x=>[x,cur.s.indexOf(x)]).filter(([x])=>!fertigS(x)); return off.length?`<section class="card wide offen-k"><h3>Noch nicht fertig</h3><p class="sup" style="margin:-8px 0 12px">Das Protokoll lässt sich erst erstellen, wenn alle Ladestationen dieser Prüfung durchgeprüft sind.</p><div class="list">${off.map(([x,si])=>`<div class="li" role="button" tabindex="0" data-act="openS" data-si="${si}">${stAv(x)}<span class="lt"><span class="h">${esc(sName(x,si))}</span><span class="s">${esc(RES_TXT[saeuleState(x)]||"offen")}</span></span>${icon("chev")}</div>`).join("")}</div></section>`:""; })()}
     <section class="card"><h3>Bewertung</h3><div class="fg">

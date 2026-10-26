@@ -17,7 +17,7 @@ const dateienVon=(kind,id)=>live("dateien").filter(d=>d.bezugKind===kind&&d.bezu
 const istBild=d=>/^image\//.test(d.typ||"");
 const groesse=n=>n>=1048576?`${(n/1048576).toFixed(1).replace(".",",")} MB`:`${Math.max(1,Math.round(n/1024))} kB`;
 const endung=d=>(String(d.name||"").match(/\.([a-z0-9]{1,5})$/i)||[,""])[1].toLowerCase()||(istBild(d)?"jpg":"bin");
-let ablageZiel=null;
+let ablageZiel=null, ablageVorgabe=null, ablageWarte=null; /* Vorgabe: Ordner-Schlüssel aus KD_ORD ("" = direkt im Kundenordner), null = fragen */
 /* eine Datei ablegen: Bilder werden verkleinert (JPEG), max. 25 MB; gibt den Datensatz zurück oder null */
 async function dateiNeu(kind,id,f,extra){
   let blob=f, typ=f.type||"application/octet-stream", name=f.name||"Datei";
@@ -26,25 +26,41 @@ async function dateiNeu(kind,id,f,extra){
   const did=uid(); await dateiPut(did,blob);
   const d=saveRec("dateien",Object.assign({id:did,bezugKind:kind,bezugId:id,name,typ,groesse:blob.size},extra||{}),true); dateiQueue(did); return d||DB.dateien.get(did); }
 async function dateiAufnehmen(el){
-  const fs=[...el.files]; el.value=""; if(!fs.length||!ablageZiel) return; let n=0;
-  const r=DB[ablageZiel.kind]&&DB[ablageZiel.kind].get(ablageZiel.id), dm=r&&r.demo?{demo:true}:null;
-  for(const f of fs){ if(await dateiNeu(ablageZiel.kind,ablageZiel.id,f,dm)) n++; }
-  if(n){ render(); toast(n===1?"Abgelegt":`${n} Dateien abgelegt`); }
+  const fs=[...el.files]; el.value=""; if(!fs.length||!ablageZiel) return;
+  /* Dokumente: erst fragen, in welchen Ordner des Kunden (Fotos landen immer unter „Fotos“) */
+  if(ablageVorgabe===null&&fs.some(f=>!/^image\//.test(f.type||""))&&typeof kdVorschlag==="function"){ ablageWarte={fs,ziel:ablageZiel}; ablageOrdnerDlg(kdVorschlag((fs.find(f=>!/^image\//.test(f.type||""))||{}).name,ablageZiel.kind),"ablOk"); return; }
+  await ablageSpeichern(fs,ablageZiel,ablageVorgabe); ablageVorgabe=null;
 }
+async function ablageSpeichern(fs,ziel,ordner){ let n=0;
+  const r=DB[ziel.kind]&&DB[ziel.kind].get(ziel.id), dm=r&&r.demo?{demo:true}:{};
+  for(const f of fs){ const extra=Object.assign({},dm); if(ordner!==null&&ordner!==undefined&&!/^image\//.test(f.type||"")) extra.ordner=ordner; if(await dateiNeu(ziel.kind,ziel.id,f,extra)) n++; }
+  if(n){ render(); toast(n===1?"Abgelegt":`${n} Dateien abgelegt`); } }
+/* Ablegen von außen anstoßen (Bibliothek: „Hier ablegen“ im Kundenordner) */
+function ablageStart(kind,id,foto,vorgabe){ ablageZiel={kind,id}; ablageVorgabe=foto?null:(vorgabe===undefined?null:vorgabe); const f=ablageInput();
+  f.accept=foto?"image/*":"application/pdf,image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.dwg,.dxf,.msg,.eml"; if(foto) f.setAttribute("capture","environment"); else f.removeAttribute("capture"); f.multiple=!foto; f.click(); }
+/* Ordnerwahl für Dokumente (Fenster mit Chips) */
+function ablageOrdnerDlg(v,act,id){
+  const W=[...KD_DOK.map(a=>[a,kdKat(a)]),["","Direkt im Kundenordner"]];
+  dialog("In welchen Ordner?",`<p class="meta" style="margin:0 0 12px">Der Ordner im Kundenordner in SharePoint. Fotos landen immer unter „Fotos“.</p>
+    <div class="chips abl-ord">${W.map(([a,t])=>`<button type="button" class="chip" data-act="ablOrd" data-v="${a}" aria-pressed="${a===v}">${esc(t)}</button>`).join("")}</div>`,
+    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-filled" data-act="${act}"${id?` data-id="${esc(id)}"`:""}>${act==="ablUm"?"Verschieben":"Ablegen"}</button>`); }
+const ablageOrt=d=>{ const kid=typeof kdDateiKunde==="function"&&kdDateiKunde(d), k=kid&&DB.kunden&&DB.kunden.get(kid); return k&&!k.deleted?["Kundenordner",...kdOrtDatei(d)].join(" › "):""; };
 function dateiQueue(id){ if(!SYNC_ON) return; META.sync.dateiQueue=[...new Set([...(META.sync.dateiQueue||[]),id])]; metaSave(); syncSoon(); }
 async function pushDateien(){
-  const q=META.sync.dateiQueue||[]; if(!q.length) return;
-  const fid=await folderId(`${CONFIG.dataFolder}/dateien`,BIB.dateien);
+  const q=META.sync.dateiQueue||[]; if(!q.length) return; let fid=null;
   for(const id of [...q]){
     const d=DB.dateien.get(id), b=await dateiGet(id);
-    if(d&&b&&!d.deleted&&!d.demo){ const r=await g(`/drives/${fid}:/${id}.${endung(d)}:/content`,{method:"PUT",headers:{"Content-Type":d.typ||"application/octet-stream"},body:b}); if(!r.ok) throw new Error(`Datei hochladen fehlgeschlagen (${r.status})`); }
+    if(d&&b&&!d.deleted&&!d.demo){ const kid=typeof kdDateiKunde==="function"?kdDateiKunde(d):"", it=kid&&bbKunde(kid)?await kdHoch(kid,[...kdOrtDatei(d),kdDateiName(d)],b,"rename"):null; /* Kundenordner (ablage.js) */
+      if(it){ Object.assign(d,{item:it.id,ort:kdOrtDatei(d),ablage:it.name}); saveRec("dateien",d); }
+      else { fid=fid||await folderId(`${CONFIG.dataFolder}/dateien`,BIB.dateien); const r=await g(`/drives/${fid}:/${id}.${endung(d)}:/content`,{method:"PUT",headers:{"Content-Type":d.typ||"application/octet-stream"},body:b}); if(!r.ok) throw new Error(`Datei hochladen fehlgeschlagen (${r.status})`); } }
     META.sync.dateiQueue=(META.sync.dateiQueue||[]).filter(x=>x!==id); metaSave();
   }
 }
 async function dateiHolen(d){
   if(d&&d.demo&&typeof demoDateiBlob==="function"){ const b=await demoDateiBlob(d); if(b){ await dateiPut(d.id,b); return b; } return null; }
   if(!SYNC_ON||!ME.signedIn||!navigator.onLine) return null;
-  try{ await syncRoot(); const fid=await folderId(`${CONFIG.dataFolder}/dateien`,BIB.dateien); const meta=await gj(`/drives/${fid}:/${d.id}.${endung(d)}`);
+  try{ await syncRoot(); if(d.item&&typeof kdItemId==="function"){ const it=await kdItemId(d.item); if(it){ const b=await (await readItem(it)).blob(); await dateiPut(d.id,b); return b; } }
+    const meta=typeof kdAltItem==="function"?await kdAltItem(BIB.dateien,`${CONFIG.dataFolder}/dateien/${d.id}.${endung(d)}`):await gj(`/drives/${await folderId(`${CONFIG.dataFolder}/dateien`,BIB.dateien)}:/${d.id}.${endung(d)}`); if(!meta) return null;
     const b=await (await readItem(meta)).blob(); await dateiPut(d.id,b); return b; }catch(e){ return null; } }
 async function bilderFuellen(){
   for(const el of document.querySelectorAll("img[data-datei]")){ const id=el.dataset.datei; let u=await dateiUrl(id);
@@ -56,14 +72,14 @@ async function dateiOeffnen(id){
   let b=await dateiGet(id); if(!b){ toast("Wird geladen …"); b=await dateiHolen(d); }
   if(!b){ toast(SYNC_ON?"Datei nicht erreichbar – Internet prüfen":"Datei liegt nur auf dem Gerät, auf dem sie abgelegt wurde"); return; }
   const u=await dateiUrl(id), darf=canEdit(d)||ME.admin;
-  const kopf=`<p class="sup" style="margin:0 0 12px">${esc([groesse(d.groesse||b.size),vonText(d),wann(d.created)].filter(Boolean).join(" · "))}</p>`;
+  const ort=ablageOrt(d), kopf=`<p class="sup" style="margin:0 0 12px">${esc([groesse(d.groesse||b.size),vonText(d),wann(d.created)].filter(Boolean).join(" · "))}${ort?`<br>${esc(ort)}`:""}</p>`;
   dialog(d.name,kopf+(istBild(d)?`<img class="dimg" src="${u}" alt="">`:`<div class="ab-dok">${icon("doc")}<span>${esc(d.name)}</span></div>`),
-    `${darf?`<button class="btn-text danger" data-act="dateiDelAsk" data-id="${id}">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="dateiSpeichern" data-id="${id}">${istBild(d)?"Speichern":"Öffnen"}</button><button class="btn-text" data-act="cancel">Schließen</button>`);
+    `${darf?`<button class="btn-text danger" data-act="dateiDelAsk" data-id="${id}">Löschen</button>`:""}<span style="flex:1"></span>${darf&&ort&&!istBild(d)?`<button class="btn-text" data-act="ablUmAsk" data-id="${id}">Ordner</button>`:""}<button class="btn-text" data-act="dateiSpeichern" data-id="${id}">${istBild(d)?"Speichern":"Öffnen"}</button><button class="btn-text" data-act="cancel">Schließen</button>`);
 }
 
 function ablageView(kind,r){
   const L=dateienVon(kind,r.id), bilder=L.filter(istBild), doks=L.filter(d=>!istBild(d));
-  return `<div class="sec-row"><div class="sec-lbl">Dokumente und Fotos</div><span class="ab-btns"><button class="ab-ic" data-act="ablageFoto" data-kind="${kind}" data-id="${esc(r.id)}" aria-label="Foto aufnehmen" title="Foto aufnehmen">${icon("cam")}</button><button class="ab-ic" data-act="ablageDatei" data-kind="${kind}" data-id="${esc(r.id)}" aria-label="Datei anhängen" title="Datei anhängen">${icon("attach")}</button></span></div>
+  return `<div class="sec-row"><div class="sec-lbl">Dokumente und Fotos</div><span class="ab-btns">${kind==="kunden"&&typeof bibliothekView==="function"?`<button class="ab-ic" data-act="ablageOrdner" data-id="${esc(r.id)}" aria-label="Kundenordner öffnen" title="Kundenordner in der Bibliothek">${icon("folder")}</button>`:""}<button class="ab-ic" data-act="ablageFoto" data-kind="${kind}" data-id="${esc(r.id)}" aria-label="Foto aufnehmen" title="Foto aufnehmen">${icon("cam")}</button><button class="ab-ic" data-act="ablageDatei" data-kind="${kind}" data-id="${esc(r.id)}" aria-label="Datei anhängen" title="Datei anhängen">${icon("attach")}</button></span></div>
     ${L.length?`${bilder.length?`<div class="ab-grid">${bilder.map(d=>`<button class="ab-k" data-act="dateiOeffnen" data-id="${d.id}" aria-label="${esc(d.name)}"><img data-datei="${d.id}" alt=""><span class="ab-leer">${icon("cam")}</span></button>`).join("")}</div>`:""}
       ${doks.length?listOf(doks.map(d=>`<div class="li" role="button" tabindex="0" data-act="dateiOeffnen" data-id="${d.id}"><span class="av">${icon("doc")}</span><span class="lt"><span class="h">${esc(d.name)}</span><span class="s">${esc([groesse(d.groesse||0),vonText(d),wann(d.created)].filter(Boolean).join(" · "))}</span></span>${icon("chev")}</div>`)):""}`
     :`<p class="meta">Noch nichts abgelegt. Hier landen Angebote, Pläne, Schaltpläne oder schnelle Fotos vom Kunden – statt in OneNote.</p>`}`;
@@ -71,9 +87,15 @@ function ablageView(kind,r){
 
 /* Klicks: Foto/Datei ablegen, öffnen, speichern, löschen – eigene Abfangung, die Apps brauchen dafür nichts */
 function ablageInput(){ let f=document.getElementById("ablageFile"); if(!f){ f=document.createElement("input"); f.type="file"; f.id="ablageFile"; f.hidden=true; document.body.appendChild(f); } return f; }
-document.addEventListener("click",async e=>{ const b=e.target.closest&&e.target.closest('[data-act="ablageFoto"],[data-act="ablageDatei"],[data-act="dateiOeffnen"],[data-act="dateiSpeichern"],[data-act="dateiDelAsk"],[data-act="dateiDelOk"]'); if(!b) return;
+document.addEventListener("click",async e=>{ const b=e.target.closest&&e.target.closest('[data-act="ablageFoto"],[data-act="ablageDatei"],[data-act="dateiOeffnen"],[data-act="dateiSpeichern"],[data-act="dateiDelAsk"],[data-act="dateiDelOk"],[data-act="ablOrd"],[data-act="ablOk"],[data-act="ablUmAsk"],[data-act="ablUm"],[data-act="ablageOrdner"]'); if(!b) return;
   e.stopPropagation(); e.preventDefault(); const a=b.dataset.act, id=b.dataset.id;
-  if(a==="ablageFoto"||a==="ablageDatei"){ ablageZiel={kind:b.dataset.kind,id}; const f=ablageInput();
+  if(a==="ablOrd"){ b.parentElement.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",String(c===b))); return; }
+  const wahl=()=>{ const c=document.querySelector('#dlg .abl-ord .chip[aria-pressed="true"]'); return c?c.dataset.v:""; };
+  if(a==="ablOk"){ const v=wahl(), w=ablageWarte; ablageWarte=null; closeOverlays(); if(w) await ablageSpeichern(w.fs,w.ziel,v); return; }
+  if(a==="ablUmAsk"){ const d=DB.dateien.get(id); if(!d) return; closeOverlays(); ablageOrdnerDlg("ordner" in d?d.ordner:kdVorschlag(d.name,d.bezugKind),"ablUm",id); return; }
+  if(a==="ablUm"){ const d=DB.dateien.get(id), v=wahl(); closeOverlays(); if(!d||!(canEdit(d)||ME.admin)) return; d.ordner=v; saveRec("dateien",d); render(); toast(`Liegt jetzt in „${v?kdKat(v):"Kundenordner"}“`); return; }
+  if(a==="ablageOrdner"){ META.bibAnsicht="ordner"; metaSave(); BB_ORT={k:id,p:[]}; if(typeof query!=="undefined") query=""; go({v:"bibliothek"}); return; }
+  if(a==="ablageFoto"||a==="ablageDatei"){ ablageZiel={kind:b.dataset.kind,id}; ablageVorgabe=null; const f=ablageInput();
     f.accept=a==="ablageFoto"?"image/*":"application/pdf,image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.dwg,.dxf"; if(a==="ablageFoto") f.setAttribute("capture","environment"); else f.removeAttribute("capture"); f.multiple=a!=="ablageFoto"; f.click(); }
   else if(a==="dateiOeffnen") dateiOeffnen(id);
   else if(a==="dateiSpeichern"){ const d=DB.dateien.get(id), bl=await dateiGet(id); if(!d||!bl) return;
