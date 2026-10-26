@@ -134,11 +134,10 @@
 .bb-kw{container-type:inline-size}
 .bb-oraster.kat{grid-template-columns:repeat(7,minmax(0,1fr));gap:24px 12px}
 .bb-oraster.kat .bb-mk{max-width:200px}
-@container (max-width:900px){.bb-oraster.kat{grid-template-columns:repeat(4,minmax(0,1fr))}
-  /* schmal: Menüpfeil als runder Knopf oben rechts am Ordner, damit der Name die ganze Breite hat */
-  .bb-oraster.kat .bb-m{position:relative} .bb-oraster.kat .bb-mn::before{display:none}
-  .bb-oraster.kat .bb-mm{position:absolute;top:6px;right:6px;margin:0;background:var(--sc-high)}}
-@container (max-width:560px){.bb-oraster.kat{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px 6px}.bb-oraster.kat .bb-mt{font-size:14px}.bb-oraster.kat .bb-mm{top:2px;right:0;width:26px;height:26px}.bb-oraster.kat .bb-m small{font-size:11px}}
+@container (max-width:900px){.bb-oraster.kat{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* Touch (iPad/Handy): kein Menüpfeil – das Ordner-Menü kommt wie in der Dateien-App über langes Drücken; der Name hat die volle Breite */
+@media (hover:none) and (pointer:coarse){.bb-mm{display:none}.bb-mn::before{display:none}}
+@container (max-width:560px){.bb-oraster.kat{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px 6px}.bb-oraster.kat .bb-mt{font-size:14px}.bb-oraster.kat .bb-m small{font-size:11px}}
 .bb-stil .fp-t{margin:4px 6px 8px}
 .bb-farben{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:0 6px 12px;justify-items:center}
 .bb-fa{width:40px;height:40px;border:0;border-radius:50%;background:var(--o);cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
