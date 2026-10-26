@@ -729,7 +729,7 @@ body:has(.vg-bar) .snackbar{bottom:96px!important}
 .pf-seite .pf-rtext{font-size:13px;color:var(--on-sv);max-width:420px}
 .pf-seite .pf-weg{margin-top:4px}
 .pf-fuss{display:flex;align-items:center;gap:8px;margin:20px 0 8px}
-.info-k{display:grid;grid-template-columns:auto 1fr;gap:12px 14px;align-items:center;background:var(--sc-high);border-radius:20px;padding:16px}
+.info-k{margin-top:12px;display:grid;grid-template-columns:auto 1fr;gap:12px 14px;align-items:center;background:var(--sc-high);border-radius:20px;padding:16px}
 .info-ic{width:52px;height:52px;border-radius:14px}
 .info-t{display:flex;flex-direction:column;gap:2px;min-width:0}.info-t b{font-size:17px;font-weight:750}.info-t small{font-size:13px;color:var(--on-sv)}
 .info-l{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px}

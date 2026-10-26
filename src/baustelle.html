@@ -1882,7 +1882,7 @@ function impressumView(){
     <p><b>Umsatzsteuer-Identifikationsnummer</b> gemäß § 27a UStG: ${F.ust}<br>${F.register}</p>
     <p><b>Berufsrechtliche Angaben</b><br>Berufsbezeichnung: ${F.beruf}<br>Zuständige Kammer: ${F.hwk}<br>Es gilt die Handwerksordnung (HwO), abrufbar unter gesetze-im-internet.de.</p>
     <p><b>Verantwortlich für den Inhalt:</b> ${F.inhaber}, Anschrift wie oben.</p>
-    <p class="note-doc">Diese App ist ein internes Werkzeug von ${F.name} zur Dokumentation von Prüfungen an Ladeeinrichtungen.</p>
+    <p class="note-doc">Diese App ist ein internes Werkzeug von ${F.name} für Übergaben, Notizen und Material auf Baustellen.</p>
     <p class="note-doc">Angaben übernommen aus dem Impressum von elektro-irrgang.de.</p>`);
 }
 const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
@@ -2893,7 +2893,7 @@ function mehrView(){
     apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../evse/","ev","EVSE","Prüfung von Wallboxen und Ladesäulen")}${link("../echeck/","home","E-Check","Hausinstallation, Geräte und Netzwerk")}</div></div>`,
     geraet:[geraetZeilen(true)],
     verwaltung:[row("nav:team","person","Mitarbeiter",esc(META.profil.name||"")),bkZeile(),kdoZeile()],
-    infoTitel:"Rechtliches und Info",info:[["nav:impressum","Impressum"],["nav:about","Über die App"]]});
+    infoTitel:"Rechtliches und Info",info:[["nav:impressum","paragraph","Impressum",""],["nav:datenschutz","shield","Datenschutz",""],["nav:about","info","Über die App",`Version ${APP_VERSION}`]]});
 }
 function teamView(){
   const T=team(), ich=(META.profil.mail||"").toLowerCase();
@@ -2904,7 +2904,7 @@ function aboutView(){
   const ic=(document.querySelector('link[rel="apple-touch-icon"]')||{}).href||"";
   return `<div class="narrow"><section class="card about">
     <img class="app-ic" src="${ic}" alt=""><h2>Baustelle</h2><p class="ver">Version ${APP_VERSION}</p>
-    <p>Kurze Übergaben am Ende des Tages: Stand, was offen ist, welches Material gebraucht wird und Fotos – damit jeder Kollege auf dem gleichen Stand ist.</p>
+    <p>Kurze Übergaben am Ende des Tages: Stand, was offen ist, welches Material gebraucht wird, Notizen und Fotos – damit jeder Kollege auf dem gleichen Stand ist. Berichte gehen als PDF in den Kundenordner.</p>
     <div class="logos"><img class="lg-firma l-hell" src="${LOGO_PDF}" alt="Elektro Irrgang"></div>
     <p class="note-doc">${FIRMA.name} · ${FIRMA.strasse} · ${FIRMA.ort}</p>
     <p class="note-doc">Speicher: ${SYNC_ON?"Microsoft 365 und Gerät":"nur auf diesem Gerät"} · ${live("baustellen").length} Baustelle(n), ${live("eintraege").length} Übergabe(n)</p>

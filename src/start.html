@@ -1470,7 +1470,7 @@ function impressumView(){
     <p><b>Umsatzsteuer-Identifikationsnummer</b> gemäß § 27a UStG: ${F.ust}<br>${F.register}</p>
     <p><b>Berufsrechtliche Angaben</b><br>Berufsbezeichnung: ${F.beruf}<br>Zuständige Kammer: ${F.hwk}<br>Es gilt die Handwerksordnung (HwO), abrufbar unter gesetze-im-internet.de.</p>
     <p><b>Verantwortlich für den Inhalt:</b> ${F.inhaber}, Anschrift wie oben.</p>
-    <p class="note-doc">Diese App ist ein internes Werkzeug von ${F.name} zur Dokumentation von Prüfungen an Ladeeinrichtungen.</p>
+    <p class="note-doc">Diese App ist ein internes Werkzeug von ${F.name} als Startseite für Kunden, Aufträge und Ablage.</p>
     <p class="note-doc">Angaben übernommen aus dem Impressum von elektro-irrgang.de.</p>`);
 }
 const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
@@ -1550,14 +1550,17 @@ const APPS=[
   {name:"Baustelle",text:"Tagesstand, offene Punkte und Material",href:"../baustelle/",ic:"<!--ICON_BAU-->"},
   {name:"E-Check",text:"Hausinstallation und Geräte · in Vorbereitung",href:"../echeck/",ic:"<!--ICON_ECHECK-->"}];
 const ENTWICKLUNG=[
-  {t:"EVSE",st:"ok",s:"Im Testbetrieb",d:"Prüfablauf, PDF-Protokoll, Wallbox-Katalog, Wiederholungsprüfung, Plausibilitätsprüfung."},
-  {t:"Baustelle",st:"ok",s:"Im Testbetrieb",d:"Seit 15.10.2026. Übergaben mit Stand, offenen Punkten, Material und Fotos."},
-  {t:"Übersicht (Startseite)",st:"ok",s:"Im Testbetrieb",d:"Seit 15.10.2026. Alle Apps an einem Ort, Statistiken, Kundendatenbank mit Ablage, Mitarbeiter."},
-  {t:"Aufträge-Tafel",st:"wip",s:"Neu im Test",d:"Seit 16.10.2026. Anruf → Anfrage → Auftrag → Termin. Anfrage stellt jeder, den Auftrag erteilt das Büro (mit SCC-Auftragsnummer). Ersetzt die externen Listen vor SCC."},
-  {t:"Microsoft-365-Anbindung",st:"open",s:"Wartet auf EDV Achenbach",d:"Erst damit landen alle Daten in der Firmen-Ablage und jeder sieht die Einträge der Kollegen. Bis dahin bleibt alles auf dem jeweiligen Gerät."},
-  {t:"Firmenadresse",st:"open",s:"Geplant",d:"Umzug auf ein Firmenkonto bei GitHub und ggf. eine eigene Adresse unter elektro-irrgang.de."},
-  {t:"E-Check (Hausinstallation und Geräte)",st:"wip",s:"In Vorbereitung",d:"App angelegt mit Anmeldung und Kunden. Offen: Messgeräte, Protokollvorlagen, Datenübernahme aus dem Messgerät, Abgrenzung zu SCC Mobile."}];
-const ENTW_STAND="15.10.2026";
+  {t:"Microsoft-365-Anbindung",st:"ok",s:"Läuft",d:"Anmeldung mit dem Firmenkonto. Alle Apps gleichen über SharePoint ab – jeder sieht die Einträge der Kollegen, auf allen Geräten."},
+  {t:"EVSE",st:"ok",s:"Im Testbetrieb",d:"Prüfablauf, PDF-Protokoll, Wallbox-Katalog, Wiederholungsprüfung, Plausibilitätsprüfung. PDFs landen im Kundenordner."},
+  {t:"Baustelle",st:"ok",s:"Im Testbetrieb",d:"Seit 15.10.2026. Tagesstände, offene Punkte, Notizen, Material, Fotos und Berichte als PDF."},
+  {t:"Übersicht (Startseite)",st:"ok",s:"Im Testbetrieb",d:"Seit 15.10.2026. Alle Apps an einem Ort, Statistik, Kunden mit Ablage, Messgeräte, Mitarbeiter und Rechte."},
+  {t:"Aufträge-Tafel",st:"wip",s:"Im Test",d:"Seit 16.10.2026. Anruf → Anfrage → Auftrag → Termin → Ausgeführt. Anfrage stellt jeder, den Auftrag erteilt das Büro (mit SCC-Auftragsnummer)."},
+  {t:"E-Check",st:"wip",s:"Im Aufbau",d:"Installation, Geräte und Netzwerk mit Netzwerkschränken, Belegung, Patchkabel-Farben und Netzwerk-Katalog; PDF-Protokolle. Offen: Messwerte direkt aus dem Messgerät übernehmen."},
+  {t:"Kundenordner und Bibliothek",st:"wip",s:"Neu seit 26.10.2026",d:"Jeder Kunde hat einen Ordner in SharePoint (Angebote, Pläne, Prüfprotokolle, Berichte, Fotos, Datenblätter, Schriftverkehr). Die Bibliothek zeigt ihn in allen Apps, auch was das Büro direkt ablegt. Ältere Dateien ziehen automatisch um."},
+  {t:"Konto und Einstellungen",st:"wip",s:"Neu seit 26.10.2026",d:"Einheitlich in allen Apps: Abgleich mit Anzeige am Profilbild, Konto, Start-Seite, Textgröße, Speicher, Backup für Chef und Entwickler."},
+  {t:"Anbindung an SCC-CONTROL",st:"open",s:"In Klärung",d:"Ziel: Kunden und Aufträge aus SCC übernehmen, statt sie doppelt zu pflegen. Wird mit dem Chef und einem IT-Dienstleister besprochen."},
+  {t:"Firmenadresse",st:"open",s:"Geplant",d:"Umzug auf ein Firmenkonto bei GitHub und ggf. eine eigene Adresse unter elektro-irrgang.de."}];
+const ENTW_STAND="26.10.2026";
 const TOPDEST_ALLE=[["start","Start","home"],["auftraege","Aufträge","board"],["uebersicht","Statistik","chart"],["kunden","Kunden","firma"],["geraete","Messgeräte","geraet"],["bibliothek","Bibliothek","folder"]];
 const topdest=()=>TOPDEST_ALLE.filter(d=>d[0]!=="uebersicht"||ME.admin);
 const MEHR_SUB={team:"Mitarbeiter",backup:"Backup",impressum:"Impressum",about:"Über",entwicklung:"Entwicklung"};
@@ -2270,7 +2273,7 @@ function mehrView(){
     apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div>${listOf(APPS.filter(a=>!a.geplant).map(a=>`<a class="li" href="${a.href}" style="text-decoration:none;color:inherit"><img class="app-mini" src="${a.ic}" alt=""><span class="lt"><span class="h">${a.name}</span><span class="s">${a.text}</span></span>${icon("chev")}</a>`))}</div>`,
     geraet:[geraetZeilen(true)],
     verwaltung:[ME.admin?row("nav:team","person","Mitarbeiter und Rechte",`${team().length} aktiv · Protokolle an ${esc(mailAn())}`):"",bkZeile(),kdoZeile()],
-    info:[["nav:entwicklung","Entwicklung der Apps"],["nav:impressum","Impressum"],["nav:about","Über"]]});
+    info:[["nav:entwicklung","bulb","Entwicklung der Apps",`Stand ${ENTW_STAND}`],["nav:impressum","paragraph","Impressum",""],["nav:datenschutz","shield","Datenschutz",""],["nav:about","info","Über die App",`Version ${APP_VERSION}`]]});
 }
 function entwicklungView(){
   return `<div class="narrow"><div class="entw">${ENTWICKLUNG.map(e=>`<div class="ew ${e.st}"><span class="ew-p"></span><div><b>${esc(e.t)}</b> ${pill(e.st,e.s)}<p>${esc(e.d)}</p></div></div>`).join("")}</div>
@@ -2280,7 +2283,7 @@ function aboutView(){
   const ic=(document.querySelector('link[rel="apple-touch-icon"]')||{}).href||"";
   return `<div class="narrow"><section class="card about">
     <img class="app-ic" src="${ic}" alt=""><h2>Übersicht</h2><p class="ver">Version ${APP_VERSION}</p>
-    <p>Die Startseite für alle Apps von ${FIRMA.name}: Apps öffnen, Kunden nachschlagen, Dokumente ablegen und den Überblick behalten.</p>
+    <p>Die Startseite für alle Apps von ${FIRMA.name}: Apps öffnen, Aufträge und Kunden im Blick, Kundenordner und Bibliothek, Messgeräte und Statistik.</p>
     <div class="logos"><img class="lg-firma l-hell" src="${LOGO_PDF}" alt="Elektro Irrgang"></div>
     <p class="note-doc">${FIRMA.name} · ${FIRMA.strasse} · ${FIRMA.ort}</p>
     <p class="note-doc">Speicher: ${SYNC_ON?"Microsoft 365 und Gerät":"nur auf diesem Gerät"}</p></section></div>`;

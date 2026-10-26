@@ -189,8 +189,9 @@ function kontoSeite(o){ const sek=(t,z)=>{ z=(Array.isArray(z)?z.join(""):z||"")
   return `<div class="narrow konto-s">${sek("Konto",o.konto)}${syncKarte()}${sek("Darstellung",o.darstellung)}${o.apps||""}${sek("Dieses Gerät",o.geraet)}${sek("Verwaltung",o.verwaltung)}${o.eigenes||""}${kontoInfoKarte(o.info||[])}${demoFremd}${entwicklerBereich()}</div>`; }
 /* Info: eine Karte mit App-Symbol, Version und den Seiten als Chips (statt drei Listenzeilen) */
 function kontoInfoKarte(L){ const ic=(document.querySelector('link[rel="apple-touch-icon"]')||{}).href||"", app=document.title.split(" · ")[0], F=typeof FIRMA!=="undefined"?FIRMA:null;
-  return `<div class="sec-lbl">Info</div><section class="info-k">${ic?`<img class="info-ic" src="${ic}" alt="">`:""}<div class="info-t"><b>${esc(app)}</b><small>Version ${esc(typeof APP_VERSION!=="undefined"?APP_VERSION:"")}</small></div>
-    <div class="info-l">${L.map(([act,t])=>`<button type="button" class="chip" data-act="${act}">${esc(t)}</button>`).join("")}</div>
+  const zeilen=L.map(([act,i,t,sub])=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(i)}</span><span class="lt"><span class="h">${esc(t)}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}</span>${icon("chev")}</div>`).join("");
+  return `<div class="sec-lbl">Info</div><div class="list">${zeilen}</div>
+    <section class="info-k">${ic?`<img class="info-ic" src="${ic}" alt="">`:""}<div class="info-t"><b>${esc(app)}</b><small>Version ${esc(typeof APP_VERSION!=="undefined"?APP_VERSION:"")}</small></div>
     ${F?`<small class="info-f">${esc([F.name,F.strasse,F.ort].filter(Boolean).join(" · "))}</small>`:""}</section>`; }
 const einChips=(act,L,an)=>`<div class="chips ein-chips">${L.map(([v,t])=>`<button type="button" class="chip" data-act="${act}" data-v="${esc(v)}" aria-pressed="${v===an}">${esc(t)}</button>`).join("")}</div>`;
 /* Speicher: PDFs (evse_protokolle), Dateien (irrgang_dateien), Fotos (Gerätespeicher der App) */
@@ -285,8 +286,56 @@ async function speicherLaden(){ if(speicherLaden.l) return; speicherLaden.l=true
   try{ const est=navigator.storage&&navigator.storage.estimate?await navigator.storage.estimate().catch(()=>null):null, A=await einAufraeumbar();
     const foto=typeof fotoCache!=="undefined"?[...fotoCache.values()].reduce((s,v)=>s+(typeof v==="string"?v.length*.75:0),0):0;
     SP_STAND={t:Date.now(),est,A,foto}; if(nav.v==="speicher") render(); }finally{ speicherLaden.l=false; } }
-const KONTO_SEITEN={konto:["Konto",kontoView],abgleich:["Abgleich",abgleichView],kundenordner:["Kundenordner",kdoView],speicher:["Speicher",speicherView],backup:["Backup",backupView]};
-Object.assign(MEHR_SUB,{konto:"Konto",abgleich:"Abgleich",kundenordner:"Kundenordner",speicher:"Speicher",backup:"Backup"});
+const KONTO_SEITEN={datenschutz:["Datenschutz",datenschutzView],konto:["Konto",kontoView],abgleich:["Abgleich",abgleichView],kundenordner:["Kundenordner",kdoView],speicher:["Speicher",speicherView],backup:["Backup",backupView]};
+Object.assign(MEHR_SUB,{datenschutz:"Datenschutz",konto:"Konto",abgleich:"Abgleich",kundenordner:"Kundenordner",speicher:"Speicher",backup:"Backup"});
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="syncNeu"],[data-act="entwKlapp"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
   if(b.dataset.act==="syncNeu"){ META.sync.delta={}; metaSave(); if(!navigator.onLine){ toast("Kein Internet – beim nächsten Abgleich wird alles neu geladen"); return; } toast("Alles wird neu geladen …"); syncNow(true); }
   else { META.entwZu=!META.entwZu; metaSave(); const y=scrollY; render(); scrollTo(0,y); } },true);
+
+/* ===== Datenschutzhinweise – gemeinsam für alle Apps (früher nur EVSE). Gelb markierte Stellen legt der Betrieb fest. ===== */
+const DS_STAND="Oktober 2026";
+function datenschutzView(){
+  const F=FIRMA, ph=t=>`<span class="ph">${t}</span>`, h=(n,t)=>`<h4>${n}. ${t}</h4>`, app=document.title.split(" · ")[0];
+  return rechtsSeite(`<h3>Datenschutzhinweise zu den Apps von ${F.name}</h3>
+    <p class="note-doc">Gilt für Übersicht, EVSE, Baustelle und E-Check (Sie sind gerade in „${esc(app)}“). Stand: ${DS_STAND} · Entwurf – gelb markierte Stellen legt der Betrieb fest.</p>
+    ${h(1,"Verantwortlicher")}
+    <p>${F.name}, Inhaber ${F.inhaber}<br>${F.strasse}, ${F.ort}<br>Telefon ${F.tel} · <a href="mailto:${F.mail}">${F.mail}</a></p>
+    <p><b>Datenschutzbeauftragter:</b> ${ph("nicht benannt (keine Pflicht nach § 38 BDSG) – oder Name/Kontakt eintragen")}</p>
+    ${h(2,"Wofür die Apps da sind")}
+    <p>Die Apps sind interne Werkzeuge von ${F.name}. Mitarbeiter nehmen damit Aufträge auf, dokumentieren Prüfungen (Wallboxen und Ladesäulen, Hausinstallationen, ortsveränderliche Geräte, Netzwerke) und Baustellen, legen Dokumente und Fotos zu Kunden ab und erstellen Protokolle und Berichte als PDF. Kunden bedienen die Apps nicht selbst.</p>
+    ${h(3,"Welche Daten verarbeitet werden")}
+    <p><b>Kunden und Ansprechpartner:</b> Firmen- bzw. Personenname, Anschrift, Kundennummer, Ansprechpartner, Telefon, E-Mail, Standorte, Auftrags- und SCC-Auftragsnummern, Anliegen und Termine.</p>
+    <p><b>Prüfungen und Anlagen:</b> Angaben zu Ladeeinrichtungen, Elektroinstallation, Geräten und Netzwerk (Hersteller, Typ, Seriennummer, Ort), Messwerte, Mängel, Prüfdatum und nächster Prüftermin.</p>
+    <p><b>Baustellen:</b> Tagesstände, offene Punkte, Material, Notizen (privat, für Personen oder für die Firma freigegeben) und Berichte.</p>
+    <p><b>Fotos und Dokumente:</b> Fotos der Technik und Dokumente zu Kunden (z. B. Angebote, Pläne, Datenblätter, Schriftverkehr). Fotos zeigen die Technik, nicht Personen.</p>
+    <p><b>Unterschriften:</b> Unterschrift und Name des Prüfers sowie des Auftraggebers bzw. seines Vertreters.</p>
+    <p><b>Mitarbeiter:</b> Name, dienstliche E-Mail-Adresse und Rolle aus dem Microsoft-Firmenkonto, freiwillig ein Profilbild und ein Rufname; wer einen Eintrag angelegt oder zuletzt geändert hat; verwendete Messgeräte.</p>
+    ${h(4,"Zwecke und Rechtsgrundlagen")}
+    <p>Durchführung und Dokumentation von Aufträgen und Prüfungen (Art. 6 Abs. 1 lit. b DSGVO). Nachweis normgerechter Prüfungen, Planung von Wiederholungsprüfungen, Abstimmung im Team und Absicherung bei Gewährleistung oder Haftung (Art. 6 Abs. 1 lit. f DSGVO – berechtigtes Interesse an einer vollständigen Dokumentation). Aufbewahrung nach gesetzlichen Pflichten (Art. 6 Abs. 1 lit. c DSGVO). Daten der Mitarbeiter: Durchführung des Beschäftigungsverhältnisses (Art. 6 Abs. 1 lit. b DSGVO, § 26 BDSG).</p>
+    ${h(5,"Wo die Daten gespeichert werden")}
+    <p><b>Auf dem Gerät:</b> Eingaben, Fotos und PDFs liegen im Speicher des Browsers auf dem jeweiligen iPad, Handy oder PC, damit die Apps auch ohne Netz funktionieren.</p>
+    <p><b>Microsoft 365:</b> Nach der Anmeldung mit dem Firmenkonto werden die Daten im Microsoft-365-Speicher (SharePoint) von ${F.name} abgelegt, Dokumente und Protokolle in Kundenordnern; private Notizen im OneDrive des jeweiligen Mitarbeiters. Microsoft verarbeitet diese Daten als Auftragsverarbeiter (Art. 28 DSGVO) auf Grundlage der Microsoft-Vertragsbedingungen.</p>
+    ${h(6,"Empfänger")}
+    <p>Protokolle und Berichte erhält der Auftraggeber bzw. eine von ihm benannte Stelle (z. B. Betreiber, Hausverwaltung, Versicherer). Innerhalb von ${F.name} haben nur Mitarbeiter mit Firmenkonto Zugriff; was sie ändern dürfen, richtet sich nach ihrer Rolle.</p>
+    <p>Auftragsverarbeiter: Microsoft Ireland Operations Ltd. (Microsoft 365); ${ph("IT-Dienstleister, z. B. EDV Achenbach, falls er Zugriff auf den Microsoft-365-Mandanten hat")}.</p>
+    ${h(7,"Bereitstellung der Apps und Dienste Dritter")}
+    <p>Die Apps werden über GitHub Pages (GitHub Inc., USA) ausgeliefert. Beim Aufruf verarbeitet GitHub technisch notwendige Verbindungsdaten wie IP-Adresse, Zeitpunkt und Browsertyp (Art. 6 Abs. 1 lit. f DSGVO). Kunden- oder Prüfdaten liegen dort nicht. ${ph("Prüfen: aktueller Zertifizierungsstand von GitHub nach dem EU-US Data Privacy Framework")}</p>
+    <p>Für einzelne Funktionen ruft das Gerät direkt Dienste Dritter auf; dabei werden die IP-Adresse und die jeweilige Anfrage übertragen, aber keine Kunden- oder Prüfdaten außer bei der Adresssuche:</p>
+    <ul><li><b>Karten:</b> Kartenkacheln von OpenFreeMap und Luftbilder von Esri (ArcGIS).</li>
+      <li><b>Adresssuche:</b> Nominatim (OpenStreetMap Foundation) – übertragen wird die eingegebene Adresse.</li>
+      <li><b>Wetter</b> (Übersicht): Bright Sky (Daten des Deutschen Wetterdienstes) – übertragen wird der ungefähre Ort.</li>
+      <li><b>Produktbilder</b> in den Katalogen: werden von den Webseiten der Hersteller und Händler geladen (z. B. Ubiquiti, Mennekes, Synology, Wiha, Fluke).</li></ul>
+    <p>Rechtsgrundlage ist jeweils Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an funktionierenden Karten, Adressen und Katalogen). ${ph("Prüfen: ob diese Dienste ersetzt oder lokal bereitgestellt werden sollen")}</p>
+    ${h(8,"Keine Cookies, kein Tracking")}
+    <p>Die Apps setzen keine Cookies und nutzen keine Analyse- oder Werbedienste. Für die Anmeldung wird die Microsoft-Anmeldeseite aufgerufen. Benachrichtigungen erzeugt die App selbst auf dem Gerät; es wird kein Push-Dienst eines Dritten verwendet.</p>
+    ${h(9,"Speicherdauer")}
+    <p>Prüfprotokolle und zugehörige Fotos werden ${ph("10 Jahre nach der Prüfung")} aufbewahrt, mindestens bis zur nächsten Wiederholungsprüfung. Kundendaten und Dokumente werden gelöscht, wenn sie nicht mehr benötigt werden und keine Aufbewahrungspflicht besteht. Gelöschte Dateien liegen danach noch bis zu 93 Tage im SharePoint-Papierkorb. Auf einem Gerät gespeicherte Daten werden mit dem Löschen in der App, über „Speicher auf diesem Gerät“ oder mit dem Entfernen der Websitedaten des Browsers gelöscht.</p>
+    ${h(10,"Sicherheit")}
+    <p>Die Verbindung läuft verschlüsselt (HTTPS). Die Anmeldung erfolgt über das Microsoft-Firmenkonto mit den dort geltenden Sicherheitsregeln (z. B. Zwei-Faktor); der Zugriff ist auf die eine SharePoint-Website der Apps beschränkt. Geräte sind mit Code gesperrt. Sicherungsdateien (Backup) können nur Chef und Entwickler erstellen.</p>
+    ${h(11,"Ihre Rechte")}
+    <p>Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit (Art. 15–20 DSGVO) und können der Verarbeitung auf Grundlage berechtigter Interessen widersprechen (Art. 21 DSGVO). Wenden Sie sich dazu an die oben genannte Adresse.</p>
+    <p>Beschwerden können Sie an die Aufsichtsbehörde richten: Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen, Kavalleriestraße 2–4, 40213 Düsseldorf.</p>
+    <p>Eine automatisierte Entscheidungsfindung oder ein Profiling findet nicht statt.</p>
+    ${h(12,"Hinweise für Mitarbeiter")}
+    <p>Keine Personen und keine Kfz-Kennzeichen fotografieren – nur die Technik. Geräte immer mit Code sperren. PDFs und Sicherungsdateien nicht über private Konten oder Messenger verschicken. Geht ein Gerät verloren, sofort ${ph("den Chef / EDV Achenbach")} informieren.</p>
+    <p class="warnline">${icon("warn")}Entwurf: vor der Weitergabe an Dritte vom Betrieb freigeben und rechtlich prüfen lassen.</p>`); }

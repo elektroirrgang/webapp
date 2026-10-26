@@ -53,5 +53,6 @@ Gilt für alle Apps (Übersicht, EVSE, Baustelle, E-Check). Vorbild ist EVSE. Go
 ## Konto-Unterseiten
 - Zeilen mit Pfeil öffnen eine eigene Seite (Konto, Abgleich, Speicher, Mitarbeiter, Backup, Kundenordner); schnelle Auswahl ohne viel Inhalt (Darstellung, Start mit, Textgröße) bleibt ein kleines Fenster.
 - Abgleich-Karte: Karte antippen öffnet die Seite „Abgleich“, der Knopf „Abgleichen“ gleicht sofort ab.
-- Info ist eine Karte (App-Symbol, Version, Seiten als Chips). „Entwickler“ ist einklappbar (je Gerät gemerkt).
+- Info: Liste (Entwicklung der Apps, Impressum, Datenschutz, Über die App), darunter die Karte mit App-Symbol, Version und Firmenadresse. „Entwickler“ ist einklappbar (je Gerät gemerkt).
+- Datenschutz ist eine gemeinsame Seite für alle Apps (`datenschutzView` in `profil.js`).
 - Code: `KONTO_SEITEN` in `profil.js`; die Apps hängen sie in `render()` ein.

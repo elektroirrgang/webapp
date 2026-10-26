@@ -1666,7 +1666,7 @@ function impressumView(){
     <p><b>Umsatzsteuer-Identifikationsnummer</b> gemäß § 27a UStG: ${F.ust}<br>${F.register}</p>
     <p><b>Berufsrechtliche Angaben</b><br>Berufsbezeichnung: ${F.beruf}<br>Zuständige Kammer: ${F.hwk}<br>Es gilt die Handwerksordnung (HwO), abrufbar unter gesetze-im-internet.de.</p>
     <p><b>Verantwortlich für den Inhalt:</b> ${F.inhaber}, Anschrift wie oben.</p>
-    <p class="note-doc">Diese App ist ein internes Werkzeug von ${F.name} zur Dokumentation von Prüfungen an Ladeeinrichtungen.</p>
+    <p class="note-doc">Diese App ist ein internes Werkzeug von ${F.name} zur Dokumentation von E-Checks, Geräteprüfungen und Netzwerken.</p>
     <p class="note-doc">Angaben übernommen aus dem Impressum von elektro-irrgang.de.</p>`);
 }
 const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
@@ -2039,7 +2039,7 @@ function mehrView(){
     apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../evse/","ev","EVSE","Prüfung von Wallboxen und Ladesäulen")}${link("../baustelle/","baustelle","Baustelle","Tagesstand, offene Punkte und Material")}</div></div>`,
     geraet:[geraetZeilen(false)],
     verwaltung:[row("nav:team","person","Mitarbeiter",esc(META.profil.name||"")),bkZeile(),kdoZeile()],
-    infoTitel:"Rechtliches und Info",info:[["nav:impressum","Impressum"],["nav:about","Über die App"]]});
+    infoTitel:"Rechtliches und Info",info:[["nav:impressum","paragraph","Impressum",""],["nav:datenschutz","shield","Datenschutz",""],["nav:about","info","Über die App",`Version ${APP_VERSION}`]]});
 }
 function teamView(){
   const ich=(META.profil.mail||"").toLowerCase();
@@ -2049,7 +2049,7 @@ function teamView(){
 function aboutView(){
   const ic=(document.querySelector('link[rel="apple-touch-icon"]')||{}).href||"";
   return `<div class="narrow"><section class="card about"><img class="app-ic" src="${ic}" alt=""><h2>E-Check</h2><p class="ver">Version ${APP_VERSION}</p>
-    <p>Prüfung von Hausinstallationen und Anlagen (DIN VDE 0100-600 / 0105-100) und von ortsveränderlichen Geräten (DIN VDE 0701-0702, DGUV Vorschrift 3).</p>
+    <p>Prüfung von Hausinstallationen und Anlagen (DIN VDE 0100-600 / 0105-100), von ortsveränderlichen Geräten (DIN VDE 0701-0702, DGUV Vorschrift 3) und Dokumentation von Netzwerken mit Netzwerkschränken und Belegung.</p>
     <div class="logos"><img class="lg-firma l-hell" src="${LOGO_PDF}" alt="Elektro Irrgang"></div>
     <p class="note-doc">${FIRMA.name} · ${FIRMA.strasse} · ${FIRMA.ort}</p></section></div>`;
 }
