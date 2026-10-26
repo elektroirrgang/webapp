@@ -258,7 +258,9 @@ setInterval(()=>{ try{ if(demoAn()){ if(demoNachfuellen()) (typeof softRender===
 function demoZeile(){ return `<div class="li" role="button" tabindex="0" data-act="demoUm"><span class="av">${icon("bulb")}</span><span class="lt"><span class="h">Demo-Vorschau</span><span class="s">Beispielkunden, Aufträge, Baustellen, Prüfungen und Bibliothek zum Ausprobieren – gilt in allen Apps und auf allen deinen Geräten, Beispieldaten werden nie hochgeladen</span></span><span class="schalter${demoAn()?" an":""}" aria-hidden="true"><i></i></span></div>`; }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="demoUm"]'); if(!b) return; e.stopPropagation(); e.preventDefault(); demoUmschalten(!demoAn()); },true);
 /* ===== Entwickler-Einstellungen (nur Rolle „Entwickler“): ganz unten in „Mehr“ ===== */
-const istEntwickler=()=>{ try{ return typeof meineRollen==="function"&&meineRollen().includes("Entwickler"); }catch(e){ return false; } };
+/* Entwickler: Rolle in Microsoft oder in der Mitarbeiterliste der Übersicht als „Entwickler“ eingetragen */
+const istEntwickler=()=>{ try{ if(typeof meineRollen==="function"&&meineRollen().includes("Entwickler")) return true;
+  const T=typeof EINST!=="undefined"&&EINST.team||[], ich=String((typeof ME!=="undefined"&&ME.mail)||"").toLowerCase(); return !!ich&&T.some(m=>m.mail===ich&&m.entwickler&&m.status!=="weg"); }catch(e){ return false; } };
 function entwicklerBereich(){ if(!istEntwickler()) return ""; const z=[typeof mlDiagZeile==="function"&&ME.mail?mlDiagZeile():"",typeof mlTestZeile==="function"&&ME.mail?mlTestZeile():"",typeof simZeile==="function"&&ME.mail?simZeile():"",demoZeile()].join("").trim();
   if(!z) return ""; const zu=!!META.entwZu; /* ein- und ausklappbar, Zustand je Gerät */
   return `<button type="button" class="sec-lbl sec-klapp" data-act="entwKlapp" aria-expanded="${!zu}">Entwickler<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>${zu?"":`<div class="list">${z}</div>`}`; }

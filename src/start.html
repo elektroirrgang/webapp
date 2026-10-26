@@ -2257,7 +2257,7 @@ function teamView(){
 let teamForm=null;
 /* Mitarbeiter als eigene Seite (Chef/Entwickler): Profil (Vorname, Nachname, Rufname) + Firma (Kürzel, Mail, Aufgabe, Status, Rechte, Prüfer) */
 function maView(m){
-  if(!teamForm||teamForm.alt!==(m?m.mail:null)) teamForm={alt:m?m.mail:null,admin:!!(m&&m.admin),status:m?m.status||"aktiv":"aktiv",pruefer:!!(m&&m.pruefer),stufe:m?(m.stufe||maStufe(m).k||(m.azubiBis?"azubi":"")):""};
+  if(!teamForm||teamForm.alt!==(m?m.mail:null)) teamForm={alt:m?m.mail:null,admin:!!(m&&m.admin),entw:!!(m&&m.entwickler),status:m?m.status||"aktiv":"aktiv",pruefer:!!(m&&m.pruefer),stufe:m?(m.stufe||maStufe(m).k||(m.azubiBis?"azubi":"")):""};
   const st=m?maStufe(m):null, bisTxt=m&&m.azubiBis?new Date(m.azubiBis+"T12:00").toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"}):"";
   const ich=m&&m.mail===ME.mail, p=(m&&profilVon(m.mail))||{}, t=nameTeile(m?m.name:"");
   const bild=p.bild?`background-image:url('${p.bild}')`:"";
@@ -2275,8 +2275,8 @@ function maView(m){
       <div style="margin-top:12px">${tf("lj","Lehrjahr jetzt (nur wenn abweichend, z. B. nach Betriebswechsel)",m&&m.lj?String(maLehrjahr(m)):"",{form:true,type:"number",ph:m&&m.azubiVon?`gerechnet: ${maLehrjahr(Object.assign({},m,{lj:0}))}`:"1 bis 4"})}</div>
       <p class="sup" style="margin:8px 4px 0">Das Lehrjahr rechnet sich aus „seit“ und zählt jedes Jahr am Ausbildungsbeginn weiter. Weicht es ab, hier eintragen – ab dann zählt es von diesem Stand aus weiter. Ab dem Tag nach „bis“ wird er automatisch als Geselle geführt; Rechte und Prüfer ändert das nicht.</p></div>
     <div class="lbl" style="margin:16px 4px 8px">Status</div>${seg("teamStatus",teamForm.status,STATUS_MA)}
-    <div class="lbl" style="margin:16px 4px 8px">Rechte</div>${seg("teamAdmin",teamForm.admin?"1":"0",[["0","Mitarbeiter"],["1","Admin"]])}
-    <p class="sup" style="margin:8px 4px 0">Admins sehen die Statistik, verwalten Mitarbeiter und dürfen alle Einträge bearbeiten.${ich?" Dich selbst kannst du nicht herabstufen oder austragen.":""}</p>
+    <div class="lbl" style="margin:16px 4px 8px">Rechte</div>${seg("teamAdmin",teamForm.entw?"2":teamForm.admin?"1":"0",[["0","Mitarbeiter"],["1","Admin"],["2","Entwickler"]])}
+    <p class="sup" style="margin:8px 4px 0">Admins sehen die Statistik, verwalten Mitarbeiter und dürfen alle Einträge bearbeiten. Entwickler dürfen dasselbe und sehen zusätzlich die Testwerkzeuge.${ich?" Dich selbst kannst du nicht herabstufen oder austragen.":""}</p>
     <div class="lbl" style="margin:16px 4px 8px">Prüfer</div>${seg("teamPruefer",teamForm.pruefer?"1":"0",[["0","Nein"],["1","Ja, darf Prüfungen leiten"]])}
     <p class="sup" style="margin:8px 4px 0">Prüfer erscheinen in EVSE und E-Check zur Auswahl und stehen im Protokoll. Prüfen darf nur eine Elektrofachkraft.</p>
     <div class="pf-fuss">${m&&!ich?`<button class="btn-text danger" data-act="teamDelAsk">Entfernen</button>`:""}<span style="flex:1"></span><button class="btn-filled" data-act="teamSave">${m?"Speichern":"Hinzufügen"}</button></div></div>`; }
@@ -2444,13 +2444,13 @@ document.addEventListener("click",async ev=>{
   case "teamStatus": if(teamForm){ if(teamForm.alt===ME.mail&&b.dataset.v==="weg"){ toast("Dich selbst kannst du nicht austragen"); return; } teamForm.status=b.dataset.v; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;
   case "teamStufe": if(teamForm){ teamForm.stufe=teamForm.stufe===b.dataset.v?"":b.dataset.v; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===teamForm.stufe))); const z=document.getElementById("maAzubi"); if(z) z.hidden=teamForm.stufe!=="azubi"; } return;
   case "teamPruefer": if(teamForm){ teamForm.pruefer=b.dataset.v==="1"; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;
-  case "teamAdmin": if(teamForm){ if(teamForm.alt===ME.mail&&b.dataset.v==="0"){ toast("Dich selbst kannst du nicht herabstufen"); return; } teamForm.admin=b.dataset.v==="1"; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;
+  case "teamAdmin": if(teamForm){ if(teamForm.alt===ME.mail&&b.dataset.v==="0"){ toast("Dich selbst kannst du nicht herabstufen"); return; } teamForm.admin=b.dataset.v!=="0"; teamForm.entw=b.dataset.v==="2"; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;
   case "teamSave": { const F=nav.v==="ma"?(()=>{ const o={}; document.querySelectorAll(".ma-seite [data-f]").forEach(e=>o[e.dataset.f]=e.value.trim()); return o; })():formVals(), T=teamForm, mail=(F.mail||"").trim().toLowerCase();
     if(!F.name){ toast("Bitte einen Namen eingeben"); return; }
     if(!mail.endsWith(TEST_LOGIN.domain)){ toast(`Bitte die Arbeitsadresse (…${TEST_LOGIN.domain}) eingeben`); return; }
     const L=teamAlle().map(m=>({...m}));
     if(L.some(m=>m.mail===mail&&m.mail!==T.alt)){ toast("Diese Adresse ist schon eingetragen"); return; }
-    const neu={name:F.name.trim(),mail,rolle:(F.rolle||"").trim()||undefined,admin:T.admin,status:T.status,pruefer:T.pruefer||undefined};
+    const neu={name:F.name.trim(),mail,rolle:(F.rolle||"").trim()||undefined,admin:T.admin,entwickler:T.entw||undefined,status:T.status,pruefer:T.pruefer||undefined};
     if(nav.v==="ma"){ if(T.stufe) neu.stufe=T.stufe; if(T.stufe==="azubi"){ if(F.azubiVon) neu.azubiVon=F.azubiVon; if(F.azubiBis) neu.azubiBis=F.azubiBis;
       const alt=teamAlle().find(x=>x.mail===T.alt), lj=parseInt(F.lj,10);
       if(lj>=1&&lj<=4){ const bisher=alt&&alt.lj?maLehrjahr(Object.assign({},alt,{azubiVon:neu.azubiVon})):0; if(bisher===lj&&alt.ljAm){ neu.lj=alt.lj; neu.ljAm=alt.ljAm; } else { neu.lj=lj; neu.ljAm=new Date().toISOString().slice(0,10); } } } }
