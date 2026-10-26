@@ -770,3 +770,4 @@ body.sf-an nav.navbar.navbar{padding-bottom:200px!important}
 .sf-z.an .sf-ic .sf-n{background:var(--primary);color:#fff;box-shadow:0 0 0 2px var(--sec-c)}
 /* PC-Seitenleiste: alle Symbole auf einer Linie (Mitte 38 px), das Profilbild ringsum gleich weit vom Rand seiner Pille (10 px) */
 @media (min-width:1024px) and (hover:hover) and (pointer:fine){ :root body nav.navbar.navbar .nav-item{padding:0 14px!important} }
+.ma-ruf{font-weight:500;color:var(--on-sv)}
