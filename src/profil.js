@@ -345,8 +345,11 @@ function datenschutzView(){
 /* ===== Stufe im Betrieb (Chef, Meister, Geselle, Azubi …) – steht in der Mitarbeiterliste (einstellungen „team“) =====
    Azubis mit Ausbildungsende werden ab dem Tag danach automatisch als Geselle angezeigt; mit Beginn steht das Lehrjahr dabei. */
 const MA_STUFEN=[["chef","Chef"],["meister","Meister"],["geselle","Geselle"],["azubi","Azubi"],["buero","Büro"],["aushilfe","Aushilfe"]];
-const maRolleRest=m=>String((m&&m.rolle)||"").replace(/\bChef\b\s*·?\s*/i,"").replace(/^\s*·\s*|\s*·\s*$/g,"").trim();
-function maStufe(m){ if(!m) return {k:"",t:""}; let k=m.stufe||(/\bchef\b/i.test(m.rolle||"")?"chef":""), t=(MA_STUFEN.find(x=>x[0]===k)||[,""])[1], heute=new Date().toISOString().slice(0,10), auto=false;
+/* Steht die Stufe noch im alten Freitext („Chef · Firmenmail“, „Geselle“, „Azubi“ …), wird sie daraus erkannt und dort ausgeblendet */
+const MA_STUFE_TEXT=[["chef",/\bchef(in)?\b/i],["meister",/\bmeister(in)?\b/i],["geselle",/\bgesell(e|in)\b/i],["azubi",/\b(azubi|auszubildende[r]?|lehrling)\b/i],["buero",/\bb(ü|ue)ro(kraft)?\b/i],["aushilfe",/\baushilfe\b/i]];
+const maStufeAusText=r=>{ const t=String(r||""); const f=MA_STUFE_TEXT.find(([,re])=>re.test(t)); return f?f[0]:""; };
+const maRolleRest=m=>{ let t=String((m&&m.rolle)||""); MA_STUFE_TEXT.forEach(([,re])=>{ t=t.replace(new RegExp(re.source+"\\s*·?\\s*","i"),""); }); return t.replace(/^\s*·\s*|\s*·\s*$/g,"").trim(); };
+function maStufe(m){ if(!m) return {k:"",t:""}; let k=m.stufe||maStufeAusText(m.rolle), t=(MA_STUFEN.find(x=>x[0]===k)||[,""])[1], heute=new Date().toISOString().slice(0,10), auto=false;
   if(k==="azubi"&&m.azubiBis&&m.azubiBis<heute){ k="geselle"; t="Geselle"; auto=true; }
   else if(k==="azubi"){ const lj=maLehrjahr(m); t=lj?`Azubi · ${lj}. Lehrjahr`:"Azubi"; }
   return {k,t,auto}; }
