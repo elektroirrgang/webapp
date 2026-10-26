@@ -2897,7 +2897,7 @@ function mehrView(){
 }
 function teamView(){
   const T=team(), ich=(META.profil.mail||"").toLowerCase();
-  return `<div class="narrow"><div class="sec-lbl">Mitarbeiter · angemeldet ist der markierte</div>${listOf(T.map(m=>`<div class="li${ich===m.mail?" sel":""}"><span class="rb${ich===m.mail?" on":""}"></span><span class="lt"><span class="h">${esc(m.name)}</span><span class="s">${esc([m.mail,m.rolle].filter(Boolean).join(" · "))}</span></span></div>`))}
+  return `<div class="narrow"><div class="sec-lbl">Mitarbeiter · angemeldet ist der markierte</div>${listOf(T.map(m=>`<div class="li${ich===m.mail?" sel":""}"><span class="rb${ich===m.mail?" on":""}"></span><span class="lt"><span class="h">${esc(m.name)}</span><span class="s">${esc([m.mail,maStufe(m).t,maRolleRest(m)].filter(Boolean).join(" · "))}</span></span></div>`))}
     <p class="hint">Wer schreibt, ergibt sich aus der Anmeldung. Wechseln: Mehr → Abmelden.${EINST.team?" Mitarbeiter verwaltet ein Admin auf der Startseite.":""}</p></div>`;
 }
 function aboutView(){

@@ -341,3 +341,14 @@ function datenschutzView(){
     ${h(12,"Hinweise für Mitarbeiter")}
     <p>Keine Personen und keine Kfz-Kennzeichen fotografieren – nur die Technik. Geräte immer mit Code sperren. PDFs und Sicherungsdateien nicht über private Konten oder Messenger verschicken. Geht ein Gerät verloren, sofort den Chef und EDV Achenbach informieren.</p>
     <p class="warnline">${icon("warn")}Entwurf: vor der Weitergabe an Dritte vom Betrieb freigeben und rechtlich prüfen lassen.</p>`); }
+
+/* ===== Stufe im Betrieb (Chef, Meister, Geselle, Azubi …) – steht in der Mitarbeiterliste (einstellungen „team“) =====
+   Azubis mit Ausbildungsende werden ab dem Tag danach automatisch als Geselle angezeigt; mit Beginn steht das Lehrjahr dabei. */
+const MA_STUFEN=[["chef","Chef"],["meister","Meister"],["geselle","Geselle"],["azubi","Azubi"],["buero","Büro"],["aushilfe","Aushilfe"]];
+const maRolleRest=m=>String((m&&m.rolle)||"").replace(/\bChef\b\s*·?\s*/i,"").replace(/^\s*·\s*|\s*·\s*$/g,"").trim();
+function maStufe(m){ if(!m) return {k:"",t:""}; let k=m.stufe||(/\bchef\b/i.test(m.rolle||"")?"chef":""), t=(MA_STUFEN.find(x=>x[0]===k)||[,""])[1], heute=new Date().toISOString().slice(0,10), auto=false;
+  if(k==="azubi"&&m.azubiBis&&m.azubiBis<heute){ k="geselle"; t="Geselle"; auto=true; }
+  else if(k==="azubi"&&m.azubiVon){ const a=new Date(m.azubiVon+"T12:00"), n=new Date(), lj=Math.min(4,Math.max(1,Math.floor(((n.getFullYear()-a.getFullYear())*12+n.getMonth()-a.getMonth()-(n.getDate()<a.getDate()?1:0))/12)+1)); t=`Azubi · ${lj}. Lehrjahr`; }
+  return {k,t,auto}; }
+function maPillen(m){ const st=maStufe(m);
+  return [st.t&&pill("stufe",st.t),m.admin?pill("ok","Admin"):pill("open","Mitarbeiter"),m.pruefer&&pill("wip","Prüfer"),m.status==="weg"&&pill("open","ausgeschieden")].filter(Boolean).join(""); }

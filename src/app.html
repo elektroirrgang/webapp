@@ -3327,7 +3327,7 @@ function teamView(){
   const T=team(), ich=(META.profil.mail||"").toLowerCase();
   const fest=SYNC_ON||(TEST_LOGIN.an&&META.angemeldet);
   const zeile=m=>`<div class="li${!SYNC_ON&&ich===m.mail?" sel":""}" role="button" tabindex="0" data-act="${EINST.team?"":fest?"teamEdit":"ichBin"}" data-mail="${esc(m.mail)}">
-      ${fest&&ich!==m.mail?`<span class="av">${icon("person")}</span>`:`<span class="rb${ich===m.mail?" on":""}"></span>`}<span class="lt"><span class="h">${esc(m.name)}</span><span class="s">${esc([m.mail,m.rolle].filter(Boolean).join(" · "))}</span></span>
+      ${fest&&ich!==m.mail?`<span class="av">${icon("person")}</span>`:`<span class="rb${ich===m.mail?" on":""}"></span>`}<span class="lt"><span class="h">${esc(m.name)}</span><span class="s">${esc([m.mail,maStufe(m).t,maRolleRest(m)].filter(Boolean).join(" · "))}</span></span>
       ${EINST.team?"":`<button class="icon-btn sm" data-act="teamEdit" data-mail="${esc(m.mail)}" aria-label="Bearbeiten">${icon("edit")}</button>`}</div>`;
   return `<div class="narrow">
     <div class="sec-row"><div class="sec-lbl">${SYNC_ON?"Mitarbeiter":fest?"Mitarbeiter · angemeldet ist der markierte":"Wer arbeitet auf diesem Gerät?"}</div>${EINST.team?"":`<button class="btn-text" data-act="teamAdd">${icon("add")}Mitarbeiter</button>`}</div>
