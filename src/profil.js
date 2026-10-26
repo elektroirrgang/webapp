@@ -165,8 +165,13 @@ txtAnwenden();
 const einTop=()=>typeof topdest==="function"?topdest():typeof TOPDEST!=="undefined"?TOPDEST:[];
 function startBereich(){ const v=META.startV; if(v&&einTop().some(x=>x[0]===v)) nav={v}; }
 const einZ=(act,ic,t,sub)=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(ic)}</span><span class="lt"><span class="h">${t}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}</span>${icon("chev")}</div>`;
-function einstZeilen(){ const T=einTop(), st=T.find(x=>x[0]===META.startV)||T[0];
-  return einZ("einStartDlg","einStart","Start mit",st?st[1]:"")+einZ("einTextDlg","einTxt","Textgröße",(TXT_GR.find(x=>x[0]===txtGr())||TXT_GR[0])[1]+" · für alle Apps auf diesem Gerät")+einZ("einSpeicher","einSp","Speicher auf diesem Gerät","Belegung anzeigen und aufräumen"); }
+function darstellungZeilen(){ const T=einTop(), st=T.find(x=>x[0]===META.startV)||T[0];
+  return einZ("einStartDlg","einStart","Start mit",st?st[1]:"")+einZ("einTextDlg","einTxt","Textgröße",(TXT_GR.find(x=>x[0]===txtGr())||TXT_GR[0])[1]+" · für alle Apps auf diesem Gerät"); }
+function geraetZeilen(mitPush){ return (mitPush&&typeof mlGeraetZeile==="function"&&ME.mail?mlGeraetZeile():"")+einZ("einSpeicher","einSp","Speicher auf diesem Gerät","Belegung anzeigen und aufräumen"); }
+/* Konto-Seite – Reihenfolge für alle Apps gleich: Konto · Abgleich · Darstellung · Apps · Dieses Gerät · Verwaltung · App-Eigenes · Info · Entwickler (mit Demo-Vorschau) */
+function kontoSeite(o){ const sek=(t,z)=>{ z=(Array.isArray(z)?z.join(""):z||"").trim(); return z?`<div class="sec-lbl">${t}</div><div class="list">${z}</div>`:""; };
+  const demoFremd=typeof demoAn==="function"&&demoAn()&&!(typeof istEntwickler==="function"&&istEntwickler())?sek("Demo",demoZeile()):""; /* wer sie anhat, muss sie auch ausschalten können */
+  return `<div class="narrow konto-s">${sek("Konto",o.konto)}${syncKarte()}${sek("Darstellung",o.darstellung)}${o.apps||""}${sek("Dieses Gerät",o.geraet)}${sek("Verwaltung",o.verwaltung)}${o.eigenes||""}${sek(o.infoTitel||"Info",o.info)}${demoFremd}${entwicklerBereich()}${o.fuss||""}</div>`; }
 const einChips=(act,L,an)=>`<div class="chips ein-chips">${L.map(([v,t])=>`<button type="button" class="chip" data-act="${act}" data-v="${esc(v)}" aria-pressed="${v===an}">${esc(t)}</button>`).join("")}</div>`;
 /* Speicher: PDFs (evse_protokolle), Dateien (irrgang_dateien), Fotos (Gerätespeicher der App) */
 async function einIdb(name,store){ return new Promise(res=>{ try{ const r=indexedDB.open(name); r.onsuccess=()=>{ const d=r.result; if(!d.objectStoreNames.contains(store)){ d.close(); return res(null); } res(d); }; r.onerror=()=>res(null); }catch(e){ res(null); } }); }

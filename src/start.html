@@ -2264,20 +2264,12 @@ function teamSpeichern(liste){ const r=DB.einstellungen.get("team")||{id:"team"}
 
 function mehrView(){
   const row=(act,ic,t,sub)=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(ic)}</span><span class="lt"><span class="h">${t}</span>${sub?`<span class="s">${sub}</span>`:""}</span>${icon("chev")}</div>`;
-  return `<div class="narrow">${syncKarte()}
-    <div class="sec-lbl">Konto und Darstellung</div><div class="list">
-      ${SYNC_ON?row("konto","person","Konto",esc(ME.name)):""}
-      ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}${ME.admin?" · Admin":""}`)):""}
-      ${row("theme","theme","Darstellung",TH_LABEL[theme])}${einstZeilen()}
-      ${ME.mail?mlGeraetZeile():""}
-      ${demoZeile()}</div>
-    ${ME.admin?`<div class="sec-lbl">Verwaltung</div><div class="list">
-      ${row("nav:team","person","Mitarbeiter und Rechte",`${team().length} aktiv · Protokolle an ${esc(mailAn())}`)}${bkZeile()}${kdoZeile()}</div>`:""}
-    <div class="app-weiter"><div class="sec-lbl">Apps</div>${listOf(APPS.filter(a=>!a.geplant).map(a=>`<a class="li" href="${a.href}" style="text-decoration:none;color:inherit"><img class="app-mini" src="${a.ic}" alt=""><span class="lt"><span class="h">${a.name}</span><span class="s">${a.text}</span></span>${icon("chev")}</a>`))}</div>
-    <div class="sec-lbl">Info</div><div class="list">
-      ${row("nav:entwicklung","bulb","Entwicklung der Apps",`Stand ${ENTW_STAND}`)}
-      ${row("nav:impressum","paragraph","Impressum","")}
-      ${row("nav:about","info","Über",`Version ${APP_VERSION}`)}</div>${entwicklerBereich()}</div>`;
+  return kontoSeite({konto:[SYNC_ON?row("konto","person","Konto",esc(ME.name)):"",!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}${ME.admin?" · Admin":""}`)):""],
+    darstellung:[row("theme","theme","Darstellung",TH_LABEL[theme]),darstellungZeilen()],
+    apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div>${listOf(APPS.filter(a=>!a.geplant).map(a=>`<a class="li" href="${a.href}" style="text-decoration:none;color:inherit"><img class="app-mini" src="${a.ic}" alt=""><span class="lt"><span class="h">${a.name}</span><span class="s">${a.text}</span></span>${icon("chev")}</a>`))}</div>`,
+    geraet:[geraetZeilen(true)],
+    verwaltung:[ME.admin?row("nav:team","person","Mitarbeiter und Rechte",`${team().length} aktiv · Protokolle an ${esc(mailAn())}`):"",bkZeile(),kdoZeile()],
+    info:[row("nav:entwicklung","bulb","Entwicklung der Apps",`Stand ${ENTW_STAND}`),row("nav:impressum","paragraph","Impressum",""),row("nav:about","info","Über",`Version ${APP_VERSION}`)]});
 }
 function entwicklungView(){
   return `<div class="narrow"><div class="entw">${ENTWICKLUNG.map(e=>`<div class="ew ${e.st}"><span class="ew-p"></span><div><b>${esc(e.t)}</b> ${pill(e.st,e.s)}<p>${esc(e.d)}</p></div></div>`).join("")}</div>

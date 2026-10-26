@@ -259,7 +259,7 @@ function demoZeile(){ return `<div class="li" role="button" tabindex="0" data-ac
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="demoUm"]'); if(!b) return; e.stopPropagation(); e.preventDefault(); demoUmschalten(!demoAn()); },true);
 /* ===== Entwickler-Einstellungen (nur Rolle „Entwickler“): ganz unten in „Mehr“ ===== */
 const istEntwickler=()=>{ try{ return typeof meineRollen==="function"&&meineRollen().includes("Entwickler"); }catch(e){ return false; } };
-function entwicklerBereich(){ if(!istEntwickler()) return ""; const z=[typeof mlDiagZeile==="function"&&ME.mail?mlDiagZeile():"",typeof mlTestZeile==="function"&&ME.mail?mlTestZeile():"",typeof simZeile==="function"&&ME.mail?simZeile():""].join("").trim();
+function entwicklerBereich(){ if(!istEntwickler()) return ""; const z=[typeof mlDiagZeile==="function"&&ME.mail?mlDiagZeile():"",typeof mlTestZeile==="function"&&ME.mail?mlTestZeile():"",typeof simZeile==="function"&&ME.mail?simZeile():"",demoZeile()].join("").trim();
   return z?`<div class="sec-lbl">Entwickler</div><div class="list">${z}</div>`:""; }
 /* Demo an: gelber Ring ums Profilbild statt eines Schildchens in der Kopfzeile (das saß je nach Gerät schief) */
 function demoMarke(){ document.getElementById("demoMarke")?.remove(); const an=demoAn(); document.body.classList.toggle("demo-an",an);

@@ -2033,16 +2033,12 @@ function bezugZahl(kind,id){
 function mehrView(){
   const row=(act,ic,t,sub)=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(ic)}</span><span class="lt"><span class="h">${t}</span>${sub?`<span class="s">${sub}</span>`:""}</span>${icon("chev")}</div>`;
   const link=(href,ic,t,s)=>`<a class="li" href="${href}" style="text-decoration:none;color:inherit"><span class="av">${icon(ic)}</span><span class="lt"><span class="h">${t}</span><span class="s">${s}</span></span>${icon("chev")}</a>`;
-  return `<div class="narrow">${syncKarte()}
-    <div class="sec-lbl">Konto und Darstellung</div><div class="list">
-      ${SYNC_ON?row("konto","person","Konto",esc(ME.name)):""}
-      ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}`)):""}
-      ${row("theme","theme","Darstellung",TH_LABEL[theme])}${einstZeilen()}${demoZeile()}</div>
-    ${(()=>{ const z=[row("nav:team","person","Mitarbeiter",esc(META.profil.name||"")),bkZeile(),kdoZeile()].join("").trim(); return z?`<div class="sec-lbl">Verwaltung</div><div class="list">${z}</div>`:""; })()}
-    <div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../evse/","ev","EVSE","Prüfung von Wallboxen und Ladesäulen")}${link("../baustelle/","baustelle","Baustelle","Tagesstand, offene Punkte und Material")}</div></div>
-    <div class="sec-lbl">Rechtliches und Info</div><div class="list">
-      ${row("nav:impressum","paragraph","Impressum","")}
-      ${row("nav:about","info","Über die App",`Version ${APP_VERSION}`)}</div>${entwicklerBereich()}</div>`;
+  return kontoSeite({konto:[SYNC_ON?row("konto","person","Konto",esc(ME.name)):"",!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}`)):""],
+    darstellung:[row("theme","theme","Darstellung",TH_LABEL[theme]),darstellungZeilen()],
+    apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../evse/","ev","EVSE","Prüfung von Wallboxen und Ladesäulen")}${link("../baustelle/","baustelle","Baustelle","Tagesstand, offene Punkte und Material")}</div></div>`,
+    geraet:[geraetZeilen(false)],
+    verwaltung:[row("nav:team","person","Mitarbeiter",esc(META.profil.name||"")),bkZeile(),kdoZeile()],
+    infoTitel:"Rechtliches und Info",info:[row("nav:impressum","paragraph","Impressum",""),row("nav:about","info","Über die App",`Version ${APP_VERSION}`)]});
 }
 function teamView(){
   const ich=(META.profil.mail||"").toLowerCase();
