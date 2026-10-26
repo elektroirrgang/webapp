@@ -57,7 +57,7 @@ function seitenFussText(){ const f=document.getElementById("seitenFuss"); if(!f|
   const v=typeof nav!=="undefined"?nav.v:"", unter=typeof MEHR_SUB!=="undefined"&&!!MEHR_SUB[v];
   f.querySelector(".sf-einst").classList.toggle("an",v==="mehr"||(unter&&v!=="konto"));
   f.querySelector(".sf-ich").classList.toggle("an",v==="konto");
-  const n=f.querySelector(".sf-ich .sf-l"); if(n) n.textContent=(typeof ME!=="undefined"&&(ME.ruf||ME.name))||"Konto";
+  const n=f.querySelector(".sf-ich .sf-l"); if(n){ n.textContent=(typeof ME!=="undefined"&&(ME.ruf||ME.name))||"Konto"; f.querySelector(".sf-ich").title=typeof ME!=="undefined"&&ME.name?`${ME.name} – Konto`:"Konto"; }
   /* Benachrichtigungen: Zeile nur, wo die App eine Glocke hat; Zahl wie an der Glocke */
   const gl=document.getElementById("glBtn"), z=document.getElementById("glN"), r=f.querySelector(".sf-gl"), rn=r&&r.querySelector(".sf-n");
   if(r){ r.hidden=!gl||!(typeof ME!=="undefined"&&ME.mail); if(rn){ rn.hidden=!z||z.hidden; rn.textContent=z?z.textContent:""; } r.classList.toggle("an",v==="meldungen"); } }
