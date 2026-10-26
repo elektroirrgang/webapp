@@ -1580,7 +1580,7 @@ const DEST=[["projekt","Auftrag","project"],["saeulen","Ladestationen","ev"],["a
 const WIDE=matchMedia("(min-width:744px)"); const DESK=matchMedia("(min-width:1024px) and (hover:hover) and (pointer:fine)"); DESK.addEventListener?.("change",()=>{ if(typeof render==="function"&&typeof nav!=="undefined"&&nav) render(); }); WIDE.addEventListener?.("change",()=>{ if(typeof render==="function"&&nav) render(); });
 let railOpen=window.innerWidth>=1100; try{const r=localStorage.getItem("evse_rail"); if(r) railOpen=r==="1";}catch(e){} document.body.classList.toggle("rail-open",railOpen);
 const TOPDEST=[["start","Start","home"],["kunden","Kunden","firma"],["pruefungen","Prüfungen","doc"],["faellig","Fällig","pending"],["katalog","Katalog","book"],["bibliothek","Bibliothek","folder"]];
-const TOP=TOPDEST.map(x=>x[0]), MEHR_SUB={team:"Mitarbeiter und Mail",archiv:"Archiv",impressum:"Impressum",datenschutz:"Datenschutz",about:"Über die App"};
+const TOP=TOPDEST.map(x=>x[0]), MEHR_SUB={team:"Mitarbeiter und Mail",backup:"Backup",archiv:"Archiv",impressum:"Impressum",datenschutz:"Datenschutz",about:"Über die App"};
 const APP_VERSION="<!--VERSION-->";
 const EDITOR=["projekt","saeulen","saeule","abschluss"];
 const KIND_ICON={kunden:"firma",standorte:"ort",ladeparks:"ev"};
@@ -1936,6 +1936,7 @@ function render(){ profilAnwenden();
   else if(nav.v==="datenschutz"){ title="Datenschutz"; body=datenschutzView(); }
   else if(nav.v==="about"){ title="Über die App"; body=aboutView(); }
   else if(nav.v==="team"){ title="Mitarbeiter und Mail"; body=teamView(); }
+  else if(nav.v==="backup"){ title="Backup"; body=backupView(); }
   else if(nav.v==="geraet"){ const T=geraeteTreffer(nav.sn); title="Geräteakte"; sub=T.length?sName(T[0].s,T[0].i):""; body=akteView(nav.sn); }
   else if(VIEW_KIND[nav.v]){ const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id);
     if(!r||r.deleted){ nav={v:"kunden"}; return render(); }
@@ -2153,13 +2154,11 @@ function mehrView(){
     <div class="sec-lbl">Konto und Darstellung</div><div class="list">
       ${SYNC_ON?row("konto","person","Konto",esc(ME.name)):""}
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}`)):""}
-      ${row("nav:team","person",SYNC_ON?"Mitarbeiter und Mail":"Ich bin · Mitarbeiter und Mail",esc(SYNC_ON?`Protokolle an ${mailAn()}`:[META.profil.name||"noch nicht ausgewählt",`Protokolle an ${mailAn()}`].join(" · ")))}
       ${row("theme","theme","Darstellung",TH_LABEL[theme])}${demoZeile()}</div>
+    ${(()=>{ const z=[row("nav:team","person",SYNC_ON?"Mitarbeiter und Mail":"Ich bin · Mitarbeiter und Mail",esc(SYNC_ON?`Protokolle an ${mailAn()}`:[META.profil.name||"noch nicht ausgewählt",`Protokolle an ${mailAn()}`].join(" · "))),bkZeile()].join("").trim(); return z?`<div class="sec-lbl">Verwaltung</div><div class="list">${z}</div>`:""; })()}
     ${WIDE.matches?"":`<div class="sec-lbl">Wissen</div><div class="list">${row("nav:katalog","book","Wallbox-Katalog",`${live("katalog").length} Modelle · Hinweise und Fotos`)}</div>`}
     <div class="sec-lbl">Daten</div><div class="list">
       ${row("nav:archiv","archive","Archiv",nArch?`${nArch} Prüfung${nArch>1?"en":""}`:"leer")}
-      ${row("export","backup","Alle sichern","Sicherungsdatei mit allen Daten und Fotos")}
-      ${row("import","upload","Sicherung laden","Daten aus einer Sicherungsdatei übernehmen")}
       </div>
     <div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list"><a class="li" href="../uebersicht/" style="text-decoration:none;color:inherit"><span class="av">${icon("home")}</span><span class="lt"><span class="h">Übersicht</span><span class="s">Startseite mit Statistik und Kunden</span></span>${icon("chev")}</a><a class="li" href="../baustelle/" style="text-decoration:none;color:inherit"><span class="av">${icon("baustelle")}</span><span class="lt"><span class="h">Baustelle</span><span class="s">Tagesstand, offene Punkte und Material pro Baustelle</span></span>${icon("chev")}</a><a class="li" href="../echeck/" style="text-decoration:none;color:inherit"><span class="av">${icon("home")}</span><span class="lt"><span class="h">E-Check</span><span class="s">Hausinstallation und Geräte · in Vorbereitung</span></span>${icon("chev")}</a></div></div>
     <div class="sec-lbl">Rechtliches und Info</div><div class="list">
@@ -2673,7 +2672,7 @@ function openMenu(){
   if(nav.v==="start"||nav.v==="kunden"||nav.v==="archiv"){
     if(nav.v!=="archiv") it.push(["nav:archiv",`Archiv${META.archiv.length?` (${live("pruefungen").filter(p=>META.archiv.includes(p.id)).length})`:""}`,"archive"]);
     if(SYNC_ON) it.push(["syncNow","Jetzt abgleichen","sync"]);
-    it.push(["export","Alle sichern","backup"],["import","Sicherung laden","upload"]);
+    if(ME.admin) it.push(["nav:backup","Backup","backup"]);
   } else if(nav.v==="katmodell"){
     const r=DB.katalog.get(nav.id);
     it.push(["katEdit","Steckbrief bearbeiten","edit"],["katHNeu","Hinweis hinzufügen","add"]);
@@ -3284,6 +3283,8 @@ async function fotoAufnehmen(el){
   if(nav.v==="saeule"&&nav.si===t.si){ const y=scrollY; render(); scrollTo(0,y); }
   if(!ok) toast("Foto nur bis zum Schließen der App gespeichert – Speicher nicht verfügbar");
 }
+/* Backup-Seite (profil.js): Anhänge aus dem Wallbox-Katalog gehören mit in die Sicherung */
+async function backupExtra(){ const dateien={}; for(const d of live("katalog").flatMap(r=>r.anhaenge||[])){ const o=await anhGet(d.id); if(o&&o.blob) dateien[d.id]={name:o.name,type:o.type,data:await blobToDataUrl(o.blob)}; } return {dateien}; }
 async function exportBackup(){
   const daten={}; KINDS.forEach(k=>daten[k]=[...DB[k].values()].map(strip));
   const fotos={}; [...live("pruefungen").flatMap(p=>p.s.flatMap(fotoIds)),...live("katalog").flatMap(katFotoIds)].forEach(i=>{ const d=fotoCache.get(i); if(d) fotos[i]=d; });

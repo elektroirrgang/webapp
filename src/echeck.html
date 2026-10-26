@@ -1723,7 +1723,7 @@ WIDE.addEventListener?.("change",()=>{ if(typeof render==="function"&&nav) rende
 
 const APP_VERSION="<!--VERSION-->";
 const TOPDEST=[["anlagen","Installation","home"],["geraete","Geräte","ecStecker"],["netzwerk","Netzwerk","ecNetz"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
-const TOP=TOPDEST.map(x=>x[0]), MEHR_SUB={team:"Mitarbeiter",impressum:"Impressum",about:"Über die App"};
+const TOP=TOPDEST.map(x=>x[0]), MEHR_SUB={team:"Mitarbeiter",backup:"Backup",impressum:"Impressum",about:"Über die App"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
 const KIND_NAME={kunden:"Kunde",standorte:"Standort"};
 
@@ -1926,6 +1926,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
   else if(nav.v==="mehr"){ title="Mehr"; body=mehrView(); }
   else if(nav.v==="team"){ title="Mitarbeiter"; body=teamView(); }
+  else if(nav.v==="backup"){ title="Backup"; body=backupView(); }
   else if(nav.v==="impressum"){ title="Impressum"; body=impressumView(); }
   else if(nav.v==="about"){ title="Über die App"; body=aboutView(); }
   else if(VIEW_KIND[nav.v]){ const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id); if(!r||r.deleted){ nav={v:"kunden"}; return render(); }
@@ -2036,11 +2037,8 @@ function mehrView(){
     <div class="sec-lbl">Konto und Darstellung</div><div class="list">
       ${SYNC_ON?row("konto","person","Konto",esc(ME.name)):""}
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}`)):""}
-      ${row("nav:team","person","Mitarbeiter",esc(META.profil.name||""))}
       ${row("theme","theme","Darstellung",TH_LABEL[theme])}${demoZeile()}</div>
-    <div class="sec-lbl">Daten</div><div class="list">
-      ${row("sichernAlle","backup","Alle sichern","Sicherungsdatei mit allen Daten und Fotos")}
-      ${row("sicherungLaden","upload","Sicherung laden","Daten aus einer Sicherungsdatei übernehmen")}</div>
+    ${(()=>{ const z=[row("nav:team","person","Mitarbeiter",esc(META.profil.name||"")),bkZeile()].join("").trim(); return z?`<div class="sec-lbl">Verwaltung</div><div class="list">${z}</div>`:""; })()}
     <div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../evse/","ev","EVSE","Prüfung von Wallboxen und Ladesäulen")}${link("../baustelle/","baustelle","Baustelle","Tagesstand, offene Punkte und Material")}</div></div>
     <div class="sec-lbl">Rechtliches und Info</div><div class="list">
       ${row("nav:impressum","paragraph","Impressum","")}

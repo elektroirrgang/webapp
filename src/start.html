@@ -1560,7 +1560,7 @@ const ENTWICKLUNG=[
 const ENTW_STAND="15.10.2026";
 const TOPDEST_ALLE=[["start","Start","home"],["auftraege","Aufträge","board"],["uebersicht","Statistik","chart"],["kunden","Kunden","firma"],["geraete","Messgeräte","geraet"],["bibliothek","Bibliothek","folder"]];
 const topdest=()=>TOPDEST_ALLE.filter(d=>d[0]!=="uebersicht"||ME.admin);
-const MEHR_SUB={team:"Mitarbeiter",impressum:"Impressum",about:"Über",entwicklung:"Entwicklung"};
+const MEHR_SUB={team:"Mitarbeiter",backup:"Backup",impressum:"Impressum",about:"Über",entwicklung:"Entwicklung"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
 const KIND_NAME={kunden:"Kunde",standorte:"Standort"};
 
@@ -1848,6 +1848,7 @@ function render(){ profilAnwenden();
   else if(nav.v==="materialanf"){ title="Materialanforderungen"; body=`<div class="narrow">${anfListeView()}</div>`; fab=["afNeu","Anfordern","add"]; }
   else if(nav.v==="mehr"){ title="Mehr"; body=mehrView(); }
   else if(nav.v==="team"){ title="Mitarbeiter"; body=teamView(); fab=["teamNeu","Mitarbeiter","add"]; }
+  else if(nav.v==="backup"){ title="Backup"; body=backupView(); }
   else if(nav.v==="entwicklung"){ title="Entwicklung der Apps"; body=entwicklungView(); }
   else if(nav.v==="impressum"){ title="Impressum"; body=impressumView(); }
   else if(nav.v==="about"){ title="Über"; body=aboutView(); }
@@ -2270,11 +2271,8 @@ function mehrView(){
       ${row("theme","theme","Darstellung",TH_LABEL[theme])}
       ${ME.mail?mlGeraetZeile():""}
       ${demoZeile()}</div>
-    <div class="sec-lbl">Daten</div><div class="list">
-      ${row("sichernAlle","backup","Alle sichern","Sicherungsdatei mit allen Daten und Fotos")}
-      ${row("sicherungLaden","upload","Sicherung laden","Daten aus einer Sicherungsdatei übernehmen")}</div>
     ${ME.admin?`<div class="sec-lbl">Verwaltung</div><div class="list">
-      ${row("nav:team","person","Mitarbeiter und Rechte",`${team().length} aktiv · Protokolle an ${esc(mailAn())}`)}</div>`:""}
+      ${row("nav:team","person","Mitarbeiter und Rechte",`${team().length} aktiv · Protokolle an ${esc(mailAn())}`)}${bkZeile()}</div>`:""}
     <div class="app-weiter"><div class="sec-lbl">Apps</div>${listOf(APPS.filter(a=>!a.geplant).map(a=>`<a class="li" href="${a.href}" style="text-decoration:none;color:inherit"><img class="app-mini" src="${a.ic}" alt=""><span class="lt"><span class="h">${a.name}</span><span class="s">${a.text}</span></span>${icon("chev")}</a>`))}</div>
     <div class="sec-lbl">Info</div><div class="list">
       ${row("nav:entwicklung","bulb","Entwicklung der Apps",`Stand ${ENTW_STAND}`)}

@@ -713,3 +713,7 @@ body:has(.vg-bar) .snackbar{bottom:96px!important}
 @keyframes syncDreh{to{transform:rotate(-360deg)}}
 @keyframes syncWelle{from{transform:scale(1);opacity:.55}to{transform:scale(1.45);opacity:0}}
 @media (prefers-reduced-motion:reduce){.avatar::before,.avatar::after,.sync-ic svg,.sync-ic::after{animation:none!important}}
+.bk-k{cursor:default}.bk-k:hover,.bk-k:active{background:var(--sc-high)}
+.bk-los{display:flex;justify-content:flex-end;margin:14px 0 4px}
+.bk-los .btn-filled{display:inline-flex;align-items:center;gap:8px}
+.bk-los .btn-filled .ic{width:20px;height:20px}

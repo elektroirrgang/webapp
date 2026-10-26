@@ -92,22 +92,63 @@ function syncKarte(){
     <span class="sync-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${SYNC_P[K[1]]}"/></svg>${n&&s!=="läuft"?`<span class="sync-n">${n>99?"99+":n}</span>`:""}</span>
     <span class="sync-t"><b>${K[0]}</b><small>${esc(K[2])}</small></span>${s==="läuft"?"":`<span class="sync-los">${s==="anmelden"?"Anmelden":"Abgleichen"}</span>`}</button>`; }
 function syncKarteAkt(){ const el=document.getElementById("syncKarte"); if(el) el.outerHTML=syncKarte(); }
-/* Sicherung für Apps ohne eigene (Übersicht, E-Check): alle Datensätze + Fotos aus dem Gerätespeicher */
-function sichernAlle(name){
-  const daten={}; KINDS.forEach(k=>{ daten[k]=[...DB[k].values()].filter(r=>!r.demo).map(strip); });
-  const fotos={}; if(typeof fotoCache!=="undefined") fotoCache.forEach((v,k)=>{ if(typeof v==="string") fotos[k]=v; });
-  saveFile(new Blob([JSON.stringify({app:name,version:1,saved:Date.now(),daten,fotos})],{type:"application/json"}),`${name}_Sicherung_${today()}.json`);
-  toast("Sicherung erstellt"); }
+/* ===== Backup – nur Chef und Entwickler (ME.admin), eigene Unterseite „Backup“ in allen Apps =====
+   Einstellungen je Gerät in META.backup: {inhalt:{kunden,arbeit,team,fotos}, erinnerung:"aus"|"woche"|"monat", zuletzt}.
+   Dokumente, PDFs und Kundenordner liegen in SharePoint (dort Papierkorb und Versionen) und sind nicht Teil der Datei. */
+const BK_ARBEIT={"EVSE":"Prüfungen, Ladeparks, Katalog und Messgeräte","Baustelle":"Baustellen, Übergaben, Notizen, Material und Aufträge","E-Check":"Anlagen, Geräte, Netzwerke und Messgeräte","Übersicht":"Aufträge, Prüfungen, Baustellen und Messgeräte"};
+const bkApp=()=>document.title.split(" · ")[0]||"Irrgang";
+const BK_GRUPPEN=[["kunden","Kunden und Standorte",["kunden","standorte","ladeparks"]],["arbeit","",null],["team","Mitarbeiterprofile und Einstellungen",["profile","einstellungen"]]];
+const bkW=()=>{ const b=Object.assign({inhalt:{},erinnerung:"aus",zuletzt:0},META.backup||{}); b.inhalt=Object.assign({kunden:true,arbeit:true,team:true,fotos:true},b.inhalt||{}); return b; };
+const bkSet=o=>{ META.backup=Object.assign(bkW(),o); metaSave(); };
+const BK_TAGE={woche:7,monat:30};
+const bkFaellig=()=>{ const b=bkW(), t=BK_TAGE[b.erinnerung]; return !!t&&(!b.zuletzt||Date.now()-b.zuletzt>t*864e5); };
+function bkArten(g){ const alle=Object.keys(DB).filter(k=>DB[k] instanceof Map), fest=BK_GRUPPEN.filter(x=>x[2]).flatMap(x=>x[2]);
+  const G=BK_GRUPPEN.find(x=>x[0]===g); return (G&&G[2]?G[2]:alle.filter(k=>!fest.includes(k))).filter(k=>alle.includes(k)); }
+function bkZeile(){ if(!ME.admin) return ""; const b=bkW(), t=b.zuletzt?new Date(b.zuletzt).toLocaleDateString("de-DE"):"";
+  return `<div class="li" role="button" tabindex="0" data-act="nav:backup"><span class="av">${icon("backup")}</span><span class="lt"><span class="h">Backup</span><span class="s">${esc(bkFaellig()?(t?`Fällig – letzte Sicherung am ${t}`:"Fällig – noch keine Sicherung"):t?`Letzte Sicherung am ${t}`:"Sicherung erstellen und laden")}</span>${bkFaellig()?`<span class="st">${pill("wip","fällig")}</span>`:""}</span>${icon("chev")}</div>`; }
+function backupView(){
+  if(!ME.admin) return `<div class="narrow"><div class="empty">${icon("backup")}<h2>Nur für Chef und Entwickler</h2><p>Sicherungen erstellt und lädt der Chef.</p></div></div>`;
+  const b=bkW(), I=b.inhalt, t=b.zuletzt?new Date(b.zuletzt).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}):"";
+  const n=k=>bkArten(k).reduce((s,x)=>s+[...DB[x].values()].filter(r=>!r.deleted&&!r.demo).length,0), nF=typeof fotoCache!=="undefined"?fotoCache.size:0;
+  const sch=(k,titel,sub)=>`<div class="li" role="button" tabindex="0" data-act="bkInhalt" data-k="${k}"><span class="lt"><span class="h">${esc(titel)}</span><span class="s">${esc(sub)}</span></span><span class="schalter${I[k]?" an":""}" aria-hidden="true"><i></i></span></div>`;
+  const E=[["aus","Aus"],["woche","Jede Woche"],["monat","Jeden Monat"]];
+  return `<div class="narrow">
+    <div class="sync-k bk-k" data-z="${bkFaellig()?"fehler":t?"ok":"offline"}"><span class="sync-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${IC.backup||SYNC_P.cloud}"/></svg></span>
+      <span class="sync-t"><b>${t?"Letzte Sicherung":"Noch keine Sicherung"}</b><small>${esc(t?`${t} · auf diesem Gerät erstellt`:"Auf diesem Gerät wurde noch keine Sicherungsdatei erstellt")}${bkFaellig()?" · wieder fällig":""}</small></span></div>
+    <div class="sec-lbl">Was soll rein?</div><div class="list">
+      ${sch("kunden","Kunden und Standorte",`${n("kunden")} Einträge`)}
+      ${sch("arbeit",BK_ARBEIT[bkApp()]||"Daten dieser App",`${n("arbeit")} Einträge`)}
+      ${sch("team","Mitarbeiterprofile und Einstellungen",`${n("team")} Einträge`)}
+      ${sch("fotos","Fotos",nF?`${nF} Fotos auf diesem Gerät`:"Fotos, die auf diesem Gerät liegen")}</div>
+    <div class="bk-los"><button class="btn-filled" data-act="bkErstellen">${icon("backup")}Sicherung erstellen</button></div>
+    <div class="sec-lbl">Erinnerung</div>
+    <div class="chips">${E.map(([v,tx])=>`<button class="chip" data-act="bkErinnerung" data-v="${v}" aria-pressed="${b.erinnerung===v}">${tx}</button>`).join("")}</div>
+    <p class="meta" style="margin:6px 4px 0">Ist eine Sicherung fällig, steht das auf der Konto-Seite bei „Backup“.</p>
+    <div class="sec-lbl">Wiederherstellen</div><div class="list">
+      <div class="li" role="button" tabindex="0" data-act="bkLaden"><span class="av">${icon("upload")}</span><span class="lt"><span class="h">Sicherung laden</span><span class="s">Datei auswählen – neuere Einträge ersetzen ältere, gelöscht wird nichts</span></span>${icon("chev")}</div></div>
+    <p class="hint">Geladene Daten werden danach abgeglichen und sind für alle sichtbar. Dokumente, PDFs und Kundenordner liegen in SharePoint (mit Papierkorb und Versionen) und gehören nicht in diese Datei.</p></div>`; }
+async function bkErstellen(){
+  const b=bkW(), I=b.inhalt, kinds=["kunden","arbeit","team"].filter(k=>I[k]).flatMap(bkArten);
+  if(!kinds.length&&!I.fotos){ toast("Bitte mindestens einen Inhalt auswählen"); return; }
+  const daten={}; kinds.forEach(k=>{ daten[k]=[...DB[k].values()].filter(r=>!r.demo).map(strip); });
+  const fotos={}; if(I.fotos&&typeof fotoCache!=="undefined") fotoCache.forEach((v,k)=>{ if(typeof v==="string") fotos[k]=v; });
+  const extra=I.arbeit&&typeof backupExtra==="function"?await backupExtra():{};
+  const app=bkApp(); saveFile(new Blob([JSON.stringify(Object.assign({app,version:4,saved:Date.now(),inhalt:I,daten,fotos},extra))],{type:"application/json"}),`${app}_Sicherung_${today()}.json`);
+  bkSet({zuletzt:Date.now()}); render(); toast(`Sicherung erstellt – ${kinds.reduce((s,k)=>s+daten[k].length,0)} Einträge${I.fotos?`, ${Object.keys(fotos).length} Fotos`:""}`); }
 async function sicherungEinlesen(f){
+  if(typeof importBackup==="function"){ await importBackup({files:[f],set value(v){}}); return; } /* EVSE, Baustelle: eigene Wiederherstellung (alte Formate, Anhänge) */
   try{ const d=JSON.parse(await new Response(f).text()); if(!d||!d.daten) throw 0; let neu=0, akt=0;
-    for(const k of KINDS) for(const r of (d.daten[k]||[])){ if(!r||!r.id) continue; const loc=DB[k].get(r.id);
+    for(const k of Object.keys(d.daten)) if(DB[k] instanceof Map) for(const r of (d.daten[k]||[])){ if(!r||!r.id) continue; const loc=DB[k].get(r.id);
       if(!loc){ r._dirty=!r.demo; dbPut(k,r); neu++; } else if((r.updated||0)>(loc.updated||0)){ r._etag=loc._etag; r._itemId=loc._itemId; r._dirty=!r.demo; dbPut(k,r); akt++; } }
     if(d.fotos&&typeof fotoPut==="function") for(const [k,v] of Object.entries(d.fotos)) if(!fotoCache.has(k)){ await fotoPut(k,v); if(typeof fotoQueue==="function") fotoQueue(k); }
     syncSoon(); render(); toast(`${neu} neu, ${akt} aktualisiert`);
   }catch(e){ toast("Die Datei ist keine gültige Sicherung"); } }
-document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="syncKarte"],[data-act="sichernAlle"],[data-act="sicherungLaden"]'); if(!b) return;
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="syncKarte"],[data-act="bkInhalt"],[data-act="bkErstellen"],[data-act="bkErinnerung"],[data-act="bkLaden"]'); if(!b) return;
   e.stopPropagation(); e.preventDefault(); const a=b.dataset.act;
   if(a==="syncKarte"){ if(SY.state==="anmelden") Auth.relogin(); else if(SY.state!=="läuft"){ if(!navigator.onLine){ toast("Kein Internet – der Abgleich startet automatisch, sobald du wieder online bist"); return; } syncNow(true); } }
-  else if(a==="sichernAlle") sichernAlle(b.dataset.name||document.title.split(" · ")[0]||"Irrgang");
-  else if(a==="sicherungLaden"){ let i=document.getElementById("sicherungDatei"); if(!i){ i=document.createElement("input"); i.type="file"; i.id="sicherungDatei"; i.accept=".json,application/json"; i.hidden=true; document.body.appendChild(i);
+  else if(!ME.admin) return;
+  else if(a==="bkInhalt"){ const I=bkW().inhalt; I[b.dataset.k]=!I[b.dataset.k]; bkSet({inhalt:I}); render(); }
+  else if(a==="bkErinnerung"){ bkSet({erinnerung:b.dataset.v}); render(); }
+  else if(a==="bkErstellen") bkErstellen();
+  else if(a==="bkLaden"){ let i=document.getElementById("sicherungDatei"); if(!i){ i=document.createElement("input"); i.type="file"; i.id="sicherungDatei"; i.accept=".json,application/json"; i.hidden=true; document.body.appendChild(i);
       i.addEventListener("change",()=>{ const f=i.files[0]; i.value=""; if(f) sicherungEinlesen(f); }); } i.click(); } },true);

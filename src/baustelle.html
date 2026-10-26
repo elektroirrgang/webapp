@@ -1983,7 +1983,7 @@ WIDE.addEventListener?.("change",()=>{ if(typeof render==="function"&&nav) rende
 
 const APP_VERSION="<!--VERSION-->";
 const TOPDEST=[["start","Baustellen","baustelle"],["auftraege","Aufträge","vgTafel"],["notizen","Notizen","notiz"],["material","Material","lager"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
-const TOP=TOPDEST.map(x=>x[0]), MEHR_SUB={team:"Mitarbeiter",impressum:"Impressum",about:"Über die App"};
+const TOP=TOPDEST.map(x=>x[0]), MEHR_SUB={team:"Mitarbeiter",backup:"Backup",impressum:"Impressum",about:"Über die App"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
 const KIND_NAME={kunden:"Kunde",standorte:"Standort"};
 
@@ -2280,6 +2280,7 @@ function render(){ profilAnwenden();
   else if(nav.v==="materialanf"){ title="Materialanforderungen"; body=`<div class="narrow">${anfListeView()}</div>`; fab=["afNeu","Anfordern","add"]; }
   else if(nav.v==="mehr"){ title="Mehr"; body=mehrView(); }
   else if(nav.v==="team"){ title="Mitarbeiter"; body=teamView(); }
+  else if(nav.v==="backup"){ title="Backup"; body=backupView(); }
   else if(nav.v==="impressum"){ title="Impressum"; body=impressumView(); }
   else if(nav.v==="about"){ title="Über die App"; body=aboutView(); }
   else if(nav.v==="baustelle"){ const b=DB.baustellen.get(nav.id); if(!b||b.deleted){ nav={v:"start"}; return render(); }
@@ -2889,12 +2890,9 @@ function mehrView(){
     <div class="sec-lbl">Konto und Darstellung</div><div class="list">
       ${SYNC_ON?row("konto","person","Konto",esc(ME.name)):""}
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}`)):""}
-      ${row("nav:team","person","Mitarbeiter",esc(META.profil.name||""))}
       ${row("theme","theme","Darstellung",TH_LABEL[theme])}
       ${ME.mail?mlGeraetZeile():""}${demoZeile()}</div>
-    <div class="sec-lbl">Daten</div><div class="list">
-      ${row("export","backup","Alle sichern","Baustellen, Übergaben, Fotos und Kunden")}
-      ${row("import","upload","Sicherung laden","Daten aus einer Sicherungsdatei übernehmen")}</div>
+    ${(()=>{ const z=[row("nav:team","person","Mitarbeiter",esc(META.profil.name||"")),bkZeile()].join("").trim(); return z?`<div class="sec-lbl">Verwaltung</div><div class="list">${z}</div>`:""; })()}
     <div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${`<a class="li" href="../uebersicht/" style="text-decoration:none;color:inherit"><span class="av">${icon("home")}</span><span class="lt"><span class="h">Übersicht</span><span class="s">Startseite mit Statistik und Kunden</span></span>${icon("chev")}</a><a class="li" href="../evse/" style="text-decoration:none;color:inherit"><span class="av">${icon("ev")}</span><span class="lt"><span class="h">EVSE</span><span class="s">Prüfung von Wallboxen und Ladesäulen</span></span>${icon("chev")}</a><a class="li" href="../echeck/" style="text-decoration:none;color:inherit"><span class="av">${icon("home")}</span><span class="lt"><span class="h">E-Check</span><span class="s">Hausinstallation und Geräte · in Vorbereitung</span></span>${icon("chev")}</a>`}</div></div>
     <div class="sec-lbl">Rechtliches und Info</div><div class="list">
       ${row("nav:impressum","paragraph","Impressum","")}
