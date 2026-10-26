@@ -773,3 +773,7 @@ body.sf-an nav.navbar.navbar{padding-bottom:200px!important}
 .ma-ruf{font-weight:500;color:var(--on-sv)}
 .pill.stufe{background:var(--sec-c);color:var(--on-sec-c)}
 .ma-pillen{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:6px}
+
+/* Mitarbeiterseite: Hinweis auf wiederhergestellte Eingaben */
+.ma-entwurf{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 16px;margin:0 0 12px;border-radius:14px;background:var(--surface-2,#eceef3);font-size:14px}
+.ma-entwurf span{flex:1}

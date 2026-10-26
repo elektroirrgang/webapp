@@ -159,6 +159,7 @@ function updSicher(){
   const m=document.getElementById("menu"); if(m&&!m.hidden) return false;
   const a=document.activeElement; if(a&&(a.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return false;
   if(typeof ZG!=="undefined"&&ZG) return false;
+  if(document.querySelector(".ma-seite")) return false;       /* Übersicht: Mitarbeiter wird bearbeitet */
   if(typeof cur!=="undefined"&&cur) return false;              /* EVSE: Prüfung offen */
   if(typeof entw!=="undefined"&&entw) return false;            /* Baustelle: Übergabe im Editor */
   if(typeof nEntw!=="undefined"&&nEntw&&typeof nav!=="undefined"&&nav.v==="notiz") return false;
