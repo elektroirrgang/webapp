@@ -1457,7 +1457,7 @@ async function pdfHochladen(p,blob,name){
   }
   return `${dir}/${file}`;
 }
-function setSync(s){ SY.state=s; const av=$("#avBtn"); if(av) av.dataset.sync=s; const e=$("#syncState"); if(e) e.textContent=syncText(); }
+function setSync(s){ SY.state=s; syncAnzeige(s); } /* Punkt, Ring und Konto-Karte: profil.js */
 function syncText(){
   if(!SYNC_ON) return "Nur auf diesem Gerät gespeichert";
   const t=META.sync.last?new Date(META.sync.last).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"noch nie";
@@ -1955,7 +1955,7 @@ function render(){ profilAnwenden();
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
   f.classList.toggle("fab-rund",!!fab&&!fab[1]); $("#fabm")?.remove();
   if(fab){ f.dataset.act=fab[0]; f.setAttribute("aria-label",fab[1]||"Neu anlegen"); f.innerHTML=`${icon(fab[2])}${fab[1]?`<span>${fab[1]}</span>`:""}`; }
-  profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); $("#avBtn").dataset.sync=SY.state; profilAvatar(); bilderFuellen();
+  profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); syncPunkt(); profilAvatar(); bilderFuellen();
   if(E&&!canEdit(cur)) applyRO();
 }
 function applyRO(){
@@ -2149,7 +2149,7 @@ function faelligView(){
 function mehrView(){
   const row=(act,ic,t,sub,cls="")=>`<div class="li ${cls}" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(ic)}</span><span class="lt"><span class="h">${t}</span>${sub?`<span class="s">${sub}</span>`:""}</span>${icon("chev")}</div>`;
   const nArch=live("pruefungen").filter(p=>META.archiv.includes(p.id)).length;
-  return `<div class="narrow">
+  return `<div class="narrow">${syncKarte()}
     <div class="sec-lbl">Konto und Darstellung</div><div class="list">
       ${SYNC_ON?row("konto","person","Konto",esc(ME.name)):""}
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}`)):""}
@@ -2158,7 +2158,6 @@ function mehrView(){
     ${WIDE.matches?"":`<div class="sec-lbl">Wissen</div><div class="list">${row("nav:katalog","book","Wallbox-Katalog",`${live("katalog").length} Modelle · Hinweise und Fotos`)}</div>`}
     <div class="sec-lbl">Daten</div><div class="list">
       ${row("nav:archiv","archive","Archiv",nArch?`${nArch} Prüfung${nArch>1?"en":""}`:"leer")}
-      ${SYNC_ON?row("syncNow","sync","Jetzt abgleichen",esc(syncText())):""}
       ${row("export","backup","Alle sichern","Sicherungsdatei mit allen Daten und Fotos")}
       ${row("import","upload","Sicherung laden","Daten aus einer Sicherungsdatei übernehmen")}
       </div>

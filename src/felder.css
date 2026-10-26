@@ -684,3 +684,32 @@ body:has(.vg-bar) .snackbar{bottom:96px!important}
 /* mehrere Zuständige: Kürzel überlappend */
 .vk-ps{display:inline-flex;align-items:center}.vk-ps>*+*{margin-left:-8px;box-shadow:0 0 0 2px var(--sc-low)}
 .vk-p.mehr{background:var(--sc-highest);color:var(--on-sv)}
+/* ===== Abgleich: Profilbild-Punkt und Konto-Karte (profil.js) ===== */
+.avatar::before{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid transparent;border-top-color:var(--ok);border-right-color:color-mix(in srgb,var(--ok) 35%,transparent);opacity:0;transition:opacity .35s;pointer-events:none}
+.avatar[data-sync="läuft"]::before{opacity:1;animation:avDreh .9s linear infinite}
+#avBtn.avatar[data-sync="läuft"]::after{background:var(--ok);animation:avPuls 1.1s ease-in-out infinite}
+.avatar.sync-fertig::after{animation:avPop .7s cubic-bezier(.3,1.6,.5,1)}
+.avatar[data-sync="fehler"]::after,.avatar[data-sync="anmelden"]::after{animation:avWarn 2.4s ease-in-out infinite}
+@keyframes avDreh{to{transform:rotate(360deg)}}
+@keyframes avPuls{0%,100%{transform:scale(1)}50%{transform:scale(.72)}}
+@keyframes avPop{0%{transform:scale(.3)}100%{transform:scale(1)}}
+@keyframes avWarn{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--err) 55%,transparent)}60%{box-shadow:0 0 0 6px color-mix(in srgb,var(--err) 0%,transparent)}}
+.sync-k{display:flex;align-items:center;gap:14px;width:100%;border:0;border-radius:20px;padding:14px 16px;margin:4px 0 16px;background:var(--sc-high);color:var(--on-surface);font:inherit;text-align:left;cursor:pointer;transition:background .25s}
+.sync-k:hover{background:var(--sc-highest)}
+.sync-k:active{background:color-mix(in srgb,var(--primary) 12%,var(--sc-high))}
+.sync-ic{position:relative;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:none;background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok);transition:background .3s,color .3s}
+.sync-ic svg{width:24px;height:24px;fill:currentColor}
+.sync-k[data-z="läuft"]{cursor:default}
+.sync-k[data-z="läuft"] .sync-ic{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.sync-k[data-z="läuft"] .sync-ic svg{animation:syncDreh 1.1s linear infinite}
+.sync-k[data-z="läuft"] .sync-ic::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--ok);animation:syncWelle 1.6s ease-out infinite}
+.sync-k[data-z="offline"] .sync-ic{background:var(--sc-highest);color:var(--on-sv)}
+.sync-k[data-z="fehler"] .sync-ic,.sync-k[data-z="anmelden"] .sync-ic{background:color-mix(in srgb,var(--err) 15%,transparent);color:var(--err)}
+.sync-n{position:absolute;top:-4px;right:-6px;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:10px;background:var(--primary);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;box-shadow:0 0 0 2px var(--sc-high)}
+.sync-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sync-t b{font-size:16px;font-weight:700}
+.sync-t small{font-size:13px;color:var(--on-sv);line-height:1.35}
+.sync-los{flex:none;padding:8px 14px;border-radius:18px;background:var(--pc);color:var(--on-pc);font-weight:700;font-size:14px}
+@keyframes syncDreh{to{transform:rotate(-360deg)}}
+@keyframes syncWelle{from{transform:scale(1);opacity:.55}to{transform:scale(1.45);opacity:0}}
+@media (prefers-reduced-motion:reduce){.avatar::before,.avatar::after,.sync-ic svg,.sync-ic::after{animation:none!important}}

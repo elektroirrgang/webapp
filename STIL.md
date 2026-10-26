@@ -37,3 +37,10 @@ Gilt für alle Apps (Übersicht, EVSE, Baustelle, E-Check). Vorbild ist EVSE. Go
 - Wie der Wallbox-Katalog in EVSE: Kachel mit weißem Bildfeld (4:3), darunter Name fett, eine Zeile Eckdaten, eine Zeile Art in Grau. Gruppiert nach Hersteller.
 - Vorschau-Reihen (z. B. „Aus dem Katalog“) zeigen genau eine Reihe: Handy 2 × 2, iPad 4, Laptop 5, großer Monitor 6.
 - Steckbrief-Seite: „Steckbrief“ mit Bild links und Daten rechts, darunter Aufklapper „Bei uns …“.
+
+## Abgleich (Profilbild und Konto-Seite)
+- Punkt am Profilbild: grün = abgeglichen, grau = offline, rot = Fehler oder Anmeldung abgelaufen (pulsiert langsam).
+- Während des Abgleichs dreht ein feiner grüner Ring ums Profilbild, der Punkt pulsiert; danach „ploppt“ er einmal. Mindestens 0,9 s sichtbar.
+- Konto-Seite (Profilbild antippen): ganz oben die Abgleich-Karte – Zustand, letzter Abgleich, wartende Änderungen; antippen = jetzt abgleichen bzw. neu anmelden.
+- Abschnitt „Daten“ in jeder App: „Alle sichern“ und „Sicherung laden“ (EVSE zusätzlich „Archiv“).
+- Code: `syncAnzeige`, `syncKarte` in `profil.js`, Aussehen in `felder.css`.

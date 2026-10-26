@@ -1301,7 +1301,7 @@ async function push(){
 const dataUrlToBlob=d=>{ const [h,b]=d.split(","), bin=atob(b), a=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return new Blob([a],{type:h.slice(5).split(";")[0]}); };
 const blobToDataUrl=b=>new Promise(res=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(b); });
 function fotoQueue(id){ if(!SYNC_ON) return; META.sync.fotoQueue=[...new Set([...(META.sync.fotoQueue||[]),id])]; metaSave(); syncSoon(); }
-function setSync(s){ SY.state=s; const av=$("#avBtn"); if(av) av.dataset.sync=s; const e=$("#syncState"); if(e) e.textContent=syncText(); }
+function setSync(s){ SY.state=s; syncAnzeige(s); } /* Punkt, Ring und Konto-Karte: profil.js */
 function syncText(){
   if(!SYNC_ON) return "Nur auf diesem Gerät gespeichert";
   const t=META.sync.last?new Date(META.sync.last).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"noch nie";
@@ -1859,7 +1859,7 @@ function render(){ profilAnwenden();
   $("#topTitle").innerHTML=title?`<span>${esc(title)}</span>${sub?`<small>${esc(String(sub).split(/\s*›\s*/).pop())}</small>`:""}`:"";
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
   if(fab){ f.dataset.act=fab[0]; f.setAttribute("aria-label",fab[1]); f.innerHTML=`${icon(fab[2])}<span>${fab[1]}</span>`; }
-  profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); $("#avBtn").dataset.sync=SY.state; profilAvatar(); mlGlocke();
+  profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); syncPunkt(); profilAvatar(); mlGlocke();
   bilderFuellen();
 }
 
@@ -2263,13 +2263,16 @@ function teamSpeichern(liste){ const r=DB.einstellungen.get("team")||{id:"team"}
 
 function mehrView(){
   const row=(act,ic,t,sub)=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(ic)}</span><span class="lt"><span class="h">${t}</span>${sub?`<span class="s">${sub}</span>`:""}</span>${icon("chev")}</div>`;
-  return `<div class="narrow">
+  return `<div class="narrow">${syncKarte()}
     <div class="sec-lbl">Konto und Darstellung</div><div class="list">
       ${SYNC_ON?row("konto","person","Konto",esc(ME.name)):""}
       ${!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}${ME.admin?" · Admin":""}`)):""}
       ${row("theme","theme","Darstellung",TH_LABEL[theme])}
       ${ME.mail?mlGeraetZeile():""}
       ${demoZeile()}</div>
+    <div class="sec-lbl">Daten</div><div class="list">
+      ${row("sichernAlle","backup","Alle sichern","Sicherungsdatei mit allen Daten und Fotos")}
+      ${row("sicherungLaden","upload","Sicherung laden","Daten aus einer Sicherungsdatei übernehmen")}</div>
     ${ME.admin?`<div class="sec-lbl">Verwaltung</div><div class="list">
       ${row("nav:team","person","Mitarbeiter und Rechte",`${team().length} aktiv · Protokolle an ${esc(mailAn())}`)}</div>`:""}
     <div class="app-weiter"><div class="sec-lbl">Apps</div>${listOf(APPS.filter(a=>!a.geplant).map(a=>`<a class="li" href="${a.href}" style="text-decoration:none;color:inherit"><img class="app-mini" src="${a.ic}" alt=""><span class="lt"><span class="h">${a.name}</span><span class="s">${a.text}</span></span>${icon("chev")}</a>`))}</div>
