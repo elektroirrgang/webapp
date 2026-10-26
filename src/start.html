@@ -1103,6 +1103,28 @@ body.kopf-oben .edk-platz{display:none!important}
 .wg-apps.gross .wg-app{text-align:left;column-gap:12px;padding:8px 10px;background:var(--sc);display:grid;grid-template-columns:44px minmax(0,1fr);align-items:center}
 .wg-apps.gross .wg-app img{width:44px;height:44px;grid-row:span 2}
 .wg-apps.gross .wg-app span{align-self:end}
+/* ===== Handy (schmaler als iPad) – kompakter; iPad und PC bleiben unverändert ===== */
+@media (max-width:743px){
+  .gruss{font-size:24px;margin:4px 4px 12px}
+  .wg-raster{grid-auto-rows:auto;gap:12px}
+  .wg{padding:12px 14px;border-radius:20px}
+  .wg-k{min-height:32px}.wg-ic{width:32px;height:32px;border-radius:10px}.wg-ic .ic{width:18px;height:18px}
+  .wg-b{margin-top:8px;flex:none}
+  .wg-leer{margin:2px 0}
+  .wg-gross{margin-top:6px}.wg-gross b{font-size:32px}
+  .wg-kpis .kpi{padding:8px 10px}.wg-kpis .kpi b{font-size:20px}
+  .wg-apps{margin:0}
+  .li{padding:10px 14px;min-height:56px}
+  .lt .st{margin-top:6px}
+  .sec-lbl{margin-top:18px}
+  /* Filterzeilen: eine Zeile, waagerecht wischen, bis an den Rand */
+  .chips.bib-chips,.chips.vg-chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:-16px;margin-right:-16px;padding:0 16px 2px;scroll-padding:0 16px}
+  .chips.bib-chips::-webkit-scrollbar,.chips.vg-chips::-webkit-scrollbar{display:none}
+  .chips.bib-chips .chip,.chips.vg-chips .chip{flex:none}
+  .wg-kpis.vier{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .wg-leer.dopp{display:none}
+  .wg-app img{width:44px;height:44px;border-radius:12px}.wg-app{padding:4px;gap:4px}
+}
 .wg-apps.gross .wg-app small{align-self:start;font-size:12px;font-weight:400;color:var(--on-sv);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Bearbeiten: leichtes Wackeln wie am Handy */
 .wg-raster.anp .wg{background:color-mix(in srgb,var(--primary) 6%,var(--sc-low));animation:wgWackel .32s ease-in-out infinite alternate}
@@ -1561,7 +1583,9 @@ const ENTWICKLUNG=[
   {t:"Anbindung an SCC-CONTROL",st:"open",s:"In Klärung",d:"Ziel: Kunden und Aufträge aus SCC übernehmen, statt sie doppelt zu pflegen. Wird mit dem Chef und einem IT-Dienstleister besprochen."}];
 const ENTW_STAND="26.10.2026";
 const TOPDEST_ALLE=[["start","Start","home"],["auftraege","Aufträge","board"],["uebersicht","Statistik","chart"],["kunden","Kunden","firma"],["geraete","Messgeräte","geraet"],["bibliothek","Bibliothek","folder"]];
-const topdest=()=>TOPDEST_ALLE.filter(d=>d[0]!=="uebersicht"||ME.admin);
+/* Handy (schmaler als iPad): nur vier Tabs – Statistik und Messgeräte sind dort Karten auf der Startseite */
+const HANDY_WEG=["uebersicht","geraete"], istHandy=()=>!WIDE.matches;
+const topdest=()=>TOPDEST_ALLE.filter(d=>(d[0]!=="uebersicht"||ME.admin)&&!(istHandy()&&HANDY_WEG.includes(d[0])));
 const MEHR_SUB={team:"Mitarbeiter",ma:"Mitarbeiter",backup:"Backup",impressum:"Impressum",about:"Über",entwicklung:"Entwicklung"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
 const KIND_NAME={kunden:"Kunde",standorte:"Standort"};
@@ -1839,7 +1863,7 @@ function render(){ profilAnwenden();
   document.body.classList.toggle("has-nav",!login);
   $("#backBtn").hidden=top||login; $("#navbar").hidden=login; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]);
   $("#menuBtn").hidden=!(VIEW_KIND[nav.v]&&kdDarf()); kdKopfKnopf();
-  const active=nav.v==="meldungen"?"":top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":"kunden";
+  const active=nav.v==="meldungen"?"":top?nav.v:HANDY_WEG.includes(nav.v)?"start":(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":"kunden";
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
     +TD.map(([k,t,i])=>`<button class="nav-item${k==="mehr"?" nav-end":""}" data-act="nav" data-v="${k}" ${k===active?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join("");
@@ -1880,7 +1904,9 @@ function startView(){
   /* Begrüßung steht am iPad/PC oben im Kopf; am Handy (kein Seitenkopf) bleibt sie im Inhalt */
   const g=WIDE.matches?"":`<h2 class="gruss">${esc(startTitel())}</h2>`;
   if(anfVerw()) return `<div class="narrow">${g}${dashboard(kacheln)}</div>`;
-  let h=`<div class="narrow">${g}${vgStartKarte()}<div class="apps app-weiter">${kacheln}</div>`;
+  const gerZ=istHandy()?(()=>{ const G=live("geraete").filter(x=>!x.aus), f=G.map(gerKal).filter(k=>k&&k.s!=="ok").length;
+    return `<div class="sec-lbl">Betrieb</div>${listOf([`<div class="li" role="button" tabindex="0" data-act="nav" data-v="geraete"><span class="av">${icon("geraet")}</span><span class="lt"><span class="h">Messgeräte</span><span class="s">${G.length} ${G.length===1?"Gerät":"Geräte"}${f?` · ${f} ${f===1?"braucht":"brauchen"} Kalibrierung`:""}</span></span>${icon("chev")}</div>`])}`; })():"";
+  let h=`<div class="narrow">${g}${vgStartKarte()}${gerZ}<div class="apps app-weiter">${kacheln}</div>`;
   return h+`<p class="hint app-weiter">Jede App lässt sich einzeln auf den Home-Bildschirm legen: App öffnen, dann „Teilen“ → „Zum Home-Bildschirm“.</p></div>`;
 }
 const startTitel=()=>`${gruss()}${ME.ruf||ME.name?`, ${ME.ruf||ME.name}`:""}`;
@@ -1894,11 +1920,15 @@ function skRechts(){
    Jeder legt fest, welche Kacheln er sieht, in welcher Reihenfolge und wie breit (halb/ganz).
    Gespeichert im eigenen Profil („profile“) ⇒ gleich auf iPad und PC. Halbe Kacheln werden automatisch
    auf zwei Spalten verteilt, sodass keine Löcher entstehen. */
-const DB_W={material:"Material",auftraege:"Aufträge",pruefungen:"Prüfungen & Fristen",baustellen:"Baustellen",zahlen:"Kennzahlen",apps:"Apps"};
+const DB_W={material:"Material",auftraege:"Aufträge",pruefungen:"Prüfungen & Fristen",baustellen:"Baustellen",zahlen:"Kennzahlen",geraete:"Messgeräte",apps:"Apps"};
+/* Neu hinzugekommene Kacheln erscheinen bei bestehenden Startseiten nicht von selbst (iPad/PC bleiben, wie eingestellt) */
+const DB_NEU_AUS=["geraete"];
+/* Auf dem Handy sind das die Wege zu Statistik und Messgeräten (dort keine Tabs) – daher immer sichtbar */
+const dbPflicht=()=>istHandy()?["geraete",...(ME.admin?["zahlen"]:[])]:[];
 /* Größen wie Handy-Widgets: S = 1×1, M = 2×1, L = 2×2 Rasterfelder. Jede Kachel kann nur Größen, für die sie Inhalt hat. */
-const DB_GR={material:["s","m","l"],auftraege:["s","m","l"],pruefungen:["s","m","l"],baustellen:["s","m","l"],zahlen:["m","l"],apps:["m","l"]};
+const DB_GR={geraete:["s","m","l"],material:["s","m","l"],auftraege:["s","m","l"],pruefungen:["s","m","l"],baustellen:["s","m","l"],zahlen:["m","l"],apps:["m","l"]};
 const DB_GR_TXT={s:"Klein",m:"Mittel",l:"Groß"};
-const DB_STD={o:["material","auftraege","pruefungen","baustellen","apps","zahlen"],aus:["zahlen"],gr:{}};
+const DB_STD={o:["material","auftraege","pruefungen","baustellen","apps","zahlen","geraete"],aus:["zahlen","geraete"],gr:{}};
 
 /* ===== Wetter für den Betrieb (Waldbröl) =====
    Bright Sky – kostenlos, ohne Schlüssel, auch gewerblich erlaubt; Daten vom Deutschen Wetterdienst.
@@ -1934,9 +1964,10 @@ function wetterKopf(){ const W=META.wetter, p=document.querySelector("#tbKopf .s
   p.insertAdjacentHTML("beforeend",`<span class="w-kopf">${wIc(W.jetzt.ic)}${W.jetzt.temp} °C · ${esc((W_ART[W.jetzt.ic]||W_ART.cloudy)[1])}</span>`); }
 let DB_ANP=false;
 function dbLayout(){ const p=profilVon(ME.mail), L=p&&p.start||{}, o=(L.o||[]).filter(k=>DB_W[k]);
-  DB_STD.o.forEach(k=>{ if(!o.includes(k)) o.push(k); }); const gr={};
+  const aus=(L.o?(L.aus||[]).slice():DB_STD.aus.slice());
+  DB_STD.o.forEach(k=>{ if(!o.includes(k)){ o.push(k); if(L.o&&DB_NEU_AUS.includes(k)&&!aus.includes(k)) aus.push(k); } }); const gr={};
   o.forEach(k=>{ const g=(L.gr||{})[k]; gr[k]=DB_GR[k].includes(g)?g:"m"; });
-  return {o,aus:(L.o?(L.aus||[]):DB_STD.aus.slice()).filter(k=>DB_W[k]),gr}; }
+  return {o,aus:aus.filter(k=>DB_W[k]),gr}; }
 function dbLayoutSpeichern(L){ const id=String(ME.mail||"").toLowerCase(); if(!id) return; const alt=DB.profile.get(id), r=alt||{id};
   r.start={o:L.o,aus:L.aus,gr:L.gr}; saveRec("profile",r,!alt); }
 /* Dashboard für Chef und Büro: vier Boxen. Jede zeigt nur, was zu tun ist – Details über „Alle“. */
@@ -1944,7 +1975,7 @@ function dashboard(kacheln){
   const t=today(), bald=new Date(Date.now()+90*864e5).toISOString().slice(0,10), woche=Date.now()-7*864e5, L=dbLayout();
   wetterHolen();
   const zeile=(h,s2)=>`<div class="wg-z"><span>${esc(h)}</span>${s2?`<small>${esc(s2)}</small>`:""}</div>`;
-  const leer=txt=>`<p class="wg-leer">${esc(txt)}</p>`;
+  const leer=(txt,dopp)=>`<p class="wg-leer${dopp?" dopp":""}">${esc(txt)}</p>`;
   const gross=(z,txt,warn)=>`<div class="wg-gross${warn?" warn":""}"><b>${z}</b><span>${esc(txt)}</span></div>`;
   const anz=g=>g==="l"?5:2;
   const A=anfOffen().sort((a,b)=>(a.status==="angefordert"?0:1)-(b.status==="angefordert"?0:1)||(b.created||0)-(a.created||0)), an=A.filter(a=>a.status==="angefordert").length;
@@ -1957,10 +1988,10 @@ function dashboard(kacheln){
   const W={
     material:{ic:"lager",v:"materialanf",sub:A.length?`${an} angefordert · ${A.length-an} bestellt`:"Nichts offen",plus:["afNeu","Material anfordern"],
       s:()=>gross(an,"angefordert"),
-      m:g=>A.length?A.slice(0,anz(g)).map(a=>zeile(anfPosText(a),`${anfOrt(a)} · ${a.status==="angefordert"?"angefordert":"bestellt"}`)).join(""):leer("Nichts offen.")},
+      m:g=>A.length?A.slice(0,anz(g)).map(a=>zeile(anfPosText(a),`${anfOrt(a)} · ${a.status==="angefordert"?"angefordert":"bestellt"}`)).join(""):leer("Nichts offen.",true)},
     auftraege:{ic:"board",v:"auftraege",sub:V.length?`${V.length} offen${vb?` · ${vb} beim Büro`:""}`:"Keine offenen Vorgänge",plus:["vgNeu","Vorgang anlegen"],
       s:()=>gross(V.length,vb?`offen · ${vb} beim Büro`:"offen"),
-      m:g=>V.length?V.slice(0,anz(g)).map(v=>zeile(vgKunde(v),vgKurz(v.anliegen||"",60))).join(""):leer("Keine offenen Vorgänge.")},
+      m:g=>V.length?V.slice(0,anz(g)).map(v=>zeile(vgKunde(v),vgKurz(v.anliegen||"",60))).join(""):leer("Keine offenen Vorgänge.",true)},
     pruefungen:{ic:"doc",v:"geraete",sub:ueber.length?`${ueber.length} überfällig`:fb.length?`${fb.length} fällig in 3 Monaten`:"Keine Fristen offen",warn:ueber.length>0||G.some(x=>x.k.s==="ab"),
       s:()=>gross(ueber.length,"überfällig",ueber.length>0),
       m:g=>`<div class="wg-kpis">${kpi(neu.length,"neue Protokolle")}${kpi(ueber.length,"überfällig",ueber.length?"warn":"")}${kpi(fb.length,"fällig in 3 Mon.")}</div>`
@@ -1970,22 +2001,26 @@ function dashboard(kacheln){
       m:g=>E.length?E.slice(0,anz(g)).map(e=>{ const b=DB.baustellen.get(e.baustelleId); return zeile(b?b.name:"Baustelle",[(e.createdBy||{}).name,wann(e.created)].filter(Boolean).join(" · ")); }).join(""):leer("Noch keine Übergaben.")},
     zahlen:{ic:"chart",v:"uebersicht",
       m:g=>`<div class="wg-kpis ${g==="l"?"zwei":"vier"}">${kpi(aktiv.length,"aktive Baustellen")}${kpi(inArbeit,"Prüfungen in Arbeit")}${kpi(F.filter(p=>p.a.naechste<=bald).length,"fällig in 3 Mon.",ueber.length?"warn":"")}${kpi(echt("kunden").length,"Kunden")}</div>`},
+    geraete:(()=>{ const alle=live("geraete").filter(g=>!g.aus), P=alle.map(g=>({g,k:gerKal(g)})).filter(x=>x.k&&x.k.s!=="ok"), rot=P.some(x=>x.k.s==="ab"||x.k.s==="leer");
+      return {ic:"geraet",v:"geraete",sub:`${alle.length} ${alle.length===1?"Gerät":"Geräte"}${P.length?` · ${P.length} ${P.length===1?"braucht":"brauchen"} Kalibrierung`:""}`,warn:rot,
+        s:()=>gross(P.length,"Kalibrierung offen",rot),
+        m:g=>P.length?P.slice(0,anz(g)).map(({g:x,k})=>zeile(gerLabel(x),k.t)).join(""):leer("Alle Geräte kalibriert."),}; })(),
     apps:{ic:"home",app:true,m:g=>`<div class="wg-apps${g==="l"?" gross":""}">${APPS.map(a=>a.geplant?"":`<a class="wg-app" href="${a.href}"><img src="${a.ic}" alt=""><span>${esc(a.name)}</span>${g==="l"?`<small>${esc(a.text)}</small>`:""}</a>`).join("")}</div>`}
   };
-  const sicht=L.o.filter(k=>!L.aus.includes(k));
+  const PF=dbPflicht(), sicht=L.o.filter(k=>!L.aus.includes(k)||PF.includes(k));
   const kachel=(k,i)=>{ const w=W[k], g=L.gr[k], inhalt=g==="s"&&w.s?w.s():w.m(g), ganzKlick=!DB_ANP&&!w.app&&w.v;
     const grN=DB_GR[k][(DB_GR[k].indexOf(g)+1)%DB_GR[k].length];
     return `<section class="wg wg-${g}${ganzKlick?" klick":""}" data-w="${k}" ${ganzKlick?`data-act="nav" data-v="${w.v}" role="button" tabindex="0"`:""}>
-      <div class="wg-k"><span class="wg-ic">${icon(w.ic)}</span><span class="wg-t"><b>${esc(DB_W[k])}</b>${w.sub&&g!=="s"?`<small class="${w.warn?"warn":""}">${esc(w.sub)}</small>`:""}</span>${w.plus&&!DB_ANP&&g!=="s"?`<button class="wg-plus" data-act="${w.plus[0]}" aria-label="${w.plus[1]}" title="${w.plus[1]}">${icon("add")}</button>`:""}</div>
+      <div class="wg-k"><span class="wg-ic">${icon(w.ic)}</span><span class="wg-t"><b>${esc(k==="zahlen"&&istHandy()?"Statistik":DB_W[k])}</b>${w.sub&&g!=="s"?`<small class="${w.warn?"warn":""}">${esc(w.sub)}</small>`:""}</span>${w.plus&&!DB_ANP&&g!=="s"?`<button class="wg-plus" data-act="${w.plus[0]}" aria-label="${w.plus[1]}" title="${w.plus[1]}">${icon("add")}</button>`:""}</div>
       <div class="wg-b">${inhalt}</div>
-      ${DB_ANP?`<button class="wg-weg" data-act="dbAus" data-w="${k}" aria-label="${esc(DB_W[k])} ausblenden" title="Ausblenden">−</button>
+      ${DB_ANP&&!PF.includes(k)?`<button class="wg-weg" data-act="dbAus" data-w="${k}" aria-label="${esc(DB_W[k])} ausblenden" title="Ausblenden">−</button>
         <div class="wg-anp"><button class="db-ab" data-act="dbZug" data-w="${k}" data-d="-1" ${i===0?"disabled":""} aria-label="Nach vorne" title="Nach vorne">${icon("hoch")}</button><button class="db-ab wg-gr" data-act="dbBreite" data-w="${k}" title="Größe ändern – als Nächstes: ${DB_GR_TXT[grN]}">${DB_GR_TXT[g]}</button><button class="db-ab" data-act="dbZug" data-w="${k}" data-d="1" ${i===sicht.length-1?"disabled":""} aria-label="Nach hinten" title="Nach hinten">${icon("runter")}</button></div>`:""}
     </section>`; };
   setTimeout(wetterKopf,0);
   const versteckt=L.o.filter(k=>L.aus.includes(k));
   return `${DB_ANP?`<p class="db-hinweis">Pfeile verschieben, die Mitte ändert die Größe (Klein, Mittel, Groß), „−“ blendet aus. Gilt nur für dich – auf all deinen Geräten.</p>`:""}
     <div class="wg-raster${DB_ANP?" anp":""}">${sicht.map(kachel).join("")||`<p class="meta">Alle Kacheln sind ausgeblendet.</p>`}</div>
-    ${DB_ANP&&versteckt.length?`<div class="sec-lbl" style="margin-top:20px">Ausgeblendet – antippen zum Hinzufügen</div><div class="db-weg">${versteckt.map(k=>`<button class="chip" data-act="dbEin" data-w="${k}">${icon("add")}${esc(DB_W[k])}</button>`).join("")}</div>`:""}`;
+    ${DB_ANP&&versteckt.filter(k=>!PF.includes(k)).length?`<div class="sec-lbl" style="margin-top:20px">Ausgeblendet – antippen zum Hinzufügen</div><div class="db-weg">${versteckt.filter(k=>!PF.includes(k)).map(k=>`<button class="chip" data-act="dbEin" data-w="${k}">${icon("add")}${esc(DB_W[k])}</button>`).join("")}</div>`:""}`;
 }
 function balken(werte){ const max=Math.max(1,...werte.map(w=>w[1]));
   return `<div class="balken">${werte.map(([l,v])=>`<div class="bk"><span class="bk-v">${v||""}</span><span class="bk-b" style="height:${Math.round(v/max*100)}%"></span><span class="bk-l">${l}</span></div>`).join("")}</div>`; }
