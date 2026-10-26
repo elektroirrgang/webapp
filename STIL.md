@@ -49,3 +49,9 @@ Gilt für alle Apps (Übersicht, EVSE, Baustelle, E-Check). Vorbild ist EVSE. Go
 ## Bibliothek – Kundenordner
 - Ordner-Ansicht: Alle Kunden › Kunde › sieben feste Ordner › Standort/Baustelle. Sie zeigt Dateien und zusätzlich Aufträge, Prüfungen ohne PDF, E-Checks und Baustellen als Einträge.
 - Seltene Admin-Aktionen zu einem Datensatz (Zusammenführen, Löschen) stehen im Bearbeiten-Fenster, auf dem Handy über dem Fuß, auf dem PC im Fuß links.
+
+## Konto-Unterseiten
+- Zeilen mit Pfeil öffnen eine eigene Seite (Konto, Abgleich, Speicher, Mitarbeiter, Backup, Kundenordner); schnelle Auswahl ohne viel Inhalt (Darstellung, Start mit, Textgröße) bleibt ein kleines Fenster.
+- Abgleich-Karte: Karte antippen öffnet die Seite „Abgleich“, der Knopf „Abgleichen“ gleicht sofort ab.
+- Info ist eine Karte (App-Symbol, Version, Seiten als Chips). „Entwickler“ ist einklappbar (je Gerät gemerkt).
+- Code: `KONTO_SEITEN` in `profil.js`; die Apps hängen sie in `render()` ein.

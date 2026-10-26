@@ -2279,6 +2279,7 @@ function render(){ profilAnwenden();
   else if(nav.v==="material"){ title="Material"; body=materialView(); fab=["matStammNeu","Material","add"]; }
   else if(nav.v==="materialanf"){ title="Materialanforderungen"; body=`<div class="narrow">${anfListeView()}</div>`; fab=["afNeu","Anfordern","add"]; }
   else if(nav.v==="mehr"){ title="Mehr"; body=mehrView(); }
+  else if(KONTO_SEITEN[nav.v]){ title=KONTO_SEITEN[nav.v][0]; body=KONTO_SEITEN[nav.v][1](); }
   else if(nav.v==="team"){ title="Mitarbeiter"; body=teamView(); }
   else if(nav.v==="backup"){ title="Backup"; body=backupView(); }
   else if(nav.v==="impressum"){ title="Impressum"; body=impressumView(); }
@@ -2892,8 +2893,7 @@ function mehrView(){
     apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../evse/","ev","EVSE","Prüfung von Wallboxen und Ladesäulen")}${link("../echeck/","home","E-Check","Hausinstallation, Geräte und Netzwerk")}</div></div>`,
     geraet:[geraetZeilen(true)],
     verwaltung:[row("nav:team","person","Mitarbeiter",esc(META.profil.name||"")),bkZeile(),kdoZeile()],
-    infoTitel:"Rechtliches und Info",info:[row("nav:impressum","paragraph","Impressum",""),row("nav:about","info","Über die App",`Version ${APP_VERSION}`)],
-    fuss:`<p class="hint">Baustelle · Version ${APP_VERSION}${nf?` · ${nf} abgeschlossene Baustelle${nf>1?"n":""} unter „Abgeschlossen“`:""}</p>`});
+    infoTitel:"Rechtliches und Info",info:[["nav:impressum","Impressum"],["nav:about","Über die App"]]});
 }
 function teamView(){
   const T=team(), ich=(META.profil.mail||"").toLowerCase();

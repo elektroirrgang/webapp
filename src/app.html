@@ -1935,6 +1935,7 @@ function render(){ profilAnwenden();
   else if(nav.v==="impressum"){ title="Impressum"; body=impressumView(); }
   else if(nav.v==="datenschutz"){ title="Datenschutz"; body=datenschutzView(); }
   else if(nav.v==="about"){ title="Über die App"; body=aboutView(); }
+  else if(KONTO_SEITEN[nav.v]){ title=KONTO_SEITEN[nav.v][0]; body=KONTO_SEITEN[nav.v][1](); }
   else if(nav.v==="team"){ title="Mitarbeiter und Mail"; body=teamView(); }
   else if(nav.v==="backup"){ title="Backup"; body=backupView(); }
   else if(nav.v==="geraet"){ const T=geraeteTreffer(nav.sn); title="Geräteakte"; sub=T.length?sName(T[0].s,T[0].i):""; body=akteView(nav.sn); }
@@ -2158,8 +2159,7 @@ function mehrView(){
     verwaltung:[row("nav:team","person",SYNC_ON?"Mitarbeiter und Mail":"Ich bin · Mitarbeiter und Mail",esc(SYNC_ON?`Protokolle an ${mailAn()}`:[META.profil.name||"noch nicht ausgewählt",`Protokolle an ${mailAn()}`].join(" · "))),bkZeile(),kdoZeile()],
     eigenes:`${WIDE.matches?"":`<div class="sec-lbl">Wissen</div><div class="list">${row("nav:katalog","book","Wallbox-Katalog",`${live("katalog").length} Modelle · Hinweise und Fotos`)}</div>`}
       <div class="sec-lbl">Prüfungen</div><div class="list">${row("nav:archiv","archive","Archiv",nArch?`${nArch} Prüfung${nArch>1?"en":""}`:"leer")}</div>`,
-    infoTitel:"Rechtliches und Info",info:[row("nav:impressum","doc","Impressum",""),row("nav:datenschutz","shield","Datenschutz",""),row("nav:about","info","Über die App",`Version ${APP_VERSION}`)],
-    fuss:`<p class="hint">EVSE · Version ${APP_VERSION}</p>`});
+    infoTitel:"Rechtliches und Info",info:[["nav:impressum","Impressum"],["nav:datenschutz","Datenschutz"],["nav:about","Über die App"]]});
 }
 const FIRMA={name:"Elektro Irrgang",inhaber:"Joachim Irrgang",strasse:"Hahner Weg 2",ort:"51545 Waldbröl",tel:"+49 2291 4878",telHref:"+4922914878",fax:"+49 2291 800718",mail:"info@elektro-irrgang.de",
   ust:"DE169864585",register:"Registergericht: Waldbröl",hwk:"Handwerkskammer zu Köln, Heumarkt 12, 50667 Köln",beruf:"Elektromeister (verliehen in Deutschland)"};
