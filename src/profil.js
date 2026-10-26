@@ -351,7 +351,8 @@ function maStufe(m){ if(!m) return {k:"",t:""}; let k=m.stufe||(/\bchef\b/i.test
   else if(k==="azubi"){ const lj=maLehrjahr(m); t=lj?`Azubi · ${lj}. Lehrjahr`:"Azubi"; }
   return {k,t,auto}; }
 function maPillen(m){ const st=maStufe(m);
-  return [st.t&&pill("stufe",st.t),m.entwickler?pill("ok","Entwickler"):m.admin?pill("ok","Admin"):pill("open","Mitarbeiter"),m.pruefer&&pill("wip","Prüfer"),m.status==="weg"&&pill("open","ausgeschieden")].filter(Boolean).join(""); }
+  /* „Mitarbeiter“ hat jeder im Betrieb (außer dem Chef); Admin bzw. Entwickler kommt als eigene Pille dazu, die Rechte bleiben wie eingestellt */
+  return [st.t&&pill("stufe",st.t),st.k!=="chef"&&pill("open","Mitarbeiter"),m.entwickler?pill("ok","Entwickler"):m.admin&&pill("ok","Admin"),m.pruefer&&pill("wip","Prüfer"),m.status==="weg"&&pill("open","ausgeschieden")].filter(Boolean).join(""); }
 /* Lehrjahr: normal aus „Ausbildung seit“ gerechnet. Weicht es ab (Betriebswechsel, Verkürzung, Wiederholung), wird es von Hand gesetzt
    (lj + ljAm) und zählt ab dann zu jedem Jahrestag des Ausbildungsbeginns (ohne Beginn: 1. August) eins weiter. */
 function maLehrjahr(m){ const n=new Date(), mon=(a,b)=>(b.getFullYear()-a.getFullYear())*12+b.getMonth()-a.getMonth()-(b.getDate()<a.getDate()?1:0);
