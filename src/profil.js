@@ -186,7 +186,8 @@ function geraetZeilen(mitPush){ return (mitPush&&typeof mlGeraetZeile==="functio
 /* Konto-Seite – Reihenfolge für alle Apps gleich: Konto · Abgleich · Darstellung · Apps · Dieses Gerät · Verwaltung · App-Eigenes · Info · Entwickler (mit Demo-Vorschau) */
 function kontoSeite(o){ const sek=(t,z)=>{ z=(Array.isArray(z)?z.join(""):z||"").trim(); return z?`<div class="sec-lbl">${t}</div><div class="list">${z}</div>`:""; };
   const demoFremd=typeof demoAn==="function"&&demoAn()&&!(typeof istEntwickler==="function"&&istEntwickler())?sek("Demo",demoZeile()):""; /* wer sie anhat, muss sie auch ausschalten können */
-  return `<div class="narrow konto-s">${sek("Konto",o.konto)}${syncKarte()}${sek("Darstellung",o.darstellung)}${o.apps||""}${sek("Dieses Gerät",o.geraet)}${sek("Verwaltung",o.verwaltung)}${o.eigenes||""}${kontoInfoKarte(o.info||[])}${demoFremd}${entwicklerBereich()}</div>`; }
+  const pcFuss=typeof KOPF_PC!=="undefined"&&KOPF_PC.matches; /* PC: Konto steht unten in der Seitenleiste – hier nicht doppelt */
+  return `<div class="narrow konto-s">${syncKarte()}${pcFuss?"":sek("Konto",o.konto)}${sek("Darstellung",o.darstellung)}${o.apps||""}${sek("Dieses Gerät",o.geraet)}${sek("Verwaltung",o.verwaltung)}${o.eigenes||""}${kontoInfoKarte(o.info||[])}${demoFremd}${entwicklerBereich()}</div>`; }
 /* Info: eine Karte mit App-Symbol, Version und den Seiten als Chips (statt drei Listenzeilen) */
 function kontoInfoKarte(L){ const ic=(document.querySelector('link[rel="apple-touch-icon"]')||{}).href||"", app=document.title.split(" · ")[0];
   const zeilen=L.map(([act,i,t,sub])=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(i)}</span><span class="lt"><span class="h">${esc(t)}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}</span>${icon("chev")}</div>`).join("");

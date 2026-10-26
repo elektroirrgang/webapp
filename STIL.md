@@ -43,7 +43,7 @@ Gilt für alle Apps (Übersicht, EVSE, Baustelle, E-Check). Vorbild ist EVSE. Go
 - Punkt am Profilbild: grün = abgeglichen, grau = offline, rot = Fehler oder Anmeldung abgelaufen (pulsiert langsam).
 - Während des Abgleichs dreht ein feiner grüner Ring ums Profilbild, der Punkt pulsiert; danach „ploppt“ er einmal. Mindestens 0,9 s sichtbar.
 - Konto-Seite (Profilbild antippen): direkt unter „Konto“ die Abgleich-Karte – Zustand, letzter Abgleich, wartende Änderungen; antippen = jetzt abgleichen bzw. neu anmelden.
-- Konto-Seite (`kontoSeite` in `profil.js`), Reihenfolge in allen Apps: Konto · Abgleich-Karte · Darstellung (Darstellung, Start mit, Textgröße) · Apps · Dieses Gerät (Benachrichtigungen, Speicher) · Verwaltung (Mitarbeiter, Backup, Kundenordner) · App-Eigenes (EVSE: Wissen, Prüfungen/Archiv) · Info · Entwickler (inkl. Demo-Vorschau).
+- Einstellungen-Seite (`kontoSeite` in `profil.js`), Reihenfolge in allen Apps: Abgleich-Karte (ohne Überschrift) · Konto (nur Handy/iPad – am PC unten in der Seitenleiste) · Darstellung (Darstellung, Start mit, Textgröße) · Apps · Dieses Gerät (Benachrichtigungen, Speicher) · Verwaltung (Mitarbeiter, Backup, Kundenordner) · App-Eigenes (EVSE: Wissen, Prüfungen/Archiv) · Info · Entwickler (inkl. Demo-Vorschau).
 - „Backup“ (Sicherung erstellen/laden, Inhalt, Erinnerung) ist eine eigene Unterseite und nur für Chef und Entwickler sichtbar (`ME.admin`).
 - Code: `syncAnzeige`, `syncKarte`, `backupView` in `profil.js`, Aussehen in `felder.css`.
 
