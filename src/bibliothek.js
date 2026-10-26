@@ -259,6 +259,8 @@ function bibListe(){
   if(!bbGeladen){ bbLaden(); return ""; }
   const art=bbW("art"), ku=bbW("kunde"), so=bbW("sort"), q=String(query||"").toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
   const A=bbEintraege(), zahl=a=>a==="alle"?A.length:A.filter(x=>x.art===a).length;
+  const nurOrdner=!A.length&&bbAnsicht()==="ordner"&&!q&&DB.kunden&&[...DB.kunden.values()].some(k=>!k.deleted); /* Kundenordner gibt es auch ohne Dateien */
+  if(nurOrdner) return bbOrdner([],()=>"");
   if(!A.length) return `<div class="empty bib-leer">${icon("folder")}<h2>Noch nichts in der Bibliothek</h2><p>Hier landen fertige Prüfprotokolle aus EVSE, Berichte aus Baustelle sowie Dokumente und Fotos aus den Kundenablagen.</p></div>`;
   const chips=`<div class="chips bib-chips">${BB_ART.filter(([a])=>a==="alle"||zahl(a)).map(([a,t])=>`<button class="chip" data-act="bbArt" data-v="${a}" aria-pressed="${art===a}">${esc(t)}<span class="chip-n">${zahl(a)}</span></button>`).join("")}</div>`;
   const L=A.filter(x=>(art==="alle"||x.art===art)&&(ku==="alle"||x.kundeId===ku)&&(!q||H(x.titel)||H(x.kunde)||H(x.info)||H((bbKunde(x.kundeId)||{}).kdnr)));
