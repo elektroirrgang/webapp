@@ -348,7 +348,14 @@ const MA_STUFEN=[["chef","Chef"],["meister","Meister"],["geselle","Geselle"],["a
 const maRolleRest=m=>String((m&&m.rolle)||"").replace(/\bChef\b\s*·?\s*/i,"").replace(/^\s*·\s*|\s*·\s*$/g,"").trim();
 function maStufe(m){ if(!m) return {k:"",t:""}; let k=m.stufe||(/\bchef\b/i.test(m.rolle||"")?"chef":""), t=(MA_STUFEN.find(x=>x[0]===k)||[,""])[1], heute=new Date().toISOString().slice(0,10), auto=false;
   if(k==="azubi"&&m.azubiBis&&m.azubiBis<heute){ k="geselle"; t="Geselle"; auto=true; }
-  else if(k==="azubi"&&m.azubiVon){ const a=new Date(m.azubiVon+"T12:00"), n=new Date(), lj=Math.min(4,Math.max(1,Math.floor(((n.getFullYear()-a.getFullYear())*12+n.getMonth()-a.getMonth()-(n.getDate()<a.getDate()?1:0))/12)+1)); t=`Azubi · ${lj}. Lehrjahr`; }
+  else if(k==="azubi"){ const lj=maLehrjahr(m); t=lj?`Azubi · ${lj}. Lehrjahr`:"Azubi"; }
   return {k,t,auto}; }
 function maPillen(m){ const st=maStufe(m);
   return [st.t&&pill("stufe",st.t),m.admin?pill("ok","Admin"):pill("open","Mitarbeiter"),m.pruefer&&pill("wip","Prüfer"),m.status==="weg"&&pill("open","ausgeschieden")].filter(Boolean).join(""); }
+/* Lehrjahr: normal aus „Ausbildung seit“ gerechnet. Weicht es ab (Betriebswechsel, Verkürzung, Wiederholung), wird es von Hand gesetzt
+   (lj + ljAm) und zählt ab dann zu jedem Jahrestag des Ausbildungsbeginns (ohne Beginn: 1. August) eins weiter. */
+function maLehrjahr(m){ const n=new Date(), mon=(a,b)=>(b.getFullYear()-a.getFullYear())*12+b.getMonth()-a.getMonth()-(b.getDate()<a.getDate()?1:0);
+  if(m.lj){ const am=new Date((m.ljAm||n.toISOString().slice(0,10))+"T12:00"), v=m.azubiVon?new Date(m.azubiVon+"T12:00"):new Date(am.getFullYear(),7,1,12);
+    let z=0; for(let y=am.getFullYear();y<=n.getFullYear();y++){ const tag=new Date(y,v.getMonth(),v.getDate(),12); if(tag>am&&tag<=n) z++; } return Math.min(4,Math.max(1,(+m.lj)+z)); }
+  if(m.azubiVon) return Math.min(4,Math.max(1,Math.floor(mon(new Date(m.azubiVon+"T12:00"),n)/12)+1));
+  return 0; }

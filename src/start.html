@@ -2272,7 +2272,8 @@ function maView(m){
     <div class="lbl" style="margin:16px 4px 8px">Stufe</div>
     <div class="chips ma-stufen">${MA_STUFEN.map(([v,t])=>`<button type="button" class="chip" data-act="teamStufe" data-v="${v}" aria-pressed="${teamForm.stufe===v}">${t}</button>`).join("")}</div>
     <div id="maAzubi" ${teamForm.stufe==="azubi"?"":"hidden"}><div class="row2" style="margin-top:12px">${tf("azubiVon","Ausbildung seit",m&&m.azubiVon||"",{form:true,type:"date"})}${tf("azubiBis","Ausbildung bis",m&&m.azubiBis||"",{form:true,type:"date"})}</div>
-      <p class="sup" style="margin:8px 4px 0">Mit „seit“ steht das Lehrjahr dabei. Ab dem Tag nach „bis“ wird er automatisch als Geselle geführt – das ändert nichts an Rechten und Prüfer.</p></div>
+      <div style="margin-top:12px">${tf("lj","Lehrjahr jetzt (nur wenn abweichend, z. B. nach Betriebswechsel)",m&&m.lj?String(maLehrjahr(m)):"",{form:true,type:"number",ph:m&&m.azubiVon?`gerechnet: ${maLehrjahr(Object.assign({},m,{lj:0}))}`:"1 bis 4"})}</div>
+      <p class="sup" style="margin:8px 4px 0">Das Lehrjahr rechnet sich aus „seit“ und zählt jedes Jahr am Ausbildungsbeginn weiter. Weicht es ab, hier eintragen – ab dann zählt es von diesem Stand aus weiter. Ab dem Tag nach „bis“ wird er automatisch als Geselle geführt; Rechte und Prüfer ändert das nicht.</p></div>
     <div class="lbl" style="margin:16px 4px 8px">Status</div>${seg("teamStatus",teamForm.status,STATUS_MA)}
     <div class="lbl" style="margin:16px 4px 8px">Rechte</div>${seg("teamAdmin",teamForm.admin?"1":"0",[["0","Mitarbeiter"],["1","Admin"]])}
     <p class="sup" style="margin:8px 4px 0">Admins sehen die Statistik, verwalten Mitarbeiter und dürfen alle Einträge bearbeiten.${ich?" Dich selbst kannst du nicht herabstufen oder austragen.":""}</p>
@@ -2450,8 +2451,10 @@ document.addEventListener("click",async ev=>{
     const L=teamAlle().map(m=>({...m}));
     if(L.some(m=>m.mail===mail&&m.mail!==T.alt)){ toast("Diese Adresse ist schon eingetragen"); return; }
     const neu={name:F.name.trim(),mail,rolle:(F.rolle||"").trim()||undefined,admin:T.admin,status:T.status,pruefer:T.pruefer||undefined};
-    if(nav.v==="ma"){ if(T.stufe) neu.stufe=T.stufe; if(T.stufe==="azubi"){ if(F.azubiVon) neu.azubiVon=F.azubiVon; if(F.azubiBis) neu.azubiBis=F.azubiBis; } }
-    else { const alt=teamAlle().find(m=>m.mail===T.alt); if(alt) ["stufe","azubiVon","azubiBis"].forEach(k=>{ if(alt[k]) neu[k]=alt[k]; }); }
+    if(nav.v==="ma"){ if(T.stufe) neu.stufe=T.stufe; if(T.stufe==="azubi"){ if(F.azubiVon) neu.azubiVon=F.azubiVon; if(F.azubiBis) neu.azubiBis=F.azubiBis;
+      const alt=teamAlle().find(x=>x.mail===T.alt), lj=parseInt(F.lj,10);
+      if(lj>=1&&lj<=4){ const bisher=alt&&alt.lj?maLehrjahr(Object.assign({},alt,{azubiVon:neu.azubiVon})):0; if(bisher===lj&&alt.ljAm){ neu.lj=alt.lj; neu.ljAm=alt.ljAm; } else { neu.lj=lj; neu.ljAm=new Date().toISOString().slice(0,10); } } } }
+    else { const alt=teamAlle().find(m=>m.mail===T.alt); if(alt) ["stufe","azubiVon","azubiBis","lj","ljAm"].forEach(k=>{ if(alt[k]) neu[k]=alt[k]; }); }
     const i=L.findIndex(m=>m.mail===T.alt); if(i>=0) L[i]=neu; else L.push(neu);
     if(!L.some(m=>m.admin&&m.status!=="weg")){ toast("Mindestens ein aktiver Admin muss bleiben"); return; }
     teamSpeichern(L);
