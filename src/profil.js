@@ -191,7 +191,7 @@ function kontoSeite(o){ const sek=(t,z)=>{ z=(Array.isArray(z)?z.join(""):z||"")
 function kontoInfoKarte(L){ const ic=(document.querySelector('link[rel="apple-touch-icon"]')||{}).href||"", app=document.title.split(" · ")[0], F=typeof FIRMA!=="undefined"?FIRMA:null;
   const zeilen=L.map(([act,i,t,sub])=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(i)}</span><span class="lt"><span class="h">${esc(t)}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}</span>${icon("chev")}</div>`).join("");
   return `<div class="sec-lbl">Info</div><div class="list">${zeilen}</div>
-    <section class="info-k">${ic?`<img class="info-ic" src="${ic}" alt="">`:""}<div class="info-t"><b>${esc(app)}</b><small>Version ${esc(typeof APP_VERSION!=="undefined"?APP_VERSION:"")}</small></div>
+    <section class="info-k" role="button" tabindex="0" data-act="nav:about" aria-label="Über die App">${ic?`<img class="info-ic" src="${ic}" alt="">`:""}<div class="info-t"><b>${esc(app)}</b><small>Version ${esc(typeof APP_VERSION!=="undefined"?APP_VERSION:"")}</small></div>${icon("chev")}
     ${F?`<small class="info-f">${esc([F.name,F.strasse,F.ort].filter(Boolean).join(" · "))}</small>`:""}</section>`; }
 const einChips=(act,L,an)=>`<div class="chips ein-chips">${L.map(([v,t])=>`<button type="button" class="chip" data-act="${act}" data-v="${esc(v)}" aria-pressed="${v===an}">${esc(t)}</button>`).join("")}</div>`;
 /* Speicher: PDFs (evse_protokolle), Dateien (irrgang_dateien), Fotos (Gerätespeicher der App) */

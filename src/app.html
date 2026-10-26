@@ -564,7 +564,7 @@ body input,body textarea,body select,body [contenteditable],body [contenteditabl
 @media (min-width:744px){:root[data-theme="dark"] .nav-ind{background:var(--on-surface)}:root[data-theme="dark"] body .nav-item[aria-current="page"]{color:var(--surface)!important}:root[data-theme="dark"] body .navbar.zieht .nav-item[aria-current="page"]{color:var(--on-sv)!important}:root[data-theme="dark"] body .navbar.zieht .nav-item.nav-ziel{color:var(--surface)!important}}
 
 #menuBtn{order:1}#avBtn{order:2}
-.avatar.aktiv{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--primary)}
+
 .li.ruhig{cursor:default}
 .bib-dlg p{margin:0 0 6px;font-size:14px}
 .bib-dlg .sup{color:var(--on-sv)}
@@ -2159,7 +2159,7 @@ function mehrView(){
     verwaltung:[row("nav:team","person",SYNC_ON?"Mitarbeiter und Mail":"Ich bin · Mitarbeiter und Mail",esc(SYNC_ON?`Protokolle an ${mailAn()}`:[META.profil.name||"noch nicht ausgewählt",`Protokolle an ${mailAn()}`].join(" · "))),bkZeile(),kdoZeile()],
     eigenes:`${WIDE.matches?"":`<div class="sec-lbl">Wissen</div><div class="list">${row("nav:katalog","book","Wallbox-Katalog",`${live("katalog").length} Modelle · Hinweise und Fotos`)}</div>`}
       <div class="sec-lbl">Prüfungen</div><div class="list">${row("nav:archiv","archive","Archiv",nArch?`${nArch} Prüfung${nArch>1?"en":""}`:"leer")}</div>`,
-    infoTitel:"Rechtliches und Info",info:[["nav:impressum","doc","Impressum",""],["nav:datenschutz","shield","Datenschutz",""],["nav:about","info","Über die App",`Version ${APP_VERSION}`]]});
+    infoTitel:"Rechtliches und Info",info:[["nav:impressum","doc","Impressum",""],["nav:datenschutz","shield","Datenschutz",""]]});
 }
 const FIRMA={name:"Elektro Irrgang",inhaber:"Joachim Irrgang",strasse:"Hahner Weg 2",ort:"51545 Waldbröl",tel:"+49 2291 4878",telHref:"+4922914878",fax:"+49 2291 800718",mail:"info@elektro-irrgang.de",
   ust:"DE169864585",register:"Registergericht: Waldbröl",hwk:"Handwerkskammer zu Köln, Heumarkt 12, 50667 Köln",beruf:"Elektromeister (verliehen in Deutschland)"};

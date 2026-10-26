@@ -630,7 +630,7 @@ html,body{overscroll-behavior-y:none}
 @media (min-width:744px){:root[data-theme="dark"] .nav-ind{background:var(--on-surface)}:root[data-theme="dark"] body .nav-item[aria-current="page"]{color:var(--surface)!important}:root[data-theme="dark"] body .navbar.zieht .nav-item[aria-current="page"]{color:var(--on-sv)!important}:root[data-theme="dark"] body .navbar.zieht .nav-item.nav-ziel{color:var(--surface)!important}}
 
 #menuBtn{order:1}#avBtn{order:2}
-.avatar.aktiv{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--primary)}
+
 .li.ruhig{cursor:default}
 .bib-dlg p{margin:0 0 6px;font-size:14px}
 .bib-dlg .sup{color:var(--on-sv)}
@@ -1558,8 +1558,7 @@ const ENTWICKLUNG=[
   {t:"E-Check",st:"wip",s:"Im Aufbau",d:"Installation, Geräte und Netzwerk mit Netzwerkschränken, Belegung, Patchkabel-Farben und Netzwerk-Katalog; PDF-Protokolle. Offen: Messwerte direkt aus dem Messgerät übernehmen."},
   {t:"Kundenordner und Bibliothek",st:"wip",s:"Neu seit 26.10.2026",d:"Jeder Kunde hat einen Ordner in SharePoint (Angebote, Pläne, Prüfprotokolle, Berichte, Fotos, Datenblätter, Schriftverkehr). Die Bibliothek zeigt ihn in allen Apps, auch was das Büro direkt ablegt. Ältere Dateien ziehen automatisch um."},
   {t:"Konto und Einstellungen",st:"wip",s:"Neu seit 26.10.2026",d:"Einheitlich in allen Apps: Abgleich mit Anzeige am Profilbild, Konto, Start-Seite, Textgröße, Speicher, Backup für Chef und Entwickler."},
-  {t:"Anbindung an SCC-CONTROL",st:"open",s:"In Klärung",d:"Ziel: Kunden und Aufträge aus SCC übernehmen, statt sie doppelt zu pflegen. Wird mit dem Chef und einem IT-Dienstleister besprochen."},
-  {t:"Firmenadresse",st:"open",s:"Geplant",d:"Umzug auf ein Firmenkonto bei GitHub und ggf. eine eigene Adresse unter elektro-irrgang.de."}];
+  {t:"Anbindung an SCC-CONTROL",st:"open",s:"In Klärung",d:"Ziel: Kunden und Aufträge aus SCC übernehmen, statt sie doppelt zu pflegen. Wird mit dem Chef und einem IT-Dienstleister besprochen."}];
 const ENTW_STAND="26.10.2026";
 const TOPDEST_ALLE=[["start","Start","home"],["auftraege","Aufträge","board"],["uebersicht","Statistik","chart"],["kunden","Kunden","firma"],["geraete","Messgeräte","geraet"],["bibliothek","Bibliothek","folder"]];
 const topdest=()=>TOPDEST_ALLE.filter(d=>d[0]!=="uebersicht"||ME.admin);
@@ -2273,7 +2272,7 @@ function mehrView(){
     apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div>${listOf(APPS.filter(a=>!a.geplant).map(a=>`<a class="li" href="${a.href}" style="text-decoration:none;color:inherit"><img class="app-mini" src="${a.ic}" alt=""><span class="lt"><span class="h">${a.name}</span><span class="s">${a.text}</span></span>${icon("chev")}</a>`))}</div>`,
     geraet:[geraetZeilen(true)],
     verwaltung:[ME.admin?row("nav:team","person","Mitarbeiter und Rechte",`${team().length} aktiv · Protokolle an ${esc(mailAn())}`):"",bkZeile(),kdoZeile()],
-    info:[["nav:entwicklung","bulb","Entwicklung der Apps",`Stand ${ENTW_STAND}`],["nav:impressum","paragraph","Impressum",""],["nav:datenschutz","shield","Datenschutz",""],["nav:about","info","Über die App",`Version ${APP_VERSION}`]]});
+    info:[["nav:entwicklung","bulb","Entwicklung der Apps",`Stand ${ENTW_STAND}`],["nav:impressum","paragraph","Impressum",""],["nav:datenschutz","shield","Datenschutz",""]]});
 }
 function entwicklungView(){
   return `<div class="narrow"><div class="entw">${ENTWICKLUNG.map(e=>`<div class="ew ${e.st}"><span class="ew-p"></span><div><b>${esc(e.t)}</b> ${pill(e.st,e.s)}<p>${esc(e.d)}</p></div></div>`).join("")}</div>

@@ -661,7 +661,7 @@ html,body{overscroll-behavior-y:none}
 @media (min-width:744px){:root[data-theme="dark"] .nav-ind{background:var(--on-surface)}:root[data-theme="dark"] body .nav-item[aria-current="page"]{color:var(--surface)!important}:root[data-theme="dark"] body .navbar.zieht .nav-item[aria-current="page"]{color:var(--on-sv)!important}:root[data-theme="dark"] body .navbar.zieht .nav-item.nav-ziel{color:var(--surface)!important}}
 
 #menuBtn{order:1}#avBtn{order:2}
-.avatar.aktiv{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--primary)}
+
 .li.ruhig{cursor:default}
 .bib-dlg p{margin:0 0 6px;font-size:14px}
 .bib-dlg .sup{color:var(--on-sv)}
@@ -2039,7 +2039,7 @@ function mehrView(){
     apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../evse/","ev","EVSE","Prüfung von Wallboxen und Ladesäulen")}${link("../baustelle/","baustelle","Baustelle","Tagesstand, offene Punkte und Material")}</div></div>`,
     geraet:[geraetZeilen(false)],
     verwaltung:[row("nav:team","person","Mitarbeiter",esc(META.profil.name||"")),bkZeile(),kdoZeile()],
-    infoTitel:"Rechtliches und Info",info:[["nav:impressum","paragraph","Impressum",""],["nav:datenschutz","shield","Datenschutz",""],["nav:about","info","Über die App",`Version ${APP_VERSION}`]]});
+    infoTitel:"Rechtliches und Info",info:[["nav:impressum","paragraph","Impressum",""],["nav:datenschutz","shield","Datenschutz",""]]});
 }
 function teamView(){
   const ich=(META.profil.mail||"").toLowerCase();
