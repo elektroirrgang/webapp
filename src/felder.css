@@ -855,3 +855,6 @@ body.sf-an nav.navbar.navbar{padding-bottom:200px!important}
 .an-pf{color:var(--on-sv);font-weight:700}
 .an-dz{margin-top:8px}
 .an-frist{margin:4px 4px 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.an-orte{margin-bottom:12px}
+.an-neu{min-width:40px;justify-content:center;padding:4px 10px!important}.an-neu .ic{width:18px;height:18px}
+.an-neuzeile{display:flex;gap:8px;align-items:center;margin:0 0 10px}.an-neuzeile .tf{flex:1}

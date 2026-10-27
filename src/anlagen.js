@@ -47,6 +47,15 @@ function anWeg(g,vId,abgang){ const W=[]; let v=vId&&anVtB(g,vId), ab=abgang, n=
   while(v&&n++<20){ W.unshift({v,ab}); ab=v.vonAbgang; v=v.vonVId&&anVtB(g,v.vonVId); } return W; }
 const anWegText=(g,vId,abgang)=>anWeg(g,vId,abgang).map(x=>`${x.v.name}${x.ab?` / ${x.ab}`:""}`).join(" › ");
 
+/* Orte eines Kunden: Adresse des Kunden + alle Standorte (z. B. Werk 1, Werk 2, Lager) */
+function anOrte(kundeId){ const k=kundeOf(kundeId); if(!k) return []; const ss=typeof standorteVon==="function"?standorteVon(k.id):[];
+  return [{id:"k:"+k.id,name:ss.length?"Hauptadresse":"Adresse des Kunden",adr:adrText(k)},...ss.map(x=>({id:x.id,name:x.name||"Standort",adr:adrText(x)}))]; }
+const anKdVonOrt=ortId=>(anOrtInfo(ortId).k||{}).id||"";
+/* Karte am Kunden: alle Orte zusammen */
+function anKarteKunde(k){ if(!DB.gebaeude||!DB.anlagen) return ""; const O=anOrte(k.id); let bt=0,vt=0,mz=0,f=0,erst="";
+  O.forEach(o=>{ const g=anGeb(o.id), M=anMaschinen(o.id); bt+=g.bauteile.length; vt+=g.verteiler.length; mz+=M.length; f+=M.map(anFaellig).filter(x=>x&&x.kl!=="ok").length; if(!erst&&(M.length||g.verteiler.length||g.bauteile.length)) erst=o.id; });
+  const sub=[O.length>1&&`${O.length} Standorte`,bt&&`${bt} Bauteil${bt===1?"":"e"}`,vt&&`${vt} Verteiler`,mz&&`${mz} Maschine${mz===1?"":"n"}`].filter(Boolean).join(" · ");
+  return `<div class="sec-lbl">Anlagen</div>${listOf([`<div class="li" role="button" tabindex="0" data-act="anAuf" data-id="${esc(erst||O[0].id)}"><span class="av">${icon("anMasch")}</span><span class="lt"><span class="h">Gebäude, Verteiler und Maschinen</span><span class="s">${esc(sub||"Noch nichts erfasst")}</span>${f?`<span class="st">${pill("bad",`${f} Prüfung${f===1?"":"en"} fällig`)}</span>`:""}</span>${icon("chev")}</div>`])}`; }
 /* ---- Karte am Kunden/Standort ---- */
 function anKarte(ortId){ if(!DB.gebaeude||!DB.anlagen) return ""; const g=anGeb(ortId), M=anMaschinen(ortId), F=M.map(anFaellig).filter(f=>f&&f.kl!=="ok").length;
   const sub=[g.bauteile.length&&`${g.bauteile.length} Bauteil${g.bauteile.length===1?"":"e"}`,g.verteiler.length&&`${g.verteiler.length} Verteiler`,M.length&&`${M.length} Maschine${M.length===1?"":"n"}`].filter(Boolean).join(" · ");
@@ -65,7 +74,8 @@ function anSeite(ortId){ const tab=META.anTab||"masch", g=anGeb(ortId);
       <div id="anRes">${anMListe(M,g)}</div>`; }
   else if(tab==="vt") inhalt=anVtBaum(g,ortId);
   else inhalt=anGebView(g,ortId);
-  return `<div class="narrow an-seite">${tabs}${inhalt}</div>`; }
+  const O=anOrte(anKdVonOrt(ortId)), orte=O.length>1?`<div class="chips vg-chips an-orte">${O.map(o=>{ const n=anMaschinen(o.id).length; return `<button class="chip" data-act="anOrtW" data-v="${esc(o.id)}" aria-pressed="${o.id===ortId}" title="${esc(o.adr||"")}">${esc(o.name)}${n?`<span class="chip-n">${n}</span>`:""}</button>`; }).join("")}</div>`:"";
+  return `<div class="narrow an-seite">${orte}${tabs}${inhalt}</div>`; }
 function anMListe(M,g){ if(!M.length) return `<p class="meta" style="margin:16px 4px">${AN_Q||AN_BT?"Nichts gefunden.":"Noch keine Maschine erfasst. Unten rechts „+ Maschine“."}</p>`;
   return listOf(M.map(m=>{ const f=anFaellig(m), w=anWegText(g,m.vId,m.abgang);
     return `<div class="li" role="button" tabindex="0" data-act="anMAuf" data-id="${esc(m.id)}"><span class="av">${icon("anMasch")}</span><span class="lt"><span class="h">${esc(anMName(m))}</span>
@@ -97,7 +107,7 @@ function anMSeite(m){ const g=anGeb(m.ortId), f=anFaellig(m), l=anLetzte(m), W=a
   const ML=typeof mlZeile==="function"?live("vorgaenge").filter(x=>x.typ==="meldung"&&x.anlageId===m.id).sort((a,b)=>(b.gemeldet||0)-(a.gemeldet||0)):[];
   return `<div class="narrow kd-seite an-m">
     <div class="infok2"><div class="qa-row"><button type="button" class="qa" data-act="anMEdit" data-id="${esc(m.id)}"><span class="qa-ic">${icon("edit")}</span><span>Bearbeiten</span></button><button type="button" class="qa" data-act="anANeu" data-id="${esc(m.id)}"><span class="qa-ic">${icon("notes")}</span><span>Änderung</span></button><button type="button" class="qa" data-act="anPNeu" data-id="${esc(m.id)}"><span class="qa-ic">${icon("doc")}</span><span>Prüfung</span></button></div>
-      <div class="dz-list">${z("Maschinennummer",m.nr)}${z("Bezeichnung",m.bez)}${z("Hersteller / Typ",[m.hersteller,m.typ].filter(Boolean).join(" "))}${z("Baujahr / Seriennummer",[m.baujahr,m.sn&&`SN ${m.sn}`].filter(Boolean).join(" · "))}${z("Leistung / Spannung",[m.leistung&&`${m.leistung} kW`,m.spannung&&`${m.spannung} V`].filter(Boolean).join(" · "))}${z("Ort",anOrtText(g,m.bauteilId,m.etageId,m.raum))}${z("Notiz",m.notiz)}</div></div>
+      <div class="dz-list">${z("Maschinennummer",m.nr)}${z("Bezeichnung",m.bez)}${z("Hersteller / Typ",[m.hersteller,m.typ].filter(Boolean).join(" "))}${z("Baujahr / Seriennummer",[m.baujahr,m.sn&&`SN ${m.sn}`].filter(Boolean).join(" · "))}${z("Leistung / Spannung",[m.leistung&&`${m.leistung} kW`,m.spannung&&`${m.spannung} V`].filter(Boolean).join(" · "))}${z("Ort",[anOrte(m.kundeId).length>1&&(anOrte(m.kundeId).find(o=>o.id===m.ortId)||{}).name,anOrtText(g,m.bauteilId,m.etageId,m.raum)].filter(Boolean).join(" · "))}${z("Notiz",m.notiz)}</div></div>
     <div class="sec-lbl">Versorgung</div>${weg}
     <div class="dz-list an-dz">${z("Absicherung",m.absicherung)}${z("Zuleitung",m.zuleitung)}${z("Steuerschrank / eigene Unterverteilung",schrank&&schrank.name)}</div>
     <div class="sec-row"><div class="sec-lbl">Prüfung${m.fristM?` · alle ${m.fristM} Monate`:""}</div><span class="ab-btns"><button class="ab-ic" data-act="anPNeu" data-id="${esc(m.id)}" aria-label="Prüfung eintragen" title="Prüfung eintragen">${icon("add")}</button></span></div>
@@ -111,15 +121,18 @@ function anMSeite(m){ const g=anGeb(m.ortId), f=anFaellig(m), l=anLetzte(m), W=a
 
 /* ---- Fenster ---- */
 let anE=null;
-const anChipReihe=(act,L,cur,label)=>L.length?`<div class="ml-oc"><span>${label}</span><div class="chips">${L.map(x=>`<button type="button" class="chip" data-act="${act}" data-v="${esc(x.id)}" aria-pressed="${cur===x.id}">${esc(x.name)}</button>`).join("")}</div></div>`:"";
-function anMDialog(m,ortId){ const g=anGeb(m?m.ortId:ortId); anE=m?JSON.parse(JSON.stringify(m)):{id:null,ortId};
+const anChipReihe=(act,L,cur,label,neu)=>L.length||neu?`<div class="ml-oc"><span>${label}</span><div class="chips">${L.map(x=>`<button type="button" class="chip" data-act="${act}" data-v="${esc(x.id)}" aria-pressed="${cur===x.id}">${esc(x.name)}</button>`).join("")}${neu?`<button type="button" class="chip an-neu" data-act="${neu}" aria-label="${label} hinzufügen" title="${label} hinzufügen">${icon("add")}</button>`:""}</div></div>`:"";
+/* Fenster neu zeichnen, ohne Eingaben zu verlieren (Standort gewechselt, Bauteil/Ebene ergänzt) */
+function anMEntwurf(){ const F=formVals(); if(!anE) return; Object.assign(anE,{nr:F.anNr,bez:F.anBez,hersteller:F.anHer,typ:F.anTyp,baujahr:F.anBj,sn:F.anSn,leistung:F.anKw,spannung:F.anV,raum:F.anRaum,vId:F.anVt,abgang:F.anAb,absicherung:F.anSi,zuleitung:F.anZu,schrankVId:F.anSch,fristM:F.anFr,notiz:F.anNo}); }
+function anMDialog(m,ortId,entwurf){ if(!entwurf) anE=m?JSON.parse(JSON.stringify(m)):{id:null,ortId}; const g=anGeb(anE.ortId), O=anOrte(anKdVonOrt(anE.ortId));
   const vts=[["","– noch offen –"],...g.verteiler.map(v=>[v.id,v.name||"Verteiler"])];
   dialog(m?"Maschine bearbeiten":"Neue Maschine",`<div class="fg1 an-dlg">
     <div class="row2">${tf("anNr","Maschinennummer",anE.nr||"",{form:true,ph:"z. B. 4711"})}${tf("anBez","Bezeichnung",anE.bez||"",{form:true,ph:"z. B. Spritzgießmaschine"})}</div>
     <div class="row2">${tf("anHer","Hersteller",anE.hersteller||"",{form:true})}${tf("anTyp","Typ",anE.typ||"",{form:true})}</div>
     <div class="reihe3">${tf("anBj","Baujahr",anE.baujahr||"",{form:true,im:"numeric"})}${tf("anSn","Seriennummer",anE.sn||"",{form:true})}${tf("anKw","Leistung (kW)",anE.leistung||"",{form:true,im:"decimal"})}</div>
     ${tf("anV","Spannung (V)",anE.spannung||"",{form:true,im:"numeric",ph:"z. B. 400"})}
-    <div class="lbl" style="margin:12px 4px 6px">Ort</div>${anChipReihe("anMBt",g.bauteile,anE.bauteilId,"Bauteil")}${anChipReihe("anMEt",anEtagen(g),anE.etageId,"Ebene")}
+    <div class="lbl" style="margin:12px 4px 6px">Ort</div>${O.length>1?anChipReihe("anMOrt",O,anE.ortId,"Standort"):""}${anChipReihe("anMBt",g.bauteile,anE.bauteilId,"Bauteil","anMNeuB")}${anChipReihe("anMEt",anEtagen(g),anE.etageId,"Ebene","anMNeuE")}
+    <div id="anNeuOrt" class="an-neuzeile" hidden><div class="tf"><input id="anNeuN" placeholder=" " autocomplete="off"><label for="anNeuN" id="anNeuL">Neue Ebene</label></div><button type="button" class="btn-tonal" data-act="anMNeuOk">Hinzufügen</button></div>
     ${tf("anRaum","Halle / Raum / Achse (optional)",anE.raum||"",{form:true})}
     <div class="lbl" style="margin:12px 4px 6px">Versorgung</div>
     <div class="row2">${sf("anVt","Versorgt aus Verteiler",anE.vId||"",vts,{form:true})}${tf("anAb","Abgang im Verteiler",anE.abgang||"",{form:true,ph:"z. B. Q3"})}</div>
@@ -130,7 +143,7 @@ function anMDialog(m,ortId){ const g=anGeb(m?m.ortId:ortId); anE=m?JSON.parse(JS
     ${ta("anNo","Notiz",anE.notiz||"",{form:true})}</div>`,
     `${m&&(ME.admin||ME.buero)?`<button class="btn-text danger" data-act="anMDel" data-id="${esc(m.id)}">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="anMOk">${m?"Speichern":"Anlegen"}</button>`); }
 function anMSpeichern(){ const F=formVals(); if(!F.anNr&&!F.anBez){ toast("Bitte Nummer oder Bezeichnung eintragen"); return; }
-  const neu=!anE.id, m=neu?{id:uid(),ortId:anE.ortId,kundeId:(anOrtInfo(anE.ortId).k||{}).id||"",aenderungen:[],pruefungen:[]}:DB.anlagen.get(anE.id); if(!m) return;
+  const neu=!anE.id, m=neu?{id:uid(),ortId:anE.ortId,kundeId:anKdVonOrt(anE.ortId),aenderungen:[],pruefungen:[]}:DB.anlagen.get(anE.id); if(!m) return; m.ortId=anE.ortId;
   Object.assign(m,{nr:F.anNr,bez:F.anBez,hersteller:F.anHer,typ:F.anTyp,baujahr:F.anBj,sn:F.anSn,leistung:F.anKw,spannung:F.anV,bauteilId:anE.bauteilId||"",etageId:anE.etageId||"",raum:F.anRaum,
     vId:F.anVt,abgang:F.anAb,absicherung:F.anSi,zuleitung:F.anZu,schrankVId:F.anSch,fristM:F.anFr?+String(F.anFr).replace(",","."):"",notiz:F.anNo});
   saveRec("anlagen",m,neu); closeOverlays(); if(neu) go({v:"masch",id:m.id}); else render(); toast(neu?"Maschine angelegt":"Gespeichert"); }
@@ -165,6 +178,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   const a=b.dataset.act, id=b.dataset.id, seg1=()=>{ b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); if(typeof segInd==="function") segInd(); };
   const ortId=nav.v==="anl"?nav.id:nav.v==="masch"?((DB.anlagen.get(nav.id)||{}).ortId):anE&&anE.ortId;
   if(a==="anAuf"){ AN_Q=""; AN_BT=""; go({v:"anl",id}); }
+  else if(a==="anOrtW"){ AN_BT=""; go({v:"anl",id:b.dataset.v}); }
   else if(a==="anTab"){ META.anTab=b.dataset.v; metaSave(); render(); }
   else if(a==="anBtF"){ AN_BT=b.dataset.v; render(); }
   else if(a==="anMAuf") go({v:"masch",id});
@@ -173,6 +187,11 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="anMBt"||a==="anMEt"){ if(!anE) return; const k=a==="anMBt"?"bauteilId":"etageId", v=b.dataset.v; anE[k]=anE[k]===v?"":v;
     b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===anE[k]))); }
   else if(a==="anMOk") anMSpeichern();
+  else if(a==="anMOrt"){ if(!anE||b.dataset.v===anE.ortId) return; anMEntwurf(); anE.ortId=b.dataset.v; anE.bauteilId=""; anE.etageId=""; anE.vId=""; anE.schrankVId=""; anMDialog(null,null,true); }
+  else if(a==="anMNeuB"||a==="anMNeuE"){ const z=document.getElementById("anNeuOrt"); if(!z) return; z.hidden=false; z.dataset.art=a==="anMNeuB"?"b":"e"; document.getElementById("anNeuL").textContent=a==="anMNeuB"?"Neues Bauteil (z. B. H)":"Neue Ebene (z. B. Level 1)"; const i=document.getElementById("anNeuN"); i.value=""; i.focus(); }
+  else if(a==="anMNeuOk"){ const z=document.getElementById("anNeuOrt"), n=(document.getElementById("anNeuN")||{}).value; if(!z||!anE||!String(n||"").trim()) return; anMEntwurf();
+    const g=anGeb(anE.ortId), x={id:(z.dataset.art==="b"?"b-":"e-")+uid(),name:String(n).trim(),kurz:""}; if(z.dataset.art==="b"){ g.bauteile.push(x); anE.bauteilId=x.id; } else { x.raeume=[]; g.etagen.push(x); anE.etageId=x.id; }
+    anGebSpeichern(g); anMDialog(null,null,true); }
   else if(a==="anMDel"){ const m=DB.anlagen.get(id); if(!m) return; m.deleted=true; saveRec("anlagen",m); closeOverlays(); go({v:"anl",id:m.ortId}); toast("Maschine gelöscht","Rückgängig",()=>{ delete m.deleted; saveRec("anlagen",m); render(); }); }
   else if(a==="anVNeu") anVDialog(null,ortId);
   else if(a==="anVEdit"){ const v=anVtB(anGeb(ortId),id); if(v) anVDialog(v,ortId); }

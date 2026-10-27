@@ -2158,7 +2158,7 @@ function bezugListen(kind,id,opt){
 }
 function kundeView(k){
   const ss=standorteVon(k.id), darf=kdDarf();
-  return `<div class="narrow kd-seite"><div class="kd-oben">${infoKarte(k,"kunden")}${karteView(k,ss)}</div>${kontakteView("kunden",k)}${kdArt(k)!=="privat"||anMaschinen("k:"+k.id).length?anKarte("k:"+k.id):""}
+  return `<div class="narrow kd-seite"><div class="kd-oben">${infoKarte(k,"kunden")}${karteView(k,ss)}</div>${kontakteView("kunden",k)}${kdArt(k)!=="privat"||anMaschinen("k:"+k.id).length?anKarteKunde(k):""}
     ${ablageView("kunden",k)}
     <div class="sec-row"><div class="sec-lbl">${kdOrteTitel(k)}</div>${darf?`<span class="ab-btns"><button class="ab-ic" data-act="newStandort" aria-label="${kdArt(k)==="privat"?"Objekt":"Standort"} hinzufügen" title="${kdArt(k)==="privat"?"Objekt":"Standort"} hinzufügen">${icon("add")}</button></span>`:""}</div>
     ${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">${kdKeinOrt(k)||"Noch kein Standort."}</p>`}
