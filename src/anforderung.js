@@ -83,7 +83,7 @@ const mlIch=r=>!!(r&&r.mail&&String(r.mail).toLowerCase()===String(ME.mail||"").
 const mlSt=()=>{ META.ml=META.ml||{gel:{},weg:{},pin:{}}; return META.ml; };
 function meldungenRoh(){
   if(!ME.mail) return [];
-  const ab=Date.now()-ML_TAGE*864e5, L=[], v=anfVerw(), alle=k=>DB[k]?[...DB[k].values()].filter(r=>!r.deleted&&(!r.demo||r.sim)):[]; /* Simulation: nur auf diesem Gerät, wird nie abgeglichen */
+  const ab=Date.now()-ML_TAGE*864e5, L=[], v=anfVerw(), alle=k=>DB[k]?[...DB[k].values()].filter(r=>!r.deleted&&(typeof nurDemo==="function"&&nurDemo()?r.demo:(!r.demo||r.sim))):[]; /* Simulation: nur auf diesem Gerät, wird nie abgeglichen */
   const P=(id,t,von,h,s,go)=>L.push({id,t,von,h,s,go});
   if(v){
     anfAlle().filter(a=>(a.created||0)>=ab&&!mlIch(a.createdBy)).forEach(a=>P("anf:"+a.id,a.created,a.createdBy,"fordert Material an",`${anfOrt(a)}: ${anfPosText(a)}`,{v:"materialanf"}));

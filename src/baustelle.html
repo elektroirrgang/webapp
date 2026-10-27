@@ -1524,7 +1524,7 @@ const CONFIG=Object.assign({
 const SYNC_ON=!!(CONFIG.tenantId&&CONFIG.clientId&&CONFIG.shareUrl);
 function idbReq(rq){ return new Promise((res,rej)=>{ rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); }); }
 function storageWarn(){ if(!warned){ warned=true; toast("Speichern auf dem Gerät fehlgeschlagen – bitte „Alle sichern“"); } }
-const live=k=>[...DB[k].values()].filter(r=>!r.deleted);
+const live=k=>[...DB[k].values()].filter(r=>!r.deleted&&(typeof nurDemoFilter!=="function"||nurDemoFilter(k,r)));
 const who=()=>({name:ME.name||META.profil.name||"",mail:ME.mail||""});
 function stamp(rec,isNew){ const t=Date.now(), w=who(); if(isNew||!rec.created){ rec.created=t; rec.createdBy=w; } rec.updated=t; rec.updatedBy=w; if(!rec.demo) rec._dirty=true; }
 function saveRec(kind,rec,isNew){ stamp(rec,isNew); dbPut(kind,rec); syncSoon(); return rec; }
@@ -1891,7 +1891,7 @@ const TH_KEY="evse_theme";
 const RES_TXT={ok:"bestanden",bad:"nicht bestanden",open:"offen",wip:"in Arbeit"};
 const KINDS=["kunden","standorte","baustellen","eintraege","material","anforderungen","profile","vorgaenge","dateien","protokolle","einstellungen","gebaeude","anlagen"];
 const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["vorgaenge","dateien","protokolle","einstellungen","gebaeude","anlagen"];
-const DB={kunden:new Map(),standorte:new Map(),baustellen:new Map(),eintraege:new Map(),notizen:new Map(),material:new Map(),anforderungen:new Map(),profile:new Map(),vorgaenge:new Map(),dateien:new Map(),protokolle:new Map(),einstellungen:new Map()};
+const DB={kunden:new Map(),standorte:new Map(),baustellen:new Map(),eintraege:new Map(),notizen:new Map(),material:new Map(),anforderungen:new Map(),profile:new Map(),vorgaenge:new Map(),dateien:new Map(),protokolle:new Map(),einstellungen:new Map(),gebaeude:new Map(),anlagen:new Map()};
 let META={profil:{name:""},filter:"aktiv",sync:{}};
 let nav={v:"start"}, query="", kDB=null, bDB=null, aDB=null, warned=false, syncT=null;
 let ME={name:"",mail:"",admin:false,signedIn:false};

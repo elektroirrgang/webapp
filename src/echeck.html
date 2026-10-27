@@ -1346,7 +1346,7 @@ const CONFIG=Object.assign({
 const SYNC_ON=!!(CONFIG.tenantId&&CONFIG.clientId&&CONFIG.shareUrl);
 function idbReq(rq){ return new Promise((res,rej)=>{ rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); }); }
 function storageWarn(){ if(!warned){ warned=true; toast("Speichern auf dem Gerät fehlgeschlagen – bitte „Alle sichern“"); } }
-const live=k=>[...DB[k].values()].filter(r=>!r.deleted);
+const live=k=>[...DB[k].values()].filter(r=>!r.deleted&&(typeof nurDemoFilter!=="function"||nurDemoFilter(k,r)));
 const who=()=>({name:ME.name||META.profil.name||"",mail:ME.mail||""});
 function stamp(rec,isNew){ const t=Date.now(), w=who(); if(isNew||!rec.created){ rec.created=t; rec.createdBy=w; } rec.updated=t; rec.updatedBy=w; if(!rec.demo) rec._dirty=true; }
 function saveRec(kind,rec,isNew){ stamp(rec,isNew); dbPut(kind,rec); syncSoon(); return rec; }

@@ -8,20 +8,20 @@ const DEMO_KEY="irrgang_demo";
    Ohne Profil (nicht angemeldet) gilt der Schalter dieses Browsers. */
 const demoProfil=()=>{ try{ return typeof profilVon==="function"&&typeof ME!=="undefined"&&ME.mail?profilVon(ME.mail):null; }catch(e){ return null; } };
 const demoAn=()=>{ const p=demoProfil(); if(p&&typeof p.demoVorschau==="boolean") return p.demoVorschau; /* nicht „demo“ – Datensätze mit demo werden nie abgeglichen */ try{ return localStorage.getItem(DEMO_KEY)==="1"; }catch(e){ return false; } };
-const DEMO_SPEICHER=[["evse_daten",["kunden","standorte","ladeparks","pruefungen","katalog"]],["baustelle_daten",["baustellen","eintraege","notizen","anforderungen"]],["irrgang_apps",["vorgaenge","geraete","dateien","protokolle"]],["echeck_daten",["gebaeude","echecks","betriebsmittel"]]];
+const DEMO_SPEICHER=[["evse_daten",["kunden","standorte","ladeparks","pruefungen","katalog"]],["baustelle_daten",["baustellen","eintraege","notizen","anforderungen"]],["irrgang_apps",["vorgaenge","geraete","dateien","protokolle","gebaeude","anlagen"]],["echeck_daten",["gebaeude","echecks","betriebsmittel"]]];
 const DEMO_FOTOS={"demo-f-zp":"zp","demo-f-hak":"hak","demo-f-uvalt":"uvalt","demo-f-mangel":"mangel","demo-f-ue-baustrom":"baustrom","demo-f-ue-leerrohr":"leerrohr","demo-f-ue-uv":"uv","demo-f-ue-pa":"pa"};
 function demoDaten(){
   const T=864e5, jetzt=Date.now(), vor=(t,h=0)=>jetzt-t*T-h*36e5, tag=t=>new Date(jetzt+t*T).toISOString().slice(0,10);
   const P={ab:{name:"A. Brandl",mail:"a.brandl@elektro-irrgang.de"},ms:{name:"M. Seipp",mail:"m.seipp@elektro-irrgang.de"},mp:{name:"M. Pevec",mail:"m.pevec@elektro-irrgang.de"},ai:{name:"A. Irrgang",mail:"a.irrgang@elektro-irrgang.de"},bu:{name:"Büro",mail:"alex@elektro-irrgang.de"}};
   const r=(o,wer,t)=>Object.assign({demo:true,created:t,updated:t,createdBy:wer,updatedBy:wer},o);
   const kunden=[
-    r({id:"demo-k1",name:"Löwen-Apotheke",kdnr:"D-1001",strasse:"Hauptstraße 12",plz:"51597",ort:"Morsbach",tel:"02294 900100",mail:"info@loewen-apotheke.example",
+    r({id:"demo-k1",art:"gewerbe",name:"Löwen-Apotheke",kdnr:"D-1001",strasse:"Hauptstraße 12",plz:"51597",ort:"Morsbach",tel:"02294 900100",mail:"info@loewen-apotheke.example",
       kontakte:[{id:"demo-c1",name:"Dr. Sabine Kraft",rolle:"Inhaber",tel:"0171 0000001"},{id:"demo-c2",name:"Herr Weber",rolle:"Hausmeister",tel:"0171 0000002"}],ansprech:"Dr. Sabine Kraft"},P.bu,vor(40)),
-    r({id:"demo-k2",name:"Autohaus Bergland GmbH",kdnr:"D-1002",strasse:"Industriestraße 4",plz:"51545",ort:"Waldbröl",tel:"02291 900200",mail:"service@bergland.example",
+    r({id:"demo-k2",art:"gewerbe",name:"Autohaus Bergland GmbH",kdnr:"D-1002",strasse:"Industriestraße 4",plz:"51545",ort:"Waldbröl",tel:"02291 900200",mail:"service@bergland.example",
       kontakte:[{id:"demo-c3",name:"Thomas Berg",rolle:"Geschäftsführung",mail:"t.berg@bergland.example"},{id:"demo-c4",name:"Pförtnerhaus",rolle:"Pförtner",tel:"02291 900209"}],ansprech:"Thomas Berg"},P.bu,vor(60)),
-    r({id:"demo-k3",name:"Schreinerei Kraus",kdnr:"D-1003",strasse:"Am Sägewerk 2",plz:"51674",ort:"Wiehl",tel:"02262 900300",kontakte:[{id:"demo-c5",name:"Peter Kraus",rolle:"Inhaber",tel:"0171 0000005"}],ansprech:"Peter Kraus"},P.ab,vor(25)),
-    r({id:"demo-k4",name:"Familie Hoffmann",strasse:"Lindenweg 7",plz:"51545",ort:"Waldbröl",tel:"0171 0000007"},P.mp,vor(12)),
-    r({id:"demo-k5",name:"Wohnbau Waldbröl eG",kdnr:"D-1005",strasse:"Kaiserstraße 30",plz:"51545",ort:"Waldbröl",mail:"technik@wohnbau.example",kontakte:[{id:"demo-c6",name:"Frau Lenz",rolle:"Ansprechpartner",tel:"02291 900500"}],ansprech:"Frau Lenz"},P.bu,vor(90))];
+    r({id:"demo-k3",art:"gewerbe",name:"Schreinerei Kraus",kdnr:"D-1003",strasse:"Am Sägewerk 2",plz:"51674",ort:"Wiehl",tel:"02262 900300",kontakte:[{id:"demo-c5",name:"Peter Kraus",rolle:"Inhaber",tel:"0171 0000005"}],ansprech:"Peter Kraus"},P.ab,vor(25)),
+    r({id:"demo-k4",art:"privat",anrede:"",vorname:"Familie",nachname:"Hoffmann",name:"Familie Hoffmann",strasse:"Lindenweg 7",plz:"51545",ort:"Waldbröl",tel:"0171 0000007"},P.mp,vor(12)),
+    r({id:"demo-k5",art:"gewerbe",name:"Wohnbau Waldbröl eG",kdnr:"D-1005",strasse:"Kaiserstraße 30",plz:"51545",ort:"Waldbröl",mail:"technik@wohnbau.example",kontakte:[{id:"demo-c6",name:"Frau Lenz",rolle:"Ansprechpartner",tel:"02291 900500"}],ansprech:"Frau Lenz"},P.bu,vor(90))];
   const standorte=[
     r({id:"demo-s1",kundeId:"demo-k2",name:"Werkstatt",strasse:"Industriestraße 4",plz:"51545",ort:"Waldbröl"},P.bu,vor(60)),
     r({id:"demo-s2",kundeId:"demo-k2",name:"Ausstellung",strasse:"Industriestraße 6",plz:"51545",ort:"Waldbröl"},P.bu,vor(60)),
@@ -55,7 +55,9 @@ function demoDaten(){
     pr("demo-p1","demo-k2","demo-s1","Erstprüfung",tag(-2),tag(363),true,P.mp,vor(2)),
     pr("demo-p2","demo-k1","demo-s5","Wiederholungsprüfung",tag(-400),tag(-35),true,P.ms,vor(400)),
     pr("demo-p3","demo-k5","demo-s3","Wiederholungsprüfung",tag(-330),tag(35),true,P.mp,vor(330)),
-    pr("demo-p4","demo-k3","demo-s6","Erstprüfung",tag(0),"",false,P.ab,vor(0,1))];
+    pr("demo-p4","demo-k3","demo-s6","Erstprüfung",tag(0),"",false,P.ab,vor(0,1)),
+    pr("demo-p6","demo-k6","","Erstprüfung",tag(-20),tag(1440),true,P.mp,vor(20)),
+    pr("demo-p7","demo-k7","demo-s7","Wiederholungsprüfung",tag(-370),tag(-5),true,P.ms,vor(370))];
   /* Bibliothek: zu jeder Beispiel-Prüfung mit PDF ein Eintrag – so zeigt die Demo die Ordner in allen Apps */
   const protokolle=pruefungen.filter(x=>x.pdfAblage).map(x=>{ const k=kunden.find(y=>y.id===x.kundeId), s=standorte.find(y=>y.id===x.standortId);
     return r({id:"demo-pb-"+x.id,app:"evse",bib:"pdf",pfad:"demo.pdf",pruefungId:x.id,kundeId:x.kundeId,standortId:x.standortId||"",name:"Prüfprotokoll "+x.p.datum,titel:[k&&k.name,s&&s.name].filter(Boolean).join(" · "),
@@ -85,22 +87,52 @@ function demoDaten(){
     r({id:"demo-d4b",bezugKind:"kunden",bezugId:"demo-k5",name:"Schaltplan Haus B.pdf",typ:"application/pdf",groesse:63000,demoArt:"schaltplan"},P.bu,vor(30)),
     r({id:"demo-d5b",bezugKind:"standorte",bezugId:"demo-s3",name:"Unterverteilung Haus A.jpg",typ:"image/jpeg",groesse:150000,demoArt:"uv"},P.ms,vor(20))];
   const H=demoHaus(r,P,vor,tag); kunden.push(H.kunde);
-  return {kunden,standorte,baustellen,eintraege,vorgaenge,anforderungen,pruefungen,protokolle,notizen,dateien,gebaeude:H.gebaeude,echecks:H.echecks};
+  /* Industriekunde: zwei Werke, Bauteile/Ebenen, Verteiler mit Einspeisung, Maschinen, Rahmenauftrag mit Meldungen */
+  kunden.push(r({id:"demo-k7",art:"industrie",name:"Kunststoffwerk Nordhang GmbH",kdnr:"D-1007",strasse:"Am Werk 1",plz:"51545",ort:"Waldbröl",tel:"02291 900700",mail:"technik@nordhang.example",
+    kontakte:[{id:"demo-c7",name:"Herr Albers",rolle:"Haustechnik",tel:"0171 0000071"},{id:"demo-c8",name:"Frau Yilmaz",rolle:"Einkauf",mail:"einkauf@nordhang.example"}],ansprech:"Herr Albers",
+    melder:[{id:"demo-ml1",name:"Herr Becker",firma:"FM-Dienstleister Gebäudeservice",tel:"0171 0000072"},{id:"demo-ml2",name:"Schichtleitung",firma:"Produktion"}]},P.bu,vor(200)));
+  standorte.push(r({id:"demo-s7",kundeId:"demo-k7",name:"Werk Rommelsdorf",strasse:"Am Werk 1",plz:"51545",ort:"Waldbröl"},P.bu,vor(200)),
+    r({id:"demo-s8",kundeId:"demo-k7",name:"Lager Elsenroth",strasse:"Lagerweg 3",plz:"51647",ort:"Gummersbach"},P.bu,vor(200)));
+  const geb7=r({id:"g-demo-s7",ortId:"demo-s7",bauteile:[{id:"demo-bt-a",name:"A",kurz:"A"},{id:"demo-bt-h",name:"H",kurz:"H"}],
+    etagen:[{id:"demo-et-0",name:"EG",kurz:"0",raeume:[]},{id:"demo-et-1",name:"Level 1",kurz:"1",raeume:[]}],
+    verteiler:[{id:"demo-v-hv",name:"HV",bauteilId:"demo-bt-a",etageId:"demo-et-0",vonVId:"",vonAbgang:""},{id:"demo-v-uv",name:"UV-H1-03",bauteilId:"demo-bt-h",etageId:"demo-et-1",vonVId:"demo-v-hv",vonAbgang:"Q12"},{id:"demo-v-sk",name:"Steuerschrank SGM 4711",bauteilId:"demo-bt-h",etageId:"demo-et-1",vonVId:"demo-v-uv",vonAbgang:"Q3"}],
+    rcds:[],stromkreise:[],stellen:[],schraenke:[],dosen:[]},P.mp,vor(30));
+  const geb8=r({id:"g-demo-s8",ortId:"demo-s8",bauteile:[],etagen:[{id:"demo-et-l",name:"Lagerhalle",kurz:"",raeume:[]}],verteiler:[{id:"demo-v-l",name:"UV Lager",etageId:"demo-et-l",vonVId:"",vonAbgang:""}],rcds:[],stromkreise:[],stellen:[],schraenke:[],dosen:[]},P.mp,vor(30));
+  const anlagen=[
+    r({id:"demo-an1",ortId:"demo-s7",kundeId:"demo-k7",nr:"M-17.1",bez:"Spritzgießmaschine",hersteller:"Arburg",typ:"Allrounder 570",baujahr:"2018",leistung:"45",spannung:"400",bauteilId:"demo-bt-h",etageId:"demo-et-1",raum:"Halle 3",
+      vId:"demo-v-uv",abgang:"Q3",absicherung:"C63",zuleitung:"NYY-J 5×16 mm²",schrankVId:"demo-v-sk",fristM:12,pruefungen:[{id:"demo-p1",datum:tag(-300),erg:"ok",notiz:"nach DIN VDE 0113-1",wer:P.mp}],
+      aenderungen:[{id:"demo-a1",at:vor(40),datum:tag(-40),was:"Not-Aus-Kreis um Schutztür erweitert",warum:"Umbau durch Hersteller",wer:P.mp}]},P.mp,vor(60)),
+    r({id:"demo-an2",ortId:"demo-s7",kundeId:"demo-k7",nr:"M-17.2",bez:"Granulattrockner",hersteller:"Motan",bauteilId:"demo-bt-h",etageId:"demo-et-1",raum:"Halle 3",vId:"demo-v-uv",abgang:"Q4",absicherung:"C16",zuleitung:"NYY-J 5×2,5 mm²",fristM:12,pruefungen:[],aenderungen:[]},P.mp,vor(60)),
+    r({id:"demo-an4",ortId:"demo-s7",kundeId:"demo-k7",nr:"K-1",bez:"Druckluftkompressor",hersteller:"Kaeser",typ:"ASD 40",baujahr:"2015",leistung:"22",spannung:"400",bauteilId:"demo-bt-a",etageId:"demo-et-0",raum:"Kompressorraum",vId:"demo-v-hv",abgang:"Q7",absicherung:"C50",zuleitung:"NYY-J 5×10 mm²",fristM:12,
+      pruefungen:[{id:"demo-p4",datum:tag(-380),erg:"maengel",notiz:"Schutzleiterverbindung Motor nachgezogen",wer:P.ms}],aenderungen:[]},P.ms,vor(80)),
+    r({id:"demo-an5",ortId:"demo-s7",kundeId:"demo-k7",nr:"KR-10",bez:"Hallenkran 10 t",hersteller:"Demag",baujahr:"2012",spannung:"400",bauteilId:"demo-bt-h",etageId:"demo-et-1",raum:"Halle 3",vId:"demo-v-uv",abgang:"Q1",absicherung:"C32",zuleitung:"Schleifleitung",fristM:12,
+      pruefungen:[{id:"demo-p5",datum:tag(-330),erg:"ok",notiz:"UVV-Prüfung zusammen mit Kranservice",wer:P.mp}],aenderungen:[{id:"demo-a5",at:vor(150),datum:tag(-150),was:"Funkfernsteuerung nachgerüstet",warum:"Kundenwunsch",wer:P.ai}]},P.mp,vor(80)),
+    r({id:"demo-an6",ortId:"demo-s8",kundeId:"demo-k7",nr:"RBG-1",bez:"Regalbediengerät",hersteller:"Jungheinrich",etageId:"demo-et-l",vId:"demo-v-l",abgang:"Q4",absicherung:"C25",fristM:12,pruefungen:[],aenderungen:[]},P.ms,vor(60)),
+    r({id:"demo-an3",ortId:"demo-s8",kundeId:"demo-k7",nr:"M-17.1",bez:"Hubtor Lager",hersteller:"Hörmann",etageId:"demo-et-l",vId:"demo-v-l",abgang:"Q2",absicherung:"C10",fristM:12,pruefungen:[{id:"demo-p2",datum:tag(-400),erg:"ok",wer:P.ms}],aenderungen:[]},P.ms,vor(60))];
+  const rid="demo-v-rahmen";
+  vorgaenge.push(r({id:rid,kundeId:"demo-k7",anliegen:"Elektro-Kleinaufträge 2026",rahmen:true,s:{anruf:{wer:P.bu,at:vor(300)},anfrage:{wer:P.bu,at:vor(300)},auftrag:{wer:P.bu,at:vor(299),nr:"26-0042"}}},P.bu,vor(300)),
+    r({id:"demo-m1",typ:"meldung",rahmenId:rid,kundeId:"demo-k7",standortId:"demo-s7",bauteil:"C",ebene:"EG",raum:"Flur",text:"Notbeleuchtung flackert",melderId:"demo-ml1",status:"offen",gemeldet:vor(0,2),dringend:true,zustAlle:[],zust:null},P.bu,vor(0,2)),
+    r({id:"demo-m2",typ:"meldung",rahmenId:rid,kundeId:"demo-k7",standortId:"demo-s7",bauteil:"H",ebene:"Level 1",raum:"Halle 3",anlageId:"demo-an1",text:"Maschine löst Sicherung aus",melderId:"demo-ml2",status:"offen",gemeldet:vor(1),
+      zustAlle:[Object.assign({at:vor(1),von:P.bu},P.mp)],zust:Object.assign({at:vor(1),von:P.bu},P.mp)},P.bu,vor(1)),
+    r({id:"demo-m3",typ:"meldung",rahmenId:rid,kundeId:"demo-k7",standortId:"demo-s7",bauteil:"E",raum:"WC",text:"Licht kontrollieren",melderId:"demo-ml1",status:"spaeter",gemeldet:vor(3),todo:"EVG ausbauen, LED-Ersatzmodul einsetzen",mitbringen:"1 Stück LED-Ersatzmodul 1500 mm",mitLager:true,
+      zustAlle:[Object.assign({at:vor(2),von:P.bu},P.ms)],zust:Object.assign({at:vor(2),von:P.bu},P.ms)},P.bu,vor(3)),
+    r({id:"demo-m4",typ:"meldung",rahmenId:rid,kundeId:"demo-k7",standortId:"demo-s7",bauteil:"A/B",ebene:"EG",text:"Licht defekt, Bewegungsmelder prüfen",melderId:"demo-ml1",status:"ohne",gemeldet:vor(5),notiz:"Vor Ort alles in Ordnung",zeit:0.25,fertig:{wer:P.mp,at:vor(4)}},P.bu,vor(5)));
+  return {kunden,standorte,baustellen,eintraege,vorgaenge,anforderungen,pruefungen,protokolle,notizen,dateien,gebaeude:[...H.gebaeude,geb7,geb8],echecks:H.echecks,anlagen:[...H.anlagen,...anlagen]};
 }
 /* Demo-Haus „Am Sonnenhang“: komplettes Gebäude für die E-Check-App – fünf Geschosse plus Garage auf EG-Ebene,
    Hauptverteilung im Keller, drei Unterverteilungen, großer Serverschrank im Technikraum (KG) und ein Mini-Verteiler im 2. OG.
    Dazu eine laufende Installationsprüfung (E-CHECK) und eine laufende Netzwerkprüfung mit ein paar typischen Fehlern. */
 function demoHaus(r,P,vor,tag){
-  const kunde=r({id:"demo-k6",name:"Demo-Haus Sonnenhang",kdnr:"D-1006",strasse:"Am Sonnenhang 1",plz:"51545",ort:"Waldbröl",tel:"0171 0000016",
-    kontakte:[{id:"demo-c7",name:"Familie Kessler",rolle:"Eigentümer",tel:"0171 0000016"}],ansprech:"Familie Kessler"},P.bu,vor(30));
+  const kunde=r({id:"demo-k6",art:"privat",anrede:"herr",vorname:"Jonas",nachname:"Kessler",name:"Jonas Kessler",kdnr:"D-1006",strasse:"Am Sonnenhang 1",plz:"51545",ort:"Waldbröl",tel:"0171 0000016",mail:"j.kessler@mail.example",
+    kontakte:[{id:"demo-c6k",name:"Jonas Kessler",rolle:"Eigentümer",tel:"0171 0000016"},{id:"demo-c6l",name:"Lea Kessler",rolle:"Eigentümerin",tel:"0171 0000017"}],ansprech:"Jonas Kessler",notiz:"Einfamilienhaus Baujahr 2019: KG, EG, OG, Garage. PV 9,8 kWp mit Speicher, Wärmepumpe, Wallbox 11 kW, Glasfaser."},P.bu,vor(30));
   const ET=[["kg","KG",-1,["Hausanschlussraum","Heizungsraum","Technikraum","Werkstatt","Waschküche","Weinkeller","Heimkino","Flur KG"]],
     ["eg","EG",0,["Diele","Gäste-WC","Küche","Speisekammer","Wohnen / Essen","Büro","Wintergarten","Flur EG","Terrasse"]],
     ["ga","Garage",0,["Doppelgarage","Fahrradraum"]],
     ["og1","1. OG",1,["Schlafen","Ankleide","Bad","Kind 1","Kind 2","Bad Kinder","Flur OG","Balkon"]],
-    ["og2","2. OG",2,["Gästezimmer","Arbeitszimmer","Musikzimmer","Duschbad","Flur 2. OG","Abstellraum (Netzwerk)"]],
-    ["dg","DG",50,["Galerie","Abstellraum DG","Dachterrasse"]]];
+    ];
   const R={}; const etagen=ET.map(([id,name,ebene,L])=>({id:"dh-"+id,name,ebene,raeume:L.map((n,i)=>{ const rid=`dh-${id}-${i+1}`; R[`${id}:${n}`]=rid; return {id:rid,name:n}; })}));
   const raum=(e,n)=>{ const x=R[`${e}:${n}`]; if(!x) throw new Error("Demo-Raum fehlt: "+e+" "+n); return x; };
+  const da=(e,n)=>!!R[`${e}:${n}`];
   const verteiler=[{id:"dh-hv",name:"Zählerschrank / HV",raumId:raum("kg","Hausanschlussraum")},{id:"dh-uveg",name:"UV EG",raumId:raum("eg","Flur EG")},
     {id:"dh-uvga",name:"UV Garage",raumId:raum("ga","Doppelgarage")},{id:"dh-uvog",name:"UV OG",raumId:raum("og1","Flur OG")}];
   const rcds=[["hv1","dh-hv","1","A",40,30],["hv2","dh-hv","2","F",40,30],["hv3","dh-hv","3","A",16,30,1],["eg1","dh-uveg","1","A",40,30],["eg2","dh-uveg","2","A",40,30],["eg3","dh-uveg","3","F",40,30],
@@ -155,7 +187,7 @@ function demoHaus(r,P,vor,tag){
     ["uvog","F14","DG Galerie","B16","og3",L25,[["dg","Galerie","sd",3,"TV"],["dg","Galerie","sd",2,"neben Fenster"],["dg","Abstellraum DG","sd",1,"neben Tür"],["dg","Dachterrasse","sd",2,"Außen"]]],
     ["uvog","F15","Rollläden OG","B10","og1",L15,[["og1","Schlafen","fest",1,"Rollladenmotoren"]]]];
   const stromkreise=[], stellen=[], ord={}; let si=0;
-  SK.forEach(([v,nr,bez,schutz,rcd,leitung,St],k)=>{ const id=`dh-sk-${v}-${nr}`; stromkreise.push({id,vId:"dh-"+v,nr,bez,schutz,rcdId:rcd?"dh-r-"+rcd:"",leitung});
+  SK.map(x=>{ const y=x.slice(); y[6]=x[6].filter(st=>da(st[0],st[1])); return y; }).filter(x=>x[6].length).forEach(([v,nr,bez,schutz,rcd,leitung,St],k)=>{ const id=`dh-sk-${v}-${nr}`; stromkreise.push({id,vId:"dh-"+v,nr,bez,schutz,rcdId:rcd?"dh-r-"+rcd:"",leitung});
     St.forEach(([e,n,art,fach,lage])=>{ const raumId=raum(e,n); ord[raumId]=(ord[raumId]||0)+1; stellen.push({id:`dh-st-${++si}`,raumId,ord:ord[raumId],art,fach,lage,skId:id}); }); });
   /* Netzwerk: Serverschrank KG (Patchfeld 1–3), Mini-Verteiler 2. OG (Patchfeld 4) */
   const schraenke=[
@@ -166,7 +198,7 @@ function demoHaus(r,P,vor,tag){
       {id:"t12",typ:"boden",pos:13,he:2,name:"FRITZ!Box 5590 Fiber",kat:"fritz-5590"},{id:"t13",typ:"nas",pos:16,he:2,name:"RS1221+",tiefe:560,kat:"syno-rs1221"},
       {id:"t14",typ:"sonst",pos:19,he:2,name:"Home-Server (Proxmox, Home Assistant)",tiefe:650},{id:"t15",typ:"boden",pos:22,he:2,name:"KNX-IP-Router und Smart-Home-Gateways"},
       {id:"t16",typ:"pdu",pos:38,he:1,name:"Steckdosenleiste 8-fach, schaltbar"},{id:"t17",typ:"usv",pos:40,he:2,name:"APC Smart-UPS 1500 RM",tiefe:480}]},
-    {id:"dh-s2",nr:2,name:"Mini-Verteiler",raumId:raum("og2","Abstellraum (Netzwerk)"),he:9,bauart:"wand",breite:600,tiefe:450,farbe:"auto",teile:[
+    {id:"dh-s2",nr:2,name:"Mini-Verteiler",raumId:raum("og1","Flur OG"),he:9,bauart:"wand",breite:600,tiefe:450,farbe:"auto",teile:[
       {id:"m1",typ:"patch",pos:1,he:1,ports:24,nr:1,kat:"metz-130921"},{id:"m2",typ:"kabel",pos:2,he:1},{id:"m3",typ:"switch",pos:3,he:1,ports:24,poe:true,name:"USW-24-PoE",tiefe:220,kat:"uni-24poe"},
       {id:"m4",typ:"boden",pos:5,he:2,name:"Uplink: Glasfaser vom Serverschrank"},{id:"m5",typ:"pdu",pos:9,he:1,name:"Steckdosenleiste 6-fach"}]}];
   /* Datendosen: [Etage, Raum, Ports, Lage, Patchfeld] – Ports im Patchfeld werden der Reihe nach vergeben; 4 = Patchfeld 1 im Mini-Verteiler.
@@ -175,24 +207,24 @@ function demoHaus(r,P,vor,tag){
     ["eg","Diele",2,"Eingang",1],["eg","Büro",2,"Schreibtisch",1],["eg","Büro",2,"Schreibtisch",1],["eg","Wohnen / Essen",2,"TV",1],["eg","Wohnen / Essen",1,"Decke (WLAN-AP)",1],
     ["eg","Küche",1,"neben Tür",1],["eg","Wintergarten",1,"Decke (WLAN-AP)",1],["eg","Terrasse",1,"Außen (Kamera)",1],
     ["ga","Doppelgarage",2,"Wallbox (Lastmanagement)",2],["ga","Doppelgarage",1,"Decke (WLAN-AP)",2],["ga","Doppelgarage",1,"Außen (Kamera Einfahrt)",2],
-    ["og1","Schlafen",2,"TV",2],["og1","Kind 1",2,"Schreibtisch",2],["og1","Kind 2",2,"Schreibtisch",2],["og1","Flur OG",1,"Decke (WLAN-AP)",2],["og1","Balkon",1,"Außen (Kamera)",3],
+    ["og1","Schlafen",2,"TV",4],["og1","Kind 1",2,"Schreibtisch",4],["og1","Kind 2",2,"Schreibtisch",4],["og1","Flur OG",1,"Decke (WLAN-AP)",4],["og1","Balkon",1,"Außen (Kamera)",4],
     ["og2","Arbeitszimmer",2,"Schreibtisch",4],["og2","Arbeitszimmer",2,"Schreibtisch",4],["og2","Musikzimmer",2,"neben Tür",4],["og2","Gästezimmer",2,"TV",4],["og2","Flur 2. OG",1,"Decke (WLAN-AP)",4],
     ["dg","Galerie",2,"TV",4],["dg","Galerie",1,"Decke (WLAN-AP)",4],["dg","Dachterrasse",1,"Außen (Kamera)",4]];
-  const frei={}, dosen=[], dord={}; DO.forEach(([e,n,ports,lage,pf],i)=>{ const raumId=raum(e,n), pp={}; for(let p=1;p<=ports;p++){ frei[pf]=(frei[pf]||0)+1; pp[p]=`${pf===4?1:pf}.${frei[pf]}`; }
+  const frei={}, dosen=[], dord={}; DO.filter(x=>da(x[0],x[1])).forEach(([e,n,ports,lage,pf],i)=>{ const raumId=raum(e,n), pp={}; for(let p=1;p<=ports;p++){ frei[pf]=(frei[pf]||0)+1; pp[p]=`${pf===4?1:pf}.${frei[pf]}`; }
     dord[raumId]=(dord[raumId]||0)+1; const zw=/WLAN/.test(lage)?"ap":/Kamera/.test(lage)?"kamera":/TV/.test(lage)?"tv":/Wärmepumpe|Wallbox/.test(lage)?"smart":"arbeitsplatz", nutz={}; for(let p=1;p<=ports;p++) nutz[p]=zw==="arbeitsplatz"&&p===2&&/Schreibtisch/.test(lage)?"telefon":zw;
     dosen.push({id:`dh-d-${i+1}`,raumId,ord:dord[raumId],ports,lage,sId:pf===4?"dh-s2":"dh-s1",pp,nutz}); });
   const g=r({id:"g-k_demo-k6",ortId:"k:demo-k6",etagen,verteiler,rcds,stromkreise,stellen,schraenke,dosen,beschr:"nr",pkFarben:{an:true,z:{arbeitsplatz:"blau",ap:"gelb",kamera:"schwarz",telefon:"gruen",tv:"weiss",smart:"orange",drucker:"violett",uplink:"rot"}},anschluss:{art:"glasfaser",anbieter:"Deutsche Glasfaser",raumId:raum("kg","Technikraum"),ont:"box",weg:"glas_zum_schrank",routerKat:"fritz-5590",routerOrt:"s:dh-s1",notiz:"Glasfaser im Leerrohr vom Hausübergabepunkt bis in den Serverschrank, GF-TA im Schrank"}},P.mp,vor(6));
-  /* Netzwerkprüfung (läuft): fast alles gemessen, ein paar typische Fehler, 2. OG teilweise offen */
+  /* Netzwerkprüfung (läuft): fast alles gemessen, ein paar typische Fehler, im OG der Balkon noch offen */
   const nw={}; let li=0;
   dosen.forEach(d=>{ for(let p=1;p<=d.ports;p++){ const id=`${d.id}.${p}`, et=Object.keys(R).find(k=>R[k]===d.raumId).split(":")[0], i=li++;
-    if(et==="og2"&&!/Arbeitszimmer/.test(Object.keys(R).find(k=>R[k]===d.raumId))) continue; /* noch nicht gemessen */
+    if(/Balkon/.test(Object.keys(R).find(k=>R[k]===d.raumId))) continue; /* noch nicht gemessen */
     const basis={kg:9,eg:21,ga:34,og1:31,og2:7,dg:14}[et]||20, len=(basis+((i*7.3)%17)).toFixed(1).replace(".",",");
     const w={wm:"ok",wmap:"12345678",wmS:"ok",len,v10:"ok",v100:"ok",v1g:"ok"}; if(/WLAN|Kamera/.test(d.lage)){ w.poe="ok"; w.poeW=/WLAN/.test(d.lage)?"12,4":"6,8"; } else w.poe="na";
     nw[id]=w; } });
   const dose=(raumName,nr)=>dosen.filter(d=>Object.keys(R).find(k=>R[k]===d.raumId).endsWith(":"+raumName))[nr||0];
   const k2=dose("Kind 2"); Object.assign(nw[k2.id+".1"],{wm:"nok",wmap:"12645378",wmF:"Paar 3/6 verpolt"});
-  const gal=dose("Galerie"); Object.assign(nw[gal.id+".2"],{wm:"nok",wmap:"12345608",wmF:"Ader 7 offen",v1g:"nok"});
-  const dt=dose("Dachterrasse"); Object.assign(nw[dt.id+".1"],{len:"104,5",mangel:"Leitungsweg über Dachterrasse zu lang – Kamera über PoE-Extender oder vom Mini-Verteiler neu anfahren"});
+  const sch=dose("Schlafen"); Object.assign(nw[sch.id+".2"],{wm:"nok",wmap:"12345608",wmF:"Ader 7 offen",v1g:"nok"});
+  const ter2=dose("Terrasse"); Object.assign(nw[ter2.id+".1"],{len:"104,5",mangel:"Leitungsweg zur Terrasse zu lang – Kamera über PoE-Extender oder vom Mini-Verteiler im OG neu anfahren"});
   const gap=dose("Doppelgarage",1); Object.assign(nw[gap.id+".1"],{poe:"nok",poeW:"",mangel:"Access Point startet unter Last neu – PoE-Budget bzw. Kabel prüfen"});
   const hz=dose("Heizungsraum"); nw[hz.id+".1"]={ng:"Wärmepumpe angeschlossen, Port nicht abgeklemmt"};
   const netz=r({id:"demo-ec-netz",art:"netz",kundeId:"demo-k6",standortId:"",ortId:"k:demo-k6",datum:tag(-1),pruefart:"Abnahme",pruefer:P.mp.name,status:"laeuft",
@@ -208,7 +240,14 @@ function demoHaus(r,P,vor,tag){
   const sicht={}; for(let i=0;i<12;i++) sicht["s"+i]="ok"; sicht.s4="nok"; sicht.s7="na";
   const anl=r({id:"demo-ec-anl",art:"anlage",kundeId:"demo-k6",standortId:"",ortId:"k:demo-k6",datum:tag(-3),pruefart:"E-CHECK",pruefer:P.ms.name,status:"laeuft",
     sicht,werte:iw,netz:{form:"TN-C-S",hak:"63 A"},umfang:null,fristM:48,geraet:{mess:"Wiha MFT one",kurz:"MFT 1",sn:"MFT1-DEMO",kal:"03/2027"}},P.ms,vor(3));
-  return {kunde,gebaeude:[g],echecks:[anl,netz]}; }
+  const A=(id,o)=>r(Object.assign({id,ortId:"k:demo-k6",kundeId:"demo-k6",pruefungen:[],aenderungen:[]},o),P.mp,vor(20));
+  const anlagen=[
+    A("demo-an-wp",{nr:"WP-1",bez:"Wärmepumpe",hersteller:"Bosch",typ:"Compress 6800i AW 12 E",baujahr:"2019",leistung:"5,5",spannung:"400",etageId:"dh-kg",raum:"Heizungsraum / Außengerät Garten",vId:"dh-hv",abgang:"F10",absicherung:"C16",zuleitung:"NYM-J 5×2,5 mm²",fristM:12,
+      pruefungen:[{id:"demo-wp-p",datum:tag(-200),erg:"ok",notiz:"Wartung mit Heizungsbauer",wer:P.ms}],aenderungen:[{id:"demo-wp-a",at:vor(90),datum:tag(-90),was:"Modbus-Anbindung an Netzwerk (Datendose Heizungsraum)",warum:"PV-Überschussregelung",wer:P.mp}]}),
+    A("demo-an-wb",{nr:"WB-1",bez:"Wallbox 11 kW",hersteller:"KEBA",typ:"KeContact P30 x-series",baujahr:"2023",leistung:"11",spannung:"400",etageId:"dh-ga",raum:"Doppelgarage",vId:"dh-uvga",abgang:"F1",absicherung:"B16",zuleitung:"NYM-J 5×6 mm²",fristM:48,
+      pruefungen:[{id:"demo-wb-p",datum:tag(-20),erg:"ok",notiz:"Erstprüfung nach DIN VDE 0100-722 (EVSE-App)",wer:P.mp}]}),
+    A("demo-an-pv",{nr:"PV-1",bez:"PV-Anlage 9,8 kWp mit Speicher",hersteller:"Fronius / BYD",typ:"Symo GEN24 8.0 Plus · HVS 10.2",baujahr:"2021",leistung:"9,8",spannung:"400",etageId:"dh-kg",raum:"Technikraum",vId:"dh-hv",abgang:"F14",absicherung:"B20",zuleitung:"NYM-J 5×4 mm²",fristM:48,pruefungen:[],aenderungen:[]})];
+  return {kunde,gebaeude:[g],echecks:[anl,netz],anlagen}; }
 
 let demoCache=null;
 /* Beispieldaten in den Speicher dieser App legen (nicht in die Datenbank) – true, wenn etwas dazugekommen ist */
@@ -247,7 +286,13 @@ function demoUmschalten(an){
   if(an){ demoNachfuellen(); render(); toast("Demo-Vorschau an – Beispieldaten werden nicht gespeichert oder synchronisiert"); }
   else demoSchalten();
 }
-const demoDa=()=>["kunden","standorte","baustellen","pruefungen","eintraege","vorgaenge","anforderungen","gebaeude","echecks"].some(k=>DB[k]&&[...DB[k].values()].some(r=>r.demo&&!r.sim));
+/* „Nur Beispieldaten“ für Vorführungen: echte Kunden, Aufträge usw. werden ausgeblendet (nur auf diesem Gerät, nichts wird gelöscht).
+   Funktionsdeklaration, damit live() sie auch vor dieser Stelle aufrufen kann. */
+const DEMO_NUR_KEY="irrgang_nur_demo", DEMO_NUR_IMMER=["einstellungen","profile","geraete","katalog"];
+function nurDemo(){ try{ return localStorage.getItem(DEMO_NUR_KEY)==="1"&&demoAn(); }catch(e){ return false; } }
+function nurDemoFilter(k,r){ return !nurDemo()||!!r.demo||DEMO_NUR_IMMER.includes(k); }
+function nurDemoSetzen(an){ try{ localStorage.setItem(DEMO_NUR_KEY,an?"1":"0"); }catch(e){} if(an&&!demoAn()) demoUmschalten(true); render(); }
+const demoDa=()=>["kunden","standorte","baustellen","pruefungen","eintraege","vorgaenge","anforderungen","gebaeude","echecks","anlagen"].some(k=>DB[k]&&[...DB[k].values()].some(r=>r.demo&&!r.sim));
 let demoWeg=false;
 /* Demo aus, aber noch Beispieldaten auf dem Gerät (z. B. in einer anderen App ausgeschaltet) ⇒ aufräumen */
 const demoPruefen=()=>{ try{ if(!demoAn()&&!demoWeg&&demoDa()){ demoWeg=true; demoSchalten(); } }catch(e){} };

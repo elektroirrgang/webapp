@@ -53,7 +53,8 @@ function anOrte(kundeId){ const k=kundeOf(kundeId); if(!k) return []; const ss=t
 const anKdVonOrt=ortId=>(anOrtInfo(ortId).k||{}).id||"";
 /* Karte am Kunden: alle Orte zusammen */
 function anKarteKunde(k){ if(!DB.gebaeude||!DB.anlagen) return ""; const O=anOrte(k.id); let bt=0,vt=0,mz=0,f=0,erst="";
-  O.forEach(o=>{ const g=anGeb(o.id), M=anMaschinen(o.id); bt+=g.bauteile.length; vt+=g.verteiler.length; mz+=M.length; f+=M.map(anFaellig).filter(x=>x&&x.kl!=="ok").length; if(!erst&&(M.length||g.verteiler.length||g.bauteile.length)) erst=o.id; });
+  let best=-1; O.forEach(o=>{ const g=anGeb(o.id), M=anMaschinen(o.id); bt+=g.bauteile.length; vt+=g.verteiler.length; mz+=M.length; f+=M.map(anFaellig).filter(x=>x&&x.kl!=="ok").length;
+    const w=M.length*10+g.verteiler.length+g.bauteile.length; if(w>best&&w>0){ best=w; erst=o.id; } });
   const sub=[O.length>1&&`${O.length} Standorte`,bt&&`${bt} Bauteil${bt===1?"":"e"}`,vt&&`${vt} Verteiler`,mz&&`${mz} Maschine${mz===1?"":"n"}`].filter(Boolean).join(" · ");
   return `<div class="sec-lbl">Anlagen</div>${listOf([`<div class="li" role="button" tabindex="0" data-act="anAuf" data-id="${esc(erst||O[0].id)}"><span class="av">${icon("anMasch")}</span><span class="lt"><span class="h">Gebäude, Verteiler und Maschinen</span><span class="s">${esc(sub||"Noch nichts erfasst")}</span>${f?`<span class="st">${pill("bad",`${f} Prüfung${f===1?"":"en"} fällig`)}</span>`:""}</span>${icon("chev")}</div>`])}`; }
 /* ---- Karte am Kunden/Standort ---- */

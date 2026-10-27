@@ -872,3 +872,15 @@ body.sf-an nav.navbar.navbar{padding-bottom:200px!important}
 .tb-punkte{display:flex;gap:5px;flex-wrap:wrap;margin:14px 0 4px}.tb-punkte i{width:7px;height:7px;border-radius:50%;background:var(--outline-v,#ccc)}.tb-punkte i.war{background:color-mix(in srgb,var(--primary) 45%,transparent)}.tb-punkte i.an{background:var(--primary);width:18px;border-radius:4px}
 .tb-f{display:flex;align-items:center;gap:8px;margin-top:10px}
 body.tour-an .snackbar{display:none}
+#tourFab{position:fixed;z-index:320;display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 18px 0 14px;border:0;border-radius:24px;background:#1d1b20;color:#fff;font:inherit;font-size:14px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.35);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+#tourFab .ic{width:22px;height:22px;fill:currentColor}#tourFab.pause{background:var(--primary)}
+#tourMenu{position:fixed;z-index:330;width:min(320px,calc(100vw - 16px));max-height:min(70vh,560px);overflow:auto;background:var(--dlg-bg,var(--sc-high));border-radius:22px;padding:8px;box-shadow:0 12px 36px rgba(0,0,0,.35)}
+.tm-i{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;border:0;border-radius:14px;background:transparent;color:var(--on-surface);font:inherit;font-size:15px;font-weight:600;padding:0 12px;cursor:pointer;justify-content:space-between}
+.tm-i.haupt{background:var(--sec-c);color:var(--on-sec-c);justify-content:flex-start}.tm-i .ic{width:22px;height:22px;fill:currentColor}
+.tm-i:disabled{opacity:.4}.tm-i.weg{color:var(--err)}
+@media (hover:hover){.tm-i:hover,.tm-s:hover{background:var(--sc)}}
+.tm-reihe{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}.tm-reihe .tm-i{justify-content:center;background:var(--sc)}
+.tm-l{font-size:12px;font-weight:700;color:var(--on-sv);margin:10px 12px 4px}
+.tm-schritte{display:flex;flex-direction:column;max-height:220px;overflow:auto;margin-bottom:6px}
+.tm-s{display:flex;align-items:center;gap:10px;border:0;background:transparent;border-radius:12px;padding:8px 12px;text-align:left;font:inherit;font-size:14px;color:var(--on-surface);cursor:pointer}
+.tm-s b{min-width:22px;color:var(--on-sv)}.tm-s.an{background:var(--pc);color:var(--on-pc)}.tm-s.an b{color:inherit}

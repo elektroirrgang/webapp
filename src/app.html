@@ -1223,7 +1223,7 @@ async function dataLoad(){
   for(const p of [...DB.pruefungen.values()]) if(!p.zst) dbPut("pruefungen",p);
   if((META.katSeed||0)<KAT_STAND){ katSeed(); META.katSeed=KAT_STAND; metaSave(); }
 }
-const live=k=>[...DB[k].values()].filter(r=>!r.deleted);
+const live=k=>[...DB[k].values()].filter(r=>!r.deleted&&(typeof nurDemoFilter!=="function"||nurDemoFilter(k,r)));
 const who=()=>({name:ME.name||META.profil.name||"",mail:ME.mail||""});
 function stamp(rec,isNew){ const t=Date.now(), w=who(); if(isNew||!rec.created){ rec.created=t; rec.createdBy=w; } rec.updated=t; rec.updatedBy=w; if(!rec.demo) rec._dirty=true; }
 function saveRec(kind,rec,isNew){ stamp(rec,isNew); dbPut(kind,rec); syncSoon(); return rec; }
