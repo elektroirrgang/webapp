@@ -1119,3 +1119,10 @@ body.kal-mit-pane .kal-wscroll{max-height:calc(100dvh - 330px)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .kal-hov{background:color-mix(in srgb,var(--primary) 22%,var(--surface))}}
 :root[data-theme="dark"] .kal-hov{background:color-mix(in srgb,var(--primary) 22%,var(--surface))}
 #app:has(> .kal-s-woche),#app:has(.kal-seite.kal-s-woche){padding-bottom:0}main:has(.kal-seite.kal-s-woche){padding-bottom:0}
+/* Personen: Profilbild/Initialen + Name */
+.pav{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;flex:none;font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.02em;background-size:cover;background-position:center;vertical-align:middle;line-height:1}
+.pn{display:inline-flex;align-items:center;gap:6px;vertical-align:middle}
+.pn .pav{width:18px;height:18px;font-size:8px}
+.chip .pav,.vg-mitc .pav{margin-left:-4px;margin-right:6px}
+.kal-dleute{display:flex;flex-wrap:wrap;gap:6px 14px}
+.vp-pc .pav{margin-left:-4px;margin-right:6px}.vp-pc,.vg-mitc{display:inline-flex;align-items:center}

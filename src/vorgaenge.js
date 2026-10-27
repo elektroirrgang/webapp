@@ -34,7 +34,7 @@ function vgNaechster(v){ const i=vgStufe(v); if(vgZu(v)) return null; if(v.rahme
   return null; }
 function vgZelle(v,k,i){ const s=v.s&&v.s[k], st=vgStufe(v), id=esc(v.id), lbl=`<span class="vg-zk"><i class="vg-dot DOT"></i>${VG_S[i][2]?`<span class="vg-lv">${esc(VG_S[i][1])}</span><span class="vg-lk">${esc(VG_S[i][2])}</span>`:esc(VG_S[i][1])}</span>`;
   const knopf=(kl,dot,inhalt)=>`<button class="vg-z ${kl}" data-act="vgStep" data-id="${id}" data-k="${k}">${lbl.replace("DOT",dot)}${inhalt}</button>`;
-  if(s){ const extra=k==="auftrag"&&s.nr?`<em>SCC ${esc(s.nr)}</em>`:k==="termin"&&s.datum?`<em>${esc(deDate(s.datum))}${s.zeit?` · ${esc(s.zeit)}${s.bis?`–${esc(s.bis)}`:""} Uhr`:""}${s.mit?` · ${esc(s.mit)}`:""}</em>`:"";
+  if(s){ const extra=k==="auftrag"&&s.nr?`<em>SCC ${esc(s.nr)}</em>`:k==="termin"&&s.datum?`<em>${esc(deDate(s.datum))}${s.zeit?` · ${esc(s.zeit)}${s.bis?`–${esc(s.bis)}`:""} Uhr`:""}${s.mit?` · ${mitHtml(s)}`:""}</em>`:"";
     return knopf("ok","ok",`<span class="vg-zw"><span class="vg-wer">${esc(vgVorn(s.wer&&s.wer.name)||"–")} · </span>${esc(vgZeit(s.at))}</span>${extra}`); }
   if(v.abgelehnt&&i===st+1) return knopf("bad","bad",`<span class="vg-zw">abgelehnt</span><em>${esc(vgVorn(v.abgelehnt.wer&&v.abgelehnt.wer.name)||"")}</em>`);
   if(i===st+1&&!vgZu(v)){ const n=vgNaechster(v);
@@ -67,7 +67,7 @@ function vgStepDlg(v,k){ const s=(v.s||{})[k], st=vgStufe(v), n=vgNaechster(v), 
     if(st===1&&!vgZu(v)&&istBuero()) weiter=`<button class="btn-text danger" data-act="vgAblehnen" data-id="${id}">Ablehnen</button><button class="btn-text" data-act="vgAuftrag" data-id="${id}">Auftrag erteilen</button>`; }
   else if(k==="termin"){ const bau=vgBau(v), offen=!vgZu(v);
     if(s) body=stat(s.datum<today()&&offen?"warte":"ok",s.datum<today()&&offen?"Termin ist vorbei – noch nicht ausgeführt":"Termin steht")
-      +z("Datum",esc(deDate(s.datum)))+z("Uhrzeit",s.zeit?esc(s.zeit)+" Uhr":"")+z("Wer fährt hin",esc(s.mit||""))+z("Eingetragen von",wer(s))
+      +z("Datum",esc(deDate(s.datum)))+z("Uhrzeit",s.zeit?esc(s.zeit)+" Uhr":"")+z("Wer fährt hin",mitHtml(s))+z("Eingetragen von",wer(s))
       +(bau?z("Baustelle",vgBauLink(bau,`${esc(bau.name)} · ${esc({besichtigung:"Besichtigung",aktiv:"Aktiv",pausiert:"Pausiert",fertig:"Fertig"}[bau.status||"aktiv"])}`,"vg-link")):"");
     else body=stat("",st===2?"Noch kein Termin eingetragen":"Erst muss der Auftrag erteilt sein.")+(st===2?`<p class="sup">Mit dem Termin wird die Baustelle in der Baustellen-App angelegt.</p>`:"");
     if(offen&&st>=2) weiter=`<button class="btn-text" data-act="vgTermin" data-id="${id}">${s?"Termin ändern":"Termin eintragen"}</button>`; }
@@ -127,7 +127,7 @@ FDEF.vg={std:{sort:"dringend",dr:"alle",wer:"alle"},
 const vgAt=v=>(v.s&&v.s.anruf&&v.s.anruf.at)||v.created||0;
 function vgMein(v){ const m=String(ME.mail||"").toLowerCase(), n=String(ME.name||"").trim(); if(!m&&!n) return true;
   return vgZustIch(v)||Object.values(v.s||{}).some(x=>x&&x.wer&&((m&&String(x.wer.mail||"").toLowerCase()===m)||(n&&x.wer.name===n)))||(v.createdBy&&String(v.createdBy.mail||"").toLowerCase()===m)
-    ||(n&&v.s&&v.s.termin&&String(v.s.termin.mit||"").split(/\s*,\s*/).includes(n)); }
+    ||mitIch(v.s&&v.s.termin); }
 /* Suche + Filter (Person, dringend) + Sortierung – gilt für Tafel und Liste */
 function vgGefiltert(L){ const q=String(query||"").trim().toLowerCase(), H=x=>String(x||"").toLowerCase().includes(q);
   if(q) L=L.filter(v=>H(vgKunde(v))||H(v.anliegen)||H(v.tel)||H(v.s&&v.s.auftrag&&v.s.auftrag.nr)||H(v.s&&v.s.termin&&v.s.termin.mit)||vgZustNamen(v).some(H));
@@ -191,7 +191,7 @@ function vgPanel(v){ const st=vgStufe(v), id=esc(v.id), k=v.kundeId&&kundeOf(v.k
       ${v.anliegen?`<p class="vp-an">${esc(v.anliegen)}</p>`:""}
       <div class="vp-qa">${tel?`<a class="vp-q" href="tel:${esc(tel)}">${icon("phone")}<span>${esc(v.tel)}</span></a>`:""}${k?`<button class="vp-q" data-act="nav" data-v="kunde" data-id="${esc(k.id)}">${icon("firma")}<span>Kunde öffnen</span></button>`:""}${vgBau(v)?vgBauLink(vgBau(v),`${icon("baustelle")}<span>Baustelle</span>`,"vp-q"):""}${vgVonBau(v)&&vgVonBau(v)!==vgBau(v)?vgBauLink(vgVonBau(v),`${icon("baustelle")}<span>Gemeldet auf ${esc(vgKurz(vgVonBau(v).name,28))}</span>`,"vp-q"):""}</div>
       ${v.rahmen?mlAbschnitt(v):""}
-      <div class="vp-ab"><div class="vp-l">Zuständig${vgZustL(v).length>1?` · ${vgZustL(v).length} Personen`:""}</div><div class="vp-zust">${T.map(m=>`<button class="vp-pc" data-act="vgZust" data-id="${id}" data-mail="${esc(m.mail)}" aria-pressed="${vgZustHat(v,m.mail)}" ${vgDarfZust(v)?"":"disabled"}>${esc(m.name)}</button>`).join("")}</div></div>
+      <div class="vp-ab"><div class="vp-l">Zuständig${vgZustL(v).length>1?` · ${vgZustL(v).length} Personen`:""}</div><div class="vp-zust">${T.map(m=>`<button class="vp-pc" data-act="vgZust" data-id="${id}" data-mail="${esc(m.mail)}" aria-pressed="${vgZustHat(v,m.mail)}" title="${esc(persVoll(m.mail,m.name))}" ${vgDarfZust(v)?"":"disabled"}>${persAv(m.mail,m.name)}${esc(m.name)}</button>`).join("")}</div></div>
       <div class="vp-ab"><div class="sec-row" style="margin:0"><div class="vp-l">Fotos und Dateien</div><span class="ab-btns"><button class="ab-ic" data-act="ablageFoto" data-kind="vorgaenge" data-id="${id}" title="Foto aufnehmen">${icon("cam")}</button><button class="ab-ic" data-act="ablageDatei" data-kind="vorgaenge" data-id="${id}" title="Datei anhängen">${icon("attach")}</button></span></div>
         ${F.length?`<div class="vp-fotos">${F.map(d=>/^image\//.test(d.typ||"")?`<button class="ab-k" data-act="dateiOeffnen" data-id="${esc(d.id)}" aria-label="${esc(d.name)}"><img data-datei="${esc(d.id)}" alt=""></button>`:`<button class="vp-datei" data-act="dateiOeffnen" data-id="${esc(d.id)}">${icon("doc")}<span>${esc(d.name)}</span></button>`).join("")}</div>`:""}</div>
       <div class="vp-ab"><div class="vp-l">Verlauf</div><div class="vv">${vgVerlauf(v)}</div></div>
@@ -252,7 +252,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
       `<button class="btn-text danger" data-act="vgDel" data-id="${esc(v.id)}">Löschen</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button>`); }
   else if(a==="vgMitT"){ b.setAttribute("aria-pressed",b.getAttribute("aria-pressed")!=="true"); }
   else if(a==="vgMitPlus"){ const i=document.getElementById("f_vgMitNeu"), n=String(i&&i.value||"").trim(); if(!n) return; const w=document.querySelector("#dlg .vg-mit");
-    if(![...w.querySelectorAll("[data-act=vgMitT]")].some(x=>x.dataset.v===n)) w.querySelector(".vg-mitp").insertAdjacentHTML("beforebegin",`<button type="button" class="vg-mitc" data-act="vgMitT" data-v="${esc(n)}" aria-pressed="true">${esc(n)}</button>`);
+    if(![...w.querySelectorAll("[data-act=vgMitT]")].some(x=>(x.dataset.name||x.dataset.v)===n)) w.querySelector(".vg-mitp").insertAdjacentHTML("beforebegin",`<button type="button" class="vg-mitc" data-act="vgMitT" data-v="n:${esc(n)}" data-name="${esc(n)}" aria-pressed="true">${esc(n)}</button>`);
     i.value=""; }
   else if(a==="vgSpeichern") vgSpeichern();
   else if(a==="vgK"){ const k=b.dataset.v; if(nav.v!=="auftraege"){ META.vgK=k; if(!VG_PC.matches) META.vgF=k==="buero"?"buero":"offen"; metaSave(); go({v:"auftraege"}); return; } META.vgK=vgKAkt()===k&&k!=="offen"?"offen":k; metaSave(); render(); }
@@ -291,12 +291,12 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     const ort=bau?"":SS.length?`${sf("vgOrt","Wo? (Standort der Baustelle)",SS.length===1?SS[0].id:(vgVonBau(v)&&SS.some(x=>x.id===vgVonBau(v).standortId)?vgVonBau(v).standortId:""),[...(SS.length>1?[["","Bitte wählen"]]:[]),...SS.map(x=>[x.id,x.name]),["__neu","Anderer Ort …"]],{form:true})}<div id="vgOrtNeuW" hidden>${tf("vgOrtNeu","Anderer Ort (Adresse)","",{form:true,ph:"Straße, Ort"})}</div>`
       :tf("vgOrtNeu","Wo? (Adresse der Baustelle)",ortVor,{form:true,ph:"Straße, Ort"});
     dialog(v.s.termin?"Termin ändern":"Termin eintragen",`<p class="sup" style="margin:0 0 12px">${esc(vgKunde(v))} – ${esc(v.anliegen||"")}</p><div class="fg1">
-      ${tf("vgDatum","Datum",t.datum||today(),{form:true,type:"date"})}<div class="vg-zeiten">${tf("vgZeitE","Von",t.zeit||"",{form:true,ph:"z. B. 14:00"})}${tf("vgZeitB","Bis (optional)",t.bis||"",{form:true,ph:"z. B. 16:30"})}</div>${vgMitWahl(t.mit)}${ort}</div>
+      ${tf("vgDatum","Datum",t.datum||today(),{form:true,type:"date"})}<div class="vg-zeiten">${tf("vgZeitE","Von",t.zeit||"",{form:true,ph:"z. B. 14:00"})}${tf("vgZeitB","Bis (optional)",t.bis||"",{form:true,ph:"z. B. 16:30"})}</div>${vgMitWahl(t)}${ort}</div>
       <p class="sup" style="margin:12px 0 0">${bau?`Der Termin wird auch an der Baustelle „${esc(bau.name)}“ geändert.`:"Dazu wird die Baustelle in der Baustellen-App angelegt – mit Termin und Auftragsnummer."}</p>`,
       `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="vgTerminOk" data-id="${esc(id)}">Eintragen</button>`); }
   else if(a==="vgTerminOk"&&v){ const F=formVals(); if(!F.vgDatum){ toast("Bitte ein Datum wählen"); return; }
     if(!vgBau(v)&&F.vgOrt===""&&document.getElementById("f_vgOrt")){ toast("Bitte den Standort wählen"); return; }
-    F.vgMit=vgMitWerte(); const neuBau=!vgBau(v); vgZuBaustelle(v,F); vgSchritt(id,"termin",{datum:F.vgDatum,zeit:F.vgZeitE,bis:F.vgZeitB||"",mit:F.vgMit});
+    const W=vgMitWerte(); F.vgMit=W.mit; F.vgMitMails=W.mails; const neuBau=!vgBau(v); vgZuBaustelle(v,F); vgSchritt(id,"termin",{datum:F.vgDatum,zeit:F.vgZeitE,bis:F.vgZeitB||"",mit:F.vgMit,mitMails:F.vgMitMails});
     if(neuBau) toast("Termin eingetragen – Baustelle angelegt"); }
   else if(a==="vgAusgef"&&v){ v.s.ausgefuehrt={wer:who(),at:Date.now()}; saveRec("vorgaenge",v); const bau=vgBau(v), alt=bau&&bau.status;
     if(bau){ bau.status="fertig"; saveRec("baustellen",bau); }
@@ -312,13 +312,17 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="vgDel"&&v){ if(!vgDarfLoeschen(v)) return; v.deleted=true; saveRec("vorgaenge",v); closeOverlays(); render(); toast("Vorgang gelöscht","Rückgängig",()=>{ delete v.deleted; saveRec("vorgaenge",v); render(); }); }
 },true);
 /* „Wer fährt hin?“ – Mehrfachauswahl aus dem Team, gespeichert als „A, B“ (so steht es auch an der Baustelle) */
-function vgMitWahl(mit){ const ist=String(mit||"").split(/\s*,\s*/).filter(Boolean), namen=[...new Set([...team().map(m=>m.name),...ist])];
-  return `<div class="vg-mitw"><span class="vg-mitl">Wer fährt hin? (mehrere möglich)</span><div class="vg-mit">${namen.map(n=>`<button type="button" class="vg-mitc" data-act="vgMitT" data-v="${esc(n)}" aria-pressed="${ist.includes(n)}">${esc(n)}</button>`).join("")}
+function vgMitWahl(t){ t=t&&typeof t==="object"?t:{mit:t||""}; const ist=mitListe(t), T=team(), gew=new Set(ist.filter(x=>x.mail).map(x=>x.mail));
+  const chip=(v,name,mail,an,tip)=>`<button type="button" class="vg-mitc" data-act="vgMitT" data-v="${esc(v)}" data-name="${esc(name)}"${tip?` title="${esc(tip)}"`:""} aria-pressed="${an}">${mail?persAv(mail,name):""}${esc(name)}</button>`;
+  const fest=T.map(m=>chip(String(m.mail).toLowerCase(),m.name,m.mail,gew.has(String(m.mail).toLowerCase()),persVoll(m.mail,m.name)));
+  const frei=ist.filter(x=>!x.mail).map(x=>chip("n:"+x.name,x.name,"",true,x.unklar?"Älterer Eintrag – bitte die richtige Person wählen":""));
+  return `<div class="vg-mitw"><span class="vg-mitl">Wer fährt hin? (mehrere möglich)</span><div class="vg-mit">${[...fest,...frei].join("")}
     <span class="vg-mitp">${tf("vgMitNeu","Andere Person","",{form:true,ph:"Name"})}<button type="button" class="vg-mitadd" data-act="vgMitPlus" aria-label="Person hinzufügen">${icon("add")}</button></span></div></div>`; }
-const vgMitWerte=()=>{ const n=[...document.querySelectorAll('#dlg [data-act=vgMitT][aria-pressed="true"]')].map(x=>x.dataset.v), x=String((document.getElementById("f_vgMitNeu")||{}).value||"").trim(); if(x&&!n.includes(x)) n.push(x); return n.join(", "); };
+/* Auswahl lesen: Namen (wie bisher, für Anzeige/alte Versionen) + E-Mails der Mitarbeiter */
+const vgMitWerte=()=>{ const B=[...document.querySelectorAll('#dlg [data-act=vgMitT][aria-pressed="true"]')], n=B.map(x=>x.dataset.name||x.dataset.v), mails=B.map(x=>x.dataset.v).filter(v=>!v.startsWith("n:")), x=String((document.getElementById("f_vgMitNeu")||{}).value||"").trim(); if(x&&!n.includes(x)) n.push(x); return {mit:n.join(", "),mails}; };
 /* Baustelle zum Termin anlegen bzw. Termin an der Baustelle nachziehen */
 function vgKurz(t,n=48){ t=String(t||"").trim(); if(t.length<=n) return t; const c=t.slice(0,n); return c.slice(0,Math.max(c.lastIndexOf(" "),30)).replace(/[\s,–-]+$/,"")+" …"; }
-function vgZuBaustelle(v,F){ const termin={datum:F.vgDatum,zeit:F.vgZeitE||"",bis:F.vgZeitB||"",mit:F.vgMit||""}, nr=(v.s.auftrag&&v.s.auftrag.nr)||"", dm=v.demo?{demo:true}:{};
+function vgZuBaustelle(v,F){ const termin={datum:F.vgDatum,zeit:F.vgZeitE||"",bis:F.vgZeitB||"",mit:F.vgMit||"",mitMails:F.vgMitMails||[]}, nr=(v.s.auftrag&&v.s.auftrag.nr)||"", dm=v.demo?{demo:true}:{};
   let b=vgBau(v);
   if(b){ b.termin=termin; if(nr&&!b.auftragsnr) b.auftragsnr=nr; saveRec("baustellen",b); return b; }
   let k=v.kundeId&&kundeOf(v.kundeId);
@@ -448,8 +452,7 @@ function vgBauAbschnitt(b){ const L=vgZuBau(b);
   return `<div class="sec-row"><div class="sec-lbl">Aufträge</div><button class="plus-k" data-act="vgMelden" data-id="${esc(b.id)}" aria-label="Auftrag ans Büro melden" title="Auftrag ans Büro melden">${icon("add")}</button></div>
     ${L.length?`<div class="vg-l">${L.map(v=>vgKarte(v,true)).join("")}</div>`:`<p class="meta">Will der Kunde noch etwas zusätzlich? Mit + direkt ans Büro melden – gern mit Foto.</p>`}`; }
 /* „Meine Aufträge“: mir zugewiesen oder ich fahre zum Termin hin – solange nicht erledigt */
-function vgMeine(){ const n=String(ME.name||"").trim();
-  return vgAlle().filter(v=>!vgZu(v)&&(vgZustIch(v)||(n&&v.s&&v.s.termin&&String(v.s.termin.mit||"").split(/\s*,\s*/).includes(n)))); }
+function vgMeine(){ return vgAlle().filter(v=>!vgZu(v)&&(vgZustIch(v)||mitIch(v.s&&v.s.termin))); }
 function vgMeineKarte(){ const L=vgMeine(); if(!L.length) return "";
   return `<div class="vg-meine"><div class="sec-row" style="margin-top:0"><div class="sec-lbl">Meine Aufträge · ${L.length}</div>${L.length>3?`<button class="btn-text" data-act="vgAlleMeine">Alle</button>`:""}</div>
     <div class="vg-l">${L.slice(0,3).map(v=>vgKarte(v,true)).join("")}</div></div>`; }
@@ -477,7 +480,7 @@ function vgTZelle(v,i){ const k=VG_S[i][0], s=v.s&&v.s[k], st=vgStufe(v), id=esc
   if(s){ let l1=esc(vgZeit(s.at)), l2=wer(s)+(k==="anruf"&&s.vorOrt?" · vor Ort":"");
     if(k==="auftrag"){ l1=s.nr?(bu?`<button class="vt-ed" data-act="vgNrEd" data-id="${id}" title="SCC-Nr. ändern">SCC ${esc(s.nr)}</button>`:`SCC ${esc(s.nr)}`):(bu?`<button class="vt-ed leer" data-act="vgNrEd" data-id="${id}">+ SCC-Nr.</button>`:"ohne SCC-Nr."); l2=`${wer(s)} · ${esc(vgKurzDat(s.at))}`; }
     if(k==="termin"){ const d=s.datum?new Date(s.datum+"T12:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"}):"ohne Datum";
-      l1=bu&&!vgZu(v)?`<button class="vt-ed" data-act="vgTerminEd" data-id="${id}" title="Termin ändern">${d}</button>`:d; l2=[s.zeit?esc(s.zeit):"",esc(s.mit||"")].filter(Boolean).join(" · ")||wer(s); }
+      l1=bu&&!vgZu(v)?`<button class="vt-ed" data-act="vgTerminEd" data-id="${id}" title="Termin ändern">${d}</button>`:d; l2=[s.zeit?esc(s.zeit):"",s.mit?mitHtml(s):""].filter(Boolean).join(" · ")||wer(s); }
     return `<div class="vt-z ok s${i}"><span class="vt-1">${l1}</span><span class="vt-2">${l2}</span></div>`; }
   if(v.abgelehnt&&i===st+1) return `<div class="vt-z bad"><span class="vt-1">Abgelehnt</span><span class="vt-2">${esc(vgVorn(v.abgelehnt.wer&&v.abgelehnt.wer.name)||"")}${v.abgelehnt.grund?` · ${esc(v.abgelehnt.grund)}`:""}</span></div>`;
   if(i===st+1&&!vgZu(v)) return vgDarfNach(v,i)?`<button class="vt-z next" data-act="vgWeiter" data-id="${id}" title="${esc(VG_NEXT_T[st])}">${icon("add")}<span>${esc(["Ans Büro","Erteilen","Termin","Erledigt"][st])}</span></button>`

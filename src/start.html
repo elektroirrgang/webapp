@@ -2292,13 +2292,11 @@ function gerDialog(g){
     <div class="ger-notiz">${ta("notiz","Notiz",r.notiz,{form:true,ph:"z. B. liegt im Sprinter, Kalibrierung bei …"})}</div></div><input type="file" id="gerDatei" accept="image/*" hidden>`,
     `${g?`<button class="btn-text danger" data-act="gerAus">${r.aus?"Wieder aktiv":"Ausmustern"}</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gerSave">Speichern</button>`,{breit:true});
 }
-/* Namen gleich, auch wenn Leerzeichen/Groß-Kleinschreibung abweichen („A. Irrgang“ = „a.irrgang“) */
-const nameGleich=(a,b)=>String(a||"").replace(/\s+/g,"").toLowerCase()===String(b||"").replace(/\s+/g,"").toLowerCase();
 function teamView(){ entwNachtragen();
   const T=teamAlle(), a=T.filter(m=>m.status!=="weg"), w=T.filter(m=>m.status==="weg");
-  const doppelt=[...new Set(a.filter(m=>a.some(x=>x!==m&&nameGleich(x.name,m.name))).map(m=>m.name))];
+
   const z=m=>{ const p=profilVon(m.mail)||{}, voll=[p.vorname,p.nachname].filter(Boolean).join(" ");
-    return `<div class="li" role="button" tabindex="0" data-act="teamEdit" data-mail="${esc(m.mail)}">${p.bild?`<span class="av" style="background:url('${p.bild}') center/cover"></span>`:`<span class="av">${esc(initials(m.name))}</span>`}<span class="lt"><span class="h">${esc(voll||m.name)}${p.ruf&&p.ruf!==p.vorname?` <span class="ma-ruf">„${esc(p.ruf)}“</span>`:""}</span><span class="s">${esc([m.mail,maRolleRest(m)].filter(Boolean).join(" · "))}</span><span class="st">${maPillen(m)}</span></span>${icon("chev")}</div>`; };
+    return `<div class="li" role="button" tabindex="0" data-act="teamEdit" data-mail="${esc(m.mail)}">${p.bild?`<span class="av" style="background:url('${p.bild}') center/cover"></span>`:`<span class="av" style="background:${persFarbe(m.mail)};color:${persSchrift(persFarbe(m.mail))}">${esc(initials(voll||m.name))}</span>`}<span class="lt"><span class="h">${esc(voll||m.name)}${p.ruf&&p.ruf!==p.vorname?` <span class="ma-ruf">„${esc(p.ruf)}“</span>`:""}</span><span class="s">${esc([m.mail,maRolleRest(m)].filter(Boolean).join(" · "))}</span><span class="st">${maPillen(m)}</span></span>${icon("chev")}</div>`; };
   /* Wer sich schon mit seinem Firmenkonto angemeldet und etwas angelegt hat, aber noch nicht in der Liste steht */
   const bekannt=new Set(T.map(m=>String(m.mail).toLowerCase())), gef=new Map(), dom=TEST_LOGIN.domain;
   const merk=(mail,name)=>{ const ml=String(mail||"").toLowerCase(); if(ml&&ml.endsWith(dom)&&!bekannt.has(ml)&&!gef.has(ml)) gef.set(ml,name||ml); };
@@ -2307,8 +2305,7 @@ function teamView(){ entwNachtragen();
   const vz=([ml,n])=>`<div class="li"><span class="av">${esc(initials(n))}</span><span class="lt"><span class="h">${esc(n)}</span><span class="s">${esc(ml)} · hat schon mit den Apps gearbeitet</span></span><button class="btn-tonal" data-act="teamVorschlag" data-mail="${esc(ml)}" data-name="${esc(n)}">Hinzufügen</button></div>`;
   const EW=maEntwurf(), ewZeit=EW?new Date(EW.t).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
   const ewZeile=EW?`<div class="sec-lbl">Nicht gespeichert</div>${listOf([`<div class="li" role="button" tabindex="0" data-act="maEntwurfAuf"><span class="av">${icon("edit")}</span><span class="lt"><span class="h">${esc(EW.titel||(EW.k?EW.k:"Neuer Mitarbeiter"))}</span><span class="s">${EW.k?"Änderungen":"Neu angelegt"} · zuletzt ${esc(ewZeit)}</span></span><button class="btn-text" data-act="maEntwurfWeg">Verwerfen</button></div>`])}`:"";
-  const dHin=doppelt.length?`<section class="card tipp" style="margin-bottom:12px"><b>${icon("person")}Gleicher Name mehrfach</b><p>${doppelt.map(n=>`„${esc(n)}“`).join(", ")} steht für mehrere Mitarbeiter. Bei Terminen und Zuständigkeiten lässt sich dann nicht unterscheiden, wer gemeint ist. Bitte einen davon umbenennen, z. B. mit Vornamen.</p></section>`:"";
-  return `<div class="narrow">${ewZeile}${dHin}<div class="sec-lbl">Aktiv · ${a.length}</div>${listOf(a.map(z))}
+  return `<div class="narrow">${ewZeile}<div class="sec-lbl">Aktiv · ${a.length}</div>${listOf(a.map(z))}
     ${gef.size?`<div class="sec-lbl">Noch nicht in der Liste · ${gef.size}</div>${listOf([...gef].map(vz))}`:""}
     ${w.length?`<div class="sec-lbl">Ausgeschieden · ${w.length}</div>${listOf(w.map(z))}`:""}
     <section class="card tipp"><b>${icon("person")}Neuer Mitarbeiter</b>
@@ -2345,7 +2342,7 @@ function maView(m){
       ${tf("ruf","Rufname (So möchte ich begrüßt werden)",fv("ruf",p.ruf||""),{form:true,ph:p.vorname||t.vor||"z. B. Max"})}</div>
     <p class="sup" style="margin:8px 4px 0">Steht in der Begrüßung und unten in der Seitenleiste. Jeder kann seinen Namen auch selbst unter „Konto“ ändern.</p>
     <div class="sec-lbl">In der Firma</div>
-    <div class="fg1">${tf("name","Kürzel (abgekürzt)",fv("name",m?m.name:(MA_VORSCHLAG&&MA_VORSCHLAG.kurz)||""),{form:true,ph:"z. B. M. Mustermann"})}${tf("mail","E-Mail",fv("mail",m?m.mail:(MA_VORSCHLAG&&MA_VORSCHLAG.mail)||""),{form:true,type:"email",ph:"m.mustermann@elektro-irrgang.de"})}${tf("rolle","Zusatz (optional)",fv("rolle",m?maRolleRest(m):""),{form:true,ph:"z. B. Firmenmail, Kundendienst"})}</div>
+    <div class="fg1">${tf("name","Kürzel (abgekürzt)",fv("name",m?m.name:(MA_VORSCHLAG&&MA_VORSCHLAG.kurz)||""),{form:true,ph:"z. B. M. Mustermann"})}${tf("voll","Voller Name (optional)",fv("voll",m?m.voll||"":""),{form:true,ph:"z. B. Max Mustermann – zeigt die Blase beim Drüberfahren"})}${tf("mail","E-Mail",fv("mail",m?m.mail:(MA_VORSCHLAG&&MA_VORSCHLAG.mail)||""),{form:true,type:"email",ph:"m.mustermann@elektro-irrgang.de"})}${tf("rolle","Zusatz (optional)",fv("rolle",m?maRolleRest(m):""),{form:true,ph:"z. B. Firmenmail, Kundendienst"})}</div>
     <div class="lbl" style="margin:16px 4px 8px">Stufe</div>
     <div class="chips ma-stufen">${MA_STUFEN.map(([v,t])=>`<button type="button" class="chip" data-act="teamStufe" data-v="${v}" aria-pressed="${teamForm.stufe===v}">${t}</button>`).join("")}</div>
     <div id="maAzubi" ${teamForm.stufe==="azubi"?"":"hidden"}><div class="row2" style="margin-top:12px">${tf("azubiVon","Ausbildung seit",fv("azubiVon",m&&m.azubiVon||""),{form:true,type:"date"})}${tf("azubiBis","Ausbildung bis",fv("azubiBis",m&&m.azubiBis||""),{form:true,type:"date"})}</div>
@@ -2360,7 +2357,7 @@ function maView(m){
 function teamDialog(m){
   teamForm={alt:m?m.mail:null,admin:!!(m&&m.admin),status:m?m.status||"aktiv":"aktiv",pruefer:!!(m&&m.pruefer)};
   const ich=m&&m.mail===ME.mail;
-  dialog(m?"Mitarbeiter bearbeiten":"Mitarbeiter hinzufügen",`<div class="fg1">${tf("name","Name (abgekürzt)",m?m.name:"",{form:true,ph:"z. B. M. Mustermann"})}${tf("mail","E-Mail",m?m.mail:"",{form:true,type:"email",ph:"m.mustermann@elektro-irrgang.de"})}${tf("rolle","Aufgabe (optional)",m?m.rolle:"",{form:true,ph:"z. B. Geselle, Azubi, Büro"})}</div>
+  dialog(m?"Mitarbeiter bearbeiten":"Mitarbeiter hinzufügen",`<div class="fg1">${tf("name","Name (abgekürzt)",m?m.name:"",{form:true,ph:"z. B. M. Mustermann"})}${tf("voll","Voller Name (optional)",m?m.voll||"":"",{form:true,ph:"z. B. Max Mustermann"})}${tf("mail","E-Mail",m?m.mail:"",{form:true,type:"email",ph:"m.mustermann@elektro-irrgang.de"})}${tf("rolle","Aufgabe (optional)",m?m.rolle:"",{form:true,ph:"z. B. Geselle, Azubi, Büro"})}</div>
     <div class="lbl" style="margin:16px 4px 8px">Status</div>${seg("teamStatus",teamForm.status,STATUS_MA)}
     <div class="lbl" style="margin:16px 4px 8px">Rechte</div>${seg("teamAdmin",teamForm.admin?"1":"0",[["0","Mitarbeiter"],["1","Admin"]])}
     <p class="sup" style="margin:8px 0 0">Admins sehen die Statistik, verwalten Mitarbeiter und dürfen alle Einträge bearbeiten.${ich?" Dich selbst kannst du nicht herabstufen oder austragen.":""}</p>
@@ -2538,8 +2535,7 @@ document.addEventListener("click",async ev=>{
     if(!mail.endsWith(TEST_LOGIN.domain)){ toast(`Bitte die Arbeitsadresse (…${TEST_LOGIN.domain}) eingeben`); return; }
     const L=teamAlle().map(m=>({...m}));
     if(L.some(m=>m.mail===mail&&m.mail!==T.alt)){ toast("Diese Adresse ist schon eingetragen"); return; }
-    { const d=L.find(m=>m.status!=="weg"&&m.mail!==T.alt&&m.mail!==mail&&nameGleich(m.name,F.name)); if(d){ toast(`„${d.name}“ gibt es schon (${d.mail}) – bitte unterscheidbar benennen, z. B. mit Vornamen`); return; } }
-    const neu={name:F.name.trim(),mail,rolle:(F.rolle||"").trim()||undefined,admin:T.admin,entwickler:T.entw||undefined,status:T.status,pruefer:T.pruefer||undefined};
+    const neu={name:F.name.trim(),voll:(F.voll||"").trim()||undefined,mail,rolle:(F.rolle||"").trim()||undefined,admin:T.admin,entwickler:T.entw||undefined,status:T.status,pruefer:T.pruefer||undefined};
     if(nav.v==="ma"){ if(T.stufe) neu.stufe=T.stufe; if(T.stufe==="azubi"){ if(F.azubiVon) neu.azubiVon=F.azubiVon; if(F.azubiBis) neu.azubiBis=F.azubiBis;
       const alt=teamAlle().find(x=>x.mail===T.alt), lj=parseInt(F.lj,10);
       if(lj>=1&&lj<=4){ const bisher=alt&&alt.lj?maLehrjahr(Object.assign({},alt,{azubiVon:neu.azubiVon})):0; if(bisher===lj&&alt.ljAm){ neu.lj=alt.lj; neu.ljAm=alt.ljAm; } else { neu.lj=lj; neu.ljAm=new Date().toISOString().slice(0,10); } } } }

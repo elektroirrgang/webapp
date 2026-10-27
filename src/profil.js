@@ -21,7 +21,9 @@ function profilAnwenden(){
 }
 function profilAvatar(){ profilAnwenden(); const b=document.getElementById("avBtn"), t=document.getElementById("avTxt"); if(!b) return;
   if(ME.bild){ b.style.backgroundImage=`url("${ME.bild}")`; b.classList.add("mit-bild"); if(t) t.textContent=""; }
-  else { b.style.backgroundImage=""; b.classList.remove("mit-bild"); } }
+  else { b.style.backgroundImage=""; b.classList.remove("mit-bild"); }
+  /* ohne Foto: dieselbe Farbe wie überall sonst für diese Person */
+  if(!ME.bild&&ME.mail){ const f=persFarbe(ME.mail); b.style.backgroundColor=f; b.style.color=persSchrift(f); } else { b.style.backgroundColor=""; b.style.color=""; } }
 let pfBild=null;
 /* Konto als eigene Seite (Unterseite von „Mehr“); kontoDialog bleibt für alte Aufrufe und leitet um */
 function kontoDialog(){ pfBild=null; go({v:"konto"}); }
@@ -401,3 +403,39 @@ function maLehrjahr(m){ const n=new Date(), mon=(a,b)=>(b.getFullYear()-a.getFul
     let z=0; for(let y=am.getFullYear();y<=n.getFullYear();y++){ const tag=new Date(y,v.getMonth(),v.getDate(),12); if(tag>am&&tag<=n) z++; } return Math.min(4,Math.max(1,(+m.lj)+z)); }
   if(m.azubiVon) return Math.min(4,Math.max(1,Math.floor(mon(new Date(m.azubiVon+"T12:00"),n)/12)+1));
   return 0; }
+
+/* ===== Personen eindeutig zeigen =====
+   Zwei Mitarbeiter können dieselbe Abkürzung haben (z. B. „A. Irrgang“). Deshalb:
+   – jede Person hat ein Profilbild; ohne Foto einen farbigen Initialen-Kreis, Farbe je Person fest und im Team nicht doppelt
+   – beim Drüberfahren mit der Maus zeigt die Blase den vollen Namen aus dem Profil (sonst die E-Mail)
+   – „Wer fährt hin“ speichert neben den Namen auch die E-Mails (mitMails) – daran erkennt die App, wer gemeint ist */
+const PERS_FARBEN=["#1565c0","#c2185b","#ef6c00","#00838f","#4e342e","#283593","#d84315","#37474f","#ad1457","#00695c","#558b2f","#5d4037"];
+/* feste Farben (von Max so gewünscht): Chef gelb, Max grün, Alex lila – alle anderen bekommen automatisch eine freie Farbe */
+const PERS_FEST={"info@elektro-irrgang.de":"#f2b400","m.pevec@elektro-irrgang.de":"#2e7d32","alex@elektro-irrgang.de":"#7b1fa2"};
+function persFarbe(mail){ const m=String(mail||"").toLowerCase(); let T=[]; try{ T=typeof teamAlle==="function"?teamAlle():typeof team==="function"?team():[]; }catch(e){}
+  const eigen=t=>t&&(t.farbe||PERS_FEST[String(t.mail||"").toLowerCase()]), t0=T.find(x=>String(x.mail||"").toLowerCase()===m);
+  if(eigen(t0)) return eigen(t0); if(PERS_FEST[m]) return PERS_FEST[m];
+  const belegt=new Set(T.map(eigen).filter(Boolean)), frei=PERS_FARBEN.filter(f=>!belegt.has(f)), L=T.filter(x=>!eigen(x)).map(x=>String(x.mail||"").toLowerCase()).filter(Boolean).sort();
+  let i=L.indexOf(m); if(i<0){ i=0; for(const c of m) i=(i*31+c.charCodeAt(0))>>>0; } return (frei.length?frei:PERS_FARBEN)[i%(frei.length||PERS_FARBEN.length)]; }
+/* Schrift auf der Farbe: auf hellem Gelb dunkel, sonst weiß */
+function persSchrift(f){ const h=String(f||"").replace("#",""); if(h.length!==6) return "#fff"; const [r,g,b]=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255); return (0.299*r+0.587*g+0.114*b)>0.62?"#1c1b1f":"#fff"; }
+const persTeam=mail=>{ const m=String(mail||"").toLowerCase(); try{ return (typeof teamAlle==="function"?teamAlle():team()).find(x=>String(x.mail||"").toLowerCase()===m)||null; }catch(e){ return null; } };
+/* voller Name für die Blase: Vor- und Nachname aus dem Profil, sonst Rufname, sonst die E-Mail */
+function persVoll(mail,name){ const p=typeof profilVon==="function"?profilVon(mail):null, v=p&&!pfKaputt(p)?[p.vorname,p.nachname].filter(Boolean).join(" ").trim():"";
+  const t=mail?persTeam(mail):null; return v||(t&&t.voll)||(p&&p.ruf)||(mail?String(mail).toLowerCase():"")||name||""; }
+function persAv(mail,name,cls=""){ const p=mail&&typeof profilVon==="function"?profilVon(mail):null, voll=persVoll(mail,name);
+  if(p&&p.bild) return `<i class="pav ${cls}" style="background-image:url('${p.bild}')" aria-hidden="true"></i>`;
+  const ini=initials(p&&!pfKaputt(p)&&(p.vorname||p.nachname)?[p.vorname,p.nachname].filter(Boolean).join(" "):name||voll);
+  return `<i class="pav ${cls}" style="background-color:${mail?persFarbe(mail):"var(--sc-highest)"}${mail?";color:"+persSchrift(persFarbe(mail)):""}" aria-hidden="true">${esc(ini)}</i>`; }
+/* Person als kleines Element mit Bild + Name + Blase */
+const persName=(mail,name)=>`<span class="pn" title="${esc(persVoll(mail,name)||name)}">${persAv(mail,name)}${esc(name||persVoll(mail,""))}</span>`;
+/* „Wer fährt hin“ eines Termins als Liste {name,mail}: neue Einträge über mitMails, alte nur über Namen (eindeutig nur, wenn der Name einmal vorkommt) */
+function mitListe(t){ if(!t) return []; const T=(()=>{ try{ return typeof team==="function"?team():[]; }catch(e){ return []; } })();
+  const namen=String(t.mit||"").split(/\s*,\s*/).filter(Boolean);
+  if(Array.isArray(t.mitMails)&&t.mitMails.length){ const L=t.mitMails.map(m=>{ const p=persTeam(m); return {name:p?p.name:m,mail:String(m).toLowerCase()}; }); const da=new Set(L.map(x=>x.name));
+    namen.forEach(n=>{ if(!da.has(n)&&!t.mitMails.some(m=>{ const p=persTeam(m); return p&&p.name===n; })) L.push({name:n,mail:""}); }); return L; }
+  return namen.map(n=>{ const M=T.filter(x=>x.name===n); return M.length===1?{name:n,mail:String(M[0].mail).toLowerCase()}:{name:n,mail:"",unklar:M.length>1}; }); }
+const mitHtml=t=>mitListe(t).map(x=>x.mail?persName(x.mail,x.name):`<span class="pn"${x.unklar?` title="Älterer Eintrag – nicht eindeutig, wer gemeint ist"`:""}>${esc(x.name)}</span>`).join(", ");
+/* bin ich bei diesem Termin dabei? */
+function mitIch(t){ const ich=String(ME.mail||"").toLowerCase(); if(!t||!ich) return false; if(Array.isArray(t.mitMails)&&t.mitMails.length) return t.mitMails.map(m=>String(m).toLowerCase()).includes(ich);
+  const n=String(ME.name||"").trim(), me=persTeam(ich), L=String(t.mit||"").split(/\s*,\s*/); return (!!n&&L.includes(n))||(!!me&&L.includes(me.name)); }
