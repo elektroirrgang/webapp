@@ -836,3 +836,9 @@ body.sf-an nav.navbar.navbar{padding-bottom:200px!important}
 .ml-z.neu{background:color-mix(in srgb,var(--primary) 9%,var(--sc))}
 .ml-z.neu .ml-t b::after{content:"neu";margin-left:8px;font-size:11px;font-weight:700;padding:1px 7px;border-radius:8px;background:var(--primary);color:#fff;vertical-align:2px}
 .ml-fch{margin-bottom:6px}
+
+/* Kundenart und Gebäude/Ebenen */
+.kd-artw{margin-bottom:6px}
+.ml-oc{display:flex;align-items:flex-start;gap:10px;margin:2px 0 8px}.ml-oc > span{flex:none;width:56px;font-size:13px;font-weight:700;color:var(--on-sv);padding-top:8px}
+.ml-oc .chips{flex:1;gap:6px}.ml-oc .chip{min-height:34px;padding:4px 14px}
+.ml-so{margin-bottom:10px}.ml-tipp{margin:0 4px 8px}

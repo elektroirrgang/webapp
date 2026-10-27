@@ -5,11 +5,12 @@ function infoKarte(r,kind){
   const adr=adrText(r), tel=r.tel&&r.tel.replace(/[^\d+]/g,""), vorschlag=kind==="kunden"&&!r.web?webVorschlag(r):"";
   const qa=(href,ic,t,act)=>`<${href?`a href="${href}"${/^https/.test(href)?' target="_blank" rel="noopener"':""}`:`button type="button" data-act="${act}"`} class="qa"><span class="qa-ic">${icon(ic)}</span><span>${t}</span></${href?"a":"button"}>`;
   const aktionen=[tel&&qa("tel:"+tel,"phone","Anrufen"),r.mail&&qa("mailto:"+r.mail,"mail","E-Mail"),adr&&qa(mapsHref(adr),"route","Route"),
-    kind==="kunden"&&(r.web?qa(webHref(r.web),"globe","Webseite"):vorschlag?qa(webHref(vorschlag),"globe","Webseite"):canEdit(r)?qa("","search","Webseite suchen","webSuchen"):""),
+    kind==="kunden"&&(r.web?qa(webHref(r.web),"globe","Webseite"):kdArt(r)==="privat"?"":vorschlag?qa(webHref(vorschlag),"globe","Webseite"):canEdit(r)?qa("","search","Webseite suchen","webSuchen"):""),
     typeof nav!=="undefined"&&nav.id===r.id&&kdDarf(r)&&qa("","edit","Bearbeiten","editLoc")].filter(Boolean);
   /* Eckdaten nur zum Lesen – Anrufen, E-Mail, Route und Webseite gibt es oben als Knöpfe */
   const z=(ic,l,v)=>v?`<div class="dz"><span class="dz-ic">${icon(ic)}</span><span class="dz-t"><small>${l}</small><span>${esc(v)}</span></span></div>`:"";
-  const zeilen=[z("tag","Kundennummer",r.kdnr),z("ort","Adresse",adr),
+  const art=kind==="kunden"?`${KD_ART_LANG[kdArt(r)]}${r.art?"":" (vorgeschlagen)"}${kdArt(r)==="privat"&&kdAnrede(r)?` · ${kdAnrede(r)} ${r.nachname||""}`.trimEnd():""}`:"";
+  const zeilen=[z("firma","Kundenart",art),z("tag","Kundennummer",r.kdnr),z("ort","Adresse",adr),z("kdGeb","Gebäude / Bauteile",kdListe(r.bauteile).join(", ")),z("ebene","Ebenen",kdListe(r.ebenen).join(", ")),
     z("phone","Telefon",r.tel),z("mail","E-Mail",r.mail),
     z("globe",r.web?"Webseite":"Webseite (aus der E-Mail-Adresse)",r.web?webText(r.web):vorschlag),z("notes","Notiz",r.notiz)].join("");
   if(!aktionen.length&&!zeilen) return "";
@@ -200,3 +201,49 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="karteZentr"){ if(KARTE.map&&KARTE.mk) KARTE.map.easeTo({center:KARTE.mk.getLngLat(),zoom:15.2,duration:500}); }
   else if(a==="karteOrt"){ karteWahl[b.dataset.r]=b.dataset.id; render(); }
 },true);
+
+/* ===== Kundenart: Privat · Gewerbe · Industrie =====
+   Wie in Handwerker-/Wartungssoftware: Kunde → Standort/Objekt → Gebäude/Bauteil → Ebene → Raum.
+   Die Art steuert nur, was vorgeschlagen und eingeblendet wird – sie sperrt nichts (ein wachsender Gewerbekunde
+   bekommt Bauteile oder einen Rahmenauftrag, ohne umgestellt werden zu müssen).
+   Gespeichert am Kunden: art, bei Privat anrede/vorname/nachname (name = „Vorname Nachname“ für Suche und Ordner).
+   Bauteile/Ebenen als Text („A, B, C“) am Kunden (ein Werk) oder am Standort (mehrere Liegenschaften).
+   Ohne gesetzte Art wird sie aus dem Namen vorgeschlagen (GmbH, AG, KG … ⇒ Gewerbe, sonst Privat). */
+Object.assign(IC,{ebene:"M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z",kdGeb:IC.kdGeb||"M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm6 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z"});
+const KD_ARTEN=[["privat","Privat"],["gewerbe","Gewerbe"],["industrie","Industrie"]];
+const KD_ART_LANG={privat:"Privatkunde",gewerbe:"Gewerbekunde",industrie:"Industriekunde"};
+const KD_FIRMA_RE=/(\bgmbh|\bag\b|\bkg\b|\bohg\b|\bug\b|\bgbr\b|mbh\b|\be\.\s?k\b|\be\.\s?v\b|\bco\.|\bltd\b|\binc\b|\bse\b|kgaa|stiftung|apotheke|praxis|gemeinde|stadt |schule|kirche|klinik|hotel|gaststätte|autohaus|bäckerei|metzgerei|verwaltung|werk\b|werke\b|\bgruppe\b)/i;
+const kdArt=k=>k&&KD_ARTEN.some(x=>x[0]===k.art)?k.art:(KD_FIRMA_RE.test(String(k&&k.name||""))?"gewerbe":"privat");
+const kdListe=t=>Array.isArray(t)?t:String(t||"").split(/\s*[,;\n]\s*/).map(x=>x.trim()).filter(Boolean);
+const kdOrteTitel=k=>kdArt(k)==="privat"?"Weitere Objekte":"Standorte";
+const kdKeinOrt=k=>kdArt(k)==="privat"?"Das Objekt ist die Adresse des Kunden. Ein weiteres nur, wenn er z. B. ein zweites Haus hat.":"";
+const KD_ANREDE=[["herr","Herr"],["frau","Frau"],["","Ohne"]];
+const kdAnrede=k=>({herr:"Herr",frau:"Frau"})[k&&k.anrede]||"";
+/* Bearbeiten-Fenster (in allen Apps) nach dem Öffnen ergänzen: Kundenart, Privat-Felder, Bauteile/Ebenen */
+function kdDlgErweitern(kind,rec){ const d=document.getElementById("dlg"), fg=d&&d.querySelector(".fg1"); if(!fg||!["kunden","standorte"].includes(kind)) return; const r=rec||{};
+  const hid=(f,v)=>`<input type="hidden" data-f="${f}" value="${esc(v||"")}">`;
+  const struktur=(zeigen)=>`<div class="kd-strukt"${zeigen?"":" hidden"}><div class="lbl" style="margin:12px 4px 6px">Gebäude und Ebenen (für Meldungen und Prüfungen)</div>
+    ${tf("bauteile","Gebäude / Bauteile (mit Komma trennen)",kdListe(r.bauteile).join(", "),{form:true,ph:"z. B. A, B, C, D, E"})}${tf("ebenen","Ebenen (mit Komma trennen)",kdListe(r.ebenen).join(", "),{form:true,ph:"z. B. UG, EG, Level 1, Level 2"})}</div>`;
+  if(kind==="kunden"){ const art=rec?kdArt(r):"privat", t=nameTeile(r.name||"");
+    fg.insertAdjacentHTML("afterbegin",`<div class="kd-artw">${hid("art",art)}<div class="lbl" style="margin:0 4px 6px">Kundenart</div>${seg("kdArtW",art,KD_ARTEN)}</div>
+      <div class="kd-priv"${art==="privat"?"":" hidden"}>${hid("anrede",r.anrede||"")}<div class="lbl" style="margin:8px 4px 6px">Anrede</div>${seg("kdAnrW",r.anrede||"",KD_ANREDE)}
+        <div class="row2" style="margin-top:12px">${tf("vorname","Vorname",r.vorname||(r.art?"":t.vor)||"",{form:true})}${tf("nachname","Nachname",r.nachname||(r.art?"":t.nach)||"",{form:true})}</div></div>`);
+    fg.insertAdjacentHTML("beforeend",struktur(art==="industrie"||kdListe(r.bauteile).length||kdListe(r.ebenen).length));
+    kdArtAnwenden(art); }
+  else { const kd=(r.kundeId||(typeof locForm!=="undefined"&&locForm&&locForm.parentId))&&kundeOf(r.kundeId||locForm.parentId);
+    fg.insertAdjacentHTML("beforeend",struktur(!kd||kdArt(kd)!=="privat"||kdListe(r.bauteile).length)); }
+}
+function kdArtAnwenden(art){ const d=document.getElementById("dlg"); if(!d) return; const priv=art==="privat";
+  const pv=d.querySelector(".kd-priv"); if(pv) pv.hidden=!priv;
+  const nf=d.querySelector('[data-f="name"]'), tfN=nf&&nf.closest(".tf"); if(tfN) tfN.hidden=priv;
+  if(nf) nf.placeholder=art==="industrie"?"z. B. Merten GmbH":"z. B. Musterfirma GmbH";
+  const wf=d.querySelector('[data-f="web"]'), tfW=wf&&wf.closest(".tf"); if(tfW&&!wf.value) tfW.hidden=priv; /* Privatleute haben selten eine Webseite */
+  const st=d.querySelector(".kd-strukt"); if(st&&art==="industrie") st.hidden=false;
+  if(priv) kdNameAusTeilen(); }
+function kdNameAusTeilen(){ const d=document.getElementById("dlg"); if(!d) return; const v=d.querySelector('[data-f="vorname"]'), n=d.querySelector('[data-f="nachname"]'), nf=d.querySelector('[data-f="name"]');
+  if(v&&n&&nf&&(v.value.trim()||n.value.trim())) nf.value=[v.value.trim(),n.value.trim()].filter(Boolean).join(" "); }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="kdArtW"],[data-act="kdAnrW"]'); if(!b) return; e.stopImmediatePropagation(); e.preventDefault();
+  b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); if(typeof segInd==="function") segInd();
+  const d=document.getElementById("dlg"), f=b.dataset.act==="kdArtW"?"art":"anrede", h=d&&d.querySelector(`input[type=hidden][data-f="${f}"]`); if(h) h.value=b.dataset.v;
+  if(f==="art") kdArtAnwenden(b.dataset.v); },true);
+document.addEventListener("input",e=>{ const f=e.target&&e.target.dataset&&e.target.dataset.f; if((f==="vorname"||f==="nachname")&&e.target.closest("#dlg")) kdNameAusTeilen(); });

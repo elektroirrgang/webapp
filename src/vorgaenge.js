@@ -560,13 +560,22 @@ function mlAnfSync(m){ if(!DB.anforderungen) return; const txt=m.mitLager?"":Str
   const a=mlAnf(m);
   if(a){ if(a.status!=="angefordert"||JSON.stringify(a.pos)===JSON.stringify(pos)) return; if(!pos.length) a.deleted=true; a.pos=pos; saveRec("anforderungen",a); return; }
   if(pos.length) saveRec("anforderungen",{id:uid(),baustelleId:"",meldungId:m.id,pos,notiz:"",status:"angefordert",statusAm:Date.now(),statusVon:who()},true); }
+/* Gebäude/Bauteile und Ebenen aus den Stammdaten (am Kunden = ein Werk, an Standorten = mehrere Liegenschaften) */
+function mlOrte(k){ if(!k||typeof kdListe!=="function") return []; const O=[], hat=r=>kdListe(r.bauteile).length||kdListe(r.ebenen).length;
+  if(hat(k)) O.push({id:"",name:"Hauptadresse",b:kdListe(k.bauteile),e:kdListe(k.ebenen)});
+  (typeof standorteVon==="function"?standorteVon(k.id):[]).filter(hat).forEach(x=>O.push({id:x.id,name:x.name||"Standort",b:kdListe(x.bauteile),e:kdListe(x.ebenen)})); return O; }
+function mlOrtChips(init){ if(!mlE) return ""; const o=(mlE.orte||[]).find(x=>x.id===mlE.standortId);
+  if(!o) return (mlE.orte||[]).length||!istBuero()?"":`<p class="sup ml-tipp">Tipp: Gebäude/Bauteile und Ebenen einmal am Kunden eintragen (Bearbeiten) – dann hier nur noch antippen.</p>`;
+  const d=!init&&document.getElementById("dlg"), wert=id=>{ const f=d&&d.querySelector("#"+id); return f?f.value.trim():(id==="f_mlBt"?mlE.bauteil:mlE.ebene)||""; };
+  const reihe=(l,L,id)=>L.length?`<div class="ml-oc"><span>${l}</span><div class="chips">${L.map(x=>`<button type="button" class="chip" data-act="vgMlOc" data-f="${id}" data-v="${esc(x)}" aria-pressed="${wert(id)===x}">${esc(x)}</button>`).join("")}</div></div>`:"";
+  return reihe("Bauteil",o.b,"f_mlBt")+reihe("Ebene",o.e,"f_mlEb"); }
 /* Vorschläge für Bauteil/Ebene/Raum aus früheren Meldungen desselben Kunden */
 function mlVorschl(kid,f){ const s=new Set(); live("vorgaenge").filter(m=>m.typ==="meldung"&&m.kundeId===kid).forEach(m=>{ const x=String(m[f]||"").trim(); if(x) s.add(x); }); return [...s].sort((a,b)=>a.localeCompare(b,"de",{numeric:true})); }
 const mlDl=(id,L)=>`<datalist id="${id}">${L.map(x=>`<option value="${esc(x)}">`).join("")}</datalist>`;
 const mlDtLokal=t=>{ const d=new Date(t||Date.now()); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); };
 function mlDialog(r,m){ const k=r.kundeId&&kundeOf(r.kundeId), M=(k&&Array.isArray(k.melder)?k.melder:[]);
   mlE=m?JSON.parse(JSON.stringify(m)):{id:null,rahmenId:r.id,kundeId:r.kundeId||"",status:"offen",melderId:(M.find(x=>x.id===(mlAlle(r.id)[0]||{}).melderId)||{}).id||""};
-  mlE.neuMelder=false; mlE.zustSel=m?vgZustL(m).map(p=>String(p.mail||"").toLowerCase()):[];
+  mlE.neuMelder=false; mlE.orte=mlOrte(k); if(mlE.standortId===undefined||!mlE.orte.some(o=>o.id===mlE.standortId)) mlE.standortId=(mlE.orte[0]||{}).id||""; mlE.zustSel=m?vgZustL(m).map(p=>String(p.mail||"").toLowerCase()):[];
   const darfZ=mail=>istBuero()||String(mail).toLowerCase()===String(ME.mail||"").toLowerCase();
   const zChips=`<div class="chips ml-zust">${team().filter(x=>x.mail&&x.status!=="weg").map(x=>`<button type="button" class="chip" data-act="vgMlZu" data-mail="${esc(String(x.mail).toLowerCase())}" aria-pressed="${mlE.zustSel.includes(String(x.mail).toLowerCase())}"${darfZ(x.mail)?"":" disabled"}>${esc(x.name)}</button>`).join("")}</div>`;
   const chips=`<div class="chips ml-mel">${M.map(x=>`<button type="button" class="chip" data-act="vgMlMel" data-v="${esc(x.id)}" aria-pressed="${mlE.melderId===x.id}">${esc(x.name)}${x.firma?` · ${esc(x.firma)}`:""}</button>`).join("")}<button type="button" class="chip" data-act="vgMlMel" data-v="_neu">${icon("add")}Neuer Melder</button></div>`;
@@ -574,7 +583,9 @@ function mlDialog(r,m){ const k=r.kundeId&&kundeOf(r.kundeId), M=(k&&Array.isArr
   dialog(m?"Meldung":"Neue Meldung",`<div class="fg1 ml-dlg">
     <div class="lbl" style="margin:0 4px 6px">Gemeldet von</div>${chips}
     <div id="mlNeuMel" class="fg1" hidden>${tf("mlMN","Name",m?"":"",{form:true,ph:"z. B. Herr Becker"})}${tf("mlMF","Firma / Rolle",m?"":"",{form:true,ph:"z. B. Stewe – Dienstleister"})}${tf("mlMT","Telefon (optional)","",{form:true,im:"tel"})}</div>
+    ${mlE.orte.length>1?`<div class="lbl" style="margin:4px 4px 6px">Standort</div><div class="chips ml-so">${mlE.orte.map(o=>`<button type="button" class="chip" data-act="vgMlSo" data-v="${esc(o.id)}" aria-pressed="${o.id===mlE.standortId}">${esc(o.name)}</button>`).join("")}</div>`:""}
     <div class="row3">${tf("mlBt","Bauteil",mlE.bauteil||"",{form:true,list:"dl-mlbt",ph:"z. B. C"})}${tf("mlEb","Ebene",mlE.ebene||"",{form:true,list:"dl-mleb",ph:"z. B. EG"})}${tf("mlRm","Raum / Bereich",mlE.raum||"",{form:true,list:"dl-mlrm",ph:"z. B. WC"})}</div>
+    <div id="mlOrtChips">${mlOrtChips(true)}</div>
     ${ta("mlTx","Was ist gemeldet?",mlE.text||"",{form:true,ph:"z. B. Notbeleuchtung flackert"})}
     ${tf("mlAm","Gemeldet am",mlDtLokal(mlE.gemeldet),{form:true,type:"datetime-local"})}<div class="vg-drw"><span>Dringend</span>${seg("vgMlDr",mlE.dringend?"ja":"nein",[["nein","Nein"],["ja","Ja"]])}</div>
     <div class="lbl" style="margin:12px 4px 6px">Zuständig${istBuero()?"":" (du kannst dich selbst eintragen)"}</div>${zChips}
@@ -596,6 +607,7 @@ function mlSpeichern(){ const F=formVals(), r=DB.vorgaenge.get(mlE.rahmenId); if
     else { mlE.melderId=""; mlE.melderName=[F.mlMN,F.mlMF].filter(Boolean).join(", "); } }
   const neu=!mlE.id, m=neu?{id:uid(),typ:"meldung",rahmenId:r.id,kundeId:r.kundeId||""}:DB.vorgaenge.get(mlE.id); if(!m) return;
   const vorher=m.status||"offen";
+  if(mlE.orte&&mlE.orte.length) m.standortId=mlE.standortId||""; 
   Object.assign(m,{bauteil:F.mlBt,ebene:F.mlEb,raum:F.mlRm,text:F.mlTx,dringend:!!mlE.dringend,melderId:mlE.melderId||"",melderName:mlE.melderId?"":(mlE.melderName||m.melderName||""),
     gemeldet:F.mlAm?new Date(F.mlAm).getTime():(m.gemeldet||Date.now()),status:mlE.status||"offen"});
   if(!neu){ m.notiz=F.mlNo||""; const z=parseFloat(String(F.mlZt||"").replace(",",".")); if(isNaN(z)) delete m.zeit; else m.zeit=z; m.material=F.mlMa||"";
@@ -616,6 +628,8 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     const f=document.getElementById("mlNeuMel"); if(f){ f.hidden=!neuM; if(neuM) f.querySelector("input")?.focus(); } }
   else if(a==="vgMlZu"&&mlE){ const mail=b.dataset.mail; mlE.zustSel=mlE.zustSel.includes(mail)?mlE.zustSel.filter(x=>x!==mail):[...mlE.zustSel,mail]; b.setAttribute("aria-pressed",String(mlE.zustSel.includes(mail))); }
   else if(a==="vgMlF"){ META.mlF=b.dataset.v; metaSave(); if(nav.v==="meldungen"&&typeof mlFuellen==="function") mlFuellen(); else render(); }
+  else if(a==="vgMlSo"&&mlE){ mlE.standortId=b.dataset.v; seg1(); const c=document.getElementById("mlOrtChips"); if(c) c.innerHTML=mlOrtChips(); }
+  else if(a==="vgMlOc"&&mlE){ const f=document.getElementById(b.dataset.f), an=b.getAttribute("aria-pressed")==="true"; if(f){ f.value=an?"":b.dataset.v; f.dispatchEvent(new Event("input",{bubbles:true})); } const c=document.getElementById("mlOrtChips"); if(c) c.innerHTML=mlOrtChips(); }
   else if(a==="vgMlLg"&&mlE){ mlE.mitLager=b.dataset.v==="lager"; seg1(); }
   else if(a==="vgMlDr"&&mlE){ mlE.dringend=b.dataset.v==="ja"; seg1(); }
   else if(a==="vgMlSt"&&mlE){ mlE.status=b.dataset.v; seg1(); }

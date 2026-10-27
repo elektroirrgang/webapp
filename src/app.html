@@ -2092,7 +2092,7 @@ function kundeView(k){
   let h=`<div class="narrow kd-seite">${kdOben(k,"kunden",ss)}${kontakteView("kunden",k)}`;
   /* ohne eigene Standorte: geprüft wird an der Adresse des Kunden – Verlauf und Geräte direkt hier */
   if(!ss.length||ps.length) h+=`<div class="sec-lbl">Prüfverlauf${ss.length?" an der Kundenadresse":""}</div>${verlaufKopf(sid,null)}${ps.length?listOf(ps.map(p=>pItem(p,false))):`<p class="meta">Noch keine Prüfung – über „Neue Prüfung“ anlegen.</p>`}`+(ps.length||geraeteOrt(sid,null).length?geraeteSektion(sid,null):"");
-  h+=kdKopf("Standorte",kdDarf(k)&&"newStandort","Standort hinzufügen")
+  h+=kdKopf(kdOrteTitel(k),kdDarf(k)&&"newStandort",kdArt(k)==="privat"?"Objekt hinzufügen":"Standort hinzufügen")
     +(ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager) – sonst wird an der Adresse des Kunden geprüft.</p>`);
   return h+ablageView("kunden",k)+`</div>`;
 }
@@ -2667,6 +2667,7 @@ function locDialog(kind,rec,parentId){
       +tf("ansprech","Ansprechpartner",r.ansprech,{form:true})+tf("tel","Telefon",r.tel,{form:true,type:"tel"})+tf("mail","E-Mail",r.mail,{form:true,type:"email"})+tf("web","Webseite",r.web,{form:true,type:"url",ph:"z. B. musterfirma.de"})+ta("notiz","Notiz",r.notiz,{form:true})
     :tf("name","Bezeichnung",r.name,{form:true,ph:"z. B. Werk Rheinbach"})+adr+tf("ansprech","Ansprechpartner vor Ort",r.ansprech,{form:true})+tf("tel","Telefon vor Ort",r.tel,{form:true,type:"tel"})+ta("notiz","Notiz (z. B. Zufahrt, Schlüssel)",r.notiz,{form:true});
   dialog(`${KIND_NAME[kind]} ${rec?"bearbeiten":"anlegen"}`,`<div class="fg1">${felder}</div>`,`<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="saveLoc">${rec?"Speichern":"Anlegen"}</button>`);
+  if(typeof kdDlgErweitern==="function") kdDlgErweitern(kind,rec);
 }
 let pick=null;
 function pickDialog(){

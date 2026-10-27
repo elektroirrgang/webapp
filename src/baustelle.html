@@ -2514,7 +2514,7 @@ function kundeView(k){
   const ss=standorteVon(k.id), bs=live("baustellen").filter(b=>b.kundeId===k.id).sort((a,b)=>aktiv(b)-aktiv(a));
   return `<div class="narrow kd-seite">${kdOben(k,"kunden",ss)}${kontakteView("kunden",k)}
     ${kdKopf("Baustellen","neueBaustelleKunde","Baustelle anlegen")}${bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle bei diesem Kunden.</p>`}
-    ${kdKopf("Standorte",kdDarf(k)&&"newStandort","Standort hinzufügen")}${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager) – sonst gilt die Adresse des Kunden.</p>`}
+    ${kdKopf(kdOrteTitel(k),kdDarf(k)&&"newStandort",kdArt(k)==="privat"?"Objekt hinzufügen":"Standort hinzufügen")}${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">${kdKeinOrt(k)?esc(kdKeinOrt(k)):"Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager) – sonst gilt die Adresse des Kunden."}</p>`}
     ${ablageView("kunden",k)}</div>`;
 }
 function standortView(s){
@@ -2531,6 +2531,7 @@ function locDialog(kind,rec,parentId){
       +tf("ansprech","Ansprechpartner",r.ansprech,{form:true})+tf("tel","Telefon",r.tel,{form:true,type:"tel"})+tf("mail","E-Mail",r.mail,{form:true,type:"email"})+tf("web","Webseite",r.web,{form:true,type:"url",ph:"z. B. musterfirma.de"})+ta("notiz","Notiz",r.notiz,{form:true})
     :tf("name","Bezeichnung",r.name,{form:true,ph:"z. B. Neubau Einfamilienhaus"})+adr+tf("ansprech","Ansprechpartner vor Ort",r.ansprech,{form:true})+tf("tel","Telefon vor Ort",r.tel,{form:true,type:"tel"})+ta("notiz","Notiz (z. B. Zufahrt, Schlüssel)",r.notiz,{form:true});
   dialog(`${KIND_NAME[kind]} ${rec?"bearbeiten":"anlegen"}`,`<div class="fg1">${felder}</div>`,`<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="saveLoc">${rec?"Speichern":"Anlegen"}</button>`);
+  if(typeof kdDlgErweitern==="function") kdDlgErweitern(kind,rec);
 }
 let nb=null;
 function bDialog(o){
