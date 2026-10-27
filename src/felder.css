@@ -842,3 +842,16 @@ body.sf-an nav.navbar.navbar{padding-bottom:200px!important}
 .ml-oc{display:flex;align-items:flex-start;gap:10px;margin:2px 0 8px}.ml-oc > span{flex:none;width:56px;font-size:13px;font-weight:700;color:var(--on-sv);padding-top:8px}
 .ml-oc .chips{flex:1;gap:6px}.ml-oc .chip{min-height:34px;padding:4px 14px}
 .ml-so{margin-bottom:10px}.ml-tipp{margin:0 4px 8px}
+/* Anlagen */
+.an-tabs{margin:0 0 14px}
+.an-such{margin:0 0 10px}
+.an-bt{margin-bottom:10px}
+.list.an-baum > .li.an-vt{padding-left:calc(14px + var(--t,0) * 24px)!important}
+.an-chips{gap:8px;margin-bottom:6px}.an-chips .chip small{opacity:.7;font-weight:600;margin-left:4px}
+.an-weg{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:12px;border-radius:18px;background:var(--sc-low)}
+.an-wk{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:12px;background:var(--sc);font-size:14px}
+.an-wk .ic{width:18px;height:18px;color:var(--on-sv)}.an-wk small{color:var(--on-sv);font-weight:600}
+.an-wk.ziel{background:var(--sec-c);color:var(--on-sec-c)}.an-wk.ziel .ic{color:var(--on-sec-c)}
+.an-pf{color:var(--on-sv);font-weight:700}
+.an-dz{margin-top:8px}
+.an-frist{margin:4px 4px 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}

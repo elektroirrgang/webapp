@@ -1587,7 +1587,7 @@ async function gj(path,opt){ const r=await g(path,opt); if(!r.ok) throw Object.a
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
 const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",protokolle:"Kundendaten",
   ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
-  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Baustellen"};
+  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Baustellen",gebaeude:"Prüfprotokolle",anlagen:"Kundendaten"};
 async function syncRoot(){
   if(SY.drive) return;
   const c=META.sync.root;
@@ -1889,8 +1889,8 @@ const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
 
 const TH_KEY="evse_theme";
 const RES_TXT={ok:"bestanden",bad:"nicht bestanden",open:"offen",wip:"in Arbeit"};
-const KINDS=["kunden","standorte","baustellen","eintraege","material","anforderungen","profile","vorgaenge","dateien","protokolle","einstellungen"];
-const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["vorgaenge","dateien","protokolle","einstellungen"];
+const KINDS=["kunden","standorte","baustellen","eintraege","material","anforderungen","profile","vorgaenge","dateien","protokolle","einstellungen","gebaeude","anlagen"];
+const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["vorgaenge","dateien","protokolle","einstellungen","gebaeude","anlagen"];
 const DB={kunden:new Map(),standorte:new Map(),baustellen:new Map(),eintraege:new Map(),notizen:new Map(),material:new Map(),anforderungen:new Map(),profile:new Map(),vorgaenge:new Map(),dateien:new Map(),protokolle:new Map(),einstellungen:new Map()};
 let META={profil:{name:""},filter:"aktiv",sync:{}};
 let nav={v:"start"}, query="", kDB=null, bDB=null, aDB=null, warned=false, syncT=null;

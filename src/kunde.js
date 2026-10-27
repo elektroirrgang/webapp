@@ -10,7 +10,7 @@ function infoKarte(r,kind){
   /* Eckdaten nur zum Lesen – Anrufen, E-Mail, Route und Webseite gibt es oben als Knöpfe */
   const z=(ic,l,v)=>v?`<div class="dz"><span class="dz-ic">${icon(ic)}</span><span class="dz-t"><small>${l}</small><span>${esc(v)}</span></span></div>`:"";
   const art=kind==="kunden"?`${KD_ART_LANG[kdArt(r)]}${r.art?"":" (vorgeschlagen)"}${kdArt(r)==="privat"&&kdAnrede(r)?` · ${kdAnrede(r)} ${r.nachname||""}`.trimEnd():""}`:"";
-  const zeilen=[z("firma","Kundenart",art),z("tag","Kundennummer",r.kdnr),z("ort","Adresse",adr),z("kdGeb","Gebäude / Bauteile",kdListe(r.bauteile).join(", ")),z("ebene","Ebenen",kdListe(r.ebenen).join(", ")),
+  const zeilen=[z("firma","Kundenart",art),z("tag","Kundennummer",r.kdnr),z("ort","Adresse",adr),
     z("phone","Telefon",r.tel),z("mail","E-Mail",r.mail),
     z("globe",r.web?"Webseite":"Webseite (aus der E-Mail-Adresse)",r.web?webText(r.web):vorschlag),z("notes","Notiz",r.notiz)].join("");
   if(!aktionen.length&&!zeilen) return "";
@@ -228,10 +228,8 @@ function kdDlgErweitern(kind,rec){ const d=document.getElementById("dlg"), fg=d&
     fg.insertAdjacentHTML("afterbegin",`<div class="kd-artw">${hid("art",art)}<div class="lbl" style="margin:0 4px 6px">Kundenart</div>${seg("kdArtW",art,KD_ARTEN)}</div>
       <div class="kd-priv"${art==="privat"?"":" hidden"}>${hid("anrede",r.anrede||"")}<div class="lbl" style="margin:8px 4px 6px">Anrede</div>${seg("kdAnrW",r.anrede||"",KD_ANREDE)}
         <div class="row2" style="margin-top:12px">${tf("vorname","Vorname",r.vorname||(r.art?"":t.vor)||"",{form:true})}${tf("nachname","Nachname",r.nachname||(r.art?"":t.nach)||"",{form:true})}</div></div>`);
-    fg.insertAdjacentHTML("beforeend",struktur(art==="industrie"||kdListe(r.bauteile).length||kdListe(r.ebenen).length));
     kdArtAnwenden(art); }
-  else { const kd=(r.kundeId||(typeof locForm!=="undefined"&&locForm&&locForm.parentId))&&kundeOf(r.kundeId||locForm.parentId);
-    fg.insertAdjacentHTML("beforeend",struktur(!kd||kdArt(kd)!=="privat"||kdListe(r.bauteile).length)); }
+  /* Gebäude, Ebenen, Verteiler und Maschinen pflegt jetzt die Seite „Anlagen“ (Übersicht) – ein Modell für alle Apps */
 }
 function kdArtAnwenden(art){ const d=document.getElementById("dlg"); if(!d) return; const priv=art==="privat";
   const pv=d.querySelector(".kd-priv"); if(pv) pv.hidden=!priv;

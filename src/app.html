@@ -1330,7 +1330,7 @@ const b64u=s=>btoa(unescape(encodeURIComponent(s))).replace(/=+$/,"").replace(/\
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
 const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",protokolle:"Kundendaten",
   ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
-  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Prüfprotokolle"};
+  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Prüfprotokolle",anlagen:"Kundendaten"};
 async function syncRoot(){
   if(SY.drive) return;
   const c=META.sync.root;

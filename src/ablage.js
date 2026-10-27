@@ -31,6 +31,7 @@ function kdOrtProt(x){ const nm=(k,id)=>id&&DB[k]&&DB[k].get(id)?DB[k].get(id).n
   return [kdKat("prot"),nm("standorte",x.standortId),nm("ladeparks",x.ladeparkId)].filter(Boolean).map(bbFs); }
 function kdDateiKunde(d){ if(!d) return ""; if(d.bezugKind==="kunden") return d.bezugId||"";
   const s=d.bezugKind==="standorte"&&DB.standorte&&DB.standorte.get(d.bezugId); if(s) return s.kundeId||"";
+  const an=d.bezugKind==="anlagen"&&DB.anlagen&&DB.anlagen.get(d.bezugId); if(an) return an.kundeId||"";
   const v=d.bezugKind==="vorgaenge"&&DB.vorgaenge&&DB.vorgaenge.get(d.bezugId); return v?v.kundeId||"":""; }
 function kdVorschlag(name,kind){ const n=String(name||"").toLowerCase();
   if(/angebot|auftrag|bestellung|lieferschein|aufma(ß|ss)|leistungsverzeichnis|\blv\b/.test(n)) return "angebote";
@@ -39,6 +40,9 @@ function kdVorschlag(name,kind){ const n=String(name||"").toLowerCase();
   if(/brief|schreiben|rechnung|mahnung|kündigung|\.msg$|\.eml$/.test(n)) return "post";
   return kind==="vorgaenge"?"angebote":""; }
 function kdOrtDatei(d){
+  /* Maschine: Pläne/Datenblätter bzw. Fotos in einen eigenen Unterordner „<Nr> <Bezeichnung>“ */
+  const an=d.bezugKind==="anlagen"&&DB.anlagen&&DB.anlagen.get(d.bezugId);
+  if(an){ const mn=[an.nr,an.bez].filter(Boolean).join(" ")||"Maschine"; if(/^image\//.test(d.typ||"")) return [kdKat("fotos"),mn].map(bbFs); const a="ordner" in d&&d.ordner?d.ordner:(kdVorschlag(d.name,d.bezugKind)||"plaene"); return [kdKat(a)||kdKat("plaene"),mn].map(bbFs); }
   const vg=d.bezugKind==="vorgaenge"&&DB.vorgaenge&&DB.vorgaenge.get(d.bezugId), st=d.bezugKind==="standorte"?d.bezugId:vg?vg.standortId:"";
   const sn=st&&DB.standorte&&DB.standorte.get(st)?DB.standorte.get(st).name:"";
   if(/^image\//.test(d.typ||"")) return [kdKat("fotos"),sn].filter(Boolean).map(bbFs);

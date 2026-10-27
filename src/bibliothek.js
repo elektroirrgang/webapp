@@ -106,7 +106,7 @@ function bbEintraege(){
     L.push({ort:kdOrtProt({app:"evse",standortId:p.standortId,ladeparkId:p.ladeparkId}),file:String(p.pdfAblage).split("/").pop(),art:"prot",titel:[kn(p.kundeId),s&&s.name].filter(Boolean).join(" › ")||"Prüfung",kundeId:p.kundeId||"",kunde:kn(p.kundeId),t:p.updated||0,st:p.standortId||"",
       info:["EVSE",p.p&&p.p.art,p.p&&bbDatum(p.p.datum),"PDF in der Share"].filter(Boolean).join(" · "),pill:"",
       ziel:`data-act="bbShare" data-id="${esc(p.id)}"`}); });
-  if(DB.dateien) [...DB.dateien.values()].filter(d=>!d.deleted).forEach(d=>{ const st=d.bezugKind==="standorte"&&DB.standorte?DB.standorte.get(d.bezugId):null, vg=d.bezugKind==="vorgaenge"&&DB.vorgaenge?DB.vorgaenge.get(d.bezugId):null, k=bbKunde(d.bezugKind==="kunden"?d.bezugId:st?st.kundeId:vg&&vg.kundeId), bild=/^image\//.test(d.typ||"");
+  if(DB.dateien) [...DB.dateien.values()].filter(d=>!d.deleted).forEach(d=>{ const st=d.bezugKind==="standorte"&&DB.standorte?DB.standorte.get(d.bezugId):null, vg=d.bezugKind==="vorgaenge"&&DB.vorgaenge?DB.vorgaenge.get(d.bezugId):null, an=d.bezugKind==="anlagen"&&DB.anlagen?DB.anlagen.get(d.bezugId):null, k=bbKunde(d.bezugKind==="kunden"?d.bezugId:st?st.kundeId:vg?vg.kundeId:an&&an.kundeId), bild=/^image\//.test(d.typ||"");
     L.push({ort:kdOrtDatei(d),file:d.ablage||kdDateiName(d),item:d.item||"",art:bild?"foto":"dok",titel:d.name||"Datei",kundeId:k?k.id:"",kunde:k?k.name:"",t:d.created||0,bild:bild?d.id:"",st:st?st.id:"",
       info:[k&&k.name,st&&st.name,d.created&&new Date(d.created).toLocaleDateString("de-DE")].filter(Boolean).join(" · "),pill:"",ziel:`data-act="dateiOeffnen" data-id="${esc(d.id)}"`}); });
   return L;

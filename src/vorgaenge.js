@@ -549,7 +549,8 @@ function mlZeile(m,neu){ const st=m.status||"offen", k=m.kundeId&&kundeOf(m.kund
   const unter=fertig?[mlStT(st),m.fertig&&m.fertig.wer&&m.fertig.wer.name,m.fertig&&vgZeit(m.fertig.at)].filter(Boolean).join(" · "):[mel?`von ${mel.name}${mel.firma?` (${mel.firma})`:""}`:m.melderName?`von ${m.melderName}`:"",vgZeit(m.gemeldet||m.created),st==="spaeter"?"später":""].filter(Boolean).join(" · ");
   const mitL=!fertig&&m.mitLager&&String(m.mitbringen||"").trim();
   const tun=!fertig&&(m.todo||a||mitL)?`<span class="ml-tun">${m.todo?`<em>Zu tun:</em> ${esc(m.todo)}`:""}${a?`${m.todo?" · ":""}<em>Mitbringen:</em> ${esc(anfPosText(a))} (${esc((ANF_TXT[a.status]||"angefordert").toLowerCase())})`:""}${mitL?`${m.todo?" · ":""}<em>Aus dem Lager mitbringen:</em> ${esc(String(m.mitbringen).trim().split(/\n+/).join(", "))}`:""}</span>`:"";
-  return `<button class="ml-z ${st}${m.dringend&&!fertig?" dr":""}${neu?" neu":""}" data-act="vgMlAuf" data-id="${esc(m.id)}"><i class="ml-p"></i><span class="ml-t"><b>${esc(mlOrt(m)||"Ohne Ort")}</b><span>${esc(m.text||"")}</span>${tun}<small>${esc(unter)}</small></span>${vgZustAv(m)}${icon("chev")}</button>`; }
+  const an=m.anlageId&&DB.anlagen&&DB.anlagen.get(m.anlageId), anT=an&&!an.deleted?`Maschine ${mlMLabel(an)}`:m.anlageText?`Maschine ${m.anlageText}`:"";
+  return `<button class="ml-z ${st}${m.dringend&&!fertig?" dr":""}${neu?" neu":""}" data-act="vgMlAuf" data-id="${esc(m.id)}"><i class="ml-p"></i><span class="ml-t"><b>${esc([mlOrt(m),anT].filter(Boolean).join(" · ")||"Ohne Ort")}</b><span>${esc(m.text||"")}</span>${tun}<small>${esc(unter)}</small></span>${vgZustAv(m)}${icon("chev")}</button>`; }
 /* „2 Stück LED-Modul“, „3 m NYM“, „LED-Modul“ → {t,q,u} (Ersatz, wenn das Material-Modul der Baustellen-App fehlt) */
 function mlPos(z){ z=String(z||"").replace(/^[\s\-–•*]+/,"").trim(); const m=/^(\d+(?:[.,]\d+)?)\s*(x|×|stk\.?|stück|m|meter|pck\.?|packung(?:en)?|rolle(?:n)?|satz|paar)?\.?\s+(.+)$/i.exec(z);
   if(!m) return {t:z,q:1,u:"Stück"}; const u=String(m[2]||"").toLowerCase(), U=/^(m|meter)$/.test(u)?"m":/^p(ck|ackung)/.test(u)?"Packung":/^rolle/.test(u)?"Rolle":u==="satz"?"Satz":u==="paar"?"Paar":"Stück";
@@ -561,9 +562,16 @@ function mlAnfSync(m){ if(!DB.anforderungen) return; const txt=m.mitLager?"":Str
   if(a){ if(a.status!=="angefordert"||JSON.stringify(a.pos)===JSON.stringify(pos)) return; if(!pos.length) a.deleted=true; a.pos=pos; saveRec("anforderungen",a); return; }
   if(pos.length) saveRec("anforderungen",{id:uid(),baustelleId:"",meldungId:m.id,pos,notiz:"",status:"angefordert",statusAm:Date.now(),statusVon:who()},true); }
 /* Gebäude/Bauteile und Ebenen aus den Stammdaten (am Kunden = ein Werk, an Standorten = mehrere Liegenschaften) */
-function mlOrte(k){ if(!k||typeof kdListe!=="function") return []; const O=[], hat=r=>kdListe(r.bauteile).length||kdListe(r.ebenen).length;
-  if(hat(k)) O.push({id:"",name:"Hauptadresse",b:kdListe(k.bauteile),e:kdListe(k.ebenen)});
-  (typeof standorteVon==="function"?standorteVon(k.id):[]).filter(hat).forEach(x=>O.push({id:x.id,name:x.name||"Standort",b:kdListe(x.bauteile),e:kdListe(x.ebenen)})); return O; }
+/* Quelle: das gemeinsame Gebäudemodell (Seite „Anlagen“ / E-Check), sonst die früheren Textfelder am Kunden/Standort */
+function mlOrte(k){ if(!k) return []; const O=[], gid=o=>"g-"+String(o).replace(/[^A-Za-z0-9_-]/g,"_"), rang=n=>typeof anRang==="function"?anRang(n):0;
+  const von=(ortId,r)=>{ const g=DB.gebaeude&&DB.gebaeude.get(gid(ortId)); if(g&&!g.deleted&&((g.bauteile||[]).length||(g.etagen||[]).length>1||((g.etagen||[])[0]&&g.etagen[0].id!=="eg")))
+      return {b:(g.bauteile||[]).map(x=>x.name),e:[...(g.etagen||[])].sort((a,c)=>rang(a.name)-rang(c.name)).map(x=>x.name)};
+    const b=typeof kdListe==="function"?kdListe(r.bauteile):[], e=typeof kdListe==="function"?kdListe(r.ebenen):[]; return b.length||e.length?{b,e}:null; };
+  const h=von("k:"+k.id,k); if(h) O.push({id:"",name:"Hauptadresse",...h});
+  (typeof standorteVon==="function"?standorteVon(k.id):[]).forEach(x=>{ const s=von(x.id,x); if(s) O.push({id:x.id,name:x.name||"Standort",...s}); }); return O; }
+/* Maschinen des Kunden für die Meldung (Nummer · Bezeichnung) */
+const mlMaschinen=kid=>DB.anlagen?[...DB.anlagen.values()].filter(a=>!a.deleted&&a.kundeId===kid):[];
+const mlMLabel=a=>[a.nr,a.bez].filter(Boolean).join(" · ");
 function mlOrtChips(init){ if(!mlE) return ""; const o=(mlE.orte||[]).find(x=>x.id===mlE.standortId);
   if(!o) return (mlE.orte||[]).length||!istBuero()?"":`<p class="sup ml-tipp">Tipp: Gebäude/Bauteile und Ebenen einmal am Kunden eintragen (Bearbeiten) – dann hier nur noch antippen.</p>`;
   const d=!init&&document.getElementById("dlg"), wert=id=>{ const f=d&&d.querySelector("#"+id); return f?f.value.trim():(id==="f_mlBt"?mlE.bauteil:mlE.ebene)||""; };
@@ -586,6 +594,7 @@ function mlDialog(r,m){ const k=r.kundeId&&kundeOf(r.kundeId), M=(k&&Array.isArr
     ${mlE.orte.length>1?`<div class="lbl" style="margin:4px 4px 6px">Standort</div><div class="chips ml-so">${mlE.orte.map(o=>`<button type="button" class="chip" data-act="vgMlSo" data-v="${esc(o.id)}" aria-pressed="${o.id===mlE.standortId}">${esc(o.name)}</button>`).join("")}</div>`:""}
     <div class="row3">${tf("mlBt","Bauteil",mlE.bauteil||"",{form:true,list:"dl-mlbt",ph:"z. B. C"})}${tf("mlEb","Ebene",mlE.ebene||"",{form:true,list:"dl-mleb",ph:"z. B. EG"})}${tf("mlRm","Raum / Bereich",mlE.raum||"",{form:true,list:"dl-mlrm",ph:"z. B. WC"})}</div>
     <div id="mlOrtChips">${mlOrtChips(true)}</div>
+    ${mlMaschinen(r.kundeId).length?tf("mlAn","Maschine / Anlage (optional)",(()=>{ const x=mlE.anlageId&&DB.anlagen.get(mlE.anlageId); return x?mlMLabel(x):""; })(),{form:true,list:"dl-mlan",ph:"Nummer oder Bezeichnung"})+mlDl("dl-mlan",mlMaschinen(r.kundeId).map(mlMLabel)):""}
     ${ta("mlTx","Was ist gemeldet?",mlE.text||"",{form:true,ph:"z. B. Notbeleuchtung flackert"})}
     ${tf("mlAm","Gemeldet am",mlDtLokal(mlE.gemeldet),{form:true,type:"datetime-local"})}<div class="vg-drw"><span>Dringend</span>${seg("vgMlDr",mlE.dringend?"ja":"nein",[["nein","Nein"],["ja","Ja"]])}</div>
     <div class="lbl" style="margin:12px 4px 6px">Zuständig${istBuero()?"":" (du kannst dich selbst eintragen)"}</div>${zChips}
@@ -608,6 +617,7 @@ function mlSpeichern(){ const F=formVals(), r=DB.vorgaenge.get(mlE.rahmenId); if
   const neu=!mlE.id, m=neu?{id:uid(),typ:"meldung",rahmenId:r.id,kundeId:r.kundeId||""}:DB.vorgaenge.get(mlE.id); if(!m) return;
   const vorher=m.status||"offen";
   if(mlE.orte&&mlE.orte.length) m.standortId=mlE.standortId||""; 
+  if(F.mlAn!==undefined){ const q=String(F.mlAn||"").trim().toLowerCase(), x=q&&mlMaschinen(r.kundeId).find(a=>mlMLabel(a).toLowerCase()===q||String(a.nr||"").toLowerCase()===q); m.anlageId=x?x.id:""; if(q&&!x) m.anlageText=F.mlAn; else delete m.anlageText; }
   Object.assign(m,{bauteil:F.mlBt,ebene:F.mlEb,raum:F.mlRm,text:F.mlTx,dringend:!!mlE.dringend,melderId:mlE.melderId||"",melderName:mlE.melderId?"":(mlE.melderName||m.melderName||""),
     gemeldet:F.mlAm?new Date(F.mlAm).getTime():(m.gemeldet||Date.now()),status:mlE.status||"offen"});
   if(!neu){ m.notiz=F.mlNo||""; const z=parseFloat(String(F.mlZt||"").replace(",",".")); if(isNaN(z)) delete m.zeit; else m.zeit=z; m.material=F.mlMa||"";

@@ -33,6 +33,7 @@ def baue(quelle, ziel, icon):
     html = html.replace("/*ECHECKPRUEF*/", (root / "src/echeck-pruef.js").read_text(encoding="utf-8"))
     html = html.replace("/*DATEIEN*/", (root / "src/dateien.js").read_text(encoding="utf-8"))
     html = html.replace("/*VORGAENGE*/", (root / "src/vorgaenge.js").read_text(encoding="utf-8"))
+    html = html.replace("/*ANLAGEN*/", (root / "src/anlagen.js").read_text(encoding="utf-8"))
     html = html.replace("/*MATERIAL*/", (root / "src/material.js").read_text(encoding="utf-8"))
     html = html.replace("/*ZEICHNEN*/", (root / "src/zeichnen.js").read_text(encoding="utf-8"))
     html = html.replace("/*AUFNAHME*/", (root / "src/aufnahme.js").read_text(encoding="utf-8"))

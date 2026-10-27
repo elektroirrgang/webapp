@@ -1247,7 +1247,7 @@ async function gj(path,opt){ const r=await g(path,opt); if(!r.ok) throw Object.a
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
 const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",protokolle:"Kundendaten",
   ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
-  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Kundendaten"};
+  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Kundendaten",gebaeude:"Prüfprotokolle",anlagen:"Kundendaten"};
 async function syncRoot(){
   if(SY.drive) return;
   const c=META.sync.root;
@@ -1500,7 +1500,7 @@ const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
 
 const TH_KEY="evse_theme";
 const RES_TXT={ok:"fertig",bad:"Mängel",open:"offen",wip:"in Arbeit"};
-const KINDS=["kunden","standorte","ladeparks","pruefungen","baustellen","eintraege","einstellungen","dateien","vorgaenge","geraete","anforderungen","profile","protokolle"];
+const KINDS=["kunden","standorte","ladeparks","pruefungen","baustellen","eintraege","einstellungen","dateien","vorgaenge","geraete","anforderungen","profile","protokolle","gebaeude","anlagen"];
 const EVSE_KINDS=["kunden","standorte","ladeparks","pruefungen"], BAU_KINDS=["baustellen","eintraege","anforderungen"];
 const DB=Object.fromEntries(KINDS.map(k=>[k,new Map()]));
 let META={profil:{name:""},sync:{}};
@@ -1523,7 +1523,7 @@ function dbPut(kind,rec){ DB[kind].set(rec.id,rec); const db=dbOf(kind); if(!db)
   if(kind==="einstellungen") einstSetzen(live("einstellungen")); }
 function metaSave(){ if(aDB) try{ aDB.transaction("meta","readwrite").objectStore("meta").put(META,"meta"); }catch(e){} }
 async function dataLoad(){
-  try{ kDB=await openStores("evse_daten",[...EVSE_KINDS,"katalog"],true); bDB=await openStores("baustelle_daten",BAU_KINDS,true); aDB=await openStores("irrgang_apps",["einstellungen","dateien","vorgaenge","geraete","profile","protokolle"],true);
+  try{ kDB=await openStores("evse_daten",[...EVSE_KINDS,"katalog"],true); bDB=await openStores("baustelle_daten",BAU_KINDS,true); aDB=await openStores("irrgang_apps",["einstellungen","dateien","vorgaenge","geraete","profile","protokolle","gebaeude","anlagen"],true);
     for(const k of KINDS){ (await idbReq(dbOf(k).transaction(k).objectStore(k).getAll())).forEach(r=>DB[k].set(r.id,r)); }
     const m=await idbReq(aDB.transaction("meta").objectStore("meta").get("meta")); if(m) META=Object.assign(META,m);
   }catch(e){ kDB=bDB=aDB=null; toast("Gerätespeicher nicht verfügbar – Daten nur bis zum Schließen"); }
@@ -1607,6 +1607,8 @@ function pfadTeile(){
   if(nav.v==="kunde") return kette();
   if(nav.v==="ma") return [["Einstellungen",{v:"mehr"}],["Mitarbeiter",{v:"team"}]];
   if(nav.v==="mldg") return [["Aufträge",{v:"auftraege"}]];
+  if(nav.v==="anl"||nav.v==="masch"){ const ortId=nav.v==="anl"?nav.id:((DB.anlagen.get(nav.id)||{}).ortId||""), o=anOrtInfo(ortId), K=[["Kunden",{v:"kunden"}]];
+    if(o.k) K.push([o.k.name,{v:"kunde",id:o.k.id}]); if(o.s) K.push([o.s.name||"Standort",{v:"standort",id:o.s.id}]); if(nav.v==="masch") K.push(["Anlagen",{v:"anl",id:ortId}]); return K; }
   if(MEHR_SUB[nav.v]) return [["Einstellungen",{v:"mehr"}]];
   return [];
 }
@@ -1851,6 +1853,7 @@ document.addEventListener("click",e=>{
 /*KOPF*/
 /*ANFORDERUNG*/
 /*VORGAENGE*/
+/*ANLAGEN*/
 let maWieder=false; document.body.classList.add("hn"); /* Übersicht: Handy-Aufräumen (erst nur hier) */
 function render(){ profilAnwenden();
   const app=$("#app");
@@ -1865,7 +1868,7 @@ function render(){ profilAnwenden();
   document.body.classList.toggle("has-nav",!login);
   $("#backBtn").hidden=top||login; $("#navbar").hidden=login; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]);
   $("#menuBtn").hidden=!(VIEW_KIND[nav.v]&&kdDarf()); kdKopfKnopf();
-  const active=nav.v==="meldungen"?"":top?nav.v:nav.v==="mldg"?"auftraege":HANDY_WEG.includes(nav.v)?"start":(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":"kunden";
+  const active=nav.v==="meldungen"?"":top?nav.v:nav.v==="mldg"?"auftraege":["anl","masch"].includes(nav.v)?"kunden":HANDY_WEG.includes(nav.v)?"start":(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":"kunden";
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
     +TD.map(([k,t,i])=>`<button class="nav-item${k==="mehr"?" nav-end":""}" data-act="nav" data-v="${k}" ${k===active?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join("");
@@ -1878,6 +1881,8 @@ function render(){ profilAnwenden();
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
   else if(nav.v==="auftraege"){ title="Aufträge"; body=vorgaengeView(); fab=["vgNeu","Vorgang","add"]; }
   else if(nav.v==="mldg"){ title="Meldungen"; body=mlUebersicht(); }
+  else if(nav.v==="anl"){ title="Anlagen"; sub=anOrtInfo(nav.id).titel; body=anSeite(nav.id); fab=(META.anTab||"masch")==="masch"?["anMNeu","Maschine","add"]:null; }
+  else if(nav.v==="masch"){ const m=DB.anlagen.get(nav.id); if(!m||m.deleted){ nav={v:"kunden"}; return render(); } title=anMName(m); sub=anOrtInfo(m.ortId).titel; body=anMSeite(m); }
   else if(nav.v==="materialanf"){ title="Materialanforderungen"; body=`<div class="narrow">${anfListeView()}</div>`; fab=["afNeu","Anfordern","add"]; }
   else if(nav.v==="mehr"){ title="Einstellungen"; body=mehrView(); }
   else if(nav.v==="ma"){ if(!ME.admin){ nav={v:"mehr"}; return render(); } const m=nav.id?teamAlle().find(x=>x.mail===nav.id):null; title=m?m.name:"Mitarbeiter hinzufügen"; body=maView(m); }
@@ -2153,14 +2158,14 @@ function bezugListen(kind,id,opt){
 }
 function kundeView(k){
   const ss=standorteVon(k.id), darf=kdDarf();
-  return `<div class="narrow kd-seite"><div class="kd-oben">${infoKarte(k,"kunden")}${karteView(k,ss)}</div>${kontakteView("kunden",k)}
+  return `<div class="narrow kd-seite"><div class="kd-oben">${infoKarte(k,"kunden")}${karteView(k,ss)}</div>${kontakteView("kunden",k)}${kdArt(k)!=="privat"||anMaschinen("k:"+k.id).length?anKarte("k:"+k.id):""}
     ${ablageView("kunden",k)}
     <div class="sec-row"><div class="sec-lbl">${kdOrteTitel(k)}</div>${darf?`<span class="ab-btns"><button class="ab-ic" data-act="newStandort" aria-label="${kdArt(k)==="privat"?"Objekt":"Standort"} hinzufügen" title="${kdArt(k)==="privat"?"Objekt":"Standort"} hinzufügen">${icon("add")}</button></span>`:""}</div>
     ${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">${kdKeinOrt(k)||"Noch kein Standort."}</p>`}
     ${bezugListen("kunden",k.id,{bauPlus:ME.admin})}
 </div>`;
 }
-function standortView(s){ return `<div class="narrow kd-seite"><div class="kd-oben">${infoKarte(s,"standorte")}${karteView(s,[])}</div>${kontakteView("standorte",s)}${ablageView("standorte",s)}${bezugListen("standorte",s.id,{bauPlus:ME.admin})}</div>`; }
+function standortView(s){ return `<div class="narrow kd-seite"><div class="kd-oben">${infoKarte(s,"standorte")}${karteView(s,[])}</div>${kontakteView("standorte",s)}${anKarte(s.id)}${ablageView("standorte",s)}${bezugListen("standorte",s.id,{bauPlus:ME.admin})}</div>`; }
 
 /* Baustelle direkt aus der Übersicht anlegen (nur Chef/Admin) – landet in der Baustelle-App */
 let bauForm=null;
@@ -2422,6 +2427,8 @@ function zurueck(){
   if(nav.v==="standort"){ const s=standortOf(nav.id); go(s?{v:"kunde",id:s.kundeId}:{v:"kunden"}); return; }
   if(nav.v==="kunde"){ go({v:"kunden"}); return; }
   if(nav.v==="mldg"){ go({v:"auftraege"}); return; }
+  if(nav.v==="anl"){ const o=anOrtInfo(nav.id); go(o.s?{v:"standort",id:o.s.id}:o.k?{v:"kunde",id:o.k.id}:{v:"kunden"}); return; }
+  if(nav.v==="masch"){ const m=DB.anlagen.get(nav.id); go(m?{v:"anl",id:m.ortId}:{v:"kunden"}); return; }
   if(nav.v==="ma"){ teamForm=null; go({v:"team"}); return; }
   if(MEHR_SUB[nav.v]){ go({v:"mehr"}); return; }
   go({v:"start"});
