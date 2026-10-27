@@ -391,6 +391,7 @@ function kzZeichne(){ const A=KZ.a; if(!A) return;
 function kzAufraeumen(){ document.querySelectorAll(".kal-sel").forEach(x=>x.remove()); document.querySelectorAll(".kal-msel").forEach(x=>x.classList.remove("kal-msel")); document.body.classList.remove("kz-zieht"); KZ.a=null; }
 function kzStart(t,x,y,touch){ const sp=t.closest(".kal-wsp"), mz=t.closest(".kal-mz"); if(sp&&!t.closest(".kal-ev")) KZ.a={art:"w",sp,y0:y,y,x,touch,zug:!!touch};
   else if(mz) KZ.a={art:"m",d0:mz.dataset.d,d1:mz.dataset.d,x,y,y0:y,touch,zug:!!touch}; else return false;
+  document.querySelector(".kal-hov")?.remove();
   if(touch){ document.body.classList.add("kz-zieht"); kzZeichne(); try{ navigator.vibrate&&navigator.vibrate(12); }catch(e){} } return true; }
 function kzBewegt(x,y){ const A=KZ.a; if(!A) return; A.x=x; A.y=y; if(!A.zug){ if(A.art==="w"&&Math.abs(y-A.y0)<6) return; if(A.art==="m"){ const z=document.elementFromPoint(x,y)?.closest(".kal-mz"); if(!z||z.dataset.d===A.d0) return; } A.zug=true; document.body.classList.add("kz-zieht"); }
   if(A.art==="w"){ const sc=A.sp.closest(".kal-wscroll"); if(sc){ const r=sc.getBoundingClientRect(); if(y>r.bottom-30) sc.scrollTop+=10; else if(y<r.top+30) sc.scrollTop-=10; } }
@@ -398,7 +399,14 @@ function kzBewegt(x,y){ const A=KZ.a; if(!A) return; A.x=x; A.y=y; if(!A.zug){ i
 function kzEnde(){ const A=KZ.a; if(!A) return; const zug=A.zug; if(zug){ kzZeichne(); KZ.weg=Date.now(); } const von=A.von, bis=A.bis, art=A.art; kzAufraeumen();
   if(zug&&von&&bis) kalDialog(null,von,bis,art==="m"); }
 document.addEventListener("pointerdown",e=>{ if(e.pointerType==="touch"||e.button!==0||!e.target.closest?.(".kal-wsp,.kal-mz")) return; if(kzStart(e.target,e.clientX,e.clientY,false)) e.preventDefault(); });
-document.addEventListener("pointermove",e=>{ if(KZ.a&&!KZ.a.touch) kzBewegt(e.clientX,e.clientY); });
+/* Vorschau beim Überfahren (nur Maus): blasses Kästchen „+ 10:00“ dort, wo ein Klick den Termin anlegen würde */
+function kzVorschau(e){ const sp=e.pointerType==="mouse"&&!KZ.a&&e.target.closest?.(".kal-wsp"), alt=document.querySelector(".kal-hov");
+  if(!sp||e.target.closest(".kal-ev")){ if(alt) alt.remove(); return; }
+  const r=sp.getBoundingClientRect(), max=Math.round(r.height/KAL_H*60), m=Math.max(0,Math.min(max-30,Math.floor((e.clientY-r.top)/KAL_H*2)*30));
+  let el=alt; if(!el||el.parentElement!==sp){ if(el) el.remove(); el=document.createElement("div"); el.className="kal-hov"; sp.appendChild(el); }
+  if(el.dataset.m!==String(m)){ el.dataset.m=m; el.style.top=m/60*KAL_H+"px"; el.style.height=KAL_H/2-2+"px"; el.textContent="+ "+kalZeit(kzZeit(sp,m)); } }
+document.addEventListener("pointermove",e=>{ if(KZ.a&&!KZ.a.touch){ kzBewegt(e.clientX,e.clientY); return; } kzVorschau(e); });
+document.addEventListener("mouseout",e=>{ if(!e.relatedTarget||!e.relatedTarget.closest?.(".kal-wsp")) document.querySelector(".kal-hov")?.remove(); });
 document.addEventListener("pointerup",e=>{ if(KZ.a&&!KZ.a.touch) kzEnde(); });
 document.addEventListener("pointercancel",()=>{ if(KZ.a&&!KZ.a.touch) kzAufraeumen(); });
 document.addEventListener("touchstart",e=>{ clearTimeout(KZ.timer); const t=e.target.closest?.(".kal-wsp,.kal-mz"); if(!t||e.touches.length>1||e.target.closest(".kal-ev")) return; const p=e.touches[0]; KZ.t0={x:p.clientX,y:p.clientY,el:e.target};

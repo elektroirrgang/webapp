@@ -961,7 +961,7 @@ body.tour-an .snackbar{display:none}
 .kal-wgt{display:flex;flex-direction:column;gap:3px;padding:0 2px}
 .kal-wr{position:relative;margin-left:48px}
 .kal-wsps{position:absolute;inset:0;display:grid;grid-template-columns:repeat(7,1fr)}
-.kal-wsp{position:relative;cursor:copy}.kal-wsp.heute{background:color-mix(in srgb,var(--primary) 5%,transparent)}
+.kal-wsp{position:relative;cursor:default}.kal-wsp.heute{background:color-mix(in srgb,var(--primary) 5%,transparent)}
 .kal-wsp+.kal-wsp{box-shadow:-1px 0 0 color-mix(in srgb,var(--on-surface) 6%,transparent)}
 .kal-ev{position:absolute;box-sizing:border-box;border-radius:10px;padding:4px 7px;background:var(--kal-o);color:var(--kal-on-o);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;gap:1px;z-index:1}
 .kal-ev.kal-a{background:var(--kal-a);color:var(--kal-on-a)}.kal-ev.kal-f{background:var(--sc-highest);color:var(--on-surface)}
@@ -1113,3 +1113,7 @@ body.kal-mit-pane .kal-wscroll{max-height:calc(100dvh - 330px)}
 .kal-sel{position:absolute;left:2px;right:2px;z-index:4;box-sizing:border-box;border-radius:10px;padding:4px 7px;background:color-mix(in srgb,var(--primary) 26%,var(--surface));color:var(--on-surface);pointer-events:none;display:flex;flex-direction:column;gap:1px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 .kal-sel b{font-size:12px;font-weight:600}.kal-sel small{font-size:11px;opacity:.8}.kal-sel.klein{flex-direction:row;gap:6px;align-items:center;padding-block:0}
 .kal-mz.kal-msel{background:color-mix(in srgb,var(--primary) 18%,var(--surface))}
+.kal-hov{position:absolute;left:2px;right:2px;z-index:1;box-sizing:border-box;border-radius:9px;padding:0 8px;display:flex;align-items:center;font-size:12px;font-weight:600;background:color-mix(in srgb,var(--primary) 12%,var(--surface));color:var(--primary);pointer-events:none;overflow:hidden;white-space:nowrap}
+@media (hover:hover){.kal-mz:not(.fremd):not(.kal-msel):hover{background:color-mix(in srgb,var(--primary) 7%,var(--surface))}}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .kal-hov{background:color-mix(in srgb,var(--primary) 22%,var(--surface))}}
+:root[data-theme="dark"] .kal-hov{background:color-mix(in srgb,var(--primary) 22%,var(--surface))}
