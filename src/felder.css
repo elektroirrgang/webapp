@@ -1036,12 +1036,15 @@ body.tour-an .snackbar{display:none}
 .pz-fuss .btn-text{display:inline-flex;align-items:center;gap:6px}.pz-fuss .btn-text .ic{margin:0;vertical-align:0}
 
 /* Kalender-Seitenbereich rechts (breiter PC): feste Spalte am Fensterrand, Spiegelbild der App-Leiste, scrollt für sich */
-body{--kal-pw:300px}
+body{--kal-pw:248px} /* genauso breit wie die App-Leiste links */
 body.kal-mit-pane main > #app{margin-right:calc(64px + var(--kal-pw))!important}
 body.kal-mit-pane .topbar{padding-right:var(--kal-pw)!important;box-sizing:border-box}
-body.kal-mit-pane .fab{right:calc(var(--kal-pw) + 24px)}
-.kal-pane{position:fixed;top:0;right:0;bottom:0;width:var(--kal-pw);box-sizing:border-box;z-index:21;background:var(--sc);border-radius:28px 0 0 0;padding:20px 14px 24px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
-.kal-panel{display:flex;flex-direction:column;gap:6px}
+body.kal-pc .fab{display:none!important}
+.kal-pane{position:fixed;top:0;right:0;bottom:0;width:var(--kal-pw);box-sizing:border-box;z-index:21;background:var(--sc-low,var(--sc));border-radius:28px 0 0 0;padding:84px 12px 24px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.kp-neu{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:48px;border:0;border-radius:24px;background:var(--fab,var(--primary));color:var(--on-fab,var(--on-primary));font:inherit;font-size:15px;font-weight:700;cursor:pointer;flex:none}
+.kp-neu .ic{width:22px;height:22px}.kp-neu.kopf{width:auto;padding:0 20px 0 16px}
+@media (hover:hover){.kp-neu:hover{filter:brightness(1.07)}}
+.kal-panel{display:flex;flex-direction:column;gap:6px}.kal-panel .kp-neu{margin-bottom:12px}
 .kal-pt.an{color:var(--on-surface);background:var(--sc-high)}
 .kp-box{padding:6px 4px 10px}.kp-box+.kp-box{padding-top:14px}
 .kp-mk{display:flex;align-items:center;gap:2px;margin:0 0 6px 4px}.kp-mk b{flex:1;font-size:14px}
@@ -1074,4 +1077,9 @@ body.kal-mit-pane .fab{right:calc(var(--kal-pw) + 24px)}
 html:has(body.kal-mit-pane){overflow:hidden;scrollbar-gutter:auto}
 body.kal-mit-pane .kal-lscroll{max-height:calc(100dvh - 190px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-bottom:96px}
 body.kal-mit-pane .kal-wscroll{max-height:calc(100dvh - 330px)}
-.kal-pane{padding-top:12px}
+
+/* Monats-Fenster zum Springen */
+.kal-pop{position:fixed;z-index:60;width:288px;box-sizing:border-box;padding:12px;border-radius:24px;background:var(--dlg-bg,var(--sc-high));box-shadow:0 12px 36px rgba(0,0,0,.28);animation:schwebenEin .14s ease-out}
+.kal-pop .kp-t.imb{background:var(--sc-highest)}
+.kal-np.kal-dat .ic{width:20px;height:20px}
+.kal-pop .kp-t.heute{background:var(--primary);color:var(--on-primary)}

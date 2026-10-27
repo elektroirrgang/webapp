@@ -104,9 +104,9 @@ const kalFilterAktiv=()=>!KAL.ebenen.outlook||!KAL.ebenen.auftraege||!KAL.ebenen
 /* Kopf: links Zurück/Heute/Weiter in einer Gruppe, rechts Filter und Ansicht als Symbole (wie neben der Suchleiste in den Aufträgen) */
 function kalKopf(){ const s=kalSicht(), sichten=KAL_SICHTEN.filter(x=>!(istHandy()&&x[0]==="woche")), IC_S={liste:"kalListe",woche:"kalWoche",monat:"kalMonat"};
   const stand=KAL.lade?`<span class="kal-stand">lädt …</span>`:KAL.fehler?`<span class="kal-stand warn">${esc(KAL.fehler)}</span>`:"";
-  return `<div class="kal-kopf"><div class="kal-nav"><button class="kal-np" data-act="kalSchritt" data-v="-1" aria-label="Zurück" title="Zurück">${icon("back")}</button><button class="kal-np heute" data-act="kalHeute">Heute</button><button class="kal-np vor" data-act="kalSchritt" data-v="1" aria-label="Weiter" title="Weiter">${icon("back")}</button></div>${stand}
+  return `<div class="kal-kopf"><div class="kal-nav"><button class="kal-np" data-act="kalSchritt" data-v="-1" aria-label="Zurück" title="Zurück">${icon("back")}</button><button class="kal-np heute" data-act="kalHeute">Heute</button><button class="kal-np vor" data-act="kalSchritt" data-v="1" aria-label="Weiter" title="Weiter">${icon("back")}</button><button class="kal-np kal-dat" data-act="kalDatum" aria-label="Datum wählen" title="Datum wählen">${icon("kal")}</button></div>${stand}
     <div class="kal-rechts">${kalPaneAn()?"":`<button class="kal-filt${kalFilterAktiv()?" an":""}" data-act="kalFilter" aria-label="Anzeigen: Outlook, Aufträge, Firmentermine" title="Anzeigen">${icon("filt")}</button>`}
-    <div class="seg ans-seg kal-ans" role="group" aria-label="Ansicht">${sichten.map(([k,t])=>`<button data-act="kalSicht" data-v="${k}" aria-pressed="${s===k}" title="${esc(t)}" aria-label="${esc(t)}">${icon(IC_S[k])}</button>`).join("")}</div>${KAL_PC.matches?`<button class="kal-filt kal-pt${kalPaneGewollt()?" an":""}" data-act="kalPane" aria-label="Seitenbereich ${kalPaneGewollt()?"ausblenden":"einblenden"}" title="Seitenbereich ${kalPaneGewollt()?"ausblenden":"einblenden"}">${icon("kalPane")}</button>`:""}</div></div>`; }
+    <div class="seg ans-seg kal-ans" role="group" aria-label="Ansicht">${sichten.map(([k,t])=>`<button data-act="kalSicht" data-v="${k}" aria-pressed="${s===k}" title="${esc(t)}" aria-label="${esc(t)}">${icon(IC_S[k])}</button>`).join("")}</div></div></div>`; }
 function kalFilterDlg(){ const demo=typeof demoAn==="function"&&demoAn(), z=(k,f,t,s2,an)=>`<button class="li" data-act="kalEbene" data-v="${k}"><span class="kal-fd ${f}"></span><span class="lt"><span class="h">${esc(t)}</span><span class="s">${esc(s2)}</span></span><span class="schalter${an?" an":""}" aria-hidden="true"><i></i></span></button>`;
   dialog("Anzeigen",`<div class="list">${z("outlook","kal-o",demo?"Beispieltermine":"Mein Outlook","Deine eigenen Termine aus Outlook",KAL.ebenen.outlook)}${z("auftraege","kal-a","Aufträge","Termine aus dem Schritt „Termin“ der Aufträge",KAL.ebenen.auftraege)}${z("firma","kal-g","Firmentermine","Für alle – z. B. Weihnachtsfeier, Teambesprechung",KAL.ebenen.firma)}</div>
     <div class="list" style="margin-top:12px">${z("meine","","Nur meine Aufträge","Nur Aufträge, bei denen du eingeteilt oder zuständig bist",kalNurMeine())}</div>`,`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Fertig</button>`); }
@@ -122,17 +122,24 @@ function kalenderView(){ const s=kalSicht(), B=kalBereich(), demo=typeof demoAn=
    Inhalt: kleiner Monat zum Springen, Kalender an/aus, „Als Nächstes“. */
 const KAL_PC=matchMedia("(min-width:1280px) and (hover:hover) and (pointer:fine)");
 const kalPaneGewollt=()=>{ try{ return localStorage.getItem("irrgang_kal_panel")!=="aus"; }catch(e){ return true; } };
-const kalPaneAn=()=>KAL_PC.matches&&kalPaneGewollt();
+const kalPaneAn=()=>false; /* Seitenleiste rechts auf Wunsch von Max entfernt (27.10.2026) – Springen per Monats-Fenster an „Heute“ */
 /* wird bei jedem Neuzeichnen aufgerufen: Klasse am body nur, solange der Kalender offen ist */
-function kalPaneKlasse(){ document.body.classList.toggle("kal-mit-pane",typeof nav!=="undefined"&&nav.v==="kalender"&&kalPaneAn()); }
+function kalPaneKlasse(){ document.body.classList.remove("kal-mit-pane","kal-pc"); }
 KAL_PC.addEventListener?.("change",()=>{ if(typeof nav!=="undefined"&&nav.v==="kalender") render(); });
+/* kleines Monats-Fenster zum Springen (aus der Heute-Gruppe) */
+function kalDatumPop(anker){ document.getElementById("kalPop")?.remove(); const ab=KAL.ab||new Date(), m=KAL.miniMon||new Date(ab.getFullYear(),ab.getMonth(),1), a=kalMo(m), jetzt=new Date(), B=kalBereich();
+  const E=kalAlle(a,kalPlus(a,42)), hat=d=>E.some(e=>e.von<kalPlus(d,1)&&e.bis>d);
+  const tage=[...Array(42)].map((_,i)=>{ const d=kalPlus(a,i), imB=kalSicht()==="woche"&&d>=B.von&&d<B.bis; return `<button class="kp-t${d.getMonth()!==m.getMonth()?" fremd":""}${kalGleich(d,jetzt)?" heute":""}${imB?" imb":""}" data-act="kalMiniTag" data-d="${kalIso(d)}">${d.getDate()}${hat(d)?"<i></i>":""}</button>`; }).join("");
+  document.body.insertAdjacentHTML("beforeend",`<div id="kalPop" class="kal-pop" role="dialog" aria-label="Datum wählen"><div class="kp-mk"><b>${esc(m.toLocaleDateString("de-DE",{month:"long",year:"numeric"}))}</b><button class="kp-r" data-act="kalMini" data-v="-1" aria-label="Voriger Monat">${icon("back")}</button><button class="kp-r vor" data-act="kalMini" data-v="1" aria-label="Nächster Monat">${icon("back")}</button></div>
+    <div class="kp-g">${["M","D","M","D","F","S","S"].map(x=>`<span>${x}</span>`).join("")}${tage}</div></div>`);
+  const p=document.getElementById("kalPop"), r=(anker||document.querySelector(".kal-nav")).getBoundingClientRect(); p.style.left=Math.max(8,Math.min(innerWidth-p.offsetWidth-8,r.left))+"px"; p.style.top=(r.bottom+8)+"px"; }
 function kalPanel(){ const ab=KAL.ab||new Date(), m=KAL.miniMon||new Date(ab.getFullYear(),ab.getMonth(),1), a=kalMo(m), jetzt=new Date(), B=kalBereich();
   const E=kalAlle(a,kalPlus(a,42)), hat=d=>E.some(e=>e.von<kalPlus(d,1)&&e.bis>d);
   const tage=[...Array(42)].map((_,i)=>{ const d=kalPlus(a,i), imB=kalSicht()==="woche"&&d>=B.von&&d<B.bis; return `<button class="kp-t${d.getMonth()!==m.getMonth()?" fremd":""}${kalGleich(d,jetzt)?" heute":""}${imB?" imb":""}" data-act="kalMiniTag" data-d="${kalIso(d)}">${d.getDate()}${hat(d)?"<i></i>":""}</button>`; }).join("");
   const demo=typeof demoAn==="function"&&demoAn(), ebene=(k,f,t)=>`<button class="kp-e" data-act="kalEbene" data-v="${k}" aria-pressed="${k==="meine"?kalNurMeine():!!KAL.ebenen[k]}"><span class="kp-q ${f}"></span>${esc(t)}</button>`;
   const h=kalTag(jetzt), N=kalAlle(h,kalPlus(h,14)).filter(e=>e.bis>jetzt).sort((x,y)=>x.von-y.von).slice(0,5);
   const wann=e=>kalGleich(e.von,h)?(e.ganz?"Heute":`Heute ${kalZeit(e.von)}`):kalGleich(e.von,kalPlus(h,1))?(e.ganz?"Morgen":`Morgen ${kalZeit(e.von)}`):e.von.toLocaleDateString("de-DE",{weekday:"short",day:"numeric",month:"short"})+(e.ganz?"":` · ${kalZeit(e.von)}`);
-  return `<aside class="kal-panel"><div class="kp-box"><div class="kp-mk"><b>${esc(m.toLocaleDateString("de-DE",{month:"long",year:"numeric"}))}</b><button class="kp-r" data-act="kalMini" data-v="-1" aria-label="Voriger Monat">${icon("back")}</button><button class="kp-r vor" data-act="kalMini" data-v="1" aria-label="Nächster Monat">${icon("back")}</button></div>
+  return `<aside class="kal-panel"><button class="kp-neu" data-act="kalNeu">${icon("add")}Termin</button><div class="kp-box"><div class="kp-mk"><b>${esc(m.toLocaleDateString("de-DE",{month:"long",year:"numeric"}))}</b><button class="kp-r" data-act="kalMini" data-v="-1" aria-label="Voriger Monat">${icon("back")}</button><button class="kp-r vor" data-act="kalMini" data-v="1" aria-label="Nächster Monat">${icon("back")}</button></div>
     <div class="kp-g">${["M","D","M","D","F","S","S"].map(x=>`<span>${x}</span>`).join("")}${tage}</div></div>
     <div class="kp-box"><div class="kp-l">Kalender</div>${ebene("outlook","kal-o",demo?"Beispieltermine":"Mein Outlook")}${ebene("auftraege","kal-a","Aufträge")}${ebene("firma","kal-g","Firmentermine")}${ebene("meine","kp-nur","Nur meine Aufträge")}</div>
     <div class="kp-box"><div class="kp-l">Als Nächstes</div>${N.length?N.map(e=>`<button class="kp-n" ${kalEvAttr(e)}><span class="kp-q ${kalFarbe(e)}"></span><span><b>${esc(e.privat&&!e.eigen?"Privat":e.t)}</b><small>${esc(wann(e))}</small></span></button>`).join(""):`<p class="kp-leer">Keine Termine in den nächsten zwei Wochen.</p>`}</div></aside>`; }
@@ -236,8 +243,9 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
   else if(a==="kalSicht"){ KAL.sicht=b.dataset.v; try{ localStorage.setItem("irrgang_kal_sicht",KAL.sicht); }catch(e){} render(); }
   else if(a==="kalSchritt"){ const s=kalSicht(), n=+b.dataset.v, ab=KAL.ab||new Date(); KAL.ab=s==="woche"?kalPlus(ab,7*n):s==="monat"?new Date(ab.getFullYear(),ab.getMonth()+n,1):kalPlus(ab,14*n); render(); }
   else if(a==="kalHeute"){ KAL.ab=null; KAL.miniMon=null; KAL.wScroll=null; render(); }
-  else if(a==="kalMini"){ const m=KAL.miniMon||new Date((KAL.ab||new Date()).getFullYear(),(KAL.ab||new Date()).getMonth(),1); KAL.miniMon=new Date(m.getFullYear(),m.getMonth()+(+b.dataset.v),1); render(); }
-  else if(a==="kalMiniTag"){ KAL.ab=kalLokal(b.dataset.d); render(); }
+  else if(a==="kalMini"){ ev.stopPropagation(); const m=KAL.miniMon||new Date((KAL.ab||new Date()).getFullYear(),(KAL.ab||new Date()).getMonth(),1); KAL.miniMon=new Date(m.getFullYear(),m.getMonth()+(+b.dataset.v),1); if(document.getElementById("kalPop")) kalDatumPop(document.querySelector(".kal-nav")); else render(); }
+  else if(a==="kalMiniTag"){ KAL.ab=kalLokal(b.dataset.d); KAL.miniMon=null; KAL.wScroll=null; document.getElementById("kalPop")?.remove(); render(); }
+  else if(a==="kalDatum"){ ev.stopPropagation(); if(document.getElementById("kalPop")){ document.getElementById("kalPop").remove(); return; } KAL.miniMon=null; kalDatumPop(document.querySelector(".kal-nav")); }
   else if(a==="kalEbene"){ const k=b.dataset.v; KAL.ebenen[k]=k==="meine"?!kalNurMeine():!KAL.ebenen[k]; try{ localStorage.setItem("irrgang_kal_ebenen",JSON.stringify(KAL.ebenen)); }catch(e){} const sw=b.querySelector(".schalter"); if(sw) sw.classList.toggle("an",k==="meine"?kalNurMeine():!!KAL.ebenen[k]); render(); }
   else if(a==="kalFilter"){ ev.stopPropagation(); kalFilterDlg(); }
   else if(a==="kalPane"){ try{ localStorage.setItem("irrgang_kal_panel",kalPaneGewollt()?"aus":"an"); }catch(e){} render(); }
@@ -251,3 +259,7 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
   else if(a==="kalDelJa") kalLoeschen();
   else if(a==="kalZumVg"){ closeOverlays(); const v=DB.vorgaenge&&DB.vorgaenge.get(b.dataset.id); if(v&&typeof vgOpen==="function") vgOpen(v); }
 },true);
+
+/* Monats-Fenster schließen: Klick daneben, Esc, Seitenwechsel */
+document.addEventListener("click",e=>{ const p=document.getElementById("kalPop"); if(p&&!(e.target.closest&&(e.target.closest("#kalPop")||e.target.closest('[data-act="kalDatum"]')))) p.remove(); },true);
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") document.getElementById("kalPop")?.remove(); });
