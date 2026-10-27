@@ -1296,7 +1296,7 @@ const Auth={pca:null,account:null,test:null,
   },
   login(){ saveNow(); if(!this.pca){ toast("Anmeldung nicht verfügbar"); return; } this.pca.loginRedirect({scopes:SCOPES,prompt:"select_account"}); },
   relogin(){ saveNow(); if(this.pca) this.pca.acquireTokenRedirect({scopes:SCOPES,account:this.account}); },
-  logout(){ saveNow(); if(this.pca) this.pca.logoutRedirect({account:this.account}); },
+  logout(){ saveNow(); try{ localStorage.removeItem("irrgang_kal_privat"); localStorage.removeItem("irrgang_kal_cache"); }catch(e){} if(this.pca) this.pca.logoutRedirect({account:this.account}); },
   async token(){
     if(this.test) return this.test.expired?null:this.test.token;
     if(!this.pca||!this.account) return null;

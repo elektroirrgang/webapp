@@ -15,6 +15,7 @@ const KAL_SCOPES=["Calendars.ReadWrite"], KAL_TZ="Europe/Berlin", KAL_H=56, KAL_
 const KAL_SICHTEN=[["liste","Liste"],["woche","Woche"],["monat","Monat"]];
 const KAL={ab:null,sicht:null,ev:[],geladen:"",lade:false,fehler:"",verbinden:false,demo:[],ebenen:{outlook:true,auftraege:true,firma:true,meine:null}};
 try{ const e=JSON.parse(localStorage.getItem("irrgang_kal_ebenen")||"null"); if(e) Object.assign(KAL.ebenen,e); }catch(e){}
+function kalEbenenMerken(){ try{ localStorage.setItem("irrgang_kal_ebenen",JSON.stringify(KAL.ebenen)); }catch(e){} }
 const kalSicht=()=>{ let s=KAL.sicht; if(!s){ try{ s=localStorage.getItem("irrgang_kal_sicht"); }catch(e){} } if(!s||!KAL_SICHTEN.some(x=>x[0]===s)) s=istHandy()?"liste":"woche"; if(istHandy()&&s==="woche") s="liste"; return s; };
 /* --- Datum-Helfer (alles in lokaler Zeit) --- */
 const kalTag=d=>{ const x=new Date(d); x.setHours(0,0,0,0); return x; };
@@ -73,15 +74,68 @@ function kalAuftraege(){ if(!KAL.ebenen.auftraege||typeof live!=="function"||!DB
 const KAL_PAL=[["#e8710a","Orange"],["#f2b400","Gelb"],["#8e44ad","Lila"],["#00a3a3","Türkis"],["#d6336c","Pink"],["#8d6e63","Braun"],["#546e7a","Schiefer"],["#7c8b2a","Oliv"]];
 const KAL_SICHT=[["ich","Nur ich"],["personen","Ausgewählte"],["alle","Alle"]];
 const kalIchMail=()=>String(ME.mail||"").toLowerCase();
-const kalKalAlle=()=>DB.termine?live("termine").filter(t=>t.typ==="kal"&&!t.deleted):[];
-const kalKalMein=c=>!c.createdBy||!c.createdBy.mail||String(c.createdBy.mail).toLowerCase()===kalIchMail();
+/* ===== Privater Bereich: „Nur ich“-Kalender liegen im eigenen OneDrive (App-Ordner, Berechtigung Files.ReadWrite.AppFolder).
+   Dort sieht sie niemand außer dem Mitarbeiter selbst (Ausnahme: Microsoft-Administrator im Notfall).
+   Solange die Berechtigung fehlt, liegen sie wie alles andere auf der SharePoint-Website und ziehen später von selbst um. ===== */
+const KALP={ok:null,kal:[],t:[],am:0,lade:null,timer:0,offen:false}, KALP_SC=["Files.ReadWrite.AppFolder"], KALP_LS="irrgang_kal_privat";
+const kalDemoAn=()=>typeof demoAn==="function"&&demoAn();
+const kalPAn=()=>KALP.ok===true&&!kalDemoAn();
+/* private Daten nur für den Mitarbeiter, dem sie gehören (falls sich mehrere ein Gerät teilen) */
+const kalPMeins=()=>!kalDemoAn()&&!!KALP.mail&&KALP.mail===kalIchMail();
+const kalPK=()=>kalPMeins()?KALP.kal:[], kalPT=()=>kalPMeins()?KALP.t:[];
+const kalPDatei=()=>GRAPH+"/me/drive/special/approot:/kalender.json:/content";
+try{ const c=JSON.parse(localStorage.getItem(KALP_LS)||"null"); if(c&&c.mail){ KALP.kal=c.kal||[]; KALP.t=c.t||[]; KALP.mail=c.mail; KALP.offen=!!c.offen; } }catch(e){}
+function kalPCache(){ try{ localStorage.setItem(KALP_LS,JSON.stringify({mail:kalIchMail(),kal:KALP.kal,t:KALP.t,offen:KALP.offen})); }catch(e){} }
+async function kalPToken(){ if(typeof Auth==="undefined") return null; if(Auth.test) return Auth.test.ordnerNein?null:Auth.test.token; if(!Auth.pca||!Auth.account) return null;
+  try{ return (await Auth.pca.acquireTokenSilent({scopes:KALP_SC,account:Auth.account})).accessToken; }catch(e){ return null; } }
+function kalPMischen(d){ const m=(alt,neu)=>{ const M=new Map(alt.map(x=>[x.id,x])); (neu||[]).forEach(x=>{ const a=M.get(x.id); if(!a||(x.upd||0)>(a.upd||0)) M.set(x.id,{...x,privat:true}); });
+    const grenze=Date.now()-30*864e5; return [...M.values()].filter(x=>!(x.deleted&&(x.upd||0)<grenze)); };
+  KALP.kal=m(KALP.kal,d&&d.kal); KALP.t=m(KALP.t,d&&d.t); }
+async function kalPLaden(){ if(kalDemoAn()||KALP.lade) return; if(KALP.ok===false&&Date.now()-KALP.am<600e3) return; if(KALP.ok===true&&Date.now()-KALP.am<60e3){ kalPUmzug(); return; }
+  KALP.am=Date.now(); if(KALP.mail&&KALP.mail!==kalIchMail()){ KALP.kal=[]; KALP.t=[]; KALP.offen=false; } KALP.mail=kalIchMail();
+  const vorher=JSON.stringify([KALP.kal,KALP.t,KALP.ok]);
+  KALP.lade=(async()=>{ const t=await kalPToken(); if(!t){ KALP.ok=false; return; }
+    try{ const r=await fetch(kalPDatei(),{headers:{Authorization:"Bearer "+t}});
+      if(r.status===404){ KALP.ok=true; return; } if(r.status===401||r.status===403){ KALP.ok=false; return; } if(!r.ok) return;
+      kalPMischen(await r.json()); KALP.ok=true; }catch(e){ /* offline: Zwischenspeicher bleibt */ } })();
+  try{ await KALP.lade; }finally{ KALP.lade=null; }
+  if(KALP.ok){ kalPUmzug(); if(KALP.offen) kalPSpeichern(); } kalPCache();
+  if(JSON.stringify([KALP.kal,KALP.t,KALP.ok])!==vorher&&typeof nav!=="undefined"&&(nav.v==="kalender"||nav.v==="start")) render(); }
+function kalPSpeichern(){ KALP.offen=true; kalPCache(); clearTimeout(KALP.timer); KALP.timer=setTimeout(kalPSchreiben,600); }
+async function kalPSchreiben(){ const t=await kalPToken(); if(!t){ toast("Privater Kalender: noch nicht im OneDrive gespeichert"); return; }
+  try{ const g=await fetch(kalPDatei(),{headers:{Authorization:"Bearer "+t}}); if(g.ok) kalPMischen(await g.json());
+    const strip=x=>{ const {privat,...r}=x; return r; };
+    const r=await fetch(kalPDatei(),{method:"PUT",headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify({v:1,kal:KALP.kal.map(strip),t:KALP.t.map(strip)})});
+    if(!r.ok) throw new Error("Fehler "+r.status); KALP.offen=false; kalPCache(); }
+  catch(e){ kalPCache(); /* bleibt „offen“, nächster Versuch beim nächsten Laden */ } }
+/* einen Datensatz finden – privat (OneDrive) oder auf der SharePoint-Website */
+function kalRec(id){ if(!id) return null; return kalPK().find(x=>x.id===id&&!x.deleted)||kalPT().find(x=>x.id===id&&!x.deleted)||(DB.termine&&DB.termine.get(id))||null; }
+function kalAblegen(r,privat,neu){ if(privat){ r.privat=true; r.upd=Date.now(); if(!r.createdBy) r.createdBy={mail:ME.mail,name:ME.name}; const L=r.typ==="kal"?KALP.kal:KALP.t, i=L.findIndex(x=>x.id===r.id); if(i<0) L.push(r); else L[i]=r; kalPSpeichern(); }
+  else { delete r.privat; delete r.upd; saveRec("termine",r,neu); } }
+/* löschen; „leeren“ entfernt beim Umzug zusätzlich den Inhalt von der SharePoint-Website */
+function kalEntfernen(r,leeren){ if(!r) return; if(r.privat){ r.deleted=true; r.upd=Date.now(); kalPSpeichern(); return; }
+  if(leeren) Object.assign(r,{name:"",t:"",ort:"",notiz:"",personen:[]}); r.deleted=true; saveRec("termine",r); }
+const kalTermineVon=kid=>[...(DB.termine?live("termine"):[]),...kalPT()].filter(t=>t.kal===kid&&!t.deleted);
+/* Kalender speichern; wechselt er zwischen privat und SharePoint, zieht er mit allen Terminen um (mit neuen IDs) */
+function kalKalAblegen(c,privat){ const alt=c.id&&kalRec(c.id);
+  if(alt&&!!alt.privat!==privat){ const nid=uid(), T=kalTermineVon(alt.id), an=KAL.ebenen["k:"+alt.id];
+    const neu={id:nid,typ:"kal",name:c.name,farbe:c.farbe,sicht:c.sicht,personen:c.personen||[]}; kalAblegen(neu,privat,true);
+    T.forEach(t=>{ kalAblegen({id:uid(),kal:nid,t:t.t,von:t.von,bis:t.bis,ganz:!!t.ganz,ort:t.ort||"",notiz:t.notiz||""},privat,true); kalEntfernen(t,!t.privat); });
+    kalEntfernen(alt,!alt.privat); if(an===false){ KAL.ebenen["k:"+nid]=false; kalEbenenMerken(); } return neu; }
+  if(alt){ Object.assign(alt,c); kalAblegen(alt,!!alt.privat,false); return alt; }
+  const r={typ:"kal",...c,id:uid(),...(kalDemoAn()?{demo:true}:{})}; kalAblegen(r,privat,true); return r; }
+/* „Nur ich“-Kalender, die noch auf der SharePoint-Website liegen, ins OneDrive verschieben */
+function kalPUmzug(){ if(!kalPAn()||!DB.termine) return; const L=live("termine").filter(c=>c.typ==="kal"&&!c.deleted&&!c.demo&&c.sicht==="ich"&&c.createdBy&&String(c.createdBy.mail||"").toLowerCase()===kalIchMail());
+  L.forEach(c=>kalKalAblegen({...c},true)); if(L.length) toast(L.length===1?"Dein privater Kalender liegt jetzt geschützt in deinem OneDrive":"Deine privaten Kalender liegen jetzt geschützt in deinem OneDrive"); }
+const kalKalAlle=()=>[...(DB.termine?live("termine").filter(t=>t.typ==="kal"&&!t.deleted):[]),...kalPK().filter(c=>!c.deleted)];
+const kalKalMein=c=>c.privat||!c.createdBy||!c.createdBy.mail||String(c.createdBy.mail).toLowerCase()===kalIchMail();
 const kalKalSichtbar=c=>kalKalMein(c)||c.sicht==="alle"||(c.sicht==="personen"&&(c.personen||[]).map(x=>String(x).toLowerCase()).includes(kalIchMail()));
 const kalKalListe=()=>kalKalAlle().filter(kalKalSichtbar).sort((a,b)=>(kalKalMein(b)-kalKalMein(a))||String(a.name).localeCompare(String(b.name),"de"));
 const kalKalAn=c=>KAL.ebenen["k:"+c.id]!==false;
 /* belegte Farben für einen (neuen) Kalender mit dieser Sichtbarkeit */
 function kalFarbenBelegt(sicht,ausser){ const L=sicht==="alle"?kalKalAlle():kalKalListe(); return new Set(L.filter(c=>c.id!==ausser).map(c=>c.farbe)); }
 function kalEigene(){ if(!DB.termine) return []; const K=new Map(kalKalListe().filter(kalKalAn).map(c=>[c.id,c]));
-  return live("termine").filter(t=>t.kal&&!t.deleted&&K.has(t.kal)).map(t=>{ const c=K.get(t.kal); return {id:t.id,q:"eigen",kal:c.id,kalName:c.name,farbe:c.farbe,t:t.t||c.name,von:kalLokal(t.von),bis:kalLokal(t.bis),ganz:!!t.ganz,ort:t.ort||"",notiz:t.notiz||"",mit:[],eigen:kalKalMein(c)||(typeof canEdit==="function"&&canEdit(t)),rec:t}; }).filter(e=>e.von&&e.bis); }
+  return [...live("termine"),...kalPT()].filter(t=>t.kal&&!t.deleted&&K.has(t.kal)).map(t=>{ const c=K.get(t.kal); return {id:t.id,q:"eigen",kal:c.id,kalName:c.name,farbe:c.farbe,t:t.t||c.name,von:kalLokal(t.von),bis:kalLokal(t.bis),ganz:!!t.ganz,ort:t.ort||"",notiz:t.notiz||"",mit:[],eigen:kalKalMein(c)||(typeof canEdit==="function"&&canEdit(t)),rec:t}; }).filter(e=>e.von&&e.bis); }
 /* Firmentermine: in der App gespeichert (Abgleich über SharePoint), für alle sichtbar – z. B. Weihnachtsfeier, Teambesprechung */
 function kalFirma(){ if(!KAL.ebenen.firma||!DB.termine) return []; return live("termine").filter(t=>!t.deleted&&t.typ!=="kal"&&!t.kal).map(t=>({id:t.id,q:"firma",t:t.t||"Firmentermin",von:kalLokal(t.von),bis:kalLokal(t.bis),ganz:!!t.ganz,ort:t.ort||"",notiz:t.notiz||"",mit:[],eigen:typeof canEdit==="function"&&canEdit(t)&&(typeof istBuero!=="function"||istBuero()),rec:t})).filter(e=>e.von&&e.bis); }
 function kalAlle(von,bis){ const demo=typeof demoAn==="function"&&demoAn();
@@ -94,7 +148,7 @@ try{ const c=JSON.parse(localStorage.getItem("irrgang_kal_cache")||"null"); if(c
    Darum: je Zeitraum höchstens alle 2 min (nach Fehler 1 min), ohne Freigabe gar nicht mehr von selbst (gemerkt für 30 min). */
 const KAL_NEIN="irrgang_kal_nein";
 try{ if(Date.now()-(+localStorage.getItem(KAL_NEIN)||0)<30*60e3) KAL.verbinden=true; }catch(e){}
-async function kalLaden(erzwingen,bereich){ if(typeof demoAn==="function"&&demoAn()) return; if(!erzwingen&&KAL.verbinden) return;
+async function kalLaden(erzwingen,bereich){ if(typeof demoAn==="function"&&demoAn()) return; kalPLaden(); if(!erzwingen&&KAL.verbinden) return;
   const {von,bis}=bereich||kalBereich(), a=kalPlus(von,-7), b=kalPlus(bis,7), key=kalIso(a)+"|"+kalIso(b), v=KAL.versuch||{};
   if(KAL.lade||(!erzwingen&&v.key===key&&Date.now()-v.am<(v.ok?120e3:60e3))) return;
   KAL.lade=true; KAL.versuch={key,am:Date.now(),ok:false}; const vorher=JSON.stringify([KAL.fehler,KAL.verbinden,KAL.ev.length,KAL.am]);
@@ -125,7 +179,7 @@ function kalKopf(){ const s=kalSicht(), sichten=KAL_SICHTEN.filter(x=>!(istHandy
     <div class="seg ans-seg kal-ans" role="group" aria-label="Ansicht">${sichten.map(([k,t])=>`<button data-act="kalSicht" data-v="${k}" aria-pressed="${s===k}" title="${esc(t)}" aria-label="${esc(t)}">${icon(IC_S[k])}</button>`).join("")}</div></div></div>`; }
 function kalFilterDlg(){ const demo=typeof demoAn==="function"&&demoAn();
   const z=(k,f,t,s2,an,farbe,edit)=>`<div class="li kal-fz" role="button" tabindex="0" data-act="kalEbene" data-v="${k}"><span class="kal-fd ${farbe?"kal-c":f}"${farbe?` style="--c:${farbe}"`:""}></span><span class="lt"><span class="h">${esc(t)}</span><span class="s">${esc(s2)}</span></span>${edit?`<button type="button" class="ib kal-fe" data-act="kalKalEdit" data-id="${esc(edit)}" title="Kalender bearbeiten" aria-label="Kalender bearbeiten">${icon("edit")}</button>`:""}<span class="schalter${an?" an":""}" aria-hidden="true"><i></i></span></div>`;
-  const sichtTxt=c=>kalKalMein(c)?(c.sicht==="alle"?"Für alle sichtbar":c.sicht==="personen"?`Sichtbar für ${((c.personen||[]).length)} Kollegen`:"Nur für dich")+"":`Von ${(c.createdBy&&c.createdBy.name)||"Kollege"}`;
+  const sichtTxt=c=>kalKalMein(c)?(c.sicht==="alle"?"Für alle sichtbar":c.sicht==="personen"?`Sichtbar für ${((c.personen||[]).length)} Kollegen`:c.privat?"Nur für dich · geschützt in deinem OneDrive":kalDemoAn()?"Nur für dich":"Nur für dich · noch nicht geschützt")+"":`Von ${(c.createdBy&&c.createdBy.name)||"Kollege"}`;
   const eigene=kalKalListe();
   dialog("Kalender",`<div class="list">${z("outlook","kal-o",demo?"Beispieltermine":"Mein Outlook","Deine eigenen Termine aus Outlook",KAL.ebenen.outlook)}${z("auftraege","kal-a","Aufträge","Termine aus dem Schritt „Termin“ der Aufträge",KAL.ebenen.auftraege)}${z("firma","kal-g","Firmentermine","Für alle – z. B. Weihnachtsfeier, Teambesprechung",KAL.ebenen.firma)}</div>
     <div class="lbl" style="margin:16px 4px 6px">Eigene Kalender</div><div class="list">${eigene.map(c=>z("k:"+c.id,"",c.name,sichtTxt(c),kalKalAn(c),c.farbe,kalKalMein(c)?c.id:"")).join("")}
@@ -141,14 +195,14 @@ function kalKalDlg(c,danach){ const neu=!c, belegt=kalFarbenBelegt(c?c.sicht:"ic
     <div class="lbl" style="margin:12px 4px 8px">Farbe</div><div class="kal-pal">${kalPalHtml()}</div>
     <div class="lbl" style="margin:16px 4px 8px">Wer sieht den Kalender?</div><div class="kal-segz">${seg("kalKS",kalK.sicht,KAL_SICHT)}</div>
     <div class="kal-kp"${kalK.sicht==="personen"?"":" hidden"}><div class="chips kal-mit">${T.map(m=>`<button type="button" class="chip" data-act="kalKP" data-v="${esc(String(m.mail).toLowerCase())}" aria-pressed="${kalK.personen.has(String(m.mail).toLowerCase())}">${esc(m.name||m.mail)}</button>`).join("")}</div></div>
+    <p class="sup kal-ich-h"${kalK.sicht==="ich"?"":" hidden"} style="margin:12px 4px 0">${kalPAn()?"Liegt geschützt in deinem persönlichen OneDrive – Kollegen und Chef sehen ihn nicht.":"Liegt vorerst auf der Firmen-Website und ist nur in der App ausgeblendet. Sobald die IT die Berechtigung freigibt, zieht er von selbst geschützt in dein OneDrive um."}</p>
     <p class="sup" style="margin:12px 4px 0">Rot, Blau und Grün sind für Outlook, Aufträge und Firmentermine reserviert. Jede andere Farbe gibt es nur einmal.</p></div>`,
     `${!neu?`<button class="btn-text danger" data-act="kalKalDel">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="kalKalOk">Speichern</button>`); }
 function kalPalHtml(){ const belegt=kalFarbenBelegt(kalK.sicht,kalK.id);
   return KAL_PAL.map(([f,t])=>{ const weg=belegt.has(f)&&f!==kalK.farbe; return `<button type="button" class="kal-sw${f===kalK.farbe?" an":""}" style="--c:${f}" data-act="kalKF" data-v="${f}" title="${esc(t)}${weg?" – schon vergeben":""}" aria-label="${esc(t)}" ${weg?"disabled":""}></button>`; }).join(""); }
 function kalKalSpeichern(){ const F=formVals(); if(!F.kalKN){ toast("Bitte einen Namen eintragen"); document.getElementById("f_kalKN")?.focus(); return; }
   if(kalFarbenBelegt(kalK.sicht,kalK.id).has(kalK.farbe)){ toast("Diese Farbe ist schon vergeben – bitte eine andere wählen"); const p=document.querySelector("#dlg .kal-pal"); if(p) p.innerHTML=kalPalHtml(); return; }
-  const demo=typeof demoAn==="function"&&demoAn(), alt=kalK.id&&DB.termine.get(kalK.id), r=alt||{id:uid(),typ:"kal",...(demo?{demo:true}:{})};
-  Object.assign(r,{name:F.kalKN,farbe:kalK.farbe,sicht:kalK.sicht,personen:kalK.sicht==="personen"?[...kalK.personen]:[]}); saveRec("termine",r,!alt);
+  const r=kalKalAblegen({id:kalK.id,name:F.kalKN,farbe:kalK.farbe,sicht:kalK.sicht,personen:kalK.sicht==="personen"?[...kalK.personen]:[]},kalK.sicht==="ich"&&kalPAn());
   const d=kalK.danach; kalK=null; closeOverlays(); render(); if(d) d(r); else kalFilterDlg(); return r; }
 function kalVerbindenKarte(){ return `<div class="kal-verb"><span class="kal-verb-ic">${icon("kal")}</span><span class="kal-verb-t"><span class="lang">Outlook ist noch nicht verbunden – Aufträge, Firmentermine und eigene Kalender gehen trotzdem.</span><span class="kurz">Outlook nicht verbunden</span></span><button class="btn-text" data-act="kalVerbHilfe">Mehr</button><button class="btn-tonal" data-act="kalVerbinden">Verbinden</button></div>`; }
 function kalenderView(){ const s=kalSicht(), B=kalBereich(), demo=typeof demoAn==="function"&&demoAn();
@@ -227,7 +281,7 @@ function kalKachel(anz,zeile,leer,gross){ const h=kalTag(new Date()), demo=typeo
     s:()=>gross(heute.length,"heute"),
     m:g=>E.length?E.slice(0,anz(g)).map(e=>zeile(e.privat&&!e.eigen?"Privat":e.t,[wann(e),e.ort].filter(Boolean).join(" · "))).join(""):leer(!demo&&KAL.verbinden?"Outlook noch nicht verbunden – im Kalender auf „Verbinden“.":"Keine Termine in den nächsten 7 Tagen.",true)}; }
 /* Startseite lädt nur die nächsten Tage – unabhängig davon, welche Ansicht der Kalender gerade hat */
-function kalLadenStart(){ if(KAL.verbinden||(KAL.startAm&&Date.now()-KAL.startAm<300e3)) return; KAL.startAm=Date.now(); const h=kalTag(new Date()); kalLaden(false,{von:h,bis:kalPlus(h,7)}); }
+function kalLadenStart(){ kalPLaden(); if(KAL.verbinden||(KAL.startAm&&Date.now()-KAL.startAm<300e3)) return; KAL.startAm=Date.now(); const h=kalTag(new Date()); kalLaden(false,{von:h,bis:kalPlus(h,7)}); }
 /* --- Termin anlegen / ändern --- */
 let kalE=null;
 function kalOrtListe(){ try{ return live("kunden").map(k=>[k.name,adrText(k)].filter(Boolean).join(", ")).concat(live("standorte").map(s=>{ const k=kundeOf(s.kundeId); return [k&&k.name,s.name,adrText(s)].filter(Boolean).join(", "); })); }catch(e){ return []; } }
@@ -264,9 +318,11 @@ async function kalSpeichern(){ const F=formVals(); if(!F.kalT){ toast("Bitte ein
   const mit=[...kalE.mit].map(m=>{ const t=T.find(x=>String(x.mail).toLowerCase()===m); return {emailAddress:{address:m,name:t?t.name:m},type:"required"}; });
   const body={subject:F.kalT,start:{dateTime:z.von,timeZone:KAL_TZ},end:{dateTime:z.bis,timeZone:KAL_TZ},isAllDay:z.ganz,location:{displayName:F.kalOrt||""},body:{contentType:"text",content:F.kalN||""},attendees:mit};
   if(kalE.art!=="outlook"&&kalE.art!=="firma"){ let kid=kalE.art;
-    if(kid==="neu-ich"){ const f=(KAL_PAL.find(([x])=>!kalFarbenBelegt("ich").has(x))||KAL_PAL[0])[0], c={id:uid(),typ:"kal",name:"Mein Kalender",farbe:f,sicht:"ich",personen:[],...(demo?{demo:true}:{})}; saveRec("termine",c,true); kid=c.id; }
-    const alt=kalE.id&&DB.termine.get(kalE.id), r=alt||{id:uid(),...(demo?{demo:true}:{})};
-    Object.assign(r,{kal:kid,t:F.kalT,von:z.von.slice(0,16),bis:z.bis.slice(0,16),ganz:z.ganz,ort:F.kalOrt||"",notiz:F.kalN||""}); saveRec("termine",r,!alt); closeOverlays(); render(); toast("Termin gespeichert"); return; }
+    if(kid==="neu-ich"){ const f=(KAL_PAL.find(([x])=>!kalFarbenBelegt("ich").has(x))||KAL_PAL[0])[0]; kid=kalKalAblegen({name:"Mein Kalender",farbe:f,sicht:"ich",personen:[]},kalPAn()).id; }
+    const kal=kalRec(kid), privat=!!(kal&&kal.privat), daten={kal:kid,t:F.kalT,von:z.von.slice(0,16),bis:z.bis.slice(0,16),ganz:z.ganz,ort:F.kalOrt||"",notiz:F.kalN||""};
+    let alt=kalE.id&&kalRec(kalE.id); if(alt&&!!alt.privat!==privat){ kalEntfernen(alt,!alt.privat); alt=null; }
+    if(alt){ Object.assign(alt,daten); kalAblegen(alt,privat,false); } else kalAblegen({id:uid(),...daten,...(demo?{demo:true}:{})},privat,true);
+    closeOverlays(); render(); toast("Termin gespeichert"); return; }
   if(kalE.art==="firma"){ const alt=kalE.id&&DB.termine.get(kalE.id), r=alt||{id:uid(),fuer:"alle",...(demo?{demo:true}:{})};
     Object.assign(r,{t:F.kalT,von:z.von.slice(0,16),bis:z.bis.slice(0,16),ganz:z.ganz,ort:F.kalOrt||"",notiz:F.kalN||""}); saveRec("termine",r,!alt); closeOverlays(); render(); toast("Firmentermin gespeichert – für alle sichtbar"); return; }
   if(demo){ const e={id:kalE.id||"demo-t"+uid(),q:"outlook",t:F.kalT,von:kalLokal(z.von),bis:kalLokal(z.bis),ganz:z.ganz,ort:F.kalOrt||"",notiz:F.kalN||"",mit:mit.map(a=>({name:a.emailAddress.name,mail:a.emailAddress.address})),eigen:true,demo:true};
@@ -276,7 +332,7 @@ async function kalSpeichern(){ const F=formVals(); if(!F.kalT){ toast("Bitte ein
     const e=kalAusOutlook(r||{...body,id:kalE.id}); KAL.ev=[...KAL.ev.filter(x=>x.id!==e.id),e]; closeOverlays(); render(); toast(mit.length&&!kalE.id?"Termin gespeichert – Einladungen verschickt":"Termin gespeichert"); kalLaden(true); }
   catch(err){ if(btn){ btn.disabled=false; btn.textContent="Speichern"; } toast(err.verbinden?"Outlook ist nicht verbunden":"Nicht gespeichert: "+(err.message||"Fehler")); } }
 async function kalLoeschen(){ const id=kalE&&kalE.id; if(!id) return; const demo=typeof demoAn==="function"&&demoAn();
-  if(kalE.art!=="outlook"){ const r=DB.termine.get(id); if(r){ r.deleted=true; saveRec("termine",r); } closeOverlays(); render(); toast(kalE.art==="firma"?"Firmentermin gelöscht":"Termin gelöscht"); return; }
+  if(kalE.art!=="outlook"){ kalEntfernen(kalRec(id)); closeOverlays(); render(); toast(kalE.art==="firma"?"Firmentermin gelöscht":"Termin gelöscht"); return; }
   if(demo){ KAL.demo=kalDemo().filter(x=>x.id!==id); closeOverlays(); render(); return; }
   try{ await kalG(`/me/events/${encodeURIComponent(id)}`,{method:"DELETE"}); KAL.ev=KAL.ev.filter(x=>x.id!==id); closeOverlays(); render(); toast("Termin gelöscht"); }
   catch(err){ toast("Nicht gelöscht: "+(err.message||"Fehler")); } }
@@ -304,13 +360,13 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
   else if(a==="kalDel") confirmDlg("Termin löschen?",kalE&&kalE.art==="firma"?"Der Firmentermin verschwindet bei allen aus dem Kalender.":kalE&&kalE.art!=="outlook"?"Der Termin wird aus dem Kalender gelöscht.":"Der Termin wird auch in Outlook gelöscht. Eingeladene bekommen eine Absage.","Löschen","kalDelJa");
   else if(a==="kalArt"){ kalE.art=b.dataset.v; KAL.neuArt=kalE.art; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); const w=document.querySelector("#dlg .kal-dlg"), k=kalE.art==="outlook"?"outlook":kalE.art==="firma"?"firma":"eigen"; if(w){ ["outlook","firma","eigen"].forEach(x=>w.classList.toggle("kal-art-"+x,x===k)); } const h=document.querySelector("#dlg h2"); if(h) h.textContent=kalE.art==="firma"?"Neuer Firmentermin":"Neuer Termin"; }
   else if(a==="kalKalNeu"){ ev.stopPropagation(); kalKalDlg(null); }
-  else if(a==="kalKalEdit"){ ev.stopPropagation(); const c=DB.termine&&DB.termine.get(b.dataset.id); if(c) kalKalDlg(c); }
+  else if(a==="kalKalEdit"){ ev.stopPropagation(); const c=kalRec(b.dataset.id); if(c) kalKalDlg(c); }
   else if(a==="kalKF"){ if(b.disabled) return; kalK.farbe=b.dataset.v; b.parentElement.querySelectorAll(".kal-sw").forEach(x=>x.classList.toggle("an",x===b)); }
-  else if(a==="kalKS"){ kalK.sicht=b.dataset.v; seg1(); const p=document.querySelector("#dlg .kal-kp"); if(p) p.hidden=kalK.sicht!=="personen"; if(kalFarbenBelegt(kalK.sicht,kalK.id).has(kalK.farbe)){ const f=KAL_PAL.find(([x])=>!kalFarbenBelegt(kalK.sicht,kalK.id).has(x)); if(f) kalK.farbe=f[0]; } const pl=document.querySelector("#dlg .kal-pal"); if(pl) pl.innerHTML=kalPalHtml(); }
+  else if(a==="kalKS"){ kalK.sicht=b.dataset.v; seg1(); const p=document.querySelector("#dlg .kal-kp"); if(p) p.hidden=kalK.sicht!=="personen"; const ih=document.querySelector("#dlg .kal-ich-h"); if(ih) ih.hidden=kalK.sicht!=="ich"; if(kalFarbenBelegt(kalK.sicht,kalK.id).has(kalK.farbe)){ const f=KAL_PAL.find(([x])=>!kalFarbenBelegt(kalK.sicht,kalK.id).has(x)); if(f) kalK.farbe=f[0]; } const pl=document.querySelector("#dlg .kal-pal"); if(pl) pl.innerHTML=kalPalHtml(); }
   else if(a==="kalKP"){ const m=b.dataset.v; if(kalK.personen.has(m)) kalK.personen.delete(m); else kalK.personen.add(m); b.setAttribute("aria-pressed",String(kalK.personen.has(m))); }
   else if(a==="kalKalOk") kalKalSpeichern();
   else if(a==="kalKalDel") confirmDlg("Kalender löschen?","Der Kalender und seine Termine verschwinden aus der Ansicht – bei allen, die ihn sehen.","Löschen","kalKalDelJa");
-  else if(a==="kalKalDelJa"){ const r=kalK&&DB.termine.get(kalK.id); if(r){ r.deleted=true; saveRec("termine",r); } kalK=null; closeOverlays(); render(); kalFilterDlg(); }
+  else if(a==="kalKalDelJa"){ const r=kalK&&kalRec(kalK.id); if(r){ kalTermineVon(r.id).forEach(t=>kalEntfernen(t)); kalEntfernen(r); } kalK=null; closeOverlays(); render(); kalFilterDlg(); }
   else if(a==="kalDelJa") kalLoeschen();
   else if(a==="kalZumVg"){ closeOverlays(); const v=DB.vorgaenge&&DB.vorgaenge.get(b.dataset.id); if(v&&typeof vgOpen==="function") vgOpen(v); }
 },true);

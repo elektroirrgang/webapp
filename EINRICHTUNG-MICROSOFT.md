@@ -29,7 +29,8 @@ Die Apps arbeiten **nur auf einer eigenen, geschützten SharePoint-Website** (z.
 
 - `User.Read` – Name und E-Mail des angemeldeten Mitarbeiters
 - `Sites.Selected` – Zugriff nur auf die Website(s), für die die App ausdrücklich freigeschaltet wird
-- `Files.ReadWrite.AppFolder` – *optional, für später:* persönliche Notizen im eigenen App-Ordner des Mitarbeiters im OneDrive (kein Zugriff auf andere Dateien)
+- `Files.ReadWrite.AppFolder` – private Kalender („Nur ich“) im eigenen App-Ordner des Mitarbeiters im OneDrive (kein Zugriff auf andere Dateien). Ohne diese Berechtigung liegen sie auf der SharePoint-Website und ziehen nach der Freigabe automatisch um.
+- `Calendars.ReadWrite` – Kalender-Tab der Übersicht: eigene Outlook-Termine des angemeldeten Mitarbeiters lesen, anlegen, ändern (nur das eigene Postfach)
 
 Danach **„Administratorzustimmung für … erteilen“**.
 
