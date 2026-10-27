@@ -1856,7 +1856,7 @@ document.addEventListener("click",e=>{
 /*ANLAGEN*/
 /*KALENDER*/
 let maWieder=false; document.body.classList.add("hn"); /* Übersicht: Handy-Aufräumen (erst nur hier) */
-function render(){ profilAnwenden();
+function render(){ profilAnwenden(); setTimeout(()=>{ if(typeof kalPaneKlasse==="function") kalPaneKlasse(); },0);
   const app=$("#app");
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
   if(nav.v==="uebersicht"&&!ME.admin) nav={v:"start"};

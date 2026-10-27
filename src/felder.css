@@ -965,7 +965,7 @@ body.tour-an .snackbar{display:none}
 .kal-wsp+.kal-wsp{box-shadow:-1px 0 0 color-mix(in srgb,var(--on-surface) 6%,transparent)}
 .kal-ev{position:absolute;box-sizing:border-box;border-radius:10px;padding:4px 7px;background:var(--kal-o);color:var(--kal-on-o);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;gap:1px;z-index:1}
 .kal-ev.kal-a{background:var(--kal-a);color:var(--kal-on-a)}.kal-ev.kal-f{background:var(--sc-highest);color:var(--on-surface)}
-.kal-ev b{font-size:13px;font-weight:600;line-height:1.25;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:break-word;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.kal-ev b{font-size:13px;font-weight:600;line-height:1.25;hyphens:manual;overflow-wrap:normal;word-break:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
 .kal-ev small{font-size:11.5px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kal-ev.klein{flex-direction:row;align-items:center;gap:6px}.kal-ev.klein b{-webkit-line-clamp:1;white-space:nowrap;text-overflow:ellipsis;display:block}.kal-ev.klein small{display:none}
 .kal-evg{position:static;font-size:12.5px;font-weight:600;padding:4px 8px;white-space:nowrap;text-overflow:ellipsis;display:block}
@@ -1035,11 +1035,15 @@ body.tour-an .snackbar{display:none}
 @media (max-width:599px){.pz-mitte{flex-direction:column}.pz-buehne{width:100%}.pz-seite{flex-direction:row}.pz-vor{flex-direction:row}}
 .pz-fuss .btn-text{display:inline-flex;align-items:center;gap:6px}.pz-fuss .btn-text .ic{margin:0;vertical-align:0}
 
-/* Kalender-Seitenleiste (breiter PC) */
-.kal-mit-panel{display:grid;gap:20px;align-items:start}.kal-p-rechts{grid-template-columns:minmax(0,1fr) 248px}.kal-p-links{grid-template-columns:248px minmax(0,1fr)}
-.kal-haupt{min-width:0}
-.kal-panel{display:flex;flex-direction:column;gap:12px;position:sticky;top:12px}
-.kp-box{background:var(--sc-low,var(--sc));border-radius:20px;padding:12px}
+/* Kalender-Seitenbereich rechts (breiter PC): feste Spalte am Fensterrand, Spiegelbild der App-Leiste, scrollt für sich */
+body{--kal-pw:300px}
+body.kal-mit-pane main > #app{margin-right:calc(64px + var(--kal-pw))!important}
+body.kal-mit-pane .topbar{padding-right:var(--kal-pw)!important;box-sizing:border-box}
+body.kal-mit-pane .fab{right:calc(var(--kal-pw) + 24px)}
+.kal-pane{position:fixed;top:0;right:0;bottom:0;width:var(--kal-pw);box-sizing:border-box;z-index:21;background:var(--sc);border-radius:28px 0 0 0;padding:20px 14px 24px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.kal-panel{display:flex;flex-direction:column;gap:6px}
+.kal-pt.an{color:var(--on-surface);background:var(--sc-high)}
+.kp-box{padding:6px 4px 10px}.kp-box+.kp-box{padding-top:14px}
 .kp-mk{display:flex;align-items:center;gap:2px;margin:0 0 6px 4px}.kp-mk b{flex:1;font-size:14px}
 .kp-r{width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--on-sv);display:grid;place-items:center;cursor:pointer}.kp-r .ic{width:18px;height:18px}.kp-r.vor .ic{transform:rotate(180deg)}
 .kp-g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}.kp-g>span{font-size:11px;font-weight:600;color:var(--on-sv);padding:2px 0 4px}
@@ -1055,7 +1059,6 @@ body.tour-an .snackbar{display:none}
 .kp-n .kp-q{margin-top:3px;width:10px;height:10px;border-radius:3px}.kp-n b{display:block;font-size:13.5px;font-weight:600;line-height:1.3}.kp-n small{font-size:12px;color:var(--on-sv)}
 .kp-leer{font-size:13px;color:var(--on-sv);margin:4px 8px}
 @media (hover:hover){.kp-t:hover:not(.heute),.kp-e:hover,.kp-n:hover,.kp-r:hover{background:var(--sc-high)}}
-.kal-mit-panel .kal-filt{display:none}
 
 /* Woche: Kopf steht, Stunden scrollen im Raster */
 .kal-wscroll{max-height:max(360px,calc(100dvh - 300px));overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-top:8px}
@@ -1065,3 +1068,10 @@ body.tour-an .snackbar{display:none}
 .kal-lzeit{width:74px;flex:none;display:flex;flex-direction:column;font-variant-numeric:tabular-nums}.kal-lzeit b{font-size:15px;font-weight:700}.kal-lzeit small{font-size:12px;color:var(--on-sv)}
 .kal-lbar{width:6px;align-self:stretch;min-height:36px;border-radius:3px;flex:none;background:var(--primary)}.kal-lbar.kal-a{background:#3b6fd8}.kal-lbar.kal-g{background:#2e9b5b}.kal-lbar.kal-f{background:var(--sc-highest)}
 .kal-nix{margin:6px 4px 0;font-size:14px;color:var(--on-sv)}
+
+/* Mit Seitenbereich: die Kalenderseite selbst scrollt nicht (kein Scrollbalken-Streifen neben dem Seitenbereich) –
+   Woche und Liste scrollen in sich, der Monat passt in die Höhe */
+html:has(body.kal-mit-pane){overflow:hidden;scrollbar-gutter:auto}
+body.kal-mit-pane .kal-lscroll{max-height:calc(100dvh - 190px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-bottom:96px}
+body.kal-mit-pane .kal-wscroll{max-height:calc(100dvh - 330px)}
+.kal-pane{padding-top:12px}

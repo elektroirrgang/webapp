@@ -9,6 +9,7 @@ Object.assign(IC,{kal:"M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 
   kalWoche:"M13 5h-2c-.55 0-1 .45-1 1v12c0 .55.45 1 1 1h2c.55 0 1-.45 1-1V6c0-.55-.45-1-1-1zm6 0h-2c-.55 0-1 .45-1 1v12c0 .55.45 1 1 1h2c.55 0 1-.45 1-1V6c0-.55-.45-1-1-1zM7 5H5c-.55 0-1 .45-1 1v12c0 .55.45 1 1 1h2c.55 0 1-.45 1-1V6c0-.55-.45-1-1-1z",
   kalMonat:"M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z",
   kalListe:"M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z",
+  kalPane:"M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 16H5V5h10v14zm4 0h-2V5h2v14z",
   kalLeute:"M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"});
 const KAL_SCOPES=["Calendars.ReadWrite"], KAL_TZ="Europe/Berlin", KAL_H=56, KAL_VON=6, KAL_BIS=20;
 const KAL_SICHTEN=[["liste","Liste"],["woche","Woche"],["monat","Monat"]];
@@ -104,8 +105,8 @@ const kalFilterAktiv=()=>!KAL.ebenen.outlook||!KAL.ebenen.auftraege||!KAL.ebenen
 function kalKopf(){ const s=kalSicht(), sichten=KAL_SICHTEN.filter(x=>!(istHandy()&&x[0]==="woche")), IC_S={liste:"kalListe",woche:"kalWoche",monat:"kalMonat"};
   const stand=KAL.lade?`<span class="kal-stand">lädt …</span>`:KAL.fehler?`<span class="kal-stand warn">${esc(KAL.fehler)}</span>`:"";
   return `<div class="kal-kopf"><div class="kal-nav"><button class="kal-np" data-act="kalSchritt" data-v="-1" aria-label="Zurück" title="Zurück">${icon("back")}</button><button class="kal-np heute" data-act="kalHeute">Heute</button><button class="kal-np vor" data-act="kalSchritt" data-v="1" aria-label="Weiter" title="Weiter">${icon("back")}</button></div>${stand}
-    <div class="kal-rechts"><button class="kal-filt${kalFilterAktiv()?" an":""}" data-act="kalFilter" aria-label="Anzeigen: Outlook, Aufträge, Firmentermine" title="Anzeigen">${icon("filt")}</button>
-    <div class="seg ans-seg kal-ans" role="group" aria-label="Ansicht">${sichten.map(([k,t])=>`<button data-act="kalSicht" data-v="${k}" aria-pressed="${s===k}" title="${esc(t)}" aria-label="${esc(t)}">${icon(IC_S[k])}</button>`).join("")}</div></div></div>`; }
+    <div class="kal-rechts">${kalPaneAn()?"":`<button class="kal-filt${kalFilterAktiv()?" an":""}" data-act="kalFilter" aria-label="Anzeigen: Outlook, Aufträge, Firmentermine" title="Anzeigen">${icon("filt")}</button>`}
+    <div class="seg ans-seg kal-ans" role="group" aria-label="Ansicht">${sichten.map(([k,t])=>`<button data-act="kalSicht" data-v="${k}" aria-pressed="${s===k}" title="${esc(t)}" aria-label="${esc(t)}">${icon(IC_S[k])}</button>`).join("")}</div>${KAL_PC.matches?`<button class="kal-filt kal-pt${kalPaneGewollt()?" an":""}" data-act="kalPane" aria-label="Seitenbereich ${kalPaneGewollt()?"ausblenden":"einblenden"}" title="Seitenbereich ${kalPaneGewollt()?"ausblenden":"einblenden"}">${icon("kalPane")}</button>`:""}</div></div>`; }
 function kalFilterDlg(){ const demo=typeof demoAn==="function"&&demoAn(), z=(k,f,t,s2,an)=>`<button class="li" data-act="kalEbene" data-v="${k}"><span class="kal-fd ${f}"></span><span class="lt"><span class="h">${esc(t)}</span><span class="s">${esc(s2)}</span></span><span class="schalter${an?" an":""}" aria-hidden="true"><i></i></span></button>`;
   dialog("Anzeigen",`<div class="list">${z("outlook","kal-o",demo?"Beispieltermine":"Mein Outlook","Deine eigenen Termine aus Outlook",KAL.ebenen.outlook)}${z("auftraege","kal-a","Aufträge","Termine aus dem Schritt „Termin“ der Aufträge",KAL.ebenen.auftraege)}${z("firma","kal-g","Firmentermine","Für alle – z. B. Weihnachtsfeier, Teambesprechung",KAL.ebenen.firma)}</div>
     <div class="list" style="margin-top:12px">${z("meine","","Nur meine Aufträge","Nur Aufträge, bei denen du eingeteilt oder zuständig bist",kalNurMeine())}</div>`,`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Fertig</button>`); }
@@ -114,13 +115,17 @@ function kalenderView(){ const s=kalSicht(), B=kalBereich(), demo=typeof demoAn=
   if(!demo&&KAL.ebenen.outlook) setTimeout(()=>kalLaden(),0);
   const E=kalAlle(B.von,B.bis);
   const inhalt=s==="woche"?kalWoche(B,E):s==="monat"?kalMonat(B,E):kalListe(B,E);
-  const haupt=`${kalKopf()}${!demo&&KAL.ebenen.outlook&&KAL.verbinden?kalVerbindenKarte():""}${inhalt}`, pl=kalPanelSeite();
-  return pl?`<div class="narrow kal-seite kal-s-${s} kal-mit-panel kal-p-${pl}">${pl==="links"?kalPanel():""}<div class="kal-haupt">${haupt}</div>${pl==="rechts"?kalPanel():""}</div>`
-    :`<div class="narrow kal-seite kal-s-${s}">${haupt}</div>`; }
-/* Seitenleiste im Kalender (nur breiter PC): kleiner Monat zum Springen, Kalender an/aus, „Als Nächstes“.
-   Vorschau-Schalter localStorage irrgang_kal_panel = aus | links | rechts */
+  const haupt=`${kalKopf()}${!demo&&KAL.ebenen.outlook&&KAL.verbinden?kalVerbindenKarte():""}${inhalt}`, pane=kalPaneAn();
+  return `<div class="narrow kal-seite kal-s-${s}">${haupt}</div>${pane?`<aside class="kal-pane">${kalPanel()}</aside>`:""}`; }
+/* Seitenbereich rechts (nur breiter PC): eigene Spalte am rechten Fensterrand – Spiegelbild der App-Leiste links,
+   scrollt für sich (nicht mit dem Kalender), ein- und ausblendbar (localStorage irrgang_kal_panel = an | aus).
+   Inhalt: kleiner Monat zum Springen, Kalender an/aus, „Als Nächstes“. */
 const KAL_PC=matchMedia("(min-width:1280px) and (hover:hover) and (pointer:fine)");
-function kalPanelSeite(){ let v="rechts"; try{ v=localStorage.getItem("irrgang_kal_panel")||"rechts"; }catch(e){} return KAL_PC.matches&&v!=="aus"?v:""; }
+const kalPaneGewollt=()=>{ try{ return localStorage.getItem("irrgang_kal_panel")!=="aus"; }catch(e){ return true; } };
+const kalPaneAn=()=>KAL_PC.matches&&kalPaneGewollt();
+/* wird bei jedem Neuzeichnen aufgerufen: Klasse am body nur, solange der Kalender offen ist */
+function kalPaneKlasse(){ document.body.classList.toggle("kal-mit-pane",typeof nav!=="undefined"&&nav.v==="kalender"&&kalPaneAn()); }
+KAL_PC.addEventListener?.("change",()=>{ if(typeof nav!=="undefined"&&nav.v==="kalender") render(); });
 function kalPanel(){ const ab=KAL.ab||new Date(), m=KAL.miniMon||new Date(ab.getFullYear(),ab.getMonth(),1), a=kalMo(m), jetzt=new Date(), B=kalBereich();
   const E=kalAlle(a,kalPlus(a,42)), hat=d=>E.some(e=>e.von<kalPlus(d,1)&&e.bis>d);
   const tage=[...Array(42)].map((_,i)=>{ const d=kalPlus(a,i), imB=kalSicht()==="woche"&&d>=B.von&&d<B.bis; return `<button class="kp-t${d.getMonth()!==m.getMonth()?" fremd":""}${kalGleich(d,jetzt)?" heute":""}${imB?" imb":""}" data-act="kalMiniTag" data-d="${kalIso(d)}">${d.getDate()}${hat(d)?"<i></i>":""}</button>`; }).join("");
@@ -143,7 +148,7 @@ function kalListe(B,E){ let h="";
       const s2=[e.ort,e.mit&&e.mit.length?e.mit.map(m=>m.name||m.mail).join(", "):"",e.q==="auftrag"?"Auftrag":e.q==="firma"?"Firmentermin":""].filter(Boolean).join(" · ");
       return `<div class="li kal-lz2${e.erledigt?" erl":""}" role="button" tabindex="0" ${kalEvAttr(e)}><span class="kal-lzeit">${zeit}</span><span class="kal-lbar ${kalFarbe(e)}"></span><span class="lt"><span class="h">${esc(e.privat&&!e.eigen?"Privat":e.t)}</span>${s2?`<span class="s">${esc(s2)}</span>`:""}</span>${icon("chev")}</div>`; }).join("")}</div>`
       :`<p class="kal-nix">Keine Termine</p>`}`; }
-  return h||`<p class="meta" style="margin:20px 4px">In den nächsten vier Wochen keine Termine.</p>`; }
+  return `<div class="kal-lscroll">${h||`<p class="meta" style="margin:20px 4px">In den nächsten vier Wochen keine Termine.</p>`}</div>`; }
 /* Überlappende Termine eines Tages nebeneinander */
 function kalSpalten(T){ const L=T.slice().sort((a,b)=>a.von-b.von||b.bis-a.bis), out=[]; let gruppe=[], ende=0;
   const fertig=()=>{ const sp=[]; gruppe.forEach(e=>{ let i=sp.findIndex(x=>x<=e.von); if(i<0){ i=sp.length; sp.push(0); } sp[i]=e.bis; out.push({e,i}); }); out.filter(x=>gruppe.includes(x.e)).forEach(x=>x.n=sp.length); gruppe=[]; };
@@ -235,6 +240,7 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
   else if(a==="kalMiniTag"){ KAL.ab=kalLokal(b.dataset.d); render(); }
   else if(a==="kalEbene"){ const k=b.dataset.v; KAL.ebenen[k]=k==="meine"?!kalNurMeine():!KAL.ebenen[k]; try{ localStorage.setItem("irrgang_kal_ebenen",JSON.stringify(KAL.ebenen)); }catch(e){} const sw=b.querySelector(".schalter"); if(sw) sw.classList.toggle("an",k==="meine"?kalNurMeine():!!KAL.ebenen[k]); render(); }
   else if(a==="kalFilter"){ ev.stopPropagation(); kalFilterDlg(); }
+  else if(a==="kalPane"){ try{ localStorage.setItem("irrgang_kal_panel",kalPaneGewollt()?"aus":"an"); }catch(e){} render(); }
   else if(a==="kalVerbHilfe") dialog("Outlook verbinden","<p style=\"margin:0 0 10px\">Mit „Verbinden“ bestätigst du einmal bei Microsoft, dann siehst du hier deine Outlook-Termine und kannst neue anlegen.</p><p class=\"sup\" style=\"margin:0\">Erscheint bei Microsoft „Genehmigung durch Administrator erforderlich“, muss die Kalender-Berechtigung der App erst einmal freigegeben werden (EDV Achenbach bzw. ein Administrator).</p>",`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button><button class="btn-text" data-act="kalVerbinden">Verbinden</button>`);
   else if(a==="kalVerbinden") kalVerbinden();
   else if(a==="kalGanz"){ kalE.ganz=b.dataset.v==="1"; seg1(); document.querySelector("#dlg .kal-zeiten")?.classList.toggle("ganz",kalE.ganz); }
