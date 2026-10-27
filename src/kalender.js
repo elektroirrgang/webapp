@@ -29,7 +29,7 @@ function kalBereich(){ const s=kalSicht(), ab=KAL.ab||new Date();
 /* --- Zugang zu Outlook --- */
 async function kalToken(){ if(typeof Auth==="undefined") return null; if(Auth.test) return Auth.test.kalNein?null:Auth.test.token; if(!Auth.pca||!Auth.account) return null;
   try{ return (await Auth.pca.acquireTokenSilent({scopes:KAL_SCOPES,account:Auth.account})).accessToken; }catch(e){ return null; } }
-function kalVerbinden(){ if(typeof Auth==="undefined"||!Auth.pca||!Auth.account){ toast("Erst mit dem Firmenkonto anmelden"); return; } if(typeof saveNow==="function") saveNow(); Auth.pca.acquireTokenRedirect({scopes:KAL_SCOPES,account:Auth.account}); }
+function kalVerbinden(){ try{ localStorage.removeItem(KAL_NEIN); }catch(e){} if(typeof Auth==="undefined"||!Auth.pca||!Auth.account){ toast("Erst mit dem Firmenkonto anmelden"); return; } if(typeof saveNow==="function") saveNow(); Auth.pca.acquireTokenRedirect({scopes:KAL_SCOPES,account:Auth.account}); }
 async function kalG(pfad,opt={}){ const t=await kalToken(); if(!t){ KAL.verbinden=true; throw Object.assign(new Error("verbinden"),{verbinden:true}); }
   const r=await fetch(pfad.startsWith("http")?pfad:GRAPH+pfad,{...opt,headers:{Authorization:"Bearer "+t,Prefer:`outlook.timezone="${KAL_TZ}"`,...(opt.body?{"Content-Type":"application/json"}:{}),...(opt.headers||{})}});
   if(r.status===401||r.status===403){ KAL.verbinden=true; throw Object.assign(new Error("verbinden"),{verbinden:true}); }
@@ -70,15 +70,24 @@ function kalAlle(von,bis){ const demo=typeof demoAn==="function"&&demoAn();
   return [...O,...kalAuftraege(),...kalFirma()].filter(e=>e.von&&e.bis&&e.von<bis&&(e.bis>von||(+e.bis===+e.von&&e.von>=von))).sort((a,b)=>(b.ganz-a.ganz)||a.von-b.von); }
 /* Laden: Bereich der aktuellen Ansicht (+ eine Woche Puffer), letzter Stand bleibt fürs Offline-Anschauen */
 try{ const c=JSON.parse(localStorage.getItem("irrgang_kal_cache")||"null"); if(c&&Array.isArray(c.ev)){ KAL.ev=c.ev.map(e=>({...e,von:new Date(e.von),bis:new Date(e.bis)})); KAL.cacheAm=c.am; } }catch(e){}
-async function kalLaden(erzwingen){ if(typeof demoAn==="function"&&demoAn()) return; const {von,bis}=kalBereich(), a=kalPlus(von,-7), b=kalPlus(bis,7), key=kalIso(a)+"|"+kalIso(b);
-  if(KAL.lade||(!erzwingen&&KAL.geladen===key&&Date.now()-(KAL.am||0)<120e3)) return; KAL.lade=true; KAL.fehler="";
+/* Laden: Bereich der aktuellen Ansicht (+ eine Woche Puffer). Wichtig: nie aus jedem Neuzeichnen heraus erneut laden –
+   bis 0.99.32 lief bei einem Fehler (z. B. Outlook noch nicht freigegeben) eine Endlosschleife aus Laden und Neuzeichnen.
+   Darum: je Zeitraum höchstens alle 2 min (nach Fehler 1 min), ohne Freigabe gar nicht mehr von selbst (gemerkt für 30 min). */
+const KAL_NEIN="irrgang_kal_nein";
+try{ if(Date.now()-(+localStorage.getItem(KAL_NEIN)||0)<30*60e3) KAL.verbinden=true; }catch(e){}
+async function kalLaden(erzwingen,bereich){ if(typeof demoAn==="function"&&demoAn()) return; if(!erzwingen&&KAL.verbinden) return;
+  const {von,bis}=bereich||kalBereich(), a=kalPlus(von,-7), b=kalPlus(bis,7), key=kalIso(a)+"|"+kalIso(b), v=KAL.versuch||{};
+  if(KAL.lade||(!erzwingen&&v.key===key&&Date.now()-v.am<(v.ok?120e3:60e3))) return;
+  KAL.lade=true; KAL.versuch={key,am:Date.now(),ok:false}; const vorher=JSON.stringify([KAL.fehler,KAL.verbinden,KAL.ev.length,KAL.am]);
   try{ let url=`/me/calendarView?startDateTime=${a.toISOString()}&endDateTime=${b.toISOString()}&$top=250&$orderby=start/dateTime&$select=${KAL_SEL}`, L=[];
     for(let n=0;url&&n<8;n++){ const r=await kalG(url); L.push(...(r.value||[])); url=r["@odata.nextLink"]||""; }
     const neu=L.filter(e=>!e.isCancelled).map(kalAusOutlook), ids=new Set(neu.map(e=>e.id));
-    KAL.ev=[...KAL.ev.filter(e=>!ids.has(e.id)&&(e.bis<=a||e.von>=b)),...neu]; KAL.geladen=key; KAL.am=Date.now(); KAL.verbinden=false;
-    try{ const behalten=KAL.ev.filter(e=>e.bis>kalPlus(new Date(),-14)&&e.von<kalPlus(new Date(),60)).slice(0,600); localStorage.setItem("irrgang_kal_cache",JSON.stringify({am:Date.now(),ev:behalten})); }catch(e){}
-  }catch(e){ if(!e.verbinden) KAL.fehler=navigator.onLine?(e.message||"Kalender nicht erreichbar"):"Offline – zuletzt geladener Stand"; }
-  KAL.lade=false; if(nav.v==="kalender"||nav.v==="start") (typeof softRender==="function"?softRender:render)(); }
+    KAL.ev=[...KAL.ev.filter(e=>!ids.has(e.id)&&(e.bis<=a||e.von>=b)),...neu]; KAL.am=Date.now(); KAL.verbinden=false; KAL.fehler=""; KAL.versuch.ok=true;
+    try{ localStorage.removeItem(KAL_NEIN); const behalten=KAL.ev.filter(e=>e.bis>kalPlus(new Date(),-14)&&e.von<kalPlus(new Date(),60)).slice(0,600); localStorage.setItem("irrgang_kal_cache",JSON.stringify({am:Date.now(),ev:behalten})); }catch(e){}
+  }catch(e){ if(e.verbinden){ try{ localStorage.setItem(KAL_NEIN,String(Date.now())); }catch(_){} } else KAL.fehler=navigator.onLine?(e.message||"Kalender nicht erreichbar"):"Offline – zuletzt geladener Stand"; }
+  KAL.lade=false;
+  /* nur neu zeichnen, wenn sich etwas geändert hat */
+  if(JSON.stringify([KAL.fehler,KAL.verbinden,KAL.ev.length,KAL.am])!==vorher&&(nav.v==="kalender"||nav.v==="start")) (typeof softRender==="function"?softRender:render)(); }
 /* --- Darstellung --- */
 const kalFarbe=e=>e.q==="auftrag"?"kal-a":e.q==="firma"?"kal-g":e.frei?"kal-f":"kal-o";
 const kalTxtZeit=e=>e.ganz?"ganztägig":`${kalZeit(e.von)}–${kalZeit(e.bis)}`;
@@ -132,7 +141,7 @@ function kalKachel(anz,zeile,leer,gross){ const h=kalTag(new Date()), demo=typeo
     s:()=>gross(heute.length,"heute"),
     m:g=>E.length?E.slice(0,anz(g)).map(e=>zeile(e.privat&&!e.eigen?"Privat":e.t,[wann(e),e.ort].filter(Boolean).join(" · "))).join(""):leer(!demo&&KAL.verbinden?"Outlook noch nicht verbunden – im Kalender auf „Verbinden“.":"Keine Termine in den nächsten 7 Tagen.",true)}; }
 /* Startseite lädt nur die nächsten Tage – unabhängig davon, welche Ansicht der Kalender gerade hat */
-async function kalLadenStart(){ if(KAL.startAm&&Date.now()-KAL.startAm<300e3) return; KAL.startAm=Date.now(); const s=KAL.sicht, ab=KAL.ab; KAL.sicht="liste"; KAL.ab=new Date(); const k=KAL.geladen; KAL.geladen=""; try{ await kalLaden(true); }finally{ KAL.sicht=s; KAL.ab=ab; if(!KAL.geladen) KAL.geladen=k; } }
+function kalLadenStart(){ if(KAL.verbinden||(KAL.startAm&&Date.now()-KAL.startAm<300e3)) return; KAL.startAm=Date.now(); const h=kalTag(new Date()); kalLaden(false,{von:h,bis:kalPlus(h,7)}); }
 /* --- Termin anlegen / ändern --- */
 let kalE=null;
 function kalOrtListe(){ try{ return live("kunden").map(k=>[k.name,adrText(k)].filter(Boolean).join(", ")).concat(live("standorte").map(s=>{ const k=kundeOf(s.kundeId); return [k&&k.name,s.name,adrText(s)].filter(Boolean).join(", "); })); }catch(e){ return []; } }
