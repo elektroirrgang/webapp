@@ -1107,3 +1107,9 @@ body.kal-mit-pane .kal-wscroll{max-height:calc(100dvh - 330px)}
 .kal-eigen-h{display:none;margin:4px 4px 0}.kal-art-eigen .kal-eigen-h{display:block}.kal-art-eigen .kal-mit-w{display:none}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) :is(.kal-ev,.kal-mev,.kal-li).kal-c{background:color-mix(in srgb,var(--c) 42%,var(--surface))}}
 :root[data-theme="dark"] :is(.kal-ev,.kal-mev,.kal-li).kal-c{background:color-mix(in srgb,var(--c) 42%,var(--surface))}
+
+/* Ziehen zum Anlegen */
+.kal-wsp,.kal-mz{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.kal-sel{position:absolute;left:2px;right:2px;z-index:4;box-sizing:border-box;border-radius:10px;padding:4px 7px;background:color-mix(in srgb,var(--primary) 26%,var(--surface));color:var(--on-surface);pointer-events:none;display:flex;flex-direction:column;gap:1px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.kal-sel b{font-size:12px;font-weight:600}.kal-sel small{font-size:11px;opacity:.8}.kal-sel.klein{flex-direction:row;gap:6px;align-items:center;padding-block:0}
+.kal-mz.kal-msel{background:color-mix(in srgb,var(--primary) 18%,var(--surface))}

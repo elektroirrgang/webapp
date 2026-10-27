@@ -285,8 +285,8 @@ function kalLadenStart(){ kalPLaden(); if(KAL.verbinden||(KAL.startAm&&Date.now(
 /* --- Termin anlegen / ändern --- */
 let kalE=null;
 function kalOrtListe(){ try{ return live("kunden").map(k=>[k.name,adrText(k)].filter(Boolean).join(", ")).concat(live("standorte").map(s=>{ const k=kundeOf(s.kundeId); return [k&&k.name,s.name,adrText(s)].filter(Boolean).join(", "); })); }catch(e){ return []; } }
-function kalDialog(e,vor){ const neu=!e; const d=vor||kalTag(KAL.ab&&kalSicht()!=="liste"?new Date():new Date()), start=e?e.von:(()=>{ const x=new Date(d); if(!vor||!vor.getHours()){ const j=new Date(); x.setHours(kalGleich(x,j)?Math.min(20,j.getHours()+1):8,0,0,0); } return x; })();
-  const ende=e?e.bis:new Date(start.getTime()+3600e3), ganz=e?e.ganz:false, ganzEnde=ganz?kalPlus(ende,-1):ende;
+function kalDialog(e,vor,bisVor,ganzVor){ const neu=!e; const d=vor||kalTag(KAL.ab&&kalSicht()!=="liste"?new Date():new Date()), start=e?e.von:(()=>{ const x=new Date(d); if(!bisVor&&(!vor||!vor.getHours())){ const j=new Date(); x.setHours(kalGleich(x,j)?Math.min(20,j.getHours()+1):8,0,0,0); } return x; })();
+  const ende=e?e.bis:bisVor||new Date(start.getTime()+3600e3), ganz=e?e.ganz:!!ganzVor, ganzEnde=ganz?kalPlus(ende,-1):ende;
   const buero=typeof istBuero==="function"&&istBuero(), demo=typeof demoAn==="function"&&demoAn();
   /* Kalender, in die man schreiben darf: Outlook (wenn verbunden), eigene Kalender, Firmentermine (Büro) */
   const outlookOk=demo||!KAL.verbinden, eigene=kalKalListe().filter(kalKalMein);
@@ -340,8 +340,8 @@ function kalFinde(id){ const demo=typeof demoAn==="function"&&demoAn(); return [
 document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act^="kal"]'); if(!b) return; const a=b.dataset.act;
   const seg1=()=>{ b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); if(typeof segInd==="function") segInd(); };
   if(a==="kalAuf"){ ev.stopPropagation(); const e=kalFinde(b.dataset.id); if(!e) return; if((e.q==="outlook"||e.q==="firma"||e.q==="eigen")&&e.eigen) kalDialog(e); else kalAnsehen(e); }
-  else if(a==="kalFrei"){ if(ev.target.closest(".kal-ev")) return; const r=b.getBoundingClientRect(), h=Math.floor((ev.clientY-r.top)/KAL_H*2)/2+(+b.dataset.von||KAL_VON), d=kalLokal(b.dataset.d); d.setHours(Math.floor(h),h%1?30:0,0,0); kalDialog(null,d); }
-  else if(a==="kalTagAuf"){ KAL.ab=kalLokal(b.dataset.d); KAL.sicht=istHandy()?"liste":"woche"; try{ localStorage.setItem("irrgang_kal_sicht",KAL.sicht); }catch(e){} render(); }
+  else if(a==="kalFrei"){ if(ev.target.closest(".kal-ev")||Date.now()-KZ.weg<500) return; const r=b.getBoundingClientRect(), h=Math.floor((ev.clientY-r.top)/KAL_H*2)/2+(+b.dataset.von||KAL_VON), d=kalLokal(b.dataset.d); d.setHours(Math.floor(h),h%1?30:0,0,0); kalDialog(null,d); }
+  else if(a==="kalTagAuf"){ if(Date.now()-KZ.weg<500) return; KAL.ab=kalLokal(b.dataset.d); KAL.sicht=istHandy()?"liste":"woche"; try{ localStorage.setItem("irrgang_kal_sicht",KAL.sicht); }catch(e){} render(); }
   else if(a==="kalNeu"){ ev.stopPropagation(); kalDialog(null); }
   else if(a==="kalSicht"){ KAL.sicht=b.dataset.v; try{ localStorage.setItem("irrgang_kal_sicht",KAL.sicht); }catch(e){} render(); }
   else if(a==="kalSchritt"){ const s=kalSicht(), n=+b.dataset.v, ab=KAL.ab||new Date(); KAL.ab=s==="woche"?kalPlus(ab,7*n):s==="monat"?new Date(ab.getFullYear(),ab.getMonth()+n,1):kalPlus(ab,14*n); render(); }
@@ -374,3 +374,35 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
 /* Monats-Fenster schließen: Klick daneben, Esc, Seitenwechsel */
 document.addEventListener("click",e=>{ const p=document.getElementById("kalPop"); if(p&&!(e.target.closest&&(e.target.closest("#kalPop")||e.target.closest('[data-act="kalDatum"]')))) p.remove(); },true);
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") document.getElementById("kalPop")?.remove(); });
+
+/* ===== Ziehen zum Anlegen =====
+   Woche: in einer Tagesspalte von–bis aufziehen (15-Minuten-Raster) → neuer Termin mit dieser Zeit.
+   Monat: über mehrere Tage ziehen → neuer ganztägiger Termin über diese Tage.
+   Maus: sofort ziehen. Finger (iPad/Handy): kurz gedrückt halten, dann ziehen – sonst bleibt normales Scrollen. */
+const KZ={a:null,weg:0,timer:0,t0:null};
+function kzMin(sp,y){ const r=sp.getBoundingClientRect(), max=Math.round(r.height/KAL_H*60); return Math.max(0,Math.min(max-15,Math.floor((y-r.top)/KAL_H*4)*15)); }
+const kzZeit=(sp,m)=>{ const d=kalLokal(sp.dataset.d); d.setHours(+sp.dataset.von||KAL_VON,0,0,0); return new Date(d.getTime()+m*6e4); };
+function kzZeichne(){ const A=KZ.a; if(!A) return;
+  if(A.art==="w"){ const m0=kzMin(A.sp,A.y0), m1=kzMin(A.sp,A.y), a=Math.min(m0,m1), b=Math.max(m0,m1)+15; A.von=kzZeit(A.sp,a); A.bis=kzZeit(A.sp,b);
+    let el=A.sp.querySelector(".kal-sel"); if(!el){ el=document.createElement("div"); el.className="kal-sel"; A.sp.appendChild(el); }
+    el.style.top=a/60*KAL_H+"px"; el.style.height=Math.max(14,(b-a)/60*KAL_H-2)+"px"; el.innerHTML=`<b>Neuer Termin</b><small>${kalZeit(A.von)}–${kalZeit(A.bis)}</small>`; el.classList.toggle("klein",(b-a)<45); }
+  else { const z=document.elementFromPoint(A.x,A.y)?.closest(".kal-mz"); if(z) A.d1=z.dataset.d; const [a,b]=[A.d0,A.d1].sort();
+    document.querySelectorAll(".kal-mz").forEach(t=>t.classList.toggle("kal-msel",t.dataset.d>=a&&t.dataset.d<=b)); A.von=kalLokal(a); A.bis=kalPlus(kalLokal(b),1); } }
+function kzAufraeumen(){ document.querySelectorAll(".kal-sel").forEach(x=>x.remove()); document.querySelectorAll(".kal-msel").forEach(x=>x.classList.remove("kal-msel")); document.body.classList.remove("kz-zieht"); KZ.a=null; }
+function kzStart(t,x,y,touch){ const sp=t.closest(".kal-wsp"), mz=t.closest(".kal-mz"); if(sp&&!t.closest(".kal-ev")) KZ.a={art:"w",sp,y0:y,y,x,touch,zug:!!touch};
+  else if(mz) KZ.a={art:"m",d0:mz.dataset.d,d1:mz.dataset.d,x,y,y0:y,touch,zug:!!touch}; else return false;
+  if(touch){ document.body.classList.add("kz-zieht"); kzZeichne(); try{ navigator.vibrate&&navigator.vibrate(12); }catch(e){} } return true; }
+function kzBewegt(x,y){ const A=KZ.a; if(!A) return; A.x=x; A.y=y; if(!A.zug){ if(A.art==="w"&&Math.abs(y-A.y0)<6) return; if(A.art==="m"){ const z=document.elementFromPoint(x,y)?.closest(".kal-mz"); if(!z||z.dataset.d===A.d0) return; } A.zug=true; document.body.classList.add("kz-zieht"); }
+  if(A.art==="w"){ const sc=A.sp.closest(".kal-wscroll"); if(sc){ const r=sc.getBoundingClientRect(); if(y>r.bottom-30) sc.scrollTop+=10; else if(y<r.top+30) sc.scrollTop-=10; } }
+  kzZeichne(); }
+function kzEnde(){ const A=KZ.a; if(!A) return; const zug=A.zug; if(zug){ kzZeichne(); KZ.weg=Date.now(); } const von=A.von, bis=A.bis, art=A.art; kzAufraeumen();
+  if(zug&&von&&bis) kalDialog(null,von,bis,art==="m"); }
+document.addEventListener("pointerdown",e=>{ if(e.pointerType==="touch"||e.button!==0||!e.target.closest?.(".kal-wsp,.kal-mz")) return; if(kzStart(e.target,e.clientX,e.clientY,false)) e.preventDefault(); });
+document.addEventListener("pointermove",e=>{ if(KZ.a&&!KZ.a.touch) kzBewegt(e.clientX,e.clientY); });
+document.addEventListener("pointerup",e=>{ if(KZ.a&&!KZ.a.touch) kzEnde(); });
+document.addEventListener("pointercancel",()=>{ if(KZ.a&&!KZ.a.touch) kzAufraeumen(); });
+document.addEventListener("touchstart",e=>{ clearTimeout(KZ.timer); const t=e.target.closest?.(".kal-wsp,.kal-mz"); if(!t||e.touches.length>1||e.target.closest(".kal-ev")) return; const p=e.touches[0]; KZ.t0={x:p.clientX,y:p.clientY,el:e.target};
+  KZ.timer=setTimeout(()=>{ if(KZ.t0) kzStart(KZ.t0.el,KZ.t0.x,KZ.t0.y,true); },420); },{passive:true});
+document.addEventListener("touchmove",e=>{ const p=e.touches[0]; if(KZ.a&&KZ.a.touch){ e.preventDefault(); kzBewegt(p.clientX,p.clientY); return; } if(KZ.t0&&Math.hypot(p.clientX-KZ.t0.x,p.clientY-KZ.t0.y)>8){ clearTimeout(KZ.timer); KZ.t0=null; } },{passive:false});
+document.addEventListener("touchend",e=>{ clearTimeout(KZ.timer); KZ.t0=null; if(KZ.a&&KZ.a.touch){ e.preventDefault(); kzEnde(); } });
+document.addEventListener("touchcancel",()=>{ clearTimeout(KZ.timer); KZ.t0=null; if(KZ.a&&KZ.a.touch) kzAufraeumen(); });
