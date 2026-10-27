@@ -1083,3 +1083,10 @@ body.kal-mit-pane .kal-wscroll{max-height:calc(100dvh - 330px)}
 .kal-pop .kp-t.imb{background:var(--sc-highest)}
 .kal-np.kal-dat .ic{width:20px;height:20px}
 .kal-pop .kp-t.heute{background:var(--primary);color:var(--on-primary)}
+
+/* Datum als eigene runde Pille neben Zurück/Heute/Weiter */
+.kal-datp{width:48px;height:48px;flex:none;border:0;border-radius:50%;background:var(--sc-high);color:var(--on-surface);display:grid;place-items:center;cursor:pointer}.kal-datp .ic{width:22px;height:22px}
+@media (hover:hover){.kal-datp:hover{background:var(--sc-highest)}}
+/* Filter unauffällig wie neben der Suchleiste in der Bibliothek; aktiv nur rot */
+.kal-filt{background:transparent!important;color:var(--on-sv)}.kal-filt.an{background:transparent!important;color:var(--primary)}
+@media (hover:hover){.kal-filt:hover{background:var(--sc)!important}}
