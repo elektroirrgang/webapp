@@ -411,14 +411,14 @@ function maLehrjahr(m){ const n=new Date(), mon=(a,b)=>(b.getFullYear()-a.getFul
    – „Wer fährt hin“ speichert neben den Namen auch die E-Mails (mitMails) – daran erkennt die App, wer gemeint ist */
 const PERS_FARBEN=["#1565c0","#c2185b","#ef6c00","#00838f","#4e342e","#283593","#d84315","#37474f","#ad1457","#00695c","#558b2f","#5d4037"];
 /* feste Farben (von Max so gewünscht): Chef gelb, Max grün, Alex lila – alle anderen bekommen automatisch eine freie Farbe */
-const PERS_FEST={"info@elektro-irrgang.de":"#f2b400","m.pevec@elektro-irrgang.de":"#2e7d32","alex@elektro-irrgang.de":"#7b1fa2"};
+const PERS_FEST={"info@elektro-irrgang.de":"#e8a800","m.pevec@elektro-irrgang.de":"#2e7d32","alex@elektro-irrgang.de":"#7b1fa2"};
 function persFarbe(mail){ const m=String(mail||"").toLowerCase(); let T=[]; try{ T=typeof teamAlle==="function"?teamAlle():typeof team==="function"?team():[]; }catch(e){}
   const eigen=t=>t&&(t.farbe||PERS_FEST[String(t.mail||"").toLowerCase()]), t0=T.find(x=>String(x.mail||"").toLowerCase()===m);
   if(eigen(t0)) return eigen(t0); if(PERS_FEST[m]) return PERS_FEST[m];
   const belegt=new Set(T.map(eigen).filter(Boolean)), frei=PERS_FARBEN.filter(f=>!belegt.has(f)), L=T.filter(x=>!eigen(x)).map(x=>String(x.mail||"").toLowerCase()).filter(Boolean).sort();
   let i=L.indexOf(m); if(i<0){ i=0; for(const c of m) i=(i*31+c.charCodeAt(0))>>>0; } return (frei.length?frei:PERS_FARBEN)[i%(frei.length||PERS_FARBEN.length)]; }
-/* Schrift auf der Farbe: auf hellem Gelb dunkel, sonst weiß */
-function persSchrift(f){ const h=String(f||"").replace("#",""); if(h.length!==6) return "#fff"; const [r,g,b]=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255); return (0.299*r+0.587*g+0.114*b)>0.62?"#1c1b1f":"#fff"; }
+/* Schrift auf der Farbe: überall weiß (einheitlich, so von Max gewünscht) */
+const persSchrift=()=>"#fff";
 const persTeam=mail=>{ const m=String(mail||"").toLowerCase(); try{ return (typeof teamAlle==="function"?teamAlle():team()).find(x=>String(x.mail||"").toLowerCase()===m)||null; }catch(e){ return null; } };
 /* voller Name für die Blase: Vor- und Nachname aus dem Profil, sonst Rufname, sonst die E-Mail */
 function persVoll(mail,name){ const p=typeof profilVon==="function"?profilVon(mail):null, v=p&&!pfKaputt(p)?[p.vorname,p.nachname].filter(Boolean).join(" ").trim():"";
