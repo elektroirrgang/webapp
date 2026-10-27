@@ -94,19 +94,22 @@ async function kalLaden(erzwingen,bereich){ if(typeof demoAn==="function"&&demoA
 /* --- Darstellung --- */
 const kalFarbe=e=>e.q==="auftrag"?"kal-a":e.q==="firma"?"kal-g":e.frei?"kal-f":"kal-o";
 const kalTxtZeit=e=>e.ganz?"ganztägig":`${kalZeit(e.von)}–${kalZeit(e.bis)}`;
-function kalKopf(){ const s=kalSicht(), B=kalBereich(), h=new Date();
-  let titel=""; if(s==="woche"){ const e=kalPlus(B.von,6); titel=`KW ${kalKw(B.von)} · ${B.von.getDate()}.${B.von.getMonth()!==e.getMonth()?" "+B.von.toLocaleDateString("de-DE",{month:"short"}):""} – ${e.getDate()}. ${e.toLocaleDateString("de-DE",{month:"long",year:"numeric"})}`; }
-  else if(s==="monat") titel=B.monat.toLocaleDateString("de-DE",{month:"long",year:"numeric"});
-  else titel=kalGleich(B.von,h)?"Ab heute":`Ab ${B.von.toLocaleDateString("de-DE",{weekday:"short",day:"numeric",month:"long"})}`;
-  const sichten=KAL_SICHTEN.filter(x=>!(istHandy()&&x[0]==="woche"));
-  const demo=typeof demoAn==="function"&&demoAn();
-  /* Kopf: Zeitraum links, rechts Zurück/Heute/Weiter und die Ansicht als Symbole (wie neben der Suchleiste in den Aufträgen) */
-  const IC_S={liste:"kalListe",woche:"kalWoche",monat:"kalMonat"};
-  return `<div class="kal-kopf"><h2 class="kal-titel">${esc(titel)}</h2><div class="kal-rechts"><div class="kal-nav"><button class="kal-rund" data-act="kalSchritt" data-v="-1" aria-label="Zurück" title="Zurück">${icon("back")}</button><button class="btn-tonal kal-heute" data-act="kalHeute">Heute</button><button class="kal-rund vor" data-act="kalSchritt" data-v="1" aria-label="Weiter" title="Weiter">${icon("back")}</button></div>
-    <div class="seg ans-seg kal-ans" role="group" aria-label="Ansicht">${sichten.map(([k,t])=>`<button data-act="kalSicht" data-v="${k}" aria-pressed="${s===k}" title="${esc(t)}" aria-label="${esc(t)}">${icon(IC_S[k])}</button>`).join("")}</div></div></div>
-    <div class="chips kal-ebenen"><button class="chip" data-act="kalEbene" data-v="outlook" aria-pressed="${KAL.ebenen.outlook}"><i class="kal-punkt kal-o"></i>${demo?"Beispieltermine":"Mein Outlook"}</button><button class="chip" data-act="kalEbene" data-v="auftraege" aria-pressed="${KAL.ebenen.auftraege}"><i class="kal-punkt kal-a"></i>Aufträge</button><button class="chip" data-act="kalEbene" data-v="firma" aria-pressed="${KAL.ebenen.firma}"><i class="kal-punkt kal-g"></i>Firmentermine</button>${KAL.ebenen.auftraege?`<button class="chip" data-act="kalEbene" data-v="meine" aria-pressed="${kalNurMeine()}">Nur meine Aufträge</button>`:""}
-      ${KAL.lade?`<span class="kal-stand">lädt …</span>`:KAL.fehler?`<span class="kal-stand warn">${esc(KAL.fehler)}</span>`:""}</div>`; }
-function kalVerbindenKarte(){ return `<div class="kal-verb"><span class="kal-verb-ic">${icon("kal")}</span><div><b>Outlook-Kalender verbinden</b><p>Einmal bestätigen, dann siehst du hier deine Outlook-Termine und kannst neue anlegen. Die Auftragstermine siehst du auch ohne.</p><p class="sup">Erscheint bei Microsoft „Genehmigung durch Administrator erforderlich“, muss der Chef oder Alex die Kalender-Berechtigung der App einmal freigeben.</p></div><button class="btn-filled" data-act="kalVerbinden">Verbinden</button></div>`; }
+/* Zeitraum als Seitentitel (oben, die einzige Überschrift) */
+function kalTitel(){ const s=kalSicht(), B=kalBereich(), h=new Date();
+  if(s==="woche"){ const e=kalPlus(B.von,6), m=d=>d.toLocaleDateString("de-DE",{month:"short"}).replace(".",""); return `KW ${kalKw(B.von)} · ${B.von.getDate()}.${B.von.getMonth()!==e.getMonth()?" "+m(B.von):""} – ${e.getDate()}. ${m(e)} ${e.getFullYear()}`; }
+  if(s==="monat") return B.monat.toLocaleDateString("de-DE",{month:"long",year:"numeric"});
+  return kalGleich(B.von,h)?"Kalender – ab heute":`Kalender – ab ${B.von.toLocaleDateString("de-DE",{day:"numeric",month:"long"})}`; }
+const kalFilterAktiv=()=>!KAL.ebenen.outlook||!KAL.ebenen.auftraege||!KAL.ebenen.firma;
+/* Kopf: links Zurück/Heute/Weiter in einer Gruppe, rechts Filter und Ansicht als Symbole (wie neben der Suchleiste in den Aufträgen) */
+function kalKopf(){ const s=kalSicht(), sichten=KAL_SICHTEN.filter(x=>!(istHandy()&&x[0]==="woche")), IC_S={liste:"kalListe",woche:"kalWoche",monat:"kalMonat"};
+  const stand=KAL.lade?`<span class="kal-stand">lädt …</span>`:KAL.fehler?`<span class="kal-stand warn">${esc(KAL.fehler)}</span>`:"";
+  return `<div class="kal-kopf"><div class="kal-nav"><button class="kal-np" data-act="kalSchritt" data-v="-1" aria-label="Zurück" title="Zurück">${icon("back")}</button><button class="kal-np heute" data-act="kalHeute">Heute</button><button class="kal-np vor" data-act="kalSchritt" data-v="1" aria-label="Weiter" title="Weiter">${icon("back")}</button></div>${stand}
+    <div class="kal-rechts"><button class="kal-filt${kalFilterAktiv()?" an":""}" data-act="kalFilter" aria-label="Anzeigen: Outlook, Aufträge, Firmentermine" title="Anzeigen">${icon("filt")}</button>
+    <div class="seg ans-seg kal-ans" role="group" aria-label="Ansicht">${sichten.map(([k,t])=>`<button data-act="kalSicht" data-v="${k}" aria-pressed="${s===k}" title="${esc(t)}" aria-label="${esc(t)}">${icon(IC_S[k])}</button>`).join("")}</div></div></div>`; }
+function kalFilterDlg(){ const demo=typeof demoAn==="function"&&demoAn(), z=(k,f,t,s2,an)=>`<button class="li" data-act="kalEbene" data-v="${k}"><span class="kal-fd ${f}"></span><span class="lt"><span class="h">${esc(t)}</span><span class="s">${esc(s2)}</span></span><span class="schalter${an?" an":""}" aria-hidden="true"><i></i></span></button>`;
+  dialog("Anzeigen",`<div class="list">${z("outlook","kal-o",demo?"Beispieltermine":"Mein Outlook","Deine eigenen Termine aus Outlook",KAL.ebenen.outlook)}${z("auftraege","kal-a","Aufträge","Termine aus dem Schritt „Termin“ der Aufträge",KAL.ebenen.auftraege)}${z("firma","kal-g","Firmentermine","Für alle – z. B. Weihnachtsfeier, Teambesprechung",KAL.ebenen.firma)}</div>
+    <div class="list" style="margin-top:12px">${z("meine","","Nur meine Aufträge","Nur Aufträge, bei denen du eingeteilt oder zuständig bist",kalNurMeine())}</div>`,`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Fertig</button>`); }
+function kalVerbindenKarte(){ return `<div class="kal-verb"><span class="kal-verb-ic">${icon("kal")}</span><span class="kal-verb-t"><span class="lang">Outlook ist noch nicht verbunden – zu sehen sind nur Auftrags- und Firmentermine.</span><span class="kurz">Outlook nicht verbunden</span></span><button class="btn-text" data-act="kalVerbHilfe">Mehr</button><button class="btn-tonal" data-act="kalVerbinden">Verbinden</button></div>`; }
 function kalenderView(){ const s=kalSicht(), B=kalBereich(), demo=typeof demoAn==="function"&&demoAn();
   if(!demo&&KAL.ebenen.outlook) setTimeout(()=>kalLaden(),0);
   const E=kalAlle(B.von,B.bis);
@@ -156,9 +159,9 @@ function kalDialog(e,vor){ const neu=!e; const d=vor||kalTag(KAL.ab&&kalSicht()!
   const art=e?e.q:(KAL.neuArt||(buero&&!demo&&(KAL.verbinden||!KAL.ebenen.outlook)?"firma":"outlook"));
   kalE={id:e&&e.id,ganz,art,mit:new Set((e&&e.mit||[]).map(m=>m.mail).filter(Boolean)),mitAlt:(e&&e.mit||[]).filter(m=>m.mail)};
   const T=(typeof team==="function"?team():[]).filter(m=>m.mail&&String(m.mail).toLowerCase()!==String(ME.mail||"").toLowerCase());
-  const artWahl=neu&&buero?`<div class="vg-drw"><span>Für</span>${seg("kalArt",art,[["outlook","Mich (Outlook)"],["firma","Alle (Firmentermin)"]])}</div>`:"";
+  const artWahl=neu&&buero?`<div class="kal-segz">${seg("kalArt",art,[["outlook","Für mich (Outlook)"],["firma","Für alle (Firmentermin)"]])}</div>`:"";
   dialog(neu?"Neuer Termin":art==="firma"?"Firmentermin":"Termin",`<div class="fg1 kal-dlg kal-art-${art}">${artWahl}${tf("kalT","Titel",e?e.t:"",{form:true,ph:"z. B. Kundentermin, Weihnachtsfeier"})}
-    <div class="vg-drw"><span>Dauer</span>${seg("kalGanz",ganz?"1":"0",[["0","Mit Uhrzeit"],["1","Ganztägig"]])}</div>
+    <div class="kal-segz">${seg("kalGanz",ganz?"1":"0",[["0","Mit Uhrzeit"],["1","Ganztägig"]])}</div>
     <div class="kal-zeiten${ganz?" ganz":""}">${tf("kalD","Beginn",kalIso(start),{form:true,type:"date"})}<span class="kal-uz">${tf("kalVon","Von",kalZeit(start),{form:true,type:"time",ph:"08:00"})}${tf("kalBis","Bis",kalZeit(ende),{form:true,type:"time",ph:"09:00"})}</span><span class="kal-gz">${tf("kalDE","Ende",kalIso(ganzEnde),{form:true,type:"date"})}</span></div>
     ${tf("kalOrt","Ort (optional)",e?e.ort:"",{form:true,list:"kalOrte",ph:"Kunde oder Adresse"})}${datalist("kalOrte",kalOrtListe())}
     <p class="sup kal-firma-h">Erscheint bei allen in den Irrgang-Apps im Kalender, in Grün – nicht in Outlook.</p>
@@ -202,7 +205,9 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
   else if(a==="kalSicht"){ KAL.sicht=b.dataset.v; try{ localStorage.setItem("irrgang_kal_sicht",KAL.sicht); }catch(e){} render(); }
   else if(a==="kalSchritt"){ const s=kalSicht(), n=+b.dataset.v, ab=KAL.ab||new Date(); KAL.ab=s==="woche"?kalPlus(ab,7*n):s==="monat"?new Date(ab.getFullYear(),ab.getMonth()+n,1):kalPlus(ab,14*n); render(); }
   else if(a==="kalHeute"){ KAL.ab=null; render(); }
-  else if(a==="kalEbene"){ const k=b.dataset.v; KAL.ebenen[k]=k==="meine"?!kalNurMeine():!KAL.ebenen[k]; try{ localStorage.setItem("irrgang_kal_ebenen",JSON.stringify(KAL.ebenen)); }catch(e){} render(); }
+  else if(a==="kalEbene"){ const k=b.dataset.v; KAL.ebenen[k]=k==="meine"?!kalNurMeine():!KAL.ebenen[k]; try{ localStorage.setItem("irrgang_kal_ebenen",JSON.stringify(KAL.ebenen)); }catch(e){} const sw=b.querySelector(".schalter"); if(sw) sw.classList.toggle("an",k==="meine"?kalNurMeine():!!KAL.ebenen[k]); render(); }
+  else if(a==="kalFilter"){ ev.stopPropagation(); kalFilterDlg(); }
+  else if(a==="kalVerbHilfe") dialog("Outlook verbinden","<p style=\"margin:0 0 10px\">Mit „Verbinden“ bestätigst du einmal bei Microsoft, dann siehst du hier deine Outlook-Termine und kannst neue anlegen.</p><p class=\"sup\" style=\"margin:0\">Erscheint bei Microsoft „Genehmigung durch Administrator erforderlich“, muss die Kalender-Berechtigung der App erst einmal freigegeben werden (EDV Achenbach bzw. ein Administrator).</p>",`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button><button class="btn-text" data-act="kalVerbinden">Verbinden</button>`);
   else if(a==="kalVerbinden") kalVerbinden();
   else if(a==="kalGanz"){ kalE.ganz=b.dataset.v==="1"; seg1(); document.querySelector("#dlg .kal-zeiten")?.classList.toggle("ganz",kalE.ganz); }
   else if(a==="kalMit"){ const m=b.dataset.v; if(kalE.mit.has(m)) kalE.mit.delete(m); else kalE.mit.add(m); b.setAttribute("aria-pressed",String(kalE.mit.has(m))); }

@@ -50,12 +50,47 @@ function kontoDialogAlt(){
     <input type="file" id="pfDatei" accept="image/*" hidden>`,
     `<button class="btn-text danger" data-act="logout">Abmelden</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="pfSave">Speichern</button>`);
 }
+/* ===== Profilbild zuschneiden: verschieben (ziehen), zoomen (Regler, Mausrad, zwei Finger), drehen.
+   Der Kreis zeigt, was später zu sehen ist; daneben die Vorschau in Groß und in Profilbild-Größe. ===== */
+Object.assign(IC,{pzMinus:"M19 13H5v-2h14v2z",pzPlus:"M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",pzDreh:"M7.11 8.53 5.7 7.11C4.8 8.27 4.24 9.61 4.07 11h2.02c.14-.87.49-1.72 1.02-2.47zM6.09 13H4.07c.17 1.39.72 2.73 1.62 3.89l1.41-1.42c-.52-.75-.87-1.59-1.01-2.47zm1.01 5.32c1.16.9 2.51 1.44 3.9 1.61V17.9c-.87-.15-1.71-.49-2.46-1.03L7.1 18.32zM13 4.07V1L8.45 5.55 13 10V6.09c2.84.48 5 2.94 5 5.91s-2.16 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93s-3.05-7.44-7-7.93z"});
+let PZ=null;
 async function pfBildLaden(f){
   try{ const url=URL.createObjectURL(f), img=new Image(); await new Promise((ok,no)=>{ img.onload=ok; img.onerror=no; img.src=url; });
-    const s=Math.min(img.width,img.height), c=document.createElement("canvas"); c.width=c.height=192;
-    c.getContext("2d").drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,192,192); URL.revokeObjectURL(url);
-    pfBild=c.toDataURL("image/jpeg",0.82); const b=document.querySelector(".pf-bild"); if(b){ b.style.backgroundImage=`url('${pfBild}')`; b.firstChild&&b.firstChild.nodeType===3&&(b.firstChild.textContent=""); }
-  }catch(e){ toast("Das Bild konnte nicht gelesen werden"); } }
+    pzOeffnen(img,url); }catch(e){ toast("Das Bild konnte nicht gelesen werden"); } }
+function pzOeffnen(img,url){ document.getElementById("pfZu")?.remove();
+  document.body.insertAdjacentHTML("beforeend",`<div id="pfZu" class="pz" role="dialog" aria-modal="true" aria-label="Profilbild zuschneiden"><div class="pz-box">
+    <h2>Profilbild zuschneiden</h2><p class="pz-tip">Ziehen zum Verschieben, Regler oder zwei Finger zum Zoomen.</p>
+    <div class="pz-mitte"><div class="pz-buehne"><canvas id="pzC"></canvas><i class="pz-kreis"></i></div>
+      <div class="pz-seite"><div class="pz-vor"><canvas id="pzV1" width="192" height="192"></canvas><canvas id="pzV2" width="80" height="80"></canvas></div><span class="pz-vt">So sehen dich die Kollegen</span></div></div>
+    <div class="pz-zoom"><button type="button" class="pz-rund" data-pz="minus" aria-label="Kleiner">${icon("pzMinus")}</button><input type="range" id="pzZ" min="1" max="4" step="0.01" value="1" aria-label="Zoom"><button type="button" class="pz-rund" data-pz="plus" aria-label="Größer">${icon("pzPlus")}</button></div>
+    <div class="pz-fuss"><button type="button" class="btn-text" data-pz="dreh">${icon("pzDreh")}Drehen</button><span style="flex:1"></span><button type="button" class="btn-text" data-pz="ab">Abbrechen</button><button type="button" class="btn-filled" data-pz="ok">Übernehmen</button></div></div></div>`);
+  const C=document.getElementById("pzC"), B=C.parentElement, S=Math.round(B.getBoundingClientRect().width)||300, dpr=Math.min(2,window.devicePixelRatio||1);
+  C.width=C.height=Math.round(S*dpr); C.style.width=C.style.height=S+"px";
+  PZ={img,url,S,z:1,x:0,y:0,r:0,ptr:new Map()}; pzMale();
+  const z=document.getElementById("pzZ"); z.addEventListener("input",()=>{ pzZoom(+z.value); });
+  B.addEventListener("pointerdown",e=>{ B.setPointerCapture(e.pointerId); PZ.ptr.set(e.pointerId,{x:e.clientX,y:e.clientY}); PZ.ab=null; });
+  B.addEventListener("pointermove",e=>{ if(!PZ||!PZ.ptr.has(e.pointerId)) return; const alt=PZ.ptr.get(e.pointerId), P=[...PZ.ptr.values()];
+    if(PZ.ptr.size===1){ PZ.x+=e.clientX-alt.x; PZ.y+=e.clientY-alt.y; PZ.ptr.set(e.pointerId,{x:e.clientX,y:e.clientY}); pzGrenzen(); pzMale(); return; }
+    PZ.ptr.set(e.pointerId,{x:e.clientX,y:e.clientY}); const Q=[...PZ.ptr.values()], d=Math.hypot(Q[0].x-Q[1].x,Q[0].y-Q[1].y);
+    if(PZ.ab){ pzZoom(PZ.ab.z*d/PZ.ab.d); } else PZ.ab={d,z:PZ.z}; });
+  const los=e=>{ if(PZ){ PZ.ptr.delete(e.pointerId); if(PZ.ptr.size<2) PZ.ab=null; } };
+  B.addEventListener("pointerup",los); B.addEventListener("pointercancel",los);
+  B.addEventListener("wheel",e=>{ e.preventDefault(); pzZoom(PZ.z*Math.exp(-e.deltaY*0.0015)); },{passive:false}); }
+/* Bildgröße so, dass der Ausschnitt immer voll ist (kein leerer Rand im Kreis) */
+const pzMasse=()=>{ const q=PZ.r%180!==0, w=q?PZ.img.height:PZ.img.width, h=q?PZ.img.width:PZ.img.height, k=PZ.S/Math.min(w,h)*PZ.z; return {w:w*k,h:h*k,k}; };
+function pzGrenzen(){ const m=pzMasse(), gx=Math.max(0,(m.w-PZ.S)/2), gy=Math.max(0,(m.h-PZ.S)/2); PZ.x=Math.max(-gx,Math.min(gx,PZ.x)); PZ.y=Math.max(-gy,Math.min(gy,PZ.y)); }
+function pzZoom(z){ if(!PZ) return; const alt=PZ.z; PZ.z=Math.max(1,Math.min(4,z)); PZ.x*=PZ.z/alt; PZ.y*=PZ.z/alt; pzGrenzen(); const r=document.getElementById("pzZ"); if(r&&+r.value!==PZ.z) r.value=PZ.z; pzMale(); }
+const PZ_R=0.88; /* Kreis = 88 % der Bühne (6 % Rand je Seite) */
+function pzZeichne(c,kreis){ const g=c.getContext("2d"), n=c.width, f=n/(PZ.S*(kreis?PZ_R:1)), m=pzMasse(); g.clearRect(0,0,n,n); g.save(); g.translate(n/2+PZ.x*f,n/2+PZ.y*f); g.rotate(PZ.r*Math.PI/180); g.scale(m.k*f,m.k*f); g.imageSmoothingQuality="high"; g.drawImage(PZ.img,-PZ.img.width/2,-PZ.img.height/2); g.restore(); }
+function pzMale(){ if(!PZ) return; [["pzC",false],["pzV1",true],["pzV2",true]].forEach(([id,k])=>{ const c=document.getElementById(id); if(c) pzZeichne(c,k); }); }
+/* Der Kreis liegt mit 6 % Rand in der Bühne – genau dieser Bereich wird gespeichert */
+function pzFertig(){ const c=document.createElement("canvas"); c.width=c.height=256; pzZeichne(c,true);
+  pfBild=c.toDataURL("image/jpeg",0.85); pzZu(); const b=document.querySelector(".pf-bild"); if(b){ b.style.backgroundImage=`url('${pfBild}')`; b.firstChild&&b.firstChild.nodeType===3&&(b.firstChild.textContent=""); }
+  if(nav.v==="konto") toast("Bild übernommen – zum Behalten „Speichern“ tippen"); }
+function pzZu(){ if(PZ&&PZ.url) URL.revokeObjectURL(PZ.url); PZ=null; document.getElementById("pfZu")?.remove(); const i=document.getElementById("pfDatei"); if(i) i.value=""; }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest("[data-pz]"); if(!b||!PZ) return; e.stopPropagation(); const a=b.dataset.pz;
+  if(a==="plus") pzZoom(PZ.z+0.25); else if(a==="minus") pzZoom(PZ.z-0.25); else if(a==="dreh"){ PZ.r=(PZ.r+90)%360; pzGrenzen(); pzMale(); } else if(a==="ab") pzZu(); else if(a==="ok") pzFertig(); },true);
+document.addEventListener("keydown",e=>{ if(PZ&&e.key==="Escape"){ e.stopPropagation(); pzZu(); } },true);
 function pfSpeichern(){
   const F={}; document.querySelectorAll(nav.v==="konto"?".pf-seite [data-f]":"#dlg [data-f]").forEach(e=>F[e.dataset.f]=String(e.value||"").trim());
   const id=String(ME.mail||"").toLowerCase(); if(!id) return; const alt=DB.profile.get(id), r=alt||{id};

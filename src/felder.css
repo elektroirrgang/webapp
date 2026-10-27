@@ -935,22 +935,9 @@ body.tour-an .snackbar{display:none}
 .kal-li.kal-g,.kal-ev.kal-g,.kal-mev.kal-g{background:var(--kal-g);color:var(--kal-on-g)}
 .kal-firma-h{display:none;margin:4px 4px 0}.kal-art-firma .kal-firma-h{display:block}.kal-art-firma .kal-mit-w{display:none}
 .kal-seite.kal-s-woche,.kal-seite.kal-s-monat{max-width:none}
-.kal-kopf{display:flex;align-items:center;justify-content:space-between;gap:12px 16px;flex-wrap:wrap;margin:4px 0 12px}
-.kal-rechts{display:flex;align-items:center;gap:12px;margin-left:auto}
-.kal-nav{display:flex;align-items:center;gap:6px;min-width:0}
-.kal-rund{width:40px;height:40px;border:0;border-radius:50%;background:var(--sc);color:var(--on-surface);display:grid;place-items:center;cursor:pointer;flex:none}
-.kal-rund .ic{width:22px;height:22px}.kal-rund.vor .ic{transform:rotate(180deg)}
-.kal-heute{height:40px}
-.kal-titel{margin:0;padding-left:4px;font-size:24px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.kal-rund{width:48px;height:48px}.kal-heute{height:48px;padding:0 20px}
-.seg.ans-seg.kal-ans{height:48px!important}.seg.ans-seg.kal-ans button{height:40px!important;flex-basis:48px!important;width:48px}
-.kal-ebenen{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px}
 .kal-punkt{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 .kal-punkt.kal-o{background:var(--primary)}.kal-punkt.kal-a{background:#3b6fd8}.kal-punkt.kal-g{background:#2e9b5b}
 .kal-stand{font-size:13px;color:var(--on-sv)}.kal-stand.warn{color:var(--err)}
-.kal-verb{display:flex;align-items:center;gap:16px;background:var(--sc);border-radius:20px;padding:16px 18px;margin:0 0 14px}
-.kal-verb>div{flex:1;min-width:0}.kal-verb b{font-size:16px}.kal-verb p{margin:4px 0 0;font-size:14px;color:var(--on-sv)}
-.kal-verb-ic{width:44px;height:44px;border-radius:14px;background:var(--pc);color:var(--on-pc);display:grid;place-items:center;flex:none}.kal-verb-ic .ic{width:24px;height:24px}
 /* Liste */
 .kal-ltag{display:flex;gap:14px;padding:10px 0;border-radius:18px}
 .kal-ld{width:52px;flex:none;display:flex;flex-direction:column;align-items:center;padding-top:6px}
@@ -973,8 +960,6 @@ body.tour-an .snackbar{display:none}
 .kal-wg{margin-bottom:6px}.kal-wgl{font-size:11px;color:var(--on-sv);align-self:center}
 .kal-wgt{display:flex;flex-direction:column;gap:3px;padding:0 2px}
 .kal-wr{position:relative;margin-left:48px}
-.kal-std{position:absolute;left:-48px;right:0;height:0;border-top:1px solid color-mix(in srgb,var(--on-surface) 8%,transparent)}
-.kal-std span{position:absolute;left:0;top:-8px;width:42px;text-align:right;font-size:11px;color:var(--on-sv);font-variant-numeric:tabular-nums}
 .kal-wsps{position:absolute;inset:0;display:grid;grid-template-columns:repeat(7,1fr)}
 .kal-wsp{position:relative;cursor:copy}.kal-wsp.heute{background:color-mix(in srgb,var(--primary) 5%,transparent)}
 .kal-wsp+.kal-wsp{box-shadow:-1px 0 0 color-mix(in srgb,var(--on-surface) 6%,transparent)}
@@ -987,18 +972,12 @@ body.tour-an .snackbar{display:none}
 .kal-jetzt{position:absolute;left:0;right:0;height:2px;background:var(--primary);z-index:2;pointer-events:none}.kal-jetzt::before{content:"";position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--primary)}
 @media (hover:hover){.kal-ev:hover,.kal-li:hover{filter:brightness(.97)}}
 /* Monat */
-.kal-monat{background:var(--sc-low,var(--sc));border-radius:22px;padding:8px}
-.kal-mkopf,.kal-mgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .kal-mk{text-align:center;font-size:12px;font-weight:600;color:var(--on-sv);padding:4px 0 6px}
-.kal-mz{min-height:104px;border-radius:14px;background:var(--surface);padding:6px;display:flex;flex-direction:column;gap:3px;cursor:pointer;min-width:0}
-.kal-mz.fremd{opacity:.45}.kal-mn{font-size:13px;font-weight:700;width:26px;height:26px;display:grid;place-items:center;border-radius:50%}
-.kal-mz.heute .kal-mn{background:var(--primary);color:var(--on-primary)}
 .kal-mev{font-size:12px;font-weight:600;border-radius:6px;padding:2px 6px;background:var(--kal-o);color:var(--kal-on-o);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kal-mev.kal-a{background:var(--kal-a);color:var(--kal-on-a)}.kal-mev.kal-f{background:var(--sc-highest);color:var(--on-surface)}
 .kal-mmehr{font-size:11px;font-weight:700;color:var(--on-sv);padding-left:4px}
-@media (max-width:743px){.kal-mz{min-height:64px;padding:4px;border-radius:10px}.kal-mev{font-size:0;height:6px;padding:0;border-radius:3px}.kal-titel{font-size:20px}.kal-rechts{width:100%;justify-content:space-between}}
+
 /* Monat passt auf den Bildschirm: sechs Wochen, Zellenhöhe aus der Fensterhöhe */
-.kal-s-monat .kal-mz{min-height:max(84px,calc((100dvh - 330px) / 6))}
 /* Dialog */
 .kal-zeiten{display:grid;grid-template-columns:1fr 1fr;gap:10px}.kal-uz{display:grid;grid-template-columns:1fr 1fr;gap:10px}.kal-gz{display:none}
 .kal-zeiten.ganz .kal-uz{display:none}.kal-zeiten.ganz .kal-gz{display:block}
@@ -1006,4 +985,54 @@ body.tour-an .snackbar{display:none}
 .kal-dz{display:flex;gap:12px;align-items:flex-start;margin:0 0 10px;font-size:15px}.kal-dz .ic{width:20px;height:20px;flex:none;color:var(--on-sv);margin-top:1px}
 .kal-dn{white-space:pre-wrap;background:var(--sc);border-radius:14px;padding:12px 14px;margin:6px 0 0;font-size:14px}
 .vg-zeiten{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media (max-width:743px){.kal-s-monat .kal-mz{min-height:68px}.kal-ebenen{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:-16px;margin-right:-16px;padding:0 16px}.kal-ebenen::-webkit-scrollbar{display:none}.kal-ebenen .chip{flex:none}}
+
+/* Kalender-Kopf (ruhig): links Zurück/Heute/Weiter als eine Gruppe, rechts Filter + Ansicht – alles 48 px hoch, rechts bündig mit dem Raster */
+.kal-kopf{display:flex;align-items:center;gap:12px;margin:4px 0 14px}
+.kal-nav{display:flex;align-items:center;height:48px;padding:4px;border-radius:24px;background:var(--sc-high);flex:none}
+.kal-np{height:40px;min-width:40px;border:0;border-radius:20px;background:transparent;color:var(--on-surface);display:grid;place-items:center;cursor:pointer;font:inherit;font-size:15px;font-weight:600;padding:0}
+.kal-np .ic{width:22px;height:22px}.kal-np.vor .ic{transform:rotate(180deg)}.kal-np.heute{padding:0 16px}
+@media (hover:hover){.kal-np:hover,.kal-filt:hover{background:var(--sc-highest)}}
+.kal-rechts{display:flex;align-items:center;gap:8px;margin-left:auto}
+.kal-filt{width:48px;height:48px;border:0;border-radius:50%;background:var(--sc-high);color:var(--on-sv);display:grid;place-items:center;cursor:pointer;position:relative}
+.kal-filt .ic{width:22px;height:22px}.kal-filt.an{color:var(--primary)}.kal-filt.an::after{content:"";position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--primary)}
+.seg.ans-seg.kal-ans{height:48px!important}.seg.ans-seg.kal-ans button{height:40px!important;flex-basis:48px!important;width:48px}
+.kal-fd{width:14px;height:14px;border-radius:4px;flex:none;margin:0 6px 0 4px}.kal-fd.kal-o{background:var(--primary)}.kal-fd.kal-a{background:#3b6fd8}.kal-fd.kal-g{background:#2e9b5b}.kal-fd:empty:not(.kal-o):not(.kal-a):not(.kal-g){display:none}
+/* Hinweis „nicht verbunden“: eine schmale Zeile */
+.kal-verb{display:flex;align-items:center;gap:12px;background:var(--sc);border-radius:18px;padding:8px 8px 8px 12px;margin:0 0 14px}
+.kal-verb-ic{width:32px;height:32px;border-radius:10px;background:var(--sc-highest);color:var(--on-sv);display:grid;place-items:center;flex:none}.kal-verb-ic .ic{width:18px;height:18px}
+.kal-verb-t{flex:1;min-width:0;font-size:14px;color:var(--on-sv)}
+/* Woche: Uhrzeiten mittig auf der Linie, links daneben */
+.kal-std{position:absolute;left:-48px;right:0;height:0;border-top:1px solid color-mix(in srgb,var(--on-surface) 7%,transparent)}
+.kal-std span{position:absolute;left:0;top:-7px;width:40px;text-align:right;font-size:11px;line-height:14px;color:var(--on-sv);font-variant-numeric:tabular-nums;background:var(--sc-low,var(--sc));padding-right:4px}
+.kal-std:first-child{border-top:0}.kal-std:first-child span{top:0}
+/* Monat: eine Fläche, Tage nur durch feine Trennlinien, Wochenende leicht abgesetzt */
+.kal-monat{background:var(--sc-low,var(--sc));border-radius:22px;padding:6px 6px 8px;overflow:hidden}
+.kal-mkopf,.kal-mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.kal-mgrid{gap:1px;background:color-mix(in srgb,var(--on-surface) 7%,transparent);border-radius:14px;overflow:hidden}
+.kal-mk{text-align:center;font-size:12px;font-weight:600;color:var(--on-sv);padding:6px 0 8px}
+.kal-mz{min-height:max(84px,calc((100dvh - 290px) / 6));background:var(--sc-low,var(--sc));padding:6px;display:flex;flex-direction:column;gap:3px;cursor:pointer;min-width:0}
+.kal-mz:nth-child(7n),.kal-mz:nth-child(7n-1){background:color-mix(in srgb,var(--on-surface) 2.5%,var(--sc-low,var(--sc)))}
+@media (hover:hover){.kal-mz:hover{background:color-mix(in srgb,var(--on-surface) 5%,var(--sc-low,var(--sc)))}}
+.kal-mz.fremd .kal-mn{opacity:.4}.kal-mz.fremd .kal-mev{opacity:.55}
+.kal-mn{font-size:13px;font-weight:700;width:26px;height:26px;display:grid;place-items:center;border-radius:50%}
+.kal-mz.heute .kal-mn{background:var(--primary);color:var(--on-primary)}
+@media (max-width:743px){.kal-kopf{gap:8px}.kal-np.heute{padding:0 12px}.kal-mz{min-height:68px;padding:4px}.kal-mev{font-size:0;height:6px;padding:0;border-radius:3px}.kal-verb-t{font-size:13px}.kal-verb .btn-text{display:none}}
+.kal-verb-t .kurz{display:none}@media (max-width:743px){.kal-verb-t .lang{display:none}.kal-verb-t .kurz{display:inline}}
+.kal-segz{margin:0 0 12px}.kal-segz .seg{width:100%}
+
+/* Profilbild zuschneiden */
+.pz{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:16px}
+.pz-box{background:var(--dlg-bg,var(--sc-high));color:var(--on-surface);border-radius:28px;padding:22px 22px 14px;width:min(640px,100%);max-height:calc(100dvh - 32px);overflow:auto;box-sizing:border-box}
+.pz-box h2{margin:0 0 4px;font-size:22px}.pz-tip{margin:0 0 16px;font-size:14px;color:var(--on-sv)}
+.pz-mitte{display:flex;gap:20px;align-items:center}
+.pz-buehne{position:relative;flex:1 1 auto;max-width:380px;aspect-ratio:1;border-radius:20px;overflow:hidden;background:#111;touch-action:none;cursor:grab}
+.pz-buehne:active{cursor:grabbing}.pz-buehne canvas{display:block}
+.pz-kreis{position:absolute;inset:6%;border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.55),inset 0 0 0 2px rgba(255,255,255,.85);pointer-events:none}
+.pz-seite{display:flex;flex-direction:column;align-items:center;gap:10px;flex:none}
+.pz-vor{display:flex;flex-direction:column;align-items:center;gap:12px}.pz-vor canvas{border-radius:50%;background:var(--sc)}
+#pzV1{width:96px;height:96px}#pzV2{width:40px;height:40px}.pz-vt{font-size:12px;color:var(--on-sv);text-align:center;max-width:110px}
+.pz-zoom{display:flex;align-items:center;gap:10px;margin:16px 0 4px}.pz-zoom input{flex:1;accent-color:var(--primary);height:28px}
+.pz-rund{width:40px;height:40px;border:0;border-radius:50%;background:var(--sc);color:var(--on-surface);display:grid;place-items:center;cursor:pointer;flex:none}.pz-rund .ic{width:20px;height:20px}
+.pz-fuss{display:flex;align-items:center;gap:8px;margin-top:8px}.pz-fuss .btn-text .ic{width:20px;height:20px;margin-right:6px;vertical-align:-5px}
+@media (max-width:599px){.pz-mitte{flex-direction:column}.pz-buehne{width:100%}.pz-seite{flex-direction:row}.pz-vor{flex-direction:row}}
+.pz-fuss .btn-text{display:inline-flex;align-items:center;gap:6px}.pz-fuss .btn-text .ic{margin:0;vertical-align:0}
