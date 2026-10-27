@@ -22,7 +22,7 @@ const vgKunde=v=>v.kundeId&&kundeOf(v.kundeId)?kundeOf(v.kundeId).name:(v.kundeN
 const vgZeit=t=>{ if(!t) return ""; const d=new Date(t), h=new Date(); const tag=d.toDateString()===h.toDateString()?"heute":new Date(h-864e5).toDateString()===d.toDateString()?"gestern":d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}); return `${tag}, ${d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}`; };
 const vgVorn=n=>String(n||"").trim();
 /* wie lange hängt der Vorgang schon im aktuellen Schritt? */
-function vgAlter(v){ if(vgZu(v)) return null; const i=vgStufe(v); if(i<0) return null; const k=VG_S[i][0], seit=v.s[k].at||0, std=(Date.now()-seit)/36e5;
+function vgAlter(v){ if(vgZu(v)) return null; const i=vgStufe(v); if(i<0||(v.rahmen&&i>=2)) return null; /* Rahmenauftrag läuft übers Jahr – „hängt“ nie */ const k=VG_S[i][0], seit=v.s[k].at||0, std=(Date.now()-seit)/36e5;
   const grenze=[24,48,72,null][i]; if(i>=3){ const d=v.s.termin&&v.s.termin.datum; if(d&&d<today()) return {txt:"Termin vorbei – noch nicht ausgeführt",kl:"wip"}; return null; }
   if(std<grenze) return null; const tage=Math.floor(std/24); return {txt:tage>=1?`seit ${tage} Tag${tage>1?"en":""}`:`seit ${Math.floor(std)} Std.`,kl:std>grenze*2?"bad":"wip"}; }
 function vgFilter(f){ return vgAlle().filter(v=>f==="erledigt"?!!((v.s&&v.s.ausgefuehrt)||v.erledigt):f==="abgelehnt"?!!v.abgelehnt:f==="buero"?!vgZu(v)&&vgStufe(v)===1:f==="termin"?!vgZu(v)&&vgStufe(v)===2:!vgZu(v)); }
