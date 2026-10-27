@@ -306,7 +306,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
 /* Entwickler: Rolle in Microsoft oder in der Mitarbeiterliste der Übersicht als „Entwickler“ eingetragen */
 const istEntwickler=()=>{ try{ if(typeof meineRollen==="function"&&meineRollen().includes("Entwickler")) return true;
   const T=typeof EINST!=="undefined"&&EINST.team||[], ich=String((typeof ME!=="undefined"&&ME.mail)||"").toLowerCase(); return !!ich&&T.some(m=>m.mail===ich&&m.entwickler&&m.status!=="weg"); }catch(e){ return false; } };
-function entwicklerBereich(){ if(!istEntwickler()) return ""; const z=[typeof mlDiagZeile==="function"&&ME.mail?mlDiagZeile():"",typeof mlTestZeile==="function"&&ME.mail?mlTestZeile():"",typeof simZeile==="function"&&ME.mail?simZeile():"",typeof tourZeile==="function"?tourZeile():"",demoZeile()].join("").trim();
+function entwicklerBereich(){ if(!istEntwickler()) return ""; const z=[typeof mlDiagZeile==="function"&&ME.mail?mlDiagZeile():"",typeof mlTestZeile==="function"&&ME.mail?mlTestZeile():"",typeof simZeile==="function"&&ME.mail?simZeile():"",typeof wuEntwZeile==="function"&&ME.mail?wuEntwZeile():"",typeof tourZeile==="function"?tourZeile():"",demoZeile()].join("").trim();
   if(!z) return ""; const zu=!!META.entwZu; /* ein- und ausklappbar, Zustand je Gerät */
   return `<button type="button" class="sec-lbl sec-klapp" data-act="entwKlapp" aria-expanded="${!zu}">Entwickler<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>${zu?"":`<div class="list">${z}</div>`}`; }
 /* Demo an: gelber Ring ums Profilbild statt eines Schildchens in der Kopfzeile (das saß je nach Gerät schief) */

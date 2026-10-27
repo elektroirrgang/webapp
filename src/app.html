@@ -1187,9 +1187,9 @@ const CONFIG=Object.assign({
 const SYNC_ON=!!(CONFIG.tenantId&&CONFIG.clientId&&CONFIG.shareUrl);
 
 const TH_KEY="evse_theme", OLD_KEY="evse_protos_v1";
-const KINDS=["kunden","standorte","ladeparks","pruefungen","katalog","geraete","profile","dateien","protokolle","einstellungen"];
-const APP_KINDS=["dateien","protokolle","einstellungen"]; /* liegen im gemeinsamen Gerätespeicher „irrgang_apps“ (wie in Übersicht und Baustelle) */
-const DB={kunden:new Map(),standorte:new Map(),ladeparks:new Map(),pruefungen:new Map(),katalog:new Map(),geraete:new Map(),profile:new Map(),dateien:new Map(),protokolle:new Map(),einstellungen:new Map()};
+const KINDS=["kunden","standorte","ladeparks","pruefungen","katalog","geraete","profile","dateien","protokolle","einstellungen","wuensche"];
+const APP_KINDS=["dateien","protokolle","einstellungen","wuensche"]; /* liegen im gemeinsamen Gerätespeicher „irrgang_apps“ (wie in Übersicht und Baustelle) */
+const DB={kunden:new Map(),standorte:new Map(),ladeparks:new Map(),pruefungen:new Map(),katalog:new Map(),geraete:new Map(),profile:new Map(),dateien:new Map(),protokolle:new Map(),einstellungen:new Map(),wuensche:new Map()};
 let META={profil:{name:""},pins:[],archiv:[],filter:"alle",sync:{}};
 let cur=null, nav={v:"start"}, saveTimer=null, dirtyCur=false, dataDB=null, aDB=null, query="";
 let ME={name:"",mail:"",admin:false,signedIn:false};
@@ -1330,7 +1330,7 @@ const b64u=s=>btoa(unescape(encodeURIComponent(s))).replace(/=+$/,"").replace(/\
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
 const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",protokolle:"Kundendaten",
   ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
-  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Prüfprotokolle",anlagen:"Kundendaten"};
+  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Prüfprotokolle",anlagen:"Kundendaten",wuensche:"Kundendaten"};
 async function syncRoot(){
   if(SY.drive) return;
   const c=META.sync.root;

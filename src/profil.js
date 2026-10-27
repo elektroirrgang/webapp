@@ -187,7 +187,7 @@ function geraetZeilen(mitPush){ return (mitPush&&typeof mlGeraetZeile==="functio
 function kontoSeite(o){ const sek=(t,z)=>{ z=(Array.isArray(z)?z.join(""):z||"").trim(); return z?`<div class="sec-lbl">${t}</div><div class="list">${z}</div>`:""; };
   const demoFremd=typeof demoAn==="function"&&demoAn()&&!(typeof istEntwickler==="function"&&istEntwickler())?sek("Demo",demoZeile()):""; /* wer sie anhat, muss sie auch ausschalten können */
   const pcFuss=typeof KOPF_PC!=="undefined"&&KOPF_PC.matches; /* PC: Konto steht unten in der Seitenleiste – hier nicht doppelt */
-  return `<div class="narrow konto-s">${syncKarte()}${pcFuss?"":sek("Konto",o.konto)}${sek("Darstellung",o.darstellung)}${o.apps||""}${sek("Dieses Gerät",o.geraet)}${sek("Verwaltung",o.verwaltung)}${o.eigenes||""}${kontoInfoKarte(o.info||[])}${demoFremd}${entwicklerBereich()}</div>`; }
+  return `<div class="narrow konto-s">${syncKarte()}${pcFuss?"":sek("Konto",o.konto)}${sek("Darstellung",o.darstellung)}${o.apps||""}${sek("Dieses Gerät",o.geraet)}${sek("Verwaltung",o.verwaltung)}${o.eigenes||""}${sek("Mitmachen",typeof wuZeile==="function"&&ME.mail?wuZeile():"")}${kontoInfoKarte(o.info||[])}${demoFremd}${entwicklerBereich()}</div>`; }
 /* Info: eine Karte mit App-Symbol, Version und den Seiten als Chips (statt drei Listenzeilen) */
 function kontoInfoKarte(L){ const ic=(document.querySelector('link[rel="apple-touch-icon"]')||{}).href||"", app=document.title.split(" · ")[0];
   const zeilen=L.map(([act,i,t,sub])=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(i)}</span><span class="lt"><span class="h">${esc(t)}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}</span>${icon("chev")}</div>`).join("");
@@ -287,8 +287,8 @@ async function speicherLaden(){ if(speicherLaden.l) return; speicherLaden.l=true
   try{ const est=navigator.storage&&navigator.storage.estimate?await navigator.storage.estimate().catch(()=>null):null, A=await einAufraeumbar();
     const foto=typeof fotoCache!=="undefined"?[...fotoCache.values()].reduce((s,v)=>s+(typeof v==="string"?v.length*.75:0),0):0;
     SP_STAND={t:Date.now(),est,A,foto}; if(nav.v==="speicher") render(); }finally{ speicherLaden.l=false; } }
-const KONTO_SEITEN={...(typeof meldungenView==="function"?{meldungen:["Benachrichtigungen",meldungenView]}:{}),datenschutz:["Datenschutz",datenschutzView],konto:["Konto",kontoView],abgleich:["Abgleich",abgleichView],kundenordner:["Kundenordner",kdoView],speicher:["Speicher",speicherView],backup:["Backup",backupView]};
-Object.assign(MEHR_SUB,{datenschutz:"Datenschutz",konto:"Konto",abgleich:"Abgleich",kundenordner:"Kundenordner",speicher:"Speicher",backup:"Backup"});
+const KONTO_SEITEN={...(typeof meldungenView==="function"?{meldungen:["Benachrichtigungen",meldungenView]}:{}),datenschutz:["Datenschutz",datenschutzView],konto:["Konto",kontoView],abgleich:["Abgleich",abgleichView],kundenordner:["Kundenordner",kdoView],speicher:["Speicher",speicherView],backup:["Backup",backupView],wuensche:["Wünsche und Feedback",wuenscheView]};
+Object.assign(MEHR_SUB,{wuensche:"Wünsche und Feedback",datenschutz:"Datenschutz",konto:"Konto",abgleich:"Abgleich",kundenordner:"Kundenordner",speicher:"Speicher",backup:"Backup"});
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="syncNeu"],[data-act="entwKlapp"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
   if(b.dataset.act==="syncNeu"){ META.sync.delta={}; metaSave(); if(!navigator.onLine){ toast("Kein Internet – beim nächsten Abgleich wird alles neu geladen"); return; } toast("Alles wird neu geladen …"); syncNow(true); }
   else { META.entwZu=!META.entwZu; metaSave(); const y=scrollY; render(); scrollTo(0,y); } },true);

@@ -25,7 +25,7 @@ def baue(quelle, ziel, icon):
     html = html.replace("/*DEMO*/", (root / "src/demo.js").read_text(encoding="utf-8") + "\n" + (root / "src/tour.js").read_text(encoding="utf-8"))
     html = html.replace("/*FELDER*/", (root / "src/felder.css").read_text(encoding="utf-8"))
     html = html.replace("/*KOPF*/", (root / "src/kopf.js").read_text(encoding="utf-8").replace("/*BILDER*/{}", json.dumps(BILDER, ensure_ascii=False)))
-    html = html.replace("/*PROFIL*/", (root / "src/profil.js").read_text(encoding="utf-8"))
+    html = html.replace("/*PROFIL*/", (root / "src/profil.js").read_text(encoding="utf-8") + "\n" + (root / "src/wuensche.js").read_text(encoding="utf-8"))
     html = html.replace("/*ANFORDERUNG*/", (root / "src/anforderung.js").read_text(encoding="utf-8"))
     html = html.replace("/*ABGLEICH*/", (root / "src/abgleich.js").read_text(encoding="utf-8"))
     html = html.replace("/*FILTER*/", (root / "src/filter.js").read_text(encoding="utf-8"))

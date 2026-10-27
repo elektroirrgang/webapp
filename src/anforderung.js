@@ -119,6 +119,11 @@ function meldungenRoh(){
     if(frisch(v.abgelehnt)&&mlIch(anfr)) P("vab:"+v.id+":"+v.abgelehnt.at,v.abgelehnt.at,v.abgelehnt.wer,"hat deine Anfrage abgelehnt",`${was}${v.abgelehnt.grund?` – ${v.abgelehnt.grund}`:""}`,go);
     if(frisch(S.termin)&&(mlIch(anfr)||zIch||(S.auftrag&&mlIch(S.auftrag.wer)))) P("vt:"+v.id+":"+S.termin.at,S.termin.at,S.termin.wer,"hat einen Termin eingetragen",`${kd} · ${S.termin.datum?S.termin.datum.split("-").reverse().join("."):""}${S.termin.zeit?` ${S.termin.zeit} Uhr`:""}${S.termin.mit?` · ${S.termin.mit}`:""}`,go);
     if(frisch(S.ausgefuehrt)&&(anfVerw()||mlIch(anfr)||(S.auftrag&&mlIch(S.auftrag.wer)))) P("vx:"+v.id+":"+S.ausgefuehrt.at,S.ausgefuehrt.at,S.ausgefuehrt.wer,"hat einen Auftrag als ausgeführt gemeldet",was,go); });
+  /* Wünsche: Entwickler erfährt Neues, der Absender die Antwort */
+  alle("wuensche").filter(w=>!w.inId).forEach(w=>{ const go={v:"wuensche"};
+    if(typeof istEntwickler==="function"&&istEntwickler()&&!mlIch(w.von)&&(w.created||0)>=ab) P("wu:"+w.id,w.created,w.von,w.art==="fehler"?"hat einen Fehler gemeldet":w.art==="lob"?"hat Lob dagelassen":"hat einen Wunsch eingetragen",w.titel||"",go);
+    if(mlIch(w.von)&&w.statusVon&&!mlIch(w.statusVon)&&(w.statusAm||0)>=ab){ const st={neu:"Neu",geplant:"Geplant",arbeit:"In Arbeit",fertig:"Umgesetzt",nein:"Abgelehnt"}[w.status||"neu"];
+      P("wus:"+w.id+":"+w.statusAm,w.statusAm,w.statusVon,"hat deinen Eintrag beantwortet",`${w.titel||""} – ${st}${w.antwort?`: ${w.antwort}`:""}`,go); } });
   alle("notizen").filter(n=>!mlIch(n.createdBy)&&(n.sicht==="firma"||(n.sicht==="personen"&&(n.personen||[]).map(x=>String(x).toLowerCase()).includes(String(ME.mail).toLowerCase())))&&(n.updated||0)>=ab)
     .forEach(n=>P("no:"+n.id,n.updated,n.createdBy,"hat eine Notiz geteilt",n.titel||"Notiz",{v:"notizen"}));
   return L;
@@ -136,8 +141,8 @@ function mlAv(m){
 function mlName(m){ if(!m.von) return "System"; const p=typeof profilVon==="function"&&profilVon(m.von.mail), v=p&&[p.vorname,p.nachname].filter(Boolean).join(" "); return v||m.von.name||"Jemand"; }
 /* Kategorien: am PC als Spalte links, auf iPad und Handy als wischbare Chip-Zeile. „Meldungen“ zeigt die offenen
    Meldungen aus Rahmenaufträgen selbst (antippbar, mit Punkt, wenn es dazu etwas Neues gibt). */
-const ML_KAT=[["alle","Alle"],["meldung","Meldungen"],["auftrag","Aufträge"],["material","Material"],["baustelle","Baustellen"],["pruefung","Prüfungen und Geräte"]];
-const ML_KAT_VON={mz:"meldung",mn:"meldung",mf:"meldung",vz:"auftrag",vn:"auftrag",va:"auftrag",vok:"auftrag",vab:"auftrag",vt:"auftrag",vx:"auftrag",anf:"material",anfst:"material",ue:"baustelle",no:"baustelle",pr:"pruefung",fae:"pruefung",kal:"pruefung"};
+const ML_KAT=[["alle","Alle"],["meldung","Meldungen"],["auftrag","Aufträge"],["material","Material"],["baustelle","Baustellen"],["pruefung","Prüfungen und Geräte"],["wunsch","Wünsche"]];
+const ML_KAT_VON={mz:"meldung",mn:"meldung",mf:"meldung",vz:"auftrag",vn:"auftrag",va:"auftrag",vok:"auftrag",vab:"auftrag",vt:"auftrag",vx:"auftrag",anf:"material",anfst:"material",ue:"baustelle",no:"baustelle",pr:"pruefung",fae:"pruefung",kal:"pruefung",wu:"wunsch",wus:"wunsch"};
 const mlKatVon=id=>ML_KAT_VON[String(id).split(":")[0]]||"alle";
 const mlHatMeldungen=()=>typeof mlFilter==="function"&&!!DB.vorgaenge&&[...DB.vorgaenge.values()].some(v=>v.rahmen&&!v.deleted);
 /* Meldung angetippt ⇒ alles Neue dazu als gelesen */

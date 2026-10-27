@@ -1409,7 +1409,7 @@ async function gj(path,opt){ const r=await g(path,opt); if(!r.ok) throw Object.a
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
 const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",protokolle:"Kundendaten",
   ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
-  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Prüfprotokolle",gebaeude:"Prüfprotokolle",echecks:"Prüfprotokolle",betriebsmittel:"Prüfprotokolle",anlagen:"Kundendaten"};
+  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Prüfprotokolle",gebaeude:"Prüfprotokolle",echecks:"Prüfprotokolle",betriebsmittel:"Prüfprotokolle",anlagen:"Kundendaten",wuensche:"Kundendaten"};
 async function syncRoot(){
   if(SY.drive) return;
   const c=META.sync.root;
@@ -1675,8 +1675,8 @@ const TH_KEY="evse_theme";
 const RES_TXT={ok:"fertig",bad:"Mängel",open:"offen",wip:"in Arbeit"};
 /* E-Check-Daten (Gebäude, Prüfungen, Geräte der Kunden) liegen in echeck_daten und werden wie alles andere abgeglichen; Messgeräte („geraete“) pflegt die Übersicht */
 const EC_KINDS=["gebaeude","echecks","betriebsmittel"];
-const KINDS=["kunden","standorte","profile","dateien","protokolle","geraete","einstellungen",...EC_KINDS];
-const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["dateien","protokolle","geraete","einstellungen"];
+const KINDS=["kunden","standorte","profile","dateien","protokolle","geraete","einstellungen","wuensche",...EC_KINDS];
+const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["dateien","protokolle","geraete","einstellungen","wuensche"];
 const DB=Object.fromEntries(KINDS.map(k=>[k,new Map()]));
 let META={profil:{name:""},sync:{}};
 let nav={v:"anlagen"}, query="", kDB=null, eDB=null, aDB=null, warned=false, syncT=null;

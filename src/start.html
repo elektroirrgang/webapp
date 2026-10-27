@@ -1247,7 +1247,7 @@ async function gj(path,opt){ const r=await g(path,opt); if(!r.ok) throw Object.a
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
 const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",protokolle:"Kundendaten",
   ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
-  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Kundendaten",gebaeude:"Prüfprotokolle",anlagen:"Kundendaten"};
+  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Kundendaten",gebaeude:"Prüfprotokolle",anlagen:"Kundendaten",wuensche:"Kundendaten"};
 async function syncRoot(){
   if(SY.drive) return;
   const c=META.sync.root;
@@ -1500,7 +1500,7 @@ const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
 
 const TH_KEY="evse_theme";
 const RES_TXT={ok:"fertig",bad:"Mängel",open:"offen",wip:"in Arbeit"};
-const KINDS=["kunden","standorte","ladeparks","pruefungen","baustellen","eintraege","einstellungen","dateien","vorgaenge","geraete","anforderungen","profile","protokolle","gebaeude","anlagen"];
+const KINDS=["kunden","standorte","ladeparks","pruefungen","baustellen","eintraege","einstellungen","dateien","vorgaenge","geraete","anforderungen","profile","protokolle","gebaeude","anlagen","wuensche"];
 const EVSE_KINDS=["kunden","standorte","ladeparks","pruefungen"], BAU_KINDS=["baustellen","eintraege","anforderungen"];
 const DB=Object.fromEntries(KINDS.map(k=>[k,new Map()]));
 let META={profil:{name:""},sync:{}};
@@ -1523,7 +1523,7 @@ function dbPut(kind,rec){ DB[kind].set(rec.id,rec); const db=dbOf(kind); if(!db)
   if(kind==="einstellungen") einstSetzen(live("einstellungen")); }
 function metaSave(){ if(aDB) try{ aDB.transaction("meta","readwrite").objectStore("meta").put(META,"meta"); }catch(e){} }
 async function dataLoad(){
-  try{ kDB=await openStores("evse_daten",[...EVSE_KINDS,"katalog"],true); bDB=await openStores("baustelle_daten",BAU_KINDS,true); aDB=await openStores("irrgang_apps",["einstellungen","dateien","vorgaenge","geraete","profile","protokolle","gebaeude","anlagen"],true);
+  try{ kDB=await openStores("evse_daten",[...EVSE_KINDS,"katalog"],true); bDB=await openStores("baustelle_daten",BAU_KINDS,true); aDB=await openStores("irrgang_apps",["einstellungen","dateien","vorgaenge","geraete","profile","protokolle","gebaeude","anlagen","wuensche"],true);
     for(const k of KINDS){ (await idbReq(dbOf(k).transaction(k).objectStore(k).getAll())).forEach(r=>DB[k].set(r.id,r)); }
     const m=await idbReq(aDB.transaction("meta").objectStore("meta").get("meta")); if(m) META=Object.assign(META,m);
   }catch(e){ kDB=bDB=aDB=null; toast("Gerätespeicher nicht verfügbar – Daten nur bis zum Schließen"); }
