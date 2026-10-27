@@ -1090,3 +1090,6 @@ body.kal-mit-pane .kal-wscroll{max-height:calc(100dvh - 330px)}
 /* Filter unauffällig wie neben der Suchleiste in der Bibliothek; aktiv nur rot */
 .kal-filt{background:transparent!important;color:var(--on-sv)}.kal-filt.an{background:transparent!important;color:var(--primary)}
 @media (hover:hover){.kal-filt:hover{background:var(--sc)!important}}
+/* Filter: kleine Pille, dezenter als die übrigen Knöpfe */
+.kal-filt{background:var(--sc)!important;width:48px;height:48px}
+@media (hover:hover){.kal-filt:hover{background:var(--sc-high)!important}}
