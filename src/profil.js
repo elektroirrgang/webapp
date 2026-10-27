@@ -183,11 +183,10 @@ const einZ=(act,ic,t,sub)=>`<div class="li" role="button" tabindex="0" data-act=
 function darstellungZeilen(){ const T=einTop(), st=T.find(x=>x[0]===META.startV)||T[0];
   return einZ("einStartDlg","einStart","Start mit",st?st[1]:"")+einZ("einTextDlg","einTxt","Textgröße",(TXT_GR.find(x=>x[0]===txtGr())||TXT_GR[0])[1]+" · für alle Apps auf diesem Gerät"); }
 function geraetZeilen(mitPush){ return (mitPush&&typeof mlGeraetZeile==="function"&&ME.mail?mlGeraetZeile():"")+einZ("nav:speicher","einSp","Speicher auf diesem Gerät","Belegung anzeigen und aufräumen"); }
-/* Konto-Seite – Reihenfolge für alle Apps gleich: Konto · Abgleich · Darstellung · Apps · Dieses Gerät · Verwaltung · App-Eigenes · Info · Entwickler (mit Demo-Vorschau) */
+/* Konto-Seite – Reihenfolge für alle Apps gleich: Konto · Abgleich · Darstellung · Apps · Dieses Gerät · Verwaltung · App-Eigenes · Info · Entwickler (mit Präsentationsmodus) */
 function kontoSeite(o){ const sek=(t,z)=>{ z=(Array.isArray(z)?z.join(""):z||"").trim(); return z?`<div class="sec-lbl">${t}</div><div class="list">${z}</div>`:""; };
-  const demoFremd=typeof demoAn==="function"&&demoAn()&&!(typeof istEntwickler==="function"&&istEntwickler())?sek("Demo",demoZeile()):""; /* wer sie anhat, muss sie auch ausschalten können */
   const pcFuss=typeof KOPF_PC!=="undefined"&&KOPF_PC.matches; /* PC: Konto steht unten in der Seitenleiste – hier nicht doppelt */
-  return `<div class="narrow konto-s">${syncKarte()}${pcFuss?"":sek("Konto",o.konto)}${sek("Darstellung",o.darstellung)}${o.apps||""}${sek("Dieses Gerät",o.geraet)}${sek("Verwaltung",o.verwaltung)}${o.eigenes||""}${sek("Mitmachen",typeof wuZeile==="function"&&ME.mail?wuZeile():"")}${kontoInfoKarte(o.info||[])}${demoFremd}${entwicklerBereich()}</div>`; }
+  return `<div class="narrow konto-s">${syncKarte()}${pcFuss?"":sek("Konto",o.konto)}${sek("Darstellung",o.darstellung)}${o.apps||""}${sek("Dieses Gerät",o.geraet)}${sek("Verwaltung",o.verwaltung)}${o.eigenes||""}${sek("Mitmachen",typeof wuZeile==="function"&&ME.mail?wuZeile():"")}${kontoInfoKarte(o.info||[])}${entwicklerBereich()}</div>`; }
 /* Info: eine Karte mit App-Symbol, Version und den Seiten als Chips (statt drei Listenzeilen) */
 function kontoInfoKarte(L){ const ic=(document.querySelector('link[rel="apple-touch-icon"]')||{}).href||"", app=document.title.split(" · ")[0];
   const zeilen=L.map(([act,i,t,sub])=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(i)}</span><span class="lt"><span class="h">${esc(t)}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}</span>${icon("chev")}</div>`).join("");

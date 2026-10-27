@@ -348,7 +348,7 @@ async function bbVorschauen(){
 /* ===== PDF aus der Share holen (Prüfung von einem anderen Gerät) – danach liegt es auch hier und öffnet sofort ===== */
 async function bbShare(pid){
   const p=DB.pruefungen&&DB.pruefungen.get(pid); if(!p) return;
-  if(p.demo){ toast("Beispiel aus der Demo-Vorschau – dazu gibt es kein echtes PDF"); return; }
+  if(p.demo){ toast("Beispiel aus der Präsentation – dazu gibt es kein echtes PDF"); return; }
   const da=BB_PROT.find(x=>x.pruefungId===pid); if(da) return bbOeffnen(da.id);
   if(!(typeof SYNC_ON!=="undefined"&&SYNC_ON&&typeof folderId==="function"&&typeof BIB!=="undefined"&&BIB.pdf)){ toast("PDF liegt in der Share – dafür bitte anmelden"); return; }
   toast("PDF wird geladen …");

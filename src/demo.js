@@ -1,13 +1,14 @@
-/* ===== Demo-Vorschau =====
-   Über Einstellungen → „Demo-Vorschau“ einschaltbar. Dann erscheinen Beispielkunden, Aufträge, Baustellen, Übergaben,
+/* ===== Beispieldaten für den Präsentationsmodus =====
+   Startet der Präsentationsmodus, wird die Demo eingeschaltet (nur auf diesem Gerät). Dann erscheinen Beispielkunden, Aufträge, Baustellen, Übergaben,
    Materialanforderungen und Prüfungen in allen Apps – nur im Speicher dieses Geräts, mit demo:true markiert.
-   Sie werden NIE nach SharePoint hochgeladen (der Abgleich überspringt demo-Datensätze). Beim Ausschalten wird alles
-   wieder entfernt, auch was man an Beispieldaten geändert hat. Der Schalter gilt für alle Apps dieses Browsers. */
+   Sie werden NIE nach SharePoint hochgeladen (der Abgleich überspringt demo-Datensätze). Beim Beenden der Präsentation wird alles
+   wieder entfernt, auch was man an Beispieldaten geändert hat. Der Schalter gilt für alle Apps dieses Browsers.
+   Bis 27.10.2026 gab es zusätzlich eine eigene „Demo-Vorschau“ (im Profil gespeichert, auf allen Geräten) – die ist weg. */
 const DEMO_KEY="irrgang_demo";
 /* Schalter gilt systemweit: er steht im eigenen Profil (wird abgeglichen) – so ist die Demo in allen Apps und auf allen eigenen Geräten an.
    Ohne Profil (nicht angemeldet) gilt der Schalter dieses Browsers. */
 const demoProfil=()=>{ try{ return typeof profilVon==="function"&&typeof ME!=="undefined"&&ME.mail?profilVon(ME.mail):null; }catch(e){ return null; } };
-const demoAn=()=>{ const p=demoProfil(); if(p&&typeof p.demoVorschau==="boolean") return p.demoVorschau; /* nicht „demo“ – Datensätze mit demo werden nie abgeglichen */ try{ return localStorage.getItem(DEMO_KEY)==="1"; }catch(e){ return false; } };
+const demoAn=()=>{ try{ return localStorage.getItem(DEMO_KEY)==="1"; }catch(e){ return false; } };
 const DEMO_SPEICHER=[["evse_daten",["kunden","standorte","ladeparks","pruefungen","katalog"]],["baustelle_daten",["baustellen","eintraege","notizen","anforderungen"]],["irrgang_apps",["vorgaenge","geraete","dateien","protokolle","gebaeude","anlagen"]],["echeck_daten",["gebaeude","echecks","betriebsmittel"]]];
 const DEMO_FOTOS={"demo-f-zp":"zp","demo-f-hak":"hak","demo-f-uvalt":"uvalt","demo-f-mangel":"mangel","demo-f-ue-baustrom":"baustrom","demo-f-ue-leerrohr":"leerrohr","demo-f-ue-uv":"uv","demo-f-ue-pa":"pa"};
 function demoDaten(){
@@ -254,10 +255,27 @@ let demoCache=null;
 function demoNachfuellen(){
   if(!demoAn()||typeof DB==="undefined"||typeof KINDS==="undefined") return false;
   demoCache=demoCache||demoDaten(); let neu=false; const uebersicht=KINDS.includes("vorgaenge");
-  for(const [k,L] of Object.entries(demoCache)){ if(!DB[k]||!(KINDS.includes(k)||k==="notizen")||(k==="pruefungen"&&!uebersicht)) continue;
-    for(const x of L) if(!DB[k].has(x.id)){ DB[k].set(x.id,JSON.parse(JSON.stringify(x))); neu=true; } }
+  const evse=!uebersicht&&typeof newProto==="function"&&typeof newSaeule==="function"; /* EVSE: vollständige Protokolle statt Listen-Platzhalter */
+  for(const [k,L] of Object.entries(demoCache)){ if(!DB[k]||!(KINDS.includes(k)||k==="notizen")||(k==="pruefungen"&&!uebersicht&&!evse)) continue;
+    for(const x of L) if(!DB[k].has(x.id)){ let r=JSON.parse(JSON.stringify(x)); if(k==="pruefungen"&&evse){ try{ r=demoEvseVoll(r); }catch(e){ continue; } } DB[k].set(x.id,r); neu=true; } }
   return neu;
 }
+/* EVSE-Beispielprotokoll mit echten Messwerten (alle im Grenzwert). fertig=false: Sichtprüfung und die ersten Messungen erledigt, Rest offen */
+const DEMO_WERTE={rpe:"0,12",riso12:"299",riso13:"299",riso23:"299",riso1pe:"287",riso2pe:"299",riso3pe:"264",risov:"500 V",pevt:"ok",cp:"ok",u1:"231",u2:"232",u3:"229",unpe:"0,4",dreh:"rechts (123)",zs1:"0,38",zs2:"0,41",zs3:"0,39",ria:"21",ub:"1,2",r1:"24",dc6ms:"2800",r05:"ok",r5:"12",fe:"ok",ff:"ok"};
+const DEMO_WB={"demo-p6":[["Wallbox Garage","Heidelberg Energy Control 11 kW","EC-2318841","Garage, Rückwand"]],"demo-p1":[["Wallbox 1","ABL eMH3 22 kW","ABL-77310","Werkstatt, Tor 1"],["Wallbox 2","ABL eMH3 22 kW","ABL-77311","Werkstatt, Tor 2"]],"demo-p4":[["Wallbox Halle","Mennekes Amtron 11 kW","AM-55120","Halle 2, Stütze B4"]]};
+/* gezeichnete Beispiel-Unterschrift als PNG (wie vom Unterschriftenfeld) */
+function demoUnterschrift(n){ try{ const c=document.createElement("canvas"); c.width=360; c.height=110; const g=c.getContext("2d"); g.strokeStyle="#1d2a5a"; g.lineWidth=3; g.lineCap=g.lineJoin="round"; g.beginPath();
+  for(let t=0;t<=1;t+=.005){ const x=20+t*320, y=60+Math.sin(t*(n===1?23:17))*22*(1-t*.6)+Math.sin(t*(n===1?7:5)+n)*12; t?g.lineTo(x,y):g.moveTo(x,y); } g.stroke();
+  g.beginPath(); g.moveTo(40,92); g.quadraticCurveTo(180,80,330,88); g.stroke(); return c.toDataURL("image/png"); }catch(e){ return ""; } }
+function demoEvseVoll(x){ const p=newProto(), fertig=!!x.pdfAblage, wb=DEMO_WB[x.id]||[["Wallbox 1","Wallbox 11 kW","SN-"+x.id.slice(-2),""]];
+  p.id=x.id; p.kundeId=x.kundeId; p.standortId=x.standortId||null; p.ladeparkId=x.ladeparkId||null;
+  Object.assign(p.p,{datum:x.p.datum,art:x.p.art,pruefer:x.p.pruefer,auftragsnr:x.id==="demo-p6"?"A-24109":x.p.auftragsnr||"",geraetSn:"MFT-104422",kal:"03/2027"});
+  p.s=wb.map((w,i)=>{ const s=newSaeule(i+1,"Wallbox"); Object.assign(s,{name:w[0],typ:w[1],sn:w[2],ort:w[3],fw:"1.4.2",absTyp:"LS B",absIn:"16",inenn:"16",phasen:3,lps:1,freigabe:"11 kW"});
+    SICHT.forEach(r=>s.sicht[r.k]=fertig||i===0?"ok":"");
+    const ks=Object.keys(DEMO_WERTE), bis=fertig?ks.length:i===0?ks.indexOf("zs1"):1; /* in Arbeit: bis vor die Schleifenimpedanz */
+    ks.slice(0,bis).forEach(k=>s.lp[0].v[k]=DEMO_WERTE[k]); return s; });
+  p.a=Object.assign(p.a,{naechste:x.a&&x.a.naechste||"",sigP:fertig?demoUnterschrift(1):"",sigPName:fertig?x.p.pruefer:"",sigK:fertig?demoUnterschrift(2):"",sigKName:fertig?(x.id==="demo-p6"?"Jonas Kessler":"Auftraggeber"):""});
+  return Object.assign(p,{demo:true,pdfAblage:x.pdfAblage||"",createdBy:x.createdBy,created:x.created,updated:x.updated,updatedBy:x.updatedBy}); }
 function demoIdb(rq){ return new Promise((res,rej)=>{ rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); }); }
 function demoTx(tx){ return new Promise(res=>{ tx.oncomplete=tx.onerror=tx.onabort=()=>res(); }); }
 /* Alles mit demo:true von diesem Gerät entfernen (auch Beispieldaten, die beim Ausprobieren geändert und dabei gespeichert wurden) */
@@ -280,10 +298,7 @@ async function demoSchalten(){
 }
 function demoUmschalten(an){
   try{ localStorage.setItem(DEMO_KEY,an?"1":"0"); }catch(e){}
-  /* im eigenen Profil merken ⇒ alle Apps und Geräte ziehen beim nächsten Abgleich nach */
-  try{ if(typeof ME!=="undefined"&&ME.mail&&DB.profile&&typeof saveRec==="function"){ const id=String(ME.mail).toLowerCase(), p=DB.profile.get(id);
-    if(p){ p.demoVorschau=an; saveRec("profile",p); } else saveRec("profile",{id,demoVorschau:an},true); } }catch(e){}
-  if(an){ demoNachfuellen(); render(); toast("Demo-Vorschau an – Beispieldaten werden nicht gespeichert oder synchronisiert"); }
+  if(an){ demoNachfuellen(); render(); }
   else demoSchalten();
 }
 /* „Nur Beispieldaten“ für Vorführungen: echte Kunden, Aufträge usw. werden ausgeblendet (nur auf diesem Gerät, nichts wird gelöscht).
@@ -299,21 +314,16 @@ const demoPruefen=()=>{ try{ if(!demoAn()&&!demoWeg&&demoDa()){ demoWeg=true; de
 addEventListener("load",()=>{ setTimeout(demoPruefen,1500); setTimeout(demoPruefen,6000); });
 /* Schalter kommt evtl. erst mit dem Abgleich (andere App/anderes Gerät): regelmäßig nachsehen */
 setInterval(()=>{ try{ if(demoAn()){ if(demoNachfuellen()) (typeof softRender==="function"?softRender:render)(); } else demoPruefen(); }catch(e){} },8000);
-/* Zeile für „Mehr“ in allen Apps */
-function demoZeile(){ return `<div class="li" role="button" tabindex="0" data-act="demoUm"><span class="av">${icon("bulb")}</span><span class="lt"><span class="h">Demo-Vorschau</span><span class="s">Beispielkunden, Aufträge, Baustellen, Prüfungen und Bibliothek zum Ausprobieren – gilt in allen Apps und auf allen deinen Geräten, Beispieldaten werden nie hochgeladen</span></span><span class="schalter${demoAn()?" an":""}" aria-hidden="true"><i></i></span></div>`; }
-document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="demoUm"]'); if(!b) return; e.stopPropagation(); e.preventDefault(); demoUmschalten(!demoAn()); },true);
 /* ===== Entwickler-Einstellungen (nur Rolle „Entwickler“): ganz unten in „Mehr“ ===== */
 /* Entwickler: Rolle in Microsoft oder in der Mitarbeiterliste der Übersicht als „Entwickler“ eingetragen */
 const istEntwickler=()=>{ try{ if(typeof meineRollen==="function"&&meineRollen().includes("Entwickler")) return true;
   const T=typeof EINST!=="undefined"&&EINST.team||[], ich=String((typeof ME!=="undefined"&&ME.mail)||"").toLowerCase(); return !!ich&&T.some(m=>m.mail===ich&&m.entwickler&&m.status!=="weg"); }catch(e){ return false; } };
-function entwicklerBereich(){ if(!istEntwickler()) return ""; const z=[typeof mlDiagZeile==="function"&&ME.mail?mlDiagZeile():"",typeof mlTestZeile==="function"&&ME.mail?mlTestZeile():"",typeof simZeile==="function"&&ME.mail?simZeile():"",typeof wuEntwZeile==="function"&&ME.mail?wuEntwZeile():"",typeof tourZeile==="function"?tourZeile():"",demoZeile()].join("").trim();
+function entwicklerBereich(){ if(!istEntwickler()) return ""; const z=[typeof mlDiagZeile==="function"&&ME.mail?mlDiagZeile():"",typeof mlTestZeile==="function"&&ME.mail?mlTestZeile():"",typeof simZeile==="function"&&ME.mail?simZeile():"",typeof wuEntwZeile==="function"&&ME.mail?wuEntwZeile():"",typeof tourZeile==="function"?tourZeile():""].join("").trim();
   if(!z) return ""; const zu=!!META.entwZu; /* ein- und ausklappbar, Zustand je Gerät */
   return `<button type="button" class="sec-lbl sec-klapp" data-act="entwKlapp" aria-expanded="${!zu}">Entwickler<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>${zu?"":`<div class="list">${z}</div>`}`; }
-/* Demo an: gelber Ring ums Profilbild statt eines Schildchens in der Kopfzeile (das saß je nach Gerät schief) */
-function demoMarke(){ document.getElementById("demoMarke")?.remove(); const an=demoAn(); document.body.classList.toggle("demo-an",an);
-  if(!document.getElementById("demoStil")){ const st=document.createElement("style"); st.id="demoStil";
-    st.textContent="body.demo-an #avBtn{border-radius:50%;box-shadow:0 0 0 2px var(--surface,#fff),0 0 0 4.5px #F2C14E}"; document.head.appendChild(st); }
-  const av=document.getElementById("avBtn"); if(av){ if(an) av.title="Demo-Vorschau ist an – Beispieldaten"; else if((av.title||"").startsWith("Demo")) av.removeAttribute("title"); } }
+/* keine Markierung mehr am Profilbild (der gelbe Ring ist weg) – nur die Klasse für evtl. Sonderfälle */
+function demoMarke(){ document.getElementById("demoMarke")?.remove(); document.getElementById("demoStil")?.remove(); document.body.classList.toggle("demo-an",demoAn());
+  const av=document.getElementById("avBtn"); if(av&&(av.title||"").startsWith("Demo")) av.removeAttribute("title"); }
 
 /* ===== Beispiel-PDFs und -Bilder für die Demo (ohne Bibliothek, läuft in allen Apps) ===== */
 const DEMO_WIN={"–":"\x96","—":"\x97","„":"\x84","“":"\x93","”":"\x94","‚":"\x82","‘":"\x91","’":"\x92","€":"\x80","…":"\x85","•":"\x95","Ω":"Ohm","≥":">=","≤":"<=","→":"->","›":">"};
@@ -347,7 +357,7 @@ function demoPdfVorlage(titel,unter,felder,tab,schluss){ return demoPdfBauen((P,
     P.flaeche(40,y,W-80,20,[.95,.95,.96]); let x=46; tab.kopf.forEach((k,i)=>{ P.text(x,y+13,k,{fett:1,gr:8.5}); x+=sp[i]; }); y+=20;
     tab.zeilen.forEach(z=>{ let x=46; z.forEach((v,i)=>{ const schlecht=/nicht bestanden|Mangel/.test(v); P.text(x,y+14,v,{gr:9.5,farbe:schlecht?[.75,.1,.1]:undefined,fett:schlecht}); x+=sp[i]; }); y+=22; P.linie(40,y,W-40,y,[.9,.9,.92]); }); }
   (schluss||[]).forEach(([t,o])=>{ y+=o&&o.abstand?o.abstand:20; P.text(40,y,t,o||{}); });
-  P.linie(40,780,W-40,780); P.text(40,796,"Erstellt mit der Demo-Vorschau der Irrgang-Apps – Beispieldaten, kein echtes Protokoll.",{gr:8,farbe:G}); }); }
+  P.linie(40,780,W-40,780); P.text(40,796,"Beispiel aus dem Präsentationsmodus der Irrgang-Apps – kein echtes Protokoll.",{gr:8,farbe:G}); }); }
 /* Demo-PDFs im echten Irrgang-Layout (pdfstil.js wie das EVSE-Prüfprotokoll); ohne jsPDF (offline) die einfache Ersatzfassung */
 function demoWasserzeichen(d){ const N=d.getNumberOfPages(); for(let i=1;i<=N;i++){ d.setPage(i); d.setFont("helvetica","bold"); d.setFontSize(70); d.setTextColor(236,238,241); d.text("BEISPIEL",52,200,{angle:35}); } }
 async function demoProtBlob(r){
