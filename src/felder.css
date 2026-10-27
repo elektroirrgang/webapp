@@ -820,3 +820,19 @@ body.sf-an nav.navbar.navbar{padding-bottom:200px!important}
 .ml-zust{margin-bottom:8px}.ml-zust .chip[disabled]{opacity:.45}
 .ml-chip{margin-left:auto}
 .ml-seite2 .ml-z{margin-top:6px}
+/* Benachrichtigungen: Kategorien – Handy/iPad wischbare Zeile, PC Spalte links */
+.ml-kats{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px 14px;padding:0 16px 2px}
+.ml-kats::-webkit-scrollbar{display:none}
+.ml-kat{flex:none;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border:0;border-radius:20px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.ml-kat[aria-pressed="true"]{background:var(--sec-c);color:var(--on-sec-c)}
+.ml-kat i{font-style:normal;font-size:12px;font-weight:700;min-width:20px;height:20px;box-sizing:border-box;border-radius:10px;background:var(--primary);color:#fff;display:grid;place-items:center;padding:0 6px}
+@media (min-width:1024px){
+  .ml-wrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:28px;align-items:start}
+  .ml-kats{flex-direction:column;gap:2px;margin:0;padding:0;position:sticky;top:16px;overflow:visible}
+  .ml-kat{height:48px;border-radius:24px;justify-content:space-between;padding:0 12px 0 18px;background:transparent}
+  @media (hover:hover){.ml-kat:hover{background:var(--sc)}}
+  .ml-kat[aria-pressed="true"]{background:var(--sec-c)}
+}
+.ml-z.neu{background:color-mix(in srgb,var(--primary) 9%,var(--sc))}
+.ml-z.neu .ml-t b::after{content:"neu";margin-left:8px;font-size:11px;font-weight:700;padding:1px 7px;border-radius:8px;background:var(--primary);color:#fff;vertical-align:2px}
+.ml-fch{margin-bottom:6px}

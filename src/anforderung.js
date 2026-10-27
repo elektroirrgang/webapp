@@ -101,7 +101,7 @@ function meldungenRoh(){
   /* Aufträge: mir zugewiesen, neue Notizen an meinen Aufträgen, fürs Büro neue Anfragen */
   alle("vorgaenge").forEach(v=>{ const kd=(v.kundeId&&typeof kundeOf==="function"&&kundeOf(v.kundeId)||{}).name||v.kundeName||"Auftrag", go={v:"auftraege",sel:v.id};
     if(v.typ==="meldung"){ /* Meldung aus einem Rahmenauftrag */
-      const mg=typeof mlUebersicht==="function"&&!(typeof VG_HIER==="function"&&VG_HIER())?{v:"mldg",ml:v.id}:{v:"auftraege",sel:v.rahmenId}, was=`${kd}${typeof mlOrt==="function"&&mlOrt(v)?" · "+mlOrt(v):""}: ${v.text||""}`;
+      const mg={ml:v.id}, was=`${kd}${typeof mlOrt==="function"&&mlOrt(v)?" · "+mlOrt(v):""}: ${v.text||""}`;
       const ZM=Array.isArray(v.zustAlle)?v.zustAlle.filter(Boolean):[];
       ZM.filter(z=>mlIch(z)&&z.von&&!mlIch(z.von)&&(z.at||0)>=ab).forEach(z=>P("mz:"+v.id+":"+z.at,z.at,z.von,"hat dir eine Meldung zugewiesen",was,mg));
       if(anfVerw()&&!mlIch(v.createdBy)&&(v.created||0)>=ab) P("mn:"+v.id,v.created,v.createdBy,"Neue Meldung",was,mg);
@@ -134,6 +134,14 @@ function mlAv(m){
   const p=typeof profilVon==="function"&&profilVon(m.von.mail);
   return p&&p.bild?`<span class="ml-av" style="background-image:url('${p.bild}')"></span>`:`<span class="ml-av">${esc(initials(m.von.name||"?"))}</span>`; }
 function mlName(m){ if(!m.von) return "System"; const p=typeof profilVon==="function"&&profilVon(m.von.mail), v=p&&[p.vorname,p.nachname].filter(Boolean).join(" "); return v||m.von.name||"Jemand"; }
+/* Kategorien: am PC als Spalte links, auf iPad und Handy als wischbare Chip-Zeile. „Meldungen“ zeigt die offenen
+   Meldungen aus Rahmenaufträgen selbst (antippbar, mit Punkt, wenn es dazu etwas Neues gibt). */
+const ML_KAT=[["alle","Alle"],["meldung","Meldungen"],["auftrag","Aufträge"],["material","Material"],["baustelle","Baustellen"],["pruefung","Prüfungen und Geräte"]];
+const ML_KAT_VON={mz:"meldung",mn:"meldung",mf:"meldung",vz:"auftrag",vn:"auftrag",va:"auftrag",vok:"auftrag",vab:"auftrag",vt:"auftrag",vx:"auftrag",anf:"material",anfst:"material",ue:"baustelle",no:"baustelle",pr:"pruefung",fae:"pruefung",kal:"pruefung"};
+const mlKatVon=id=>ML_KAT_VON[String(id).split(":")[0]]||"alle";
+const mlHatMeldungen=()=>typeof mlFilter==="function"&&!!DB.vorgaenge&&[...DB.vorgaenge.values()].some(v=>v.rahmen&&!v.deleted);
+/* Meldung angetippt ⇒ alles Neue dazu als gelesen */
+function mlGelesenFuer(mid){ const S=mlSt(); let ch=false; meldungen().forEach(x=>{ if(x.id.split(":")[1]===mid&&mlKatVon(x.id)==="meldung"&&!S.gel[x.id]){ S.gel[x.id]=1; ch=true; } }); if(ch){ mlStSpeichern(); mlGlocke(); mlFuellen(); } }
 /* Benachrichtigungen sind eine eigene Seite („meldungen“, in allen Apps mit Glocke) – mehr Platz als das frühere Fenster */
 let ML_VON=null;
 function mlFuellen(){
@@ -143,12 +151,26 @@ function mlFuellen(){
       <span class="ml-h">${esc(m.h)}</span>${m.s?`<span class="ml-s">${esc(m.s)}</span>`:""}</span>
     <span class="ml-ak"><button class="ml-b${S.pin[m.id]?" an":""}" data-act="mlPin" data-id="${esc(m.id)}" aria-label="${S.pin[m.id]?"Nicht mehr anpinnen":"Anpinnen"}" title="${S.pin[m.id]?"Nicht mehr anpinnen":"Anpinnen"}">${mlSvg("pin")}</button>
     <button class="ml-b" data-act="mlWeg" data-id="${esc(m.id)}" aria-label="Entfernen" title="Entfernen">${mlSvg("weg")}</button></span></div>`;
-  const pin=L.filter(m=>S.pin[m.id]), rest=L.filter(m=>!S.pin[m.id]);
-  const html=`<div class="ml-kopf"><b>${seite?`${neu?`${neu} neu`:"Keine neuen"}`:"Benachrichtigungen"}</b>${neu?`<button class="ml-alle" data-act="mlAlleGel">Alle gelesen</button>`:""}</div>
-    <div class="ml-liste">${L.length?`${pin.length?`<div class="ml-gr">Angepinnt</div>${pin.map(zeile).join("")}${rest.length?`<div class="ml-gr">Neueste</div>`:""}`:""}${rest.map(zeile).join("")}`
+  /* Kategorien nur auf der Seite */
+  const K=seite?ML_KAT.filter(([k])=>k==="alle"||(k==="meldung"?mlHatMeldungen():L.some(m=>mlKatVon(m.id)===k))):[];
+  let kat=META.mlKat||"alle"; if(!K.some(x=>x[0]===kat)) kat="alle";
+  const ungel=k=>L.filter(m=>!S.gel[m.id]&&(k==="alle"||mlKatVon(m.id)===k)).length;
+  const kats=K.length>1?`<nav class="ml-kats" aria-label="Kategorien">${K.map(([k,t])=>{ const n=ungel(k); return `<button class="ml-kat" data-act="mlKat" data-v="${k}" aria-pressed="${k===kat}"><span>${esc(t)}</span>${n?`<i>${n>99?"99+":n}</i>`:""}</button>`; }).join("")}</nav>`:"";
+  if(seite&&kat==="meldung"){ /* die Meldungen selbst */
+    const neuIds=new Set(L.filter(m=>!S.gel[m.id]&&mlKatVon(m.id)==="meldung").map(m=>m.id.split(":")[1]));
+    const f=META.mlF||"offen", M=mlFilter(f), G=new Map(); (f==="fertig"?M.slice(0,60):M).forEach(m=>{ if(!G.has(m.rahmenId)) G.set(m.rahmenId,[]); G.get(m.rahmenId).push(m); });
+    const fch=`<div class="chips vg-chips ml-fch">${ML_F.map(([k,tx])=>`<button class="chip" data-act="vgMlF" data-v="${k}" aria-pressed="${f===k}">${esc(tx)}${k==="fertig"?"":`<span class="chip-n">${mlFilter(k).length}</span>`}</button>`).join("")}</div>`;
+    const leer={offen:"Keine offenen Meldungen.",frei:"Alle offenen Meldungen haben einen Zuständigen.",mein:"Dir ist keine offene Meldung zugeordnet.",spaeter:"Nichts zurückgestellt.",fertig:"Noch nichts abgeschlossen."}[f];
+    const inhalt=fch+([...G].map(([rid,R])=>{ const r=DB.vorgaenge.get(rid);
+      return `<div class="sec-row"><div class="sec-lbl">${esc(vgKunde(r))} · Rahmenauftrag${r.s&&r.s.auftrag&&r.s.auftrag.nr?` · SCC ${esc(r.s.auftrag.nr)}`:""}</div><span class="ab-btns"><button class="ab-ic" data-act="vgMlNeu" data-id="${esc(rid)}" aria-label="Meldung erfassen" title="Meldung erfassen">${icon("add")}</button></span></div>${R.map(m=>mlZeile(m,neuIds.has(m.id))).join("")}`; }).join("")||`<p class="meta" style="margin:16px 4px">${leer}</p>`);
+    seite.innerHTML=`<div class="ml-wrap">${kats}<div class="ml-inhalt">${inhalt}</div></div>`; if(pop) pop.innerHTML=""; return; }
+  const LK=kat==="alle"?L:L.filter(m=>mlKatVon(m.id)===kat), neuK=LK.filter(m=>!S.gel[m.id]).length;
+  const pin=LK.filter(m=>S.pin[m.id]), rest=LK.filter(m=>!S.pin[m.id]);
+  const html=`<div class="ml-kopf"><b>${seite?`${neuK?`${neuK} neu`:"Keine neuen"}`:"Benachrichtigungen"}</b>${neuK?`<button class="ml-alle" data-act="mlAlleGel">Alle gelesen</button>`:""}</div>
+    <div class="ml-liste">${LK.length?`${pin.length?`<div class="ml-gr">Angepinnt</div>${pin.map(zeile).join("")}${rest.length?`<div class="ml-gr">Neueste</div>`:""}`:""}${rest.map(zeile).join("")}`
       :`<div class="ml-leer"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span>Aktuell keine Benachrichtigungen</span></div>`}</div>
     ${Object.keys(S.weg).length?`<div class="ml-fuss"><button class="btn-text" data-act="mlWiederher">Entfernte wieder anzeigen</button></div>`:""}`;
-  if(pop) pop.innerHTML=html; if(seite) seite.innerHTML=html;
+  if(pop) pop.innerHTML=html; if(seite) seite.innerHTML=`<div class="ml-wrap">${kats}<div class="ml-inhalt">${html}</div></div>`;
 }
 function mlAuf(){ mlZu(); if(nav.v==="meldungen"){ go(ML_VON||{v:"start"}); return; } ML_VON=nav; go({v:"meldungen"}); }
 function mlPlatz(){ const pop=document.getElementById("mlPop"), z=document.querySelector("#seitenFuss:not([hidden]) .sf-gl"), b=z||document.getElementById("glBtn"); if(!pop||!b) return; const r=b.getBoundingClientRect();
@@ -158,13 +180,14 @@ function mlPlatz(){ const pop=document.getElementById("mlPop"), z=document.query
 function mlZu(){ const p=document.getElementById("mlPop"); if(p) p.remove(); }
 function mlStSpeichern(){ /* nur IDs behalten, die es noch gibt */ const S=mlSt(), da=new Set(meldungenRoh().map(m=>m.id)); ["gel","weg","pin"].forEach(k=>Object.keys(S[k]).forEach(id=>{ if(!da.has(id)) delete S[k][id]; })); metaSave(); }
 document.addEventListener("click",e=>{
-  const b=e.target.closest&&e.target.closest('[data-act="mlAuf"],[data-act="mlKlick"],[data-act="mlPin"],[data-act="mlWeg"],[data-act="mlAlleGel"],[data-act="mlWiederher"]');
+  const b=e.target.closest&&e.target.closest('[data-act="mlKat"],[data-act="mlAuf"],[data-act="mlKlick"],[data-act="mlPin"],[data-act="mlWeg"],[data-act="mlAlleGel"],[data-act="mlWiederher"]');
   if(!b){ const p=document.getElementById("mlPop"); if(p&&!p.contains(e.target)) mlZu(); return; }
   e.stopPropagation(); e.preventDefault(); const a=b.dataset.act, id=b.dataset.id, S=mlSt();
   if(a==="mlAuf") return mlAuf();
+  if(a==="mlKat"){ META.mlKat=b.dataset.v; metaSave(); mlFuellen(); return; }
   if(a==="mlPin"){ if(S.pin[id]) delete S.pin[id]; else S.pin[id]=1; }
   else if(a==="mlWeg"){ S.weg[id]=1; delete S.pin[id]; S.gel[id]=1; }
-  else if(a==="mlAlleGel"){ meldungen().forEach(m=>S.gel[m.id]=1); }
+  else if(a==="mlAlleGel"){ const k=META.mlKat||"alle"; meldungen().filter(m=>k==="alle"||mlKatVon(m.id)===k).forEach(m=>S.gel[m.id]=1); }
   else if(a==="mlWiederher"){ S.weg={}; }
   else if(a==="mlKlick"){ S.gel[id]=1; mlStSpeichern(); const m=meldungen().find(x=>x.id===id); mlZu(); mlGlocke(); if(m&&m.go) mlGo(m.go); else mlFuellen(); return; }
   mlStSpeichern(); mlFuellen(); mlGlocke();
@@ -172,7 +195,10 @@ document.addEventListener("click",e=>{
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") mlZu(); });
 addEventListener("resize",mlPlatz);
 /* Ziel öffnen: in der Übersicht gibt es Baustellen/Notizen nicht als Ansicht ⇒ Baustelle-App */
-function mlGo(z){ if(["baustelle","notizen"].includes(z.v)&&typeof notizenView!=="function"){ location.href="../baustelle/"; return; } go(z); }
+function mlGo(z){
+  if(z&&z.ml){ /* Meldung aus einem Rahmenauftrag: in der Kategorie „Meldungen“ öffnen */ META.mlKat="meldung"; metaSave(); if(nav.v!=="meldungen"){ ML_VON=nav; go({v:"meldungen"}); } else mlFuellen();
+    const m=DB.vorgaenge&&DB.vorgaenge.get(z.ml), r=m&&DB.vorgaenge.get(m.rahmenId); if(r&&typeof mlDialog==="function") setTimeout(()=>mlDialog(r,m),0); return; }
+  if(["baustelle","notizen"].includes(z.v)&&typeof notizenView!=="function"){ location.href="../baustelle/"; return; } go(z); }
 function meldungenView(){ setTimeout(mlFuellen,0); return `<div class="narrow"><div class="ml-seite" id="mlSeite"></div></div>`; }
 
 /* ===== Neue Meldungen ankündigen =====
