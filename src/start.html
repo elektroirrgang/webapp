@@ -1453,9 +1453,14 @@ const mapsHref=a=>(/iPad|iPhone|Macintosh/.test(navigator.userAgent)?"https://ma
 function closeOverlays(){ ["#menu","#dlg","#scrim"].forEach(s=>$(s).hidden=true); $("#scrim").classList.remove("dim"); $("#menuBtn").setAttribute("aria-expanded","false"); }
 function dialog(title,body,actions,opt){
   $("#dlg").classList.toggle("breit",!!(opt&&opt.breit)); $("#dlg").classList.toggle("mittel",!!(opt&&opt.mittel)); $("#dlg").innerHTML=`<h2>${esc(title)}</h2><div class="db">${body}</div>${actions?`<div class="da">${actions}</div>`:""}`;
-  $("#menu").hidden=true; $("#dlg").hidden=false; $("#scrim").hidden=false; $("#scrim").classList.add("dim");
+  $("#menu").hidden=true; $("#dlg").hidden=false; $("#scrim").hidden=false; $("#scrim").classList.add("dim"); dlgMitte();
   const f=$("#dlg").querySelector("input:not([type=hidden])"); if(f&&!f.value) setTimeout(()=>f.focus(),50);
 }
+/* Fenster mittig über dem Inhaltsbereich (rechts neben der Seitenleiste), nicht über dem ganzen Bildschirm */
+function dlgMitte(){ const d=$("#dlg"), mn=document.querySelector("main"); if(!d) return; d.style.left="";
+  if(d.hidden||!mn||innerWidth<744) return; const r=mn.getBoundingClientRect(), w=d.offsetWidth; if(!r.width||!w) return;
+  d.style.left=Math.max(w/2+16,Math.min(innerWidth-w/2-16,r.left+r.width/2))+"px"; }
+addEventListener("resize",()=>dlgMitte());
 const confirmDlg=(title,text,label,act)=>dialog(title,esc(text),`<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text danger" data-act="${act}">${esc(label)}</button>`);
 const formVals=()=>{ const o={}; $("#dlg").querySelectorAll("[data-f]").forEach(e=>o[e.dataset.f]=e.value.trim()); return o; };
 const MITARBEITER=[{name:"J. Irrgang",mail:"info@elektro-irrgang.de",rolle:"Chef · Firmenmail"},{name:"M. Pevec",mail:"m.pevec@elektro-irrgang.de"},{name:"M. Seipp",mail:"m.seipp@elektro-irrgang.de"},{name:"A. Brandl",mail:"a.brandl@elektro-irrgang.de"},{name:"A. Irrgang",mail:"a.irrgang@elektro-irrgang.de"}];

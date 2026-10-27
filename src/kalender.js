@@ -32,12 +32,12 @@ function kalBereich(){ const s=kalSicht(), ab=KAL.ab||new Date();
   if(s==="monat"){ const e=new Date(ab.getFullYear(),ab.getMonth(),1), a=kalMo(e); return {von:a,bis:kalPlus(a,42),monat:e}; }
   const a=kalTag(ab); return {von:a,bis:kalPlus(a,28)}; }
 /* --- Zugang zu Outlook --- */
-async function kalToken(){ if(typeof Auth==="undefined") return null; if(Auth.test) return Auth.test.kalNein?null:Auth.test.token; if(!Auth.pca||!Auth.account) return null;
-  try{ return (await Auth.pca.acquireTokenSilent({scopes:KAL_SCOPES,account:Auth.account})).accessToken; }catch(e){ return null; } }
+async function kalToken(){ if(typeof Auth==="undefined") return null; if(Auth.test) return Auth.test.kalNein?null:Auth.test.token; if(!Auth.pca||!Auth.account){ KAL.grund="nicht angemeldet"; return null; }
+  try{ return (await Auth.pca.acquireTokenSilent({scopes:KAL_SCOPES,account:Auth.account})).accessToken; }catch(e){ KAL.grund=e&&(e.errorCode||e.message)||"Anmeldung fehlt"; return null; } }
 function kalVerbinden(){ try{ localStorage.removeItem(KAL_NEIN); }catch(e){} if(typeof Auth==="undefined"||!Auth.pca||!Auth.account){ toast("Erst mit dem Firmenkonto anmelden"); return; } if(typeof saveNow==="function") saveNow(); Auth.pca.acquireTokenRedirect({scopes:KAL_SCOPES,account:Auth.account}); }
-async function kalG(pfad,opt={}){ const t=await kalToken(); if(!t){ KAL.verbinden=true; throw Object.assign(new Error("verbinden"),{verbinden:true}); }
+async function kalG(pfad,opt={}){ const t=await kalToken(); if(!t){ KAL.verbinden=true; KAL.ok=false; throw Object.assign(new Error("verbinden"),{verbinden:true}); }
   const r=await fetch(pfad.startsWith("http")?pfad:GRAPH+pfad,{...opt,headers:{Authorization:"Bearer "+t,Prefer:`outlook.timezone="${KAL_TZ}"`,...(opt.body?{"Content-Type":"application/json"}:{}),...(opt.headers||{})}});
-  if(r.status===401||r.status===403){ KAL.verbinden=true; throw Object.assign(new Error("verbinden"),{verbinden:true}); }
+  if(r.status===401||r.status===403){ KAL.verbinden=true; KAL.ok=false; KAL.grund="Zugriff verweigert ("+r.status+")"; throw Object.assign(new Error("verbinden"),{verbinden:true}); }
   if(!r.ok){ let m=""; try{ m=(await r.json()).error.message; }catch(e){} throw new Error(m||("Fehler "+r.status)); }
   return r.status===204?null:r.json(); }
 const KAL_SEL="subject,start,end,isAllDay,location,bodyPreview,showAs,sensitivity,organizer,attendees,isOrganizer,webLink,isCancelled";
@@ -155,7 +155,7 @@ async function kalLaden(erzwingen,bereich){ if(typeof demoAn==="function"&&demoA
   try{ let url=`/me/calendarView?startDateTime=${a.toISOString()}&endDateTime=${b.toISOString()}&$top=250&$orderby=start/dateTime&$select=${KAL_SEL}`, L=[];
     for(let n=0;url&&n<8;n++){ const r=await kalG(url); L.push(...(r.value||[])); url=r["@odata.nextLink"]||""; }
     const neu=L.filter(e=>!e.isCancelled).map(kalAusOutlook), ids=new Set(neu.map(e=>e.id));
-    KAL.ev=[...KAL.ev.filter(e=>!ids.has(e.id)&&(e.bis<=a||e.von>=b)),...neu]; KAL.am=Date.now(); KAL.verbinden=false; KAL.fehler=""; KAL.versuch.ok=true;
+    KAL.ev=[...KAL.ev.filter(e=>!ids.has(e.id)&&(e.bis<=a||e.von>=b)),...neu]; KAL.am=Date.now(); KAL.verbinden=false; KAL.ok=true; KAL.grund=""; KAL.fehler=""; KAL.versuch.ok=true;
     try{ localStorage.removeItem(KAL_NEIN); const behalten=KAL.ev.filter(e=>e.bis>kalPlus(new Date(),-14)&&e.von<kalPlus(new Date(),60)).slice(0,600); localStorage.setItem("irrgang_kal_cache",JSON.stringify({am:Date.now(),ev:behalten})); }catch(e){}
   }catch(e){ if(e.verbinden){ try{ localStorage.setItem(KAL_NEIN,String(Date.now())); }catch(_){} } else KAL.fehler=navigator.onLine?(e.message||"Kalender nicht erreichbar"):"Offline – zuletzt geladener Stand"; }
   KAL.lade=false;
@@ -204,12 +204,12 @@ function kalKalSpeichern(){ const F=formVals(); if(!F.kalKN){ toast("Bitte einen
   if(kalFarbenBelegt(kalK.sicht,kalK.id).has(kalK.farbe)){ toast("Diese Farbe ist schon vergeben – bitte eine andere wählen"); const p=document.querySelector("#dlg .kal-pal"); if(p) p.innerHTML=kalPalHtml(); return; }
   const r=kalKalAblegen({id:kalK.id,name:F.kalKN,farbe:kalK.farbe,sicht:kalK.sicht,personen:kalK.sicht==="personen"?[...kalK.personen]:[]},kalK.sicht==="ich"&&kalPAn());
   const d=kalK.danach; kalK=null; closeOverlays(); render(); if(d) d(r); else kalFilterDlg(); return r; }
-function kalVerbindenKarte(){ return `<div class="kal-verb"><span class="kal-verb-ic">${icon("kal")}</span><span class="kal-verb-t"><span class="lang">Outlook ist noch nicht verbunden – Aufträge, Firmentermine und eigene Kalender gehen trotzdem.</span><span class="kurz">Outlook nicht verbunden</span></span><button class="btn-text" data-act="kalVerbHilfe">Mehr</button><button class="btn-tonal" data-act="kalVerbinden">Verbinden</button></div>`; }
+function kalVerbindenKarte(){ return `<div class="kal-verb"><span class="kal-verb-ic">${icon("kal")}</span><span class="kal-verb-t"><span class="lang">${KAL.fehler&&!KAL.verbinden?`Outlook nicht erreichbar (${esc(KAL.fehler)})`:"Outlook ist noch nicht verbunden"} – Aufträge, Firmentermine und eigene Kalender gehen trotzdem.</span><span class="kurz">Outlook nicht verbunden</span></span><button class="btn-text" data-act="kalVerbHilfe">Mehr</button><button class="btn-tonal" data-act="kalVerbinden">Verbinden</button></div>`; }
 function kalenderView(){ const s=kalSicht(), B=kalBereich(), demo=typeof demoAn==="function"&&demoAn();
   if(!demo&&KAL.ebenen.outlook) setTimeout(()=>kalLaden(),0);
   const E=kalAlle(B.von,B.bis);
   const inhalt=s==="woche"?kalWoche(B,E):s==="monat"?kalMonat(B,E):kalListe(B,E);
-  const haupt=`${kalKopf()}${!demo&&KAL.ebenen.outlook&&KAL.verbinden?kalVerbindenKarte():""}${inhalt}`, pane=kalPaneAn();
+  const haupt=`${kalKopf()}${!demo&&KAL.ebenen.outlook&&KAL.ok!==true&&!KAL.lade&&(KAL.verbinden||KAL.fehler||KAL.versuch)?kalVerbindenKarte():""}${inhalt}`, pane=kalPaneAn();
   return `<div class="narrow kal-seite kal-s-${s}">${haupt}</div>${pane?`<aside class="kal-pane">${kalPanel()}</aside>`:""}`; }
 /* Seitenbereich rechts (nur breiter PC): eigene Spalte am rechten Fensterrand – Spiegelbild der App-Leiste links,
    scrollt für sich (nicht mit dem Kalender), ein- und ausblendbar (localStorage irrgang_kal_panel = an | aus).
@@ -289,7 +289,7 @@ function kalDialog(e,vor,bisVor,ganzVor){ const neu=!e; const d=vor||kalTag(KAL.
   const ende=e?e.bis:bisVor||new Date(start.getTime()+3600e3), ganz=e?e.ganz:!!ganzVor, ganzEnde=ganz?kalPlus(ende,-1):ende;
   const buero=typeof istBuero==="function"&&istBuero(), demo=typeof demoAn==="function"&&demoAn();
   /* Kalender, in die man schreiben darf: Outlook (wenn verbunden), eigene Kalender, Firmentermine (Büro) */
-  const outlookOk=demo||!KAL.verbinden, eigene=kalKalListe().filter(kalKalMein);
+  const outlookOk=demo||KAL.ok===true, eigene=kalKalListe().filter(kalKalMein);
   const wahl=[...(outlookOk?[["outlook",demo?"Beispieltermine":"Mein Outlook","var(--primary)"]]:[]),...eigene.map(c=>[c.id,c.name,c.farbe]),...(eigene.length?[]:[["neu-ich","Mein Kalender",(KAL_PAL.find(([f])=>!kalFarbenBelegt("ich").has(f))||KAL_PAL[0])[0]]]),...(buero?[["firma","Firmentermine","#2e9b5b"]]:[])];
   const vor0=e?(e.q==="eigen"?e.kal:e.q):KAL.neuArt, art=wahl.some(w=>w[0]===vor0)?vor0:(e?e.q:wahl[0][0]);
   kalE={id:e&&e.id,ganz,art,mit:new Set((e&&e.mit||[]).map(m=>m.mail).filter(Boolean)),mitAlt:(e&&e.mit||[]).filter(m=>m.mail)};
@@ -330,7 +330,7 @@ async function kalSpeichern(){ const F=formVals(); if(!F.kalT){ toast("Bitte ein
   const btn=document.querySelector('#dlg [data-act="kalOk"]'); if(btn){ btn.disabled=true; btn.textContent="Speichert …"; }
   try{ const r=kalE.id?await kalG(`/me/events/${encodeURIComponent(kalE.id)}`,{method:"PATCH",body:JSON.stringify(body)}):await kalG("/me/events",{method:"POST",body:JSON.stringify(body)});
     const e=kalAusOutlook(r||{...body,id:kalE.id}); KAL.ev=[...KAL.ev.filter(x=>x.id!==e.id),e]; closeOverlays(); render(); toast(mit.length&&!kalE.id?"Termin gespeichert – Einladungen verschickt":"Termin gespeichert"); kalLaden(true); }
-  catch(err){ if(btn){ btn.disabled=false; btn.textContent="Speichern"; } toast(err.verbinden?"Outlook ist nicht verbunden":"Nicht gespeichert: "+(err.message||"Fehler")); } }
+  catch(err){ if(btn){ btn.disabled=false; btn.textContent="Speichern"; } toast(err.verbinden?`Outlook ist nicht verbunden${KAL.grund?` (${KAL.grund})`:""} – oben auf „Verbinden“ tippen`:"Nicht gespeichert: "+(err.message||"Fehler")); } }
 async function kalLoeschen(){ const id=kalE&&kalE.id; if(!id) return; const demo=typeof demoAn==="function"&&demoAn();
   if(kalE.art!=="outlook"){ kalEntfernen(kalRec(id)); closeOverlays(); render(); toast(kalE.art==="firma"?"Firmentermin gelöscht":"Termin gelöscht"); return; }
   if(demo){ KAL.demo=kalDemo().filter(x=>x.id!==id); closeOverlays(); render(); return; }

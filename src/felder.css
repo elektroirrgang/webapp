@@ -1126,4 +1126,4 @@ body.kal-mit-pane .kal-wscroll{max-height:calc(100dvh - 330px)}
 .chip .pav,.vg-mitc .pav{margin-left:-4px;margin-right:6px}
 .kal-dleute{display:flex;flex-wrap:wrap;gap:6px 14px}
 .vp-pc .pav{margin-left:-4px;margin-right:6px}.vp-pc,.vg-mitc{display:inline-flex;align-items:center}
-@media (min-width:744px){.dlg.mittel{width:min(780px,calc(100% - 64px))}}
+@media (min-width:744px){.dlg.mittel{width:min(720px,calc(100% - 64px))}}
