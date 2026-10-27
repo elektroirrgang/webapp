@@ -420,12 +420,14 @@ function persFarbe(mail){ const m=String(mail||"").toLowerCase(); let T=[]; try{
 /* Schrift auf der Farbe: überall weiß (einheitlich, so von Max gewünscht) */
 const persSchrift=()=>"#fff";
 const persTeam=mail=>{ const m=String(mail||"").toLowerCase(); try{ return (typeof teamAlle==="function"?teamAlle():team()).find(x=>String(x.mail||"").toLowerCase()===m)||null; }catch(e){ return null; } };
-/* voller Name für die Blase: Vor- und Nachname aus dem Profil, sonst Rufname, sonst die E-Mail */
-function persVoll(mail,name){ const p=typeof profilVon==="function"?profilVon(mail):null, v=p&&!pfKaputt(p)?[p.vorname,p.nachname].filter(Boolean).join(" ").trim():"";
-  const t=mail?persTeam(mail):null; return v||(t&&t.voll)||(p&&p.ruf)||(mail?String(mail).toLowerCase():"")||name||""; }
+/* Name für die Blase beim Drüberfahren: nur Spitz-/Rufname bzw. Vorname (so von Max gewünscht) –
+   Profil (Rufname, sonst Vorname) → Mitarbeiterliste (Rufname) → E-Mail */
+function persVoll(mail,name){ const p=typeof profilVon==="function"?profilVon(mail):null, ok=p&&!pfKaputt(p), t=mail?persTeam(mail):null;
+  const erst=x=>String(x||"").trim().split(/\s+/)[0]||"";
+  return (ok&&erst(p.ruf))||(ok&&erst(p.vorname))||(t&&erst(t.ruf||t.voll))||(mail?String(mail).toLowerCase():"")||name||""; }
 function persAv(mail,name,cls=""){ const p=mail&&typeof profilVon==="function"?profilVon(mail):null, voll=persVoll(mail,name);
   if(p&&p.bild) return `<i class="pav ${cls}" style="background-image:url('${p.bild}')" aria-hidden="true"></i>`;
-  const ini=initials(p&&!pfKaputt(p)&&(p.vorname||p.nachname)?[p.vorname,p.nachname].filter(Boolean).join(" "):name||voll);
+  const ini=initials(p&&!pfKaputt(p)&&p.vorname&&p.nachname?[p.vorname,p.nachname].filter(Boolean).join(" "):name||voll);
   return `<i class="pav ${cls}" style="background-color:${mail?persFarbe(mail):"var(--sc-highest)"}${mail?";color:"+persSchrift(persFarbe(mail)):""}" aria-hidden="true">${esc(ini)}</i>`; }
 /* Person als kleines Element mit Bild + Name + Blase */
 const persName=(mail,name)=>`<span class="pn" title="${esc(persVoll(mail,name)||name)}">${persAv(mail,name)}${esc(name||persVoll(mail,""))}</span>`;

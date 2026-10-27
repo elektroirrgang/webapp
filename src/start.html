@@ -1452,7 +1452,7 @@ const mapsHref=a=>(/iPad|iPhone|Macintosh/.test(navigator.userAgent)?"https://ma
 /*KUNDE*/
 function closeOverlays(){ ["#menu","#dlg","#scrim"].forEach(s=>$(s).hidden=true); $("#scrim").classList.remove("dim"); $("#menuBtn").setAttribute("aria-expanded","false"); }
 function dialog(title,body,actions,opt){
-  $("#dlg").classList.toggle("breit",!!(opt&&opt.breit)); $("#dlg").innerHTML=`<h2>${esc(title)}</h2><div class="db">${body}</div>${actions?`<div class="da">${actions}</div>`:""}`;
+  $("#dlg").classList.toggle("breit",!!(opt&&opt.breit)); $("#dlg").classList.toggle("mittel",!!(opt&&opt.mittel)); $("#dlg").innerHTML=`<h2>${esc(title)}</h2><div class="db">${body}</div>${actions?`<div class="da">${actions}</div>`:""}`;
   $("#menu").hidden=true; $("#dlg").hidden=false; $("#scrim").hidden=false; $("#scrim").classList.add("dim");
   const f=$("#dlg").querySelector("input:not([type=hidden])"); if(f&&!f.value) setTimeout(()=>f.focus(),50);
 }
@@ -2340,9 +2340,9 @@ function maView(m){
     <div class="sec-lbl">Name</div>
     <div class="fg1"><div class="row2">${tf("vorname","Vorname",fv("vorname",p.vorname||""),{form:true,ph:t.vor||"z. B. Max"})}${tf("nachname","Nachname",fv("nachname",p.nachname||""),{form:true,ph:t.nach||"z. B. Mustermann"})}</div>
       ${tf("ruf","Rufname (So möchte ich begrüßt werden)",fv("ruf",p.ruf||""),{form:true,ph:p.vorname||t.vor||"z. B. Max"})}</div>
-    <p class="sup" style="margin:8px 4px 0">Steht in der Begrüßung und unten in der Seitenleiste. Jeder kann seinen Namen auch selbst unter „Konto“ ändern.</p>
+    <p class="sup" style="margin:8px 4px 0">Steht in der Begrüßung, unten in der Seitenleiste und in der Blase beim Drüberfahren (Rufname, sonst Vorname). Jeder kann seinen Namen auch selbst unter „Konto“ ändern.</p>
     <div class="sec-lbl">In der Firma</div>
-    <div class="fg1">${tf("name","Kürzel (abgekürzt)",fv("name",m?m.name:(MA_VORSCHLAG&&MA_VORSCHLAG.kurz)||""),{form:true,ph:"z. B. M. Mustermann"})}${tf("voll","Voller Name (optional)",fv("voll",m?m.voll||"":""),{form:true,ph:"z. B. Max Mustermann – zeigt die Blase beim Drüberfahren"})}${tf("mail","E-Mail",fv("mail",m?m.mail:(MA_VORSCHLAG&&MA_VORSCHLAG.mail)||""),{form:true,type:"email",ph:"m.mustermann@elektro-irrgang.de"})}${tf("rolle","Zusatz (optional)",fv("rolle",m?maRolleRest(m):""),{form:true,ph:"z. B. Firmenmail, Kundendienst"})}</div>
+    <div class="fg1">${tf("name","Kürzel (abgekürzt)",fv("name",m?m.name:(MA_VORSCHLAG&&MA_VORSCHLAG.kurz)||""),{form:true,ph:"z. B. M. Mustermann"})}${tf("mail","E-Mail",fv("mail",m?m.mail:(MA_VORSCHLAG&&MA_VORSCHLAG.mail)||""),{form:true,type:"email",ph:"m.mustermann@elektro-irrgang.de"})}${tf("rolle","Zusatz (optional)",fv("rolle",m?maRolleRest(m):""),{form:true,ph:"z. B. Firmenmail, Kundendienst"})}</div>
     <div class="lbl" style="margin:16px 4px 8px">Stufe</div>
     <div class="chips ma-stufen">${MA_STUFEN.map(([v,t])=>`<button type="button" class="chip" data-act="teamStufe" data-v="${v}" aria-pressed="${teamForm.stufe===v}">${t}</button>`).join("")}</div>
     <div id="maAzubi" ${teamForm.stufe==="azubi"?"":"hidden"}><div class="row2" style="margin-top:12px">${tf("azubiVon","Ausbildung seit",fv("azubiVon",m&&m.azubiVon||""),{form:true,type:"date"})}${tf("azubiBis","Ausbildung bis",fv("azubiBis",m&&m.azubiBis||""),{form:true,type:"date"})}</div>
@@ -2357,7 +2357,7 @@ function maView(m){
 function teamDialog(m){
   teamForm={alt:m?m.mail:null,admin:!!(m&&m.admin),status:m?m.status||"aktiv":"aktiv",pruefer:!!(m&&m.pruefer)};
   const ich=m&&m.mail===ME.mail;
-  dialog(m?"Mitarbeiter bearbeiten":"Mitarbeiter hinzufügen",`<div class="fg1">${tf("name","Name (abgekürzt)",m?m.name:"",{form:true,ph:"z. B. M. Mustermann"})}${tf("voll","Voller Name (optional)",m?m.voll||"":"",{form:true,ph:"z. B. Max Mustermann"})}${tf("mail","E-Mail",m?m.mail:"",{form:true,type:"email",ph:"m.mustermann@elektro-irrgang.de"})}${tf("rolle","Aufgabe (optional)",m?m.rolle:"",{form:true,ph:"z. B. Geselle, Azubi, Büro"})}</div>
+  dialog(m?"Mitarbeiter bearbeiten":"Mitarbeiter hinzufügen",`<div class="fg1">${tf("name","Name (abgekürzt)",m?m.name:"",{form:true,ph:"z. B. M. Mustermann"})}${tf("mail","E-Mail",m?m.mail:"",{form:true,type:"email",ph:"m.mustermann@elektro-irrgang.de"})}${tf("rolle","Aufgabe (optional)",m?m.rolle:"",{form:true,ph:"z. B. Geselle, Azubi, Büro"})}</div>
     <div class="lbl" style="margin:16px 4px 8px">Status</div>${seg("teamStatus",teamForm.status,STATUS_MA)}
     <div class="lbl" style="margin:16px 4px 8px">Rechte</div>${seg("teamAdmin",teamForm.admin?"1":"0",[["0","Mitarbeiter"],["1","Admin"]])}
     <p class="sup" style="margin:8px 0 0">Admins sehen die Statistik, verwalten Mitarbeiter und dürfen alle Einträge bearbeiten.${ich?" Dich selbst kannst du nicht herabstufen oder austragen.":""}</p>
@@ -2535,7 +2535,7 @@ document.addEventListener("click",async ev=>{
     if(!mail.endsWith(TEST_LOGIN.domain)){ toast(`Bitte die Arbeitsadresse (…${TEST_LOGIN.domain}) eingeben`); return; }
     const L=teamAlle().map(m=>({...m}));
     if(L.some(m=>m.mail===mail&&m.mail!==T.alt)){ toast("Diese Adresse ist schon eingetragen"); return; }
-    const neu={name:F.name.trim(),voll:(F.voll||"").trim()||undefined,mail,rolle:(F.rolle||"").trim()||undefined,admin:T.admin,entwickler:T.entw||undefined,status:T.status,pruefer:T.pruefer||undefined};
+    const neu={name:F.name.trim(),mail,rolle:(F.rolle||"").trim()||undefined,admin:T.admin,entwickler:T.entw||undefined,status:T.status,pruefer:T.pruefer||undefined};
     if(nav.v==="ma"){ if(T.stufe) neu.stufe=T.stufe; if(T.stufe==="azubi"){ if(F.azubiVon) neu.azubiVon=F.azubiVon; if(F.azubiBis) neu.azubiBis=F.azubiBis;
       const alt=teamAlle().find(x=>x.mail===T.alt), lj=parseInt(F.lj,10);
       if(lj>=1&&lj<=4){ const bisher=alt&&alt.lj?maLehrjahr(Object.assign({},alt,{azubiVon:neu.azubiVon})):0; if(bisher===lj&&alt.ljAm){ neu.lj=alt.lj; neu.ljAm=alt.ljAm; } else { neu.lj=lj; neu.ljAm=new Date().toISOString().slice(0,10); } } } }
