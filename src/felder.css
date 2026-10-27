@@ -358,6 +358,8 @@ button.vg-z{cursor:pointer;-webkit-tap-highlight-color:transparent} button.vg-z:
 @keyframes vpEin{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
 @media (min-width:1024px){#app > .narrow.vg.mit-panel{margin-right:392px!important}}
 @media (max-width:1023.98px){.vp{width:auto;left:0;border-radius:0;z-index:45}}
+/* Fenster aus der Seitenleiste heraus (Meldung, Bearbeiten …) liegen darüber, nicht dahinter */
+@media (max-width:1023.98px){body:has(#dlg:not([hidden])) .vp{z-index:40}}
 .vp-kopf{display:flex;align-items:center;gap:10px;padding:18px 14px 10px 22px;flex:none}
 .vp-t{flex:1;min-width:0;display:flex;flex-direction:column}
 .vp-t b{font-size:20px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -792,3 +794,24 @@ body.sf-an nav.navbar.navbar{padding-bottom:200px!important}
 /* Mitarbeiterseite: Hinweis auf wiederhergestellte Eingaben */
 .ma-entwurf{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 16px;margin:0 0 12px;border-radius:14px;background:var(--surface-2,#eceef3);font-size:14px}
 .ma-entwurf span{flex:1}
+
+/* Rahmenauftrag: Meldungen */
+.vk-rh{font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;background:var(--sec-c);color:var(--on-sec-c);white-space:nowrap}
+.vk-c.ml-o{background:var(--pc);color:var(--on-pc)}
+.ml-ab .sec-row{margin-bottom:6px!important}
+.ml-z{display:flex;align-items:center;gap:12px;width:100%;border:0;background:var(--sc);border-radius:14px;padding:10px 12px;margin-top:6px;text-align:left;color:var(--on-surface);cursor:pointer;font:inherit}
+.ml-z:hover{background:var(--sc-high)}
+.ml-z .ml-p{flex:none;width:10px;height:10px;border-radius:50%;background:var(--primary)}
+.ml-z.spaeter .ml-p{background:#E0A100}.ml-z.erledigt .ml-p{background:#1E8E3E}.ml-z.ohne .ml-p{background:var(--on-sv)}
+.ml-z.dr .ml-p{box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 25%,transparent)}
+.ml-z.erledigt b,.ml-z.ohne b{color:var(--on-sv)}
+.ml-t{flex:1;min-width:0;display:flex;flex-direction:column}
+.ml-t b{font-size:14px;font-weight:700}.ml-t span{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ml-t small{font-size:12px;color:var(--on-sv)}
+.ml-z > .ic{flex:none;color:var(--on-sv)}
+.ml-leer{margin:6px 2px;font-size:14px;color:var(--on-sv)}
+.ml-zl{font-size:12px;font-weight:700;color:var(--on-sv);margin:14px 0 0 2px}
+.ml-mehr{margin-top:4px}
+.ml-mel{margin-bottom:10px}
+.ml-dlg .row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ml-foto{display:flex;align-items:center;gap:12px;margin-top:8px}.ml-foto span{flex:1;font-size:14px;color:var(--on-sv)}
+.ml-foto .btn-tonal{display:inline-flex;align-items:center;gap:6px}

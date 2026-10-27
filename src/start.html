@@ -1984,15 +1984,16 @@ function dashboard(kacheln){
   const F=faellig(), ueber=F.filter(p=>p.a.naechste<t), fb=F.filter(p=>p.a.naechste>=t&&p.a.naechste<=bald), neu=echt("pruefungen").filter(p=>p.pdfAblage&&(p.updated||0)>=woche);
   const G=live("geraete").filter(g=>!g.aus).map(g=>({g,k:gerKal(g)})).filter(x=>x.k&&(x.k.s==="ab"||x.k.s==="bald"));
   const V=typeof vgFilter==="function"?vgFilter("offen"):[], vb=V.filter(v=>vgStufe(v)===1).length;
+  const MO=live("vorgaenge").filter(m=>m.typ==="meldung"&&(m.status||"offen")==="offen"&&!m.deleted).length;
   const inArbeit=echt("pruefungen").filter(p=>["wip","open"].includes(pStand(p))).length;
   /* Inhalt je Kachel: s = nur die wichtigste Zahl, m/l = Liste (2 bzw. 5 Einträge) */
   const W={
     material:{ic:"lager",v:"materialanf",sub:A.length?`${an} angefordert · ${A.length-an} bestellt`:"Nichts offen",plus:["afNeu","Material anfordern"],
       s:()=>gross(an,"angefordert"),
       m:g=>A.length?A.slice(0,anz(g)).map(a=>zeile(anfPosText(a),`${anfOrt(a)} · ${a.status==="angefordert"?"angefordert":"bestellt"}`)).join(""):leer("Nichts offen.",true)},
-    auftraege:{ic:"board",v:"auftraege",sub:V.length?`${V.length} offen${vb?` · ${vb} beim Büro`:""}`:"Keine offenen Vorgänge",plus:["vgNeu","Vorgang anlegen"],
+    auftraege:{ic:"board",v:"auftraege",sub:V.length?`${V.length} offen${vb?` · ${vb} beim Büro`:""}${MO?` · ${MO} Meldung${MO===1?"":"en"}`:""}`:"Keine offenen Vorgänge",plus:["vgNeu","Vorgang anlegen"],
       s:()=>gross(V.length,vb?`offen · ${vb} beim Büro`:"offen"),
-      m:g=>V.length?V.slice(0,anz(g)).map(v=>zeile(vgKunde(v),vgKurz(v.anliegen||"",60))).join(""):leer("Keine offenen Vorgänge.",true)},
+      m:g=>V.length?V.slice(0,anz(g)).map(v=>zeile(vgKunde(v)+(v.rahmen?" · Rahmenauftrag":""),v.rahmen&&typeof mlOffen==="function"?`${mlOffen(v.id).length} Meldung${mlOffen(v.id).length===1?"":"en"} offen`:vgKurz(v.anliegen||"",60))).join(""):leer("Keine offenen Vorgänge.",true)},
     pruefungen:{ic:"doc",v:istHandy()&&ME.admin?"uebersicht":"geraete",ziel:istHandy()&&ME.admin?"fristen":"",sub:ueber.length?`${ueber.length} überfällig`:fb.length?`${fb.length} fällig in 3 Monaten`:"Keine Fristen offen",warn:ueber.length>0||G.some(x=>x.k.s==="ab"),
       s:()=>gross(ueber.length,"überfällig",ueber.length>0),
       m:g=>`<div class="wg-kpis">${kpi(neu.length,"neue Protokolle")}${kpi(ueber.length,"überfällig",ueber.length?"warn":"")}${kpi(fb.length,"fällig in 3 Mon.")}</div>`

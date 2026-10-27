@@ -269,7 +269,7 @@ function bbAuftraege(){
   const mitPdf=new Set([...(DB.protokolle?DB.protokolle.values():[])].filter(r=>!r.deleted).flatMap(r=>[r.pruefungId,r.echeckId]).filter(Boolean));
   BB_PROT.forEach(x=>{ if(x.pruefungId) mitPdf.add(x.pruefungId); if(x.echeckId) mitPdf.add(x.echeckId); });
   const neu=(r,o)=>L.push(Object.assign({kundeId:r.kundeId,kunde:kn(r.kundeId),t:r.updated||r.created||0,file:"",item:"",pill:""},o));
-  if(DB.vorgaenge) for(const v of DB.vorgaenge.values()){ if(!ok(v)) continue; const st=typeof vgStufe==="function"?vgStufe(v):-1, nr=v.s&&v.s.auftrag&&v.s.auftrag.nr;
+  if(DB.vorgaenge) for(const v of DB.vorgaenge.values()){ if(v.typ==="meldung"||!ok(v)) continue; const st=typeof vgStufe==="function"?vgStufe(v):-1, nr=v.s&&v.s.auftrag&&v.s.auftrag.nr;
     neu(v,{art:"auftrag",sym:"auftrag",ort:[kdKat("angebote")],titel:v.anliegen||"Auftrag",t:(v.s&&v.s.anruf&&v.s.anruf.at)||v.created||0,
       info:["Auftrag",v.abgelehnt?"abgelehnt":typeof VG_T!=="undefined"&&st>=0?VG_T[st]:"",nr&&`SCC ${nr}`,v.created&&new Date(v.created).toLocaleDateString("de-DE")].filter(Boolean).join(" · "),
       ziel:`data-act="bbAuf" data-k="vg" data-id="${esc(v.id)}"`}); }
