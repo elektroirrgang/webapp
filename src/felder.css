@@ -452,7 +452,7 @@ button.vg-z{cursor:pointer;-webkit-tap-highlight-color:transparent} button.vg-z:
 .such-f .ic{width:22px;height:22px}
 .such-ans{display:none!important}
 /* Übersicht am Handy: Suchfeld volle Breite, Ansicht-Umschalter als Knopf im Suchfeld */
-@media (max-width:743px){body.hn .such-ans{display:grid!important}body.hn .bib-kopf .ans-seg{display:none!important}body.hn .search.mit-f{padding-right:4px}}
+@media (max-width:743px){body.hn .such-ans{display:grid!important}body.hn .bib-kopf .ans-seg{display:none!important}body.hn .search.mit-f{padding-right:4px}body.hn .search .such-f{width:40px;height:40px}}
 .mi.an{background:var(--sec-c);color:var(--on-sec-c)}.mi.an .ic,.mi.an svg{color:var(--on-sec-c);fill:currentColor}
 #fpopBg{position:fixed;inset:0;z-index:95}
 .fpop{position:fixed;z-index:96;background:var(--sc-high);border-radius:24px;padding:12px;box-shadow:0 12px 32px rgba(0,0,0,.24),0 2px 6px rgba(0,0,0,.12);overflow:auto;overscroll-behavior:contain;animation:menuAuf .16s cubic-bezier(.2,.8,.2,1);transform-origin:top right}
