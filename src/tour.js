@@ -49,7 +49,9 @@ const TOURS={
     {t:"Das war’s",x:"Fragen? Alles, was hier gezeigt wurde, funktioniert am Handy, iPad und PC – mit demselben Firmenkonto."}]};
 
 let TOUR=null;
-function tourStart(app,ab){ const L=TOURS[app||TOUR_APP]; if(!L||!L.length) return; if(typeof closeOverlays==="function") closeOverlays(); TOUR={app:app||TOUR_APP,i:Math.max(0,Math.min(ab||0,L.length-1))};
+/* Nur auf iPad und PC (ab iPad-Breite) – auf dem Handy ist dafür kein Platz und keiner präsentiert vom Handy */
+const tourMoeglich=()=>matchMedia("(min-width:744px)").matches;
+function tourStart(app,ab){ const L=TOURS[app||TOUR_APP]; if(!L||!L.length) return; if(!tourMoeglich()){ if(typeof toast==="function") toast("Den Präsentationsmodus gibt es auf iPad und PC"); return; } if(typeof closeOverlays==="function") closeOverlays(); TOUR={app:app||TOUR_APP,i:Math.max(0,Math.min(ab||0,L.length-1))};
   document.body.classList.add("tour-an"); if(!document.getElementById("tourLayer")) document.body.insertAdjacentHTML("beforeend",`<div id="tourLayer" aria-live="polite"><div id="tourSpot"></div><div id="tourBox" role="dialog" aria-label="Präsentation"></div></div>`);
   document.getElementById("tourLayer").style.display=""; tourFab(); tourZeig(); }
 function tourEnde(){ TOUR=null; document.body.classList.remove("tour-an","tour-pause"); document.getElementById("tourLayer")?.remove(); document.getElementById("tourFab")?.remove(); tourMenuZu(); }
@@ -120,11 +122,11 @@ document.addEventListener("keydown",e=>{ if(!TOUR) return; const k=e.key, tippt=
   if(["ArrowRight","PageDown"," ","Enter"].includes(k)){ e.preventDefault(); e.stopImmediatePropagation(); tourSchritt(1); }
   else if(["ArrowLeft","PageUp","Backspace"].includes(k)){ e.preventDefault(); e.stopImmediatePropagation(); tourSchritt(-1); }
   else if(k==="Escape"){ e.preventDefault(); e.stopImmediatePropagation(); tourEnde(); } },true);
-addEventListener("resize",()=>{ if(TOUR){ tourMenuZu(); if(!TOUR.pause) tourZeig(); } });
+addEventListener("resize",()=>{ if(TOUR){ if(!tourMoeglich()){ tourEnde(); return; } tourMenuZu(); if(!TOUR.pause) tourZeig(); } });
 /* Sprung aus einer anderen App: ?tour=<app> startet nach dem Laden */
 addEventListener("load",()=>{ try{ const q=new URLSearchParams(location.search).get("tour"); if(q&&TOURS[q]){ history.replaceState(null,"",location.pathname); setTimeout(()=>tourStart(q),1800); } }catch(e){} });
 /* Zeile im Entwickler-Bereich + Auswahlfenster */
-function tourZeile(){ return `<div class="li" role="button" tabindex="0" data-act="tourWahl"><span class="av">${icon("bulb")}</span><span class="lt"><span class="h">Präsentationsmodus</span><span class="s">Geführte Vorstellung der Apps – Weiter mit Pfeiltasten, Leertaste oder Fernbedienung</span></span>${icon("chev")}</div>`; }
+function tourZeile(){ if(!tourMoeglich()) return ""; return `<div class="li" role="button" tabindex="0" data-act="tourWahl"><span class="av">${icon("bulb")}</span><span class="lt"><span class="h">Präsentationsmodus</span><span class="s">Geführte Vorstellung der Apps – Weiter mit Pfeiltasten, Leertaste oder Fernbedienung</span></span>${icon("chev")}</div>`; }
 function tourWahl(){ const z=(app,t)=>`<button class="li" data-tour="start" data-v="${app}"><span class="av">${icon("bulb")}</span><span class="lt"><span class="h">${esc(t)}</span><span class="s">${TOURS[app].length} Schritte${app===TOUR_APP?" · diese App":""}</span></span>${icon("chev")}</button>`;
   dialog("Präsentation starten",`<div class="list">${TOUR_FOLGE.filter(a=>a===TOUR_APP).map(a=>z(a,TOUR_NAME[a])).join("")}${TOUR_FOLGE.filter(a=>a!==TOUR_APP).map(a=>`<button class="li" data-tour="app" data-v="${a}"><span class="av">${icon("bulb")}</span><span class="lt"><span class="h">${esc(TOUR_NAME[a])}</span><span class="s">öffnet die App und startet dort</span></span>${icon("chev")}</button>`).join("")}</div>
     <div class="list" style="margin-top:12px"><button class="li" data-tour="nurdemo"><span class="lt"><span class="h">Nur Beispieldaten zeigen</span><span class="s">Echte Kunden und Aufträge werden auf diesem Gerät ausgeblendet (nichts wird gelöscht). Schaltet die Demo-Vorschau mit ein.</span></span><span class="schalter${typeof nurDemo==="function"&&nurDemo()?" an":""}" aria-hidden="true"><i></i></span></button></div>
