@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 const CACHE = "evse-v0.99.44-f17ea66d", BILDER = "evse-bilder";
-=======
-const CACHE = "evse-v0.99.44-aba5f60e", BILDER = "evse-bilder";
->>>>>>> 951aed7 (0.99.44: Kalender – Vorschau beim Überfahren statt Plus-Zeiger)
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll([new Request("./", {cache: "reload"}), new Request("./index.html", {cache: "reload"}), new Request("./pdfjs/pdf.min.js", {cache: "reload"}), new Request("./pdfjs/pdf.worker.min.js", {cache: "reload"})]))); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith("evse-v") && k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
 self.addEventListener("fetch", e => {
