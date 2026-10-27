@@ -2292,8 +2292,11 @@ function gerDialog(g){
     <div class="ger-notiz">${ta("notiz","Notiz",r.notiz,{form:true,ph:"z. B. liegt im Sprinter, Kalibrierung bei …"})}</div></div><input type="file" id="gerDatei" accept="image/*" hidden>`,
     `${g?`<button class="btn-text danger" data-act="gerAus">${r.aus?"Wieder aktiv":"Ausmustern"}</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gerSave">Speichern</button>`,{breit:true});
 }
+/* Namen gleich, auch wenn Leerzeichen/Groß-Kleinschreibung abweichen („A. Irrgang“ = „a.irrgang“) */
+const nameGleich=(a,b)=>String(a||"").replace(/\s+/g,"").toLowerCase()===String(b||"").replace(/\s+/g,"").toLowerCase();
 function teamView(){ entwNachtragen();
   const T=teamAlle(), a=T.filter(m=>m.status!=="weg"), w=T.filter(m=>m.status==="weg");
+  const doppelt=[...new Set(a.filter(m=>a.some(x=>x!==m&&nameGleich(x.name,m.name))).map(m=>m.name))];
   const z=m=>{ const p=profilVon(m.mail)||{}, voll=[p.vorname,p.nachname].filter(Boolean).join(" ");
     return `<div class="li" role="button" tabindex="0" data-act="teamEdit" data-mail="${esc(m.mail)}">${p.bild?`<span class="av" style="background:url('${p.bild}') center/cover"></span>`:`<span class="av">${esc(initials(m.name))}</span>`}<span class="lt"><span class="h">${esc(voll||m.name)}${p.ruf&&p.ruf!==p.vorname?` <span class="ma-ruf">„${esc(p.ruf)}“</span>`:""}</span><span class="s">${esc([m.mail,maRolleRest(m)].filter(Boolean).join(" · "))}</span><span class="st">${maPillen(m)}</span></span>${icon("chev")}</div>`; };
   /* Wer sich schon mit seinem Firmenkonto angemeldet und etwas angelegt hat, aber noch nicht in der Liste steht */
@@ -2304,7 +2307,8 @@ function teamView(){ entwNachtragen();
   const vz=([ml,n])=>`<div class="li"><span class="av">${esc(initials(n))}</span><span class="lt"><span class="h">${esc(n)}</span><span class="s">${esc(ml)} · hat schon mit den Apps gearbeitet</span></span><button class="btn-tonal" data-act="teamVorschlag" data-mail="${esc(ml)}" data-name="${esc(n)}">Hinzufügen</button></div>`;
   const EW=maEntwurf(), ewZeit=EW?new Date(EW.t).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
   const ewZeile=EW?`<div class="sec-lbl">Nicht gespeichert</div>${listOf([`<div class="li" role="button" tabindex="0" data-act="maEntwurfAuf"><span class="av">${icon("edit")}</span><span class="lt"><span class="h">${esc(EW.titel||(EW.k?EW.k:"Neuer Mitarbeiter"))}</span><span class="s">${EW.k?"Änderungen":"Neu angelegt"} · zuletzt ${esc(ewZeit)}</span></span><button class="btn-text" data-act="maEntwurfWeg">Verwerfen</button></div>`])}`:"";
-  return `<div class="narrow">${ewZeile}<div class="sec-lbl">Aktiv · ${a.length}</div>${listOf(a.map(z))}
+  const dHin=doppelt.length?`<section class="card tipp" style="margin-bottom:12px"><b>${icon("person")}Gleicher Name mehrfach</b><p>${doppelt.map(n=>`„${esc(n)}“`).join(", ")} steht für mehrere Mitarbeiter. Bei Terminen und Zuständigkeiten lässt sich dann nicht unterscheiden, wer gemeint ist. Bitte einen davon umbenennen, z. B. mit Vornamen.</p></section>`:"";
+  return `<div class="narrow">${ewZeile}${dHin}<div class="sec-lbl">Aktiv · ${a.length}</div>${listOf(a.map(z))}
     ${gef.size?`<div class="sec-lbl">Noch nicht in der Liste · ${gef.size}</div>${listOf([...gef].map(vz))}`:""}
     ${w.length?`<div class="sec-lbl">Ausgeschieden · ${w.length}</div>${listOf(w.map(z))}`:""}
     <section class="card tipp"><b>${icon("person")}Neuer Mitarbeiter</b>
@@ -2534,6 +2538,7 @@ document.addEventListener("click",async ev=>{
     if(!mail.endsWith(TEST_LOGIN.domain)){ toast(`Bitte die Arbeitsadresse (…${TEST_LOGIN.domain}) eingeben`); return; }
     const L=teamAlle().map(m=>({...m}));
     if(L.some(m=>m.mail===mail&&m.mail!==T.alt)){ toast("Diese Adresse ist schon eingetragen"); return; }
+    { const d=L.find(m=>m.status!=="weg"&&m.mail!==T.alt&&m.mail!==mail&&nameGleich(m.name,F.name)); if(d){ toast(`„${d.name}“ gibt es schon (${d.mail}) – bitte unterscheidbar benennen, z. B. mit Vornamen`); return; } }
     const neu={name:F.name.trim(),mail,rolle:(F.rolle||"").trim()||undefined,admin:T.admin,entwickler:T.entw||undefined,status:T.status,pruefer:T.pruefer||undefined};
     if(nav.v==="ma"){ if(T.stufe) neu.stufe=T.stufe; if(T.stufe==="azubi"){ if(F.azubiVon) neu.azubiVon=F.azubiVon; if(F.azubiBis) neu.azubiBis=F.azubiBis;
       const alt=teamAlle().find(x=>x.mail===T.alt), lj=parseInt(F.lj,10);

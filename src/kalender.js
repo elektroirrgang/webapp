@@ -11,7 +11,7 @@ Object.assign(IC,{kal:"M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 
   kalListe:"M19 13H5c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2zm0 6H5v-4h14v4zm0-16H5c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 6H5V5h14v4z",
   kalPane:"M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 16H5V5h10v14zm4 0h-2V5h2v14z",
   kalLeute:"M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"});
-const KAL_SCOPES=["Calendars.ReadWrite"], KAL_TZ="Europe/Berlin", KAL_H=56, KAL_VON=6, KAL_BIS=20;
+const KAL_SCOPES=["Calendars.ReadWrite"], KAL_TZ="Europe/Berlin", KAL_H=56, KAL_VON=0, KAL_BIS=24; /* ganzer Tag – der Chef parkt Platzhalter gern nachts um 2–3 Uhr */
 const KAL_SICHTEN=[["liste","Liste"],["woche","Woche"],["monat","Monat"]];
 const KAL={ab:null,sicht:null,ev:[],geladen:"",lade:false,fehler:"",verbinden:false,demo:[],ebenen:{outlook:true,auftraege:true,firma:true,meine:null}};
 try{ const e=JSON.parse(localStorage.getItem("irrgang_kal_ebenen")||"null"); if(e) Object.assign(KAL.ebenen,e); }catch(e){}
@@ -266,7 +266,7 @@ function kalWoche(B,E){ const tage=[...Array(7)].map((_,i)=>kalPlus(B.von,i)), j
     const jl=kalGleich(d,jetzt)&&jetzt.getHours()>=von&&jetzt.getHours()<bis?`<i class="kal-jetzt" style="top:${((jetzt.getHours()-von)*60+jetzt.getMinutes())/60*KAL_H}px"></i>`:"";
     return `<div class="kal-wsp${kalGleich(d,jetzt)?" heute":""}" data-act="kalFrei" data-d="${kalIso(d)}" data-von="${von}">${ev}${jl}</div>`; }).join("");
   const ziel=Math.max(0,((kalGleich(kalMo(jetzt),B.von)?jetzt.getHours()-1:7)-von)*KAL_H);
-  setTimeout(()=>{ const sc=document.querySelector(".kal-wscroll"); if(sc&&!sc.dataset.ok){ sc.scrollTop=KAL.wScroll!=null?KAL.wScroll:ziel; sc.dataset.ok="1"; sc.addEventListener("scroll",()=>{ KAL.wScroll=sc.scrollTop; },{passive:true}); } },0);
+  setTimeout(()=>{ kalWHoehe(); const sc=document.querySelector(".kal-wscroll"); if(sc&&!sc.dataset.ok){ sc.scrollTop=KAL.wScroll!=null?KAL.wScroll:ziel; sc.dataset.ok="1"; sc.addEventListener("scroll",()=>{ KAL.wScroll=sc.scrollTop; },{passive:true}); } },0);
   return `<div class="kal-woche">${kopf}${ganzZ}<div class="kal-wscroll"><div class="kal-wr" style="height:${(bis-von)*KAL_H}px">${std}<div class="kal-wsps">${spalten}</div></div></div></div>`; }
 function kalMonat(B,E){ const jetzt=new Date(), mon=B.monat.getMonth();
   const kopf=[...Array(7)].map((_,i)=>`<div class="kal-mk">${esc(kalWT(kalPlus(B.von,i)))}</div>`).join("");
@@ -414,3 +414,9 @@ document.addEventListener("touchstart",e=>{ clearTimeout(KZ.timer); const t=e.ta
 document.addEventListener("touchmove",e=>{ const p=e.touches[0]; if(KZ.a&&KZ.a.touch){ e.preventDefault(); kzBewegt(p.clientX,p.clientY); return; } if(KZ.t0&&Math.hypot(p.clientX-KZ.t0.x,p.clientY-KZ.t0.y)>8){ clearTimeout(KZ.timer); KZ.t0=null; } },{passive:false});
 document.addEventListener("touchend",e=>{ clearTimeout(KZ.timer); KZ.t0=null; if(KZ.a&&KZ.a.touch){ e.preventDefault(); kzEnde(); } });
 document.addEventListener("touchcancel",()=>{ clearTimeout(KZ.timer); KZ.t0=null; if(KZ.a&&KZ.a.touch) kzAufraeumen(); });
+
+/* Wochenraster genau bis zum Fensterrand: die Seite selbst scrollt nicht, nur die Stunden darin */
+function kalWHoehe(){ const sc=document.querySelector(".kal-wscroll"); if(!sc) return; const nb=document.querySelector(".navbar"), nr=nb&&nb.getBoundingClientRect();
+  const unten=nr&&nr.top>window.innerHeight/2&&nr.height?nr.top:window.innerHeight; let h=Math.max(300,Math.floor(unten-sc.getBoundingClientRect().top-12-20)); sc.style.maxHeight=h+"px";
+  const se=document.scrollingElement, ueber=se.scrollHeight-se.clientHeight; if(ueber>0&&h-ueber>=300) sc.style.maxHeight=(h-ueber)+"px"; }
+window.addEventListener("resize",()=>{ clearTimeout(KAL.rz); KAL.rz=setTimeout(kalWHoehe,100); });

@@ -1064,7 +1064,8 @@ body.kal-pc .fab{display:none!important}
 @media (hover:hover){.kp-t:hover:not(.heute),.kp-e:hover,.kp-n:hover,.kp-r:hover{background:var(--sc-high)}}
 
 /* Woche: Kopf steht, Stunden scrollen im Raster */
-.kal-wscroll{max-height:max(360px,calc(100dvh - 300px));overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-top:8px}
+.kal-wscroll{max-height:max(360px,calc(100dvh - 300px));overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:transparent transparent;padding-top:8px}
+.kal-wscroll:hover{scrollbar-color:color-mix(in srgb,var(--on-surface) 22%,transparent) transparent}
 /* Liste (Agenda) */
 .kal-lk{margin-top:18px}.kal-lk:first-of-type{margin-top:4px}.kal-lk.heute{color:var(--primary)}
 .kal-ll .li.kal-lz2{gap:14px;align-items:center}
@@ -1117,3 +1118,4 @@ body.kal-mit-pane .kal-wscroll{max-height:calc(100dvh - 330px)}
 @media (hover:hover){.kal-mz:not(.fremd):not(.kal-msel):hover{background:color-mix(in srgb,var(--primary) 7%,var(--surface))}}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .kal-hov{background:color-mix(in srgb,var(--primary) 22%,var(--surface))}}
 :root[data-theme="dark"] .kal-hov{background:color-mix(in srgb,var(--primary) 22%,var(--surface))}
+#app:has(> .kal-s-woche),#app:has(.kal-seite.kal-s-woche){padding-bottom:0}main:has(.kal-seite.kal-s-woche){padding-bottom:0}
