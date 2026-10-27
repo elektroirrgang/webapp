@@ -97,18 +97,21 @@ function tourEnde(){ TOUR=null; tourMerk(); tourPuls(false); document.body.class
 /* ---- Schwebender Knopf: pausieren (frei zeigen und erklären), fortsetzen, springen, beenden ---- */
 const TOUR_IC={play:"M8 5v14l11-7z",pause:"M6 19h4V5H6v14zm8-14v14h4V5h-4z",zur:"M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z",vor:"M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"};
 const tourSvg=k=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${TOUR_IC[k]}"/></svg>`;
+/* Das iPad wird auf die Tafel gespiegelt – alle sehen, was auf dem iPad ist. Darum während der Präsentation KEIN schwebender Knopf:
+   gesteuert wird über die Karte (Weiter/Zurück, Wischen), einen Bluetooth-Klicker oder lange auf den Kartenkopf drücken (Menü).
+   Nur in der Pause bleibt ein kleiner runder Knopf zum Zurückkehren (lange drücken = Menü, verschiebbar). */
 function tourFab(){ if(!TOUR) return; let f=document.getElementById("tourFab");
+  if(!TOUR.pause){ f?.remove(); return; }
   if(!f){ document.body.insertAdjacentHTML("beforeend",`<button type="button" id="tourFab" aria-label="Präsentation steuern"></button>`); f=document.getElementById("tourFab");
     let pos=null; try{ pos=JSON.parse(localStorage.getItem("irrgang_tour_fab")||"null"); }catch(e){}
     const setz=(x,y)=>{ const w=f.offsetWidth||160, h=f.offsetHeight||48; f.style.left=Math.max(8,Math.min(innerWidth-w-8,x))+"px"; f.style.top=Math.max(8,Math.min(innerHeight-h-8,y))+"px"; };
-    requestAnimationFrame(()=>setz(pos?pos.x*innerWidth:16,pos?pos.y*innerHeight:innerHeight-(f.offsetHeight||52)-16)); /* Standard: unten links, aus dem Weg der Karte */
-    let zug=null; f.addEventListener("pointerdown",e=>{ zug={x:e.clientX,y:e.clientY,l:f.offsetLeft,t:f.offsetTop,weit:false}; f.setPointerCapture(e.pointerId); });
-    f.addEventListener("pointermove",e=>{ if(!zug) return; const dx=e.clientX-zug.x, dy=e.clientY-zug.y; if(Math.hypot(dx,dy)>6) zug.weit=true; if(zug.weit){ setz(zug.l+dx,zug.t+dy); tourMenuZu(); } });
-    f.addEventListener("pointerup",()=>{ if(!zug) return; const weit=zug.weit; zug=null; if(weit){ try{ localStorage.setItem("irrgang_tour_fab",JSON.stringify({x:f.offsetLeft/innerWidth,y:f.offsetTop/innerHeight})); }catch(e){} f.dataset.gezogen="1"; setTimeout(()=>delete f.dataset.gezogen,50); } }); }
-  const L=TOURS[TOUR.app]; f.classList.toggle("pause",!!TOUR.pause);
-  f.innerHTML=`${tourSvg(TOUR.pause?"play":"pause")}<span>${TOUR.pause?"Weiter präsentieren":`${esc(TOUR_NAME[TOUR.app])} · ${TOUR.i+1}/${L.length}`}</span>`; }
+    requestAnimationFrame(()=>setz(pos?pos.x*innerWidth:16,pos?pos.y*innerHeight:innerHeight-(f.offsetHeight||52)-16)); /* Standard: unten links */
+    let zug=null, lang=null; f.addEventListener("pointerdown",e=>{ zug={x:e.clientX,y:e.clientY,l:f.offsetLeft,t:f.offsetTop,weit:false}; f.setPointerCapture(e.pointerId); clearTimeout(lang); lang=setTimeout(()=>{ if(zug&&!zug.weit){ zug.lang=true; tourLang=Date.now(); tourMenu(f); } },550); });
+    f.addEventListener("pointermove",e=>{ if(!zug) return; const dx=e.clientX-zug.x, dy=e.clientY-zug.y; if(Math.hypot(dx,dy)>6){ zug.weit=true; clearTimeout(lang); } if(zug.weit){ setz(zug.l+dx,zug.t+dy); tourMenuZu(); } });
+    f.addEventListener("pointerup",()=>{ clearTimeout(lang); if(!zug) return; const weit=zug.weit, lg=zug.lang; zug=null; if(lg){ f.dataset.gezogen="1"; setTimeout(()=>delete f.dataset.gezogen,50); return; } if(weit){ try{ localStorage.setItem("irrgang_tour_fab",JSON.stringify({x:f.offsetLeft/innerWidth,y:f.offsetTop/innerHeight})); }catch(e){} f.dataset.gezogen="1"; setTimeout(()=>delete f.dataset.gezogen,50); } }); }
+  f.classList.add("pause"); f.setAttribute("aria-label","Präsentation fortsetzen – lange drücken für das Menü"); f.innerHTML=tourSvg("play"); }
 function tourMenuZu(){ document.getElementById("tourMenu")?.remove(); }
-function tourMenu(){ if(!TOUR) return; if(document.getElementById("tourMenu")){ tourMenuZu(); return; } const f=document.getElementById("tourFab"), L=TOURS[TOUR.app], nd=typeof nurDemo==="function"&&nurDemo();
+function tourMenu(anker){ if(!TOUR) return; if(document.getElementById("tourMenu")){ tourMenuZu(); return; } const f=anker||document.getElementById("tourFab")||document.getElementById("tourBox"), L=TOURS[TOUR.app], nd=typeof nurDemo==="function"&&nurDemo();
   document.body.insertAdjacentHTML("beforeend",`<div id="tourMenu" role="menu">
     <button class="tm-i haupt" data-tour="${TOUR.pause?"weiterspielen":"pause"}">${tourSvg(TOUR.pause?"play":"pause")}<span>${TOUR.pause?"Präsentation fortsetzen":"Pausieren – frei zeigen"}</span></button>
     <div class="tm-reihe"><button class="tm-i" data-tour="zurueck" ${TOUR.i?"":"disabled"}>${tourSvg("zur")}Zurück</button><button class="tm-i" data-tour="weiter">Weiter${tourSvg("vor")}</button></div>
@@ -117,7 +120,7 @@ function tourMenu(){ if(!TOUR) return; if(document.getElementById("tourMenu")){ 
     <button class="tm-i" data-tour="nurdemo"><span>Nur Beispieldaten</span><span class="schalter${nd?" an":""}" aria-hidden="true"><i></i></span></button>
     <button class="tm-i weg" data-tour="ende"><span>Präsentation beenden</span></button></div>`);
   const m=document.getElementById("tourMenu"), r=f.getBoundingClientRect(), w=m.offsetWidth, h=m.offsetHeight;
-  m.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left))+"px"; m.style.top=(r.top-h-8>8?r.top-h-8:Math.min(innerHeight-h-8,r.bottom+8))+"px";
+  m.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left))+"px"; m.style.top=(r.top-h-8>8?r.top-h-8:Math.max(8,Math.min(innerHeight-h-8,r.bottom+8)))+"px";
   m.querySelector(".tm-s.an")?.scrollIntoView({block:"center"}); }
 function tourPause(an){ if(!TOUR) return; TOUR.pause=an; const l=document.getElementById("tourLayer"); if(l) l.style.display=an?"none":""; document.body.classList.toggle("tour-pause",an); tourMenuZu(); tourFab(); if(!an) tourZeig(); }
 function tourSicht(el){ if(!el) return false; const r=el.getBoundingClientRect(), st=getComputedStyle(el); return r.width>4&&r.height>4&&st.visibility!=="hidden"&&st.display!=="none"&&!el.closest("[hidden]"); }
@@ -171,22 +174,29 @@ function tourSchritt(d){ if(!TOUR) return; const L=TOURS[TOUR.app], n=TOUR.i+d; 
 function tourApp(app){ if(app===TOUR_APP){ if(TOUR){ TOUR.i=0; tourMerk(); tourFab(); tourZeig(); } else tourStart(app,0,true); return; }
   try{ sessionStorage.setItem(TOUR_SK,JSON.stringify({app,i:0})); }catch(e){} if(!TOUR) tourDemoAn(true);
   const pfad={uebersicht:"uebersicht",evse:"evse",baustelle:"baustelle",echeck:"echeck"}[app]; location.href=`../${pfad}/?tour=${app}`; }
-/* Wischen auf der Karte (iPad): links = weiter, rechts = zurück */
+/* Wischen auf der Karte (iPad): links = weiter, rechts = zurück. tourLang: Zeitpunkt des letzten langen Drückens – der Klick danach darf das Menü nicht gleich wieder schließen */
+let tourLang=0;
 function tourWisch(){ const l=document.getElementById("tourLayer"); if(!l||l.dataset.w) return; l.dataset.w="1"; let st=null;
-  l.addEventListener("pointerdown",e=>{ st={x:e.clientX,y:e.clientY}; });
-  l.addEventListener("pointerup",e=>{ if(!st||!TOUR||TOUR.pause) return; const dx=e.clientX-st.x, dy=e.clientY-st.y; st=null; if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.5) tourSchritt(dx<0?1:-1); }); }
+  let lang=null;
+  l.addEventListener("pointerdown",e=>{ st={x:e.clientX,y:e.clientY}; clearTimeout(lang); const k=e.target.closest&&e.target.closest(".tb-k"); if(k&&!e.target.closest("button")) lang=setTimeout(()=>{ st=null; tourLang=Date.now(); tourMenu(k); },550); });
+  l.addEventListener("pointermove",e=>{ if(st&&Math.hypot(e.clientX-st.x,e.clientY-st.y)>8) clearTimeout(lang); });
+  l.addEventListener("pointercancel",()=>clearTimeout(lang));
+  l.addEventListener("pointerup",e=>{ clearTimeout(lang); if(!st||!TOUR||TOUR.pause) return; const dx=e.clientX-st.x, dy=e.clientY-st.y; st=null; if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.5) tourSchritt(dx<0?1:-1); }); }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest("[data-tour]"); if(b){ e.stopImmediatePropagation(); e.preventDefault(); const a=b.dataset.tour;
     if(a==="weiter"){ tourMenuZu(); tourSchritt(1); } else if(a==="zurueck"){ tourMenuZu(); tourSchritt(-1); } else if(a==="ende") tourEnde(); else if(a==="app"){ tourMenuZu(); tourApp(b.dataset.v); }
     else if(a==="pause") tourPause(true); else if(a==="weiterspielen") tourPause(false);
     else if(a==="geh"&&TOUR){ tourMenuZu(); TOUR.i=+b.dataset.v; tourMerk(); if(TOUR.pause) tourPause(false); else { tourFab(); tourZeig(); } }
     else if(a==="nurdemo"){ const an=!(typeof nurDemo==="function"&&nurDemo()); if(typeof nurDemoSetzen==="function") nurDemoSetzen(an); const s=b.querySelector(".schalter"); if(s) s.classList.toggle("an",an); if(TOUR&&!TOUR.pause) setTimeout(tourZeig,200); }
     else if(a==="start"){ if(typeof closeOverlays==="function") closeOverlays(); const app=b.dataset.v||TOUR_APP; if(app===TOUR_APP) tourStart(app,0,true); else tourApp(app); } return; }
-  const fab=e.target.closest&&e.target.closest("#tourFab"); if(fab){ e.stopImmediatePropagation(); e.preventDefault(); if(!fab.dataset.gezogen) tourMenu(); return; }
+  const fab=e.target.closest&&e.target.closest("#tourFab"); if(fab){ e.stopImmediatePropagation(); e.preventDefault(); if(!fab.dataset.gezogen) tourPause(false); return; }
+  if(Date.now()-tourLang<900){ e.stopImmediatePropagation(); e.preventDefault(); return; }
   if(document.getElementById("tourMenu")&&!(e.target.closest&&e.target.closest("#tourMenu"))) tourMenuZu();
   if(TOUR&&!TOUR.pause&&e.target.closest&&e.target.closest("#tourLayer")){ e.stopImmediatePropagation(); e.preventDefault(); } },true);
 document.addEventListener("keydown",e=>{ if(!TOUR) return; const k=e.key, tippt=e.target&&/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
-  if(((k==="p"||k==="P")&&!tippt&&!e.ctrlKey&&!e.metaKey)||(k==="Escape"&&!TOUR.pause)){ e.preventDefault(); e.stopImmediatePropagation(); tourPause(!TOUR.pause); return; }
-  if(TOUR.pause) return; /* pausiert: Tastatur gehört wieder der App */
+  /* Klicker (Bluetooth, am iPad als Tastatur): Bild ab/auf = weiter/zurück, „Bildschirm schwarz“ (b oder .) und F5 = Pause/weiter */
+  if(((["p","P","b","B","."].includes(k))&&!tippt&&!e.ctrlKey&&!e.metaKey)||k==="F5"||(k==="Escape"&&!TOUR.pause)){ e.preventDefault(); e.stopImmediatePropagation(); tourPause(!TOUR.pause); return; }
+  if(TOUR.pause){ if(k==="PageDown"||k==="PageUp"){ e.preventDefault(); e.stopImmediatePropagation(); tourPause(false); } return; } /* pausiert: Tastatur gehört der App, nur der Klicker holt zurück */
+  if(k==="m"||k==="M"){ e.preventDefault(); tourMenu(); return; }
   if(["ArrowRight","ArrowDown","PageDown"," ","Enter"].includes(k)){ e.preventDefault(); e.stopImmediatePropagation(); tourSchritt(1); }
   else if(["ArrowLeft","ArrowUp","PageUp","Backspace"].includes(k)){ e.preventDefault(); e.stopImmediatePropagation(); tourSchritt(-1); } },true);
 addEventListener("resize",()=>{ if(TOUR){ if(!tourMoeglich()){ tourEnde(); return; } tourMenuZu(); if(!TOUR.pause) tourZeig(); } });
@@ -201,6 +211,6 @@ function tourZeile(){ if(!tourMoeglich()) return ""; return `<div class="li" rol
 function tourWahl(){ const n=a=>TOURS[a].length;
   dialog("Präsentation starten",`<div class="list">${TOUR_FOLGE.map(a=>`<button class="li" data-tour="start" data-v="${a}"><span class="av">${icon("bulb")}</span><span class="lt"><span class="h">${esc(TOUR_NAME[a])}${a==="uebersicht"?" – von vorne":""}</span><span class="s">${n(a)} Schritte${a===TOUR_APP?" · diese App":" · öffnet die App"}</span></span>${icon("chev")}</button>`).join("")}</div>
     <p class="sup" style="margin:14px 4px 0">Gezeigt werden Beispielkunden (Familie Kessler, Kunststoffwerk Nordhang u. a.) – echte Kunden und Aufträge sind währenddessen ausgeblendet, nichts davon wird hochgeladen. Beim Beenden verschwinden die Beispieldaten wieder.</p>
-    <p class="sup" style="margin:8px 4px 0">Steuern: Pfeiltasten, Leertaste, Fernbedienung oder auf der Karte wischen. P oder Esc = Pause, um frei etwas zu zeigen; der schwebende Knopf unten links führt zurück und hat Schrittliste und Beenden.</p>`,
+    <p class="sup" style="margin:8px 4px 0">Auf der Tafel ist nur die App mit der Erklärkarte zu sehen – keine Steuerknöpfe. Weiter und zurück: Knöpfe auf der Karte, auf der Karte wischen oder Bluetooth-Klicker (Bild ab/auf). Pause zum freien Zeigen: Pause-Symbol auf der Karte oder Klicker-Taste „Bildschirm schwarz“. Zurück aus der Pause: kleiner runder Knopf unten links oder Klicker. Menü mit Schrittliste, App-Wechsel und Beenden: lange auf den Kopf der Karte drücken (bzw. auf den runden Knopf).</p>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`); }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="tourWahl"]'); if(!b) return; e.stopImmediatePropagation(); e.preventDefault(); tourWahl(); },true);
