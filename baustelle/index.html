@@ -2472,7 +2472,7 @@ body.tour-an .snackbar{display:none}
 .kal-filt{width:48px;height:48px;border:0;border-radius:50%;background:var(--sc-high);color:var(--on-sv);display:grid;place-items:center;cursor:pointer;position:relative}
 .kal-filt .ic{width:22px;height:22px}.kal-filt.an{color:var(--primary);background:var(--pc)}
 .seg.ans-seg.kal-ans{height:48px!important}.seg.ans-seg.kal-ans button{height:40px!important;flex-basis:48px!important;width:48px}
-.kal-fd{width:14px;height:14px;border-radius:4px;flex:none;margin:0 6px 0 4px}.kal-fd.kal-o{background:var(--primary)}.kal-fd.kal-a{background:#3b6fd8}.kal-fd.kal-g{background:#2e9b5b}.kal-fd:empty:not(.kal-o):not(.kal-a):not(.kal-g){display:none}
+.kal-fd{width:14px;height:14px;border-radius:4px;flex:none;margin:0 6px 0 4px}.kal-fd.kal-o{background:var(--primary)}.kal-fd.kal-a{background:#3b6fd8}.kal-fd.kal-g{background:#2e9b5b}.kal-fd:empty:not(.kal-o):not(.kal-a):not(.kal-g):not(.kal-c){display:none}
 /* Hinweis „nicht verbunden“: eine schmale Zeile */
 .kal-verb{display:flex;align-items:center;gap:12px;background:var(--sc);border-radius:18px;padding:8px 8px 8px 12px;margin:0 0 14px}
 .kal-verb-ic{width:32px;height:32px;border-radius:10px;background:var(--sc-highest);color:var(--on-sv);display:grid;place-items:center;flex:none}.kal-verb-ic .ic{width:18px;height:18px}
@@ -2569,6 +2569,20 @@ body.kal-mit-pane .kal-wscroll{max-height:calc(100dvh - 330px)}
 /* Filter: kleine Pille, dezenter als die übrigen Knöpfe */
 .kal-filt,.kal-filt.an{background:color-mix(in srgb,var(--on-surface) 6%,transparent)!important;width:48px;height:48px}
 @media (hover:hover){.kal-filt:hover{background:var(--sc-high)!important}}
+
+/* eigene Kalender: Farbe über --c */
+.kal-ev.kal-c,.kal-mev.kal-c,.kal-li.kal-c{background:color-mix(in srgb,var(--c) 30%,var(--surface));color:var(--on-surface)}
+.kal-lbar.kal-c{background:var(--c)}.kal-fd.kal-c{background:var(--c)}
+.kal-fe{width:40px;height:40px;border:0;border-radius:50%;background:none;color:var(--on-sv);display:grid;place-items:center;margin-right:4px;cursor:pointer;flex:none}.kal-fe .ic{width:20px;height:20px}
+.kal-fd.kal-plus{background:none;color:var(--on-sv);display:grid;place-items:center;overflow:visible}.kal-fd.kal-plus .ic{width:20px;height:20px;flex:none}
+.kal-pal{display:flex;flex-wrap:wrap;gap:10px;padding:0 4px}
+.kal-sw{width:40px;height:40px;border:0;border-radius:50%;background:var(--c);cursor:pointer;position:relative;padding:0}
+.kal-sw.an::after{content:"";position:absolute;inset:13px;border-radius:50%;background:#fff}
+.kal-sw:disabled{opacity:.22;cursor:not-allowed}
+.kal-wahl{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.kal-wd{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:8px}
+.kal-eigen-h{display:none;margin:4px 4px 0}.kal-art-eigen .kal-eigen-h{display:block}.kal-art-eigen .kal-mit-w{display:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) :is(.kal-ev,.kal-mev,.kal-li).kal-c{background:color-mix(in srgb,var(--c) 42%,var(--surface))}}
+:root[data-theme="dark"] :is(.kal-ev,.kal-mev,.kal-li).kal-c{background:color-mix(in srgb,var(--c) 42%,var(--surface))}
 
 </style>
 </head>
