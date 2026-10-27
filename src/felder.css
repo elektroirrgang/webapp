@@ -1091,5 +1091,5 @@ body.kal-mit-pane .kal-wscroll{max-height:calc(100dvh - 330px)}
 .kal-filt{background:transparent!important;color:var(--on-sv)}.kal-filt.an{background:transparent!important;color:var(--primary)}
 @media (hover:hover){.kal-filt:hover{background:var(--sc)!important}}
 /* Filter: kleine Pille, dezenter als die übrigen Knöpfe */
-.kal-filt{background:var(--sc)!important;width:48px;height:48px}
+.kal-filt,.kal-filt.an{background:color-mix(in srgb,var(--on-surface) 6%,transparent)!important;width:48px;height:48px}
 @media (hover:hover){.kal-filt:hover{background:var(--sc-high)!important}}
