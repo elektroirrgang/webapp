@@ -1606,6 +1606,7 @@ function pfadTeile(){
   if(nav.v==="standort"){ const s=standortOf(nav.id); return kette(s&&s.kundeId); }
   if(nav.v==="kunde") return kette();
   if(nav.v==="ma") return [["Einstellungen",{v:"mehr"}],["Mitarbeiter",{v:"team"}]];
+  if(nav.v==="mldg") return [["Aufträge",{v:"auftraege"}]];
   if(MEHR_SUB[nav.v]) return [["Einstellungen",{v:"mehr"}]];
   return [];
 }
@@ -1864,7 +1865,7 @@ function render(){ profilAnwenden();
   document.body.classList.toggle("has-nav",!login);
   $("#backBtn").hidden=top||login; $("#navbar").hidden=login; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]);
   $("#menuBtn").hidden=!(VIEW_KIND[nav.v]&&kdDarf()); kdKopfKnopf();
-  const active=nav.v==="meldungen"?"":top?nav.v:HANDY_WEG.includes(nav.v)?"start":(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":"kunden";
+  const active=nav.v==="meldungen"?"":top?nav.v:nav.v==="mldg"?"auftraege":HANDY_WEG.includes(nav.v)?"start":(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":"kunden";
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
     +TD.map(([k,t,i])=>`<button class="nav-item${k==="mehr"?" nav-end":""}" data-act="nav" data-v="${k}" ${k===active?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join("");
@@ -1876,6 +1877,7 @@ function render(){ profilAnwenden();
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=ME.admin?["newKunde","Kunde","add"]:null; }
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
   else if(nav.v==="auftraege"){ title="Aufträge"; body=vorgaengeView(); fab=["vgNeu","Vorgang","add"]; }
+  else if(nav.v==="mldg"){ title="Meldungen"; body=mlUebersicht(); }
   else if(nav.v==="materialanf"){ title="Materialanforderungen"; body=`<div class="narrow">${anfListeView()}</div>`; fab=["afNeu","Anfordern","add"]; }
   else if(nav.v==="mehr"){ title="Einstellungen"; body=mehrView(); }
   else if(nav.v==="ma"){ if(!ME.admin){ nav={v:"mehr"}; return render(); } const m=nav.id?teamAlle().find(x=>x.mail===nav.id):null; title=m?m.name:"Mitarbeiter hinzufügen"; body=maView(m); }
@@ -2418,6 +2420,7 @@ function openMenu(){
 function zurueck(){
   if(nav.v==="standort"){ const s=standortOf(nav.id); go(s?{v:"kunde",id:s.kundeId}:{v:"kunden"}); return; }
   if(nav.v==="kunde"){ go({v:"kunden"}); return; }
+  if(nav.v==="mldg"){ go({v:"auftraege"}); return; }
   if(nav.v==="ma"){ teamForm=null; go({v:"team"}); return; }
   if(MEHR_SUB[nav.v]){ go({v:"mehr"}); return; }
   go({v:"start"});

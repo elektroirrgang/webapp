@@ -815,3 +815,8 @@ body.sf-an nav.navbar.navbar{padding-bottom:200px!important}
 .ml-dlg .row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .ml-foto{display:flex;align-items:center;gap:12px;margin-top:8px}.ml-foto span{flex:1;font-size:14px;color:var(--on-sv)}
 .ml-foto .btn-tonal{display:inline-flex;align-items:center;gap:6px}
+.ml-tun{font-size:13px!important;white-space:normal!important;color:var(--on-surface);margin:2px 0}.ml-tun em{font-style:normal;font-weight:700}
+.ml-z .vk-ps{flex:none}
+.ml-zust{margin-bottom:8px}.ml-zust .chip[disabled]{opacity:.45}
+.ml-chip{margin-left:auto}
+.ml-seite2 .ml-z{margin-top:6px}

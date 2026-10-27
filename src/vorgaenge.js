@@ -168,10 +168,12 @@ function vorgaengeView(){ vgAbgleich();
   const chips=tafel?`<div class="chips vg-chips"><button class="chip" data-act="vgWer" data-v="alle" aria-pressed="${w==="alle"}">Alle</button><button class="chip" data-act="vgWer" data-v="mein" aria-pressed="${w==="mein"}">Meine</button><button class="chip" data-act="vgWer" data-v="zust" aria-pressed="${w==="zust"}">Mir zugewiesen</button><button class="chip" data-act="vgDr" aria-pressed="${fW("vg","dr")==="ja"}">Nur dringende</button>${ans==="tabelle"?`<span class="vg-chsp"></span><button class="chip" data-act="vgK" data-v="erledigt" aria-pressed="${kAkt==="erledigt"}">Erledigt</button><button class="chip" data-act="vgK" data-v="abgelehnt" aria-pressed="${kAkt==="abgelehnt"}">Abgelehnt</button>`:""}</div>`
     :`<div class="chips vg-chips">${VG_F.map(([k,t])=>`<button class="chip" data-act="vgFilter" data-v="${k}" aria-pressed="${f===k}">${esc(t)}${k==="erledigt"||k==="abgelehnt"?"":`<span class="chip-n">${n(k)}</span>`}</button>`).join("")}</div>`;
   const kopf=`<div class="bib-kopf">${searchBar(typeof WIDE!=="undefined"&&!WIDE.matches?"Kunde, Anliegen, Nr.":"Kunde, Anliegen, SCC-Nr., Person",fKnopf("vg")).replace(/<\/div>$/,`<button type="button" class="such-f such-ans" data-act="ansMenue" aria-label="Ansicht wechseln" title="Ansicht">${icon(ans==="tafel"?"vgTafel":ans==="tabelle"?"vgTabelle":"vgListe")}</button></div>`)}<div class="seg ans-seg" role="group" aria-label="Ansicht">${VG_PC.matches?`<button data-act="vgAnsicht" data-v="tabelle" aria-pressed="${ans==="tabelle"}" title="Tabelle">${icon("vgTabelle")}</button>`:""}<button data-act="vgAnsicht" data-v="tafel" aria-pressed="${ans==="tafel"}" title="Tafel">${icon("vgTafel")}</button><button data-act="vgAnsicht" data-v="liste" aria-pressed="${ans==="liste"}" title="Liste">${icon("vgListe")}</button></div></div>`;
+  const mlN=!VG_HIER()&&vgAlle().some(x=>x.rahmen)?mlAlleOffen().length:-1;
+  const mlChip=mlN>=0?`<button class="chip ml-chip" data-act="nav" data-v="mldg">Meldungen<span class="chip-n">${mlN}</span></button>`:"";
   const v=VG_SEL&&DB.vorgaenge.get(VG_SEL); if(VG_SEL&&(!v||v.deleted)) VG_SEL=null;
   if(!vgAlle().length) return `<div class="narrow vg">${kopf}<div class="empty bib-leer">${icon("vgTafel")}<h2>Noch keine Aufträge</h2><p>Kommt ein Anruf rein: ${typeof WIDE!=="undefined"&&!WIDE.matches?"auf „+ Vorgang“ tippen":"„N“ drücken oder auf „+ Vorgang“"} – Kunde und Anliegen eintragen, fertig. Danach wandert die Karte von links nach rechts: Neu, beim Büro, beauftragt, geplant, erledigt.</p></div></div>`;
   if(ans==="tabelle") vgMarkAufraeumen();
-  return `<div class="narrow vg${VG_SEL?" mit-panel":""}${ans==="tafel"?" ist-tafel":""}${ans==="tabelle"?" ist-tabelle":""}">${kopf}${ans==="tabelle"?vgKennzahlen():""}${chips}<div id="res">${vgListe()}</div></div>${VG_SEL&&v?vgPanel(v):""}${ans==="tabelle"?vgLeiste():""}`; }
+  return `<div class="narrow vg${VG_SEL?" mit-panel":""}${ans==="tafel"?" ist-tafel":""}${ans==="tabelle"?" ist-tabelle":""}">${kopf}${ans==="tabelle"?vgKennzahlen():""}${mlChip?chips.replace(/<\/div>$/,mlChip+"</div>"):chips}<div id="res">${vgListe()}</div></div>${VG_SEL&&v?vgPanel(v):""}${ans==="tabelle"?vgLeiste():""}`; }
 /* ===== Seitenleiste: alles zu einem Auftrag ===== */
 function vgVerlauf(v){ const E=[];
   VG_S.forEach(([k,t],i)=>{ const s=v.s&&v.s[k]; if(s) E.push({at:s.at||0,html:`<div class="vv-e schritt"><i class="vv-p s${i}"></i><div><b>${esc(k==="anruf"&&s.vorOrt?"Vor Ort gemeldet":VG_T[i])}</b><span>${esc((s.wer&&s.wer.name)||"–")} · ${esc(vgZeit(s.at))}${k==="auftrag"&&s.nr?` · SCC ${esc(s.nr)}`:""}${k==="termin"&&s.datum?` · ${esc(deDate(s.datum))}${s.zeit?` ${esc(s.zeit)} Uhr`:""}${s.mit?` · ${esc(s.mit)}`:""}`:""}</span></div>${istBuero()&&k!=="anruf"?`<button class="vv-z" data-act="vgZurueck" data-id="${esc(v.id)}" data-k="${k}" title="Zurücknehmen">${icon("back")}</button>`:""}</div>`}); });
@@ -535,21 +537,37 @@ const mlStT=st=>(ML_ST.find(x=>x[0]===(st||"offen"))||ML_ST[0])[1];
 let ML_ALLE=false, mlE=null;
 function mlAbschnitt(v){ const A=mlAlle(v.id), O=A.filter(m=>(m.status||"offen")==="offen"), S=A.filter(m=>m.status==="spaeter"), Z=A.filter(m=>m.status==="erledigt"||m.status==="ohne"), k=v.kundeId&&kundeOf(v.kundeId);
   const n=x=>A.filter(m=>(m.status||"offen")===x).length;
-  const zeile=m=>{ const st=m.status||"offen", mel=mlMelder(k,m.melderId), fertig=st==="erledigt"||st==="ohne";
-    const unter=fertig?[mlStT(st),m.fertig&&m.fertig.wer&&m.fertig.wer.name,m.fertig&&vgZeit(m.fertig.at)].filter(Boolean).join(" · "):[mel?`von ${mel.name}${mel.firma?` (${mel.firma})`:""}`:m.melderName?`von ${m.melderName}`:"",vgZeit(m.gemeldet||m.created),st==="spaeter"?"später":""].filter(Boolean).join(" · ");
-    return `<button class="ml-z ${st}${m.dringend&&!fertig?" dr":""}" data-act="vgMlAuf" data-id="${esc(m.id)}"><i class="ml-p"></i><span class="ml-t"><b>${esc(mlOrt(m)||"Ohne Ort")}</b><span>${esc(m.text||"")}</span><small>${esc(unter)}</small></span>${icon("chev")}</button>`; };
+  const zeile=m=>mlZeile(m);
   const zu=ML_ALLE?Z:Z.slice(0,5);
   return `<div class="vp-ab ml-ab"><div class="sec-row" style="margin:0"><div class="vp-l">Meldungen · ${[`${n("offen")} offen`,n("spaeter")&&`${n("spaeter")} später`,n("erledigt")&&`${n("erledigt")} erledigt`,n("ohne")&&`${n("ohne")} ohne Befund`].filter(Boolean).join(" · ")}</div>
       <span class="ab-btns"><button class="ab-ic" data-act="vgMlNeu" data-id="${esc(v.id)}" aria-label="Meldung erfassen" title="Meldung erfassen">${icon("add")}</button></span></div>
     ${[...O,...S].map(zeile).join("")||`<p class="ml-leer">Keine offenen Meldungen.</p>`}
     ${Z.length?`<div class="ml-zl">Abgeschlossen</div>${zu.map(zeile).join("")}${Z.length>5?`<button class="btn-text ml-mehr" data-act="vgMlMehr">${ML_ALLE?"Weniger anzeigen":`Alle ${Z.length} anzeigen`}</button>`:""}`:""}</div>`; }
+const mlFertig=m=>m.status==="erledigt"||m.status==="ohne";
+const mlAnf=m=>DB.anforderungen?[...DB.anforderungen.values()].find(a=>a.meldungId===m.id&&!a.deleted):null;
+function mlZeile(m){ const st=m.status||"offen", k=m.kundeId&&kundeOf(m.kundeId), mel=mlMelder(k,m.melderId), fertig=mlFertig(m), a=!fertig&&mlAnf(m);
+  const unter=fertig?[mlStT(st),m.fertig&&m.fertig.wer&&m.fertig.wer.name,m.fertig&&vgZeit(m.fertig.at)].filter(Boolean).join(" · "):[mel?`von ${mel.name}${mel.firma?` (${mel.firma})`:""}`:m.melderName?`von ${m.melderName}`:"",vgZeit(m.gemeldet||m.created),st==="spaeter"?"später":""].filter(Boolean).join(" · ");
+  const tun=!fertig&&(m.todo||a)?`<span class="ml-tun">${m.todo?`<em>Zu tun:</em> ${esc(m.todo)}`:""}${a?`${m.todo?" · ":""}<em>Mitbringen:</em> ${esc(anfPosText(a))} (${esc((ANF_TXT[a.status]||"angefordert").toLowerCase())})`:""}</span>`:"";
+  return `<button class="ml-z ${st}${m.dringend&&!fertig?" dr":""}" data-act="vgMlAuf" data-id="${esc(m.id)}"><i class="ml-p"></i><span class="ml-t"><b>${esc(mlOrt(m)||"Ohne Ort")}</b><span>${esc(m.text||"")}</span>${tun}<small>${esc(unter)}</small></span>${vgZustAv(m)}${icon("chev")}</button>`; }
+/* „2 Stück LED-Modul“, „3 m NYM“, „LED-Modul“ → {t,q,u} (Ersatz, wenn das Material-Modul der Baustellen-App fehlt) */
+function mlPos(z){ z=String(z||"").replace(/^[\s\-–•*]+/,"").trim(); const m=/^(\d+(?:[.,]\d+)?)\s*(x|×|stk\.?|stück|m|meter|pck\.?|packung(?:en)?|rolle(?:n)?|satz|paar)?\.?\s+(.+)$/i.exec(z);
+  if(!m) return {t:z,q:1,u:"Stück"}; const u=String(m[2]||"").toLowerCase(), U=/^(m|meter)$/.test(u)?"m":/^p(ck|ackung)/.test(u)?"Packung":/^rolle/.test(u)?"Rolle":u==="satz"?"Satz":u==="paar"?"Paar":"Stück";
+  return {t:m[3].trim(),q:parseFloat(m[1].replace(",","."))||1,u:U}; }
+/* „Mitbringen“ wird eine Materialanforderung – erscheint beim Büro unter Material (angefordert → bestellt → da) */
+function mlAnfSync(m){ if(!DB.anforderungen) return; const txt=String(m.mitbringen||"").trim();
+  const pos=!txt?[]:(typeof matAusText==="function"?matAusText(txt):txt.split(/\n+/).map(mlPos)).filter(x=>String(x.t||"").trim()).map(x=>({t:String(x.t).trim(),q:x.q,u:x.u}));
+  const a=mlAnf(m);
+  if(a){ if(a.status!=="angefordert"||JSON.stringify(a.pos)===JSON.stringify(pos)) return; if(!pos.length) a.deleted=true; a.pos=pos; saveRec("anforderungen",a); return; }
+  if(pos.length) saveRec("anforderungen",{id:uid(),baustelleId:"",meldungId:m.id,pos,notiz:"",status:"angefordert",statusAm:Date.now(),statusVon:who()},true); }
 /* Vorschläge für Bauteil/Ebene/Raum aus früheren Meldungen desselben Kunden */
 function mlVorschl(kid,f){ const s=new Set(); live("vorgaenge").filter(m=>m.typ==="meldung"&&m.kundeId===kid).forEach(m=>{ const x=String(m[f]||"").trim(); if(x) s.add(x); }); return [...s].sort((a,b)=>a.localeCompare(b,"de",{numeric:true})); }
 const mlDl=(id,L)=>`<datalist id="${id}">${L.map(x=>`<option value="${esc(x)}">`).join("")}</datalist>`;
 const mlDtLokal=t=>{ const d=new Date(t||Date.now()); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); };
 function mlDialog(r,m){ const k=r.kundeId&&kundeOf(r.kundeId), M=(k&&Array.isArray(k.melder)?k.melder:[]);
   mlE=m?JSON.parse(JSON.stringify(m)):{id:null,rahmenId:r.id,kundeId:r.kundeId||"",status:"offen",melderId:(M.find(x=>x.id===(mlAlle(r.id)[0]||{}).melderId)||{}).id||""};
-  mlE.neuMelder=false;
+  mlE.neuMelder=false; mlE.zustSel=m?vgZustL(m).map(p=>String(p.mail||"").toLowerCase()):[];
+  const darfZ=mail=>istBuero()||String(mail).toLowerCase()===String(ME.mail||"").toLowerCase();
+  const zChips=`<div class="chips ml-zust">${team().filter(x=>x.mail&&x.status!=="weg").map(x=>`<button type="button" class="chip" data-act="vgMlZu" data-mail="${esc(String(x.mail).toLowerCase())}" aria-pressed="${mlE.zustSel.includes(String(x.mail).toLowerCase())}"${darfZ(x.mail)?"":" disabled"}>${esc(x.name)}</button>`).join("")}</div>`;
   const chips=`<div class="chips ml-mel">${M.map(x=>`<button type="button" class="chip" data-act="vgMlMel" data-v="${esc(x.id)}" aria-pressed="${mlE.melderId===x.id}">${esc(x.name)}${x.firma?` · ${esc(x.firma)}`:""}</button>`).join("")}<button type="button" class="chip" data-act="vgMlMel" data-v="_neu">${icon("add")}Neuer Melder</button></div>`;
   const fertig=!!m;
   dialog(m?"Meldung":"Neue Meldung",`<div class="fg1 ml-dlg">
@@ -558,6 +576,9 @@ function mlDialog(r,m){ const k=r.kundeId&&kundeOf(r.kundeId), M=(k&&Array.isArr
     <div class="row3">${tf("mlBt","Bauteil",mlE.bauteil||"",{form:true,list:"dl-mlbt",ph:"z. B. C"})}${tf("mlEb","Ebene",mlE.ebene||"",{form:true,list:"dl-mleb",ph:"z. B. EG"})}${tf("mlRm","Raum / Bereich",mlE.raum||"",{form:true,list:"dl-mlrm",ph:"z. B. WC"})}</div>
     ${ta("mlTx","Was ist gemeldet?",mlE.text||"",{form:true,ph:"z. B. Notbeleuchtung flackert"})}
     ${tf("mlAm","Gemeldet am",mlDtLokal(mlE.gemeldet),{form:true,type:"datetime-local"})}<div class="vg-drw"><span>Dringend</span>${seg("vgMlDr",mlE.dringend?"ja":"nein",[["nein","Nein"],["ja","Ja"]])}</div>
+    <div class="lbl" style="margin:12px 4px 6px">Zuständig${istBuero()?"":" (du kannst dich selbst eintragen)"}</div>${zChips}
+    ${ta("mlTd","Noch zu tun (optional)",mlE.todo||"",{form:true,ph:"z. B. EVG ausbauen, LED-Ersatzmodul einsetzen"})}
+    ${ta("mlMb","Mitbringen (eine Zeile pro Teil, optional)",mlE.mitbringen||"",{form:true,ph:"z. B. 1 Stück LED-Ersatzmodul 1500 mm"})}
     ${fertig?`<div class="lbl" style="margin:12px 4px 6px">Ergebnis</div>${seg("vgMlSt",mlE.status||"offen",ML_ST)}
       ${ta("mlNo","Was wurde gemacht? (Notiz)",mlE.notiz||"",{form:true,ph:"z. B. Akku der Notleuchte getauscht"})}
       <div class="row2">${tf("mlZt","Arbeitszeit (Std.)",mlE.zeit!=null?String(mlE.zeit).replace(".",","):"",{form:true,im:"decimal",ph:"z. B. 0,5"})}<span></span></div>
@@ -578,7 +599,10 @@ function mlSpeichern(){ const F=formVals(), r=DB.vorgaenge.get(mlE.rahmenId); if
   if(!neu){ m.notiz=F.mlNo||""; const z=parseFloat(String(F.mlZt||"").replace(",",".")); if(isNaN(z)) delete m.zeit; else m.zeit=z; m.material=F.mlMa||"";
     const fertig=m.status==="erledigt"||m.status==="ohne"; if(fertig&&(vorher!==m.status||!m.fertig)) m.fertig={wer:who(),at:Date.now()}; if(!fertig) delete m.fertig; }
   if(neu){ m.von=who(); if(r.demo) m.demo=true; }
-  saveRec("vorgaenge",m,neu); closeOverlays(); render(); toast(neu?"Meldung erfasst":"Gespeichert"); }
+  m.todo=F.mlTd||""; m.mitbringen=F.mlMb||"";
+  { const alt=vgZustL(m), sel=mlE.zustSel||[]; const L=sel.map(mail=>alt.find(p=>String(p.mail||"").toLowerCase()===mail)||(x=>x&&{mail:String(x.mail).toLowerCase(),name:x.name,at:Date.now(),von:who()})(team().find(x=>String(x.mail).toLowerCase()===mail))).filter(Boolean);
+    m.zustAlle=L; m.zust=L[0]||null; }
+  saveRec("vorgaenge",m,neu); mlAnfSync(m); closeOverlays(); render(); toast(neu?"Meldung erfasst":"Gespeichert"); }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="vgMl"]'); if(!b) return; e.stopImmediatePropagation(); e.preventDefault();
   const a=b.dataset.act, seg1=()=>{ b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)); if(typeof segInd==="function") segInd(); };
   if(a==="vgMlNeu"){ const r=DB.vorgaenge.get(b.dataset.id); if(r) mlDialog(r,null); }
@@ -587,8 +611,24 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="vgMlMel"&&mlE){ const v=b.dataset.v, neuM=v==="_neu"; mlE.neuMelder=neuM; if(!neuM) mlE.melderId=mlE.melderId===v?"":v;
     b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(neuM?x===b:x.dataset.v===mlE.melderId)));
     const f=document.getElementById("mlNeuMel"); if(f){ f.hidden=!neuM; if(neuM) f.querySelector("input")?.focus(); } }
+  else if(a==="vgMlZu"&&mlE){ const mail=b.dataset.mail; mlE.zustSel=mlE.zustSel.includes(mail)?mlE.zustSel.filter(x=>x!==mail):[...mlE.zustSel,mail]; b.setAttribute("aria-pressed",String(mlE.zustSel.includes(mail))); }
+  else if(a==="vgMlF"){ META.mlF=b.dataset.v; metaSave(); render(); }
   else if(a==="vgMlDr"&&mlE){ mlE.dringend=b.dataset.v==="ja"; seg1(); }
   else if(a==="vgMlSt"&&mlE){ mlE.status=b.dataset.v; seg1(); }
   else if(a==="vgMlOk") mlSpeichern();
   else if(a==="vgMlDel"){ const m=DB.vorgaenge.get(b.dataset.id); if(!m) return; m.deleted=true; saveRec("vorgaenge",m); closeOverlays(); render(); toast("Meldung gelöscht","Rückgängig",()=>{ delete m.deleted; saveRec("vorgaenge",m); render(); }); }
 },true);
+
+/* ===== Alle Meldungen (Büro): sehen, zuordnen, nachhalten ===== */
+const ML_F=[["offen","Offen"],["frei","Ohne Zuständigen"],["mein","Meine"],["spaeter","Später"],["fertig","Abgeschlossen"]];
+const mlAlleOffen=()=>live("vorgaenge").filter(m=>m.typ==="meldung"&&!mlFertig(m)&&DB.vorgaenge.get(m.rahmenId));
+function mlFilter(f){ const L=live("vorgaenge").filter(m=>m.typ==="meldung"&&DB.vorgaenge.get(m.rahmenId)&&!DB.vorgaenge.get(m.rahmenId).deleted);
+  return L.filter(m=>f==="fertig"?mlFertig(m):f==="frei"?!mlFertig(m)&&!vgZustL(m).length:f==="mein"?!mlFertig(m)&&vgZustIch(m):f==="spaeter"?m.status==="spaeter":!mlFertig(m))
+    .sort((a,b)=>(!!b.dringend-!!a.dringend)||(f==="fertig"?((b.fertig&&b.fertig.at)||0)-((a.fertig&&a.fertig.at)||0):(a.gemeldet||a.created||0)-(b.gemeldet||b.created||0))); }
+function mlUebersicht(){ const f=META.mlF||"offen", L=mlFilter(f), G=new Map();
+  if(nav.ml){ const id=nav.ml; delete nav.ml; setTimeout(()=>{ const m=DB.vorgaenge.get(id), r=m&&DB.vorgaenge.get(m.rahmenId); if(r) mlDialog(r,m); },0); }
+  (f==="fertig"?L.slice(0,60):L).forEach(m=>{ if(!G.has(m.rahmenId)) G.set(m.rahmenId,[]); G.get(m.rahmenId).push(m); });
+  const chips=`<div class="chips vg-chips">${ML_F.map(([k,t])=>`<button class="chip" data-act="vgMlF" data-v="${k}" aria-pressed="${f===k}">${esc(t)}${k==="fertig"?"":`<span class="chip-n">${mlFilter(k).length}</span>`}</button>`).join("")}</div>`;
+  const leer={offen:"Keine offenen Meldungen.",frei:"Alle offenen Meldungen haben einen Zuständigen.",mein:"Dir ist keine offene Meldung zugeordnet.",spaeter:"Nichts zurückgestellt.",fertig:"Noch nichts abgeschlossen."}[f];
+  return `<div class="narrow ml-seite2">${chips}${[...G].map(([rid,M])=>{ const r=DB.vorgaenge.get(rid);
+    return `<div class="sec-row"><div class="sec-lbl">${esc(vgKunde(r))} · Rahmenauftrag${r.s&&r.s.auftrag&&r.s.auftrag.nr?` · SCC ${esc(r.s.auftrag.nr)}`:""}</div><span class="ab-btns"><button class="ab-ic" data-act="vgMlNeu" data-id="${esc(rid)}" aria-label="Meldung erfassen" title="Meldung erfassen">${icon("add")}</button></span></div>${M.map(mlZeile).join("")}`; }).join("")||`<p class="meta" style="margin:16px 4px">${leer}</p>`}</div>`; }

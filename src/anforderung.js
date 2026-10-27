@@ -9,7 +9,8 @@ const anfVerw=()=>!!(ME.admin||ME.buero);
 const anfFmt=n=>String(Math.round((+n||0)*100)/100).replace(".",",");
 const anfPosText=a=>(a.pos||[]).map(x=>`${anfFmt(x.q)} ${x.u||""} ${x.t}`.replace(/\s+/g," ").trim()).join(", ");
 const anfBau=a=>a.baustelleId&&DB.baustellen&&DB.baustellen.get(a.baustelleId);
-const anfOrt=a=>{ const b=anfBau(a); return b&&!b.deleted?b.name:"Allgemein (Lager / Werkstatt)"; };
+const anfOrt=a=>{ if(a.meldungId&&DB.vorgaenge){ const m=DB.vorgaenge.get(a.meldungId); if(m){ const k=m.kundeId&&typeof kundeOf==="function"&&kundeOf(m.kundeId); return [k&&k.name,typeof mlOrt==="function"&&mlOrt(m)].filter(Boolean).join(" · ")||"Meldung"; } }
+  const b=anfBau(a); return b&&!b.deleted?b.name:"Allgemein (Lager / Werkstatt)"; };
 const anfMeine=a=>!!(a.createdBy&&a.createdBy.mail&&String(a.createdBy.mail).toLowerCase()===String(ME.mail||"").toLowerCase());
 const anfAlle=()=>(DB.anforderungen?[...DB.anforderungen.values()]:[]).filter(a=>!a.deleted&&(a.pos||[]).length);
 const anfOffen=()=>anfAlle().filter(a=>a.status!=="da");
@@ -99,6 +100,13 @@ function meldungenRoh(){
   anfAlle().filter(a=>anfMeine(a)&&a.status!=="angefordert"&&(a.statusAm||0)>=ab&&!mlIch(a.statusVon)).forEach(a=>P("anfst:"+a.id+":"+a.status,a.statusAm,a.statusVon,a.status==="da"?"hat dein Material als da markiert":"hat dein Material bestellt",`${anfOrt(a)}: ${anfPosText(a)}`,{v:"materialanf"}));
   /* Aufträge: mir zugewiesen, neue Notizen an meinen Aufträgen, fürs Büro neue Anfragen */
   alle("vorgaenge").forEach(v=>{ const kd=(v.kundeId&&typeof kundeOf==="function"&&kundeOf(v.kundeId)||{}).name||v.kundeName||"Auftrag", go={v:"auftraege",sel:v.id};
+    if(v.typ==="meldung"){ /* Meldung aus einem Rahmenauftrag */
+      const mg=typeof mlUebersicht==="function"&&!(typeof VG_HIER==="function"&&VG_HIER())?{v:"mldg",ml:v.id}:{v:"auftraege",sel:v.rahmenId}, was=`${kd}${typeof mlOrt==="function"&&mlOrt(v)?" · "+mlOrt(v):""}: ${v.text||""}`;
+      const ZM=Array.isArray(v.zustAlle)?v.zustAlle.filter(Boolean):[];
+      ZM.filter(z=>mlIch(z)&&z.von&&!mlIch(z.von)&&(z.at||0)>=ab).forEach(z=>P("mz:"+v.id+":"+z.at,z.at,z.von,"hat dir eine Meldung zugewiesen",was,mg));
+      if(anfVerw()&&!mlIch(v.createdBy)&&(v.created||0)>=ab) P("mn:"+v.id,v.created,v.createdBy,"Neue Meldung",was,mg);
+      if(v.fertig&&!mlIch(v.fertig.wer)&&(v.fertig.at||0)>=ab&&(anfVerw()||ZM.some(mlIch)||mlIch(v.createdBy))) P("mf:"+v.id+":"+v.fertig.at,v.fertig.at,v.fertig.wer,v.status==="ohne"?"Meldung ohne Befund abgeschlossen":"hat eine Meldung erledigt",was,mg);
+      return; }
     const ZL=Array.isArray(v.zustAlle)?v.zustAlle.filter(Boolean):(v.zust?[v.zust]:[]), zIch=ZL.some(mlIch);
     ZL.filter(z=>mlIch(z)&&z.von&&!mlIch(z.von)&&(z.at||0)>=ab).forEach(z=>{ const mit=ZL.filter(x=>!mlIch(x)).map(x=>x.name).filter(Boolean);
       P("vz:"+v.id+":"+z.at,z.at,z.von,"hat dir einen Auftrag zugewiesen",`${kd}${v.anliegen?": "+v.anliegen:""}${mit.length?` · mit ${mit.join(", ")}`:""}`,go); });
