@@ -4,7 +4,7 @@
    Ändern kann jeder nur sein eigenes Profil. Die Rolle kommt aus Microsoft (Chef weist sie zu), hier wird sie nur angezeigt. */
 const ROLLE_TXT={Admin:["Admin","darf alles, vergibt Rollen in Microsoft"],Buero:["Büro","Aufträge, Material bestellen, Kunden pflegen"],
   Entwickler:["Entwickler","wie Admin, dazu Testwerkzeuge"],Mitarbeiter:["Mitarbeiter","bearbeitet eigene Prüfungen, Übergaben und Notizen"]};
-function meineRollen(){ const a=typeof Auth!=="undefined"&&Auth.account; return (a&&a.idTokenClaims&&a.idTokenClaims.roles)||[]; }
+function meineRollen(){ const a=typeof Auth!=="undefined"&&Auth.account; return ((a&&a.idTokenClaims&&a.idTokenClaims.roles)||[]).map(r=>r==="Büro"?"Buero":r); } /* Wert der App-Rolle kann „Buero“ oder „Büro“ sein */
 function meineRolle(){ const R=meineRollen(); const k=["Admin","Entwickler","Buero","Mitarbeiter"].find(x=>R.includes(x)); return k?ROLLE_TXT[k]:ME.admin?ROLLE_TXT.Admin:ROLLE_TXT.Mitarbeiter; }
 const profilVon=mail=>mail&&DB.profile?DB.profile.get(String(mail).toLowerCase()):null;
 let msName=null;

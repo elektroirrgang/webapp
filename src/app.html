@@ -1308,7 +1308,7 @@ function setMe(){
   const a=Auth.account;
   if(!a){ ME={name:META.profil.name||"",mail:(META.profil.mail||"").toLowerCase(),admin:istAdmin(META.profil.mail),signedIn:false}; return; }
   const roles=(a.idTokenClaims&&a.idTokenClaims.roles)||[], mail=(a.username||"").toLowerCase();
-  ME={name:a.name||mail,mail,buero:roles.includes("Buero"),admin:(roles.includes("Admin")||roles.includes("Entwickler"))||istAdmin(mail)||CONFIG.admins.map(x=>x.toLowerCase()).includes(mail),signedIn:true};
+  ME={name:a.name||mail,mail,buero:(roles.includes("Buero")||roles.includes("Büro")),admin:(roles.includes("Admin")||roles.includes("Entwickler"))||istAdmin(mail)||CONFIG.admins.map(x=>x.toLowerCase()).includes(mail),signedIn:true};
   for(const k of KINDS) for(const r of DB[k].values()) if(!r.demo&&!r._etag&&(!r.createdBy||!r.createdBy.mail)){ r.createdBy={name:ME.name,mail:ME.mail}; r._dirty=true; dbPut(k,r); }
 }
 
