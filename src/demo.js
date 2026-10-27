@@ -9,7 +9,7 @@ const DEMO_KEY="irrgang_demo";
    Ohne Profil (nicht angemeldet) gilt der Schalter dieses Browsers. */
 const demoProfil=()=>{ try{ return typeof profilVon==="function"&&typeof ME!=="undefined"&&ME.mail?profilVon(ME.mail):null; }catch(e){ return null; } };
 const demoAn=()=>{ try{ return localStorage.getItem(DEMO_KEY)==="1"; }catch(e){ return false; } };
-const DEMO_SPEICHER=[["evse_daten",["kunden","standorte","ladeparks","pruefungen","katalog"]],["baustelle_daten",["baustellen","eintraege","notizen","anforderungen"]],["irrgang_apps",["vorgaenge","geraete","dateien","protokolle","gebaeude","anlagen"]],["echeck_daten",["gebaeude","echecks","betriebsmittel"]]];
+const DEMO_SPEICHER=[["evse_daten",["kunden","standorte","ladeparks","pruefungen","katalog"]],["baustelle_daten",["baustellen","eintraege","notizen","anforderungen"]],["irrgang_apps",["vorgaenge","geraete","dateien","protokolle","gebaeude","anlagen","termine"]],["echeck_daten",["gebaeude","echecks","betriebsmittel"]]];
 const DEMO_FOTOS={"demo-f-zp":"zp","demo-f-hak":"hak","demo-f-uvalt":"uvalt","demo-f-mangel":"mangel","demo-f-ue-baustrom":"baustrom","demo-f-ue-leerrohr":"leerrohr","demo-f-ue-uv":"uv","demo-f-ue-pa":"pa"};
 function demoDaten(){
   const T=864e5, jetzt=Date.now(), vor=(t,h=0)=>jetzt-t*T-h*36e5, tag=t=>new Date(jetzt+t*T).toISOString().slice(0,10);
@@ -43,7 +43,7 @@ function demoDaten(){
   const vorgaenge=[
     r({id:"demo-v1",kundeId:"demo-k1",anliegen:"Notbeleuchtung im Lager prüfen, eine Leuchte defekt",tel:"02294 900100",dringend:true,s:{anruf:{wer:P.bu,at:vor(0,2)}}},P.bu,vor(0,2)),
     r({id:"demo-v2",kundeId:"demo-k3",anliegen:"Angebot für zwei Drehstromsteckdosen in der Halle",s:{anruf:{wer:P.ab,at:vor(2)},anfrage:{wer:P.ab,at:vor(2)}}},P.ab,vor(2)),
-    r({id:"demo-v6",kundeId:"demo-k4",anliegen:"Außensteckdose Terrasse setzen",s:{anruf:{wer:P.bu,at:vor(9)},anfrage:{wer:P.bu,at:vor(9)},auftrag:{wer:P.bu,at:vor(7),nr:"A-24127"},termin:{wer:P.bu,at:vor(5),datum:tag(2),zeit:"7:30",mit:"A. Brandl"}},zust:{mail:P.ab.mail,name:P.ab.name,at:vor(5),von:P.bu},notizen:[{id:"demo-n1",wer:P.bu,at:vor(5),text:"Schlüssel liegt beim Nachbarn (Nr. 9)."}]},P.bu,vor(9)),
+    r({id:"demo-v6",kundeId:"demo-k4",anliegen:"Außensteckdose Terrasse setzen",s:{anruf:{wer:P.bu,at:vor(9)},anfrage:{wer:P.bu,at:vor(9)},auftrag:{wer:P.bu,at:vor(7),nr:"A-24127"},termin:{wer:P.bu,at:vor(5),datum:tag(2),zeit:"7:30",bis:"10:00",mit:"A. Brandl, M. Pevec"}},zust:{mail:P.ab.mail,name:P.ab.name,at:vor(5),von:P.bu},notizen:[{id:"demo-n1",wer:P.bu,at:vor(5),text:"Schlüssel liegt beim Nachbarn (Nr. 9)."}]},P.bu,vor(9)),
     r({id:"demo-v3",kundeId:"demo-k2",anliegen:"Zwei weitere Wallboxen an der Ausstellung",s:{anruf:{wer:P.bu,at:vor(6)},anfrage:{wer:P.bu,at:vor(6)},auftrag:{wer:P.bu,at:vor(4),nr:"A-24130"}}},P.bu,vor(6)),
     r({id:"demo-v4",kundeName:"Herr Schulz (Neukunde)",anliegen:"Wohnung renovieren – Steckdosen und Licht neu",tel:"0171 0000010",s:{anruf:{wer:P.bu,at:vor(1)}}},P.bu,vor(1)),
     r({id:"demo-v5",kundeId:"demo-k5",anliegen:"E-Check Haus B",s:{anruf:{wer:P.bu,at:vor(12)},anfrage:{wer:P.bu,at:vor(12)},auftrag:{wer:P.bu,at:vor(10),nr:"A-24062"},termin:{wer:P.bu,at:vor(8),datum:tag(-4),zeit:"8:00",mit:"M. Seipp"},ausgefuehrt:{wer:P.ms,at:vor(4)}},zust:{mail:P.ms.mail,name:P.ms.name,at:vor(10),von:P.bu}},P.bu,vor(12))];
@@ -118,7 +118,11 @@ function demoDaten(){
     r({id:"demo-m3",typ:"meldung",rahmenId:rid,kundeId:"demo-k7",standortId:"demo-s7",bauteil:"E",raum:"WC",text:"Licht kontrollieren",melderId:"demo-ml1",status:"spaeter",gemeldet:vor(3),todo:"EVG ausbauen, LED-Ersatzmodul einsetzen",mitbringen:"1 Stück LED-Ersatzmodul 1500 mm",mitLager:true,
       zustAlle:[Object.assign({at:vor(2),von:P.bu},P.ms)],zust:Object.assign({at:vor(2),von:P.bu},P.ms)},P.bu,vor(3)),
     r({id:"demo-m4",typ:"meldung",rahmenId:rid,kundeId:"demo-k7",standortId:"demo-s7",bauteil:"A/B",ebene:"EG",text:"Licht defekt, Bewegungsmelder prüfen",melderId:"demo-ml1",status:"ohne",gemeldet:vor(5),notiz:"Vor Ort alles in Ordnung",zeit:0.25,fertig:{wer:P.mp,at:vor(4)}},P.bu,vor(5)));
-  return {kunden,standorte,baustellen,eintraege,vorgaenge,anforderungen,pruefungen,protokolle,notizen,dateien,gebaeude:[...H.gebaeude,geb7,geb8],echecks:H.echecks,anlagen:[...H.anlagen,...anlagen]};
+  /* Firmentermine (Kalender der Übersicht): für alle sichtbar */
+  const jahr=new Date().getFullYear(), d6=`${jahr}-12-06`, mo=(()=>{ const x=new Date(); x.setHours(0,0,0,0); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; })(), iso=x=>`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`;
+  const termine=[r({id:"demo-ft1",t:"Weihnachtsfeier",von:`${d6}T00:00`,bis:`${jahr}-12-07T00:00`,ganz:true,ort:"Gasthaus zur Post, Waldbröl",notiz:"Ab 18 Uhr, Partner sind eingeladen.",fuer:"alle"},P.bu,vor(20)),
+    r({id:"demo-ft2",t:"Teambesprechung",von:`${iso(new Date(mo.getTime()+4*864e5))}T07:00`,bis:`${iso(new Date(mo.getTime()+4*864e5))}T07:45`,ganz:false,ort:"Werkstatt",notiz:"Wochenplanung KW",fuer:"alle"},P.bu,vor(3))];
+  return {kunden,standorte,baustellen,eintraege,vorgaenge,anforderungen,pruefungen,protokolle,notizen,dateien,gebaeude:[...H.gebaeude,geb7,geb8],echecks:H.echecks,anlagen:[...H.anlagen,...anlagen],termine};
 }
 /* Demo-Haus „Am Sonnenhang“: komplettes Gebäude für die E-Check-App – fünf Geschosse plus Garage auf EG-Ebene,
    Hauptverteilung im Keller, drei Unterverteilungen, großer Serverschrank im Technikraum (KG) und ein Mini-Verteiler im 2. OG.
@@ -307,7 +311,7 @@ const DEMO_NUR_KEY="irrgang_nur_demo", DEMO_NUR_IMMER=["einstellungen","profile"
 function nurDemo(){ try{ return localStorage.getItem(DEMO_NUR_KEY)==="1"&&demoAn(); }catch(e){ return false; } }
 function nurDemoFilter(k,r){ return !nurDemo()||!!r.demo||DEMO_NUR_IMMER.includes(k); }
 function nurDemoSetzen(an){ try{ localStorage.setItem(DEMO_NUR_KEY,an?"1":"0"); }catch(e){} if(an&&!demoAn()) demoUmschalten(true); render(); }
-const demoDa=()=>["kunden","standorte","baustellen","pruefungen","eintraege","vorgaenge","anforderungen","gebaeude","echecks","anlagen"].some(k=>DB[k]&&[...DB[k].values()].some(r=>r.demo&&!r.sim));
+const demoDa=()=>["kunden","standorte","baustellen","pruefungen","eintraege","vorgaenge","anforderungen","gebaeude","echecks","anlagen","termine"].some(k=>DB[k]&&[...DB[k].values()].some(r=>r.demo&&!r.sim));
 let demoWeg=false;
 /* Demo aus, aber noch Beispieldaten auf dem Gerät (z. B. in einer anderen App ausgeschaltet) ⇒ aufräumen */
 const demoPruefen=()=>{ try{ if(!demoAn()&&!demoWeg&&demoDa()){ demoWeg=true; demoSchalten(); } }catch(e){} };

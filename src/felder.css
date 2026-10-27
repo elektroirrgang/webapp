@@ -931,7 +931,9 @@ body.tour-an .snackbar{display:none}
 .wu-q{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;background:var(--sc-high);color:var(--on-sv);margin-bottom:6px}.wu-q.ki{background:var(--pc);color:var(--on-pc)}
 .wu-ki{height:36px}
 /* ===== Kalender ===== */
-.kal-seite,.wg{--kal-o:var(--pc);--kal-on-o:var(--on-pc);--kal-a:color-mix(in srgb,#3b6fd8 24%,var(--surface));--kal-on-a:var(--on-surface)}
+.kal-seite,.wg,#dlg{--kal-o:var(--pc);--kal-on-o:var(--on-pc);--kal-a:color-mix(in srgb,#3b6fd8 24%,var(--surface));--kal-on-a:var(--on-surface);--kal-g:color-mix(in srgb,#2e9b5b 26%,var(--surface));--kal-on-g:var(--on-surface)}
+.kal-li.kal-g,.kal-ev.kal-g,.kal-mev.kal-g{background:var(--kal-g);color:var(--kal-on-g)}
+.kal-firma-h{display:none;margin:4px 4px 0}.kal-art-firma .kal-firma-h{display:block}.kal-art-firma .kal-mit-w{display:none}
 .kal-seite.kal-s-woche,.kal-seite.kal-s-monat{max-width:none}
 .kal-kopf{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:4px 0 10px}
 .kal-nav{display:flex;align-items:center;gap:6px;min-width:0}
@@ -942,7 +944,7 @@ body.tour-an .snackbar{display:none}
 .kal-kopf .seg.kal-seg{width:auto;min-width:300px;flex:0 0 auto}
 .kal-ebenen{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px}
 .kal-punkt{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
-.kal-punkt.kal-o{background:var(--primary)}.kal-punkt.kal-a{background:#3b6fd8}
+.kal-punkt.kal-o{background:var(--primary)}.kal-punkt.kal-a{background:#3b6fd8}.kal-punkt.kal-g{background:#2e9b5b}
 .kal-stand{font-size:13px;color:var(--on-sv)}.kal-stand.warn{color:var(--err)}
 .kal-verb{display:flex;align-items:center;gap:16px;background:var(--sc);border-radius:20px;padding:16px 18px;margin:0 0 14px}
 .kal-verb>div{flex:1;min-width:0}.kal-verb b{font-size:16px}.kal-verb p{margin:4px 0 0;font-size:14px;color:var(--on-sv)}
@@ -976,7 +978,7 @@ body.tour-an .snackbar{display:none}
 .kal-wsp+.kal-wsp{box-shadow:-1px 0 0 color-mix(in srgb,var(--on-surface) 6%,transparent)}
 .kal-ev{position:absolute;box-sizing:border-box;border-radius:10px;padding:4px 7px;background:var(--kal-o);color:var(--kal-on-o);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;gap:1px;z-index:1}
 .kal-ev.kal-a{background:var(--kal-a);color:var(--kal-on-a)}.kal-ev.kal-f{background:var(--sc-highest);color:var(--on-surface)}
-.kal-ev b{font-size:13px;font-weight:600;line-height:1.25;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:anywhere;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.kal-ev b{font-size:13px;font-weight:600;line-height:1.25;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:break-word;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
 .kal-ev small{font-size:11.5px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kal-ev.klein{flex-direction:row;align-items:center;gap:6px}.kal-ev.klein b{-webkit-line-clamp:1;white-space:nowrap;text-overflow:ellipsis;display:block}.kal-ev.klein small{display:none}
 .kal-evg{position:static;font-size:12.5px;font-weight:600;padding:4px 8px;white-space:nowrap;text-overflow:ellipsis;display:block}
@@ -999,3 +1001,4 @@ body.tour-an .snackbar{display:none}
 .kal-mit{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
 .kal-dz{display:flex;gap:12px;align-items:flex-start;margin:0 0 10px;font-size:15px}.kal-dz .ic{width:20px;height:20px;flex:none;color:var(--on-sv);margin-top:1px}
 .kal-dn{white-space:pre-wrap;background:var(--sc);border-radius:14px;padding:12px 14px;margin:6px 0 0;font-size:14px}
+.vg-zeiten{display:grid;grid-template-columns:1fr 1fr;gap:10px}

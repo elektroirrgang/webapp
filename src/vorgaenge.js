@@ -34,7 +34,7 @@ function vgNaechster(v){ const i=vgStufe(v); if(vgZu(v)) return null; if(v.rahme
   return null; }
 function vgZelle(v,k,i){ const s=v.s&&v.s[k], st=vgStufe(v), id=esc(v.id), lbl=`<span class="vg-zk"><i class="vg-dot DOT"></i>${VG_S[i][2]?`<span class="vg-lv">${esc(VG_S[i][1])}</span><span class="vg-lk">${esc(VG_S[i][2])}</span>`:esc(VG_S[i][1])}</span>`;
   const knopf=(kl,dot,inhalt)=>`<button class="vg-z ${kl}" data-act="vgStep" data-id="${id}" data-k="${k}">${lbl.replace("DOT",dot)}${inhalt}</button>`;
-  if(s){ const extra=k==="auftrag"&&s.nr?`<em>SCC ${esc(s.nr)}</em>`:k==="termin"&&s.datum?`<em>${esc(deDate(s.datum))}${s.zeit?` · ${esc(s.zeit)} Uhr`:""}${s.mit?` · ${esc(s.mit)}`:""}</em>`:"";
+  if(s){ const extra=k==="auftrag"&&s.nr?`<em>SCC ${esc(s.nr)}</em>`:k==="termin"&&s.datum?`<em>${esc(deDate(s.datum))}${s.zeit?` · ${esc(s.zeit)}${s.bis?`–${esc(s.bis)}`:""} Uhr`:""}${s.mit?` · ${esc(s.mit)}`:""}</em>`:"";
     return knopf("ok","ok",`<span class="vg-zw"><span class="vg-wer">${esc(vgVorn(s.wer&&s.wer.name)||"–")} · </span>${esc(vgZeit(s.at))}</span>${extra}`); }
   if(v.abgelehnt&&i===st+1) return knopf("bad","bad",`<span class="vg-zw">abgelehnt</span><em>${esc(vgVorn(v.abgelehnt.wer&&v.abgelehnt.wer.name)||"")}</em>`);
   if(i===st+1&&!vgZu(v)){ const n=vgNaechster(v);
@@ -291,12 +291,12 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     const ort=bau?"":SS.length?`${sf("vgOrt","Wo? (Standort der Baustelle)",SS.length===1?SS[0].id:(vgVonBau(v)&&SS.some(x=>x.id===vgVonBau(v).standortId)?vgVonBau(v).standortId:""),[...(SS.length>1?[["","Bitte wählen"]]:[]),...SS.map(x=>[x.id,x.name]),["__neu","Anderer Ort …"]],{form:true})}<div id="vgOrtNeuW" hidden>${tf("vgOrtNeu","Anderer Ort (Adresse)","",{form:true,ph:"Straße, Ort"})}</div>`
       :tf("vgOrtNeu","Wo? (Adresse der Baustelle)",ortVor,{form:true,ph:"Straße, Ort"});
     dialog(v.s.termin?"Termin ändern":"Termin eintragen",`<p class="sup" style="margin:0 0 12px">${esc(vgKunde(v))} – ${esc(v.anliegen||"")}</p><div class="fg1">
-      ${tf("vgDatum","Datum",t.datum||today(),{form:true,type:"date"})}${tf("vgZeitE","Uhrzeit",t.zeit||"",{form:true,ph:"z. B. 8:00"})}${vgMitWahl(t.mit)}${ort}</div>
+      ${tf("vgDatum","Datum",t.datum||today(),{form:true,type:"date"})}<div class="vg-zeiten">${tf("vgZeitE","Von",t.zeit||"",{form:true,ph:"z. B. 14:00"})}${tf("vgZeitB","Bis (optional)",t.bis||"",{form:true,ph:"z. B. 16:30"})}</div>${vgMitWahl(t.mit)}${ort}</div>
       <p class="sup" style="margin:12px 0 0">${bau?`Der Termin wird auch an der Baustelle „${esc(bau.name)}“ geändert.`:"Dazu wird die Baustelle in der Baustellen-App angelegt – mit Termin und Auftragsnummer."}</p>`,
       `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="vgTerminOk" data-id="${esc(id)}">Eintragen</button>`); }
   else if(a==="vgTerminOk"&&v){ const F=formVals(); if(!F.vgDatum){ toast("Bitte ein Datum wählen"); return; }
     if(!vgBau(v)&&F.vgOrt===""&&document.getElementById("f_vgOrt")){ toast("Bitte den Standort wählen"); return; }
-    F.vgMit=vgMitWerte(); const neuBau=!vgBau(v); vgZuBaustelle(v,F); vgSchritt(id,"termin",{datum:F.vgDatum,zeit:F.vgZeitE,mit:F.vgMit});
+    F.vgMit=vgMitWerte(); const neuBau=!vgBau(v); vgZuBaustelle(v,F); vgSchritt(id,"termin",{datum:F.vgDatum,zeit:F.vgZeitE,bis:F.vgZeitB||"",mit:F.vgMit});
     if(neuBau) toast("Termin eingetragen – Baustelle angelegt"); }
   else if(a==="vgAusgef"&&v){ v.s.ausgefuehrt={wer:who(),at:Date.now()}; saveRec("vorgaenge",v); const bau=vgBau(v), alt=bau&&bau.status;
     if(bau){ bau.status="fertig"; saveRec("baustellen",bau); }
@@ -318,7 +318,7 @@ function vgMitWahl(mit){ const ist=String(mit||"").split(/\s*,\s*/).filter(Boole
 const vgMitWerte=()=>{ const n=[...document.querySelectorAll('#dlg [data-act=vgMitT][aria-pressed="true"]')].map(x=>x.dataset.v), x=String((document.getElementById("f_vgMitNeu")||{}).value||"").trim(); if(x&&!n.includes(x)) n.push(x); return n.join(", "); };
 /* Baustelle zum Termin anlegen bzw. Termin an der Baustelle nachziehen */
 function vgKurz(t,n=48){ t=String(t||"").trim(); if(t.length<=n) return t; const c=t.slice(0,n); return c.slice(0,Math.max(c.lastIndexOf(" "),30)).replace(/[\s,–-]+$/,"")+" …"; }
-function vgZuBaustelle(v,F){ const termin={datum:F.vgDatum,zeit:F.vgZeitE||"",mit:F.vgMit||""}, nr=(v.s.auftrag&&v.s.auftrag.nr)||"", dm=v.demo?{demo:true}:{};
+function vgZuBaustelle(v,F){ const termin={datum:F.vgDatum,zeit:F.vgZeitE||"",bis:F.vgZeitB||"",mit:F.vgMit||""}, nr=(v.s.auftrag&&v.s.auftrag.nr)||"", dm=v.demo?{demo:true}:{};
   let b=vgBau(v);
   if(b){ b.termin=termin; if(nr&&!b.auftragsnr) b.auftragsnr=nr; saveRec("baustellen",b); return b; }
   let k=v.kundeId&&kundeOf(v.kundeId);
