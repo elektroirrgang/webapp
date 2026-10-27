@@ -1583,9 +1583,9 @@ const ENTWICKLUNG=[
   {t:"Konto und Einstellungen",st:"wip",s:"Neu seit 26.10.2026",d:"Einheitlich in allen Apps: Abgleich mit Anzeige am Profilbild, Konto, Start-Seite, Textgröße, Speicher, Backup für Chef und Entwickler."},
   {t:"Anbindung an SCC-CONTROL",st:"open",s:"In Klärung",d:"Ziel: Kunden und Aufträge aus SCC übernehmen, statt sie doppelt zu pflegen. Wird mit dem Chef und einem IT-Dienstleister besprochen."}];
 const ENTW_STAND="26.10.2026";
-const TOPDEST_ALLE=[["start","Start","home"],["auftraege","Aufträge","board"],["uebersicht","Statistik","chart"],["kunden","Kunden","firma"],["geraete","Messgeräte","geraet"],["bibliothek","Bibliothek","folder"]];
+const TOPDEST_ALLE=[["start","Start","home"],["auftraege","Aufträge","board"],["kalender","Kalender","kal"],["uebersicht","Statistik","chart"],["kunden","Kunden","firma"],["geraete","Messgeräte","geraet"],["bibliothek","Bibliothek","folder"]];
 /* Handy (schmaler als iPad): nur vier Tabs – Statistik und Messgeräte sind dort Karten auf der Startseite */
-const HANDY_WEG=["uebersicht","geraete"], istHandy=()=>!WIDE.matches;
+const HANDY_WEG=["uebersicht","geraete","kalender"], istHandy=()=>!WIDE.matches;
 const topdest=()=>TOPDEST_ALLE.filter(d=>(d[0]!=="uebersicht"||ME.admin)&&!(istHandy()&&HANDY_WEG.includes(d[0])));
 const MEHR_SUB={team:"Mitarbeiter",ma:"Mitarbeiter",backup:"Backup",impressum:"Impressum",about:"Über",entwicklung:"Entwicklung"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
@@ -1854,6 +1854,7 @@ document.addEventListener("click",e=>{
 /*ANFORDERUNG*/
 /*VORGAENGE*/
 /*ANLAGEN*/
+/*KALENDER*/
 let maWieder=false; document.body.classList.add("hn"); /* Übersicht: Handy-Aufräumen (erst nur hier) */
 function render(){ profilAnwenden();
   const app=$("#app");
@@ -1876,6 +1877,7 @@ function render(){ profilAnwenden();
   if(login) body=loginView();
   else if(nav.v==="start"){ title=startTitel(); sub=startUnter(); body=startView(); }
   else if(nav.v==="uebersicht"){ title="Statistik"; body=uebersichtView()+(SYNC_ON?"":`<p class="hint">Daten auf diesem Gerät – mit der Microsoft-Anbindung kommen die Daten aller Mitarbeiter dazu.</p>`); }
+  else if(nav.v==="kalender"){ title="Kalender"; body=kalenderView(); fab=["kalNeu","Termin","add"]; }
   else if(nav.v==="geraete"){ title="Messgeräte"; gerVorlagen(); body=geraeteView(); fab=ME.admin?["gerNeu","Messgerät","add"]:null; }
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=ME.admin?["newKunde","Kunde","add"]:null; }
   else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
@@ -1928,15 +1930,15 @@ function skRechts(){
    Jeder legt fest, welche Kacheln er sieht, in welcher Reihenfolge und wie breit (halb/ganz).
    Gespeichert im eigenen Profil („profile“) ⇒ gleich auf iPad und PC. Halbe Kacheln werden automatisch
    auf zwei Spalten verteilt, sodass keine Löcher entstehen. */
-const DB_W={material:"Material",auftraege:"Aufträge",pruefungen:"Prüfungen & Fristen",baustellen:"Baustellen",zahlen:"Kennzahlen",geraete:"Messgeräte",apps:"Apps"};
+const DB_W={termine:"Termine",material:"Material",auftraege:"Aufträge",pruefungen:"Prüfungen & Fristen",baustellen:"Baustellen",zahlen:"Kennzahlen",geraete:"Messgeräte",apps:"Apps"};
 /* Neu hinzugekommene Kacheln erscheinen bei bestehenden Startseiten nicht von selbst (iPad/PC bleiben, wie eingestellt) */
 const DB_NEU_AUS=["geraete"];
 /* Auf dem Handy sind das die Wege zu Statistik und Messgeräten (dort keine Tabs) – daher immer sichtbar */
-const dbPflicht=()=>istHandy()?["geraete",...(ME.admin?["zahlen"]:[])]:[];
+const dbPflicht=()=>istHandy()?["termine","geraete",...(ME.admin?["zahlen"]:[])]:[];
 /* Größen wie Handy-Widgets: S = 1×1, M = 2×1, L = 2×2 Rasterfelder. Jede Kachel kann nur Größen, für die sie Inhalt hat. */
-const DB_GR={geraete:["s","m","l"],material:["s","m","l"],auftraege:["s","m","l"],pruefungen:["s","m","l"],baustellen:["s","m","l"],zahlen:["m","l"],apps:["m","l"]};
+const DB_GR={termine:["s","m","l"],geraete:["s","m","l"],material:["s","m","l"],auftraege:["s","m","l"],pruefungen:["s","m","l"],baustellen:["s","m","l"],zahlen:["m","l"],apps:["m","l"]};
 const DB_GR_TXT={s:"Klein",m:"Mittel",l:"Groß"};
-const DB_STD={o:["material","auftraege","pruefungen","baustellen","apps","zahlen","geraete"],aus:["zahlen","geraete"],gr:{}};
+const DB_STD={o:["termine","material","auftraege","pruefungen","baustellen","apps","zahlen","geraete"],aus:["zahlen","geraete"],gr:{}};
 
 /* ===== Wetter für den Betrieb (Waldbröl) =====
    Bright Sky – kostenlos, ohne Schlüssel, auch gewerblich erlaubt; Daten vom Deutschen Wetterdienst.
@@ -1995,6 +1997,7 @@ function dashboard(kacheln){
   const inArbeit=echt("pruefungen").filter(p=>["wip","open"].includes(pStand(p))).length;
   /* Inhalt je Kachel: s = nur die wichtigste Zahl, m/l = Liste (2 bzw. 5 Einträge) */
   const W={
+    termine:typeof kalKachel==="function"?kalKachel(anz,zeile,leer,gross):{ic:"home",m:()=>""},
     material:{ic:"lager",v:"materialanf",sub:A.length?`${an} angefordert · ${A.length-an} bestellt`:"Nichts offen",plus:["afNeu","Material anfordern"],
       s:()=>gross(an,"angefordert"),
       m:g=>A.length?A.slice(0,anz(g)).map(a=>zeile(anfPosText(a),`${anfOrt(a)} · ${a.status==="angefordert"?"angefordert":"bestellt"}`)).join(""):leer("Nichts offen.",true)},
