@@ -6,6 +6,9 @@
 Object.assign(IC,{kal:"M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z",
   kalOrt:"M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z",
   kalUhr:"M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z",
+  kalWoche:"M13 5h-2c-.55 0-1 .45-1 1v12c0 .55.45 1 1 1h2c.55 0 1-.45 1-1V6c0-.55-.45-1-1-1zm6 0h-2c-.55 0-1 .45-1 1v12c0 .55.45 1 1 1h2c.55 0 1-.45 1-1V6c0-.55-.45-1-1-1zM7 5H5c-.55 0-1 .45-1 1v12c0 .55.45 1 1 1h2c.55 0 1-.45 1-1V6c0-.55-.45-1-1-1z",
+  kalMonat:"M3 5v14h18V5H3zm5.33 12H5v-4.33h3.33V17zm0-6.33H5V7h3.33v3.67zm6.34 6.33h-3.34v-4.33h3.34V17zm0-6.33h-3.34V7h3.34v3.67zM19 17h-3.33v-4.33H19V17zm0-6.33h-3.33V7H19v3.67z",
+  kalListe:"M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z",
   kalLeute:"M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"});
 const KAL_SCOPES=["Calendars.ReadWrite"], KAL_TZ="Europe/Berlin", KAL_H=56, KAL_VON=6, KAL_BIS=20;
 const KAL_SICHTEN=[["liste","Liste"],["woche","Woche"],["monat","Monat"]];
@@ -97,8 +100,10 @@ function kalKopf(){ const s=kalSicht(), B=kalBereich(), h=new Date();
   else titel=kalGleich(B.von,h)?"Ab heute":`Ab ${B.von.toLocaleDateString("de-DE",{weekday:"short",day:"numeric",month:"long"})}`;
   const sichten=KAL_SICHTEN.filter(x=>!(istHandy()&&x[0]==="woche"));
   const demo=typeof demoAn==="function"&&demoAn();
-  return `<div class="kal-kopf"><div class="kal-nav"><button class="kal-rund" data-act="kalSchritt" data-v="-1" aria-label="Zurück">${icon("back")}</button><button class="btn-tonal kal-heute" data-act="kalHeute">Heute</button><button class="kal-rund vor" data-act="kalSchritt" data-v="1" aria-label="Weiter">${icon("back")}</button><h2 class="kal-titel">${esc(titel)}</h2></div>
-    ${seg("kalSicht",s,sichten,"kal-seg")}</div>
+  /* Kopf: Zeitraum links, rechts Zurück/Heute/Weiter und die Ansicht als Symbole (wie neben der Suchleiste in den Aufträgen) */
+  const IC_S={liste:"kalListe",woche:"kalWoche",monat:"kalMonat"};
+  return `<div class="kal-kopf"><h2 class="kal-titel">${esc(titel)}</h2><div class="kal-rechts"><div class="kal-nav"><button class="kal-rund" data-act="kalSchritt" data-v="-1" aria-label="Zurück" title="Zurück">${icon("back")}</button><button class="btn-tonal kal-heute" data-act="kalHeute">Heute</button><button class="kal-rund vor" data-act="kalSchritt" data-v="1" aria-label="Weiter" title="Weiter">${icon("back")}</button></div>
+    <div class="seg ans-seg kal-ans" role="group" aria-label="Ansicht">${sichten.map(([k,t])=>`<button data-act="kalSicht" data-v="${k}" aria-pressed="${s===k}" title="${esc(t)}" aria-label="${esc(t)}">${icon(IC_S[k])}</button>`).join("")}</div></div></div>
     <div class="chips kal-ebenen"><button class="chip" data-act="kalEbene" data-v="outlook" aria-pressed="${KAL.ebenen.outlook}"><i class="kal-punkt kal-o"></i>${demo?"Beispieltermine":"Mein Outlook"}</button><button class="chip" data-act="kalEbene" data-v="auftraege" aria-pressed="${KAL.ebenen.auftraege}"><i class="kal-punkt kal-a"></i>Aufträge</button><button class="chip" data-act="kalEbene" data-v="firma" aria-pressed="${KAL.ebenen.firma}"><i class="kal-punkt kal-g"></i>Firmentermine</button>${KAL.ebenen.auftraege?`<button class="chip" data-act="kalEbene" data-v="meine" aria-pressed="${kalNurMeine()}">Nur meine Aufträge</button>`:""}
       ${KAL.lade?`<span class="kal-stand">lädt …</span>`:KAL.fehler?`<span class="kal-stand warn">${esc(KAL.fehler)}</span>`:""}</div>`; }
 function kalVerbindenKarte(){ return `<div class="kal-verb"><span class="kal-verb-ic">${icon("kal")}</span><div><b>Outlook-Kalender verbinden</b><p>Einmal bestätigen, dann siehst du hier deine Outlook-Termine und kannst neue anlegen. Die Auftragstermine siehst du auch ohne.</p><p class="sup">Erscheint bei Microsoft „Genehmigung durch Administrator erforderlich“, muss der Chef oder Alex die Kalender-Berechtigung der App einmal freigeben.</p></div><button class="btn-filled" data-act="kalVerbinden">Verbinden</button></div>`; }
