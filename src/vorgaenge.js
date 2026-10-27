@@ -570,8 +570,12 @@ function mlOrte(k){ if(!k) return []; const O=[], gid=o=>"g-"+String(o).replace(
   const h=von("k:"+k.id,k); if(h) O.push({id:"",name:"Hauptadresse",...h});
   (typeof standorteVon==="function"?standorteVon(k.id):[]).forEach(x=>{ const s=von(x.id,x); if(s) O.push({id:x.id,name:x.name||"Standort",...s}); }); return O; }
 /* Maschinen des Kunden für die Meldung (Nummer · Bezeichnung) */
-const mlMaschinen=kid=>DB.anlagen?[...DB.anlagen.values()].filter(a=>!a.deleted&&a.kundeId===kid):[];
-const mlMLabel=a=>[a.nr,a.bez].filter(Boolean).join(" · ");
+/* Gleiche Nummer an zwei Standorten (M-17.1 in Rommelsdorf und Elsenroth) ⇒ Standort steht im Namen und die Auswahl gilt je Standort */
+const mlMehrOrte=kid=>typeof standorteVon==="function"&&standorteVon(kid).length>0;
+const mlOrtName=(kid,ortId)=>{ if(!ortId||ortId==="k:"+kid) return mlMehrOrte(kid)?"Hauptadresse":""; const s=DB.standorte&&DB.standorte.get(ortId); return s?s.name||"Standort":""; };
+const mlMaschinen=(kid,ortId)=>DB.anlagen?[...DB.anlagen.values()].filter(a=>!a.deleted&&a.kundeId===kid&&(ortId===undefined||a.ortId===ortId)):[];
+const mlMLabel=a=>{ const t=[a.nr,a.bez].filter(Boolean).join(" · "), o=mlMehrOrte(a.kundeId)?mlOrtName(a.kundeId,a.ortId):""; return o?`${t} (${o})`:t; };
+const mlMOrt=kid=>mlE&&mlE.orte&&mlE.orte.length?(mlE.standortId||"k:"+kid):undefined;
 function mlOrtChips(init){ if(!mlE) return ""; const o=(mlE.orte||[]).find(x=>x.id===mlE.standortId);
   if(!o) return (mlE.orte||[]).length||!istBuero()?"":`<p class="sup ml-tipp">Tipp: Gebäude/Bauteile und Ebenen einmal am Kunden eintragen (Bearbeiten) – dann hier nur noch antippen.</p>`;
   const d=!init&&document.getElementById("dlg"), wert=id=>{ const f=d&&d.querySelector("#"+id); return f?f.value.trim():(id==="f_mlBt"?mlE.bauteil:mlE.ebene)||""; };
@@ -594,7 +598,7 @@ function mlDialog(r,m){ const k=r.kundeId&&kundeOf(r.kundeId), M=(k&&Array.isArr
     ${mlE.orte.length>1?`<div class="lbl" style="margin:4px 4px 6px">Standort</div><div class="chips ml-so">${mlE.orte.map(o=>`<button type="button" class="chip" data-act="vgMlSo" data-v="${esc(o.id)}" aria-pressed="${o.id===mlE.standortId}">${esc(o.name)}</button>`).join("")}</div>`:""}
     <div class="row3">${tf("mlBt","Bauteil",mlE.bauteil||"",{form:true,list:"dl-mlbt",ph:"z. B. C"})}${tf("mlEb","Ebene",mlE.ebene||"",{form:true,list:"dl-mleb",ph:"z. B. EG"})}${tf("mlRm","Raum / Bereich",mlE.raum||"",{form:true,list:"dl-mlrm",ph:"z. B. WC"})}</div>
     <div id="mlOrtChips">${mlOrtChips(true)}</div>
-    ${mlMaschinen(r.kundeId).length?tf("mlAn","Maschine / Anlage (optional)",(()=>{ const x=mlE.anlageId&&DB.anlagen.get(mlE.anlageId); return x?mlMLabel(x):""; })(),{form:true,list:"dl-mlan",ph:"Nummer oder Bezeichnung"})+mlDl("dl-mlan",mlMaschinen(r.kundeId).map(mlMLabel)):""}
+    ${mlMaschinen(r.kundeId).length?tf("mlAn","Maschine / Anlage (optional)",(()=>{ const x=mlE.anlageId&&DB.anlagen.get(mlE.anlageId); return x?mlMLabel(x):""; })(),{form:true,list:"dl-mlan",ph:"Nummer oder Bezeichnung"})+mlDl("dl-mlan",mlMaschinen(r.kundeId,mlMOrt(r.kundeId)).map(mlMLabel)):""}
     ${ta("mlTx","Was ist gemeldet?",mlE.text||"",{form:true,ph:"z. B. Notbeleuchtung flackert"})}
     ${tf("mlAm","Gemeldet am",mlDtLokal(mlE.gemeldet),{form:true,type:"datetime-local"})}<div class="vg-drw"><span>Dringend</span>${seg("vgMlDr",mlE.dringend?"ja":"nein",[["nein","Nein"],["ja","Ja"]])}</div>
     <div class="lbl" style="margin:12px 4px 6px">Zuständig${istBuero()?"":" (du kannst dich selbst eintragen)"}</div>${zChips}
@@ -617,7 +621,11 @@ function mlSpeichern(){ const F=formVals(), r=DB.vorgaenge.get(mlE.rahmenId); if
   const neu=!mlE.id, m=neu?{id:uid(),typ:"meldung",rahmenId:r.id,kundeId:r.kundeId||""}:DB.vorgaenge.get(mlE.id); if(!m) return;
   const vorher=m.status||"offen";
   if(mlE.orte&&mlE.orte.length) m.standortId=mlE.standortId||""; 
-  if(F.mlAn!==undefined){ const q=String(F.mlAn||"").trim().toLowerCase(), x=q&&mlMaschinen(r.kundeId).find(a=>mlMLabel(a).toLowerCase()===q||String(a.nr||"").toLowerCase()===q); m.anlageId=x?x.id:""; if(q&&!x) m.anlageText=F.mlAn; else delete m.anlageText; }
+  if(F.mlAn!==undefined){ const q=String(F.mlAn||"").trim().toLowerCase(), L=mlMaschinen(r.kundeId), Lo=mlMaschinen(r.kundeId,mlMOrt(r.kundeId));
+    /* erst exakt (mit Standort im Namen), sonst Nummer/Name nur am gewählten Standort – und nur, wenn eindeutig */
+    let x=q&&L.find(a=>mlMLabel(a).toLowerCase()===q); if(!x&&q){ const T=(Lo.length?Lo:L).filter(a=>String(a.nr||"").toLowerCase()===q||[a.nr,a.bez].filter(Boolean).join(" · ").toLowerCase()===q); if(T.length===1) x=T[0]; }
+    m.anlageId=x?x.id:""; if(q&&!x) m.anlageText=F.mlAn; else delete m.anlageText;
+    if(x){ m.standortId=String(x.ortId).startsWith("k:")?"":x.ortId; } }
   Object.assign(m,{bauteil:F.mlBt,ebene:F.mlEb,raum:F.mlRm,text:F.mlTx,dringend:!!mlE.dringend,melderId:mlE.melderId||"",melderName:mlE.melderId?"":(mlE.melderName||m.melderName||""),
     gemeldet:F.mlAm?new Date(F.mlAm).getTime():(m.gemeldet||Date.now()),status:mlE.status||"offen"});
   if(!neu){ m.notiz=F.mlNo||""; const z=parseFloat(String(F.mlZt||"").replace(",",".")); if(isNaN(z)) delete m.zeit; else m.zeit=z; m.material=F.mlMa||"";
@@ -638,7 +646,8 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     const f=document.getElementById("mlNeuMel"); if(f){ f.hidden=!neuM; if(neuM) f.querySelector("input")?.focus(); } }
   else if(a==="vgMlZu"&&mlE){ const mail=b.dataset.mail; mlE.zustSel=mlE.zustSel.includes(mail)?mlE.zustSel.filter(x=>x!==mail):[...mlE.zustSel,mail]; b.setAttribute("aria-pressed",String(mlE.zustSel.includes(mail))); }
   else if(a==="vgMlF"){ META.mlF=b.dataset.v; metaSave(); if(nav.v==="meldungen"&&typeof mlFuellen==="function") mlFuellen(); else render(); }
-  else if(a==="vgMlSo"&&mlE){ mlE.standortId=b.dataset.v; seg1(); const c=document.getElementById("mlOrtChips"); if(c) c.innerHTML=mlOrtChips(); }
+  else if(a==="vgMlSo"&&mlE){ mlE.standortId=b.dataset.v; seg1(); const c=document.getElementById("mlOrtChips"); if(c) c.innerHTML=mlOrtChips();
+    const dl=document.getElementById("dl-mlan"), r=DB.vorgaenge.get(mlE.rahmenId); if(dl&&r) dl.innerHTML=mlMaschinen(r.kundeId,mlMOrt(r.kundeId)).map(x=>`<option value="${esc(mlMLabel(x))}">`).join(""); }
   else if(a==="vgMlOc"&&mlE){ const f=document.getElementById(b.dataset.f), an=b.getAttribute("aria-pressed")==="true"; if(f){ f.value=an?"":b.dataset.v; f.dispatchEvent(new Event("input",{bubbles:true})); } const c=document.getElementById("mlOrtChips"); if(c) c.innerHTML=mlOrtChips(); }
   else if(a==="vgMlLg"&&mlE){ mlE.mitLager=b.dataset.v==="lager"; seg1(); }
   else if(a==="vgMlDr"&&mlE){ mlE.dringend=b.dataset.v==="ja"; seg1(); }

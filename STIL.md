@@ -50,6 +50,7 @@ Gilt für alle Apps (Übersicht, EVSE, Baustelle, E-Check). Vorbild ist EVSE. Go
 ## Bibliothek – Kundenordner
 - Ordner-Ansicht: Alle Kunden › Kunde › sieben feste Ordner › Standort/Baustelle. Sie zeigt Dateien und zusätzlich Aufträge, Prüfungen ohne PDF, E-Checks und Baustellen als Einträge.
 - Seltene Admin-Aktionen zu einem Datensatz (Zusammenführen, Löschen) stehen im Bearbeiten-Fenster, auf dem Handy über dem Fuß, auf dem PC im Fuß links.
+- Grundregel (Max, 27.10.2026): Jede neue Datenart, an der Dateien hängen können, bekommt sofort ihren Platz im Kundenordner – Pfad folgt der Hierarchie Kategorie › Standort › Objekt (z. B. „Pläne und Schaltpläne/Elsenroth/M-17.1 Presse“). Gleiche Nummern an verschiedenen Standorten dürfen nie im selben Ordner landen; in Auswahllisten steht bei Kunden mit mehreren Standorten der Standort mit im Namen. Pfad wird in `kdOrtDatei` (ablage.js) bestimmt, `kdPflege` zieht bestehende Dateien bei Änderung um.
 
 ## Konto-Unterseiten
 - Zeilen mit Pfeil öffnen eine eigene Seite (Konto, Abgleich, Speicher, Mitarbeiter, Backup, Kundenordner); schnelle Auswahl ohne viel Inhalt (Darstellung, Start mit, Textgröße) bleibt ein kleines Fenster.

@@ -40,9 +40,11 @@ function kdVorschlag(name,kind){ const n=String(name||"").toLowerCase();
   if(/brief|schreiben|rechnung|mahnung|kündigung|\.msg$|\.eml$/.test(n)) return "post";
   return kind==="vorgaenge"?"angebote":""; }
 function kdOrtDatei(d){
-  /* Maschine: Pläne/Datenblätter bzw. Fotos in einen eigenen Unterordner „<Nr> <Bezeichnung>“ */
-  const an=d.bezugKind==="anlagen"&&DB.anlagen&&DB.anlagen.get(d.bezugId);
-  if(an){ const mn=[an.nr,an.bez].filter(Boolean).join(" ")||"Maschine"; if(/^image\//.test(d.typ||"")) return [kdKat("fotos"),mn].map(bbFs); const a="ordner" in d&&d.ordner?d.ordner:(kdVorschlag(d.name,d.bezugKind)||"plaene"); return [kdKat(a)||kdKat("plaene"),mn].map(bbFs); }
+  /* Maschine: Kategorie › Standort › „<Nr> <Bezeichnung>“ – gleiche Maschinennummern an verschiedenen Standorten
+     (z. B. M-17.1 in Rommelsdorf und in Elsenroth) landen so nie im selben Ordner. Fotos einer Meldung zu einer Maschine ebenso. */
+  const vgM=d.bezugKind==="vorgaenge"&&DB.vorgaenge&&DB.vorgaenge.get(d.bezugId), an=d.bezugKind==="anlagen"&&DB.anlagen?DB.anlagen.get(d.bezugId):vgM&&vgM.anlageId&&DB.anlagen&&/^image\//.test(d.typ||"")?DB.anlagen.get(vgM.anlageId):null;
+  if(an&&!an.deleted){ const mn=[an.nr,an.bez].filter(Boolean).join(" ")||"Maschine", so=an.ortId&&!String(an.ortId).startsWith("k:")&&DB.standorte&&DB.standorte.get(an.ortId), sn=so?so.name||"Standort":"";
+    if(/^image\//.test(d.typ||"")) return [kdKat("fotos"),sn,mn].filter(Boolean).map(bbFs); const a="ordner" in d&&d.ordner?d.ordner:(kdVorschlag(d.name,d.bezugKind)||"plaene"); return [kdKat(a)||kdKat("plaene"),sn,mn].filter(Boolean).map(bbFs); }
   const vg=d.bezugKind==="vorgaenge"&&DB.vorgaenge&&DB.vorgaenge.get(d.bezugId), st=d.bezugKind==="standorte"?d.bezugId:vg?vg.standortId:"";
   const sn=st&&DB.standorte&&DB.standorte.get(st)?DB.standorte.get(st).name:"";
   if(/^image\//.test(d.typ||"")) return [kdKat("fotos"),sn].filter(Boolean).map(bbFs);
