@@ -175,13 +175,14 @@ function tourApp(app){ if(app===TOUR_APP){ if(TOUR){ TOUR.i=0; tourMerk(); tourF
   try{ sessionStorage.setItem(TOUR_SK,JSON.stringify({app,i:0})); }catch(e){} if(!TOUR) tourDemoAn(true);
   const pfad={uebersicht:"uebersicht",evse:"evse",baustelle:"baustelle",echeck:"echeck"}[app]; location.href=`../${pfad}/?tour=${app}`; }
 /* Wischen auf der Karte (iPad): links = weiter, rechts = zurück. tourLang: Zeitpunkt des letzten langen Drückens – der Klick danach darf das Menü nicht gleich wieder schließen */
-let tourLang=0;
+let tourLang=0, tourEsc=0, tourTipp=0;
 function tourWisch(){ const l=document.getElementById("tourLayer"); if(!l||l.dataset.w) return; l.dataset.w="1"; let st=null;
   let lang=null;
   l.addEventListener("pointerdown",e=>{ st={x:e.clientX,y:e.clientY}; clearTimeout(lang); const k=e.target.closest&&e.target.closest(".tb-k"); if(k&&!e.target.closest("button")) lang=setTimeout(()=>{ st=null; tourLang=Date.now(); tourMenu(k); },550); });
   l.addEventListener("pointermove",e=>{ if(st&&Math.hypot(e.clientX-st.x,e.clientY-st.y)>8) clearTimeout(lang); });
-  l.addEventListener("pointercancel",()=>clearTimeout(lang));
-  l.addEventListener("pointerup",e=>{ clearTimeout(lang); if(!st||!TOUR||TOUR.pause) return; const dx=e.clientX-st.x, dy=e.clientY-st.y; st=null; if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.5) tourSchritt(dx<0?1:-1); }); }
+  l.addEventListener("pointerup",e=>{ clearTimeout(lang);
+    const k=e.target.closest&&e.target.closest(".tb-k"); if(k&&!e.target.closest("button")&&st){ const j=Date.now(); if(j-tourTipp<380){ tourTipp=0; st=null; tourLang=j; tourMenu(k); return; } tourTipp=j; }
+    if(!st||!TOUR||TOUR.pause) return; const dx=e.clientX-st.x, dy=e.clientY-st.y; st=null; if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.5) tourSchritt(dx<0?1:-1); }); }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest("[data-tour]"); if(b){ e.stopImmediatePropagation(); e.preventDefault(); const a=b.dataset.tour;
     if(a==="weiter"){ tourMenuZu(); tourSchritt(1); } else if(a==="zurueck"){ tourMenuZu(); tourSchritt(-1); } else if(a==="ende") tourEnde(); else if(a==="app"){ tourMenuZu(); tourApp(b.dataset.v); }
     else if(a==="pause") tourPause(true); else if(a==="weiterspielen") tourPause(false);
@@ -193,6 +194,8 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(document.getElementById("tourMenu")&&!(e.target.closest&&e.target.closest("#tourMenu"))) tourMenuZu();
   if(TOUR&&!TOUR.pause&&e.target.closest&&e.target.closest("#tourLayer")){ e.stopImmediatePropagation(); e.preventDefault(); } },true);
 document.addEventListener("keydown",e=>{ if(!TOUR) return; const k=e.key, tippt=e.target&&/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+  /* Beenden: Umschalt+Esc oder Esc zweimal kurz hintereinander (das erste Esc pausiert, das zweite beendet) */
+  if(k==="Escape"){ const jetzt=Date.now(), doppelt=jetzt-(tourEsc||0)<700; tourEsc=jetzt; if(e.shiftKey||doppelt){ e.preventDefault(); e.stopImmediatePropagation(); tourEsc=0; tourEnde(); return; } }
   /* Klicker (Bluetooth, am iPad als Tastatur): Bild ab/auf = weiter/zurück, „Bildschirm schwarz“ (b oder .) und F5 = Pause/weiter */
   if(((["p","P","b","B","."].includes(k))&&!tippt&&!e.ctrlKey&&!e.metaKey)||k==="F5"||(k==="Escape"&&!TOUR.pause)){ e.preventDefault(); e.stopImmediatePropagation(); tourPause(!TOUR.pause); return; }
   if(TOUR.pause){ if(k==="PageDown"||k==="PageUp"){ e.preventDefault(); e.stopImmediatePropagation(); tourPause(false); } return; } /* pausiert: Tastatur gehört der App, nur der Klicker holt zurück */
@@ -211,6 +214,6 @@ function tourZeile(){ if(!tourMoeglich()) return ""; return `<div class="li" rol
 function tourWahl(){ const n=a=>TOURS[a].length;
   dialog("Präsentation starten",`<div class="list">${TOUR_FOLGE.map(a=>`<button class="li" data-tour="start" data-v="${a}"><span class="av">${icon("bulb")}</span><span class="lt"><span class="h">${esc(TOUR_NAME[a])}${a==="uebersicht"?" – von vorne":""}</span><span class="s">${n(a)} Schritte${a===TOUR_APP?" · diese App":" · öffnet die App"}</span></span>${icon("chev")}</button>`).join("")}</div>
     <p class="sup" style="margin:14px 4px 0">Gezeigt werden Beispielkunden (Familie Kessler, Kunststoffwerk Nordhang u. a.) – echte Kunden und Aufträge sind währenddessen ausgeblendet, nichts davon wird hochgeladen. Beim Beenden verschwinden die Beispieldaten wieder.</p>
-    <p class="sup" style="margin:8px 4px 0">Auf der Tafel ist nur die App mit der Erklärkarte zu sehen – keine Steuerknöpfe. Weiter und zurück: Knöpfe auf der Karte, auf der Karte wischen oder Bluetooth-Klicker (Bild ab/auf). Pause zum freien Zeigen: Pause-Symbol auf der Karte oder Klicker-Taste „Bildschirm schwarz“. Zurück aus der Pause: kleiner runder Knopf unten links oder Klicker. Menü mit Schrittliste, App-Wechsel und Beenden: lange auf den Kopf der Karte drücken (bzw. auf den runden Knopf).</p>`,
+    <p class="sup" style="margin:8px 4px 0">Auf der Tafel ist nur die App mit der Erklärkarte zu sehen – keine Steuerknöpfe. Weiter und zurück: Knöpfe auf der Karte, auf der Karte wischen oder Bluetooth-Klicker (Bild ab/auf). Pause zum freien Zeigen: Pause-Symbol auf der Karte oder Klicker-Taste „Bildschirm schwarz“. Zurück aus der Pause: kleiner runder Knopf unten links oder Klicker. Menü mit Schrittliste, App-Wechsel und Beenden: zweimal auf den Kopf der Karte tippen oder lange drücken (in der Pause lange auf den runden Knopf). Beenden mit Tastatur: Umschalt+Esc oder zweimal Esc.</p>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`); }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="tourWahl"]'); if(!b) return; e.stopImmediatePropagation(); e.preventDefault(); tourWahl(); },true);
