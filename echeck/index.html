@@ -3339,7 +3339,7 @@ let theme="auto"; try{ theme=localStorage.getItem(TH_KEY)||"auto"; }catch(e){}
 applyTheme(theme);
 WIDE.addEventListener?.("change",()=>{ if(typeof render==="function"&&nav) render(); });
 
-const APP_VERSION="0.99.49 · 27.10.2026";
+const APP_VERSION="0.99.49 · 28.10.2026";
 const TOPDEST=[["anlagen","Installation","home"],["geraete","Geräte","ecStecker"],["netzwerk","Netzwerk","ecNetz"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
 const TOP=TOPDEST.map(x=>x[0]), MEHR_SUB={team:"Mitarbeiter",backup:"Backup",impressum:"Impressum",about:"Über die App"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
