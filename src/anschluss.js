@@ -127,7 +127,7 @@ function leitung(a,b,f,c1,c2,ende="stecker"){
 const hinweis=(_x,_y,t,f="#5f6068")=>{ const x=24,y=494; return `<rect x="${x}" y="${y}" width="${t.length*7.6+28}" height="30" rx="15" fill="${f}"/>${T(x+14,y+20,t,13,"#fff",700,"start")}`; };
 
 /* Größenverhältnis wie in echt: MFT one (Querformat) deutlich breiter als der FEV300 hoch ist */
-const GW={x:16,y:166,s:.8}, GF={x:196,y:128,s:.7}, GM={x:440,y:300,s:.62};
+const GW={x:10,y:150,s:.9}, GF={x:224,y:62,s:.8}, GM={x:428,y:292,s:.66};
 const grund=(o={})=>{ const d=pt(GW,wbDose(0,0)), f=pt(GF,[0,0]);
   return gr(GW,wallbox(0,0,o.wb||{}))+gr(GF,fev(0,0,o.fev||{}))
     +`<path d="M${f[0]+39*GF.s} ${f[1]-30*GF.s} C ${f[0]+39*GF.s} ${f[1]-90}, ${d[0]+110} ${d[1]-10}, ${d[0]+30} ${d[1]}" fill="none" stroke="#222327" stroke-width="8" stroke-linecap="round"/>
