@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="E-Check">
+<meta name="apple-mobile-web-app-title" content="Gebäudetechnik">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#FCFCFD">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="<!--ICON-->">
 <link rel="icon" type="image/png" sizes="64x64" href="<!--ICON_FAV-->">
-<title>E-Check · Elektro Irrgang</title>
+<title>Gebäudetechnik · Elektro Irrgang</title>
 <style>
 @font-face{font-family:"Manrope";font-weight:400;font-display:swap;src:url(data:font/woff2;base64,<!--F400-->) format("woff2")}
 @font-face{font-family:"Manrope";font-weight:600;font-display:swap;src:url(data:font/woff2;base64,<!--F600-->) format("woff2")}
@@ -1688,7 +1688,7 @@ function impressumView(){
     <p><b>Umsatzsteuer-Identifikationsnummer</b> gemäß § 27a UStG: ${F.ust}<br>${F.register}</p>
     <p><b>Berufsrechtliche Angaben</b><br>Berufsbezeichnung: ${F.beruf}<br>Zuständige Kammer: ${F.hwk}<br>Es gilt die Handwerksordnung (HwO), abrufbar unter gesetze-im-internet.de.</p>
     <p><b>Verantwortlich für den Inhalt:</b> ${F.inhaber}, Anschrift wie oben.</p>
-    <p class="note-doc">Diese App ist ein internes Werkzeug von ${F.name} zur Dokumentation von E-Checks, Geräteprüfungen und Netzwerken.</p>
+    <p class="note-doc">Diese App ist ein internes Werkzeug von ${F.name} zur Dokumentation von Elektroinstallationen, Verteilern, Geräteprüfungen und Netzwerken.</p>
     <p class="note-doc">Angaben übernommen aus dem Impressum von elektro-irrgang.de.</p>`);
 }
 const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
@@ -2078,7 +2078,7 @@ function teamView(){
 }
 function aboutView(){
   const ic=(document.querySelector('link[rel="apple-touch-icon"]')||{}).href||"";
-  return `<div class="narrow"><section class="card about"><img class="app-ic" src="${ic}" alt=""><h2>E-Check</h2><p class="ver">Version ${APP_VERSION}</p>
+  return `<div class="narrow"><section class="card about"><img class="app-ic" src="${ic}" alt=""><h2>Gebäudetechnik</h2><p class="ver">Version ${APP_VERSION}</p>
     <p>Prüfung von Hausinstallationen und Anlagen (DIN VDE 0100-600 / 0105-100), von ortsveränderlichen Geräten (DIN VDE 0701-0702, DGUV Vorschrift 3) und Dokumentation von Netzwerken mit Netzwerkschränken und Belegung.</p>
     <div class="logos"><img class="lg-firma l-hell" src="${LOGO_PDF}" alt="Elektro Irrgang"></div>
     <p class="note-doc">${FIRMA.name} · ${FIRMA.strasse} · ${FIRMA.ort}</p></section></div>`;
@@ -2086,13 +2086,13 @@ function aboutView(){
 function loginView(){
   const logos=`<img class="logo-big l-hell" src="${LOGO_PDF}" alt="Elektro Irrgang"><img class="logo-big l-dunkel" src="${$(".logo.l-dunkel").src}" alt="Elektro Irrgang">`;
   if(!SYNC_ON){ const wer=team().find(m=>m.mail===tlSel);
-    return `<form class="login" id="tlForm" autocomplete="on">${logos}<h2>E-Check</h2><p>Name wählen und mit dem Firmen-Passwort anmelden.</p>
+    return `<form class="login" id="tlForm" autocomplete="on">${logos}<h2>Gebäudetechnik</h2><p>Name wählen und mit dem Firmen-Passwort anmelden.</p>
     <div class="fg1" style="text-align:left"><button type="button" class="tl-feld" id="tlFeld" aria-haspopup="menu">${(()=>{ const m=team().find(x=>x.mail===tlSel); return m?`<span class="tl-av">${esc(tlIni(m))}</span><span class="tl-n"><small>Name</small>${esc(m.name)}</span>`:tlSel==="__andere"?`<span class="tl-av tl-av-plus">${icon("add")}</span><span class="tl-n"><small>Name</small>Andere Person</span>`:`<span class="tl-n tl-leer">Name auswählen</span>`; })()}<span class="tl-pf">${icon("drop")}</span></button><div class="tl-sel" hidden>${sf("tlWer","Name",tlSel||"",[["","Name auswählen"],...team().map(m=>[m.mail,m.name]),["__andere","Andere Person …"]],{form:true})}</div>
       ${wer?`<p class="tl-mail">${esc(wer.mail)}</p>`:""}
       ${tlSel==="__andere"?tf("tlMail","E-Mail",tlAndere,{form:true,type:"email",ph:"name@elektro-irrgang.de"}):""}
       <div class="tf"><input id="f_tlPw" data-f="tlPw" type="password" placeholder=" " autocomplete="current-password"><label for="f_tlPw">Passwort</label></div></div>
     <button class="btn-filled" type="submit" style="margin-top:20px">${icon("person")}Anmelden</button><p class="login-ver">Version ${APP_VERSION}</p></form>`; }
-  return `<div class="login">${logos}<h2>E-Check</h2><p>Melde dich mit deinem Microsoft-Mitarbeiterkonto an.</p><button class="btn-filled" data-act="login">${icon("person")}Mit Microsoft anmelden</button></div>`;
+  return `<div class="login">${logos}<h2>Gebäudetechnik</h2><p>Melde dich mit deinem Microsoft-Mitarbeiterkonto an.</p><button class="btn-filled" data-act="login">${icon("person")}Mit Microsoft anmelden</button></div>`;
 }
 async function testAnmelden(){
   const mail=(tlSel==="__andere"?($("#f_tlMail")||{}).value||"":tlSel||"").trim().toLowerCase(), pw=$("#f_tlPw").value||"";

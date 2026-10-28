@@ -15,7 +15,7 @@ let BB_PROT=[], bbGeladen=false;
    Das PDF selbst liegt in SharePoint (EVSE: Prüfprotokolle/<Kunde>/<Standort>, Baustelle: Baustellen/Berichte/<Kunde>/<Baustelle>).
    Andere Geräte zeigen den Eintrag sofort und holen das PDF beim ersten Öffnen (danach liegt es auch dort im Gerät). */
 const bbSync=()=>typeof DB!=="undefined"&&!!DB.protokolle&&typeof saveRec==="function";
-const bbAppName=a=>a==="baustelle"?"Baustelle":a==="echeck"?"E-Check":"EVSE";
+const bbAppName=a=>a==="baustelle"?"Baustelle":a==="echeck"?"Gebäudetechnik":"EVSE";
 const BB_FELDER=["app","pruefungId","echeckId","kundeId","standortId","ladeparkId","baustelleId","name","titel","datum","art","auftragsnr","pruefer","ergebnis","nr","unterschrift","fassung","size","von","created"];
 const bbFs=v=>String(v||"").replace(/[\\/:*?"<>|#%\u0000-\u001f]/g,"-").replace(/\s+/g," ").trim().replace(/[. ]+$/,"").slice(0,80)||"Unbenannt";
 function bbZiel(x){ const k=bbKunde(x.kundeId), nm=(M,id)=>id&&M&&M.get(id)?M.get(id).name:"";
@@ -286,7 +286,7 @@ function bbAufOeffnen(k,id){
   const weiter=(app,pfad,t)=>toast(`${t} liegt in der App ${app}`,`${app} öffnen`,()=>{ location.href=pfad; });
   if(k==="vg"){ const v=DB.vorgaenge&&DB.vorgaenge.get(id); if(!v) return; if(typeof vgOpen==="function") return vgOpen(v); return weiter("Übersicht","../uebersicht/","Der Auftrag"); }
   if(k==="pr"){ if(typeof oeffne==="function"&&typeof EDITOR!=="undefined") return oeffne(id); return weiter("EVSE","../evse/","Die Prüfung"); }
-  if(k==="ec"){ const e=DB.echecks&&DB.echecks.get(id); if(e) return go({v:"ec",id,tab:e.status==="fertig"?"abschluss":"auftrag"}); return weiter("E-Check","../echeck/","Die Prüfung"); }
+  if(k==="ec"){ const e=DB.echecks&&DB.echecks.get(id); if(e) return go({v:"ec",id,tab:e.status==="fertig"?"abschluss":"auftrag"}); return weiter("Gebäudetechnik","../echeck/","Die Prüfung"); }
   if(k==="bau"){ if(typeof baustelleView==="function"&&DB.baustellen&&DB.baustellen.get(id)) return go({v:"baustelle",id}); return weiter("Baustelle","../baustelle/","Die Baustelle"); } }
 function bibListe(){
   if(!bbGeladen){ bbLaden(); return ""; }

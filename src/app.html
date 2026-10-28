@@ -2157,7 +2157,7 @@ function mehrView(){
   const nArch=live("pruefungen").filter(p=>META.archiv.includes(p.id)).length;
   return kontoSeite({konto:[SYNC_ON?row("konto","person","Konto",esc(ME.name)):"",!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}`)):""],
     darstellung:[row("theme","theme","Darstellung",TH_LABEL[theme]),darstellungZeilen()],
-    apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../baustelle/","baustelle","Baustelle","Tagesstand, offene Punkte und Material pro Baustelle")}${link("../echeck/","home","E-Check","Hausinstallation, Geräte und Netzwerk")}</div></div>`,
+    apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../baustelle/","baustelle","Baustelle","Tagesstand, offene Punkte und Material pro Baustelle")}${link("../echeck/","home","Gebäudetechnik","Installation, Verteiler, Geräte und Netzwerk")}</div></div>`,
     geraet:[geraetZeilen(false)],
     verwaltung:[row("nav:team","person",SYNC_ON?"Mitarbeiter und Mail":"Ich bin · Mitarbeiter und Mail",esc(SYNC_ON?`Protokolle an ${mailAn()}`:[META.profil.name||"noch nicht ausgewählt",`Protokolle an ${mailAn()}`].join(" · "))),bkZeile(),kdoZeile()],
     eigenes:`${WIDE.matches?"":`<div class="sec-lbl">Wissen</div><div class="list">${row("nav:katalog","book","Wallbox-Katalog",`${live("katalog").length} Modelle · Hinweise und Fotos`)}</div>`}

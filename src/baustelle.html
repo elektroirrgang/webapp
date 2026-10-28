@@ -2891,7 +2891,7 @@ function mehrView(){
   const nf=live("baustellen").filter(b=>b.status==="fertig").length;
   return kontoSeite({konto:[SYNC_ON?row("konto","person","Konto",esc(ME.name)):"",!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}`)):""],
     darstellung:[row("theme","theme","Darstellung",TH_LABEL[theme]),darstellungZeilen()],
-    apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../evse/","ev","EVSE","Prüfung von Wallboxen und Ladesäulen")}${link("../echeck/","home","E-Check","Hausinstallation, Geräte und Netzwerk")}</div></div>`,
+    apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../evse/","ev","EVSE","Prüfung von Wallboxen und Ladesäulen")}${link("../echeck/","home","Gebäudetechnik","Installation, Verteiler, Geräte und Netzwerk")}</div></div>`,
     geraet:[geraetZeilen(true)],
     verwaltung:[row("nav:team","person","Mitarbeiter",esc(META.profil.name||"")),bkZeile(),kdoZeile()],
     infoTitel:"Rechtliches und Info",info:[["nav:impressum","paragraph","Impressum",""],["nav:datenschutz","shield","Datenschutz",""]]});

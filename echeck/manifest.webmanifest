@@ -1,8 +1,8 @@
 {
   "id": "/echeck/",
-  "name": "E-Check · Elektro Irrgang",
-  "short_name": "E-Check",
-  "description": "Prüfung von Hausinstallationen und Geräten",
+  "name": "Gebäudetechnik · Elektro Irrgang",
+  "short_name": "Gebäudetechnik",
+  "description": "Installation, Verteiler, Geräteprüfung und Netzwerk",
   "lang": "de",
   "start_url": "./?start=3",
   "scope": "./",

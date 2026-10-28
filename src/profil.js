@@ -146,7 +146,7 @@ function syncKarteAkt(){ const el=document.getElementById("syncKarte"); if(el) e
 /* ===== Backup – nur Chef und Entwickler (ME.admin), eigene Unterseite „Backup“ in allen Apps =====
    Einstellungen je Gerät in META.backup: {inhalt:{kunden,arbeit,team,fotos}, erinnerung:"aus"|"woche"|"monat", zuletzt}.
    Dokumente, PDFs und Kundenordner liegen in SharePoint (dort Papierkorb und Versionen) und sind nicht Teil der Datei. */
-const BK_ARBEIT={"EVSE":"Prüfungen, Ladeparks, Katalog und Messgeräte","Baustelle":"Baustellen, Übergaben, Notizen, Material und Aufträge","E-Check":"Anlagen, Geräte, Netzwerke und Messgeräte","Übersicht":"Aufträge, Prüfungen, Baustellen und Messgeräte"};
+const BK_ARBEIT={"EVSE":"Prüfungen, Ladeparks, Katalog und Messgeräte","Baustelle":"Baustellen, Übergaben, Notizen, Material und Aufträge","Gebäudetechnik":"Anlagen, Geräte, Netzwerke und Messgeräte","Übersicht":"Aufträge, Prüfungen, Baustellen und Messgeräte"};
 const bkApp=()=>document.title.split(" · ")[0]||"Irrgang";
 const BK_GRUPPEN=[["kunden","Kunden und Standorte",["kunden","standorte","ladeparks"]],["arbeit","",null],["team","Mitarbeiterprofile und Einstellungen",["profile","einstellungen"]]];
 const bkW=()=>{ const b=Object.assign({inhalt:{},erinnerung:"aus",zuletzt:0},META.backup||{}); b.inhalt=Object.assign({kunden:true,arbeit:true,team:true,fotos:true},b.inhalt||{}); return b; };
@@ -334,7 +334,7 @@ const DS_STAND="Oktober 2026";
 function datenschutzView(){
   const F=FIRMA, ph=t=>`<span class="ph">${t}</span>`, h=(n,t)=>`<h4>${n}. ${t}</h4>`, app=document.title.split(" · ")[0];
   return rechtsSeite(`<h3>Datenschutzhinweise zu den Apps von ${F.name}</h3>
-    <p class="note-doc">Gilt für Übersicht, EVSE, Baustelle und E-Check (Sie sind gerade in „${esc(app)}“). Stand: ${DS_STAND}. Gelb markiert ist, was vor einer Veröffentlichung noch geprüft wird.</p>
+    <p class="note-doc">Gilt für Übersicht, EVSE, Baustelle und Gebäudetechnik (Sie sind gerade in „${esc(app)}“). Stand: ${DS_STAND}. Gelb markiert ist, was vor einer Veröffentlichung noch geprüft wird.</p>
     ${h(1,"Verantwortlicher")}
     <p>${F.name}, Inhaber ${F.inhaber}<br>${F.strasse}, ${F.ort}<br>Telefon ${F.tel} · <a href="mailto:${F.mail}">${F.mail}</a></p>
     <p><b>Datenschutzbeauftragter:</b> nicht benannt – dazu besteht keine Pflicht (§ 38 BDSG).</p>

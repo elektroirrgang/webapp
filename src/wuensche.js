@@ -7,7 +7,7 @@
 const WU_ART=[["wunsch","Wunsch"],["fehler","Fehler"],["lob","Lob"]];
 const WU_ST=[["neu","Neu"],["geplant","Geplant"],["arbeit","In Arbeit"],["fertig","Umgesetzt"],["nein","Abgelehnt"]];
 const WU_ST_PILL={neu:"open",geplant:"wip",arbeit:"wip",fertig:"ok",nein:"bad"};
-const WU_APPS=[["uebersicht","Übersicht"],["baustelle","Baustelle"],["evse","EVSE"],["echeck","E-Check"],["alle","Alle Apps"]];
+const WU_APPS=[["uebersicht","Übersicht"],["baustelle","Baustelle"],["evse","EVSE"],["echeck","Gebäudetechnik"],["alle","Alle Apps"]];
 const WU_F=[["offen","Offen"],["fertig","Umgesetzt"],["nein","Abgelehnt"],["alle","Alle"]];
 const wuApp=()=>{ const p=location.pathname; return /\/evse\//.test(p)?"evse":/\/baustelle\//.test(p)?"baustelle":/\/echeck\//.test(p)?"echeck":"uebersicht"; };
 const wuDev=()=>typeof istEntwickler==="function"&&istEntwickler();

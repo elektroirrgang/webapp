@@ -6,7 +6,7 @@
    Schritt: {v, id, vor:()=>ziel, tun:()=>…, ziel:"css, css", t:"Titel", x:"Text", d:["Punkt", …], kap:true (Kapitelfolie)}
    Ohne sichtbares Ziel steht die Karte groß in der Mitte. Am Ende einer App geht es in die nächste (?tour=<app>). */
 const TOUR_APP=(()=>{ const p=location.pathname; return /\/evse\//.test(p)?"evse":/\/baustelle\//.test(p)?"baustelle":/\/echeck\//.test(p)?"echeck":"uebersicht"; })();
-const TOUR_NAME={uebersicht:"Übersicht",evse:"EVSE",baustelle:"Baustelle",echeck:"E-Check"};
+const TOUR_NAME={uebersicht:"Übersicht",evse:"EVSE",baustelle:"Baustelle",echeck:"Gebäudetechnik"};
 const TOUR_FOLGE=["uebersicht","baustelle","evse","echeck"];
 const TOUR_SK="irrgang_tour", TOUR_PULS="irrgang_tour_puls";
 /* kleine Helfer für die Schritte (alle Funktionen der Apps sind hier sichtbar, aber nicht in jeder App vorhanden) */
@@ -16,12 +16,12 @@ const tourMeldung=id=>{ try{ const m=DB.vorgaenge.get(id), r=m&&DB.vorgaenge.get
 const tourAnTab=t=>{ try{ META.anTab=t; }catch(e){} };
 const TOURS={
   uebersicht:[
-    {v:"start",kap:true,t:"Die Irrgang-Apps",x:"Vier Apps, ein Firmenkonto – vom Anruf bis zum Prüfprotokoll.",d:["Übersicht – Büro, Aufträge, Kunden, Anlagen","Baustelle – der Alltag draußen","EVSE – Wallbox-Prüfungen nach Norm","E-Check – Anlagen, Geräte, Netzwerk"]},
+    {v:"start",kap:true,t:"Die Irrgang-Apps",x:"Vier Apps, ein Firmenkonto – vom Anruf bis zum Prüfprotokoll.",d:["Übersicht – Büro, Aufträge, Kunden, Anlagen","Baustelle – der Alltag draußen","EVSE – Wallbox-Prüfungen nach Norm","Gebäudetechnik – Installation, Verteiler, Geräte, Netzwerk"]},
     {v:"start",kap:true,t:"Ein Speicher für alles",x:"Alles liegt in unserem SharePoint. Die Apps arbeiten auch ohne Netz und gleichen ab, sobald wieder Empfang da ist.",d:["Keine Zettel, keine WhatsApp-Fotos","Am Handy, iPad und PC dasselbe","Jeder meldet sich mit seinem Firmenkonto an"]},
     {v:"start",ziel:"#navbar",t:"Die Bereiche",x:"Start, Aufträge, Statistik, Kunden, Messgeräte und Bibliothek.",d:["Am Handy unten vier Bereiche, der Rest als Karten auf der Startseite","Am iPad und PC alles oben bzw. links"]},
     {v:"start",ziel:".wg-raster, .apps",t:"Die Startseite",x:"Jeder sieht sofort, was heute ansteht.",d:["Offenes Material, Aufträge, Prüfungen und Fristen, Baustellen","Über den Stift stellt sich jeder seine Startseite selbst zusammen"]},
     {v:"start",ziel:'.wg[data-w="material"]',t:"Material",x:"Was auf der Baustelle fehlt, kommt automatisch hier an.",d:["Das Büro setzt auf „bestellt“ und „da“","Wer angefordert hat, bekommt Bescheid","„Aus dem Lager“ – dann wird nichts bestellt"]},
-    {v:"start",ziel:'.wg[data-w="pruefungen"], .wg[data-w="fristen"]',t:"Prüfungen und Fristen",x:"Wiederholungsprüfungen aus EVSE, E-Check und den Maschinen der Kunden – rechtzeitig sichtbar.",d:["Rot: überfällig · Gelb: bald fällig","Antippen führt direkt zur Prüfung"]},
+    {v:"start",ziel:'.wg[data-w="pruefungen"], .wg[data-w="fristen"]',t:"Prüfungen und Fristen",x:"Wiederholungsprüfungen aus EVSE, Gebäudetechnik und den Maschinen der Kunden – rechtzeitig sichtbar.",d:["Rot: überfällig · Gelb: bald fällig","Antippen führt direkt zur Prüfung"]},
     {v:"auftraege",ziel:".vg-tafel, .vt, .vg-l, #res",t:"Aufträge",x:"Jeder Auftrag läuft von links nach rechts durch.",d:["Anruf → Anfrage ans Büro → Auftrag mit SCC-Nummer → Termin → erledigt","Hängt etwas zu lange, wird es markiert","Karten lassen sich in die nächste Spalte ziehen"]},
     {v:"auftraege",tun:()=>tourVg("demo-v6"),vg:true,ziel:".vp",t:"Ein Auftrag im Detail",x:"Familie Hoffmann – Außensteckdose Terrasse.",d:["Verlauf: wer hat wann was gemacht","Zuständig, Termin, Notizen und Fotos","Mit dem Termin wird daraus eine Baustelle"]},
     {v:"auftraege",ziel:"#fab",t:"Neuer Vorgang",x:"Ein Anruf kommt rein: hier tippen, Kunde und Anliegen eintragen, fertig.",d:["Die Telefonnummer schlägt den Kunden vor","Das Büro bekommt die Anfrage und erteilt den Auftrag"]},
@@ -65,9 +65,9 @@ const TOURS={
     {v:"faellig",ziel:"#res, #app .narrow",t:"Fällige Prüfungen",x:"Welche Wallboxen wieder geprüft werden müssen.",d:["Nach Fälligkeit sortiert","Das Büro macht daraus direkt einen Auftrag"]},
     {v:"katalog",ziel:"#res, #app .narrow",t:"Wallbox-Katalog",x:"Typen mit Datenblatt, Leistung und Schutzeinrichtung.",d:["Einmal angelegt, bei jeder Prüfung wieder da","Gerätesuche über die Seriennummer"]},
     {v:"bibliothek",ziel:".bib-kopf, #res",t:"Protokolle",x:"Fertige Protokolle liegen als PDF im Kundenordner.",d:["Unter „Prüfprotokolle“","Gehen automatisch an info@ zur Rechnung"]},
-    {kap:true,t:"EVSE – fertig",x:"Zum Schluss der E-Check."}],
+    {kap:true,t:"EVSE – fertig",x:"Zum Schluss die Gebäudetechnik."}],
   echeck:[
-    {kap:true,t:"E-Check",x:"Anlagen, Geräte und Netzwerk prüfen – mit Gebäudeaufbau und Protokoll.",d:["Installation nach DIN VDE 0100-600 / 0105-100","Ortsveränderliche Geräte nach DIN VDE 0701-0702","Netzwerkverkabelung"]},
+    {kap:true,t:"Gebäudetechnik",x:"Anlagen, Geräte und Netzwerk prüfen – mit Gebäudeaufbau und Protokoll.",d:["Installation nach DIN VDE 0100-600 / 0105-100","Ortsveränderliche Geräte nach DIN VDE 0701-0702","Netzwerkverkabelung"]},
     {v:"anlagen",ziel:"#navbar",t:"Die Bereiche",x:"Installation, Geräte, Netzwerk, Kunden und Bibliothek."},
     {v:"anlagen",ziel:"#res, #app .narrow",t:"Installationsprüfung",x:"Alle Prüfungen der Elektroanlage.",d:["Mit Stand und nächster Frist","Antippen öffnet die Prüfung"]},
     {v:"ec",id:"demo-ec-anl",tab:"auftrag",ziel:"#app .narrow, #res",t:"Haus Kessler",x:"E-Check des Einfamilienhauses – Schritt für Schritt von links nach rechts.",d:["Auftrag, Gebäude, Besichtigung, Messen, Abschluss","Oben der Fortschritt: Stromkreise, Messpunkte, Mängel","Messgerät mit Kalibrierung ist vorbelegt"]},

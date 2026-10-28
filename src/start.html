@@ -1576,14 +1576,14 @@ const APP_VERSION="<!--VERSION-->";
 const APPS=[
   {name:"EVSE",text:"Prüfung von Wallboxen und Ladesäulen",href:"../evse/",ic:"<!--ICON_EVSE-->"},
   {name:"Baustelle",text:"Tagesstand, offene Punkte und Material",href:"../baustelle/",ic:"<!--ICON_BAU-->"},
-  {name:"E-Check",text:"Hausinstallation und Geräte · in Vorbereitung",href:"../echeck/",ic:"<!--ICON_ECHECK-->"}];
+  {name:"Gebäudetechnik",text:"Installation, Verteiler, Geräte und Netzwerk",href:"../echeck/",ic:"<!--ICON_ECHECK-->"}];
 const ENTWICKLUNG=[
   {t:"Microsoft-365-Anbindung",st:"ok",s:"Läuft",d:"Anmeldung mit dem Firmenkonto. Alle Apps gleichen über SharePoint ab – jeder sieht die Einträge der Kollegen, auf allen Geräten."},
   {t:"EVSE",st:"ok",s:"Im Testbetrieb",d:"Prüfablauf, PDF-Protokoll, Wallbox-Katalog, Wiederholungsprüfung, Plausibilitätsprüfung. PDFs landen im Kundenordner."},
   {t:"Baustelle",st:"ok",s:"Im Testbetrieb",d:"Seit 15.10.2026. Tagesstände, offene Punkte, Notizen, Material, Fotos und Berichte als PDF."},
   {t:"Übersicht (Startseite)",st:"ok",s:"Im Testbetrieb",d:"Seit 15.10.2026. Alle Apps an einem Ort, Statistik, Kunden mit Ablage, Messgeräte, Mitarbeiter und Rechte."},
   {t:"Aufträge-Tafel",st:"wip",s:"Im Test",d:"Seit 16.10.2026. Anruf → Anfrage → Auftrag → Termin → Ausgeführt. Anfrage stellt jeder, den Auftrag erteilt das Büro (mit SCC-Auftragsnummer)."},
-  {t:"E-Check",st:"wip",s:"Im Aufbau",d:"Installation, Geräte und Netzwerk mit Netzwerkschränken, Belegung, Patchkabel-Farben und Netzwerk-Katalog; PDF-Protokolle. Offen: Messwerte direkt aus dem Messgerät übernehmen."},
+  {t:"Gebäudetechnik",st:"wip",s:"Im Aufbau",d:"Installation, Geräte und Netzwerk mit Netzwerkschränken, Belegung, Patchkabel-Farben und Netzwerk-Katalog; PDF-Protokolle. Offen: Messwerte direkt aus dem Messgerät übernehmen."},
   {t:"Kundenordner und Bibliothek",st:"wip",s:"Neu seit 26.10.2026",d:"Jeder Kunde hat einen Ordner in SharePoint (Angebote, Pläne, Prüfprotokolle, Berichte, Fotos, Datenblätter, Schriftverkehr). Die Bibliothek zeigt ihn in allen Apps, auch was das Büro direkt ablegt. Ältere Dateien ziehen automatisch um."},
   {t:"Konto und Einstellungen",st:"wip",s:"Neu seit 26.10.2026",d:"Einheitlich in allen Apps: Abgleich mit Anzeige am Profilbild, Konto, Start-Seite, Textgröße, Speicher, Backup für Chef und Entwickler."},
   {t:"Anbindung an SCC-CONTROL",st:"open",s:"In Klärung",d:"Ziel: Kunden und Aufträge aus SCC übernehmen, statt sie doppelt zu pflegen. Wird mit dem Chef und einem IT-Dienstleister besprochen."}];
@@ -2153,7 +2153,7 @@ function kzAusfuehren(zid,wegIds){
   return n;
 }
 function kundenView(){
-  if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden aus den Apps EVSE, Baustelle und E-Check erscheinen hier automatisch.</p></div>`;
+  if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden aus den Apps EVSE, Baustelle und Gebäudetechnik erscheinen hier automatisch.</p></div>`;
   return `<div class="narrow">${searchBar("Kunde, Ort, Ansprechpartner suchen",fKnopf("kunden"))}${query?"":kDoppeltKarte()}<div id="res">${kundenListe()}</div></div>`;
 }
 function bezugListen(kind,id,opt){
@@ -2357,7 +2357,7 @@ function maView(m){
     <div class="lbl" style="margin:16px 4px 8px">Rechte</div>${seg("teamAdmin",teamForm.entw?"2":teamForm.admin?"1":"0",[["0","Mitarbeiter"],["1","Admin"],["2","Entwickler"]])}
     <p class="sup" style="margin:8px 4px 0">Admins sehen die Statistik, verwalten Mitarbeiter und dürfen alle Einträge bearbeiten. Entwickler dürfen dasselbe und sehen zusätzlich die Testwerkzeuge.${ich?" Dich selbst kannst du nicht herabstufen oder austragen.":""}</p>
     <div class="lbl" style="margin:16px 4px 8px">Prüfer</div>${seg("teamPruefer",teamForm.pruefer?"1":"0",[["0","Nein"],["1","Ja, darf Prüfungen leiten"]])}
-    <p class="sup" style="margin:8px 4px 0">Prüfer erscheinen in EVSE und E-Check zur Auswahl und stehen im Protokoll. Prüfen darf nur eine Elektrofachkraft.</p>
+    <p class="sup" style="margin:8px 4px 0">Prüfer erscheinen in EVSE und Gebäudetechnik zur Auswahl und stehen im Protokoll. Prüfen darf nur eine Elektrofachkraft.</p>
     <div class="pf-fuss">${m&&!ich?`<button class="btn-text danger" data-act="teamDelAsk">Entfernen</button>`:""}<span style="flex:1"></span><button class="btn-filled" data-act="teamSave">${m?"Speichern":"Hinzufügen"}</button></div></div>`; }
 function teamDialog(m){
   teamForm={alt:m?m.mail:null,admin:!!(m&&m.admin),status:m?m.status||"aktiv":"aktiv",pruefer:!!(m&&m.pruefer)};
@@ -2367,7 +2367,7 @@ function teamDialog(m){
     <div class="lbl" style="margin:16px 4px 8px">Rechte</div>${seg("teamAdmin",teamForm.admin?"1":"0",[["0","Mitarbeiter"],["1","Admin"]])}
     <p class="sup" style="margin:8px 0 0">Admins sehen die Statistik, verwalten Mitarbeiter und dürfen alle Einträge bearbeiten.${ich?" Dich selbst kannst du nicht herabstufen oder austragen.":""}</p>
     <div class="lbl" style="margin:16px 4px 8px">Prüfer</div>${seg("teamPruefer",teamForm.pruefer?"1":"0",[["0","Nein"],["1","Ja, darf Prüfungen leiten"]])}
-    <p class="sup" style="margin:8px 0 0">Prüfer erscheinen in EVSE und E-Check zur Auswahl und stehen im Protokoll. Prüfen darf nur eine Elektrofachkraft.</p>`,
+    <p class="sup" style="margin:8px 0 0">Prüfer erscheinen in EVSE und Gebäudetechnik zur Auswahl und stehen im Protokoll. Prüfen darf nur eine Elektrofachkraft.</p>`,
     `${m&&!ich?`<button class="btn-text danger" data-act="teamDelAsk">Entfernen</button><span style="flex:1"></span>`:""}<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="teamSave">${m?"Speichern":"Hinzufügen"}</button>`);
 }
 let entwGeheilt=false;

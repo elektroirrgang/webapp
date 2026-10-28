@@ -91,13 +91,13 @@ function anVtBaum(g,ortId){ const kinder=id=>g.verteiler.filter(v=>(v.vonVId||""
   const L=baum("",0);
   return `<div class="sec-row"><div class="sec-lbl">Verteiler · ${g.verteiler.length}</div><span class="ab-btns"><button class="ab-ic" data-act="anVNeu" aria-label="Verteiler hinzufügen" title="Verteiler hinzufügen">${icon("add")}</button></span></div>
     ${L.length?`<div class="list an-baum">${L.join("")}</div>`:`<p class="meta">Noch kein Verteiler. Beginne mit der Hauptverteilung, darunter die Unterverteilungen mit „eingespeist aus“.</p>`}
-    <p class="sup" style="margin:10px 4px 0">Stromkreise und Fehlerschutzschalter je Verteiler pflegt die E-Check-App – es ist derselbe Datensatz.</p>`; }
+    <p class="sup" style="margin:10px 4px 0">Stromkreise und Fehlerschutzschalter je Verteiler pflegt die App Gebäudetechnik – es ist derselbe Datensatz.</p>`; }
 function anGebView(g){ const E=anEtagen(g);
   return `<div class="sec-row"><div class="sec-lbl">Bauteile · ${g.bauteile.length}</div><span class="ab-btns"><button class="ab-ic" data-act="anBNeu" aria-label="Bauteil hinzufügen" title="Bauteil hinzufügen">${icon("add")}</button></span></div>
     ${g.bauteile.length?`<div class="chips an-chips">${g.bauteile.map(b=>`<button class="chip" data-act="anBEdit" data-id="${esc(b.id)}">${esc(b.name)}${b.kurz?` <small>${esc(b.kurz)}</small>`:""}</button>`).join("")}</div>`:`<p class="meta">Keine Bauteile – nur nötig bei mehreren Gebäuden (z. B. A bis H).</p>`}
     <div class="sec-row"><div class="sec-lbl">Ebenen · ${E.length}</div><span class="ab-btns"><button class="ab-ic" data-act="anENeu" aria-label="Ebene hinzufügen" title="Ebene hinzufügen">${icon("add")}</button></span></div>
     ${E.length?`<div class="chips an-chips">${E.map(e=>`<button class="chip" data-act="anEEdit" data-id="${esc(e.id)}">${esc(e.name)}${e.kurz?` <small>${esc(e.kurz)}</small>`:""}${(e.raeume||[]).length?` <small>· ${(e.raeume||[]).length} Räume</small>`:""}</button>`).join("")}</div>`:`<p class="meta">Noch keine Ebene.</p>`}
-    <p class="sup" style="margin:12px 4px 0">Kürzel (optional): Bauteil „H“ + Ebene „1“ ergibt „H1“ – so steht es dann überall. Räume pflegt die E-Check-App.</p>`; }
+    <p class="sup" style="margin:12px 4px 0">Kürzel (optional): Bauteil „H“ + Ebene „1“ ergibt „H1“ – so steht es dann überall. Räume pflegt die App Gebäudetechnik.</p>`; }
 
 /* ---- Seite einer Maschine ---- */
 function anMSeite(m){ const g=anGeb(m.ortId), f=anFaellig(m), l=anLetzte(m), W=anWeg(g,m.vId,m.abgang), schrank=m.schrankVId&&anVtB(g,m.schrankVId);
