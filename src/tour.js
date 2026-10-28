@@ -2,7 +2,7 @@
    Geführte Vorstellung der Apps für die große Tafel: Bildschirm wird abgedunkelt, ein Bereich hervorgehoben, daneben eine große Erklärkarte.
    Weiter/Zurück per Knopf, Wischen auf der Karte, Pfeiltasten, Leertaste oder Präsentations-Fernbedienung (Bild auf/ab).
    P oder Esc = Pause (frei zeigen und erklären), danach geht es an derselben Stelle weiter.
-   Beispieldaten: Beim Start wird die Demo eingeschaltet (nur auf diesem Gerät, nie hochgeladen), beim Beenden wieder entfernt.
+   Beispieldaten: Waren sie aus, schaltet die Präsentation sie ein und beim Beenden wieder aus. Von Hand eingeschaltete (Einstellungen › Entwickler) bleiben.
    Schritt: {v, id, vor:()=>ziel, tun:()=>…, ziel:"css, css", t:"Titel", x:"Text", d:["Punkt", …], kap:true (Kapitelfolie)}
    Ohne sichtbares Ziel steht die Karte groß in der Mitte. Am Ende einer App geht es in die nächste (?tour=<app>). */
 const TOUR_APP=(()=>{ const p=location.pathname; return /\/evse\//.test(p)?"evse":/\/baustelle\//.test(p)?"baustelle":/\/echeck\//.test(p)?"echeck":"uebersicht"; })();
@@ -94,7 +94,11 @@ const tourMerk=()=>{ try{ if(TOUR) sessionStorage.setItem(TOUR_SK,JSON.stringify
 let tourPulsT=null;
 const tourPuls=an=>{ clearInterval(tourPulsT); const p=()=>{ try{ localStorage.setItem(TOUR_PULS,String(Date.now())); }catch(e){} }; if(an){ p(); tourPulsT=setInterval(p,4000); } else { try{ localStorage.removeItem(TOUR_PULS); }catch(e){} } };
 /* Beispieldaten einschalten (nur dieses Gerät); neu=true: frische Präsentation ⇒ „Nur Beispieldaten“ an */
-function tourDemoAn(neu){ try{ if(neu) localStorage.setItem("irrgang_nur_demo","1"); if(typeof demoAn==="function"&&!demoAn()&&typeof demoUmschalten==="function") demoUmschalten(true); else if(typeof render==="function") render(); }catch(e){} }
+/* Die Präsentation schaltet Beispieldaten nur dann selbst ein (und am Ende wieder aus), wenn sie vorher aus waren.
+   Wer sie über Einstellungen › Entwickler › Beispieldaten eingeschaltet hat, behält sie nach der Präsentation. */
+const TOUR_DEMO="irrgang_demo_tour", TOUR_NUR_VOR="irrgang_tour_nur_vorher";
+function tourDemoAn(neu){ try{ if(neu){ sessionStorage.setItem(TOUR_NUR_VOR,localStorage.getItem("irrgang_nur_demo")||"0"); localStorage.setItem("irrgang_nur_demo","1"); }
+  if(typeof demoAn==="function"&&!demoAn()&&typeof demoUmschalten==="function"){ localStorage.setItem(TOUR_DEMO,"1"); demoUmschalten(true); } else if(typeof render==="function") render(); }catch(e){} }
 function tourStart(app,ab,neu){ const L=TOURS[app||TOUR_APP]; if(!L||!L.length) return; if(!tourMoeglich()){ if(typeof toast==="function") toast("Den Präsentationsmodus gibt es auf iPad und PC"); return; }
   if(typeof closeOverlays==="function") closeOverlays(); tourDemoAn(neu);
   TOUR={app:app||TOUR_APP,i:Math.max(0,Math.min(ab||0,L.length-1))}; tourMerk(); tourPuls(true);
@@ -102,8 +106,8 @@ function tourStart(app,ab,neu){ const L=TOURS[app||TOUR_APP]; if(!L||!L.length) 
   document.getElementById("tourLayer").style.display=""; tourWisch(); tourFab(); setTimeout(tourZeig,250); }
 /* Beenden: Beispieldaten wieder entfernen (lädt die App neu) */
 function tourEnde(){ TOUR=null; tourMerk(); tourPuls(false); document.body.classList.remove("tour-an","tour-pause"); document.getElementById("tourLayer")?.remove(); document.getElementById("tourFab")?.remove(); tourMenuZu();
-  try{ localStorage.setItem("irrgang_nur_demo","0"); }catch(e){}
-  if(typeof demoAn==="function"&&demoAn()){ if(typeof toast==="function") toast("Präsentation beendet – Beispieldaten werden entfernt"); setTimeout(()=>demoUmschalten(false),600); } else if(typeof render==="function") render(); }
+  let selbst=false; try{ selbst=localStorage.getItem(TOUR_DEMO)==="1"; localStorage.removeItem(TOUR_DEMO); const v=sessionStorage.getItem(TOUR_NUR_VOR); localStorage.setItem("irrgang_nur_demo",selbst?"0":(v||"0")); sessionStorage.removeItem(TOUR_NUR_VOR); }catch(e){}
+  if(selbst&&typeof demoAn==="function"&&demoAn()){ if(typeof toast==="function") toast("Präsentation beendet – Beispieldaten werden entfernt"); setTimeout(()=>demoUmschalten(false),600); } else if(typeof render==="function") render(); }
 /* ---- Schwebender Knopf: pausieren (frei zeigen und erklären), fortsetzen, springen, beenden ---- */
 const TOUR_IC={play:"M8 5v14l11-7z",pause:"M6 19h4V5H6v14zm8-14v14h4V5h-4z",zur:"M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z",vor:"M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"};
 const tourSvg=k=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${TOUR_IC[k]}"/></svg>`;
@@ -218,7 +222,8 @@ addEventListener("resize",()=>{ if(TOUR){ if(!tourMoeglich()){ tourEnde(); retur
 addEventListener("load",()=>{ let q=null, gem=null; try{ q=new URLSearchParams(location.search).get("tour"); gem=JSON.parse(sessionStorage.getItem(TOUR_SK)||"null"); }catch(e){}
   if(q&&TOURS[q]){ history.replaceState(null,"",location.pathname); setTimeout(()=>tourStart(q,gem&&gem.app===q?gem.i:0),1800); return; }
   if(gem&&gem.app===TOUR_APP&&TOURS[gem.app]){ setTimeout(()=>tourStart(gem.app,gem.i),1800); return; }
-  setTimeout(()=>{ try{ if(TOUR||typeof demoAn!=="function"||!demoAn()) return; const p=+localStorage.getItem(TOUR_PULS)||0; if(Date.now()-p>15000){ localStorage.setItem("irrgang_nur_demo","0"); demoUmschalten(false); } }catch(e){} },5000); });
+  /* nur aufräumen, wenn die Präsentation die Beispieldaten selbst eingeschaltet hat – von Hand eingeschaltete bleiben */
+  setTimeout(()=>{ try{ if(TOUR||typeof demoAn!=="function"||!demoAn()||localStorage.getItem(TOUR_DEMO)!=="1") return; const p=+localStorage.getItem(TOUR_PULS)||0; if(Date.now()-p>15000){ localStorage.removeItem(TOUR_DEMO); localStorage.setItem("irrgang_nur_demo","0"); demoUmschalten(false); } }catch(e){} },5000); });
 /* Zeile im Entwickler-Bereich + Auswahlfenster */
 function tourZeile(){ if(!tourMoeglich()) return ""; return `<div class="li" role="button" tabindex="0" data-act="tourWahl"><span class="av">${icon("bulb")}</span><span class="lt"><span class="h">Präsentationsmodus</span><span class="s">Geführte Vorstellung der Apps mit Beispielkunden – für iPad und PC, auch auf der großen Tafel</span></span>${icon("chev")}</div>`; }
 function tourWahl(){ const n=a=>TOURS[a].length;

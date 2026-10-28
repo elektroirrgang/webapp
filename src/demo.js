@@ -379,7 +379,15 @@ setInterval(()=>{ try{ if(demoAn()){ if(demoNachfuellen()) (typeof softRender===
 /* Entwickler: Rolle in Microsoft oder in der Mitarbeiterliste der Übersicht als „Entwickler“ eingetragen */
 const istEntwickler=()=>{ try{ if(typeof meineRollen==="function"&&meineRollen().includes("Entwickler")) return true;
   const T=typeof EINST!=="undefined"&&EINST.team||[], ich=String((typeof ME!=="undefined"&&ME.mail)||"").toLowerCase(); return !!ich&&T.some(m=>m.mail===ich&&m.entwickler&&m.status!=="weg"); }catch(e){ return false; } };
-function entwicklerBereich(){ if(!istEntwickler()) return ""; const z=[typeof mlDiagZeile==="function"&&ME.mail?mlDiagZeile():"",typeof mlTestZeile==="function"&&ME.mail?mlTestZeile():"",typeof simZeile==="function"&&ME.mail?simZeile():"",typeof wuEntwZeile==="function"&&ME.mail?wuEntwZeile():"",typeof tourZeile==="function"?tourZeile():""].join("").trim();
+/* Beispieldaten an/aus – unabhängig von der Präsentation (nur dieses Gerät, wird nie hochgeladen) */
+function demoZeile(){ const an=demoAn(), nur=an&&nurDemo(), z=(act,t,sub,on)=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon("bulb")}</span><span class="lt"><span class="h">${t}</span><span class="s">${sub}</span></span><span class="st">${typeof pill==="function"?pill(on?"ok":"wip",on?"an":"aus"):on?"an":"aus"}</span></div>`;
+  return z("demoUm","Beispieldaten",an?"Beispielkunden, Verteiler mit QR, Prüfungen und Aufträge – nur auf diesem Gerät, wird nie hochgeladen":"Zum Ausprobieren einschalten – ausschalten entfernt sie wieder",an)
+    +(an?z("demoNurUm","Nur Beispieldaten zeigen",nur?"Echte Kunden und Daten sind ausgeblendet (nicht gelöscht)":"Echte Daten und Beispieldaten gemischt",nur):""); }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="demoUm"],[data-act="demoNurUm"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
+  if(b.dataset.act==="demoNurUm"){ nurDemoSetzen(!nurDemo()); return; }
+  try{ localStorage.removeItem("irrgang_demo_tour"); }catch(x){}
+  if(demoAn()){ if(typeof toast==="function") toast("Beispieldaten werden entfernt …"); setTimeout(()=>demoUmschalten(false),300); } else { demoUmschalten(true); if(typeof toast==="function") toast("Beispieldaten sind an – nur auf diesem Gerät"); } },true);
+function entwicklerBereich(){ if(!istEntwickler()) return ""; const z=[typeof mlDiagZeile==="function"&&ME.mail?mlDiagZeile():"",typeof mlTestZeile==="function"&&ME.mail?mlTestZeile():"",typeof simZeile==="function"&&ME.mail?simZeile():"",typeof wuEntwZeile==="function"&&ME.mail?wuEntwZeile():"",demoZeile(),typeof tourZeile==="function"?tourZeile():""].join("").trim();
   if(!z) return ""; const zu=!!META.entwZu; /* ein- und ausklappbar, Zustand je Gerät */
   return `<button type="button" class="sec-lbl sec-klapp" data-act="entwKlapp" aria-expanded="${!zu}">Entwickler<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>${zu?"":`<div class="list">${z}</div>`}`; }
 /* keine Markierung mehr am Profilbild (der gelbe Ring ist weg) – nur die Klasse für evtl. Sonderfälle */
