@@ -8,7 +8,7 @@ import hashlib, json, pathlib, re, sys, urllib.request
 
 root = pathlib.Path(__file__).resolve().parent.parent
 ziel = root / "bilder"; ziel.mkdir(exist_ok=True)
-MUSTER = re.compile(r"https://[^\"' )`\\]+?\.(?:jpg|jpeg|png|webp|gif|avif)(?:\?[^\"' )`\\]*)?", re.I)
+MUSTER = re.compile(r"https://[^\"' )`\\]+?\.(?:jpg|jpeg|png|webp|gif|avif)(?=[\"' )`\\?]|$)(?:\?[^\"' )`\\]*)?", re.I)  # Endung muss wirklich am Ende stehen (galaxus: „5.jpg_720.jpeg“)
 
 def adressen():
     s = set()
