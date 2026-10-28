@@ -1256,7 +1256,7 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .leg-fuss .btn-tonal,.leg-fuss .btn-filled{display:inline-flex;align-items:center;gap:8px}.leg-fuss .ic{width:18px;height:18px}
 .leg-fuss .leg-del{height:48px;padding:0 22px 0 18px;background:var(--err);color:#fff;border-radius:24px;font-size:15px}
 .leg-vor{gap:6px}.leg-vor .chip{min-height:32px;padding:4px 12px;font-size:13px}
-.leg-ohne{margin:0 0 20px}
+.leg-ohne{margin:20px 0 0}
 #dlg .da .ab-ic{width:40px;height:40px;border:0;border-radius:20px;background:transparent;color:var(--on-sv);display:inline-flex;align-items:center;justify-content:center}
 #dlg .da .ab-ic .ic{width:22px;height:22px;transform:rotate(-90deg)}#dlg .da .ab-ic.ab .ic{transform:rotate(90deg)}#dlg .da .ab-ic:disabled{opacity:.35}
 @media (max-width:479px){.leg-z{grid-template-columns:84px minmax(0,1fr) auto;gap:8px;font-size:14px}}
@@ -1984,7 +1984,8 @@ function kundenListe(){
   const ks=live("kunden").filter(k=>!q||H(k.name)||H(k.kdnr)||H(k.ort)||H(k.ansprech)||standorteVon(k.id).some(s=>H(s.name)||H(s.ort)||H(s.strasse)));
   ks.sort(so==="za"?(a,b)=>nm(b,a):so==="kdnr"?(a,b)=>String(a.kdnr||"~").localeCompare(String(b.kdnr||"~"),"de",{numeric:true})||nm(a,b):so==="neu"?(a,b)=>(b.created||0)-(a.created||0):nm);
   if(!ks.length) return `<p class="meta">Kein Kunde gefunden.</p>`;
-  return so==="az"||so==="za"?abcListe(ks,k=>k.name,k=>locItem("kunden",k)):listOf(ks.map(k=>locItem("kunden",k)));
+  const abc=so==="az"||so==="za";
+  return (abc?abcListe(ks,k=>k.name,k=>locItem("kunden",k)):listOf(ks.map(k=>locItem("kunden",k))))+(q?"":legOhneEintrag(abc));
 }
 /* Doppelte Kunden: gleicher Name (ohne „Familie“, „GmbH“ usw.). Zusammenführen nur für Admins. */
 const kNorm=s=>String(s||"").toLowerCase().replace(/\b(familie|fam|firma|fa|herrn?|frau|gmbh|ug|kg|ag|ohg|gbr|ek|e\.k)\b\.?/g,"").replace(/[^a-z0-9äöüß]/g,"");
@@ -2035,8 +2036,8 @@ function kzAusfuehren(zid,wegIds){
   return n;
 }
 function kundenView(){
-  if(!live("kunden").length) return `<div class="narrow">${legOhneEintrag()}</div><div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden und Standorte sind dieselben wie in der Übersicht und den Apps EVSE und Baustelle.</p></div>`;
-  return `<div class="narrow">${searchBar("Kunde, Ort, Ansprechpartner suchen",fKnopf("kunden"))}${query?"":legOhneEintrag()}${query?"":kDoppeltKarte()}<div id="res">${kundenListe()}</div></div>`;
+  if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden und Standorte sind dieselben wie in der Übersicht und den Apps EVSE und Baustelle.</p></div><div class="narrow">${legOhneEintrag(false)}</div>`;
+  return `<div class="narrow">${searchBar("Kunde, Ort, Ansprechpartner suchen",fKnopf("kunden"))}${query?"":kDoppeltKarte()}<div id="res">${kundenListe()}</div></div>`;
 }
 function kundeView(k){ const ss=standorteVon(k.id);
   return `<div class="narrow kd-seite">${kdOben(k,"kunden",ss)}${kontakteView("kunden",k)}

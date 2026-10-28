@@ -24,10 +24,11 @@ function legItem(L,mitOrt){ const n=legSkZahl(L), o=mitOrt&&L.standortId&&stando
 /* Abschnitt in der Kunden-/Standortansicht */
 function legBeiKunde(kind,r){ const A=legVon(kind,r.id);
   return kdKopf("Verteilerlegenden","legNeu","Legende anlegen",` data-kind="${kind}" data-id="${esc(r.id)}"`)+(A.length?listOf(A.map(L=>legItem(L,kind==="kunden"))):`<p class="meta">Noch keine Legende – Stromkreisliste für die Hager-Tasche im Verteiler.</p>`); }
-/* Eintrag oben in der Kundenliste */
-function legOhneEintrag(){ const n=legOhne().length;
-  return listOf([`<div class="li" role="button" tabindex="0" data-act="nav" data-v="ohnekunde"><span class="av">${icon("folder")}</span>
-    <span class="lt"><span class="h">Ohne Kunde</span><span class="s">${n?`${n} Verteilerlegende${n===1?"":"n"} ohne Kunde`:"Verteilerlegenden, die noch keinem Kunden gehören"}</span></span>${icon("chev")}</div>`]).replace('class="list"','class="list leg-ohne"'); }
+/* Eintrag „Ohne Kunde“ ganz unten in der Kundenliste – im A–Z-Register unter „*“ */
+function legOhneEintrag(abc){ const n=legOhne().length;
+  const li=listOf([`<div class="li" role="button" tabindex="0" data-act="nav" data-v="ohnekunde"><span class="av">${icon("folder")}</span>
+    <span class="lt"><span class="h">Ohne Kunde</span><span class="s">${n?`${n} Verteilerlegende${n===1?"":"n"} ohne Kunde`:"Verteilerlegenden, die noch keinem Kunden gehören"}</span></span>${icon("chev")}</div>`]);
+  return abc?`<div class="abc-gr"><div class="abc-b" aria-hidden="true">*</div><div class="abc-l">${li}</div></div>`:`<div class="leg-ohne">${li}</div>`; }
 function legOhneView(){ const A=legOhne();
   return `<div class="narrow">${A.length?listOf(A.map(L=>legItem(L,true))):`<div class="empty">${icon("notes")}<h2>Keine Legende ohne Kunde</h2><p>Hier liegen Verteilerlegenden, die (noch) keinem Kunden gehören – z. B. schnell vor Ort angelegt. Zuordnen geht jederzeit in der Legende über „Kunde zuordnen“.</p></div>`}</div>`; }
 
