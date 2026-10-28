@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#FCFCFD" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131314" media="(prefers-color-scheme: dark)">
+<title>Elektrische Anlage · Elektro Irrgang</title>
+<link rel="icon" href="<!--ICON_FAV-->">
+<script>
+/* Mitarbeiter, die in diesem Browser schon angemeldet sind, gehen direkt in die App zum Verteiler. Alle anderen sehen nur diese Seite – ohne Daten. */
+(function(){ var c=(location.hash||location.search||"").replace(/^[#?]/,"").toUpperCase().replace(/[^0-9A-Z]/g,"").slice(0,6);
+  window.QR_NR=/^[0-9A-Z]{6}$/.test(c)?c:"";
+  var an=false; try{ var l=JSON.parse(localStorage.getItem("irrgang_login")||"null"); if(l&&l.mail&&!l.aus) an=true;
+    if(!an){ var k=JSON.parse(localStorage.getItem("msal.account.keys")||"[]"); if(k&&k.length) an=true; } }catch(e){}
+  if(an&&window.QR_NR&&!/[?&]info\b/.test(location.search)) location.replace("../echeck/#qr="+window.QR_NR); })();
+</script>
+<style>
+@font-face{font-family:Manrope;font-weight:400;font-display:swap;src:url(data:font/woff2;base64,<!--F400-->) format("woff2")}
+@font-face{font-family:Manrope;font-weight:700;font-display:swap;src:url(data:font/woff2;base64,<!--F700-->) format("woff2")}
+@font-face{font-family:Manrope;font-weight:800;font-display:swap;src:url(data:font/woff2;base64,<!--F800-->) format("woff2")}
+:root{--primary:#C8102E;--on-primary:#fff;--brand:#E11D2F;--pc:#FFDAD8;--on-pc:#410006;--surface:#FCFCFD;--sc:#EFF0F3;--sc-high:#E8E9ED;--on-surface:#1F1F22;--on-sv:#4A4D55;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--primary:#FFB3AE;--on-primary:#68000F;--pc:#930019;--on-pc:#FFDAD8;--surface:#131314;--sc:#1F1F21;--sc-high:#2A2A2C;--on-surface:#E5E5E7;--on-sv:#C1C3C9;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface);color:var(--on-surface);font:16px/1.5 Manrope,system-ui,-apple-system,sans-serif;-webkit-text-size-adjust:100%}
+.w{max-width:480px;margin:0 auto;padding:calc(28px + env(safe-area-inset-top,0px)) 16px calc(32px + env(safe-area-inset-bottom,0px))}
+.logo{height:40px;display:block;margin:0 0 28px}.logo.d{display:none}
+@media (prefers-color-scheme:dark){.logo.h{display:none}.logo.d{display:block}}
+.karte{background:var(--sc);border-radius:28px;padding:24px 20px}
+.ober{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);margin:0 0 6px}
+h1{font-size:26px;line-height:1.25;margin:0 0 12px;font-weight:800}
+p{margin:0 0 12px;color:var(--on-sv)}
+.nr{display:flex;align-items:baseline;gap:12px;background:var(--sc-high);border-radius:16px;padding:12px 16px;margin:18px 0 4px}
+.nr small{font-size:13px;font-weight:700;color:var(--on-sv)}.nr b{font-size:24px;font-weight:800;letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.kn{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;height:56px;border-radius:28px;font-weight:700;font-size:17px;text-decoration:none}
+.btn svg{width:22px;height:22px;fill:currentColor}
+.f{background:var(--primary);color:var(--on-primary)}.t{background:var(--pc);color:var(--on-pc)}
+.adr{margin:24px 4px 0;font-size:14px;color:var(--on-sv)}.adr b{color:var(--on-surface)}
+.ma{display:block;margin:28px 4px 0;font-size:14px;font-weight:700;color:var(--primary);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="w">
+  <img class="logo h" src="<!--LOGO_HELL-->" alt="Elektro Irrgang"><img class="logo d" src="<!--LOGO_DUNKEL-->" alt="Elektro Irrgang">
+  <div class="karte">
+    <p class="ober">Elektrische Anlage</p>
+    <h1>Diese Anlage wird von Elektro Irrgang betreut.</h1>
+    <p>Die Dokumentation – Verteiler, Stromkreise und Prüfungen – liegt bei uns vor. Sprechen Sie uns an, wir helfen gern weiter.</p>
+    <div class="nr" id="nr"><small>Anlagen-Nr.</small><b id="nrT"></b></div>
+    <div class="kn">
+      <a class="btn f" href="tel:+4922914878"><svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>Anrufen · 02291 4878</a>
+      <a class="btn t" id="mail" href="mailto:info@elektro-irrgang.de"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>Dokumentation anfragen</a>
+      <a class="btn t" href="https://www.elektro-irrgang.de" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.93 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.99 7.99 0 0 1 5.08 16zm2.95-8H5.08a7.99 7.99 0 0 1 4.33-3.56A15.65 15.65 0 0 0 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>elektro-irrgang.de</a>
+    </div>
+  </div>
+  <p class="adr"><b>Elektro Irrgang</b><br>Hahner Weg 2 · 51545 Waldbröl<br>info@elektro-irrgang.de</p>
+  <a class="ma" id="ma" href="../echeck/">Mitarbeiter von Elektro Irrgang: in der App öffnen ›</a>
+</div>
+<script>
+(function(){ var c=window.QR_NR||"", z=c?c.slice(0,3)+" "+c.slice(3):"";
+  if(c){ document.getElementById("nrT").textContent=z; } else document.getElementById("nr").style.display="none";
+  var b="Guten Tag,\n\nich bitte um die Dokumentation zur elektrischen Anlage"+(c?" mit der Anlagen-Nr. "+z:"")+".\n\nName:\nFirma:\nTelefon:\nAnschrift der Anlage:\nGrund der Anfrage:\n\nVielen Dank!";
+  document.getElementById("mail").href="mailto:info@elektro-irrgang.de?subject="+encodeURIComponent("Dokumentation Anlage"+(c?" "+z:""))+"&body="+encodeURIComponent(b);
+  if(c) document.getElementById("ma").href="../echeck/#qr="+c; })();
+</script>
+</body>
+</html>

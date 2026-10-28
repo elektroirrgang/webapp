@@ -34,6 +34,7 @@ def baue(quelle, ziel, icon):
     html = html.replace("/*ECHECKPRUEF*/", (root / "src/echeck-pruef.js").read_text(encoding="utf-8"))
     html = html.replace("/*LEGENDE*/", (root / "src/legende.js").read_text(encoding="utf-8"))
     html = html.replace("/*VERTEILER*/", (root / "src/verteiler.js").read_text(encoding="utf-8"))
+    html = html.replace("/*QR*/", (root / "vendor/qrcode-generator.min.js").read_text(encoding="utf-8") + "\n" + (root / "src/qr.js").read_text(encoding="utf-8"))
     html = html.replace("/*DATEIEN*/", (root / "src/dateien.js").read_text(encoding="utf-8"))
     html = html.replace("/*VORGAENGE*/", (root / "src/vorgaenge.js").read_text(encoding="utf-8"))
     html = html.replace("/*ANLAGEN*/", (root / "src/anlagen.js").read_text(encoding="utf-8"))
@@ -71,3 +72,19 @@ for app in ("evse", "uebersicht", "baustelle"):
     (root / app / "pdfjs").mkdir(exist_ok=True)
     for f in ("pdf.min.js", "pdf.worker.min.js"):
         shutil.copyfile(root / "vendor/pdfjs" / f, root / app / "pdfjs" / f)
+
+
+# Öffentliche Info-Seite hinter den QR-Aufklebern (/q/) – ohne Daten, nur Kontakt; angemeldete Mitarbeiter gehen weiter in die App
+def baue_qr():
+    html = (root / "src/qr-seite.html").read_text(encoding="utf-8")
+    html = html.replace("<!--LOGO_HELL-->", "data:image/png;base64," + b64("brand/logo-hell.png"))
+    html = html.replace("<!--LOGO_DUNKEL-->", "data:image/png;base64," + b64("brand/logo-dunkel.png"))
+    html = html.replace("<!--ICON_FAV-->", "data:image/png;base64," + b64("echeck/icon-rund-64.png"))
+    for w in (400, 700, 800):
+        html = html.replace(f"<!--F{w}-->", b64(f"vendor/fonts/manrope-latin-{w}-normal.woff2"))
+    (root / "q").mkdir(exist_ok=True)
+    (root / "q" / "index.html").write_text(html, encoding="utf-8")
+    print(f"q/index.html: {len(html)} Zeichen")
+
+
+baue_qr()

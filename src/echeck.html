@@ -1252,6 +1252,23 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .leg-z.z-gr:first-child{margin-top:0}
 .leg-rcd{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:8px;background:var(--sec-c);color:var(--on-sec-c);font-size:11px;font-weight:700;vertical-align:1px}
 .leg-n{font-size:13px;font-weight:600;color:var(--on-sv);margin-left:6px}
+/* QR-Aufkleber */
+.qr-karte h3{margin-bottom:12px}
+.qr-zeile,.qr-neu{display:flex;align-items:center;gap:16px}
+.qr-svg{flex:none;border-radius:8px;background:#fff;padding:0;display:block}
+.qr-txt{display:flex;flex-direction:column;gap:4px;min-width:0}
+.qr-nr{font-size:22px;font-weight:800;letter-spacing:.06em;font-variant-numeric:tabular-nums}
+.qr-knoepfe{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}
+.qr-knoepfe .btn-tonal{display:inline-flex;align-items:center;gap:8px}.qr-knoepfe .ic{width:18px;height:18px}
+.qr-neu{margin-bottom:14px}.qr-neu .meta{margin:4px 0 0}
+.qr-cam{position:relative;aspect-ratio:4/3;background:#000;border-radius:16px;overflow:hidden}
+.qr-cam video{width:100%;height:100%;object-fit:cover;display:block}
+.qr-rahmen{position:absolute;left:50%;top:46%;width:56%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:18px;box-shadow:0 0 0 2000px rgba(0,0,0,.38);background:transparent;
+  background-image:linear-gradient(#fff,#fff),linear-gradient(#fff,#fff),linear-gradient(#fff,#fff),linear-gradient(#fff,#fff),linear-gradient(#fff,#fff),linear-gradient(#fff,#fff),linear-gradient(#fff,#fff),linear-gradient(#fff,#fff);
+  background-repeat:no-repeat;background-size:28px 4px,4px 28px,28px 4px,4px 28px,28px 4px,4px 28px,28px 4px,4px 28px;
+  background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%}
+.qr-cam-msg{position:absolute;left:0;right:0;bottom:10px;margin:0;text-align:center;color:#fff;font-size:14px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+#qrBtn{margin-right:8px}
 .leg-fuss{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:4px 0 8px}
 .leg-fuss .btn-tonal,.leg-fuss .btn-filled{display:inline-flex;align-items:center;gap:8px}.leg-fuss .ic{width:18px;height:18px}
 .leg-fuss .leg-del{height:48px;padding:0 22px 0 18px;background:#C62828;color:#fff;border-radius:24px;font-size:15px}
@@ -1358,6 +1375,7 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
     <img class="logo l-hell" src="<!--LOGO_HELL-->" alt="Elektro Irrgang">
     <img class="logo l-dunkel" src="<!--LOGO_DUNKEL-->" alt="Elektro Irrgang">
     <h1 class="tb-title" id="topTitle"></h1>
+    <button class="icon-btn" id="qrBtn" data-act="qrScan" aria-label="QR-Aufkleber scannen" title="QR-Aufkleber scannen" hidden></button>
     <button class="avatar" id="avBtn" data-act="nav" data-v="mehr" aria-label="Konto und Einstellungen" hidden><span id="avTxt"></span></button>
     <button class="icon-btn" id="menuBtn" data-act="menu" aria-label="Weitere Optionen" aria-haspopup="menu" aria-expanded="false"></button>
   </div>
@@ -1944,18 +1962,20 @@ document.addEventListener("click",e=>{
 /*ECHECKPRUEF*/
 /*LEGENDE*/
 /*VERTEILER*/
+/*QR*/
 /*PROFIL*/
 /*KOPF*/
 function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   document.body.classList.toggle("rk-offen",nav.v==="ec"&&!!nav.schr&&nav.tab==="infra");
   const app=$("#app");
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
+  if(QR_WARTET&&nav.v!=="login") qrNachLogin();
   const top=TOP.includes(nav.v), login=nav.v==="login";
   document.body.classList.toggle("is-list",nav.v==="anlagen"||login);
   document.body.classList.toggle("is-login",login);
   document.body.classList.toggle("has-nav",!login);
   const katV=nav.v==="netzkatalog"||nav.v==="netzkatmodell";   /* Netzwerk-Katalog gehört zum Bereich Netzwerk (Einstieg unten auf der Netzwerkseite) */
-  $("#backBtn").hidden=top||login; $("#navbar").hidden=login; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]);
+  $("#backBtn").hidden=top||login; $("#navbar").hidden=login; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#qrBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]);
   const rkS=nav.v==="ec"&&!login?ecRkOffen():null;   /* Netzwerkschrank offen: eigene Ebene wie die Ladestation in EVSE */
   $("#menuBtn").hidden=!VIEW_KIND[nav.v]&&!rkS; kdKopfKnopf();
   if(rkS&&!WIDE.matches){ $("#tabs").innerHTML=ecRkTabsHtml(); $("#tabs").hidden=false; }
@@ -2098,6 +2118,7 @@ function mehrView(){
     apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../evse/","ev","EVSE","Prüfung von Wallboxen und Ladesäulen")}${link("../baustelle/","baustelle","Baustelle","Tagesstand, offene Punkte und Material")}</div></div>`,
     geraet:[geraetZeilen(false)],
     verwaltung:[row("nav:team","person","Mitarbeiter",esc(META.profil.name||"")),bkZeile(),kdoZeile()],
+    eigenes:`<div class="sec-lbl">Aufkleber</div><div class="list">${row("qrBogen","qr","QR-Aufkleber drucken","Bogen mit 24 neuen Nummern · 70 × 36 mm")}</div>`,
     infoTitel:"Rechtliches und Info",info:[["nav:impressum","paragraph","Impressum",""],["nav:datenschutz","shield","Datenschutz",""]]});
 }
 function teamView(){
@@ -2210,7 +2231,7 @@ document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeOverlays(); i
 window.addEventListener("scroll",()=>{ $("#topbar").classList.toggle("scrolled",scrollY>4); document.body.classList.toggle("fab-klein",scrollY>60); },{passive:true});
 
 try{ const kopf=()=>{ const t=$("#topbar"), r=t&&t.querySelector(".tb-row"); if(!t||!r) return; const s=document.documentElement.style; s.setProperty("--tbh",Math.ceil(t.getBoundingClientRect().height)+"px"); s.setProperty("--kopf",(r.offsetTop+r.offsetHeight)+"px"); }; kopf(); if(window.ResizeObserver) new ResizeObserver(kopf).observe($("#topbar"),{box:"border-box"}); ["resize","orientationchange","pageshow"].forEach(ev=>addEventListener(ev,kopf)); document.addEventListener("visibilitychange",kopf); if(window.visualViewport) visualViewport.addEventListener("resize",kopf); [150,500,1500].forEach(ms=>setTimeout(kopf,ms)); /* iPad mit Tastatur: iOS schiebt die Seite hoch, feste Leisten wandern sonst unter die Statusleiste */ if(window.visualViewport){ const vv=()=>document.documentElement.style.setProperty("--vvt",Math.max(0,Math.round(visualViewport.offsetTop))+"px"); visualViewport.addEventListener("resize",vv); visualViewport.addEventListener("scroll",vv); addEventListener("scroll",vv,{passive:true}); } }catch(e){}
-$("#railBtn").innerHTML=icon(railOpen?"menuOpen":"menu"); backSetzen(); $("#menuBtn").innerHTML=icon("more");
+$("#railBtn").innerHTML=icon(railOpen?"menuOpen":"menu"); backSetzen(); $("#menuBtn").innerHTML=icon("more"); $("#qrBtn").innerHTML=icon("qr");
 if("serviceWorker" in navigator && location.protocol==="https:"){
   const hatteSW=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(reg=>{
@@ -2223,6 +2244,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   await dataLoad(); await einstLaden(); loginSync(); await Auth.init(); setMe();
   if(SYNC_ON&&!ME.signedIn) nav={v:"login"}; else startBereich();
   render();
+  qrStart();
   if(SYNC_ON&&ME.signedIn){ syncNow(); setInterval(()=>{ if(document.visibilityState==="visible") syncNow(); },60000);
     document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&Date.now()-(META.sync.last||0)>15000) syncSoon(); }); }
 })();
