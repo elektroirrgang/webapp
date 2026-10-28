@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1536" height="650" viewBox="0 0 1536 650" role="img" aria-label="Editierbare Illustration eines gelb-roten Elektroinstallationsprüfgeräts ohne Markenschriftzug, mit leerem Display und Anschlüssen mittig am oberen Rand">
+<title>Elektroinstallationsprüfgerät – bearbeitbare Vorlage</title>
+<desc>Frei editierbare SVG-Vektorgrafik. Jede Bauteilgruppe hat eine eigene ID. Display leer, Messbuchsen unbelegt. Die Anschlüsse sind schematisch an der Geräteoberkante angebracht, für die endgültige Anschlusssituation sind die Herstellerunterlagen verbindlich.</desc>
+<defs>
+ <linearGradient id="caseYellow" x2="0" y2="1"><stop offset="0" stop-color="#ffe471"/><stop offset=".48" stop-color="#ffdd52"/><stop offset="1" stop-color="#f9ca35"/></linearGradient>
+ <linearGradient id="lip" x2="0" y2="1"><stop offset="0" stop-color="#dfac20"/><stop offset=".22" stop-color="#ffdf62"/><stop offset=".77" stop-color="#ffe16a"/><stop offset="1" stop-color="#e7b529"/></linearGradient>
+ <linearGradient id="lowerLip" x2="0" y2="1"><stop offset="0" stop-color="#e3b122"/><stop offset=".42" stop-color="#ffdc59"/><stop offset=".85" stop-color="#f4c743"/><stop offset="1" stop-color="#b89421"/></linearGradient>
+ <linearGradient id="bumper" x2="0" y2="1"><stop offset="0" stop-color="#a8392f"/><stop offset=".3" stop-color="#ac392d"/><stop offset=".7" stop-color="#8d2c26"/><stop offset="1" stop-color="#b33d31"/></linearGradient>
+ <linearGradient id="bumperBottom" x2="0" y2="1"><stop offset="0" stop-color="#772820"/><stop offset=".3" stop-color="#ad3930"/><stop offset="1" stop-color="#982c25"/></linearGradient>
+ <linearGradient id="panel" x2="0" y2="1"><stop offset="0" stop-color="#ffe37a"/><stop offset=".62" stop-color="#ffdf55"/><stop offset="1" stop-color="#ffd54b"/></linearGradient>
+ <linearGradient id="keyBlack" x2="0" y2="1"><stop offset="0" stop-color="#44413b"/><stop offset=".22" stop-color="#1b1c1e"/><stop offset=".8" stop-color="#07090c"/><stop offset="1" stop-color="#33343a"/></linearGradient>
+ <linearGradient id="keyRed" x2="0" y2="1"><stop offset="0" stop-color="#8e2b19"/><stop offset=".37" stop-color="#c25337"/><stop offset=".8" stop-color="#ad3e2a"/><stop offset="1" stop-color="#7a251d"/></linearGradient>
+ <radialGradient id="dial"><stop offset="0" stop-color="#242427"/><stop offset=".75" stop-color="#111112"/><stop offset="1" stop-color="#050505"/></radialGradient>
+ <linearGradient id="dialHandle" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#111213"/><stop offset=".4" stop-color="#2d2d30"/><stop offset=".8" stop-color="#151618"/><stop offset="1" stop-color="#080809"/></linearGradient>
+ <linearGradient id="lcd" x2="0" y2="1"><stop offset="0" stop-color="#f0f0ec"/><stop offset=".55" stop-color="#ced2d6"/><stop offset="1" stop-color="#c0c8d1"/></linearGradient>
+ <linearGradient id="connectorPanel" x2="0" y2="1"><stop offset="0" stop-color="#434444"/><stop offset=".5" stop-color="#151618"/><stop offset="1" stop-color="#343436"/></linearGradient>
+ <filter id="deviceShadow" x="-10%" y="-30%" width="120%" height="170%"><feGaussianBlur stdDeviation="11"/></filter>
+ <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.4"/></filter>
+</defs>
+
+
+<g id="gehaeuse-rot">
+<path d="M 15 178 Q 17 155 35 146 L 184 63 Q 222 40 265 41 L 1269 41 Q 1312 39 1351 60 L 1505 151 Q 1520 161 1522 184 L 1522 515 Q 1520 540 1495 552 L 1388 607 Q 1357 621 1305 619 L 236 619 Q 180 622 139 604 L 18 541 Q 5 533 5 512 Z" fill="url(#bumper)" stroke="#8e2d26" stroke-width="5" />
+<path d="M 30 164 L 214 57 Q 243 41 260 42 L 205 116 Q 151 145 143 192 L 132 523 Q 128 546 160 556 L 206 574 L 171 585 L 26 527 Z" fill="#962f29" stroke="none" stroke-width="1" opacity=".74"/>
+<path d="M 1503 165 L 1328 56 Q 1307 42 1272 42 L 1337 119 Q 1394 150 1397 183 L 1407 510 Q 1411 547 1376 558 L 1332 578 L 1380 594 L 1511 518 Z" fill="#922d27" stroke="none" stroke-width="1" opacity=".75"/>
+<path d="M 24 177 L 200 69 Q 225 55 249 52" fill="none" stroke="#d36a55" stroke-width="4" opacity=".55"/>
+<path d="M 1510 180 L 1334 70 Q 1311 55 1281 50" fill="none" stroke="#e17965" stroke-width="4" opacity=".39"/>
+</g>
+<g id="gehaeuse-gelb">
+<path d="M 160 119 Q 211 93 278 76 Q 591 55 774 54 Q 1042 57 1270 76 Q 1339 89 1388 136 Q 1408 148 1408 186 L 1406 515 Q 1404 532 1384 541 L 1320 574 Q 1286 580 1120 564 L 420 564 Q 326 574 216 573 L 146 537 Q 123 525 126 498 L 131 192 Q 133 144 160 119 Z" fill="url(#caseYellow)" stroke="#bd8c2c" stroke-width="4" />
+<path d="M 160 122 Q 211 102 269 89 Q 497 81 630 83 L 1251 86 Q 1337 103 1381 143 L 1388 489 Q 1388 520 1367 526 L 1289 557 L 1120 548 L 434 547 L 230 562 L 156 529 Q 133 521 136 489 L 143 200 Q 142 148 160 122 Z" fill="url(#panel)" stroke="#fce986" stroke-width="3" />
+<path d="M 234 62 Q 250 36 278 34 C 610 6 930 4 1260 30 Q 1294 31 1301 58 L 1292 117 C 920 101 580 99 240 117 Z" fill="url(#lip)" stroke="#cf982a" stroke-width="2" />
+<path d="M 250 79 C 520 69 950 62 1286 80" fill="none" stroke="#ffe995" stroke-width="6" opacity=".52"/>
+<path d="M 413 524 Q 742 526 1127 524 L 1123 602 Q 778 618 416 603 Z" fill="url(#lowerLip)" stroke="#bb8d25" stroke-width="3" />
+<path d="M 433 549 Q 760 553 1111 547" fill="none" stroke="#ffe781" stroke-width="6" opacity=".42"/>
+</g>
+<g id="eckschutz-rot">
+<path d="M 7 501 Q 20 535 44 548 L 177 607 Q 206 620 236 620 L 416 607 L 411 541 L 215 567 Q 173 570 145 544 Q 116 533 116 508 L 116 558 L 95 552 L 90 579 L 20 539 Z" fill="url(#bumperBottom)" stroke="#853026" stroke-width="2" />
+<path d="M 1515 503 Q 1508 539 1476 556 L 1360 609 Q 1339 618 1304 618 L 1124 605 L 1129 542 L 1305 564 Q 1357 574 1394 533 L 1405 512 L 1405 562 L 1430 552 L 1446 577 L 1515 533 Z" fill="url(#bumperBottom)" stroke="#843025" stroke-width="2" />
+<path d="M 170 578 L 404 553 L 405 574 L 169 601 Z" fill="#bb4735" stroke="none" stroke-width="1" opacity=".35"/>
+<path d="M 1134 552 L 1362 579 L 1360 602 L 1134 578 Z" fill="#bd4b39" stroke="none" stroke-width="1" opacity=".3"/>
+<path d="M 94 550 L 158 567 L 158 589 L 91 577 Z" fill="#181817" stroke="#eda93b" stroke-width="3" />
+<path d="M 1431 565 L 1466 548 L 1468 578 L 1432 591 Z" fill="#101010" stroke="#c58928" stroke-width="3" />
+</g>
+<g id="anschlussfeld-mittig-oben">
+<rect x="602" y="44" width="333" height="84" rx="14" fill="#33302c" stroke="none" stroke-width="1" opacity=".15" filter="url(#soft)"/>
+<rect x="603" y="39" width="330" height="87" rx="12" fill="url(#connectorPanel)" stroke="#555047" stroke-width="3" />
+<rect x="615" y="49" width="305" height="64" rx="8" fill="#17191a" stroke="#545657" stroke-width="1.5" />
+<path d="M 628 55 V 104" fill="none" stroke="#515252" stroke-width="1.2" opacity=".35"/>
+<path d="M 634 55 V 104" fill="none" stroke="#515252" stroke-width="1.2" opacity=".35"/>
+<path d="M 640 55 V 104" fill="none" stroke="#515252" stroke-width="1.2" opacity=".35"/>
+<path d="M 646 55 V 104" fill="none" stroke="#515252" stroke-width="1.2" opacity=".35"/>
+<path d="M 652 55 V 104" fill="none" stroke="#515252" stroke-width="1.2" opacity=".35"/>
+<path d="M 658 55 V 104" fill="none" stroke="#515252" stroke-width="1.2" opacity=".35"/>
+<path d="M 664 55 V 104" fill="none" stroke="#515252" stroke-width="1.2" opacity=".35"/>
+<path d="M 670 55 V 104" fill="none" stroke="#515252" stroke-width="1.2" opacity=".35"/>
+<path d="M 676 55 V 104" fill="none" stroke="#515252" stroke-width="1.2" opacity=".35"/>
+<path d="M 874 55 V 104" fill="none" stroke="#515252" stroke-width="1.2" opacity=".35"/>
+<path d="M 880 55 V 104" fill="none" stroke="#515252" stroke-width="1.2" opacity=".35"/>
+<path d="M 886 55 V 104" fill="none" stroke="#515252" stroke-width="1.2" opacity=".35"/>
+<path d="M 892 55 V 104" fill="none" stroke="#515252" stroke-width="1.2" opacity=".35"/>
+<path d="M 898 55 V 104" fill="none" stroke="#515252" stroke-width="1.2" opacity=".35"/>
+<path d="M 904 55 V 104" fill="none" stroke="#515252" stroke-width="1.2" opacity=".35"/>
+<circle cx="707" cy="75" r="22" fill="#080a0a" stroke="#696761" stroke-width="3" />
+<circle cx="707" cy="75" r="16" fill="#d84429" stroke="#0a0b0d" stroke-width="2" />
+<circle cx="707" cy="75" r="10" fill="#08090b" stroke="#6f6d6a" stroke-width="2" />
+<circle cx="704" cy="71" r="3" fill="#292b2d" stroke="none" stroke-width="1" opacity=".9"/>
+<text x="707" y="49" font-family="Arial,DejaVu Sans,sans-serif" font-size="10" font-weight="bold" fill="#e5e6de" text-anchor="middle" >L1</text>
+<circle cx="834" cy="75" r="22" fill="#080a0a" stroke="#696761" stroke-width="3" />
+<circle cx="834" cy="75" r="16" fill="#2085cf" stroke="#0a0b0d" stroke-width="2" />
+<circle cx="834" cy="75" r="10" fill="#08090b" stroke="#6f6d6a" stroke-width="2" />
+<circle cx="831" cy="71" r="3" fill="#292b2d" stroke="none" stroke-width="1" opacity=".9"/>
+<text x="834" y="49" font-family="Arial,DejaVu Sans,sans-serif" font-size="10" font-weight="bold" fill="#e5e6de" text-anchor="middle" >N</text>
+<circle cx="768" cy="100" r="22" fill="#080a0a" stroke="#696761" stroke-width="3" />
+<circle cx="768" cy="100" r="16" fill="#94bb38" stroke="#0a0b0d" stroke-width="2" />
+<circle cx="768" cy="100" r="10" fill="#08090b" stroke="#6f6d6a" stroke-width="2" />
+<circle cx="765" cy="96" r="3" fill="#292b2d" stroke="none" stroke-width="1" opacity=".9"/>
+<text x="768" y="74" font-family="Arial,DejaVu Sans,sans-serif" font-size="10" font-weight="bold" fill="#e5e6de" text-anchor="middle" >PE</text>
+</g>
+<g id="display-und-rahmen">
+<rect x="525" y="172" width="477" height="342" rx="6" fill="#27292a" stroke="#6d6254" stroke-width="3" />
+<rect x="534" y="181" width="458" height="324" rx="3" fill="#161719" stroke="#44403e" stroke-width="2" />
+<rect x="547" y="194" width="432" height="300" rx="1" fill="url(#lcd)" stroke="#171a1c" stroke-width="3" />
+<path d="M 550 196 L 791 196 L 651 491 L 551 491 Z" fill="#ffffff" stroke="none" stroke-width="1" opacity=".07"/>
+<rect x="548" y="483" width="430" height="8" rx="0" fill="#a5abb0" stroke="none" stroke-width="1" opacity=".3"/>
+</g>
+<g id="tasten-links">
+<rect x="199" y="158" width="70" height="44" rx="7" fill="#44301d" stroke="none" stroke-width="1" opacity=".16"/>
+<rect x="201" y="155" width="66" height="41" rx="7" fill="url(#keyBlack)" stroke="#6a5942" stroke-width="2" />
+<path d="M 207 161 Q 234.0 157 261 161" fill="none" stroke="#727069" stroke-width="1.4" opacity=".65"/>
+<text x="234.0" y="182.06" font-family="Arial,DejaVu Sans,sans-serif" font-size="25" font-weight="bold" fill="#ffffff" text-anchor="middle" >▣</text>
+<rect x="300" y="158" width="72" height="44" rx="7" fill="#44301d" stroke="none" stroke-width="1" opacity=".16"/>
+<rect x="302" y="155" width="68" height="41" rx="7" fill="url(#keyBlack)" stroke="#6a5942" stroke-width="2" />
+<path d="M 308 161 Q 336.0 157 364 161" fill="none" stroke="#727069" stroke-width="1.4" opacity=".65"/>
+<text x="336.0" y="182.06" font-family="Arial,DejaVu Sans,sans-serif" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle" >ZERO</text>
+<rect x="401" y="158" width="71" height="44" rx="7" fill="#44301d" stroke="none" stroke-width="1" opacity=".16"/>
+<rect x="403" y="155" width="67" height="41" rx="7" fill="url(#keyBlack)" stroke="#6a5942" stroke-width="2" />
+<path d="M 409 161 Q 436.5 157 464 161" fill="none" stroke="#727069" stroke-width="1.4" opacity=".65"/>
+<text x="436.5" y="182.06" font-family="Arial,DejaVu Sans,sans-serif" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="middle" >HELP</text>
+<rect x="199" y="227" width="70" height="45" rx="7" fill="#44301d" stroke="none" stroke-width="1" opacity=".16"/>
+<rect x="201" y="224" width="66" height="42" rx="7" fill="url(#keyBlack)" stroke="#6a5942" stroke-width="2" />
+<path d="M 207 230 Q 234.0 226 261 230" fill="none" stroke="#727069" stroke-width="1.4" opacity=".65"/>
+<text x="234.0" y="251.72" font-family="Arial,DejaVu Sans,sans-serif" font-size="25" font-weight="bold" fill="#ffffff" text-anchor="middle" >⚙</text>
+<rect x="401" y="227" width="71" height="45" rx="7" fill="#44301d" stroke="none" stroke-width="1" opacity=".16"/>
+<rect x="403" y="224" width="67" height="42" rx="7" fill="url(#keyBlack)" stroke="#6a5942" stroke-width="2" />
+<path d="M 409 230 Q 436.5 226 464 230" fill="none" stroke="#727069" stroke-width="1.4" opacity=".65"/>
+<text x="436.5" y="251.72" font-family="Arial,DejaVu Sans,sans-serif" font-size="27" font-weight="bold" fill="#ffffff" text-anchor="middle" >←</text>
+<rect x="306" y="253" width="60" height="54" rx="7" fill="#5f2a21" stroke="none" stroke-width="1" opacity=".2"/>
+<rect x="306" y="250" width="58" height="51" rx="7" fill="url(#keyRed)" stroke="#723326" stroke-width="2" />
+<text x="335" y="286" font-family="Arial,DejaVu Sans,sans-serif" font-size="30" font-weight="bold" fill="#fff9ed" text-anchor="middle" >▲</text>
+<rect x="199" y="355" width="60" height="54" rx="7" fill="#5f2a21" stroke="none" stroke-width="1" opacity=".2"/>
+<rect x="199" y="352" width="58" height="51" rx="7" fill="url(#keyRed)" stroke="#723326" stroke-width="2" />
+<text x="228" y="388" font-family="Arial,DejaVu Sans,sans-serif" font-size="30" font-weight="bold" fill="#fff9ed" text-anchor="middle" >◀</text>
+<rect x="412" y="355" width="60" height="54" rx="7" fill="#5f2a21" stroke="none" stroke-width="1" opacity=".2"/>
+<rect x="412" y="352" width="58" height="51" rx="7" fill="url(#keyRed)" stroke="#723326" stroke-width="2" />
+<text x="441" y="388" font-family="Arial,DejaVu Sans,sans-serif" font-size="30" font-weight="bold" fill="#fff9ed" text-anchor="middle" >▶</text>
+<rect x="307" y="460" width="60" height="54" rx="7" fill="#5f2a21" stroke="none" stroke-width="1" opacity=".2"/>
+<rect x="307" y="457" width="58" height="51" rx="7" fill="url(#keyRed)" stroke="#723326" stroke-width="2" />
+<text x="336" y="493" font-family="Arial,DejaVu Sans,sans-serif" font-size="30" font-weight="bold" fill="#fff9ed" text-anchor="middle" >▼</text>
+<circle cx="333" cy="374" r="71" fill="#aaa69a" stroke="#d2ad53" stroke-width="3" />
+<circle cx="333" cy="374" r="60" fill="#37383b" stroke="#d2cfbd" stroke-width="2" />
+<circle cx="333" cy="374" r="49" fill="url(#keyRed)" stroke="#eedca0" stroke-width="4" />
+<circle cx="333" cy="374" r="45" fill="none" stroke="#8d3529" stroke-width="2" />
+<text x="333" y="378" font-family="Arial,DejaVu Sans,sans-serif" font-size="29" font-weight="bold" fill="#ffffff" text-anchor="middle" >TEST</text>
+<text x="333" y="402" font-family="Arial,DejaVu Sans,sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle" >ENTER</text>
+</g>
+<g id="nfc-und-einschalter">
+<rect x="1051" y="117" width="124" height="50" rx="5" fill="none" stroke="#36322b" stroke-width="3" />
+<text x="1063" y="149" font-family="Arial,DejaVu Sans,sans-serif" font-size="22" font-weight="bold" fill="#1c1b18" text-anchor="start" >NFC</text>
+<path d="M 1121 131 q 13 11 0 24 M 1128 124 q 20 16 0 37" fill="none" stroke="#22201c" stroke-width="3" />
+<rect x="1147" y="125" width="19" height="34" rx="2" fill="#28241f" stroke="none" stroke-width="1" />
+<rect x="1152" y="121" width="10" height="6" rx="1" fill="#28241f" stroke="none" stroke-width="1" />
+<circle cx="1318" cy="184" r="36" fill="#d8ab3d" stroke="none" stroke-width="1" opacity=".5"/>
+<circle cx="1318" cy="184" r="32" fill="url(#keyBlack)" stroke="#786441" stroke-width="3" />
+<path d="M 1318 164 V 184 M 1307 174 A 16 16 0 1 0 1329 174" fill="none" stroke="#fffefd" stroke-width="5" stroke-linecap="round"/>
+</g>
+<g id="drehschalter-rechts">
+<text x="1191" y="240" font-family="Arial,DejaVu Sans,sans-serif" font-size="20" font-weight="bold" fill="#afa16e" text-anchor="middle" >AUTO</text>
+<text x="1256" y="247" font-family="Arial,DejaVu Sans,sans-serif" font-size="20" font-weight="normal" fill="#29251f" text-anchor="start" >RISO</text>
+<text x="1335" y="293" font-family="Arial,DejaVu Sans,sans-serif" font-size="19" font-weight="normal" fill="#332b24" text-anchor="start" >RCD</text>
+<text x="1345" y="312" font-family="Arial,DejaVu Sans,sans-serif" font-size="13" font-weight="normal" fill="#423a2c" text-anchor="start" >(IΔn,t)</text>
+<text x="1360" y="364" font-family="Arial,DejaVu Sans,sans-serif" font-size="21" font-weight="normal" fill="#342a1e" text-anchor="start" >Zs</text>
+<text x="1351" y="382" font-family="Arial,DejaVu Sans,sans-serif" font-size="13" font-weight="normal" fill="#423a2c" text-anchor="start" >(L-PE)</text>
+<text x="1357" y="441" font-family="Arial,DejaVu Sans,sans-serif" font-size="21" font-weight="normal" fill="#342a1e" text-anchor="start" >Z</text>
+<text x="1347" y="458" font-family="Arial,DejaVu Sans,sans-serif" font-size="13" font-weight="normal" fill="#423a2c" text-anchor="start" >(L-N,ΔU)</text>
+<text x="1032" y="446" font-family="Arial,DejaVu Sans,sans-serif" font-size="20" font-weight="normal" fill="#362c23" text-anchor="middle" >U</text>
+<text x="1033" y="463" font-family="Arial,DejaVu Sans,sans-serif" font-size="13" font-weight="normal" fill="#423a2c" text-anchor="middle" >(~,Hz)</text>
+<text x="1055" y="363" font-family="Arial,DejaVu Sans,sans-serif" font-size="21" font-weight="normal" fill="#362c23" text-anchor="middle" >Rᴇ</text>
+<text x="1046" y="380" font-family="Arial,DejaVu Sans,sans-serif" font-size="13" font-weight="normal" fill="#423a2c" text-anchor="middle" >(φ,ρ)</text>
+<text x="1105" y="285" font-family="Arial,DejaVu Sans,sans-serif" font-size="20" font-weight="normal" fill="#362c23" text-anchor="middle" >RLOW</text>
+<path d="M 1080.09 321.48 L 1070.12 316.83" fill="none" stroke="#7e7154" stroke-width="2" />
+<path d="M 1115.82 275.75 L 1108.90 267.20" fill="none" stroke="#7e7154" stroke-width="2" />
+<path d="M 1165.79 250.83 L 1163.13 240.16" fill="none" stroke="#7e7154" stroke-width="2" />
+<path d="M 1221.61 249.37 L 1223.71 238.57" fill="none" stroke="#7e7154" stroke-width="2" />
+<path d="M 1270.99 270.33 L 1277.30 261.32" fill="none" stroke="#7e7154" stroke-width="2" />
+<path d="M 1307.57 309.56 L 1317.00 303.89" fill="none" stroke="#7e7154" stroke-width="2" />
+<path d="M 1324.41 355.82 L 1335.28 354.10" fill="none" stroke="#7e7154" stroke-width="2" />
+<path d="M 1318.22 420.12 L 1328.56 423.88" fill="none" stroke="#7e7154" stroke-width="2" />
+<path d="M 1289.79 465.61 L 1297.71 473.25" fill="none" stroke="#7e7154" stroke-width="2" />
+<path d="M 1241.12 497.22 L 1244.88 507.56" fill="none" stroke="#7e7154" stroke-width="2" />
+<path d="M 1185.76 504.51 L 1184.80 515.47" fill="none" stroke="#7e7154" stroke-width="2" />
+<path d="M 1134.46 488.83 L 1129.13 498.45" fill="none" stroke="#7e7154" stroke-width="2" />
+<path d="M 1092.64 451.82 L 1083.74 458.29" fill="none" stroke="#7e7154" stroke-width="2" />
+<path d="M 1071.31 405.02 L 1060.59 407.49" fill="none" stroke="#7e7154" stroke-width="2" />
+<circle cx="1198" cy="376" r="132" fill="#dec05b" stroke="none" stroke-width="1" opacity=".4"/>
+<circle cx="1198" cy="376" r="125" fill="#313133" stroke="#eec957" stroke-width="3" />
+<circle cx="1198" cy="376" r="119" fill="url(#dial)" stroke="#77716a" stroke-width="4" />
+<circle cx="1198" cy="376" r="108" fill="#17191a" stroke="#2f2c2e" stroke-width="3" />
+<path d="M 1174 285 Q 1178 279 1189 283 L 1258 509 Q 1246 518 1224 520 L 1159 296 Q 1159 285 1174 285 Z" fill="url(#dialHandle)" stroke="#08090c" stroke-width="3" />
+<path d="M 1176 291 L 1240 505" fill="none" stroke="#545455" stroke-width="3" opacity=".55"/>
+<circle cx="1175" cy="294" r="8" fill="#101113" stroke="#44464a" stroke-width="2" />
+</g>
+</svg>

@@ -28,7 +28,7 @@ def baue(quelle, ziel, icon):
     html = html.replace("/*PROFIL*/", (root / "src/profil.js").read_text(encoding="utf-8") + "\n" + (root / "src/wuensche.js").read_text(encoding="utf-8"))
     html = html.replace("/*ANFORDERUNG*/", (root / "src/anforderung.js").read_text(encoding="utf-8"))
     html = html.replace("/*ABGLEICH*/", (root / "src/abgleich.js").read_text(encoding="utf-8"))
-    html = html.replace("/*ANSCHLUSS*/", (root / "src/anschluss.js").read_text(encoding="utf-8"))
+    html = html.replace("/*ANSCHLUSS*/", (root / "src/anschluss.js").read_text(encoding="utf-8").replace("/*MFTSVG*/\"\"", json.dumps((root / "src/geraete/pruefgeraet.svg").read_text(encoding="utf-8"), ensure_ascii=False)))
     html = html.replace("/*FILTER*/", (root / "src/filter.js").read_text(encoding="utf-8"))
     html = html.replace("/*KUNDE*/", (root / "src/kunde.js").read_text(encoding="utf-8"))
     html = html.replace("/*ECHECKPRUEF*/", (root / "src/echeck-pruef.js").read_text(encoding="utf-8"))

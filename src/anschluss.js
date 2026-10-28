@@ -82,35 +82,29 @@ function pruefkabel(fx,fy,dx,dy){
   <path d="M${dx-12} ${dy-20} h24" stroke="#55565e" stroke-width="5" stroke-linecap="round"/>${T(dx,dy+6,"Typ 2",11,"#d0d1d7",700)}</g>`;
 }
 
-/* --- Wiha MFT one: 1:1 nach der Ansicht aus der Wiha-Anleitung (Querformat), eigene Koordinaten 800 × 335 ---
-   Tasten links, Display Mitte, NFC + Ein/Aus oben rechts, Drehschalter rechts; Messbuchsen oben (L1/L/H rot, L2/N/E blau, L3/PE/ES gelb, S) */
-const MFT_LAB={AUTO:[602,120],RISO:[662,126],RLO:[562,141],RCD:[704,140],RE:[536,180],ZS:[712,177],U:[534,226],ZI:[712,220]};
+/* --- Prüfgerät: Vorlage von Max (src/geraete/pruefgeraet.svg, 1536 × 650, Bauteile mit IDs) ---
+   Daraus wird je Messung: Drehschalter-Griff auf die Stellung gedreht, Stellung rot markiert, NFC-Feld entfernt, Display beschriftet.
+   Buchsen oben mittig: L1 (rot), N (blau), PE (grün). */
+const MFT_SVG=/*MFTSVG*/"";
+const MFT_K=[1198,376];
+const MFT_POS={RLO:[1105,278],AUTO:[1191,233],RISO:[1278,240],RCD:[1355,287],ZS:[1371,357],ZI:[1364,434],U:[1032,440],RE:[1055,357]};
+const MFT_TXT={RLO:"RLOW",AUTO:"AUTO",RISO:"RISO",RCD:"RCD",ZS:"Zs",ZI:"Z",U:"U",RE:"Rᴇ"};
 function mftL(stell,anz){
-  const K=[620,182];
-  const t=(tx,ty,tw,th,lab,sz=11)=>`<rect x="${tx}" y="${ty}" width="${tw}" height="${th}" rx="8" fill="#2a2b30"/><rect x="${tx+2.5}" y="${ty+2.5}" width="${tw-5}" height="${th-5}" rx="6" fill="#f4f4f6"/>${lab?T(tx+tw/2,ty+th/2+sz*.36,lab,sz,"#2a2b30",800):""}`;
-  const lab=(k,txt,sub)=>{ const [x,y]=MFT_LAB[k], an=k===stell; return T(x,y,txt,an?13:11,an?"#c62828":"#2a2b30",an?900:700)+(sub?T(x,y+12,sub,7,an?"#c62828":"#5a5b62",600):""); };
-  const [lx,ly]=MFT_LAB[stell], wnk=Math.atan2(ly-6-K[1],lx-K[0]), px=K[0]+39*Math.cos(wnk), py=K[1]+39*Math.sin(wnk), qx=K[0]-33*Math.cos(wnk), qy=K[1]-33*Math.sin(wnk);
-  return `<rect x="512" y="-22" width="236" height="30" rx="8" fill="#26272c"/>
-  ${[["#e53935",540],["#1e7fe0",598],["#f2c230",656],["#5a5b62",714]].map(([f,x])=>`<circle cx="${x}" cy="-8" r="12" fill="${f}"/><circle cx="${x}" cy="-8" r="5" fill="#141518"/>`).join("")}
-  <g filter="url(#abSh)"><path d="M48 52 L118 4 Q124 0 132 0 H668 Q676 0 682 4 L752 52 Q800 60 800 92 V292 Q800 335 758 335 H42 Q0 335 0 292 V92 Q0 60 48 52 Z" fill="url(#abMg)"/></g>
-  <rect x="140" y="10" width="520" height="24" rx="8" fill="#56575f"/><rect x="0" y="96" width="22" height="190" rx="10" fill="#202125"/><rect x="778" y="96" width="22" height="190" rx="10" fill="#202125"/>
-  <rect x="30" y="50" width="740" height="262" rx="34" fill="#ececf0"/>
-  ${t(110,76,32,28,"💾",12)}${t(154,76,44,28,"ZERO",10.5)}${t(206,76,44,28,"HELP",10.5)}
-  ${t(106,114,34,30,"⚙",13)}${t(208,116,40,28,"←",14)}
-  ${t(158,124,36,32,"▲",11)}${t(158,240,36,32,"▼",11)}${t(104,180,32,36,"◀",11)}${t(214,180,32,36,"▶",11)}
-  <circle cx="175" cy="198" r="34" fill="#2a2b30"/><circle cx="175" cy="198" r="30" fill="#dcdde2"/>${T(175,199,"TEST",15,"#2a2b30",900)}${T(175,213,"ENTER",8,"#5a5b62",700)}
-  
-  <rect x="276" y="88" width="246" height="190" rx="8" fill="#26272c"/><rect x="284" y="96" width="230" height="174" rx="4" fill="url(#abDs)"/>
-  ${anz.map((x,i)=>T(399,148+i*42,x,i?26:30,"#173b1f",i?600:800)).join("")}
-  
-  <circle cx="728" cy="88" r="22" fill="#2a2b30"/><circle cx="728" cy="88" r="18" fill="#3c3d44"/><path d="M721 82 A10 10 0 1 0 735 82" fill="none" stroke="#f4f4f6" stroke-width="3"/><path d="M728 76v12" stroke="#f4f4f6" stroke-width="3"/>
-  <path d="M${(K[0]+62*Math.cos(Math.atan2(141-6-K[1],566-K[0]))).toFixed(1)} ${(K[1]+62*Math.sin(Math.atan2(141-6-K[1],566-K[0]))).toFixed(1)} A62 62 0 0 1 ${(K[0]+62*Math.cos(Math.atan2(218-6-K[1],706-K[0]))).toFixed(1)} ${(K[1]+62*Math.sin(Math.atan2(218-6-K[1],706-K[0]))).toFixed(1)}" fill="none" stroke="#b8b9c1" stroke-width="6" stroke-linecap="round"/>
-  <rect x="640" y="92" width="34" height="16" rx="3" fill="none" stroke="#2a2b30" stroke-width="1.5"/>${T(657,104,"⚠ϟ",10,"#2a2b30",800)}
-  ${lab("AUTO","AUTO")}${lab("RISO","R<tspan dy='4' font-size='10'>ISO</tspan>")}${lab("RLO","R<tspan dy='4' font-size='10'>LOW</tspan>")}${lab("RCD","RCD","(IΔN, t)")}${lab("RE","R<tspan dy='4' font-size='10'>E</tspan>","(⏚, ρ)")}${lab("ZS","Z<tspan dy='4' font-size='10'>S</tspan>","(L-PE)")}${lab("U","U","(~, Hz)")}${lab("ZI","Z<tspan dy='4' font-size='10'>I</tspan>","(L-N, ΔU)")}
-  <circle cx="${K[0]}" cy="${K[1]}" r="50" fill="#2a2b30"/><circle cx="${K[0]}" cy="${K[1]}" r="45" fill="#dcdde2"/>
-  <path d="M${qx.toFixed(1)} ${qy.toFixed(1)} L${px.toFixed(1)} ${py.toFixed(1)}" stroke="#2a2b30" stroke-width="20" stroke-linecap="round"/><path d="M${K[0]} ${K[1]} L${(K[0]+35*Math.cos(wnk)).toFixed(1)} ${(K[1]+35*Math.sin(wnk)).toFixed(1)}" stroke="#f4f4f6" stroke-width="3" stroke-linecap="round"/><circle cx="${(K[0]+35*Math.cos(wnk)).toFixed(1)}" cy="${(K[1]+35*Math.sin(wnk)).toFixed(1)}" r="4.5" fill="#e53935"/>`;
+  let s=MFT_SVG.replace(/<\?xml[^>]*>/,"").replace(/<svg[^>]*>/,"").replace(/<\/svg>\s*$/,"").replace(/<title>[\s\S]*?<\/title>/,"").replace(/<desc>[\s\S]*?<\/desc>/,"");
+  /* eigene IDs mit „ab“ davor, damit sie je Bild eindeutig gemacht werden */
+  s=s.replace(/id="([^"]+)"/g,'id="abm-$1"').replace(/url\(#([^)]+)\)/g,"url(#abm-$1)");
+  /* NFC-Feld raus, Einschalter bleibt */
+  s=s.replace(/(<g id="abm-nfc-und-einschalter">)[\s\S]*?(<circle cx="1318")/,"$1$2");
+  /* Griff des Drehschalters auf die Stellung drehen (Grundstellung zeigt mit der Spitze bei 1175/294) */
+  const ziel=MFT_POS[stell]||MFT_POS.AUTO, w0=Math.atan2(294-MFT_K[1],1175-MFT_K[0]), w1=Math.atan2(ziel[1]-MFT_K[1],ziel[0]-MFT_K[0]), grad=((w1-w0)*180/Math.PI).toFixed(1);
+  s=s.replace(/(<path d="M 1174 285[\s\S]*?<circle cx="1175" cy="294"[^>]*\/>)/,`<g transform="rotate(${grad} ${MFT_K[0]} ${MFT_K[1]})">$1<circle cx="1175" cy="294" r="5" fill="#e53935"/></g>`);
+  /* Stellung rot hervorheben */
+  const t=MFT_TXT[stell]; if(t) s=s.replace(new RegExp(`(<text[^>]*?)fill="[^"]*"([^>]*>)${t}</text>`),`$1fill="#d32f2f" style="font-weight:900"$2${t}</text>`);
+  /* Display beschriften */
+  s+=anz.map((x,i)=>`<text x="763" y="${anz.length>1?(i?392:318):355}" text-anchor="middle" style="font:${i?600:800} ${i?42:56}px system-ui,-apple-system,'Segoe UI',sans-serif;fill:#1d2a20">${x}</text>`).join("");
+  return s;
 }
-const MFT_BU={rot:[540,-8],blau:[598,-8],gelb:[656,-8]};
+const MFT_BU={rot:[707,75],blau:[834,75],gelb:[768,100]};
 /* Geräte maßstäblich platzieren: g = {x,y,s}; pt rechnet einen Punkt aus Geräte- in Bildkoordinaten um */
 const gr=(g,inhalt)=>`<g transform="translate(${g.x} ${g.y}) scale(${g.s})">${inhalt}</g>`;
 const pt=(g,[a,b])=>[+(g.x+a*g.s).toFixed(1),+(g.y+b*g.s).toFixed(1)];
@@ -127,7 +121,7 @@ function leitung(a,b,f,c1,c2,ende="stecker"){
 const hinweis=(_x,_y,t,f="#5f6068")=>{ const x=24,y=494; return `<rect x="${x}" y="${y}" width="${t.length*7.6+28}" height="30" rx="15" fill="${f}"/>${T(x+14,y+20,t,13,"#fff",700,"start")}`; };
 
 /* Größenverhältnis wie in echt: MFT one (Querformat) deutlich breiter als der FEV300 hoch ist */
-const GW={x:10,y:150,s:.9}, GF={x:224,y:62,s:.8}, GM={x:428,y:292,s:.66};
+const GW={x:10,y:150,s:.9}, GF={x:224,y:62,s:.8}, GM={x:420,y:300,s:.35};
 const grund=(o={})=>{ const d=pt(GW,wbDose(0,0)), f=pt(GF,[0,0]);
   return gr(GW,wallbox(0,0,o.wb||{}))+gr(GF,fev(0,0,o.fev||{}))
     +`<path d="M${f[0]+39*GF.s} ${f[1]-30*GF.s} C ${f[0]+39*GF.s} ${f[1]-90}, ${d[0]+110} ${d[1]-10}, ${d[0]+30} ${d[1]}" fill="none" stroke="#222327" stroke-width="8" stroke-linecap="round"/>
