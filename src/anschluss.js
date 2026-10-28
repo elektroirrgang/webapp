@@ -8,7 +8,7 @@ const ADER={L1:"#7a4a24",L2:"#1f1f22",L3:"#8c8c92",N:"#1e63c8",PE:"#5aa02c"};
 const LEIT={rot:"#e0342f",blau:"#1e7fe0",gelb:"#5aa02c"};
 const defs=`<defs>
  <linearGradient id="abWb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbfbfd"/><stop offset="1" stop-color="#dcdce3"/></linearGradient>
- <linearGradient id="abFg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f6c62f"/><stop offset=".5" stop-color="#ffd84a"/><stop offset="1" stop-color="#e9b31f"/></linearGradient>
+ <linearGradient id="abFg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5a5b63"/><stop offset=".5" stop-color="#6b6c75"/><stop offset="1" stop-color="#4f5058"/></linearGradient>
  <linearGradient id="abMg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#46474e"/><stop offset="1" stop-color="#2a2b30"/></linearGradient>
  <linearGradient id="abDs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dfeee1"/><stop offset="1" stop-color="#c6dcc9"/></linearGradient>
  <filter id="abSh" x="-10%" y="-10%" width="130%" height="130%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity=".18"/></filter>
@@ -71,7 +71,7 @@ function fev(x,y,{cp="A",pp="32A",tE=false,tF=false,an=[]}={}){
   s+=buchse(x+178,y+304,"#3d8f33","PE")+T(x+148,y+308,"PE",10,"#2a2b30",700)
     +T(x+160,y+344,"⚠ 10 A MAX",8.5,"#2a2b30",700)
     +buchse(x+178,y+380,"#1e5fc2","N")+T(x+150,y+384,"N",10,"#2a2b30",700)
-    +`<rect x="${x+24}" y="${y+412}" width="${w-48}" height="16" rx="3" fill="#e2e3e8"/>${T(x+36,y+424,"FLUKE",9.5,"#111",900,"start")}${T(x+82,y+424,"FEV300",9.5,"#111",800,"start")}${T(x+196,y+420,"EV CHARGING STATION",5.5,"#333",600)}${T(x+196,y+427,"TEST ADAPTER",5.5,"#333",600)}`;
+    +`<rect x="${x+24}" y="${y+412}" width="${w-48}" height="16" rx="3" fill="#e2e3e8"/>${T(x+36,y+424,"Prüfadapter FEV300",9.5,"#111",800,"start")}`;
   return s;
 }
 const fevBuchse=(x,y,n)=>({L1:[x+52,y+304],L2:[x+52,y+342],L3:[x+52,y+380],PE:[x+178,y+304],N:[x+178,y+380]})[n];
@@ -84,7 +84,7 @@ function pruefkabel(fx,fy,dx,dy){
 
 /* --- Wiha MFT one: 1:1 nach der Ansicht aus der Wiha-Anleitung (Querformat), eigene Koordinaten 800 × 335 ---
    Tasten links, Display Mitte, NFC + Ein/Aus oben rechts, Drehschalter rechts; Messbuchsen oben (L1/L/H rot, L2/N/E blau, L3/PE/ES gelb, S) */
-const MFT_LAB={AUTO:[604,118],RISO:[655,124],RLO:[566,141],RCD:[692,141],RE:[540,180],ZS:[706,173],U:[538,224],ZI:[706,218]};
+const MFT_LAB={AUTO:[602,120],RISO:[662,126],RLO:[562,141],RCD:[704,140],RE:[536,180],ZS:[712,177],U:[534,226],ZI:[712,220]};
 function mftL(stell,anz){
   const K=[620,182];
   const t=(tx,ty,tw,th,lab,sz=11)=>`<rect x="${tx}" y="${ty}" width="${tw}" height="${th}" rx="8" fill="#2a2b30"/><rect x="${tx+2.5}" y="${ty+2.5}" width="${tw-5}" height="${th-5}" rx="6" fill="#f4f4f6"/>${lab?T(tx+tw/2,ty+th/2+sz*.36,lab,sz,"#2a2b30",800):""}`;
@@ -99,14 +99,14 @@ function mftL(stell,anz){
   ${t(106,114,34,30,"⚙",13)}${t(208,116,40,28,"←",14)}
   ${t(158,124,36,32,"▲",11)}${t(158,240,36,32,"▼",11)}${t(104,180,32,36,"◀",11)}${t(214,180,32,36,"▶",11)}
   <circle cx="175" cy="198" r="34" fill="#2a2b30"/><circle cx="175" cy="198" r="30" fill="#dcdde2"/>${T(175,199,"TEST",15,"#2a2b30",900)}${T(175,213,"ENTER",8,"#5a5b62",700)}
-  ${T(386,74,"wiha",30,"#1c1b1f",900)}
+  
   <rect x="276" y="88" width="246" height="190" rx="8" fill="#26272c"/><rect x="284" y="96" width="230" height="174" rx="4" fill="url(#abDs)"/>
   ${anz.map((x,i)=>T(399,148+i*42,x,i?26:30,"#173b1f",i?600:800)).join("")}
-  <rect x="550" y="58" width="64" height="26" rx="6" fill="#2a2b30"/><rect x="552.5" y="60.5" width="59" height="21" rx="5" fill="#f4f4f6"/>${T(574,75,"NFC",11,"#2a2b30",900)}${T(600,75,")))",8,"#2a2b30",800)}
-  <circle cx="682" cy="98" r="22" fill="#2a2b30"/><circle cx="682" cy="98" r="18" fill="#3c3d44"/><path d="M675 92 A10 10 0 1 0 689 92" fill="none" stroke="#f4f4f6" stroke-width="3"/><path d="M682 86v12" stroke="#f4f4f6" stroke-width="3"/>
+  
+  <circle cx="728" cy="88" r="22" fill="#2a2b30"/><circle cx="728" cy="88" r="18" fill="#3c3d44"/><path d="M721 82 A10 10 0 1 0 735 82" fill="none" stroke="#f4f4f6" stroke-width="3"/><path d="M728 76v12" stroke="#f4f4f6" stroke-width="3"/>
   <path d="M${(K[0]+62*Math.cos(Math.atan2(141-6-K[1],566-K[0]))).toFixed(1)} ${(K[1]+62*Math.sin(Math.atan2(141-6-K[1],566-K[0]))).toFixed(1)} A62 62 0 0 1 ${(K[0]+62*Math.cos(Math.atan2(218-6-K[1],706-K[0]))).toFixed(1)} ${(K[1]+62*Math.sin(Math.atan2(218-6-K[1],706-K[0]))).toFixed(1)}" fill="none" stroke="#b8b9c1" stroke-width="6" stroke-linecap="round"/>
-  ${T(640,104,"⚠",11,"#2a2b30",800)}
-  ${lab("AUTO","AUTO")}${lab("RISO","R<tspan dy='4' font-size='10'>ISO</tspan>")}${lab("RLO","R<tspan dy='4' font-size='10'>LOW</tspan>")}${lab("RCD","RCD")}${lab("RE","R<tspan dy='4' font-size='10'>E</tspan>","(⏚, Ω)")}${lab("ZS","Z<tspan dy='4' font-size='10'>S</tspan>","(L-PE)")}${lab("U","U","(~, Hz)")}${lab("ZI","Z<tspan dy='4' font-size='10'>I</tspan>","(L-N, ΔU)")}
+  <rect x="640" y="92" width="34" height="16" rx="3" fill="none" stroke="#2a2b30" stroke-width="1.5"/>${T(657,104,"⚠ϟ",10,"#2a2b30",800)}
+  ${lab("AUTO","AUTO")}${lab("RISO","R<tspan dy='4' font-size='10'>ISO</tspan>")}${lab("RLO","R<tspan dy='4' font-size='10'>LOW</tspan>")}${lab("RCD","RCD","(IΔN, t)")}${lab("RE","R<tspan dy='4' font-size='10'>E</tspan>","(⏚, ρ)")}${lab("ZS","Z<tspan dy='4' font-size='10'>S</tspan>","(L-PE)")}${lab("U","U","(~, Hz)")}${lab("ZI","Z<tspan dy='4' font-size='10'>I</tspan>","(L-N, ΔU)")}
   <circle cx="${K[0]}" cy="${K[1]}" r="50" fill="#2a2b30"/><circle cx="${K[0]}" cy="${K[1]}" r="45" fill="#dcdde2"/>
   <path d="M${qx.toFixed(1)} ${qy.toFixed(1)} L${px.toFixed(1)} ${py.toFixed(1)}" stroke="#2a2b30" stroke-width="20" stroke-linecap="round"/><path d="M${K[0]} ${K[1]} L${(K[0]+35*Math.cos(wnk)).toFixed(1)} ${(K[1]+35*Math.sin(wnk)).toFixed(1)}" stroke="#f4f4f6" stroke-width="3" stroke-linecap="round"/><circle cx="${(K[0]+35*Math.cos(wnk)).toFixed(1)}" cy="${(K[1]+35*Math.sin(wnk)).toFixed(1)}" r="4.5" fill="#e53935"/>`;
 }
