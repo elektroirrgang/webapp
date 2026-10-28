@@ -15,21 +15,47 @@ const legSkZahl=L=>legE(L).filter(e=>e.art==="sk"||e.art==="res").length;
 const legSchutz=e=>[e.schutz,e.art==="sk"&&+e.pole===3?"3-polig":""].filter(Boolean).join(" ");
 function legSpeichern(L){ L.stand=ecHeute(); saveRec("legenden",L); }
 
-/* ---- Abschnitt auf der Seite „Installation“ ---- */
-function legAbschnitt(){ const A=legAlle();
-  return kdKopf("Verteilerlegenden","legNeu","Legende anlegen")+(A.length?listOf(A.map(L=>`<div class="li" role="button" tabindex="0" data-act="legAuf" data-id="${esc(L.id)}"><span class="av">${icon("notes")}</span>
-      <span class="lt"><span class="h">${esc(L.titel||"Verteiler")}</span><span class="s">${esc([L.kunde,`${legSkZahl(L)} Stromkreis${legSkZahl(L)===1?"":"e"}`,L.stand&&"Stand "+ecDatum(L.stand)].filter(Boolean).join(" · "))}</span></span>${icon("chev")}</div>`))
-    :`<p class="meta leg-leer">Stromkreisliste für die Hager-Tasche im Verteiler – geht auch ohne angelegten Kunden.</p>`); }
+/* ---- Ablage: beim Kunden/Standort, sonst im Ablageort „Ohne Kunde“ (Seite unter Kunden) ---- */
+const legOhne=()=>legAlle().filter(L=>!L.kundeId||!kundeOf(L.kundeId));
+const legVon=(kind,id)=>legAlle().filter(L=>kind==="kunden"?(kundeOf(L.kundeId)||{}).id===id:(standortOf(L.standortId)||{}).id===id);
+function legItem(L,mitOrt){ const n=legSkZahl(L), o=mitOrt&&L.standortId&&standortOf(L.standortId);
+  return `<div class="li" role="button" tabindex="0" data-act="legAuf" data-id="${esc(L.id)}"><span class="av">${icon("notes")}</span>
+    <span class="lt"><span class="h">${esc(L.titel||"Verteiler")}</span><span class="s">${esc([o?o.name:!mitOrt?"":L.kundeId?"":L.kunde,`${n} Stromkreis${n===1?"":"e"}`,L.stand&&"Stand "+ecDatum(L.stand)].filter(Boolean).join(" · "))}</span></span>${icon("chev")}</div>`; }
+/* Abschnitt in der Kunden-/Standortansicht */
+function legBeiKunde(kind,r){ const A=legVon(kind,r.id);
+  return kdKopf("Verteilerlegenden","legNeu","Legende anlegen",` data-kind="${kind}" data-id="${esc(r.id)}"`)+(A.length?listOf(A.map(L=>legItem(L,kind==="kunden"))):`<p class="meta">Noch keine Legende – Stromkreisliste für die Hager-Tasche im Verteiler.</p>`); }
+/* Eintrag oben in der Kundenliste */
+function legOhneEintrag(){ const n=legOhne().length;
+  return listOf([`<div class="li" role="button" tabindex="0" data-act="nav" data-v="ohnekunde"><span class="av">${icon("folder")}</span>
+    <span class="lt"><span class="h">Ohne Kunde</span><span class="s">${n?`${n} Verteilerlegende${n===1?"":"n"} ohne Kunde`:"Verteilerlegenden, die noch keinem Kunden gehören"}</span></span>${icon("chev")}</div>`]).replace('class="list"','class="list leg-ohne"'); }
+function legOhneView(){ const A=legOhne();
+  return `<div class="narrow">${A.length?listOf(A.map(L=>legItem(L,true))):`<div class="empty">${icon("notes")}<h2>Keine Legende ohne Kunde</h2><p>Hier liegen Verteilerlegenden, die (noch) keinem Kunden gehören – z. B. schnell vor Ort angelegt. Zuordnen geht jederzeit in der Legende über „Kunde zuordnen“.</p></div>`}</div>`; }
 
-/* ---- Neue Legende ---- */
-function legNeuDlg(){ const K=live("kunden").sort((a,b)=>a.name.localeCompare(b.name,"de"));
+/* ---- Neue Legende (kid/ort aus der Kunden- oder Standortansicht, sonst ohne Kunde) ---- */
+let legNeuBei=null;
+function legNeuDlg(kind,id){ const s=kind==="standorte"&&standortOf(id), k=kind==="kunden"?kundeOf(id):s?kundeOf(s.kundeId):null;
+  legNeuBei=k?{kid:k.id,ort:s?s.id:null}:null;
   dialog("Neue Verteilerlegende",`<div class="fg1">${tf("legVt","Verteiler",LEG_VT[0],{form:true,ph:"z. B. HV Keller"})}</div>
     <div class="chips ec-wahl">${LEG_VT.map(v=>`<button type="button" class="chip" data-act="legSetz" data-ziel="f_legVt" data-v="${esc(v)}">${esc(v)}</button>`).join("")}</div>
-    <div class="fg1" style="margin-top:14px">${sf("legKd","Kunde",K.length?"":"",[["","Ohne Kunde – frei eintragen"],...K.map(k=>[k.id,k.name+(k.kdnr?` (${k.kdnr})`:"")])],{form:true})}</div>`,
+    ${k&&!s?`<div class="fg1" style="margin-top:14px">${ecOrtFeld(k.id)}</div>`:""}
+    ${k?"":`<p class="meta" style="margin:12px 4px 0">Wird unter Kunden › „Ohne Kunde“ abgelegt. Kunde und Anschrift trägst du in der Legende ein oder ordnest sie später einem Kunden zu.</p>`}`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="legNeuOk">Anlegen</button>`,{breit:true}); }
-function legNeuOk(){ const F=formVals(), k=F.legKd&&kundeOf(F.legKd);
-  const L={id:uid(),titel:F.legVt||"Verteiler",kunde:k?k.name:"",anschrift:k?adrText(k):"",kundeId:k?k.id:"",netz:"",ersteller:(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""),stand:ecHeute(),eintraege:[]};
-  saveRec("legenden",L,true); closeOverlays(); go({v:"legende",id:L.id}); }
+/* Zuordnung setzen: ortId wie bei den Prüfungen („k:<Kunde>“ oder Standort-ID) */
+function legOrtSetzen(L,ortId){ const o=ortId?ecOrt(ortId):null;
+  if(!o||!o.kunde){ L.kundeId=""; L.standortId=""; L.ortId=""; return; }
+  L.ortId=ortId; L.kundeId=o.kunde.id; L.standortId=o.standort?o.standort.id:""; L.kunde=o.kunde.name;
+  const adr=adrText(o.standort)||adrText(o.kunde); if(adr) L.anschrift=adr; }
+function legNeuOk(){ const F=formVals(), B=legNeuBei;
+  const L={id:uid(),titel:F.legVt||"Verteiler",kunde:"",anschrift:"",kundeId:"",standortId:"",ortId:"",netz:"",ersteller:(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""),stand:ecHeute(),eintraege:[]};
+  if(B) legOrtSetzen(L,B.ort||F.ecOrt||"k:"+B.kid);
+  saveRec("legenden",L,true); legNeuBei=null; closeOverlays(); go({v:"legende",id:L.id}); }
+function legZuDlg(){ const L=legAkt(); if(!L) return; const K=live("kunden").sort((a,b)=>a.name.localeCompare(b.name,"de")), kid=(kundeOf(L.kundeId)||{}).id||"";
+  dialog(kid?"Zuordnung ändern":"Kunde zuordnen",`<div class="fg1">${sf("legZuK","Kunde",kid,[["","Ohne Kunde"],...K.map(k=>[k.id,k.name+(k.kdnr?` (${k.kdnr})`:"")])],{form:true})}
+    <div id="legOrtFeld">${ecOrtFeld(kid,L.ortId||"")}</div></div>
+    <p class="meta" style="margin:12px 4px 0">Kunde und Anschrift in der Legende werden dabei aus dem Kunden übernommen.</p>`,
+    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="legZuOk">Übernehmen</button>`,{breit:true}); }
+function legZuruck(L){ const s=L&&L.standortId&&standortOf(L.standortId), k=L&&kundeOf(L.kundeId);
+  return s?{v:"standort",id:s.id}:k?{v:"kunde",id:k.id}:{v:"ohnekunde"}; }
 
 /* ---- Bearbeiten ---- */
 const legFeld=(L,k,l,o={})=>`<div class="tf${L[k]||o.ph||o.type==="date"?" fl":""}"><input id="f_leg_${k}" data-leg="${k}" value="${esc(L[k]||"")}" placeholder="${esc(o.ph||" ")}" ${o.type?`type="${o.type}"`:""} autocomplete="off"><label for="f_leg_${k}">${esc(l)}</label></div>`;
@@ -38,7 +64,8 @@ function legZeile(e){ const t=e.art==="gr";
     :`<span class="kz">${esc(e.kz||"–")}</span><span class="bz">${e.art==="res"?`<i>Reserve</i>`:esc(e.bez||"–")}${e.art==="rcd"?` <span class="leg-rcd">RCD</span>`:""}</span><span class="sc">${esc(legSchutz(e))}</span>`}</button>`; }
 function legView(L){ const E=legE(L);
   return `<div class="narrow ec-spalte leg">
-    <section class="card"><h3>Anlage</h3><div class="ec-fg">
+    <section class="card"><h3>Anlage</h3>${(()=>{ const o=kundeOf(L.kundeId)?ecOrt(L.ortId||"k:"+L.kundeId):null;
+      return `<div class="ec-hinweis leg-zu">${icon(o?"firma":"folder")}<span>${o?`Gehört zu <b>${esc(o.titel)}</b>`:"Liegt unter „Ohne Kunde“"}</span><button type="button" class="btn-tonal" data-act="legZu">${o?"Ändern":"Kunde zuordnen"}</button></div>`; })()}<div class="ec-fg">
       <div class="reihe2">${legFeld(L,"titel","Verteiler",{ph:"z. B. HV Keller"})}${legFeld(L,"stand","Stand",{type:"date"})}</div>
       ${legFeld(L,"kunde","Kunde",{ph:"Name oder Firma"})}
       ${legFeld(L,"anschrift","Anschrift",{ph:"Straße, PLZ Ort"})}
@@ -139,7 +166,9 @@ async function legPdfMachen(){ const L=legAkt(); if(!L) return; if(!legE(L).leng
 /* ---- Klicks und Eingaben ---- */
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="leg"]'); if(!b||b.disabled) return; e.stopPropagation(); const a=b.dataset.act, L=legAkt();
   switch(a){
-  case "legNeu": legNeuDlg(); return;
+  case "legNeu": legNeuDlg(b.dataset.kind,b.dataset.id); return;
+  case "legZu": legZuDlg(); return;
+  case "legZuOk": { if(!L) return; const F=formVals(); legOrtSetzen(L,F.legZuK?(F.ecOrt||"k:"+F.legZuK):""); saveRec("legenden",L); closeOverlays(); render(); toast(L.kundeId?"Legende zugeordnet":"Legende liegt jetzt unter „Ohne Kunde“"); return; }
   case "legNeuOk": legNeuOk(); return;
   case "legAuf": go({v:"legende",id:b.dataset.id}); return;
   case "legSkNeu": legSkDlg(null,null); return;
@@ -159,8 +188,9 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
       [E[i],E[j]]=[E[j],E[i]]; legSpeichern(L); render(); legSkDlg(legDlg.id); return; }
   case "legPdf": legPdfMachen(); return;
   case "legDelAsk": confirmDlg("Legende löschen?",`„${L&&L.titel||"Verteiler"}“ mit allen Zeilen löschen?`,"Löschen","legDelOk"); return;
-  case "legDelOk": { if(!L) return; L.deleted=true; saveRec("legenden",L); go({v:"anlagen"}); toast("Legende gelöscht"); return; }
+  case "legDelOk": { if(!L) return; L.deleted=true; saveRec("legenden",L); go(legZuruck(L)); toast("Legende gelöscht"); return; }
   } },true);
-document.addEventListener("change",e=>{ const el=e.target; if(!el.dataset||!el.dataset.leg) return; const L=legAkt(); if(!L) return;
+document.addEventListener("change",e=>{ const el=e.target; if(el.id==="f_legZuK"){ const f=document.getElementById("legOrtFeld"); if(f) f.innerHTML=ecOrtFeld(el.value); return; }
+  if(!el.dataset||!el.dataset.leg) return; const L=legAkt(); if(!L) return;
   const k=el.dataset.leg, v=el.value.trim(); if((L[k]||"")===v) return; L[k]=v; if(k==="stand") saveRec("legenden",L); else legSpeichern(L);
   if(k==="titel"){ const t=document.querySelector("#topTitle span"); if(t) t.textContent=v||"Verteiler"; } });

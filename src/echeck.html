@@ -1256,7 +1256,7 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .leg-fuss .btn-tonal,.leg-fuss .btn-filled{display:inline-flex;align-items:center;gap:8px}.leg-fuss .ic{width:18px;height:18px}
 .leg-fuss .leg-del{height:48px;padding:0 22px 0 18px;background:var(--err);color:#fff;border-radius:24px;font-size:15px}
 .leg-vor{gap:6px}.leg-vor .chip{min-height:32px;padding:4px 12px;font-size:13px}
-.leg-leer{margin:0 4px}
+.leg-ohne{margin:0 0 20px}
 #dlg .da .ab-ic{width:40px;height:40px;border:0;border-radius:20px;background:transparent;color:var(--on-sv);display:inline-flex;align-items:center;justify-content:center}
 #dlg .da .ab-ic .ic{width:22px;height:22px;transform:rotate(-90deg)}#dlg .da .ab-ic.ab .ic{transform:rotate(90deg)}#dlg .da .ab-ic:disabled{opacity:.35}
 @media (max-width:479px){.leg-z{grid-template-columns:84px minmax(0,1fr) auto;gap:8px;font-size:14px}}
@@ -1767,7 +1767,8 @@ function pfadTeile(){
   if(nav.v==="netzkatalog") return [["Netzwerk",{v:"netzwerk"}]];
   if(nav.v==="netzkatmodell") return nav.von==="netzwerk"?[["Netzwerk",{v:"netzwerk"}]]:[["Katalog",{v:"netzkatalog"}]];
   if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); const v=ecListeV(p&&p.art); return [[{geraete:"Geräte",netzwerk:"Netzwerk"}[v]||"Installation",{v}]]; }
-  if(nav.v==="legende") return [["Installation",{v:"anlagen"}]];
+  if(nav.v==="legende"){ const L=DB.legenden.get(nav.id); return L&&kundeOf(L.kundeId)?kette(L.kundeId,L.standortId):[["Kunden",{v:"kunden"}],["Ohne Kunde",{v:"ohnekunde"}]]; }
+  if(nav.v==="ohnekunde") return [["Kunden",{v:"kunden"}]];
   return [];
 }
 let NAV_IND_ALT=null;
@@ -1930,7 +1931,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   const rkS=nav.v==="ec"&&!login?ecRkOffen():null;   /* Netzwerkschrank offen: eigene Ebene wie die Ladestation in EVSE */
   $("#menuBtn").hidden=!VIEW_KIND[nav.v]&&!rkS; kdKopfKnopf();
   if(rkS&&!WIDE.matches){ $("#tabs").innerHTML=ecRkTabsHtml(); $("#tabs").hidden=false; }
-  const active=katV?"netzwerk":top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]?"kunden":nav.v==="ec"?ecListeV((DB.echecks.get(nav.id)||{}).art):"anlagen";
+  const active=katV?"netzwerk":top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]||nav.v==="ohnekunde"||nav.v==="legende"?"kunden":nav.v==="ec"?ecListeV((DB.echecks.get(nav.id)||{}).art):"anlagen";
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
     +(()=>{ const P=nav.v==="ec"&&DB.echecks.get(nav.id); if(P&&!P.deleted){ const T=ecSchritte(P), a=ecTab(P); /* in der Prüfung: Schritte wie in EVSE */
@@ -1943,7 +1944,8 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   else if(nav.v==="geraete"){ title="Geräte"; body=ecListeView("geraete"); fab=["ecNeuG","Prüfung","add"]; }
   else if(nav.v==="netzwerk"){ title="Netzwerk"; body=ecListeView("netz"); fab=["ecNeuN","Prüfung","add"]; }
   else if(nav.v==="netzkatalog"){ title="Netzwerk-Katalog"; body=ecKatalogView(); }
-  else if(nav.v==="legende"){ const L=DB.legenden.get(nav.id); if(!L||L.deleted){ nav={v:"anlagen"}; return render(); } title=L.titel||"Verteiler"; sub="Verteilerlegende"; body=legView(L); fab=["legSkNeu","Stromkreis","add"]; }
+  else if(nav.v==="ohnekunde"){ title="Ohne Kunde"; sub="Verteilerlegenden"; body=legOhneView(); fab=["legNeu","Legende","add"]; }
+  else if(nav.v==="legende"){ const L=DB.legenden.get(nav.id); if(!L||L.deleted){ nav={v:"kunden"}; return render(); } title=L.titel||"Verteiler"; sub="Verteilerlegende"; body=legView(L); fab=["legSkNeu","Stromkreis","add"]; }
   else if(nav.v==="netzkatmodell"){ const K=ecRkKat(nav.id); if(!K){ nav={v:"netzkatalog"}; return render(); } title=K.kurz||K.modell; sub=K.hersteller; body=ecKatModellView(K); }
   else if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); if(!p||p.deleted){ nav={v:"anlagen"}; return render(); }
     title=ecOrt(p.ortId).titel; sub=`${EC_ART[p.art||"anlage"]} · ${ecDatum(p.datum)}`; if(rkS){ sub=`Netzwerkschrank · ${title}`; title=rkS.name; } body=ecView(p); }
@@ -1986,7 +1988,7 @@ function kundenListe(){
 }
 /* Doppelte Kunden: gleicher Name (ohne „Familie“, „GmbH“ usw.). Zusammenführen nur für Admins. */
 const kNorm=s=>String(s||"").toLowerCase().replace(/\b(familie|fam|firma|fa|herrn?|frau|gmbh|ug|kg|ag|ohg|gbr|ek|e\.k)\b\.?/g,"").replace(/[^a-z0-9äöüß]/g,"");
-const kRefs=id=>live("standorte").filter(x=>x.kundeId===id).length+live("echecks").filter(p=>p.kundeId===id).length+live("betriebsmittel").filter(b=>b.kundeId===id).length;
+const kRefs=id=>live("standorte").filter(x=>x.kundeId===id).length+live("echecks").filter(p=>p.kundeId===id).length+live("betriebsmittel").filter(b=>b.kundeId===id).length+live("legenden").filter(l=>l.kundeId===id).length;
 const kBester=L=>[...L].sort((a,b)=>kRefs(b.id)-kRefs(a.id)||(a.created||0)-(b.created||0))[0];
 function kDoppelt(){ const m=new Map(); live("kunden").forEach(k=>{ const n=kNorm(k.name); if(!n) return; if(!m.has(n)) m.set(n,[]); m.get(n).push(k); }); return [...m.values()].filter(g=>g.length>1); }
 function kDoppeltKarte(){
@@ -2007,6 +2009,7 @@ function kzDialog(L,behalten){
 function ortUmziehen(alt,neu){ let n=0;
   for(const p of live("echecks")) if(p.ortId===alt){ p.ortId=neu; p.standortId=neu.startsWith("k:")?"":neu; if(neu.startsWith("k:")) p.kundeId=neu.slice(2); else p.kundeId=(standortOf(neu)||{}).kundeId||p.kundeId; saveRec("echecks",p); n++; }
   for(const b of live("betriebsmittel")) if(b.ortId===alt){ b.ortId=neu; b.kundeId=neu.startsWith("k:")?neu.slice(2):(standortOf(neu)||{}).kundeId||b.kundeId; saveRec("betriebsmittel",b); n++; }
+  for(const l of live("legenden")) if(l.ortId===alt){ l.ortId=neu; l.standortId=neu.startsWith("k:")?"":neu; l.kundeId=neu.startsWith("k:")?neu.slice(2):(standortOf(neu)||{}).kundeId||l.kundeId; saveRec("legenden",l); n++; }
   const g=DB.gebaeude.get(ecGebId(alt)); if(g&&!g.deleted&&!DB.gebaeude.get(ecGebId(neu))){ saveRec("gebaeude",{...g,id:ecGebId(neu),ortId:neu,_etag:undefined,_itemId:undefined},true); g.deleted=true; saveRec("gebaeude",g); }
   return n; }
 function kzAusfuehren(zid,wegIds){
@@ -2015,7 +2018,7 @@ function kzAusfuehren(zid,wegIds){
     for(const f of ["kdnr","strasse","plz","ort","adresse","ansprech","tel","mail","web"]) if(!z[f]&&w[f]) z[f]=w[f];
     if(w.notiz&&!String(z.notiz||"").includes(w.notiz)) z.notiz=[z.notiz,w.notiz].filter(Boolean).join("\n");
     for(const x of live("standorte").filter(x=>x.kundeId===wid)){ x.kundeId=zid; saveRec("standorte",x); n++;
-      for(const p of live("echecks")) if(p.standortId===x.id){ p.kundeId=zid; saveRec("echecks",p); } for(const b of live("betriebsmittel")) if(b.ortId===x.id){ b.kundeId=zid; saveRec("betriebsmittel",b); } }
+      for(const p of live("echecks")) if(p.standortId===x.id){ p.kundeId=zid; saveRec("echecks",p); } for(const b of live("betriebsmittel")) if(b.ortId===x.id){ b.kundeId=zid; saveRec("betriebsmittel",b); } for(const l of live("legenden")) if(l.standortId===x.id){ l.kundeId=zid; saveRec("legenden",l); } }
     n+=ortUmziehen("k:"+wid,"k:"+zid);
     for(const d of DB.dateien.values()) if(d.bezugKind==="kunden"&&d.bezugId===wid){ d.bezugId=zid; saveRec("dateien",d); n++; }
     w.deleted=true; w.mergedInto=zid; saveRec("kunden",w);
@@ -2032,16 +2035,16 @@ function kzAusfuehren(zid,wegIds){
   return n;
 }
 function kundenView(){
-  if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden und Standorte sind dieselben wie in der Übersicht und den Apps EVSE und Baustelle.</p></div>`;
-  return `<div class="narrow">${searchBar("Kunde, Ort, Ansprechpartner suchen",fKnopf("kunden"))}${query?"":kDoppeltKarte()}<div id="res">${kundenListe()}</div></div>`;
+  if(!live("kunden").length) return `<div class="narrow">${legOhneEintrag()}</div><div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden und Standorte sind dieselben wie in der Übersicht und den Apps EVSE und Baustelle.</p></div>`;
+  return `<div class="narrow">${searchBar("Kunde, Ort, Ansprechpartner suchen",fKnopf("kunden"))}${query?"":legOhneEintrag()}${query?"":kDoppeltKarte()}<div id="res">${kundenListe()}</div></div>`;
 }
 function kundeView(k){ const ss=standorteVon(k.id);
   return `<div class="narrow kd-seite">${kdOben(k,"kunden",ss)}${kontakteView("kunden",k)}
     ${ablageView("kunden",k)}
     ${kdKopf(kdOrteTitel(k),kdDarf(k)&&"newStandort",kdArt(k)==="privat"?"Objekt hinzufügen":"Standort hinzufügen")}${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">${kdKeinOrt(k)?esc(kdKeinOrt(k)):"Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager)."}</p>`}
-    ${ecBeiKunde("kunden",k)}
+    ${ecBeiKunde("kunden",k)}${legBeiKunde("kunden",k)}
 </div>`; }
-function standortView(s){ return `<div class="narrow kd-seite">${kdOben(s,"standorte")}${kontakteView("standorte",s)}${ablageView("standorte",s)}${ecBeiKunde("standorte",s)}</div>`; }
+function standortView(s){ return `<div class="narrow kd-seite">${kdOben(s,"standorte")}${kontakteView("standorte",s)}${ablageView("standorte",s)}${ecBeiKunde("standorte",s)}${legBeiKunde("standorte",s)}</div>`; }
 let locForm=null;
 function locDialog(kind,rec,parentId){
   locForm={kind,id:rec&&rec.id,parentId}; const r=rec||{}; if(rec) adrSplit(r);
@@ -2115,6 +2118,8 @@ function zurueck(){
   if(MEHR_SUB[nav.v]){ go({v:"mehr"}); return; }
   if(nav.v==="netzkatmodell"){ go({v:nav.von==="netzwerk"?"netzwerk":"netzkatalog"}); return; }
   if(nav.v==="netzkatalog"){ go({v:"netzwerk"}); return; }
+  if(nav.v==="legende"){ go(legZuruck(DB.legenden.get(nav.id))); return; }
+  if(nav.v==="ohnekunde"){ go({v:"kunden"}); return; }
   if(nav.v==="ec"&&nav.schr){ nav.schr=null; render(); scrollTo(0,0); return; }   /* erst aus dem Schrank zurück zur Infrastruktur */
   if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); go({v:ecListeV(p&&p.art)}); return; }
   go({v:"anlagen"});
