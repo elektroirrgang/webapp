@@ -104,31 +104,40 @@ function legListeView(L){ const E=legE(L), zu=L.fertig, B=[]; let g=null;
 function legReihen(L){ const n=+L.teReihe||12, R=[]; let r=null;
   legE(L).forEach((e,i)=>{ if(e.art==="gr") return; const w=Math.min(legTE(e),n); if(!r||e.umbruch||r.te+w>n){ r={te:0,g:[]}; R.push(r); } r.g.push([e,i,w]); r.te+=w; });
   return R; }
-/* Gezeichneter Verteiler: Geräte schlicht und herstellerneutral, darunter Beschriftung wie im Streifen */
-function legGeraet(e,x,w,P){ const W=w*P-4, X=x+2, rcd=e.art==="rcd", res=e.art==="res", t=legTE(e);
-  if(res) return `<rect x="${X}" y="18" width="${W}" height="118" rx="5" fill="#C9CCD2"/><rect x="${X+6}" y="60" width="${W-12}" height="34" rx="3" fill="#B7BBC2"/>`;
-  let h=`<rect x="${X}" y="10" width="${W}" height="134" rx="6" fill="#F1F2F4"/><rect x="${X}" y="10" width="${W}" height="30" rx="6" fill="#E3E5E9"/><rect x="${X}" y="114" width="${W}" height="30" rx="6" fill="#E3E5E9"/>`;
-  const hb=rcd?Math.min(W*.42,52):Math.min(W-14,40), hx=rcd?X+10:X+(W-hb)/2;
-  h+=`<rect x="${hx}" y="56" width="${hb}" height="42" rx="5" fill="#2B2E33"/><rect x="${hx+4}" y="60" width="${hb-8}" height="16" rx="3" fill="#4A4E55"/>`;
-  if(rcd) h+=`<circle cx="${X+W-22}" cy="66" r="9" fill="#FFD43B"/><text x="${X+W-22}" y="70" font-size="11" font-weight="800" text-anchor="middle" fill="#2B2E33">T</text>`;
-  const sc=String(rcd?(e.schutz||"").replace(/\s*Typ.*$/,""):legSchutz(e).replace(" 3-polig",""));
-  h+=`<text x="${X+W/2}" y="133" font-size="${t>1?13:11}" font-weight="800" text-anchor="middle" fill="#3A3D43">${esc(sc.slice(0,t>2?18:7))}</text>`;
+/* Gezeichneter Verteiler: Geräte schlicht und herstellerneutral, feste Größe (50 px je TE), darunter Beschriftung wie im Streifen */
+const LEG_P=50;
+function legGeraet(e,x,w){ const P=LEG_P, X=x+2, W=w*P-4, t=legTE(e), rcd=e.art==="rcd";
+  const schr=(y)=>Array.from({length:t},(_,k)=>{ const cx=x+k*P+P/2; return `<circle cx="${cx}" cy="${y}" r="5.5" fill="#CDD1D7"/><path d="M${cx-3.2} ${y+2.2}l6.4-4.4" stroke="#9AA0A8" stroke-width="1.4" stroke-linecap="round"/>`; }).join("");
+  if(e.art==="res") return `<rect x="${X}" y="10" width="${W}" height="146" rx="5" fill="#D9DCE1"/>${Array.from({length:6},(_,k)=>`<rect x="${X+5}" y="${44+k*13}" width="${W-10}" height="3" rx="1.5" fill="#C7CBD1"/>`).join("")}`;
+  let h=`<rect x="${X}" y="10" width="${W}" height="146" rx="5" fill="#F4F5F7"/><rect x="${X}" y="10" width="${W}" height="30" rx="5" fill="#E6E8EB"/><rect x="${X}" y="126" width="${W}" height="30" rx="5" fill="#E6E8EB"/>${schr(25)}${schr(141)}`;
+  const sc=String(rcd?(e.schutz||"").replace(/\s*Typ.*$/i,"").replace(/\s*\/\s*/," · "):legSchutz(e).replace(/\s*3-polig$/i,""));
+  if(rcd){ h+=`<rect x="${X+8}" y="66" width="18" height="36" rx="4" fill="#3A3E45"/><rect x="${X+11}" y="69" width="12" height="11" rx="2" fill="#6B7079"/>`
+      +`<circle cx="${X+W-15}" cy="76" r="7.5" fill="#F2C94C"/><text x="${X+W-15}" y="80" font-size="10" font-weight="800" text-anchor="middle" fill="#3A3E45">T</text>`
+      +`<text x="${X+34}" y="58" font-size="10.5" font-weight="700" fill="#3A3E45">${esc(sc.slice(0,22))}</text>`
+      +(/Typ\s*([A-Z+]+)/i.test(e.schutz||"")?`<text x="${X+34}" y="114" font-size="10" font-weight="600" fill="#6B7079">Typ ${esc(RegExp.$1)}</text>`:"");
+    return h; }
+  /* je Pol ein Kipphebel, bei mehrpoligen Automaten mit Verbindungssteg */
+  h+=Array.from({length:t},(_,k)=>{ const cx=x+k*P+P/2; return `<rect x="${cx-7}" y="70" width="14" height="32" rx="4" fill="#3A3E45"/><rect x="${cx-4}" y="73" width="8" height="10" rx="2" fill="#6B7079"/>`; }).join("")
+    +(t>1?`<rect x="${x+P/2-7}" y="80" width="${(t-1)*P+14}" height="5" rx="2.5" fill="#3A3E45"/>`:"")
+    +`<text x="${X+W/2}" y="58" font-size="10.5" font-weight="800" text-anchor="middle" fill="#3A3E45">${esc(sc.slice(0,t>1?14:5))}</text>`;
   return h; }
-/* Text in schmale Felder umbrechen: lange Wörter mit Trennstrich teilen, höchstens 3 Zeilen */
-const legWrap=(t,max)=>{ const w=[]; String(t||"").split(/\s+/).filter(Boolean).forEach(x=>{ while(x.length>max){ w.push(x.slice(0,max-1)+"-"); x=x.slice(max-1); } w.push(x); });
+/* Text in schmale Felder umbrechen: zusammengesetzte Wörter an der Wortfuge trennen (Kinder-zimmer), sonst hart, höchstens 3 Zeilen */
+const LEG_FUGE=/(zimmer|küche|maschine|licht|steckdosen|dosen|heizung|kanal|erhitzer|pumpe|garage|keller|raum|flur|bad|wohnung|anlage|versorgung|schalter|leuchte|beleuchtung|säule|box|sicherung|steuerung)$/i;
+const legWrap=(t,max)=>{ const w=[]; String(t||"").split(/\s+/).filter(Boolean).forEach(x=>{ if(x.length>max){ const m=x.match(LEG_FUGE); if(m&&x.length-m[0].length>=3&&x.length-m[0].length<max){ w.push(x.slice(0,x.length-m[0].length)+"-"); x=x.slice(x.length-m[0].length); } }
+    while(x.length>max){ w.push(x.slice(0,max-1)+"-"); x=x.slice(max-1); } w.push(x); });
   const Z=[]; let z=""; w.forEach(x=>{ if((z+" "+x).trim().length>max&&z){ Z.push(z); z=x; } else z=z.endsWith("-")?z+x:(z+" "+x).trim(); }); if(z) Z.push(z);
   return Z.length>3?[...Z.slice(0,2),Z[2].slice(0,max-1)+"…"]:Z; };
-function legVtView(L){ const n=+L.teReihe||12, P=58, R=legReihen(L), zu=L.fertig;
+function legVtView(L){ const n=+L.teReihe||12, P=LEG_P, R=legReihen(L), zu=L.fertig, B=n*P;
   const opt=(k,t,vals,cur)=>`<span class="leg-o"><span>${t}</span>${vals.map(v=>`<button type="button" class="chip" data-act="legOpt" data-k="${k}" data-v="${v}" aria-pressed="${String(cur)===String(v)}" ${zu?"disabled":""}>${String(v).replace(".",",")}</button>`).join("")}</span>`;
   return `<div class="leg-vopt">${opt("teReihe","TE je Reihe",[12,18,24],n)}${opt("teMm","mm je TE",[17.5,18],+L.teMm||17.5)}</div>`
-    +R.map((r,ri)=>{ let x=0; const g=r.g.map(([e,i,w])=>{ const X=x*P, Wd=w*P, sym=legSymFuer(e), z=legWrap(e.art==="res"?"Reserve":legOffen(e)?"?":e.bez,Math.max(7,w*8));
-        const out=`<g class="leg-dev" data-act="legEdit" data-id="${esc(e.id)}">${legGeraet(e,X,w,P)}
-          <rect x="${X+2}" y="154" width="${Wd-4}" height="24" rx="4" fill="${e.art==="rcd"?"#2F6FD1":e.art==="res"?"#A9AEB6":"#7D838C"}"/><text x="${X+Wd/2}" y="171" font-size="${w>1?13:11}" font-weight="800" text-anchor="middle" fill="#fff">${esc(String(e.kz||"").slice(0,w>1?16:8))}</text>
-          ${sym?`<g transform="translate(${X+Wd/2-14} 186)" class="leg-sym">${legSymSvg(sym,28,true)}</g>`:""}
-          ${z.map((t,k)=>`<text x="${X+Wd/2}" y="${(sym?230:202)+k*14}" font-size="${w>1?12:11}" font-weight="600" text-anchor="middle" class="leg-st">${esc(t)}</text>`).join("")}</g>`; x+=w; return out; }).join("");
+    +R.map((r,ri)=>{ let x=0, hoch=190; const g=r.g.map(([e,i,w])=>{ const X=x*P, Wd=w*P, sym=legSymFuer(e), z=legWrap(e.art==="res"?"Reserve":legOffen(e)?"?":e.bez,w>1?w*8:8), fz=w>1?10.5:z.some(t=>t.length>7)?9:10.5;
+        const out=`<g class="leg-dev" data-act="legEdit" data-id="${esc(e.id)}"><title>${esc([e.kz,e.bez,legSchutz(e)].filter(Boolean).join(" · "))}</title>${legGeraet(e,X,w)}
+          <rect x="${X+2}" y="166" width="${Wd-4}" height="20" rx="4" fill="${e.art==="rcd"?"#2F6FD1":e.art==="res"?"#A9AEB6":"#737A84"}"/><text x="${X+Wd/2}" y="180" font-size="10.5" font-weight="800" text-anchor="middle" fill="#fff">${esc(String(e.kz||"").slice(0,w>1?16:7))}</text>
+          ${sym?`<g transform="translate(${X+Wd/2-11} 194)" class="leg-sym">${legSymSvg(sym,22,true)}</g>`:""}
+          ${z.map((t,k)=>`<text x="${X+Wd/2}" y="${(sym?232:206)+k*13}" font-size="${fz}" font-weight="600" text-anchor="middle" class="leg-st">${esc(t)}</text>`).join("")}</g>`; hoch=Math.max(hoch,(sym?232:206)+(z.length-1)*13+10); x+=w; return out; }).join("");
       const frei=n-r.te, last=r.g[r.g.length-1][1];
-      const fr=frei>0?`<g class="leg-frei" ${zu?"":`data-act="legNach" data-i="${last}"`}><rect x="${x*P+2}" y="10" width="${frei*P-4}" height="134" rx="6" class="leg-fr"/><text x="${x*P+frei*P/2}" y="${frei>1?112:60}" font-size="${frei>1?14:11}" font-weight="800" text-anchor="middle" class="leg-frt">${frei} TE frei${zu?"":" · +"}</text></g>`:"";
-      return `<div class="leg-reihe"><div class="leg-rk">Reihe ${ri+1}<span>${r.te} von ${n} TE</span></div><svg viewBox="0 0 ${n*P} 276" class="leg-svg" role="img" aria-label="Reihe ${ri+1}"><rect x="0" y="70" width="${n*P}" height="14" fill="#9AA0A8"/>${g}${fr}</svg></div>`; }).join(""); }
+      const fr=frei>0?`<g class="leg-frei" ${zu?"":`data-act="legNach" data-i="${last}"`}><rect x="${x*P+2}" y="10" width="${frei*P-4}" height="146" rx="5" class="leg-fr"/><text x="${x*P+frei*P/2}" y="${frei>1?88:60}" font-size="${frei>1?12:10}" font-weight="800" text-anchor="middle" class="leg-frt">${frei>1?`${frei} TE frei`:"frei"}</text>${zu?"":`<text x="${x*P+frei*P/2}" y="${frei>1?108:80}" font-size="16" font-weight="700" text-anchor="middle" class="leg-frt">+</text>`}</g>`:"";
+      return `<div class="leg-reihe" style="width:min(100%,${Math.round(B*1.45)+28}px)"><div class="leg-rk">Reihe ${ri+1}<span>${r.te} von ${n} TE belegt</span></div><div class="leg-rs"><svg viewBox="0 0 ${B} ${hoch}" class="leg-svg" role="img" aria-label="Reihe ${ri+1}"><rect x="0" y="76" width="${B}" height="12" rx="2" fill="#A3A9B1"/>${g}${fr}</svg></div></div>`; }).join(""); }
 
 /* ===== Symbole für Beschriftung (eigene, schlichte Piktogramme, 24er-Raster, Linien) ===== */
 const LEG_SYM={
