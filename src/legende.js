@@ -54,20 +54,32 @@ function legView(L){ const E=legE(L);
 const legTeam=()=>team().filter(m=>m.name&&(typeof maStufe!=="function"||maStufe(m).k!=="buero")).map(m=>m.name).sort((a,b)=>a.localeCompare(b,"de"));
 function legWerSel(L){ const N=legTeam(), cur=L.ersteller||""; if(cur&&!N.includes(cur)) N.push(cur);
   return `<div class="tf fl"><select id="f_leg_ersteller" data-leg="ersteller">${["",...N].map(n=>`<option value="${esc(n)}" ${n===cur?"selected":""}>${esc(n||"bitte wählen")}</option>`).join("")}</select><label for="f_leg_ersteller">Erstellt von</label><span class="arr">${icon("drop")}</span></div>`; }
-/* Nächste Kennzeichnung: letzte Zahl der Zeile davor hochzählen (F 1.03 → F 1.04, Fi 4.1.20 → Fi 4.1.21); direkt nach einem RCD .01 anhängen */
+/* Kennzeichnung nach eurem Schema: Reihe.RCD für den RCD, Reihe.RCD.Automat für die Stromkreise darunter
+   (F 1.0 = erster RCD, F 1.0.1 / F 1.0.2 = seine Automaten, F 1.1 = zweiter RCD, F 2.0 = erster RCD der zweiten Reihe).
+   Zweistellige Automaten (F 1.0.01) nur, wenn die Legende schon so zählt (alte Pläne). */
+const legKzTeile=kz=>{ const m=String(kz||"").trim().match(/^(.*?)(\d+(?:\.\d+)*)$/); return m?{vor:m[1],z:m[2].split(".")}:null; };
+const legZweistellig=E=>E.some(e=>e.art!=="rcd"&&/\.0\d$/.test(String(e.kz||"").trim()));
 function legNaechsteKz(E,i){ for(let j=i;j>=0;j--){ const e=E[j]; if(!e||e.art==="gr"||!e.kz) continue;
-    if(e.art==="rcd") return String(e.kz).trim()+".01";   /* nach dem RCD: seine Stromkreise (Fi 4.1 → Fi 4.1.01) */
-    const m=String(e.kz).match(/^(.*?)(\d+)(\D*)$/); if(!m) return ""; const n=+m[2]+1;
-    return m[1]+String(n).padStart(m[2].length,"0"); }
-  return "F 1.01"; }
+    if(e.art==="rcd") return String(e.kz).trim()+(legZweistellig(E)?".01":".1");   /* direkt nach dem RCD: sein erster Automat */
+    const t=legKzTeile(e.kz); if(!t) return ""; const l=t.z.length-1, w=t.z[l]; t.z[l]=String(+w+1).padStart(w.length,"0");
+    return t.vor+t.z.join("."); }
+  return ""; }
+/* Nächster RCD in derselben Reihe (F 1.0 → F 1.1) bzw. erster RCD der nächsten Reihe (→ F 2.0) */
+function legRcdKz(E,i,neueReihe){ let vor="F ", reihe=1, rcd=-1;
+  for(let j=Math.min(i,E.length-1);j>=0;j--){ const e=E[j]; if(!e||e.art==="gr") continue; const t=legKzTeile(e.kz); if(!t) continue;
+    vor=t.vor; reihe=+t.z[0]; if(e.art==="rcd"){ rcd=+(t.z[1]||0); break; } if(rcd<0&&t.z.length>=3){ rcd=+t.z[1]; break; } }
+  if(neueReihe) return `${vor}${reihe+1}.0`;
+  return `${vor}${reihe}.${rcd+1}`; }
 function legSkDlg(id,nach){ const L=legAkt(); if(!L) return; const E=legE(L), i=id?E.findIndex(x=>x.id===id):-1, e=i>=0?E[i]:null;
   const pos=e?i:nach!=null?nach+1:E.length, art=e?e.art:"sk";
   const v=e||{art,kz:legNaechsteKz(E,pos-1),bez:"",schutz:"",pole:1};
-  legDlg={id:e?e.id:null,pos,art:v.art,pole:String(v.pole||1)};
+  legDlg={id:e?e.id:null,pos,art:v.art,pole:String(v.pole||1),auto:e?null:v.kz};
+  const rcdN=legRcdKz(E,pos-1,false), rcdR=legRcdKz(E,pos-1,true);
   const vorschl=[...new Set(live("legenden").flatMap(x=>legE(x).filter(y=>y.art==="sk"&&y.bez).map(y=>y.bez)))];
   dialog(e?"Zeile bearbeiten":"Neue Zeile",`<div class="chips ec-wahl leg-art">${LEG_ART.map(([k,t])=>`<button type="button" class="chip" data-act="legArt" data-v="${k}" aria-pressed="${k===v.art}">${t}</button>`).join("")}</div>
     <div class="fg1" style="margin-top:14px">
-      <div class="leg-nur" data-nicht="gr">${tf("legKz","Kennzeichnung",v.kz||"",{form:true,ph:"z. B. F 1.01 oder Fi 4.1.01"})}</div>
+      <div class="leg-nur" data-nicht="gr">${tf("legKz","Kennzeichnung",v.kz||"",{form:true,ph:"z. B. F 1.0.1"})}</div>
+      <div class="chips ec-wahl leg-nur" data-nur="rcd"><button type="button" class="chip" data-act="legSetz" data-ziel="f_legKz" data-v="${esc(rcdN)}">Nächster RCD: ${esc(rcdN)}</button><button type="button" class="chip" data-act="legSetz" data-ziel="f_legKz" data-v="${esc(rcdR)}">Neue Reihe: ${esc(rcdR)}</button></div>
       <div class="leg-nur" data-nicht="res">${tf("legBez",v.art==="gr"?"Überschrift":"Bezeichnung",v.bez||"",{form:true,ph:v.art==="gr"?"z. B. Erdgeschoss":v.art==="rcd"?"Fehlerstromschutzschalter":"z. B. Küche Steckdosen",list:"legBezListe"})}</div>
     </div>${datalist("legBezListe",vorschl)}
     <div class="leg-nur" data-nur="sk"><div class="lbl" style="margin-top:12px">Raum</div><div class="chips ec-wahl leg-vor">${LEG_RAUM.map(x=>`<button type="button" class="chip" data-act="legWort" data-v="${esc(x)}">${esc(x)}</button>`).join("")}</div>
@@ -132,7 +144,11 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "legAuf": go({v:"legende",id:b.dataset.id}); return;
   case "legSkNeu": legSkDlg(null,null); return;
   case "legEdit": legSkDlg(b.dataset.id); return;
-  case "legArt": legDlg.art=b.dataset.v; b.parentElement.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b)); legArtZeigen(); return;
+  case "legArt": { legDlg.art=b.dataset.v; b.parentElement.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b)); legArtZeigen();
+      /* neue Zeile: Vorschlag zur Art passend tauschen, solange nichts von Hand eingetragen ist */
+      const f=document.getElementById("f_legKz"), Lx=legAkt(); if(f&&Lx&&legDlg.auto!=null&&f.value.trim()===legDlg.auto){ const E=legE(Lx);
+        legDlg.auto=legDlg.art==="rcd"?legRcdKz(E,legDlg.pos-1,false):legNaechsteKz(E,legDlg.pos-1); f.value=legDlg.auto; f.parentElement.classList.toggle("fl",!!f.value); }
+      return; }
   case "legPole": legDlg.pole=b.dataset.v; b.parentElement.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b)); return;
   case "legSetz": { const f=document.getElementById(b.dataset.ziel); if(f){ f.value=b.dataset.v; f.parentElement.classList.add("fl"); } return; }
   case "legWort": { const f=document.getElementById("f_legBez"); if(!f) return; const w=b.dataset.v, t=f.value.trim();
