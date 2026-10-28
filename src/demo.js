@@ -9,7 +9,7 @@ const DEMO_KEY="irrgang_demo";
    Ohne Profil (nicht angemeldet) gilt der Schalter dieses Browsers. */
 const demoProfil=()=>{ try{ return typeof profilVon==="function"&&typeof ME!=="undefined"&&ME.mail?profilVon(ME.mail):null; }catch(e){ return null; } };
 const demoAn=()=>{ try{ return localStorage.getItem(DEMO_KEY)==="1"; }catch(e){ return false; } };
-const DEMO_SPEICHER=[["evse_daten",["kunden","standorte","ladeparks","pruefungen","katalog"]],["baustelle_daten",["baustellen","eintraege","notizen","anforderungen"]],["irrgang_apps",["vorgaenge","geraete","dateien","protokolle","gebaeude","anlagen","termine"]],["echeck_daten",["gebaeude","echecks","betriebsmittel"]]];
+const DEMO_SPEICHER=[["evse_daten",["kunden","standorte","ladeparks","pruefungen","katalog"]],["baustelle_daten",["baustellen","eintraege","notizen","anforderungen"]],["irrgang_apps",["vorgaenge","geraete","dateien","protokolle","gebaeude","anlagen","termine"]],["echeck_daten",["gebaeude","echecks","betriebsmittel","legenden"]]];
 const DEMO_FOTOS={"demo-f-zp":"zp","demo-f-hak":"hak","demo-f-uvalt":"uvalt","demo-f-mangel":"mangel","demo-f-ue-baustrom":"baustrom","demo-f-ue-leerrohr":"leerrohr","demo-f-ue-uv":"uv","demo-f-ue-pa":"pa"};
 function demoDaten(){
   const T=864e5, jetzt=Date.now(), vor=(t,h=0)=>jetzt-t*T-h*36e5, tag=t=>new Date(jetzt+t*T).toISOString().slice(0,10);
@@ -87,7 +87,7 @@ function demoDaten(){
     r({id:"demo-d3b",bezugKind:"kunden",bezugId:"demo-k1",name:"Notleuchte Lager.jpg",typ:"image/jpeg",groesse:121000,demoArt:"leuchte"},P.ab,vor(1)),
     r({id:"demo-d4b",bezugKind:"kunden",bezugId:"demo-k5",name:"Schaltplan Haus B.pdf",typ:"application/pdf",groesse:63000,demoArt:"schaltplan"},P.bu,vor(30)),
     r({id:"demo-d5b",bezugKind:"standorte",bezugId:"demo-s3",name:"Unterverteilung Haus A.jpg",typ:"image/jpeg",groesse:150000,demoArt:"uv"},P.ms,vor(20))];
-  const H=demoHaus(r,P,vor,tag); kunden.push(H.kunde);
+  const H=demoHaus(r,P,vor,tag); kunden.push(H.kunde); const Z=demoZfh(r,P,vor,tag); kunden.push(Z.kunde);
   /* Industriekunde: zwei Werke, Bauteile/Ebenen, Verteiler mit Einspeisung, Maschinen, Rahmenauftrag mit Meldungen */
   kunden.push(r({id:"demo-k7",art:"industrie",name:"Kunststoffwerk Nordhang GmbH",kdnr:"D-1007",strasse:"Am Werk 1",plz:"51545",ort:"Waldbröl",tel:"02291 900700",mail:"technik@nordhang.example",
     kontakte:[{id:"demo-c7",name:"Herr Albers",rolle:"Haustechnik",tel:"0171 0000071"},{id:"demo-c8",name:"Frau Yilmaz",rolle:"Einkauf",mail:"einkauf@nordhang.example"}],ansprech:"Herr Albers",
@@ -122,8 +122,56 @@ function demoDaten(){
   const jahr=new Date().getFullYear(), d6=`${jahr}-12-06`, mo=(()=>{ const x=new Date(); x.setHours(0,0,0,0); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; })(), iso=x=>`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`;
   const termine=[r({id:"demo-ft1",t:"Weihnachtsfeier",von:`${d6}T00:00`,bis:`${jahr}-12-07T00:00`,ganz:true,ort:"Gasthaus zur Post, Waldbröl",notiz:"Ab 18 Uhr, Partner sind eingeladen.",fuer:"alle"},P.bu,vor(20)),
     r({id:"demo-ft2",t:"Teambesprechung",von:`${iso(new Date(mo.getTime()+4*864e5))}T07:00`,bis:`${iso(new Date(mo.getTime()+4*864e5))}T07:45`,ganz:false,ort:"Werkstatt",notiz:"Wochenplanung KW",fuer:"alle"},P.bu,vor(3))];
-  return {kunden,standorte,baustellen,eintraege,vorgaenge,anforderungen,pruefungen,protokolle,notizen,dateien,gebaeude:[...H.gebaeude,geb7,geb8],echecks:H.echecks,anlagen:[...H.anlagen,...anlagen],termine};
+  return {kunden,standorte,baustellen,eintraege,vorgaenge,anforderungen,pruefungen,protokolle,notizen,dateien,gebaeude:[...H.gebaeude,...Z.gebaeude,geb7,geb8],echecks:H.echecks,legenden:demoLegende(r,P,vor,tag),anlagen:[...H.anlagen,...anlagen],termine};
 }
+/* Verteiler im Schema der Verteilerlegende: je RCD eine neue Reihe (12 TE), RCD = F Reihe.0, seine Automaten F Reihe.0.n;
+   reicht eine Gruppe über 12 TE, zählt die nächste Gruppe entsprechend weiter. Kreise ohne RCD stehen am Ende unter einer Überschrift. */
+function demoVtSchema(vId,rcds,sks,teile,ohneTitel){ let pos=0, r=0; const n=12, te=s=>+s.pole===3?3:1;
+  rcds.filter(x=>x.vId===vId).forEach((rc,i)=>{ r++; const kids=sks.filter(s=>s.vId===vId&&s.rcdId===rc.id), breit=4+kids.reduce((a,s)=>a+te(s),0);
+    Object.assign(rc,{nr:`F ${r}.0`,pos:pos++}); if(i) rc.umbruch=true;
+    kids.forEach((s,k)=>Object.assign(s,{nr:`F ${r}.0.${k+1}`,pos:pos++}));
+    r+=Math.ceil(breit/n)-1; });
+  const ohne=sks.filter(s=>s.vId===vId&&!s.rcdId);
+  if(ohne.length){ r++; teile.push({id:vId+"-gr-ohne",vId,art:"gr",kz:"",bez:ohneTitel,schutz:"",pos:pos++}); ohne.forEach((s,k)=>Object.assign(s,{nr:`F ${r}.${k+1}`,pos:pos++},k?{}:{umbruch:true})); } }
+/* Zweifamilienhaus Becker: Zählerschrank mit zwei Haushaltszählern (Wohnung EG und OG), Allgemeinstrom über Zähler 1, je Wohnung eine UV */
+function demoZfh(r,P,vor,tag){
+  const kunde=r({id:"demo-k8",art:"privat",anrede:"herr",vorname:"Klaus",nachname:"Becker",name:"Klaus Becker",kdnr:"D-1008",strasse:"Bergstraße 14",plz:"51588",ort:"Nümbrecht",tel:"0171 0000018",mail:"k.becker@mail.example",
+    kontakte:[{id:"demo-c8b",name:"Klaus Becker",rolle:"Eigentümer, Wohnung EG",tel:"0171 0000018"},{id:"demo-c8s",name:"Sandra Schmitz",rolle:"Mieterin, Wohnung OG",tel:"0171 0000019"}],ansprech:"Klaus Becker",
+    notiz:"Zweifamilienhaus Baujahr 1994, Elektrik 2025 erneuert. Zwei Haushaltszähler (Wohnung EG und OG), Allgemeinstrom läuft über den Zähler der Wohnung EG. Netzbetreiber: Gemeindewerke Nümbrecht."},P.bu,vor(45));
+  const ET=[["kg","KG",-1,["Hausanschlussraum","Heizungsraum","Waschküche","Keller Wohnung EG","Keller Wohnung OG","Treppenhaus KG"]],["eg","EG",0,["Treppenhaus","Flur","Küche","Wohnen","Schlafen","Bad"]],["og","OG",1,["Flur OG","Küche OG","Wohnen OG","Schlafen OG","Kind OG","Bad OG"]]];
+  const R={}; const etagen=ET.map(([id,name,ebene,L])=>({id:"dz-"+id,name,ebene,raeume:L.map((n,i)=>{ const rid=`dz-${id}-${i+1}`; R[n]=rid; return {id:rid,name:n}; })}));
+  const verteiler=[{id:"dz-hv",name:"Zählerschrank / HV",raumId:R["Hausanschlussraum"],qr:"BK3HV8",netz:"TN-C-S | 230/400 V",fertig:true,stand:tag(-120),ersteller:P.mp.name},
+    {id:"dz-uv1",name:"UV Wohnung EG",raumId:R["Flur"],vonVId:"dz-hv",vonAbgang:"Q 1",qr:"BK3EG8",netz:"TN-S | 230/400 V",fertig:true,stand:tag(-120),ersteller:P.mp.name},
+    {id:"dz-uv2",name:"UV Wohnung OG",raumId:R["Flur OG"],vonVId:"dz-hv",vonAbgang:"Q 2",qr:"BK3UG8",netz:"TN-S | 230/400 V",fertig:true,stand:tag(-118),ersteller:P.ms.name}];
+  const rcds=[["hv1","dz-hv"],["e1","dz-uv1"],["e2","dz-uv1"],["o1","dz-uv2"],["o2","dz-uv2"]].map(([id,vId])=>({id:"dz-r-"+id,vId,nr:"",typ:"A",in:"40",idn:"30"}));
+  const L15="NYM-J 3×1,5", L25="NYM-J 3×2,5", L525="NYM-J 5×2,5", L510="NYM-J 5×10";
+  const SK=[["hv1","Licht Treppenhaus","B10",L15],["hv1","Licht Keller","B10",L15],["hv1","Außenbeleuchtung","B10",L15],["hv1","Klingel / Sprechanlage","B6",L15],["hv1","Heizung (Gastherme)","B16",L25],["hv1","Waschküche Steckdosen","B16",L25],
+    ["e1","Licht Flur, Küche","B10",L15],["e1","Küche Arbeitsfläche","B16",L25],["e1","Küche Arbeitsfläche rechts","B16",L25],["e1","Geschirrspüler","B16",L25],["e1","Kühlschrank","B16",L25],
+    ["e2","Herd","B16",L525,3],["e2","Wohnen","B16",L25],["e2","Schlafen","B16",L25],["e2","Bad","B16",L25],["e2","Licht Wohnen, Schlafen, Bad","B10",L15],
+    ["o1","Licht Flur, Küche","B10",L15],["o1","Küche Arbeitsfläche","B16",L25],["o1","Geschirrspüler","B16",L25],["o1","Kühlschrank","B16",L25],["o1","Waschmaschine (Keller OG)","B16",L25],
+    ["o2","Herd","B16",L525,3],["o2","Wohnen","B16",L25],["o2","Schlafen","B16",L25],["o2","Kinderzimmer","B16",L25],["o2","Bad","B16",L25],["o2","Licht Wohnen, Schlafen, Kind, Bad","B10",L15]];
+  const stromkreise=SK.map(([rc,bez,schutz,leitung,pole],i)=>({id:`dz-sk-${i+1}`,vId:rcds.find(x=>x.id==="dz-r-"+rc).vId,nr:"",bez,schutz,rcdId:"dz-r-"+rc,leitung,...(pole?{pole}:{})}));
+  /* Zählerplätze in der HV: Hauptleitungsschalter (SLS) und Abgang zur Wohnungs-UV je Zähler */
+  const zp=[["Zählerplatz 1 – Wohnung EG (mit Allgemein)",1,"UV Wohnung EG"],["Zählerplatz 2 – Wohnung OG",2,"UV Wohnung OG"]];
+  stromkreise.push(...zp.flatMap(([,n,uv])=>[{id:`dz-sls${n}`,vId:"dz-hv",nr:`SLS ${n}`,bez:`Hauptleitungsschalter Zähler ${n}`,schutz:"E35",pole:3,rcdId:"",leitung:"NYM-J 5×16"},
+    {id:`dz-q${n}`,vId:"dz-hv",nr:`Q ${n}`,bez:`Zuleitung ${uv}`,schutz:"C35",pole:3,rcdId:"",leitung:L510}]));
+  const vtTeile=[];
+  demoVtSchema("dz-hv",rcds,stromkreise.filter(s=>!/^dz-(sls|q)/.test(s.id)),vtTeile,"");
+  ["dz-uv1","dz-uv2"].forEach(v=>demoVtSchema(v,rcds,stromkreise,vtTeile,"Ohne RCD"));
+  /* HV: erst die Zählerplätze, dann der Verteilerbereich Allgemein */
+  let pos=0; const hv=(o)=>{ o.pos=pos++; return o; };
+  zp.forEach(([titel,n])=>{ vtTeile.push(hv({id:`dz-gr-z${n}`,vId:"dz-hv",art:"gr",kz:"",bez:titel,schutz:""})); [`dz-sls${n}`,`dz-q${n}`].forEach(id=>hv(stromkreise.find(s=>s.id===id))); });
+  vtTeile.push(hv({id:"dz-gr-allg",vId:"dz-hv",art:"gr",kz:"",bez:"Allgemein – Treppenhaus, Keller, Heizung",schutz:""}));
+  const rhv=rcds.find(x=>x.id==="dz-r-hv1"); hv(rhv); rhv.umbruch=true; stromkreise.filter(s=>s.rcdId==="dz-r-hv1").forEach(hv);
+  stromkreise.find(s=>s.id==="dz-q1").umbruch=false;
+  vtTeile.push({id:"dz-res-o",vId:"dz-uv2",art:"res",kz:"F 2.0.7",bez:"",schutz:"B16",pos:99});
+  const g=r({id:"g-k_demo-k8",ortId:"k:demo-k8",etagen,verteiler,rcds,stromkreise,vtTeile,stellen:[],schraenke:[],dosen:[]},P.mp,vor(10));
+  return {kunde,gebaeude:[g]}; }
+/* Verteilerlegende ohne Kunde (Ablage „Ohne Kunde“): z. B. Bestandsaufnahme vor dem Angebot */
+function demoLegende(r,P,vor,tag){ const e=(art,kz,bez,schutz,o)=>Object.assign({id:"dl-"+kz.replace(/\W/g,"")+art,art,kz,bez,schutz},o||{});
+  return [r({id:"demo-leg1",titel:"UV Werkstatt (Bestand)",kunde:"",anschrift:"",netz:"TN-S | 230/400 V",ersteller:P.ab.name,stand:tag(-2),fertig:false,teReihe:12,
+    eintraege:[e("rcd","F 1.0","Fehlerstromschutzschalter","40 A / 30 mA Typ A"),e("sk","F 1.0.1","Licht Werkstatt","B10"),e("sk","F 1.0.2","Steckdosen Werkbank","B16"),e("sk","F 1.0.3","?","B16"),e("sk","F 1.0.4","Kompressor","C16",{pole:3}),
+      e("rcd","F 2.0","Fehlerstromschutzschalter","40 A / 30 mA Typ B",{umbruch:true}),e("sk","F 2.0.1","CEE 32 A","C32",{pole:3}),e("res","F 2.0.2","","B16")]},P.ab,vor(2))]; }
 /* Demo-Haus „Am Sonnenhang“: komplettes Gebäude für die E-Check-App – fünf Geschosse plus Garage auf EG-Ebene,
    Hauptverteilung im Keller, drei Unterverteilungen, großer Serverschrank im Technikraum (KG) und ein Mini-Verteiler im 2. OG.
    Dazu eine laufende Installationsprüfung (E-CHECK) und eine laufende Netzwerkprüfung mit ein paar typischen Fehlern. */
@@ -159,6 +207,7 @@ function demoHaus(r,P,vor,tag){
     ["hv","F11","Heimkino","B16","hv1",L25,[["kg","Heimkino","sd",3,"TV"],["kg","Heimkino","sd",2,"Beamer"],["kg","Heimkino","sd",1,"neben Tür"]]],
     ["hv","F12","Weinkeller Klimagerät","B16","hv1",L25,[["kg","Weinkeller","fest",1,"Klimagerät"]]],
     ["hv","F13","Außensteckdosen Terrasse","B16","hv3",L25,[["eg","Terrasse","sd",2,"Außen"],["eg","Terrasse","sd",1,"Außen"]]],
+    ["hv","F14","PV-Wechselrichter","B20","","NYM-J 5×4",[["kg","Technikraum","fest",1,"Wechselrichter"]]],
     ["uveg","F1","Licht EG","B10","eg1",L15,["Diele","Gäste-WC","Küche","Speisekammer","Wohnen / Essen","Büro","Wintergarten","Flur EG"].map(n=>["eg",n,"licht",1,"Decke"])],
     ["uveg","F2","Diele, Flur, Gäste-WC","B16","eg1",L25,[["eg","Diele","sd",1,"Eingang"],["eg","Flur EG","sd",2,"neben Tür"],["eg","Gäste-WC","sd",1,"neben Tür"]]],
     ["uveg","F3","Küche Arbeitsfläche links","B16","eg3",L25,[["eg","Küche","sd",2,"Arbeitsfläche"],["eg","Küche","sd",2,"Arbeitsfläche"]]],
@@ -194,6 +243,14 @@ function demoHaus(r,P,vor,tag){
   const stromkreise=[], stellen=[], ord={}; let si=0;
   SK.map(x=>{ const y=x.slice(); y[6]=x[6].filter(st=>da(st[0],st[1])); return y; }).filter(x=>x[6].length).forEach(([v,nr,bez,schutz,rcd,leitung,St],k)=>{ const id=`dh-sk-${v}-${nr}`; stromkreise.push({id,vId:"dh-"+v,nr,bez,schutz,rcdId:rcd?"dh-r-"+rcd:"",leitung});
     St.forEach(([e,n,art,fach,lage])=>{ const raumId=raum(e,n); ord[raumId]=(ord[raumId]||0)+1; stellen.push({id:`dh-st-${++si}`,raumId,ord:ord[raumId],art,fach,lage,skId:id}); }); });
+  /* Verteiler im Schema der Legende (Reihe.RCD.Automat), mit QR-Aufkleber und Stand – fünfadrige Kreise sind dreipolig */
+  for(let i=rcds.length-1;i>=0;i--) if(!stromkreise.some(x=>x.rcdId===rcds[i].id)) rcds.splice(i,1);   /* RCDs ohne Kreise (Räume im Demo-Haus nicht vorhanden) weglassen */
+  stromkreise.forEach(x=>{ if(/5×/.test(x.leitung)) x.pole=3; });
+  const nrVon=alt=>(stromkreise.find(x=>x.id==="dh-sk-"+alt)||{}).nr||"";
+  const vtTeile=[];
+  demoVtSchema("dh-hv",rcds,stromkreise,vtTeile,"Ohne RCD: Wärmepumpe (Zähler 2, § 14a) und PV"); ["dh-uveg","dh-uvga","dh-uvog"].forEach(v=>demoVtSchema(v,rcds,stromkreise,vtTeile,"Ohne RCD"));
+  const VT={"dh-hv":["KS7HV2","TN-C-S | 230/400 V",true,-200],"dh-uveg":["KS7EG2","TN-S | 230/400 V",true,-200],"dh-uvga":["KS7GA2","TN-S | 230/400 V",true,-150],"dh-uvog":["KS7DG2","TN-S | 230/400 V",false,-3]};
+  verteiler.forEach(v=>{ const [qr,netz,fertig,t]=VT[v.id]; Object.assign(v,{qr,netz,fertig,stand:tag(t),ersteller:P.mp.name,updated:vor(-t)}); });
   /* Netzwerk: Serverschrank KG (Patchfeld 1–3), Mini-Verteiler 2. OG (Patchfeld 4) */
   const schraenke=[
     {id:"dh-s1",nr:1,name:"Serverschrank",raumId:raum("kg","Technikraum"),he:42,bauart:"stand",breite:800,tiefe:1000,farbe:"auto",teile:[
@@ -218,7 +275,7 @@ function demoHaus(r,P,vor,tag){
   const frei={}, dosen=[], dord={}; DO.filter(x=>da(x[0],x[1])).forEach(([e,n,ports,lage,pf],i)=>{ const raumId=raum(e,n), pp={}; for(let p=1;p<=ports;p++){ frei[pf]=(frei[pf]||0)+1; pp[p]=`${pf===4?1:pf}.${frei[pf]}`; }
     dord[raumId]=(dord[raumId]||0)+1; const zw=/WLAN/.test(lage)?"ap":/Kamera/.test(lage)?"kamera":/TV/.test(lage)?"tv":/Wärmepumpe|Wallbox/.test(lage)?"smart":"arbeitsplatz", nutz={}; for(let p=1;p<=ports;p++) nutz[p]=zw==="arbeitsplatz"&&p===2&&/Schreibtisch/.test(lage)?"telefon":zw;
     dosen.push({id:`dh-d-${i+1}`,raumId,ord:dord[raumId],ports,lage,sId:pf===4?"dh-s2":"dh-s1",pp,nutz}); });
-  const g=r({id:"g-k_demo-k6",ortId:"k:demo-k6",etagen,verteiler,rcds,stromkreise,stellen,schraenke,dosen,beschr:"nr",pkFarben:{an:true,z:{arbeitsplatz:"blau",ap:"gelb",kamera:"schwarz",telefon:"gruen",tv:"weiss",smart:"orange",drucker:"violett",uplink:"rot"}},anschluss:{art:"glasfaser",anbieter:"Deutsche Glasfaser",raumId:raum("kg","Technikraum"),ont:"box",weg:"glas_zum_schrank",routerKat:"fritz-5590",routerOrt:"s:dh-s1",notiz:"Glasfaser im Leerrohr vom Hausübergabepunkt bis in den Serverschrank, GF-TA im Schrank"}},P.mp,vor(6));
+  const g=r({id:"g-k_demo-k6",ortId:"k:demo-k6",etagen,verteiler,rcds,stromkreise,vtTeile,stellen,schraenke,dosen,beschr:"nr",pkFarben:{an:true,z:{arbeitsplatz:"blau",ap:"gelb",kamera:"schwarz",telefon:"gruen",tv:"weiss",smart:"orange",drucker:"violett",uplink:"rot"}},anschluss:{art:"glasfaser",anbieter:"Deutsche Glasfaser",raumId:raum("kg","Technikraum"),ont:"box",weg:"glas_zum_schrank",routerKat:"fritz-5590",routerOrt:"s:dh-s1",notiz:"Glasfaser im Leerrohr vom Hausübergabepunkt bis in den Serverschrank, GF-TA im Schrank"}},P.mp,vor(6));
   /* Netzwerkprüfung (läuft): fast alles gemessen, ein paar typische Fehler, im OG der Balkon noch offen */
   const nw={}; let li=0;
   dosen.forEach(d=>{ for(let p=1;p<=d.ports;p++){ const id=`${d.id}.${p}`, et=Object.keys(R).find(k=>R[k]===d.raumId).split(":")[0], i=li++;
@@ -247,11 +304,11 @@ function demoHaus(r,P,vor,tag){
     sicht,werte:iw,netz:{form:"TN-C-S",hak:"63 A"},umfang:null,fristM:48,geraet:{mess:"Wiha MFT one",kurz:"MFT 1",sn:"MFT1-DEMO",kal:"03/2027"}},P.ms,vor(3));
   const A=(id,o)=>r(Object.assign({id,ortId:"k:demo-k6",kundeId:"demo-k6",pruefungen:[],aenderungen:[]},o),P.mp,vor(20));
   const anlagen=[
-    A("demo-an-wp",{nr:"WP-1",bez:"Wärmepumpe",hersteller:"Bosch",typ:"Compress 6800i AW 12 E",baujahr:"2019",leistung:"5,5",spannung:"400",etageId:"dh-kg",raum:"Heizungsraum / Außengerät Garten",vId:"dh-hv",abgang:"F10",absicherung:"C16",zuleitung:"NYM-J 5×2,5 mm²",fristM:12,
+    A("demo-an-wp",{nr:"WP-1",bez:"Wärmepumpe",hersteller:"Bosch",typ:"Compress 6800i AW 12 E",baujahr:"2019",leistung:"5,5",spannung:"400",etageId:"dh-kg",raum:"Heizungsraum / Außengerät Garten",vId:"dh-hv",abgang:nrVon("hv-F10"),absicherung:"C16",zuleitung:"NYM-J 5×2,5 mm²",fristM:12,
       pruefungen:[{id:"demo-wp-p",datum:tag(-200),erg:"ok",notiz:"Wartung mit Heizungsbauer",wer:P.ms}],aenderungen:[{id:"demo-wp-a",at:vor(90),datum:tag(-90),was:"Modbus-Anbindung an Netzwerk (Datendose Heizungsraum)",warum:"PV-Überschussregelung",wer:P.mp}]}),
-    A("demo-an-wb",{nr:"WB-1",bez:"Wallbox 11 kW",hersteller:"KEBA",typ:"KeContact P30 x-series",baujahr:"2023",leistung:"11",spannung:"400",etageId:"dh-ga",raum:"Doppelgarage",vId:"dh-uvga",abgang:"F1",absicherung:"B16",zuleitung:"NYM-J 5×6 mm²",fristM:48,
+    A("demo-an-wb",{nr:"WB-1",bez:"Wallbox 11 kW",hersteller:"KEBA",typ:"KeContact P30 x-series",baujahr:"2023",leistung:"11",spannung:"400",etageId:"dh-ga",raum:"Doppelgarage",vId:"dh-uvga",abgang:nrVon("uvga-F1"),absicherung:"B16",zuleitung:"NYM-J 5×6 mm²",fristM:48,
       pruefungen:[{id:"demo-wb-p",datum:tag(-20),erg:"ok",notiz:"Erstprüfung nach DIN VDE 0100-722 (EVSE-App)",wer:P.mp}]}),
-    A("demo-an-pv",{nr:"PV-1",bez:"PV-Anlage 9,8 kWp mit Speicher",hersteller:"Fronius / BYD",typ:"Symo GEN24 8.0 Plus · HVS 10.2",baujahr:"2021",leistung:"9,8",spannung:"400",etageId:"dh-kg",raum:"Technikraum",vId:"dh-hv",abgang:"F14",absicherung:"B20",zuleitung:"NYM-J 5×4 mm²",fristM:48,pruefungen:[],aenderungen:[]})];
+    A("demo-an-pv",{nr:"PV-1",bez:"PV-Anlage 9,8 kWp mit Speicher",hersteller:"Fronius / BYD",typ:"Symo GEN24 8.0 Plus · HVS 10.2",baujahr:"2021",leistung:"9,8",spannung:"400",etageId:"dh-kg",raum:"Technikraum",vId:"dh-hv",abgang:nrVon("hv-F14"),absicherung:"B20",zuleitung:"NYM-J 5×4 mm²",fristM:48,pruefungen:[],aenderungen:[]})];
   return {kunde,gebaeude:[g],echecks:[anl,netz],anlagen}; }
 
 let demoCache=null;
