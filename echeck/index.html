@@ -2386,6 +2386,31 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .leg-fuss .leg-del{height:48px;padding:0 22px 0 18px;background:var(--err);color:#fff;border-radius:24px;font-size:15px}
 .leg-vor{gap:6px}.leg-vor .chip{min-height:32px;padding:4px 12px;font-size:13px}
 .leg-ohne{margin:20px 0 0}
+/* Stromkreise: Liste (Gruppen je RCD) und Verteiler (Reihen) */
+.leg-kopf{margin-right:0}.leg-seg{margin:0}.leg-seg button{min-height:36px;padding:0 14px;font-size:14px}
+.leg-gl{display:flex;flex-direction:column;gap:10px}
+.leg-grp{background:var(--feld);border-radius:16px;overflow:hidden}
+.leg-gk,.leg-r,.leg-add,.leg-ue{display:grid;grid-template-columns:96px minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;border:0;background:transparent;color:var(--on-surface);text-align:left;font:inherit;cursor:pointer}
+.leg-gk{padding:12px 14px;background:color-mix(in srgb,var(--on-surface) 6%,var(--feld));font-weight:700}
+.leg-gk .kz{font-weight:800}.leg-gk .sc{font-size:13px;color:var(--on-sv);font-weight:600}
+.leg-r{padding:10px 14px;min-height:44px;font-size:15px}.leg-r.kind{padding-left:30px;grid-template-columns:82px minmax(0,1fr) auto;box-shadow:inset 0 1px 0 color-mix(in srgb,var(--on-surface) 7%,transparent)}
+.leg-r .kz{color:var(--on-sv);font-weight:600;font-variant-numeric:tabular-nums}
+.leg-r .sc{font-size:13px;color:var(--on-sv);background:color-mix(in srgb,var(--on-surface) 7%,transparent);padding:2px 8px;border-radius:7px;white-space:nowrap}
+.leg-r.res .bz{color:var(--on-sv);font-style:italic}.leg-r.offen .bz{color:var(--primary)}
+.leg-gk:hover,.leg-r:hover{background:color-mix(in srgb,var(--on-surface) 9%,var(--feld))}
+.leg-gk:disabled,.leg-r:disabled{cursor:default;opacity:1}
+.leg-add{display:flex;gap:6px;padding:10px 14px 12px 30px;color:var(--primary);font-weight:700;font-size:14px;box-shadow:inset 0 1px 0 color-mix(in srgb,var(--on-surface) 7%,transparent)}.leg-add .ic{width:18px;height:18px}
+.leg-ue{display:block;padding:10px 4px 0;font-weight:800;font-size:14px;color:var(--on-sv)}
+.leg-gk .leg-rcd{margin-left:8px}
+.leg-vopt{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0 0 12px}.leg-o{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--on-sv);font-weight:700}.leg-o .chip{min-height:30px;padding:2px 10px;font-size:13px}
+.leg-reihe{background:var(--feld);border-radius:16px;padding:10px 12px 6px;margin-bottom:10px}
+.leg-rk{display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:var(--on-sv);margin:0 2px 6px}.leg-rk span{font-weight:600}
+.leg-svg{display:block;width:100%;height:auto}
+.leg-dev,.leg-frei[data-act]{cursor:pointer}.leg-dev:hover>rect:first-of-type{filter:brightness(.96)}
+.leg-fr{fill:color-mix(in srgb,var(--ok) 16%,transparent)}.leg-frt{fill:var(--ok)}
+.leg-st{fill:var(--on-surface)}.leg-sym{color:var(--on-surface)}
+.leg-symw .chip{gap:6px}.leg-symw .leg-symi{flex:none}
+@media (max-width:479px){.leg-gk,.leg-r{grid-template-columns:72px minmax(0,1fr) auto;gap:8px;font-size:14px}.leg-r.kind{padding-left:20px;grid-template-columns:64px minmax(0,1fr) auto}}
 #dlg .da .ab-ic{width:40px;height:40px;border:0;border-radius:20px;background:transparent;color:var(--on-sv);display:inline-flex;align-items:center;justify-content:center}
 #dlg .da .ab-ic .ic{width:22px;height:22px;transform:rotate(-90deg)}#dlg .da .ab-ic.ab .ic{transform:rotate(90deg)}#dlg .da .ab-ic:disabled{opacity:.35}
 @media (max-width:479px){.leg-z{grid-template-columns:84px minmax(0,1fr) auto;gap:8px;font-size:14px}}
@@ -6998,11 +7023,78 @@ function legView(L){ const E=legE(L);
       ${legFeld(L,"anschrift","Anschrift",{ph:"Straße, PLZ Ort"})}
       <div class="reihe2"><div class="tf fl"><select id="f_leg_netz" data-leg="netz" ${L.fertig?"disabled":""}>${LEG_NETZ.map(n=>`<option value="${esc(n)}" ${n===(L.netz||"")?"selected":""}>${esc(n||"nicht angeben")}</option>`).join("")}</select><label for="f_leg_netz">Netzform</label><span class="arr">${icon("drop")}</span></div>${legWerSel(L)}</div>
     </div></section>
-    <section class="card"><h3>Stromkreise${E.length?` <small class="leg-n">${legSkZahl(L)}</small>`:""}</h3>
-      ${E.length?`<div class="leg-l">${E.map(e=>legZeile(e,L.fertig)).join("")}</div>`:`<p class="meta">Noch keine Stromkreise. Unten rechts über „Stromkreis“ anlegen – mit „Nächster“ im Fenster geht es Zeile für Zeile weiter, die Kennzeichnung zählt mit.</p>`}
+    <section class="card"><div class="card-kopf leg-kopf"><h3>Stromkreise${E.length?` <small class="leg-n">${legSkZahl(L)}</small>`:""}</h3>${E.length?seg("legAnsicht",legAnsicht(),[["liste","Liste"],["verteiler","Verteiler"]],"leg-seg"):""}</div>
+      ${E.length?(legAnsicht()==="verteiler"?legVtView(L):legListeView(L)):`<p class="meta">Noch keine Stromkreise. Unten rechts über „Stromkreis“ anlegen – mit „Nächster“ im Fenster geht es Zeile für Zeile weiter, die Kennzeichnung zählt mit.</p>`}
     </section>
     <div class="leg-fuss">${canEdit(L)?`<button type="button" class="btn-tonal leg-del" data-act="legDelAsk">${icon("del")}Löschen</button>`:""}<span style="flex:1"></span>${L.fertig?`<button type="button" class="btn-tonal" data-act="legFertig" data-v="0">${icon("edit")}Wieder öffnen</button>`:`<button type="button" class="btn-tonal" data-act="legFertig" data-v="1">${icon("done")}Fertig</button>`}<button type="button" class="btn-filled" data-act="legPdf">${icon("pdf")}PDF erstellen</button></div>
   </div>`; }
+
+/* ===== Ansichten der Stromkreise: Liste (je RCD eine Gruppe) und Verteiler (Reihen, Breite in TE) ===== */
+const legAnsicht=()=>META.legAnsicht==="verteiler"?"verteiler":"liste";
+const legTE=e=>+e.te||(e.art==="rcd"?4:e.art==="sk"&&+e.pole===3?3:1);
+const legOffen=e=>e.art==="sk"&&/^\s*\??\s*$/.test(e.bez||"");
+/* Liste: RCD als Kopf, seine Automaten eingerückt darunter; Überschriften trennen */
+function legListeView(L){ const E=legE(L), zu=L.fertig, B=[]; let g=null;
+  E.forEach((e,i)=>{ if(e.art==="gr"){ B.push({gr:e}); g=null; } else if(e.art==="rcd"){ g={rcd:e,i,kids:[]}; B.push(g); } else if(g){ g.kids.push([e,i]); g.last=i; } else B.push({z:[e,i]}); });
+  const zeile=([e],kl)=>`<button type="button" class="leg-r${kl||""}${e.art==="res"?" res":""}${legOffen(e)?" offen":""}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}><span class="kz">${esc(e.kz||"–")}</span><span class="bz">${e.art==="res"?"Reserve":legOffen(e)?"? – noch unbekannt":esc(e.bez)}</span>${legSchutz(e)?`<span class="sc">${esc(legSchutz(e))}</span>`:""}</button>`;
+  return `<div class="leg-gl">${B.map(b=>b.gr?`<button type="button" class="leg-ue" data-act="legEdit" data-id="${esc(b.gr.id)}" ${zu?"disabled":""}>${esc(b.gr.bez||"Überschrift")}</button>`
+    :b.z?`<div class="leg-grp solo">${zeile(b.z)}</div>`
+    :`<div class="leg-grp"><button type="button" class="leg-gk" data-act="legEdit" data-id="${esc(b.rcd.id)}" ${zu?"disabled":""}><span class="kz">${esc(b.rcd.kz||"–")}</span><span class="bz">${esc(b.rcd.bez||"Fehlerstromschutzschalter")}<span class="leg-rcd">RCD</span></span>${b.rcd.schutz?`<span class="sc">${esc(b.rcd.schutz)}</span>`:""}</button>
+      ${b.kids.map(k=>zeile(k," kind")).join("")}${zu?"":`<button type="button" class="leg-add" data-act="legNach" data-i="${b.last!=null?b.last:b.i}">${icon("add")}Stromkreis an ${esc(b.rcd.kz||"RCD")}</button>`}</div>`).join("")}</div>`; }
+/* Reihen bilden: Breite je Gerät in TE, „Neue Reihe ab hier“ bricht um */
+function legReihen(L){ const n=+L.teReihe||12, R=[]; let r=null;
+  legE(L).forEach((e,i)=>{ if(e.art==="gr") return; const w=Math.min(legTE(e),n); if(!r||e.nr||r.te+w>n){ r={te:0,g:[]}; R.push(r); } r.g.push([e,i,w]); r.te+=w; });
+  return R; }
+/* Gezeichneter Verteiler: Geräte schlicht und herstellerneutral, darunter Beschriftung wie im Streifen */
+function legGeraet(e,x,w,P){ const W=w*P-4, X=x+2, rcd=e.art==="rcd", res=e.art==="res", t=legTE(e);
+  if(res) return `<rect x="${X}" y="18" width="${W}" height="118" rx="5" fill="#C9CCD2"/><rect x="${X+6}" y="60" width="${W-12}" height="34" rx="3" fill="#B7BBC2"/>`;
+  let h=`<rect x="${X}" y="10" width="${W}" height="134" rx="6" fill="#F1F2F4"/><rect x="${X}" y="10" width="${W}" height="30" rx="6" fill="#E3E5E9"/><rect x="${X}" y="114" width="${W}" height="30" rx="6" fill="#E3E5E9"/>`;
+  const hb=rcd?Math.min(W*.42,52):Math.min(W-14,40), hx=rcd?X+10:X+(W-hb)/2;
+  h+=`<rect x="${hx}" y="56" width="${hb}" height="42" rx="5" fill="#2B2E33"/><rect x="${hx+4}" y="60" width="${hb-8}" height="16" rx="3" fill="#4A4E55"/>`;
+  if(rcd) h+=`<circle cx="${X+W-22}" cy="66" r="9" fill="#FFD43B"/><text x="${X+W-22}" y="70" font-size="11" font-weight="800" text-anchor="middle" fill="#2B2E33">T</text>`;
+  const sc=String(rcd?(e.schutz||"").replace(/\s*Typ.*$/,""):legSchutz(e).replace(" 3-polig",""));
+  h+=`<text x="${X+W/2}" y="133" font-size="${t>1?13:11}" font-weight="800" text-anchor="middle" fill="#3A3D43">${esc(sc.slice(0,t>2?18:7))}</text>`;
+  return h; }
+const legWrap=(t,max)=>{ const w=String(t||"").split(/\s+/), Z=[]; let z=""; w.forEach(x=>{ if((z+" "+x).trim().length>max&&z){ Z.push(z); z=x; } else z=(z+" "+x).trim(); }); if(z) Z.push(z); return Z.slice(0,2); };
+function legVtView(L){ const n=+L.teReihe||12, P=58, R=legReihen(L), zu=L.fertig;
+  const opt=(k,t,vals,cur)=>`<span class="leg-o"><span>${t}</span>${vals.map(v=>`<button type="button" class="chip" data-act="legOpt" data-k="${k}" data-v="${v}" aria-pressed="${String(cur)===String(v)}" ${zu?"disabled":""}>${String(v).replace(".",",")}</button>`).join("")}</span>`;
+  return `<div class="leg-vopt">${opt("teReihe","TE je Reihe",[12,18,24],n)}${opt("teMm","mm je TE",[17.5,18],+L.teMm||17.5)}</div>`
+    +R.map((r,ri)=>{ let x=0; const g=r.g.map(([e,i,w])=>{ const X=x*P, Wd=w*P, sym=legSymFuer(e), z=legWrap(e.art==="res"?"Reserve":legOffen(e)?"?":e.bez,Math.max(6,w*9));
+        const out=`<g class="leg-dev" data-act="legEdit" data-id="${esc(e.id)}">${legGeraet(e,X,w,P)}
+          <rect x="${X+2}" y="154" width="${Wd-4}" height="24" rx="4" fill="${e.art==="rcd"?"#2F6FD1":e.art==="res"?"#A9AEB6":"#7D838C"}"/><text x="${X+Wd/2}" y="171" font-size="${w>1?13:11}" font-weight="800" text-anchor="middle" fill="#fff">${esc(String(e.kz||"").slice(0,w>1?16:8))}</text>
+          ${sym?`<g transform="translate(${X+Wd/2-14} 186)" class="leg-sym">${legSymSvg(sym,28,true)}</g>`:""}
+          ${z.map((t,k)=>`<text x="${X+Wd/2}" y="${(sym?232:202)+k*15}" font-size="12" font-weight="600" text-anchor="middle" class="leg-st">${esc(t)}</text>`).join("")}</g>`; x+=w; return out; }).join("");
+      const frei=n-r.te, last=r.g[r.g.length-1][1];
+      const fr=frei>0?`<g class="leg-frei" ${zu?"":`data-act="legNach" data-i="${last}"`}><rect x="${x*P+2}" y="10" width="${frei*P-4}" height="134" rx="6" class="leg-fr"/><text x="${x*P+frei*P/2}" y="82" font-size="14" font-weight="800" text-anchor="middle" class="leg-frt">${frei} TE frei${zu?"":" · +"}</text></g>`:"";
+      return `<div class="leg-reihe"><div class="leg-rk">Reihe ${ri+1}<span>${r.te} von ${n} TE</span></div><svg viewBox="0 0 ${n*P} 268" class="leg-svg" role="img" aria-label="Reihe ${ri+1}"><rect x="0" y="70" width="${n*P}" height="14" fill="#9AA0A8"/>${g}${fr}</svg></div>`; }).join(""); }
+
+/* ===== Symbole für Beschriftung (eigene, schlichte Piktogramme, 24er-Raster, Linien) ===== */
+const LEG_SYM={
+  steckdose:'<circle cx="12" cy="12" r="9"/><circle cx="8.6" cy="12" r="1.3" class="f"/><circle cx="15.4" cy="12" r="1.3" class="f"/>',
+  licht:'<path d="M9 17h6M10 20h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V17h5v-1.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>',
+  herd:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="2.4"/><circle cx="15.5" cy="8.5" r="2.4"/><circle cx="8.5" cy="15.5" r="2.4"/><circle cx="15.5" cy="15.5" r="2.4"/>',
+  backofen:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 8h18"/><rect x="6.5" y="11" width="11" height="7" rx="1"/>',
+  spuelmaschine:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 7h16"/><path d="M12 11c-1.6 2-2.4 3.2-2.4 4.2a2.4 2.4 0 0 0 4.8 0c0-1-.8-2.2-2.4-4.2z"/>',
+  waschmaschine:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 7h16"/><circle cx="12" cy="14" r="4.5"/>',
+  trockner:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 7h16"/><circle cx="12" cy="14" r="4.5"/><path d="M10.5 12.5c1 .8 2 .8 3 0M10.5 15.5c1 .8 2 .8 3 0"/>',
+  kuehl:'<rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M5 9.5h14M8 5.5v2M8 12.5v3"/>',
+  wasser:'<path d="M12 3c-3.5 4.5-5.5 7.5-5.5 10a5.5 5.5 0 0 0 11 0c0-2.5-2-5.5-5.5-10z"/><path d="M12.8 10l-2 3.4h2.6l-2 3.4"/>',
+  heizung:'<path d="M6 5v14M10 5v14M14 5v14M18 5v14M4 19h16"/>',
+  wp:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="10" cy="12" r="4.5"/><path d="M10 7.5v9M5.5 12h9M17 8v8"/>',
+  wallbox:'<rect x="5" y="3" width="10" height="14" rx="2"/><path d="M8 7h4M10 17v2a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-4"/><path d="M16.5 12h3v3h-3z"/>',
+  pv:'<path d="M5 5h14l2 10H3z"/><path d="M4 10h16M9.7 5l-.7 10M14.3 5l.7 10M12 15v4M8 19h8"/>',
+  edv:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M9 20h6M12 16v4"/>',
+  netzwerk:'<rect x="9" y="3" width="6" height="5" rx="1"/><rect x="3" y="16" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M12 8v4M6 16v-4h12v4"/>',
+  klingel:'<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  rollladen:'<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M4 7h16M4 10.5h16M4 14h16"/>',
+  aussen:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/>',
+  motor:'<circle cx="12" cy="12" r="8.5"/><path d="M8 15.5V8.5l4 4.5 4-4.5v7"/>' };
+const LEG_SYM_LISTE=[["steckdose","Steckdose"],["licht","Licht"],["herd","Herd/Kochfeld"],["backofen","Backofen"],["spuelmaschine","Spülmaschine"],["waschmaschine","Waschmaschine"],["trockner","Trockner"],["kuehl","Kühlschrank"],["wasser","Durchlauferhitzer"],["heizung","Heizung"],["wp","Wärmepumpe"],["wallbox","Wallbox"],["pv","PV-Anlage"],["edv","EDV"],["netzwerk","Netzwerk"],["klingel","Klingel"],["rollladen","Rollladen"],["aussen","Außen/Allgemein"],["motor","Motor/Pumpe"]];
+const LEG_SYM_WORT=[[/durchlauf|boiler|warmwasser/,"wasser"],[/wärmepumpe|\bwp\b/,"wp"],[/wallbox|ladest|ladesäule|ladepunkt/,"wallbox"],[/\bpv\b|photovolt|solar|wechselrichter/,"pv"],[/spül/,"spuelmaschine"],[/wasch/,"waschmaschine"],[/trockn/,"trockner"],[/kühl|gefrier/,"kuehl"],[/backofen|ofen/,"backofen"],[/herd|kochfeld/,"herd"],[/heiz/,"heizung"],[/edv|server|computer|\bpc\b/,"edv"],[/netzwerk|router|switch|knx|sat/,"netzwerk"],[/klingel|sprech/,"klingel"],[/roll|jalous|markise/,"rollladen"],[/pumpe|motor|garagentor|tor\b/,"motor"],[/licht|beleucht|lampe/,"licht"],[/steckd|dose|brüstung/,"steckdose"],[/außen|aussen|garten|allgemein|treppenhaus/,"aussen"]];
+function legSymFuer(e){ if(e.art==="rcd"||e.art==="res") return ""; if(e.sym==="keins") return ""; if(e.sym&&LEG_SYM[e.sym]) return e.sym;
+  const b=String(e.bez||"").toLowerCase(); const f=LEG_SYM_WORT.find(([re])=>re.test(b)); return f?f[1]:""; }
+const legSymSvg=(k,px,inner)=>{ const p=LEG_SYM[k]; if(!p) return ""; const g=`<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p.replace(/class="f"/g,'fill="currentColor" stroke="none"')}</g>`;
+  return inner?`<svg width="${px}" height="${px}" viewBox="0 0 24 24">${g}</svg>`:`<svg class="leg-symi" width="${px}" height="${px}" viewBox="0 0 24 24" aria-hidden="true">${g}</svg>`; };
 
 /* „Erstellt von“: Mitarbeiter aus dem Team (ohne Büro); ein früher eingetragener Name bleibt wählbar */
 const legTeam=()=>team().filter(m=>m.name&&(typeof maStufe!=="function"||maStufe(m).k!=="buero")).map(m=>m.name).sort((a,b)=>a.localeCompare(b,"de"));
@@ -7027,7 +7119,7 @@ function legRcdKz(E,i,neueReihe){ let vor="F ", reihe=1, rcd=-1;
 function legSkDlg(id,nach){ const L=legAkt(); if(!L) return; const E=legE(L), i=id?E.findIndex(x=>x.id===id):-1, e=i>=0?E[i]:null;
   const pos=e?i:nach!=null?nach+1:E.length, art=e?e.art:"sk";
   const v=e||{art,kz:legNaechsteKz(E,pos-1),bez:"",schutz:"",pole:1};
-  legDlg={id:e?e.id:null,pos,art:v.art,pole:String(v.pole||1),auto:e?null:v.kz};
+  legDlg={id:e?e.id:null,pos,art:v.art,pole:String(v.pole||1),auto:e?null:v.kz,te:e&&e.te?String(e.te):"",nr:!!(e&&e.nr),sym:e&&e.sym||""};
   const rcdN=legRcdKz(E,pos-1,false), rcdR=legRcdKz(E,pos-1,true);
   const vorschl=[...new Set(live("legenden").flatMap(x=>legE(x).filter(y=>y.art==="sk"&&y.bez).map(y=>y.bez)))];
   dialog(e?"Zeile bearbeiten":"Neue Zeile",`<div class="chips ec-wahl leg-art">${LEG_ART.map(([k,t])=>`<button type="button" class="chip" data-act="legArt" data-v="${k}" aria-pressed="${k===v.art}">${t}</button>`).join("")}</div>
@@ -7041,7 +7133,9 @@ function legSkDlg(id,nach){ const L=legAkt(); if(!L) return; const E=legE(L), i=
     <div class="leg-nur" data-nicht="gr"><div class="fg1" style="margin-top:16px">${tf("legSchutz","Absicherung",v.schutz||"",{form:true,ph:v.art==="rcd"?"z. B. 40 A / 30 mA Typ A":"z. B. B16"})}</div>
       <div class="chips ec-wahl leg-ls leg-nur" data-nicht="rcd">${LEG_LS.map(x=>`<button type="button" class="chip" data-act="legSetz" data-ziel="f_legSchutz" data-v="${x}">${x}</button>`).join("")}</div>
       <div class="chips ec-wahl leg-nur" data-nur="rcd">${LEG_RCD.map(x=>`<button type="button" class="chip" data-act="legSetz" data-ziel="f_legSchutz" data-v="${esc(x)}">${esc(x)}</button>`).join("")}</div></div>
-    <div class="leg-nur" data-nur="sk"><div class="lbl" style="margin-top:12px">Pole</div><div class="chips ec-wahl">${[["1","1-polig"],["3","3-polig"]].map(([k,t])=>`<button type="button" class="chip" data-act="legPole" data-v="${k}" aria-pressed="${k===legDlg.pole}">${t}</button>`).join("")}</div></div>`,
+    <div class="leg-nur" data-nur="sk"><div class="lbl" style="margin-top:12px">Pole</div><div class="chips ec-wahl">${[["1","1-polig"],["3","3-polig"]].map(([k,t])=>`<button type="button" class="chip" data-act="legPole" data-v="${k}" aria-pressed="${k===legDlg.pole}">${t}</button>`).join("")}</div></div>
+    <div class="leg-nur" data-nicht="gr"><div class="lbl" style="margin-top:12px">Im Verteiler</div><div class="chips ec-wahl">${[["","Breite automatisch"],["1","1 TE"],["2","2 TE"],["3","3 TE"],["4","4 TE"]].map(([k,t])=>`<button type="button" class="chip" data-act="legTe" data-v="${k}" aria-pressed="${k===legDlg.te}">${t}</button>`).join("")}<button type="button" class="chip" data-act="legNr" aria-pressed="${legDlg.nr}">Neue Reihe ab hier</button></div>
+      <div class="lbl" style="margin-top:12px">Symbol auf der Beschriftung</div><div class="chips ec-wahl leg-symw">${[["","Automatisch"],...LEG_SYM_LISTE,["keins","Kein Symbol"]].map(([k,t])=>`<button type="button" class="chip" data-act="legSym" data-v="${k}" aria-pressed="${k===legDlg.sym}" title="${esc(t)}">${LEG_SYM[k]?legSymSvg(k,18):""}${esc(t)}</button>`).join("")}</div></div>`,
     `${e?`<button class="btn-text danger" data-act="legSkDel">Löschen</button><button class="ab-ic" data-act="legOrd" data-d="-1" ${i?"":"disabled"} aria-label="Nach oben" title="Nach oben">${icon("chev")}</button><button class="ab-ic ab" data-act="legOrd" data-d="1" ${i<E.length-1?"":"disabled"} aria-label="Nach unten" title="Nach unten">${icon("chev")}</button>`:""}<span style="flex:1"></span>
       <button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="legSkOk" data-weiter="1">${e?"Darunter neu":"Nächster"}</button><button class="btn-text" data-act="legSkOk">Speichern</button>`,{breit:true});
   legArtZeigen(); }
@@ -7053,7 +7147,7 @@ function legArtZeigen(){ const a=legDlg&&legDlg.art; if(!a) return;
 function legSkOk(weiter){ const L=legAkt(); if(!L||!legDlg) return; const F=formVals(), E=legE(L), a=legDlg.art;
   if(a==="gr"&&!F.legBez){ toast("Bitte eine Überschrift eintragen"); return; }
   if(a!=="gr"&&!F.legKz){ toast("Bitte eine Kennzeichnung eintragen"); return; }
-  const r={id:legDlg.id||uid(),art:a,kz:a==="gr"?"":F.legKz,bez:a==="res"?"":a==="rcd"&&!F.legBez?"Fehlerstromschutzschalter":F.legBez,schutz:a==="gr"?"":F.legSchutz,pole:a==="sk"?+legDlg.pole:1};
+  const r={id:legDlg.id||uid(),art:a,kz:a==="gr"?"":F.legKz,bez:a==="res"?"":a==="rcd"&&!F.legBez?"Fehlerstromschutzschalter":F.legBez,schutz:a==="gr"?"":F.legSchutz,pole:a==="sk"?+legDlg.pole:1,...(legDlg.te?{te:+legDlg.te}:{}),...(legDlg.nr?{nr:true}:{}),...(legDlg.sym?{sym:legDlg.sym}:{})};
   let i=E.findIndex(x=>x.id===r.id); if(i>=0) E[i]=r; else { E.splice(legDlg.pos,0,r); i=legDlg.pos; }
   legSpeichern(L); render();
   if(weiter) legSkDlg(null,i); else closeOverlays(); }
@@ -7106,6 +7200,12 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
         legDlg.auto=legDlg.art==="rcd"?legRcdKz(E,legDlg.pos-1,false):legNaechsteKz(E,legDlg.pos-1); f.value=legDlg.auto; f.parentElement.classList.toggle("fl",!!f.value); }
       return; }
   case "legPole": legDlg.pole=b.dataset.v; b.parentElement.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b)); return;
+  case "legTe": legDlg.te=b.dataset.v; b.parentElement.querySelectorAll('[data-act="legTe"]').forEach(c=>c.setAttribute("aria-pressed",c===b)); return;
+  case "legNr": legDlg.nr=!legDlg.nr; b.setAttribute("aria-pressed",legDlg.nr); return;
+  case "legSym": legDlg.sym=b.dataset.v; b.parentElement.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b)); return;
+  case "legAnsicht": META.legAnsicht=b.dataset.v; metaSave(); render(); return;
+  case "legNach": legSkDlg(null,+b.dataset.i); return;
+  case "legOpt": { if(!L) return; L[b.dataset.k]=+b.dataset.v; saveRec("legenden",L); render(); return; }
   case "legSetz": { const f=document.getElementById(b.dataset.ziel); if(f){ f.value=b.dataset.v; f.parentElement.classList.add("fl"); } return; }
   case "legWort": { const f=document.getElementById("f_legBez"); if(!f) return; const w=b.dataset.v, t=f.value.trim();
       f.value=!t?w:t.split(/\s+/).includes(w)?t:t+" "+w; f.parentElement.classList.add("fl"); return; }
