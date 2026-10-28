@@ -1238,6 +1238,28 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .ec-gw{display:block;font-size:12px;color:var(--on-sv);margin-top:4px}.ec-feld.bad .ec-gw{color:var(--err);font-weight:600}
 .ec-schnell{margin:4px 0 16px}
 .ec-chg{margin:8px 4px 0}.ec-chg small{display:block;color:var(--on-sv);font-size:12px;font-weight:700;margin-bottom:6px}
+/* Verteilerlegende */
+.leg-l{display:flex;flex-direction:column;margin:0 -8px}
+.leg-z{display:grid;grid-template-columns:104px minmax(0,1fr) auto;align-items:center;gap:12px;min-height:44px;padding:8px;border:0;border-radius:12px;background:transparent;color:var(--on-surface);text-align:left;font:inherit;font-size:15px;cursor:pointer}
+.leg-z:nth-child(even of .leg-z:not(.z-gr)){background:var(--feld)}
+.leg-z:hover{background:color-mix(in srgb,var(--on-surface) 7%,var(--feld))}
+.leg-z .kz{font-weight:600;font-variant-numeric:tabular-nums;color:var(--on-sv)}
+.leg-z .bz{min-width:0;overflow-wrap:anywhere}
+.leg-z .sc{font-size:13px;color:var(--on-sv);white-space:nowrap}
+.leg-z.z-rcd .kz,.leg-z.z-rcd .bz{font-weight:700;color:var(--on-surface)}
+.leg-z.z-res .bz i{color:var(--on-sv)}
+.leg-z.z-gr{display:block;margin-top:10px;padding:10px 8px 6px;font-weight:700;font-size:14px;color:var(--on-surface);border-radius:0;box-shadow:inset 0 -1px 0 var(--outline-v)}
+.leg-z.z-gr:first-child{margin-top:0}
+.leg-rcd{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:8px;background:var(--sec-c);color:var(--on-sec-c);font-size:11px;font-weight:700;vertical-align:1px}
+.leg-n{font-size:13px;font-weight:600;color:var(--on-sv);margin-left:6px}
+.leg-fuss{display:flex;align-items:center;gap:12px;margin:4px 0 8px}
+.leg-fuss .btn-tonal,.leg-fuss .btn-filled{display:inline-flex;align-items:center;gap:8px}.leg-fuss .ic{width:18px;height:18px}
+.leg-fuss .leg-del{height:48px;padding:0 22px 0 18px;background:var(--err);color:#fff;border-radius:24px;font-size:15px}
+.leg-vor{gap:6px}.leg-vor .chip{min-height:32px;padding:4px 12px;font-size:13px}
+.leg-leer{margin:0 4px}
+#dlg .da .ab-ic{width:40px;height:40px;border:0;border-radius:20px;background:transparent;color:var(--on-sv);display:inline-flex;align-items:center;justify-content:center}
+#dlg .da .ab-ic .ic{width:22px;height:22px;transform:rotate(-90deg)}#dlg .da .ab-ic.ab .ic{transform:rotate(90deg)}#dlg .da .ab-ic:disabled{opacity:.35}
+@media (max-width:479px){.leg-z{grid-template-columns:84px minmax(0,1fr) auto;gap:8px;font-size:14px}}
 .ec-fg{display:grid;gap:12px;margin-bottom:4px}.ec-fg .reihe2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}@media (max-width:599px){.ec-fg .reihe2{grid-template-columns:minmax(0,1fr)}}
 .ec-rk+.ec-sk{border-top:0}.ec-mg{margin:0 0 12px}
 .ec-erg{display:flex;align-items:center;gap:12px;justify-content:space-between;border-radius:20px;padding:16px 18px;margin:20px 0 0;font-weight:700;background:var(--sc-low)}
@@ -1409,7 +1431,7 @@ async function gj(path,opt){ const r=await g(path,opt); if(!r.ok) throw Object.a
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
 const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",protokolle:"Kundendaten",
   ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
-  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Prüfprotokolle",gebaeude:"Prüfprotokolle",echecks:"Prüfprotokolle",betriebsmittel:"Prüfprotokolle",anlagen:"Kundendaten",wuensche:"Kundendaten"};
+  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Prüfprotokolle",gebaeude:"Prüfprotokolle",echecks:"Prüfprotokolle",betriebsmittel:"Prüfprotokolle",legenden:"Prüfprotokolle",anlagen:"Kundendaten",wuensche:"Kundendaten"};
 async function syncRoot(){
   if(SY.drive) return;
   const c=META.sync.root;
@@ -1674,7 +1696,7 @@ const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
 const TH_KEY="evse_theme";
 const RES_TXT={ok:"fertig",bad:"Mängel",open:"offen",wip:"in Arbeit"};
 /* E-Check-Daten (Gebäude, Prüfungen, Geräte der Kunden) liegen in echeck_daten und werden wie alles andere abgeglichen; Messgeräte („geraete“) pflegt die Übersicht */
-const EC_KINDS=["gebaeude","echecks","betriebsmittel"];
+const EC_KINDS=["gebaeude","echecks","betriebsmittel","legenden"];
 const KINDS=["kunden","standorte","profile","dateien","protokolle","geraete","einstellungen","wuensche",...EC_KINDS];
 const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["dateien","protokolle","geraete","einstellungen","wuensche"];
 const DB=Object.fromEntries(KINDS.map(k=>[k,new Map()]));
@@ -1745,6 +1767,7 @@ function pfadTeile(){
   if(nav.v==="netzkatalog") return [["Netzwerk",{v:"netzwerk"}]];
   if(nav.v==="netzkatmodell") return nav.von==="netzwerk"?[["Netzwerk",{v:"netzwerk"}]]:[["Katalog",{v:"netzkatalog"}]];
   if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); const v=ecListeV(p&&p.art); return [[{geraete:"Geräte",netzwerk:"Netzwerk"}[v]||"Installation",{v}]]; }
+  if(nav.v==="legende") return [["Installation",{v:"anlagen"}]];
   return [];
 }
 let NAV_IND_ALT=null;
@@ -1891,6 +1914,7 @@ document.addEventListener("click",e=>{
 /*DEMO*/
 /*BIBLIOTHEK*/
 /*ECHECKPRUEF*/
+/*LEGENDE*/
 /*PROFIL*/
 /*KOPF*/
 function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
@@ -1919,6 +1943,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   else if(nav.v==="geraete"){ title="Geräte"; body=ecListeView("geraete"); fab=["ecNeuG","Prüfung","add"]; }
   else if(nav.v==="netzwerk"){ title="Netzwerk"; body=ecListeView("netz"); fab=["ecNeuN","Prüfung","add"]; }
   else if(nav.v==="netzkatalog"){ title="Netzwerk-Katalog"; body=ecKatalogView(); }
+  else if(nav.v==="legende"){ const L=DB.legenden.get(nav.id); if(!L||L.deleted){ nav={v:"anlagen"}; return render(); } title=L.titel||"Verteiler"; sub="Verteilerlegende"; body=legView(L); fab=["legSkNeu","Stromkreis","add"]; }
   else if(nav.v==="netzkatmodell"){ const K=ecRkKat(nav.id); if(!K){ nav={v:"netzkatalog"}; return render(); } title=K.kurz||K.modell; sub=K.hersteller; body=ecKatModellView(K); }
   else if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); if(!p||p.deleted){ nav={v:"anlagen"}; return render(); }
     title=ecOrt(p.ortId).titel; sub=`${EC_ART[p.art||"anlage"]} · ${ecDatum(p.datum)}`; if(rkS){ sub=`Netzwerkschrank · ${title}`; title=rkS.name; } body=ecView(p); }
