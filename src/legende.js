@@ -28,7 +28,7 @@ function legNeuDlg(){ const K=live("kunden").sort((a,b)=>a.name.localeCompare(b.
     <div class="fg1" style="margin-top:14px">${sf("legKd","Kunde",K.length?"":"",[["","Ohne Kunde – frei eintragen"],...K.map(k=>[k.id,k.name+(k.kdnr?` (${k.kdnr})`:"")])],{form:true})}</div>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="legNeuOk">Anlegen</button>`,{breit:true}); }
 function legNeuOk(){ const F=formVals(), k=F.legKd&&kundeOf(F.legKd);
-  const L={id:uid(),titel:F.legVt||"Verteiler",kunde:k?k.name:"",anschrift:k?adrText(k):"",kundeId:k?k.id:"",netz:"",ersteller:ME.name||(META.profil&&META.profil.name)||"",stand:ecHeute(),eintraege:[]};
+  const L={id:uid(),titel:F.legVt||"Verteiler",kunde:k?k.name:"",anschrift:k?adrText(k):"",kundeId:k?k.id:"",netz:"",ersteller:(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""),stand:ecHeute(),eintraege:[]};
   saveRec("legenden",L,true); closeOverlays(); go({v:"legende",id:L.id}); }
 
 /* ---- Bearbeiten ---- */
@@ -42,7 +42,7 @@ function legView(L){ const E=legE(L);
       <div class="reihe2">${legFeld(L,"titel","Verteiler",{ph:"z. B. HV Keller"})}${legFeld(L,"stand","Stand",{type:"date"})}</div>
       ${legFeld(L,"kunde","Kunde",{ph:"Name oder Firma"})}
       ${legFeld(L,"anschrift","Anschrift",{ph:"Straße, PLZ Ort"})}
-      <div class="reihe2"><div class="tf fl"><select id="f_leg_netz" data-leg="netz">${LEG_NETZ.map(n=>`<option value="${esc(n)}" ${n===(L.netz||"")?"selected":""}>${esc(n||"nicht angeben")}</option>`).join("")}</select><label for="f_leg_netz">Netzform</label><span class="arr">${icon("drop")}</span></div>${legFeld(L,"ersteller","Erstellt von")}</div>
+      <div class="reihe2"><div class="tf fl"><select id="f_leg_netz" data-leg="netz">${LEG_NETZ.map(n=>`<option value="${esc(n)}" ${n===(L.netz||"")?"selected":""}>${esc(n||"nicht angeben")}</option>`).join("")}</select><label for="f_leg_netz">Netzform</label><span class="arr">${icon("drop")}</span></div>${legWerSel(L)}</div>
     </div></section>
     <section class="card"><h3>Stromkreise${E.length?` <small class="leg-n">${legSkZahl(L)}</small>`:""}</h3>
       ${E.length?`<div class="leg-l">${E.map(legZeile).join("")}</div>`:`<p class="meta">Noch keine Stromkreise. Unten rechts über „Stromkreis“ anlegen – mit „Nächster“ im Fenster geht es Zeile für Zeile weiter, die Kennzeichnung zählt mit.</p>`}
@@ -50,6 +50,10 @@ function legView(L){ const E=legE(L);
     <div class="leg-fuss">${canEdit(L)?`<button type="button" class="btn-tonal leg-del" data-act="legDelAsk">${icon("del")}Löschen</button>`:""}<span style="flex:1"></span><button type="button" class="btn-filled" data-act="legPdf">${icon("pdf")}PDF erstellen</button></div>
   </div>`; }
 
+/* „Erstellt von“: Mitarbeiter aus dem Team (ohne Büro); ein früher eingetragener Name bleibt wählbar */
+const legTeam=()=>team().filter(m=>m.name&&(typeof maStufe!=="function"||maStufe(m).k!=="buero")).map(m=>m.name).sort((a,b)=>a.localeCompare(b,"de"));
+function legWerSel(L){ const N=legTeam(), cur=L.ersteller||""; if(cur&&!N.includes(cur)) N.push(cur);
+  return `<div class="tf fl"><select id="f_leg_ersteller" data-leg="ersteller">${["",...N].map(n=>`<option value="${esc(n)}" ${n===cur?"selected":""}>${esc(n||"bitte wählen")}</option>`).join("")}</select><label for="f_leg_ersteller">Erstellt von</label><span class="arr">${icon("drop")}</span></div>`; }
 /* Nächste Kennzeichnung: letzte Zahl der Zeile davor hochzählen (F 1.03 → F 1.04, Fi 4.1.20 → Fi 4.1.21); direkt nach einem RCD .01 anhängen */
 function legNaechsteKz(E,i){ for(let j=i;j>=0;j--){ const e=E[j]; if(!e||e.art==="gr"||!e.kz) continue;
     if(e.art==="rcd") return String(e.kz).trim()+".01";   /* nach dem RCD: seine Stromkreise (Fi 4.1 → Fi 4.1.01) */
