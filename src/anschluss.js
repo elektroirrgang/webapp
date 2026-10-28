@@ -130,32 +130,37 @@ const gr=(g,inhalt)=>`<g transform="translate(${g.x} ${g.y}) scale(${g.s})">${in
 const pt=(g,[a,b])=>[+(g.x+a*g.s).toFixed(1),+(g.y+b*g.s).toFixed(1)];
 
 /* Messleitung mit 4-mm-Sicherheitsstecker am MFT; Ende: Stecker (in Buchse), Prüfspitze oder Klemme */
+/* Messleitung wie echtes Kabel: dunkle Kante, Farbe, heller Glanzstreifen; 4-mm-Sicherheitsstecker an beiden Enden.
+   c1/c2 = Steuerpunkte relativ zu Anfang/Ende (Kabel hängt leicht durch, keine geraden Linien) */
 function leitung(a,b,f,c1,c2,ende="stecker"){
-  const s=`<path d="M${a[0]} ${a[1]-14} C ${a[0]+c1[0]} ${a[1]+c1[1]}, ${b[0]+c2[0]} ${b[1]+c2[1]}, ${b[0]} ${b[1]}" fill="none" stroke="${f}" stroke-width="6" stroke-linecap="round"/>
-  <rect x="${a[0]-6}" y="${a[1]-26}" width="12" height="22" rx="4" fill="${f}"/>`;
-  const e=ende==="spitze"?`<circle cx="${b[0]}" cy="${b[1]}" r="7" fill="${f}"/><path d="M${b[0]} ${b[1]} l-9 9" stroke="#c9cad1" stroke-width="3" stroke-linecap="round"/>`
-    :ende==="klemme"?`<rect x="${b[0]-7}" y="${b[1]-4}" width="14" height="22" rx="4" fill="${f}"/><path d="M${b[0]-5} ${b[1]-4} l5 -8 l5 8" fill="#c9cad1"/>`
-    :`<circle cx="${b[0]}" cy="${b[1]}" r="9" fill="${f}"/><circle cx="${b[0]}" cy="${b[1]}" r="4" fill="#fff" opacity=".55"/>`;
-  return s+e;
+  const a0=[a[0],a[1]-24], d=`M${a0[0]} ${a0[1]} C ${a0[0]+c1[0]} ${a0[1]+c1[1]}, ${b[0]+c2[0]} ${b[1]+c2[1]}, ${b[0]} ${b[1]}`;
+  const dunkel=`color-mix(in srgb,${f} 62%,#000)`;
+  let s=`<path d="${d}" fill="none" stroke="${dunkel}" stroke-width="9.5" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${f}" stroke-width="6.5" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".38" transform="translate(-1.2 -1.2)"/>
+  <rect x="${a[0]-7}" y="${a[1]-28}" width="14" height="24" rx="5" fill="${dunkel}"/><rect x="${a[0]-5}" y="${a[1]-27}" width="10" height="21" rx="4" fill="${f}"/>`;
+  const w=Math.atan2(-c2[1],-c2[0])*180/Math.PI;
+  if(ende==="spitze") s+=`<g transform="rotate(${w.toFixed(1)} ${b[0]} ${b[1]})"><rect x="${b[0]}" y="${b[1]-6}" width="26" height="12" rx="5" fill="${f}"/><rect x="${b[0]-12}" y="${b[1]-1.5}" width="14" height="3" rx="1.5" fill="#c9cad1"/></g>`;
+  else if(ende==="klemme") s+=`<rect x="${b[0]-8}" y="${b[1]-4}" width="16" height="26" rx="5" fill="${dunkel}"/><rect x="${b[0]-6}" y="${b[1]-3}" width="12" height="23" rx="4" fill="${f}"/><path d="M${b[0]-5} ${b[1]-4} l5 -9 l5 9" fill="#c9cad1"/>`;
+  else s+=`<g transform="rotate(${w.toFixed(1)} ${b[0]} ${b[1]})"><rect x="${b[0]+4}" y="${b[1]-7}" width="20" height="14" rx="5" fill="${dunkel}"/><rect x="${b[0]+5}" y="${b[1]-5.5}" width="18" height="11" rx="4" fill="${f}"/></g><circle cx="${b[0]}" cy="${b[1]}" r="9" fill="${dunkel}"/><circle cx="${b[0]}" cy="${b[1]}" r="7" fill="${f}"/><circle cx="${b[0]-2}" cy="${b[1]-2}" r="2.4" fill="#fff" opacity=".6"/>`;
+  return s;
 }
 const hinweis=(_x,_y,t,f="#5f6068")=>{ const x=24,y=494; return `<rect x="${x}" y="${y}" width="${t.length*7.6+28}" height="30" rx="15" fill="${f}"/>${T(x+14,y+20,t,13,"#fff",700,"start")}`; };
 
 /* Größenverhältnis wie in echt: MFT one (Querformat) deutlich breiter als der FEV300 hoch ist */
-const GW={x:10,y:150,s:.9}, GF={x:135,y:-22,s:.47}, GM={x:420,y:300,s:.35};
+const GW={x:10,y:150,s:.9}, GF={x:163,y:-2,s:.42}, GM={x:420,y:300,s:.35};
 const kabelZu=(von,d,stark=8)=>`<path d="M${von[0]} ${von[1]} C ${von[0]} ${von[1]-70}, ${d[0]+120} ${d[1]-20}, ${d[0]+30} ${d[1]}" fill="none" stroke="#16171a" stroke-width="${stark}" stroke-linecap="round"/>
     <g transform="rotate(-20 ${d[0]} ${d[1]})"><rect x="${d[0]+10}" y="${d[1]-12}" width="42" height="24" rx="8" fill="#2c2d33"/><circle cx="${d[0]}" cy="${d[1]}" r="31" fill="#2c2d33"/><circle cx="${d[0]}" cy="${d[1]}" r="24" fill="#3b3c43"/>${T(d[0],d[1]+4,"Typ 2",9.5,"#d0d1d7",700)}</g>`;
 const grund=(o={})=>gr(GW,wallbox(0,0,o.wb||{}))+kabelZu(pt(GF,FEV_KABEL),pt(GW,wbDose(0,0)))+gr(GF,fevL(o.fev||{}));
 const mftG=(st,anz)=>gr(GM,mftL(st,anz));
 const mb=n=>pt(GM,MFT_BU[n]), fb=n=>pt(GF,FEV_BU[n]);
-const dreiLtg=()=>leitung(mb("rot"),fb("L1"),LEIT.rot,[0,-150],[-130,-30])+leitung(mb("blau"),fb("N"),LEIT.blau,[0,-70],[150,10])+leitung(mb("gelb"),fb("PE"),LEIT.gelb,[0,-110],[140,-10]);
+const dreiLtg=()=>leitung(mb("rot"),fb("L1"),LEIT.rot,[-10,-150],[30,-150])+leitung(mb("gelb"),fb("PE"),LEIT.gelb,[-20,-60],[150,-30])+leitung(mb("blau"),fb("N"),LEIT.blau,[10,-40],[200,60]);
 const BILD={
   "frei-rlo":()=>grund({fev:{cp:"A",an:["PE"],leds:false}})+mftG("RLO",["R LOW","– – – Ω"])
-    +leitung(mb("rot"),pt(GW,wbSchraube(0,0)),LEIT.rot,[0,-230],[70,-90],"spitze")
-    +leitung(mb("gelb"),fb("PE"),LEIT.gelb,[0,-110],[140,-10])+hinweis(0,0,"Helfer am Verteiler: LS aus"),
+    +leitung(mb("rot"),pt(GW,wbSchraube(0,0)),LEIT.rot,[-30,-260],[80,-120],"spitze")
+    +leitung(mb("gelb"),fb("PE"),LEIT.gelb,[-20,-60],[150,-30])+hinweis(0,0,"Helfer am Verteiler: LS aus"),
   "frei-iso":()=>{ const g={x:70,y:24,s:1.28};
     return gr(g,wallbox(0,0,{offen:true}))+mftG("RISO",["R ISO","500 V"])
-    +leitung(mb("rot"),pt(g,wbKlemme(0,0,"L1")),LEIT.rot,[0,-130],[0,-150],"klemme")
-    +leitung(mb("gelb"),pt(g,wbKlemme(0,0,"PE")),LEIT.gelb,[0,-100],[0,-120],"klemme")+hinweis(0,0,"Helfer am Verteiler: LS aus"); },
+    +leitung(mb("rot"),pt(g,wbKlemme(0,0,"L1")),LEIT.rot,[-40,-150],[10,-170],"klemme")
+    +leitung(mb("gelb"),pt(g,wbKlemme(0,0,"PE")),LEIT.gelb,[-10,-110],[10,-130],"klemme")+hinweis(0,0,"Helfer am Verteiler: LS aus"); },
   "spann-u":()=>grund({fev:{cp:"C",an:["L1","N","PE"]}})+mftG("U",["U","L–N · N–PE"])+dreiLtg()+hinweis(0,0,"Helfer: LS ein · CP STATE auf C","#2e7d32"),
   "spann-zs":()=>grund({fev:{cp:"C",an:["L1","N","PE"]}})+mftG("ZS",["Zs (L-PE)","std. RCD"])+dreiLtg()+hinweis(0,0,"Helfer: LS ein · CP STATE auf C","#2e7d32"),
   "rcd":()=>grund({fev:{cp:"C",an:["L1","N","PE"]}})+mftG("RCD",["RCD","Rampe"])+dreiLtg()+hinweis(0,0,"Helfer: RCD nach jeder Auslösung wieder ein"),
