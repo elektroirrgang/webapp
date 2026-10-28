@@ -82,6 +82,26 @@ function pruefkabel(fx,fy,dx,dy){
   <path d="M${dx-12} ${dy-20} h24" stroke="#55565e" stroke-width="5" stroke-linecap="round"/>${T(dx,dy+6,"Typ 2",11,"#d0d1d7",700)}</g>`;
 }
 
+/* --- FEV300: Vorlage von Max (src/geraete/fev300.svg, 700 × 1160) ---
+   Je Messung: CP-Zeiger (#cp-zeiger) auf die Stellung drehen, Phasen-LEDs an/aus, benutzte Buchsen markieren, Tasten E/F hervorheben.
+   Das Prüfkabel der Vorlage endet oben außerhalb – es wird ab der Zugentlastung neu zur Wallbox gezeichnet. */
+const FEV_SVG=/*FEVSVG*/"";
+const FEV_CP={A:-72,B:-40,C:1,D:43};
+const FEV_BU={L1:[270,790],L2:[270,866],L3:[270,942],PE:[460,790],N:[460,942]};
+const FEV_KABEL=[286,146];
+function fevL({cp="C",an=[],leds=true,tE=false,tF=false}={}){
+  let s=FEV_SVG.replace(/<\?xml[^>]*>/,"").replace(/<svg[^>]*>/,"").replace(/<\/svg>\s*$/,"").replace(/<title[^>]*>[\s\S]*?<\/title>/,"").replace(/<desc[^>]*>[\s\S]*?<\/desc>/,"");
+  s=s.replace(/id="([^"]+)"/g,'id="abf-$1"').replace(/url\(#([^)]+)\)/g,"url(#abf-$1)");
+  s=s.replace(/(<g id="abf-fev300-cable"[^>]*>)\s*<path[^>]*\/>\s*<path[^>]*\/>/,"$1");
+  s=s.replace(/(<g id="abf-cp-zeiger" transform=")rotate\([^)]*\)/,`$1rotate(${FEV_CP[cp]??0} 453 423)`);
+  if(!leds) s=s.replace(/phase-led phase-an/g,"phase-led phase-aus");
+  const ring=([x,y])=>`<circle cx="${x}" cy="${y}" r="36" fill="none" stroke="#ffcf33" stroke-width="7"/>`;
+  s+=an.map(n=>FEV_BU[n]?ring(FEV_BU[n]):"").join("");
+  if(tE) s+=`<circle cx="452" cy="559" r="36" fill="none" stroke="#e53935" stroke-width="8"/>`;
+  if(tF) s+=`<circle cx="452" cy="659" r="36" fill="none" stroke="#e53935" stroke-width="8"/>`;
+  return s;
+}
+
 /* --- Prüfgerät: Vorlage von Max (src/geraete/pruefgeraet.svg, 1536 × 650, Bauteile mit IDs) ---
    Daraus wird je Messung: Drehschalter-Griff auf die Stellung gedreht, Stellung rot markiert, NFC-Feld entfernt, Display beschriftet.
    Buchsen oben mittig: L1 (rot), N (blau), PE (grün). */
@@ -121,16 +141,15 @@ function leitung(a,b,f,c1,c2,ende="stecker"){
 const hinweis=(_x,_y,t,f="#5f6068")=>{ const x=24,y=494; return `<rect x="${x}" y="${y}" width="${t.length*7.6+28}" height="30" rx="15" fill="${f}"/>${T(x+14,y+20,t,13,"#fff",700,"start")}`; };
 
 /* Größenverhältnis wie in echt: MFT one (Querformat) deutlich breiter als der FEV300 hoch ist */
-const GW={x:10,y:150,s:.9}, GF={x:224,y:62,s:.8}, GM={x:420,y:300,s:.35};
-const grund=(o={})=>{ const d=pt(GW,wbDose(0,0)), f=pt(GF,[0,0]);
-  return gr(GW,wallbox(0,0,o.wb||{}))+gr(GF,fev(0,0,o.fev||{}))
-    +`<path d="M${f[0]+39*GF.s} ${f[1]-30*GF.s} C ${f[0]+39*GF.s} ${f[1]-90}, ${d[0]+110} ${d[1]-10}, ${d[0]+30} ${d[1]}" fill="none" stroke="#222327" stroke-width="8" stroke-linecap="round"/>
-    <g transform="rotate(-20 ${d[0]} ${d[1]})"><rect x="${d[0]+10}" y="${d[1]-12}" width="42" height="24" rx="8" fill="#2c2d33"/><circle cx="${d[0]}" cy="${d[1]}" r="31" fill="#2c2d33"/><circle cx="${d[0]}" cy="${d[1]}" r="24" fill="#3b3c43"/>${T(d[0],d[1]+4,"Typ 2",9.5,"#d0d1d7",700)}</g>`; };
+const GW={x:10,y:150,s:.9}, GF={x:135,y:-22,s:.47}, GM={x:420,y:300,s:.35};
+const kabelZu=(von,d,stark=8)=>`<path d="M${von[0]} ${von[1]} C ${von[0]} ${von[1]-70}, ${d[0]+120} ${d[1]-20}, ${d[0]+30} ${d[1]}" fill="none" stroke="#16171a" stroke-width="${stark}" stroke-linecap="round"/>
+    <g transform="rotate(-20 ${d[0]} ${d[1]})"><rect x="${d[0]+10}" y="${d[1]-12}" width="42" height="24" rx="8" fill="#2c2d33"/><circle cx="${d[0]}" cy="${d[1]}" r="31" fill="#2c2d33"/><circle cx="${d[0]}" cy="${d[1]}" r="24" fill="#3b3c43"/>${T(d[0],d[1]+4,"Typ 2",9.5,"#d0d1d7",700)}</g>`;
+const grund=(o={})=>gr(GW,wallbox(0,0,o.wb||{}))+kabelZu(pt(GF,FEV_KABEL),pt(GW,wbDose(0,0)))+gr(GF,fevL(o.fev||{}));
 const mftG=(st,anz)=>gr(GM,mftL(st,anz));
-const mb=n=>pt(GM,MFT_BU[n]), fb=n=>pt(GF,fevBuchse(0,0,n));
+const mb=n=>pt(GM,MFT_BU[n]), fb=n=>pt(GF,FEV_BU[n]);
 const dreiLtg=()=>leitung(mb("rot"),fb("L1"),LEIT.rot,[0,-150],[-130,-30])+leitung(mb("blau"),fb("N"),LEIT.blau,[0,-70],[150,10])+leitung(mb("gelb"),fb("PE"),LEIT.gelb,[0,-110],[140,-10]);
 const BILD={
-  "frei-rlo":()=>grund({fev:{an:["PE"]}})+mftG("RLO",["R LOW","– – – Ω"])
+  "frei-rlo":()=>grund({fev:{cp:"A",an:["PE"],leds:false}})+mftG("RLO",["R LOW","– – – Ω"])
     +leitung(mb("rot"),pt(GW,wbSchraube(0,0)),LEIT.rot,[0,-230],[70,-90],"spitze")
     +leitung(mb("gelb"),fb("PE"),LEIT.gelb,[0,-110],[140,-10])+hinweis(0,0,"Helfer am Verteiler: LS aus"),
   "frei-iso":()=>{ const g={x:70,y:24,s:1.28};
@@ -140,11 +159,11 @@ const BILD={
   "spann-u":()=>grund({fev:{cp:"C",an:["L1","N","PE"]}})+mftG("U",["U","L–N · N–PE"])+dreiLtg()+hinweis(0,0,"Helfer: LS ein · CP STATE auf C","#2e7d32"),
   "spann-zs":()=>grund({fev:{cp:"C",an:["L1","N","PE"]}})+mftG("ZS",["Zs (L-PE)","std. RCD"])+dreiLtg()+hinweis(0,0,"Helfer: LS ein · CP STATE auf C","#2e7d32"),
   "rcd":()=>grund({fev:{cp:"C",an:["L1","N","PE"]}})+mftG("RCD",["RCD","Rampe"])+dreiLtg()+hinweis(0,0,"Helfer: RCD nach jeder Auslösung wieder ein"),
-  "fkt":()=>{ const w={x:30,y:150,s:.9}, f={x:300,y:80,s:.95}, d=pt(w,wbDose(0,0)), o=pt(f,[0,0]);
-    return gr(w,wallbox(0,0,{led:"#e53935"}))+gr(f,fev(0,0,{cp:"C",tE:true,tF:true}))
-    +`<path d="M${o[0]+39*f.s} ${o[1]-30*f.s} C ${o[0]+39*f.s} ${o[1]-90}, ${d[0]+110} ${d[1]-10}, ${d[0]+30} ${d[1]}" fill="none" stroke="#222327" stroke-width="9" stroke-linecap="round"/><g transform="rotate(-20 ${d[0]} ${d[1]})"><circle cx="${d[0]}" cy="${d[1]}" r="34" fill="#2c2d33"/><circle cx="${d[0]}" cy="${d[1]}" r="26" fill="#3b3c43"/>${T(d[0],d[1]+4,"Typ 2",10,"#d0d1d7",700)}</g>`
+  "fkt":()=>{ const w={x:30,y:150,s:.9}, f={x:250,y:-40,s:.53};
+    return gr(w,wallbox(0,0,{led:"#e53935"}))+kabelZu(pt(f,FEV_KABEL),pt(w,wbDose(0,0)),9)+gr(f,fevL({cp:"C",tE:true,tF:true}))
     +`<path d="M${w.x+90*w.s} ${w.y+50*w.s} L${w.x+90*w.s} ${w.y-30}" stroke="#e53935" stroke-width="3"/>`+T(w.x+90*w.s,w.y-40,"Statusleiste rot",14,"#c62828",700)
-    +T(770,240,"Taste E (CP-Fehler)",20,"#1c1b1f",800)+T(770,270,"oder F (PE-Fehler) drücken",20,"#1c1b1f",800)+T(770,312,"→ Ladung bricht ab",20,"#c62828",800); },
+    +T(760,240,"Taste E (CP-Fehler)",20,"#1c1b1f",800)+T(760,270,"oder F (PE-Fehler) drücken",20,"#1c1b1f",800)+T(760,312,"→ Ladung bricht ab",20,"#c62828",800)
+    +`<path d="M612 262 C 560 262, 540 290, ${pt(f,[490,600])[0]} ${pt(f,[490,600])[1]}" fill="none" stroke="#c62828" stroke-width="3" stroke-dasharray="6 6"/>`; },
 };
 let nr=0;
 /* eindeutige IDs je Bild – sonst greifen Verläufe/Schatten nicht, wenn ein anderes (verstecktes) Bild sie definiert */
