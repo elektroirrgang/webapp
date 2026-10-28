@@ -47,9 +47,9 @@ function qrSetzen(gid,vId,c){ const g=vtGeb(gid), v=g&&g.verteiler.find(x=>x.id=
 /* ---- Karte auf der Verteiler-Seite ---- */
 function qrKarte(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(!v) return "";
   return `<section class="card qr-karte"><h3>QR-Aufkleber</h3>${v.qr?`<div class="qr-zeile">${qrSvg(v.qr,76)}<div class="qr-txt"><b class="qr-nr">${esc(qrZeig(v.qr))}</b><span class="meta">Klebt am Verteiler. Scannen öffnet diese Seite, Fremde sehen nur unsere Kontaktdaten.</span></div></div>
-      <div class="qr-knoepfe"><button type="button" class="btn-tonal" data-act="qrDruck1">${icon("pdf")}Drucken</button><button type="button" class="btn-text" data-act="qrScanZu">Ersetzen</button><button type="button" class="btn-text danger" data-act="qrWegAsk">Entfernen</button></div>`
-    :`<p class="meta">Noch kein Aufkleber. Einen vom Bogen aufkleben und scannen – oder einen einzelnen für diesen Verteiler drucken.</p>
-      <div class="qr-knoepfe"><button type="button" class="btn-tonal" data-act="qrScanZu">${icon("qr")}Aufkleber scannen</button><button type="button" class="btn-tonal" data-act="qrNeu1">${icon("pdf")}Einzeln drucken</button></div>`}</section>`; }
+      <div class="qr-knoepfe"><button type="button" class="btn-tonal" data-act="qrDruck1">${icon("tag")}Drucken</button><button type="button" class="btn-text" data-act="qrScanZu">Ersetzen</button><button type="button" class="btn-text danger" data-act="qrWegAsk">Entfernen</button></div>`
+    :`<p class="meta">Noch kein Aufkleber. Einen vom Bogen aufkleben und scannen – oder direkt einen neuen drucken (Brother 24 mm oder PDF).</p>
+      <div class="qr-knoepfe"><button type="button" class="btn-tonal" data-act="qrScanZu">${icon("qr")}Aufkleber scannen</button><button type="button" class="btn-tonal" data-act="qrNeu1">${icon("tag")}Neuen drucken</button></div>`}</section>`; }
 
 /* ---- Scanner (Kamera) ---- */
 let QR_CAM=null;
@@ -97,6 +97,40 @@ async function qrPdf(codes,einzeln){ const lib=await pdfLib(), logo=await qrLogo
   return d.output("blob"); }
 async function qrPdfZeigen(codes,einzeln,name){ toast("PDF wird erstellt …"); let b; try{ b=await qrPdf(codes,einzeln); }catch(e){ console.error(e); toast("PDF konnte nicht erstellt werden – Internet für die PDF-Bibliothek nötig"); return; }
   const url=URL.createObjectURL(b); toast("Aufkleber bereit","Öffnen",()=>{ if(DESK.matches){ const a=document.createElement("a"); a.href=url; a.download=name+".pdf"; document.body.appendChild(a); a.click(); a.remove(); } window.open(url,"_blank","noopener"); }); }
+/* ---- Brother P-touch 24 mm (PT-E560BT): .lbxs wie eine in der Brother-App gespeicherte Datei (Vorlage „Asset management 24 mm“) ----
+   Band 68 pt breit, Druckhöhe 51,2 pt (≈ 18 mm). QR als Brother-Barcode-Objekt (der Drucker rechnet ihn selbst), Zelle 1,6 pt, Fehlerkorrektur 15 %. */
+const QR_BAND_L=150;   /* Länge des Inhalts in pt (≈ 53 mm, dazu kommen die Ränder) */
+function qrLbxXml(c){ const id=()=>Math.floor(Math.random()*0xFFFFF).toString(16), x2=v=>ecXml(v);
+  const font=(sz,b)=>`<text:ptFontInfo><text:logFont name="sans-serif" width="0" italic="false" weight="${b?700:400}" charSet="0" pitchAndFamily="2"></text:logFont><text:fontExt effect="NOEFFECT" underline="0" strikeout="0" size="${sz}pt" orgSize="28.8pt" textColor="#000000" textPrintColorNumber="1"></text:fontExt></text:ptFontInfo>`;
+  const stil=(x,y,w,h,pen)=>`<pt:objectStyle x="${x}pt" y="${y}pt" width="${w}pt" height="${h}pt" backColor="#FFFFFF" backPrintColorNumber="0" ropMode="COPYPEN" angle="0" anchor="TOPLEFT" flip="NONE"><pt:pen style="${pen||"NULL"}" widthX="0.5pt" widthY="0.5pt" color="#000000" printColorNumber="1"></pt:pen><pt:brush style="NULL" color="#000000" printColorNumber="1" id="0"></pt:brush><pt:expanded objectName="" objectID="${id()}" ID="0" lock="0" templateMergeTarget="LABELLIST" templateMergeType="NONE" templateMergeID="0" allowOutOfBoundsTransfer="false" linkStatus="NONE" linkID="0"></pt:expanded></pt:objectStyle>`;
+  const tx=(x,y,w,h,sz,b,t)=>`<text:text>${stil(x,y,w,h)}${font(sz,b)}<text:textControl control="FIXEDFRAME" clipFrame="false" aspectNormal="true" shrink="true" autoLF="false" avoidImage="false"></text:textControl><text:textAlign horizontalAlignment="LEFT" verticalAlignment="CENTER" inLineAlignment="BASELINE"></text:textAlign><text:textStyle vertical="false" nullBlock="false" charSpace="0" lineSpace="0" orgPoint="${sz}pt" combinedChars="false"></text:textStyle><text:transferSettings editOnPrintFormat="" editOnPrintOrder="0"></text:transferSettings><pt:data>${x2(t)}</pt:data><text:stringItem charLen="${[...t].length}">${font(sz,b)}</text:stringItem></text:text>`;
+  const L=QR_BAND_L, tX=62.4, tW=Math.round((L+5.6-tX-2)*10)/10;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<pt:document xmlns:pt="http://schemas.brother.info/ptouch/2007/lbx/main" xmlns:style="http://schemas.brother.info/ptouch/2007/lbx/style" xmlns:text="http://schemas.brother.info/ptouch/2007/lbx/text" xmlns:draw="http://schemas.brother.info/ptouch/2007/lbx/draw" xmlns:image="http://schemas.brother.info/ptouch/2007/lbx/image" xmlns:barcode="http://schemas.brother.info/ptouch/2007/lbx/barcode" xmlns:database="http://schemas.brother.info/ptouch/2007/lbx/database" xmlns:table="http://schemas.brother.info/ptouch/2007/lbx/table" xmlns:cable="http://schemas.brother.info/ptouch/2007/lbx/cable" version="1.11" generator="com.brother.ptouch.mobilecablelabeltool2">`
+    +`<pt:body currentSheet="24" direction="LTR"><style:sheet name="24"><style:paper media="0" width="68pt" height="2834.4pt" marginLeft="8.4pt" marginTop="5.6pt" marginRight="8.4pt" marginBottom="5.6pt" orientation="landscape" autoLength="true" monochromeDisplay="true" printColorDisplay="false" printColorsID="0" paperColor="#FFFFFF" paperInk="#000000" split="1" format="261" backgroundTheme="0" printerID="32560" printerName="Brother PT-E560BT"></style:paper>`
+    +`<style:cutLine regularCut="0pt" freeCut=""></style:cutLine><style:backGround x="5.6pt" y="8.4pt" width="${L}pt" height="51.2pt" brushStyle="NULL" brushId="0" userPattern="NONE" userPatternId="0" color="#000000" printColorNumber="1" backColor="#FFFFFF" backPrintColorNumber="0"></style:backGround><pt:objects>`
+    +`<barcode:barcode>${stil(5.6,7.6,52.8,52.8,"INSIDEFRAME")}<barcode:barcodeStyle protocol="QRCODE" lengths="48" zeroFill="false" barWidth="1.2pt" barRatio="1:3" humanReadable="true" humanReadableAlignment="LEFT" checkDigit="false" autoLengths="true" margin="true" sameLengthBar="false" bearerBar="false"></barcode:barcodeStyle><barcode:qrcodeStyle model="2" eccLevel="15%" cellSize="1.6pt" mbcs="65001" joint="1" version="auto"></barcode:qrcodeStyle><pt:data>${x2(QR_URL+c)}</pt:data></barcode:barcode>`
+    +tx(tX,9.4,tW,12,10,true,"Elektro Irrgang")+tx(tX,21.4,tW,7.6,6,false,"Anlagen-Nr.")+tx(tX,28.4,tW,17.6,16,true,qrZeig(c))+tx(tX,46.2,tW,11.6,8.5,true,"Tel. 02291 4878")
+    +`</pt:objects></style:sheet></pt:body></pt:document>`; }
+const qrLbxs=(name,c)=>ecZip([{name:"config.json",daten:JSON.stringify({Version:"1.0",CurrentLbx:name+".lbx",CurrentCsv:""})},{name:name+".lbx",daten:ecZip([{name:"label.xml",daten:qrLbxXml(c)},{name:"prop.xml",daten:ecLbxProp(name)}])}]);
+/* Vorschau des Bands in mm (QR 18 mm, Text daneben) */
+function qrBandSvg(c){ const M=qrMatrix(c), n=M.length, Q=18, m=Q/n, L=56, H=24, y0=3; let d="";
+  M.forEach((z,y)=>z.forEach((on,x)=>{ if(on) d+=`M${(2.6+x*m).toFixed(3)} ${(y0+y*m).toFixed(3)}h${m.toFixed(3)}v${m.toFixed(3)}h-${m.toFixed(3)}z`; }));
+  const tx=2.6+Q+2.8;
+  return `<svg class="qr-band" viewBox="0 0 ${L} ${H}" role="img" aria-label="Vorschau Brother-Band 24 mm"><rect width="${L}" height="${H}" rx="1.2" fill="#fff"/><path d="${d}" fill="#000"/>
+    <text x="${tx}" y="7.2" font-size="3.5" font-weight="800" fill="#000">Elektro Irrgang</text><text x="${tx}" y="10.2" font-size="2.1" fill="#000">Anlagen-Nr.</text>
+    <text x="${tx}" y="16.2" font-size="5.6" font-weight="800" fill="#000">${esc(qrZeig(c))}</text><text x="${tx}" y="20.4" font-size="3" font-weight="700" fill="#000">Tel. 02291 4878</text></svg>`; }
+let qrDruckC="", qrDruckName="";
+function qrDruckDlg(c,name){ qrDruckC=c; qrDruckName=name;
+  dialog("Aufkleber drucken",`<div class="qr-band-v">${qrBandSvg(c)}</div>
+    <div class="qr-wahl">
+      <button type="button" class="qr-w" data-act="qrBrother"><span class="av">${icon("tag")}</span><span class="lt"><span class="h">Brother · 24-mm-Band</span><span class="s">Für den PT-E560BT – Datei geht an die Brother-App</span></span>${icon("chev")}</button>
+      <button type="button" class="qr-w" data-act="qrPdf1"><span class="av">${icon("pdf")}</span><span class="lt"><span class="h">PDF · Etikett 70 × 36 mm</span><span class="s">Für Etikettendrucker oder Bogen im Büro</span></span>${icon("chev")}</button>
+    </div>`,`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`); }
+async function qrBrother(){ const c=qrDruckC; if(!c) return; const name=bbFs(qrDruckName||`QR ${c}`), f=new File([qrLbxs(name,c)],name+".lbxs",{type:"application/octet-stream"});
+  closeOverlays();
+  if(navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f],title:f.name}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(f); a.download=f.name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
+  toast("Brother-Datei heruntergeladen – in der Brother-App öffnen und drucken"); }
 function qrBogenDlg(){ dialog("QR-Aufkleber drucken",`<p>Jeder Aufkleber bekommt eine neue Nummer. Vor Ort aufkleben und mit der App scannen – dann gehört er zum Verteiler.</p>
   <div class="chips ec-wahl" style="margin-top:12px">${[1,2,5].map(n=>`<button type="button" class="chip" data-act="qrBogenOk" data-n="${n}">${n} ${n>1?"Bögen":"Bogen"} · ${n*24} Stück</button>`).join("")}</div>
   <p class="hint">Format 70 × 36 mm, 24 Stück je A4-Bogen (3 × 8, ohne Rand links und rechts). Für den Schaltschrank Folien-Etiketten nehmen. Beim Drucken „Tatsächliche Größe“ bzw. 100 % wählen.</p>`,
@@ -107,8 +141,10 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="qrScanZu"){ if(nav.v!=="vt") return; qrScan({g:nav.g,id:nav.id}); return; }
   if(a==="qrNrOk"){ const c=qrNorm((document.getElementById("f_qrNr")||{}).value); if(!c){ toast("Nummer hat 6 Zeichen, z. B. 4K7 P2M"); return; } const z=QR_CAM&&QR_CAM.ziel; qrStop(); closeOverlays(); z?qrZuweisen(z,c):qrOeffnen(c); return; }
   if(a==="qrZuOk"){ const c=qrZu.c; if(!c) return; qrSetzen(b.dataset.g,b.dataset.id,c); closeOverlays(); go({v:"vt",g:b.dataset.g,id:b.dataset.id}); toast(`Aufkleber ${qrZeig(c)} zugeordnet`); return; }
-  if(a==="qrNeu1"){ if(nav.v!=="vt") return; const c=qrNeu(); qrSetzen(nav.g,nav.id,c); render(); const v=(vtGeb(nav.g)||{verteiler:[]}).verteiler.find(x=>x.id===nav.id); qrPdfZeigen([c],true,`QR-Aufkleber ${v&&v.name||""} ${c}`.trim()); return; }
-  if(a==="qrDruck1"){ const v=nav.v==="vt"&&(vtGeb(nav.g)||{verteiler:[]}).verteiler.find(x=>x.id===nav.id); if(v&&v.qr) qrPdfZeigen([v.qr],true,`QR-Aufkleber ${v.name||""} ${v.qr}`.trim()); return; }
+  if(a==="qrNeu1"){ if(nav.v!=="vt") return; const c=qrNeu(); qrSetzen(nav.g,nav.id,c); render(); const v=(vtGeb(nav.g)||{verteiler:[]}).verteiler.find(x=>x.id===nav.id); qrDruckDlg(c,`QR ${v&&v.name||""} ${c}`.replace(/\s+/g," ")); return; }
+  if(a==="qrDruck1"){ const v=nav.v==="vt"&&(vtGeb(nav.g)||{verteiler:[]}).verteiler.find(x=>x.id===nav.id); if(v&&v.qr) qrDruckDlg(v.qr,`QR ${v.name||""} ${v.qr}`.replace(/\s+/g," ")); return; }
+  if(a==="qrBrother"){ qrBrother(); return; }
+  if(a==="qrPdf1"){ const c=qrDruckC; closeOverlays(); if(c) qrPdfZeigen([c],true,qrDruckName||`QR ${c}`); return; }
   if(a==="qrWegAsk"){ confirmDlg("Aufkleber entfernen?","Die Nummer gehört dann zu keinem Verteiler mehr. Scannt jemand den alten Aufkleber, fragt die App, wohin er gehört.","Entfernen","qrWegOk"); return; }
   if(a==="qrWegOk"){ const g=vtGeb(nav.g), v=g&&g.verteiler.find(x=>x.id===nav.id); if(v){ delete v.qr; v.updated=Date.now(); ecGebSpeichern(g); } closeOverlays(); render(); return; }
   if(a==="qrBogen"){ qrBogenDlg(); return; }
