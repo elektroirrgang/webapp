@@ -82,33 +82,38 @@ function pruefkabel(fx,fy,dx,dy){
   <path d="M${dx-12} ${dy-20} h24" stroke="#55565e" stroke-width="5" stroke-linecap="round"/>${T(dx,dy+6,"Typ 2",11,"#d0d1d7",700)}</g>`;
 }
 
-/* --- Wiha MFT one: Querformat (Tasten links, Display Mitte, Drehschalter rechts), Buchsen oben --- */
-const STELL={U:208,RE:166,RLO:128,AUTO:95,RISO:62,RCD:32,ZS:2,ZI:-30};
-function mft(x,y,stell,anz){
-  const w=386,h=200, cx=x+300, cy=y+118, r=36;
-  const pol=(a,d)=>[cx+d*Math.cos(a*Math.PI/180), cy-d*Math.sin(a*Math.PI/180)];
-  const lab={U:["U","(~, Hz)"],RE:["R<tspan dy='3' font-size='8'>E</tspan>",""],RLO:["R<tspan dy='3' font-size='8'>LOW</tspan>",""],AUTO:["AUTO",""],RISO:["R<tspan dy='3' font-size='8'>ISO</tspan>",""],RCD:["RCD",""],ZS:["Z<tspan dy='3' font-size='8'>S</tspan>","(L-PE)"],ZI:["Z<tspan dy='3' font-size='8'>I</tspan>","(L-N, ΔU)"]};
-  const p=pol(STELL[stell],r-8), q=pol(STELL[stell]+180,r-14);
-  const taste=(tx,ty,tw,th,t,f="#e9eaef",tf="#2a2b30")=>`<rect x="${tx}" y="${ty}" width="${tw}" height="${th}" rx="6" fill="#2a2b30"/><rect x="${tx+2}" y="${ty+2}" width="${tw-4}" height="${th-4}" rx="5" fill="${f}"/>${t?T(tx+tw/2,ty+th/2+3.5,t,8.5,tf,800):""}`;
-  let s=`<rect x="${x+206}" y="${y-16}" width="132" height="22" rx="6" fill="#26272c"/>
-  ${[["#e53935","L1/L/H"],["#1e7fe0","L2/N/E"],["#f2c230","L3/PE/ES"],["#5a5b62","S"]].map(([f,t],i)=>`<circle cx="${x+226+i*31}" cy="${y-5}" r="9" fill="${f}"/><circle cx="${x+226+i*31}" cy="${y-5}" r="4" fill="#141518"/>`).join("")}
-  <g filter="url(#abSh)"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="34" fill="url(#abMg)"/></g>
-  <rect x="${x+14}" y="${y+14}" width="${w-28}" height="${h-28}" rx="24" fill="#eeeff2"/>
-  ${taste(x+30,y+34,26,18,"💾")}${taste(x+60,y+34,30,18,"ZERO")}${taste(x+94,y+34,30,18,"HELP")}
-  ${taste(x+30,y+58,26,18,"⚙")}${taste(x+94,y+58,30,18,"←")}
-  ${taste(x+64,y+82,22,20,"▲",undefined,"#555")}${taste(x+64,y+148,22,20,"▼",undefined,"#555")}${taste(x+30,y+115,22,20,"◀",undefined,"#555")}${taste(x+98,y+115,22,20,"▶",undefined,"#555")}
-  <circle cx="${x+75}" cy="${y+125}" r="21" fill="#2a2b30"/><circle cx="${x+75}" cy="${y+125}" r="18" fill="#d9dae0"/>${T(x+75,y+124,"TEST",9,"#2a2b30",900)}${T(x+75,y+134,"ENTER",5.5,"#555",700)}
-  ${T(x+176,y+40,"wiha",17,"#1c1b1f",900)}
-  <rect x="${x+132}" y="${y+50}" width="92" height="96" rx="6" fill="#2a2b30"/><rect x="${x+136}" y="${y+54}" width="84" height="88" rx="4" fill="url(#abDs)"/>
-  ${anz.map((t,i)=>T(x+178,y+80+i*20,t,i?11:12.5,"#173b1f",i?600:800)).join("")}
-  <rect x="${x+282}" y="${y+24}" width="30" height="16" rx="4" fill="#d9dae0"/>${T(x+297,y+36,"NFC",7.5,"#2a2b30",800)}
-  <circle cx="${x+346}" cy="${y+34}" r="13" fill="#2a2b30"/><circle cx="${x+346}" cy="${y+34}" r="7" fill="none" stroke="#e9eaef" stroke-width="2"/><path d="M${x+346} ${y+27}v6" stroke="#e9eaef" stroke-width="2"/>
-  ${Object.keys(STELL).map(k=>{ const [lx,ly]=pol(STELL[k],r+(k==="ZI"||k==="ZS"||k==="U"?30:22)), an=k===stell; return T(lx.toFixed(1),(ly+3).toFixed(1),lab[k][0],an?11:9.5,an?"#c62828":"#3a3b42",an?900:700)+(lab[k][1]?T(lx.toFixed(1),(ly+13).toFixed(1),lab[k][1],6,an?"#c62828":"#5a5b62",600):""); }).join("")}
-  <circle cx="${cx}" cy="${cy}" r="${r}" fill="#2a2b30"/><circle cx="${cx}" cy="${cy}" r="${r-6}" fill="#e3e4e9"/>
-  <path d="M${q[0].toFixed(1)} ${q[1].toFixed(1)} L${p[0].toFixed(1)} ${p[1].toFixed(1)}" stroke="#2a2b30" stroke-width="13" stroke-linecap="round"/><circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.5" fill="#e53935"/>`;
-  return s;
+/* --- Wiha MFT one: 1:1 nach der Ansicht aus der Wiha-Anleitung (Querformat), eigene Koordinaten 800 × 335 ---
+   Tasten links, Display Mitte, NFC + Ein/Aus oben rechts, Drehschalter rechts; Messbuchsen oben (L1/L/H rot, L2/N/E blau, L3/PE/ES gelb, S) */
+const MFT_LAB={AUTO:[604,118],RISO:[655,124],RLO:[566,141],RCD:[692,141],RE:[540,180],ZS:[706,173],U:[538,224],ZI:[706,218]};
+function mftL(stell,anz){
+  const K=[620,182];
+  const t=(tx,ty,tw,th,lab,sz=11)=>`<rect x="${tx}" y="${ty}" width="${tw}" height="${th}" rx="8" fill="#2a2b30"/><rect x="${tx+2.5}" y="${ty+2.5}" width="${tw-5}" height="${th-5}" rx="6" fill="#f4f4f6"/>${lab?T(tx+tw/2,ty+th/2+sz*.36,lab,sz,"#2a2b30",800):""}`;
+  const lab=(k,txt,sub)=>{ const [x,y]=MFT_LAB[k], an=k===stell; return T(x,y,txt,an?13:11,an?"#c62828":"#2a2b30",an?900:700)+(sub?T(x,y+12,sub,7,an?"#c62828":"#5a5b62",600):""); };
+  const [lx,ly]=MFT_LAB[stell], wnk=Math.atan2(ly-6-K[1],lx-K[0]), px=K[0]+39*Math.cos(wnk), py=K[1]+39*Math.sin(wnk), qx=K[0]-33*Math.cos(wnk), qy=K[1]-33*Math.sin(wnk);
+  return `<rect x="512" y="-22" width="236" height="30" rx="8" fill="#26272c"/>
+  ${[["#e53935",540],["#1e7fe0",598],["#f2c230",656],["#5a5b62",714]].map(([f,x])=>`<circle cx="${x}" cy="-8" r="12" fill="${f}"/><circle cx="${x}" cy="-8" r="5" fill="#141518"/>`).join("")}
+  <g filter="url(#abSh)"><path d="M48 52 L118 4 Q124 0 132 0 H668 Q676 0 682 4 L752 52 Q800 60 800 92 V292 Q800 335 758 335 H42 Q0 335 0 292 V92 Q0 60 48 52 Z" fill="url(#abMg)"/></g>
+  <rect x="140" y="10" width="520" height="24" rx="8" fill="#56575f"/><rect x="0" y="96" width="22" height="190" rx="10" fill="#202125"/><rect x="778" y="96" width="22" height="190" rx="10" fill="#202125"/>
+  <rect x="30" y="50" width="740" height="262" rx="34" fill="#ececf0"/>
+  ${t(110,76,32,28,"💾",12)}${t(154,76,44,28,"ZERO",10.5)}${t(206,76,44,28,"HELP",10.5)}
+  ${t(106,114,34,30,"⚙",13)}${t(208,116,40,28,"←",14)}
+  ${t(158,124,36,32,"▲",11)}${t(158,240,36,32,"▼",11)}${t(104,180,32,36,"◀",11)}${t(214,180,32,36,"▶",11)}
+  <circle cx="175" cy="198" r="34" fill="#2a2b30"/><circle cx="175" cy="198" r="30" fill="#dcdde2"/>${T(175,199,"TEST",15,"#2a2b30",900)}${T(175,213,"ENTER",8,"#5a5b62",700)}
+  ${T(386,74,"wiha",30,"#1c1b1f",900)}
+  <rect x="276" y="88" width="246" height="190" rx="8" fill="#26272c"/><rect x="284" y="96" width="230" height="174" rx="4" fill="url(#abDs)"/>
+  ${anz.map((x,i)=>T(399,148+i*42,x,i?26:30,"#173b1f",i?600:800)).join("")}
+  <rect x="550" y="58" width="64" height="26" rx="6" fill="#2a2b30"/><rect x="552.5" y="60.5" width="59" height="21" rx="5" fill="#f4f4f6"/>${T(574,75,"NFC",11,"#2a2b30",900)}${T(600,75,")))",8,"#2a2b30",800)}
+  <circle cx="682" cy="98" r="22" fill="#2a2b30"/><circle cx="682" cy="98" r="18" fill="#3c3d44"/><path d="M675 92 A10 10 0 1 0 689 92" fill="none" stroke="#f4f4f6" stroke-width="3"/><path d="M682 86v12" stroke="#f4f4f6" stroke-width="3"/>
+  <path d="M${(K[0]+62*Math.cos(Math.atan2(141-6-K[1],566-K[0]))).toFixed(1)} ${(K[1]+62*Math.sin(Math.atan2(141-6-K[1],566-K[0]))).toFixed(1)} A62 62 0 0 1 ${(K[0]+62*Math.cos(Math.atan2(218-6-K[1],706-K[0]))).toFixed(1)} ${(K[1]+62*Math.sin(Math.atan2(218-6-K[1],706-K[0]))).toFixed(1)}" fill="none" stroke="#b8b9c1" stroke-width="6" stroke-linecap="round"/>
+  ${T(640,104,"⚠",11,"#2a2b30",800)}
+  ${lab("AUTO","AUTO")}${lab("RISO","R<tspan dy='4' font-size='10'>ISO</tspan>")}${lab("RLO","R<tspan dy='4' font-size='10'>LOW</tspan>")}${lab("RCD","RCD")}${lab("RE","R<tspan dy='4' font-size='10'>E</tspan>","(⏚, Ω)")}${lab("ZS","Z<tspan dy='4' font-size='10'>S</tspan>","(L-PE)")}${lab("U","U","(~, Hz)")}${lab("ZI","Z<tspan dy='4' font-size='10'>I</tspan>","(L-N, ΔU)")}
+  <circle cx="${K[0]}" cy="${K[1]}" r="50" fill="#2a2b30"/><circle cx="${K[0]}" cy="${K[1]}" r="45" fill="#dcdde2"/>
+  <path d="M${qx.toFixed(1)} ${qy.toFixed(1)} L${px.toFixed(1)} ${py.toFixed(1)}" stroke="#2a2b30" stroke-width="20" stroke-linecap="round"/><path d="M${K[0]} ${K[1]} L${(K[0]+35*Math.cos(wnk)).toFixed(1)} ${(K[1]+35*Math.sin(wnk)).toFixed(1)}" stroke="#f4f4f6" stroke-width="3" stroke-linecap="round"/><circle cx="${(K[0]+35*Math.cos(wnk)).toFixed(1)}" cy="${(K[1]+35*Math.sin(wnk)).toFixed(1)}" r="4.5" fill="#e53935"/>`;
 }
-const mftBuchse=(x,y,n)=>({rot:[x+226,y-5],blau:[x+257,y-5],gelb:[x+288,y-5]})[n];
+const MFT_BU={rot:[540,-8],blau:[598,-8],gelb:[656,-8]};
+/* Geräte maßstäblich platzieren: g = {x,y,s}; pt rechnet einen Punkt aus Geräte- in Bildkoordinaten um */
+const gr=(g,inhalt)=>`<g transform="translate(${g.x} ${g.y}) scale(${g.s})">${inhalt}</g>`;
+const pt=(g,[a,b])=>[+(g.x+a*g.s).toFixed(1),+(g.y+b*g.s).toFixed(1)];
 
 /* Messleitung mit 4-mm-Sicherheitsstecker am MFT; Ende: Stecker (in Buchse), Prüfspitze oder Klemme */
 function leitung(a,b,f,c1,c2,ende="stecker"){
@@ -121,32 +126,31 @@ function leitung(a,b,f,c1,c2,ende="stecker"){
 }
 const hinweis=(_x,_y,t,f="#5f6068")=>{ const x=24,y=494; return `<rect x="${x}" y="${y}" width="${t.length*7.6+28}" height="30" rx="15" fill="${f}"/>${T(x+14,y+20,t,13,"#fff",700,"start")}`; };
 
-const W=[34,120], F=[300,70], M=[560,316];
-const grund=(o={})=>wallbox(...W,o.wb||{})+fev(...F,o.fev||{})+pruefkabel(F[0],F[1],...wbDose(...W));
+/* Größenverhältnis wie in echt: MFT one (Querformat) deutlich breiter als der FEV300 hoch ist */
+const GW={x:16,y:166,s:.8}, GF={x:196,y:128,s:.7}, GM={x:440,y:300,s:.62};
+const grund=(o={})=>{ const d=pt(GW,wbDose(0,0)), f=pt(GF,[0,0]);
+  return gr(GW,wallbox(0,0,o.wb||{}))+gr(GF,fev(0,0,o.fev||{}))
+    +`<path d="M${f[0]+39*GF.s} ${f[1]-30*GF.s} C ${f[0]+39*GF.s} ${f[1]-90}, ${d[0]+110} ${d[1]-10}, ${d[0]+30} ${d[1]}" fill="none" stroke="#222327" stroke-width="8" stroke-linecap="round"/>
+    <g transform="rotate(-20 ${d[0]} ${d[1]})"><rect x="${d[0]+10}" y="${d[1]-12}" width="42" height="24" rx="8" fill="#2c2d33"/><circle cx="${d[0]}" cy="${d[1]}" r="31" fill="#2c2d33"/><circle cx="${d[0]}" cy="${d[1]}" r="24" fill="#3b3c43"/>${T(d[0],d[1]+4,"Typ 2",9.5,"#d0d1d7",700)}</g>`; };
+const mftG=(st,anz)=>gr(GM,mftL(st,anz));
+const mb=n=>pt(GM,MFT_BU[n]), fb=n=>pt(GF,fevBuchse(0,0,n));
+const dreiLtg=()=>leitung(mb("rot"),fb("L1"),LEIT.rot,[0,-150],[-130,-30])+leitung(mb("blau"),fb("N"),LEIT.blau,[0,-70],[150,10])+leitung(mb("gelb"),fb("PE"),LEIT.gelb,[0,-110],[140,-10]);
 const BILD={
-  "frei-rlo":()=>hinweis(24,20,"Helfer am Verteiler: LS aus")+grund({wb:{},fev:{an:["PE"]}})+mft(...M,"RLO",["R LOW","– – – Ω"])
-    +leitung(mftBuchse(...M,"rot"),wbSchraube(...W),LEIT.rot,[0,-260],[90,-80],"spitze")
-    +leitung(mftBuchse(...M,"gelb"),fevBuchse(...F,"PE"),LEIT.gelb,[0,-90],[90,-10]),
-  "frei-iso":()=>{ const g=[90,20], k=1.62, kl=n=>{ const [a,b]=wbKlemme(0,0,n); return [g[0]+a*k,g[1]+b*k]; };
-    return `<g transform="translate(${g[0]} ${g[1]}) scale(${k})">${wallbox(0,0,{offen:true})}</g>`+hinweis(24,20,"Helfer am Verteiler: LS aus")+mft(...M,"RISO",["R ISO","500 V"])
-    +leitung(mftBuchse(...M,"rot"),kl("L1"),LEIT.rot,[0,-140],[0,-150],"klemme")
-    +leitung(mftBuchse(...M,"gelb"),kl("PE"),LEIT.gelb,[0,-110],[0,-120],"klemme"); },
-  "spann-u":()=>hinweis(24,20,"Helfer: LS ein · CP STATE auf C","#2e7d32")+grund({fev:{cp:"C",an:["L1","N","PE"]}})+mft(...M,"U",["U","L–N · N–PE"])
-    +leitung(mftBuchse(...M,"rot"),fevBuchse(...F,"L1"),LEIT.rot,[0,-250],[-120,-40])
-    +leitung(mftBuchse(...M,"blau"),fevBuchse(...F,"N"),LEIT.blau,[-30,-120],[150,10])
-    +leitung(mftBuchse(...M,"gelb"),fevBuchse(...F,"PE"),LEIT.gelb,[0,-110],[100,-10]),
-  "spann-zs":()=>hinweis(24,20,"Helfer: LS ein · CP STATE auf C","#2e7d32")+grund({fev:{cp:"C",an:["L1","N","PE"]}})+mft(...M,"ZS",["Zs (L-PE)","std. RCD"])
-    +leitung(mftBuchse(...M,"rot"),fevBuchse(...F,"L1"),LEIT.rot,[0,-250],[-120,-40])
-    +leitung(mftBuchse(...M,"blau"),fevBuchse(...F,"N"),LEIT.blau,[-30,-120],[150,10])
-    +leitung(mftBuchse(...M,"gelb"),fevBuchse(...F,"PE"),LEIT.gelb,[0,-110],[100,-10]),
-  "rcd":()=>hinweis(24,20,"Helfer: RCD nach jeder Auslösung wieder ein")+grund({fev:{cp:"C",an:["L1","N","PE"]}})+mft(...M,"RCD",["RCD","Rampe"])
-    +leitung(mftBuchse(...M,"rot"),fevBuchse(...F,"L1"),LEIT.rot,[0,-250],[-120,-40])
-    +leitung(mftBuchse(...M,"blau"),fevBuchse(...F,"N"),LEIT.blau,[-30,-120],[150,10])
-    +leitung(mftBuchse(...M,"gelb"),fevBuchse(...F,"PE"),LEIT.gelb,[0,-110],[100,-10]),
-  "fkt":()=>grund({wb:{led:"#e53935"},fev:{cp:"C",tE:true,tF:true}})
-    +`<path d="M${W[0]+90} ${W[1]+46} L${W[0]+90} ${W[1]-30}" stroke="#e53935" stroke-width="3"/>`+T(W[0]+90,W[1]-40,"Statusleiste rot",14,"#c62828",700)
-    +T(760,250,"Taste E (CP-Fehler)",20,"#1c1b1f",800)+T(760,280,"oder F (PE-Fehler) drücken",20,"#1c1b1f",800)+T(760,322,"→ Ladung bricht ab",20,"#c62828",800)
-    +`<path d="M640 260 C 600 260, 600 248, ${F[0]+190} ${F[1]+190}" fill="none" stroke="#c62828" stroke-width="3" stroke-dasharray="6 6"/>`,
+  "frei-rlo":()=>grund({fev:{an:["PE"]}})+mftG("RLO",["R LOW","– – – Ω"])
+    +leitung(mb("rot"),pt(GW,wbSchraube(0,0)),LEIT.rot,[0,-230],[70,-90],"spitze")
+    +leitung(mb("gelb"),fb("PE"),LEIT.gelb,[0,-110],[140,-10])+hinweis(0,0,"Helfer am Verteiler: LS aus"),
+  "frei-iso":()=>{ const g={x:70,y:24,s:1.28};
+    return gr(g,wallbox(0,0,{offen:true}))+mftG("RISO",["R ISO","500 V"])
+    +leitung(mb("rot"),pt(g,wbKlemme(0,0,"L1")),LEIT.rot,[0,-130],[0,-150],"klemme")
+    +leitung(mb("gelb"),pt(g,wbKlemme(0,0,"PE")),LEIT.gelb,[0,-100],[0,-120],"klemme")+hinweis(0,0,"Helfer am Verteiler: LS aus"); },
+  "spann-u":()=>grund({fev:{cp:"C",an:["L1","N","PE"]}})+mftG("U",["U","L–N · N–PE"])+dreiLtg()+hinweis(0,0,"Helfer: LS ein · CP STATE auf C","#2e7d32"),
+  "spann-zs":()=>grund({fev:{cp:"C",an:["L1","N","PE"]}})+mftG("ZS",["Zs (L-PE)","std. RCD"])+dreiLtg()+hinweis(0,0,"Helfer: LS ein · CP STATE auf C","#2e7d32"),
+  "rcd":()=>grund({fev:{cp:"C",an:["L1","N","PE"]}})+mftG("RCD",["RCD","Rampe"])+dreiLtg()+hinweis(0,0,"Helfer: RCD nach jeder Auslösung wieder ein"),
+  "fkt":()=>{ const w={x:30,y:150,s:.9}, f={x:300,y:80,s:.95}, d=pt(w,wbDose(0,0)), o=pt(f,[0,0]);
+    return gr(w,wallbox(0,0,{led:"#e53935"}))+gr(f,fev(0,0,{cp:"C",tE:true,tF:true}))
+    +`<path d="M${o[0]+39*f.s} ${o[1]-30*f.s} C ${o[0]+39*f.s} ${o[1]-90}, ${d[0]+110} ${d[1]-10}, ${d[0]+30} ${d[1]}" fill="none" stroke="#222327" stroke-width="9" stroke-linecap="round"/><g transform="rotate(-20 ${d[0]} ${d[1]})"><circle cx="${d[0]}" cy="${d[1]}" r="34" fill="#2c2d33"/><circle cx="${d[0]}" cy="${d[1]}" r="26" fill="#3b3c43"/>${T(d[0],d[1]+4,"Typ 2",10,"#d0d1d7",700)}</g>`
+    +`<path d="M${w.x+90*w.s} ${w.y+50*w.s} L${w.x+90*w.s} ${w.y-30}" stroke="#e53935" stroke-width="3"/>`+T(w.x+90*w.s,w.y-40,"Statusleiste rot",14,"#c62828",700)
+    +T(770,240,"Taste E (CP-Fehler)",20,"#1c1b1f",800)+T(770,270,"oder F (PE-Fehler) drücken",20,"#1c1b1f",800)+T(770,312,"→ Ladung bricht ab",20,"#c62828",800); },
 };
 let nr=0;
 /* eindeutige IDs je Bild – sonst greifen Verläufe/Schatten nicht, wenn ein anderes (verstecktes) Bild sie definiert */
