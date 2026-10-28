@@ -21,6 +21,12 @@ const legVon=(kind,id)=>legAlle().filter(L=>kind==="kunden"?(kundeOf(L.kundeId)|
 function legItem(L,mitOrt){ const n=legSkZahl(L), o=mitOrt&&L.standortId&&standortOf(L.standortId);
   return `<div class="li" role="button" tabindex="0" data-act="legAuf" data-id="${esc(L.id)}"><span class="av">${icon("notes")}</span>
     <span class="lt"><span class="h">${esc(L.titel||"Verteiler")}</span><span class="s">${esc([o?o.name:!mitOrt?"":L.kundeId?"":L.kunde,`${n} Stromkreis${n===1?"":"e"}`,L.stand&&"Stand "+ecDatum(L.stand)].filter(Boolean).join(" · "))}</span></span>${icon("chev")}</div>`; }
+/* Eintrag in der Liste unter Installation (zwischen den Prüfungen) */
+const legListenEintrag=L=>({leg:L,id:L.id,kundeId:kundeOf(L.kundeId)?L.kundeId:"",status:L.fertig?"fertig":"",datum:L.stand||"",updated:L.updated,titel:kundeOf(L.kundeId)?ecOrt(L.ortId||"k:"+L.kundeId).titel:(L.kunde||"Ohne Kunde"),pruefer:L.ersteller||"",createdBy:L.createdBy});
+function legListenItem(L){ const e=legListenEintrag(L), n=legSkZahl(L);
+  return `<div class="li" role="button" tabindex="0" data-act="legAuf" data-id="${esc(L.id)}"><span class="av">${icon("notes")}</span>
+    <span class="lt"><span class="h">${esc(e.titel)}</span><span class="s">${esc(["Verteilerlegende",L.titel,`${n} Stromkreis${n===1?"":"e"}`,L.stand&&ecDatum(L.stand),L.ersteller].filter(Boolean).join(" · "))}</span>
+    <span class="st">${L.fertig?pill("ok","abgeschlossen"):pill("wip","in Arbeit")}${kundeOf(L.kundeId)?"":pill("open","ohne Kunde")}</span></span>${icon("chev")}</div>`; }
 /* Abschnitt in der Kunden-/Standortansicht */
 function legBeiKunde(kind,r){ const A=legVon(kind,r.id);
   return kdKopf("Verteilerlegenden","legNeu","Legende anlegen",` data-kind="${kind}" data-id="${esc(r.id)}"`)+(A.length?listOf(A.map(L=>legItem(L,kind==="kunden"))):`<p class="meta">Noch keine Legende – Stromkreisliste für die Hager-Tasche im Verteiler.</p>`); }
@@ -29,8 +35,9 @@ function legOhneEintrag(abc){ const n=legOhne().length;
   const li=listOf([`<div class="li" role="button" tabindex="0" data-act="nav" data-v="ohnekunde"><span class="av">${icon("folder")}</span>
     <span class="lt"><span class="h">Ohne Kunde</span><span class="s">${n?`${n} Verteilerlegende${n===1?"":"n"} ohne Kunde`:"Verteilerlegenden, die noch keinem Kunden gehören"}</span></span>${icon("chev")}</div>`]);
   return abc?`<div class="abc-gr"><div class="abc-b" aria-hidden="true">*</div><div class="abc-l">${li}</div></div>`:`<div class="leg-ohne">${li}</div>`; }
+/* Ablageort „Ohne Kunde“: je Art ein Abschnitt (bisher Verteilerlegenden, später mehr) */
 function legOhneView(){ const A=legOhne();
-  return `<div class="narrow">${A.length?listOf(A.map(L=>legItem(L,true))):`<div class="empty">${icon("notes")}<h2>Keine Legende ohne Kunde</h2><p>Hier liegen Verteilerlegenden, die (noch) keinem Kunden gehören – z. B. schnell vor Ort angelegt. Zuordnen geht jederzeit in der Legende über „Kunde zuordnen“.</p></div>`}</div>`; }
+  return `<div class="narrow">${A.length?`<div class="sec-lbl">Verteilerlegenden · ${A.length}</div>${listOf(A.map(legListenItem))}`:`<div class="empty">${icon("folder")}<h2>Hier liegt nichts</h2><p>Ablage für alles, was (noch) keinem Kunden gehört – z. B. Verteilerlegenden, die vor Ort schnell angelegt wurden. Zuordnen geht jederzeit über „Kunde zuordnen“.</p></div>`}</div>`; }
 
 /* ---- Neue Legende (kid/ort aus der Kunden- oder Standortansicht, sonst ohne Kunde) ---- */
 let legNeuBei=null;
@@ -59,9 +66,9 @@ function legZuruck(L){ const s=L&&L.standortId&&standortOf(L.standortId), k=L&&k
   return s?{v:"standort",id:s.id}:k?{v:"kunde",id:k.id}:{v:"ohnekunde"}; }
 
 /* ---- Bearbeiten ---- */
-const legFeld=(L,k,l,o={})=>`<div class="tf${L[k]||o.ph||o.type==="date"?" fl":""}"><input id="f_leg_${k}" data-leg="${k}" value="${esc(L[k]||"")}" placeholder="${esc(o.ph||" ")}" ${o.type?`type="${o.type}"`:""} autocomplete="off"><label for="f_leg_${k}">${esc(l)}</label></div>`;
-function legZeile(e){ const t=e.art==="gr";
-  return `<button type="button" class="leg-z z-${e.art}" data-act="legEdit" data-id="${esc(e.id)}">${t?`<span class="bz">${esc(e.bez||"Überschrift")}</span>`
+const legFeld=(L,k,l,o={})=>`<div class="tf${L[k]||o.ph||o.type==="date"?" fl":""}"><input id="f_leg_${k}" data-leg="${k}" value="${esc(L[k]||"")}" placeholder="${esc(o.ph||" ")}" ${o.type?`type="${o.type}"`:""} autocomplete="off" ${L.fertig?"disabled":""}><label for="f_leg_${k}">${esc(l)}</label></div>`;
+function legZeile(e,zu){ const t=e.art==="gr";
+  return `<button type="button" class="leg-z z-${e.art}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}>${t?`<span class="bz">${esc(e.bez||"Überschrift")}</span>`
     :`<span class="kz">${esc(e.kz||"–")}</span><span class="bz">${e.art==="res"?`<i>Reserve</i>`:esc(e.bez||"–")}${e.art==="rcd"?` <span class="leg-rcd">RCD</span>`:""}</span><span class="sc">${esc(legSchutz(e))}</span>`}</button>`; }
 function legView(L){ const E=legE(L);
   return `<div class="narrow ec-spalte leg">
@@ -70,18 +77,18 @@ function legView(L){ const E=legE(L);
       <div class="reihe2">${legFeld(L,"titel","Verteiler",{ph:"z. B. HV Keller"})}${legFeld(L,"stand","Stand",{type:"date"})}</div>
       ${legFeld(L,"kunde","Kunde",{ph:"Name oder Firma"})}
       ${legFeld(L,"anschrift","Anschrift",{ph:"Straße, PLZ Ort"})}
-      <div class="reihe2"><div class="tf fl"><select id="f_leg_netz" data-leg="netz">${LEG_NETZ.map(n=>`<option value="${esc(n)}" ${n===(L.netz||"")?"selected":""}>${esc(n||"nicht angeben")}</option>`).join("")}</select><label for="f_leg_netz">Netzform</label><span class="arr">${icon("drop")}</span></div>${legWerSel(L)}</div>
+      <div class="reihe2"><div class="tf fl"><select id="f_leg_netz" data-leg="netz" ${L.fertig?"disabled":""}>${LEG_NETZ.map(n=>`<option value="${esc(n)}" ${n===(L.netz||"")?"selected":""}>${esc(n||"nicht angeben")}</option>`).join("")}</select><label for="f_leg_netz">Netzform</label><span class="arr">${icon("drop")}</span></div>${legWerSel(L)}</div>
     </div></section>
     <section class="card"><h3>Stromkreise${E.length?` <small class="leg-n">${legSkZahl(L)}</small>`:""}</h3>
-      ${E.length?`<div class="leg-l">${E.map(legZeile).join("")}</div>`:`<p class="meta">Noch keine Stromkreise. Unten rechts über „Stromkreis“ anlegen – mit „Nächster“ im Fenster geht es Zeile für Zeile weiter, die Kennzeichnung zählt mit.</p>`}
+      ${E.length?`<div class="leg-l">${E.map(e=>legZeile(e,L.fertig)).join("")}</div>`:`<p class="meta">Noch keine Stromkreise. Unten rechts über „Stromkreis“ anlegen – mit „Nächster“ im Fenster geht es Zeile für Zeile weiter, die Kennzeichnung zählt mit.</p>`}
     </section>
-    <div class="leg-fuss">${canEdit(L)?`<button type="button" class="btn-tonal leg-del" data-act="legDelAsk">${icon("del")}Löschen</button>`:""}<span style="flex:1"></span><button type="button" class="btn-filled" data-act="legPdf">${icon("pdf")}PDF erstellen</button></div>
+    <div class="leg-fuss">${canEdit(L)?`<button type="button" class="btn-tonal leg-del" data-act="legDelAsk">${icon("del")}Löschen</button>`:""}<span style="flex:1"></span>${L.fertig?`<button type="button" class="btn-tonal" data-act="legFertig" data-v="0">${icon("edit")}Wieder öffnen</button>`:`<button type="button" class="btn-tonal" data-act="legFertig" data-v="1">${icon("done")}Fertig</button>`}<button type="button" class="btn-filled" data-act="legPdf">${icon("pdf")}PDF erstellen</button></div>
   </div>`; }
 
 /* „Erstellt von“: Mitarbeiter aus dem Team (ohne Büro); ein früher eingetragener Name bleibt wählbar */
 const legTeam=()=>team().filter(m=>m.name&&(typeof maStufe!=="function"||maStufe(m).k!=="buero")).map(m=>m.name).sort((a,b)=>a.localeCompare(b,"de"));
 function legWerSel(L){ const N=legTeam(), cur=L.ersteller||""; if(cur&&!N.includes(cur)) N.push(cur);
-  return `<div class="tf fl"><select id="f_leg_ersteller" data-leg="ersteller">${["",...N].map(n=>`<option value="${esc(n)}" ${n===cur?"selected":""}>${esc(n||"bitte wählen")}</option>`).join("")}</select><label for="f_leg_ersteller">Erstellt von</label><span class="arr">${icon("drop")}</span></div>`; }
+  return `<div class="tf fl"><select id="f_leg_ersteller" data-leg="ersteller" ${L.fertig?"disabled":""}>${["",...N].map(n=>`<option value="${esc(n)}" ${n===cur?"selected":""}>${esc(n||"bitte wählen")}</option>`).join("")}</select><label for="f_leg_ersteller">Erstellt von</label><span class="arr">${icon("drop")}</span></div>`; }
 /* Kennzeichnung nach eurem Schema: Reihe.RCD für den RCD, Reihe.RCD.Automat für die Stromkreise darunter
    (F 1.0 = erster RCD, F 1.0.1 / F 1.0.2 = seine Automaten, F 1.1 = zweiter RCD, F 2.0 = erster RCD der zweiten Reihe).
    Zweistellige Automaten (F 1.0.01) nur, wenn die Legende schon so zählt (alte Pläne). */
@@ -188,6 +195,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "legOrd": { if(!L||!legDlg) return; const E=legE(L), i=E.findIndex(x=>x.id===legDlg.id), j=i+(+b.dataset.d); if(i<0||j<0||j>=E.length) return;
       [E[i],E[j]]=[E[j],E[i]]; legSpeichern(L); render(); legSkDlg(legDlg.id); return; }
   case "legPdf": legPdfMachen(); return;
+  case "legFertig": { if(!L) return; L.fertig=b.dataset.v==="1"; saveRec("legenden",L); render(); toast(L.fertig?"Legende abgeschlossen":"Legende wieder in Arbeit"); return; }
   case "legDelAsk": confirmDlg("Legende löschen?",`„${L&&L.titel||"Verteiler"}“ mit allen Zeilen löschen?`,"Löschen","legDelOk"); return;
   case "legDelOk": { if(!L) return; L.deleted=true; saveRec("legenden",L); go(legZuruck(L)); toast("Legende gelöscht"); return; }
   } },true);

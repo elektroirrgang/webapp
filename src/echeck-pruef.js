@@ -180,29 +180,36 @@ const EC_LISTE_ART={anlagen:"anlage",geraete:"geraete",netzwerk:"netz"};
 ["anlage","geraete","netz"].forEach(art=>{ FDEF["ec_"+art]={std:{sort:"neu",status:"alle",wer:"alle"},sort:[["neu","Neueste zuerst"],["alt","Älteste zuerst"],["az","Ort A–Z"]],
   gruppen:[{k:"status",t:"Status",opts:[["alle","Alle"],["arbeit","In Arbeit"],["fertig","Abgeschlossen"],["maengel","Mit Mängeln"]]},{k:"wer",t:"Prüfer",opts:[["alle","Alle"],["meine","Meine"]]}],
   liste:()=>ecListeInhalt(art)}; });
+/* Installation: Verteilerlegenden stehen mit in der Liste – Filter nach Art und „Ohne Kunde“ */
+Object.assign(FDEF.ec_anlage.std,{typ:"alle",kunde:"alle"});
+FDEF.ec_anlage.gruppen.unshift({k:"typ",t:"Art",opts:[["alle","Alle"],["pruef","Prüfungen"],["leg","Verteilerlegenden"]]});
+FDEF.ec_anlage.gruppen.push({k:"kunde",t:"Kunde",opts:[["alle","Alle"],["ohne","Ohne Kunde"]]});
 function ecListeInhalt(art){ const n="ec_"+art, q=query.trim().toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q), st=fW(n,"status"), wer=fW(n,"wer"), so=fW(n,"sort");
   let L=ecAlle().filter(p=>(p.art||"anlage")===art);
-  if(q) L=L.filter(p=>{ const o=ecOrt(p.ortId); return H(o.titel)||H(o.name)||H(p.bez)||H(p.pruefer)||H(p.pruefart)||H(p.auftragsnr)||H(ecDatum(p.datum)); });
-  if(st==="arbeit") L=L.filter(p=>p.status!=="fertig"); else if(st==="fertig") L=L.filter(p=>p.status==="fertig"); else if(st==="maengel") L=L.filter(p=>ecErgebnis(p)==="bad");
+  const mitLeg=art==="anlage"&&typeof legAlle==="function";
+  if(mitLeg){ const typ=fW(n,"typ"); if(typ==="leg") L=[]; if(typ!=="pruef") L=L.concat(legAlle().map(legListenEintrag)); if(fW(n,"kunde")==="ohne") L=L.filter(p=>!kundeOf(p.kundeId)); }
+  if(q) L=L.filter(p=>{ if(p.leg) return [p.leg.titel,p.leg.kunde,p.leg.anschrift,p.leg.ersteller,"Verteilerlegende",ecDatum(p.datum)].some(H); const o=ecOrt(p.ortId); return H(o.titel)||H(o.name)||H(p.bez)||H(p.pruefer)||H(p.pruefart)||H(p.auftragsnr)||H(ecDatum(p.datum)); });
+  if(st==="arbeit") L=L.filter(p=>p.status!=="fertig"); else if(st==="fertig") L=L.filter(p=>p.status==="fertig"); else if(st==="maengel") L=L.filter(p=>!p.leg&&ecErgebnis(p)==="bad");
   if(wer==="meine") L=L.filter(p=>p.pruefer===who().name||(p.createdBy&&p.createdBy.mail===ME.mail));
+  const tit=p=>p.leg?p.titel:ecOrt(p.ortId).titel, item=p=>p.leg?legListenItem(p.leg):ecItem(p), [ein,mehr]=mitLeg?["Eintrag","Einträge"]:["Prüfung","Prüfungen"];
   const dt=(a,b)=>String(b.datum||"").localeCompare(String(a.datum||""))||(b.updated||0)-(a.updated||0);
-  L.sort(so==="alt"?(a,b)=>dt(b,a):so==="az"?(a,b)=>ecOrt(a.ortId).titel.localeCompare(ecOrt(b.ortId).titel,"de"):dt);
+  L.sort(so==="alt"?(a,b)=>dt(b,a):so==="az"?(a,b)=>tit(a).localeCompare(tit(b),"de"):dt);
   const auf=L.filter(p=>p.status!=="fertig"), fertig=L.filter(p=>p.status==="fertig");
-  if(!L.length) return `${fInfo(n,0,"Prüfung","Prüfungen")}<p class="meta">Keine Prüfung gefunden.</p>`;
+  if(!L.length) return `${fInfo(n,0,ein,mehr)}<p class="meta">${mitLeg?"Nichts gefunden.":"Keine Prüfung gefunden."}</p>`;
   const hint=`<p class="hint">Rechtsklick oder lange drücken: anpinnen oder löschen</p>`;
   if(!q&&!fAktiv(n)&&L.length>EC_KURZ&&!ecListeAlle[n]){ const P=ecPins(), pin=P.map(id=>L.find(p=>p.id===id)).filter(Boolean).slice(0,EC_KURZ);
     const rest=L.filter(p=>!pin.includes(p)).sort((a,b)=>(b.updated||0)-(a.updated||0)||String(b.datum||"").localeCompare(String(a.datum||""))).slice(0,EC_KURZ-pin.length);
     const alle=`<button class="btn-text" data-act="ecListeAlle" data-n="${n}">Alle ${L.length}</button>`;
-    return (pin.length?`<div class="sec-row"><div class="sec-lbl">Angepinnt</div>${rest.length?"":alle}</div>${listOf(pin.map(ecItem))}`:"")
-      +(rest.length?`<div class="sec-row"><div class="sec-lbl">Zuletzt bearbeitet</div>${alle}</div>${listOf(rest.map(ecItem))}`:"")+hint; }
+    return (pin.length?`<div class="sec-row"><div class="sec-lbl">Angepinnt</div>${rest.length?"":alle}</div>${listOf(pin.map(item))}`:"")
+      +(rest.length?`<div class="sec-row"><div class="sec-lbl">Zuletzt bearbeitet</div>${alle}</div>${listOf(rest.map(item))}`:"")+hint; }
   const zu=!q&&!fAktiv(n)&&L.length>EC_KURZ?`<button class="btn-text" data-act="ecListeAlle" data-n="${n}">Nur die letzten ${EC_KURZ}</button>`:"";
-  return `${fInfo(n,L.length,"Prüfung","Prüfungen")}${auf.length?`<div class="sec-row"><div class="sec-lbl">In Arbeit</div>${zu}</div>${listOf(auf.map(ecItem))}`:""}${fertig.length?`<div class="sec-row"><div class="sec-lbl">Abgeschlossen</div>${auf.length?"":zu}</div>${listOf(fertig.map(ecItem))}`:""}${hint}`; }
+  return `${fInfo(n,L.length,ein,mehr)}${auf.length?`<div class="sec-row"><div class="sec-lbl">In Arbeit</div>${zu}</div>${listOf(auf.map(item))}`:""}${fertig.length?`<div class="sec-row"><div class="sec-lbl">Abgeschlossen</div>${auf.length?"":zu}</div>${listOf(fertig.map(item))}`:""}${hint}`; }
 /* Angepinnte Prüfungen (je Gerät, wie die Pins in EVSE); Kurzliste zeigt höchstens 5 */
 const EC_KURZ=5, ecListeAlle={};
 const ecPins=()=>Array.isArray(META.ecPins)?META.ecPins:[];
 function ecPinUm(id){ const P=[...ecPins()], i=P.indexOf(id); if(i>=0) P.splice(i,1); else P.unshift(id); META.ecPins=P; metaSave(); render(); toast(i<0?"Angepinnt – steht oben in der Liste":"Nicht mehr angepinnt"); }
 function ecListeView(art){
-  const L=ecAlle().filter(p=>(p.art||"anlage")===art); let h=`<div class="narrow">`;
+  const L=ecAlle().filter(p=>(p.art||"anlage")===art).concat(art==="anlage"&&typeof legAlle==="function"?legAlle():[]); let h=`<div class="narrow">`;
   if(art==="geraete"){ const bis=ecPlus(ecHeute(),1), F=live("betriebsmittel").filter(b=>b.naechste&&b.naechste<=bis).sort((a,b)=>a.naechste.localeCompare(b.naechste));
     if(F.length){ const M=new Map(); F.forEach(b=>{ if(!M.has(b.ortId)) M.set(b.ortId,[]); M.get(b.ortId).push(b); });
       h+=`<div class="sec-lbl">Fällig in den nächsten 4 Wochen</div>${listOf([...M].map(([o,G])=>`<div class="li" role="button" tabindex="0" data-act="ecNeuOrt" data-art="geraete" data-ort="${esc(o)}"><span class="av">${icon("warn")}</span>
