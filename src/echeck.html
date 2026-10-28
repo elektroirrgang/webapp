@@ -1252,13 +1252,13 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .leg-z.z-gr:first-child{margin-top:0}
 .leg-rcd{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:8px;background:var(--sec-c);color:var(--on-sec-c);font-size:11px;font-weight:700;vertical-align:1px}
 .leg-n{font-size:13px;font-weight:600;color:var(--on-sv);margin-left:6px}
-.leg-fuss{display:flex;align-items:center;gap:12px;margin:4px 0 8px}
+.leg-fuss{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:4px 0 8px}
 .leg-fuss .btn-tonal,.leg-fuss .btn-filled{display:inline-flex;align-items:center;gap:8px}.leg-fuss .ic{width:18px;height:18px}
-.leg-fuss .leg-del{height:48px;padding:0 22px 0 18px;background:var(--err);color:#fff;border-radius:24px;font-size:15px}
+.leg-fuss .leg-del{height:48px;padding:0 22px 0 18px;background:#C62828;color:#fff;border-radius:24px;font-size:15px}
 .leg-vor{gap:6px}.leg-vor .chip{min-height:32px;padding:4px 12px;font-size:13px}
 .leg-ohne{margin:20px 0 0}
 /* Stromkreise: Liste (Gruppen je RCD) und Verteiler (Reihen) */
-.leg-kopf{margin-right:0}.leg-seg{margin:0}.leg-seg button{min-height:36px;padding:0 14px;font-size:14px}
+.leg-kopf{margin-right:0;flex-wrap:wrap}.leg-kopf h3{flex:1;white-space:nowrap}.leg-seg{margin:0;flex:none;width:auto}.leg-seg button{min-height:36px;padding:0 16px;font-size:14px;flex:none}
 .leg-gl{display:flex;flex-direction:column;gap:10px}
 .leg-grp{background:var(--feld);border-radius:16px;overflow:hidden}
 .leg-gk,.leg-r,.leg-add,.leg-ue{display:grid;grid-template-columns:96px minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;border:0;background:transparent;color:var(--on-surface);text-align:left;font:inherit;cursor:pointer}
@@ -1278,9 +1278,10 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .leg-rk{display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:var(--on-sv);margin:0 2px 6px}.leg-rk span{font-weight:600}
 .leg-svg{display:block;width:100%;height:auto}
 .leg-dev,.leg-frei[data-act]{cursor:pointer}.leg-dev:hover>rect:first-of-type{filter:brightness(.96)}
-.leg-fr{fill:color-mix(in srgb,var(--ok) 16%,transparent)}.leg-frt{fill:var(--ok)}
+.leg-fr{fill:color-mix(in srgb,var(--ok) 18%,var(--feld))}.leg-frt{fill:var(--ok)}
 .leg-st{fill:var(--on-surface)}.leg-sym{color:var(--on-surface)}
 .leg-symw .chip{gap:6px}.leg-symw .leg-symi{flex:none}
+@media (max-width:599px){.leg-reihe{overflow-x:auto;-webkit-overflow-scrolling:touch}.leg-reihe .leg-svg{min-width:620px}.leg-rk{position:sticky;left:0}.leg-fuss .btn-filled{flex:1 1 100%;justify-content:center}.leg-gk .leg-rcd{display:none}}
 @media (max-width:479px){.leg-gk,.leg-r{grid-template-columns:72px minmax(0,1fr) auto;gap:8px;font-size:14px}.leg-r.kind{padding-left:20px;grid-template-columns:64px minmax(0,1fr) auto}}
 #dlg .da .ab-ic{width:40px;height:40px;border:0;border-radius:20px;background:transparent;color:var(--on-sv);display:inline-flex;align-items:center;justify-content:center}
 #dlg .da .ab-ic .ic{width:22px;height:22px;transform:rotate(-90deg)}#dlg .da .ab-ic.ab .ic{transform:rotate(90deg)}#dlg .da .ab-ic:disabled{opacity:.35}
@@ -1794,6 +1795,7 @@ function pfadTeile(){
   if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); const v=ecListeV(p&&p.art); return [[{geraete:"Geräte",netzwerk:"Netzwerk"}[v]||"Installation",{v}]]; }
   if(nav.v==="legende"){ const L=DB.legenden.get(nav.id); return L&&kundeOf(L.kundeId)?kette(L.kundeId,L.standortId):[["Kunden",{v:"kunden"}],["Ohne Kunde",{v:"ohnekunde"}]]; }
   if(nav.v==="ohnekunde") return [["Kunden",{v:"kunden"}]];
+  if(nav.v==="vt"){ const L=vtL(nav.g,nav.id); return L&&kundeOf(L.kundeId)?kette(L.kundeId,L.standortId):[["Installation",{v:"anlagen"}]]; }
   return [];
 }
 let NAV_IND_ALT=null;
@@ -1941,6 +1943,7 @@ document.addEventListener("click",e=>{
 /*BIBLIOTHEK*/
 /*ECHECKPRUEF*/
 /*LEGENDE*/
+/*VERTEILER*/
 /*PROFIL*/
 /*KOPF*/
 function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
@@ -1956,7 +1959,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   const rkS=nav.v==="ec"&&!login?ecRkOffen():null;   /* Netzwerkschrank offen: eigene Ebene wie die Ladestation in EVSE */
   $("#menuBtn").hidden=!VIEW_KIND[nav.v]&&!rkS; kdKopfKnopf();
   if(rkS&&!WIDE.matches){ $("#tabs").innerHTML=ecRkTabsHtml(); $("#tabs").hidden=false; }
-  const active=katV?"netzwerk":top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]||nav.v==="ohnekunde"||nav.v==="legende"?"kunden":nav.v==="ec"?ecListeV((DB.echecks.get(nav.id)||{}).art):"anlagen";
+  const active=katV?"netzwerk":top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]||nav.v==="ohnekunde"||nav.v==="legende"||nav.v==="vt"?"kunden":nav.v==="ec"?ecListeV((DB.echecks.get(nav.id)||{}).art):"anlagen";
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
     +(()=>{ const P=nav.v==="ec"&&DB.echecks.get(nav.id); if(P&&!P.deleted){ const T=ecSchritte(P), a=ecTab(P); /* in der Prüfung: Schritte wie in EVSE */
@@ -1969,6 +1972,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   else if(nav.v==="geraete"){ title="Geräte"; body=ecListeView("geraete"); fab=["ecNeuG","Prüfung","add"]; }
   else if(nav.v==="netzwerk"){ title="Netzwerk"; body=ecListeView("netz"); fab=["ecNeuN","Prüfung","add"]; }
   else if(nav.v==="netzkatalog"){ title="Netzwerk-Katalog"; body=ecKatalogView(); }
+  else if(nav.v==="vt"){ const L=vtL(nav.g,nav.id); if(!L){ nav={v:"anlagen"}; return render(); } title=L.titel; sub="Verteiler"; body=legView(L); fab=L.fertig?null:["legSkNeu","Stromkreis","add"]; }
   else if(nav.v==="ohnekunde"){ title="Ohne Kunde"; sub="Ablage für alles ohne Kunden"; body=legOhneView(); fab=["legNeu","Legende","add"]; }
   else if(nav.v==="legende"){ const L=DB.legenden.get(nav.id); if(!L||L.deleted){ nav={v:"kunden"}; return render(); } title=L.titel||"Verteiler"; sub="Verteilerlegende"; body=legView(L); fab=L.fertig?null:["legSkNeu","Stromkreis","add"]; }
   else if(nav.v==="netzkatmodell"){ const K=ecRkKat(nav.id); if(!K){ nav={v:"netzkatalog"}; return render(); } title=K.kurz||K.modell; sub=K.hersteller; body=ecKatModellView(K); }
@@ -2068,9 +2072,9 @@ function kundeView(k){ const ss=standorteVon(k.id);
   return `<div class="narrow kd-seite">${kdOben(k,"kunden",ss)}${kontakteView("kunden",k)}
     ${ablageView("kunden",k)}
     ${kdKopf(kdOrteTitel(k),kdDarf(k)&&"newStandort",kdArt(k)==="privat"?"Objekt hinzufügen":"Standort hinzufügen")}${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">${kdKeinOrt(k)?esc(kdKeinOrt(k)):"Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager)."}</p>`}
-    ${ecBeiKunde("kunden",k)}${legBeiKunde("kunden",k)}
+    ${ecBeiKunde("kunden",k)}${vtBeiKunde("kunden",k)}
 </div>`; }
-function standortView(s){ return `<div class="narrow kd-seite">${kdOben(s,"standorte")}${kontakteView("standorte",s)}${ablageView("standorte",s)}${ecBeiKunde("standorte",s)}${legBeiKunde("standorte",s)}</div>`; }
+function standortView(s){ return `<div class="narrow kd-seite">${kdOben(s,"standorte")}${kontakteView("standorte",s)}${ablageView("standorte",s)}${ecBeiKunde("standorte",s)}${vtBeiKunde("standorte",s)}</div>`; }
 let locForm=null;
 function locDialog(kind,rec,parentId){
   locForm={kind,id:rec&&rec.id,parentId}; const r=rec||{}; if(rec) adrSplit(r);
@@ -2146,6 +2150,7 @@ function zurueck(){
   if(nav.v==="netzkatalog"){ go({v:"netzwerk"}); return; }
   if(nav.v==="legende"){ go(legZuruck(DB.legenden.get(nav.id))); return; }
   if(nav.v==="ohnekunde"){ go({v:"kunden"}); return; }
+  if(nav.v==="vt"){ go(vtZuruck(nav.g)); return; }
   if(nav.v==="ec"&&nav.schr){ nav.schr=null; render(); scrollTo(0,0); return; }   /* erst aus dem Schrank zurück zur Infrastruktur */
   if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); go({v:ecListeV(p&&p.art)}); return; }
   go({v:"anlagen"});

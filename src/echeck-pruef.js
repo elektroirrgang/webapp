@@ -182,16 +182,16 @@ const EC_LISTE_ART={anlagen:"anlage",geraete:"geraete",netzwerk:"netz"};
   liste:()=>ecListeInhalt(art)}; });
 /* Installation: Verteilerlegenden stehen mit in der Liste – Filter nach Art und „Ohne Kunde“ */
 Object.assign(FDEF.ec_anlage.std,{typ:"alle",kunde:"alle"});
-FDEF.ec_anlage.gruppen.unshift({k:"typ",t:"Art",opts:[["alle","Alle"],["pruef","Prüfungen"],["leg","Verteilerlegenden"]]});
+FDEF.ec_anlage.gruppen.unshift({k:"typ",t:"Art",opts:[["alle","Alle"],["pruef","Prüfungen"],["leg","Verteiler und Legenden"]]});
 FDEF.ec_anlage.gruppen.push({k:"kunde",t:"Kunde",opts:[["alle","Alle"],["ohne","Ohne Kunde"]]});
 function ecListeInhalt(art){ const n="ec_"+art, q=query.trim().toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q), st=fW(n,"status"), wer=fW(n,"wer"), so=fW(n,"sort");
   let L=ecAlle().filter(p=>(p.art||"anlage")===art);
   const mitLeg=art==="anlage"&&typeof legAlle==="function";
-  if(mitLeg){ const typ=fW(n,"typ"); if(typ==="leg") L=[]; if(typ!=="pruef") L=L.concat(legAlle().map(legListenEintrag)); if(fW(n,"kunde")==="ohne") L=L.filter(p=>!kundeOf(p.kundeId)); }
-  if(q) L=L.filter(p=>{ if(p.leg) return [p.leg.titel,p.leg.kunde,p.leg.anschrift,p.leg.ersteller,"Verteilerlegende",ecDatum(p.datum)].some(H); const o=ecOrt(p.ortId); return H(o.titel)||H(o.name)||H(p.bez)||H(p.pruefer)||H(p.pruefart)||H(p.auftragsnr)||H(ecDatum(p.datum)); });
-  if(st==="arbeit") L=L.filter(p=>p.status!=="fertig"); else if(st==="fertig") L=L.filter(p=>p.status==="fertig"); else if(st==="maengel") L=L.filter(p=>!p.leg&&ecErgebnis(p)==="bad");
+  if(mitLeg){ const typ=fW(n,"typ"); if(typ==="leg") L=[]; if(typ!=="pruef") L=L.concat(legListenAlle()); if(fW(n,"kunde")==="ohne") L=L.filter(p=>!kundeOf(p.kundeId)); }
+  if(q) L=L.filter(p=>{ if(p.leg) return [p.leg.titel,p.leg.kunde,p.leg.anschrift,p.leg.ersteller,"Verteilerlegende",ecDatum(p.datum)].some(H); if(p.vt) return H(p.such)||H(ecDatum(p.datum)); const o=ecOrt(p.ortId); return H(o.titel)||H(o.name)||H(p.bez)||H(p.pruefer)||H(p.pruefart)||H(p.auftragsnr)||H(ecDatum(p.datum)); });
+  if(st==="arbeit") L=L.filter(p=>p.status!=="fertig"); else if(st==="fertig") L=L.filter(p=>p.status==="fertig"); else if(st==="maengel") L=L.filter(p=>!p.leg&&!p.vt&&ecErgebnis(p)==="bad");
   if(wer==="meine") L=L.filter(p=>p.pruefer===who().name||(p.createdBy&&p.createdBy.mail===ME.mail));
-  const tit=p=>p.leg?p.titel:ecOrt(p.ortId).titel, item=p=>p.leg?legListenItem(p.leg):ecItem(p), [ein,mehr]=mitLeg?["Eintrag","Einträge"]:["Prüfung","Prüfungen"];
+  const tit=p=>p.leg?p.titel:ecOrt(p.ortId).titel, item=p=>p.leg?legListenItem(p.leg):p.vt?vtListenItem(p.vt):ecItem(p), [ein,mehr]=mitLeg?["Eintrag","Einträge"]:["Prüfung","Prüfungen"];
   const dt=(a,b)=>String(b.datum||"").localeCompare(String(a.datum||""))||(b.updated||0)-(a.updated||0);
   L.sort(so==="alt"?(a,b)=>dt(b,a):so==="az"?(a,b)=>tit(a).localeCompare(tit(b),"de"):dt);
   const auf=L.filter(p=>p.status!=="fertig"), fertig=L.filter(p=>p.status==="fertig");
@@ -209,7 +209,7 @@ const EC_KURZ=5, ecListeAlle={};
 const ecPins=()=>Array.isArray(META.ecPins)?META.ecPins:[];
 function ecPinUm(id){ const P=[...ecPins()], i=P.indexOf(id); if(i>=0) P.splice(i,1); else P.unshift(id); META.ecPins=P; metaSave(); render(); toast(i<0?"Angepinnt – steht oben in der Liste":"Nicht mehr angepinnt"); }
 function ecListeView(art){
-  const L=ecAlle().filter(p=>(p.art||"anlage")===art).concat(art==="anlage"&&typeof legAlle==="function"?legAlle():[]); let h=`<div class="narrow">`;
+  const L=ecAlle().filter(p=>(p.art||"anlage")===art).concat(art==="anlage"&&typeof legListenAlle==="function"?legListenAlle():[]); let h=`<div class="narrow">`;
   if(art==="geraete"){ const bis=ecPlus(ecHeute(),1), F=live("betriebsmittel").filter(b=>b.naechste&&b.naechste<=bis).sort((a,b)=>a.naechste.localeCompare(b.naechste));
     if(F.length){ const M=new Map(); F.forEach(b=>{ if(!M.has(b.ortId)) M.set(b.ortId,[]); M.get(b.ortId).push(b); });
       h+=`<div class="sec-lbl">Fällig in den nächsten 4 Wochen</div>${listOf([...M].map(([o,G])=>`<div class="li" role="button" tabindex="0" data-act="ecNeuOrt" data-art="geraete" data-ort="${esc(o)}"><span class="av">${icon("warn")}</span>
@@ -354,7 +354,7 @@ function ecGebView(pr){ const g=ecGeb(pr.ortId), et=g.etagen.find(e=>e.id===nav.
       ${R.map(r=>`<div class="ec-vz rcd" role="button" tabindex="0" data-act="ecRcdEdit" data-id="${esc(r.id)}"><span class="nr">${r.fils?"FI/LS":"RCD"}</span><span class="t">${esc(ecRcdName(r))}<small>${esc(ecRcdInfo(r)||"Daten fehlen")}</small></span>${icon("chev")}</div>
         ${S.filter(s=>s.rcdId===r.id).map(skZeile).join("")}`).join("")}
       ${ohne.length&&R.length?`<div class="ec-vz rcd ohne"><span class="nr"></span><span class="t">ohne RCD</span></div>`:""}${ohne.map(skZeile).join("")}
-      ${pr.status==="fertig"?"":`<div class="ec-vt-f"><button class="btn-text" data-act="ecRcdNeu" data-v="${esc(v.id)}">${icon("add")}RCD</button><button class="btn-text" data-act="ecSkNeu" data-v="${esc(v.id)}">${icon("add")}Stromkreis</button></div>`}</div>`; };
+      <div class="ec-vt-f"><button class="btn-text" data-act="vtAuf" data-g="${esc(g.id)}" data-id="${esc(v.id)}">${icon("ecMess")}Verteiler öffnen</button><span style="flex:1"></span>${pr.status==="fertig"?"":`<button class="btn-text" data-act="ecRcdNeu" data-v="${esc(v.id)}">${icon("add")}RCD</button><button class="btn-text" data-act="ecSkNeu" data-v="${esc(v.id)}">${icon("add")}Stromkreis</button>`}</div></div>`; };
   const ohneV=ecSkListe(g).filter(s=>!s.vId||!g.verteiler.some(v=>v.id===s.vId));
   return `<div class="ec-et">${ecEtagen(g).map(e=>{ const gs=ecGeschossName(ecEbene(e)), zwei=ecEtLabel(e)!==e.name; return `<button class="ec-etk${e===et?" an":""}${zwei?" zwei":""}" data-act="ecEt" data-id="${esc(e.id)}">${esc(e.name)}${zwei?`<small>${esc(gs)}</small>`:""}</button>`; }).join("")}${pr.status==="fertig"?"":`<button class="ec-etk plus" data-act="ecEtNeu" aria-label="Etage hinzufügen" title="Etage hinzufügen">${icon("add")}</button>`}</div>
     <div class="${nz?"ec-eins":"ec-zwei"}"><div>${kdKopf(`Räume im ${esc(et?et.name:"")}`,et&&"ecRaumNeu","Raum hinzufügen")}
