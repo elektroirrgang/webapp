@@ -12,7 +12,7 @@ const ZS_ZWECK=[["haushalt","Haushalt"],["wp","Wärmepumpe"],["wallbox","Wallbox
 const zsBelegt=z=>z.zweck!=="frei";   /* „frei“: Zählerplatz ohne Zähler, für später */
 /* Schrankhöhen mit 150-mm-Reihenraster (Hager univers Z u. a.): Verteilerfeld 7 bzw. 9 Reihen, mit APZ im Feld 2 Reihen weniger */
 const ZS_HOEHE=[[1100,"1100 mm","Zählerplatz 1050 mm · Verteilerfeld 7-reihig, mit APZ 5-reihig"],[1400,"1400 mm","Zählerplatz 1350 mm · Verteilerfeld 9-reihig, mit APZ 7-reihig"],[0,"Andere / weiß nicht","Reihen selbst angeben"]];
-const zsReihenFeld=(zs,f,reihen)=>{ const h=+zs.hoehe; if(h===1100||h===1400){ const n=h===1100?7:9; return n-(zs.apz&&zs.apz.feldId===f.id?2:0); } return +reihen||4; };
+const zsReihenFeld=(zs,f,reihen)=>{ if(+f.reihen) return +f.reihen; const h=+zs.hoehe; if(h===1100||h===1400){ const n=h===1100?7:9; return n-(zs.apz&&zs.apz.feldId===f.id?2:0); } return +reihen||4; };
 const zsReihenSumme=(zs,reihen)=>zs.felder.filter(f=>f.typ==="v").reduce((a,f)=>a+zsReihenFeld(zs,f,reihen),0);
 const ZS_ART=[["ehz","eHZ (BKE-I)","Stecktechnik"],["3pkt","3-Punkt","Schraubbefestigung"]];
 const ZS_SLS=[["E35","SLS E35"],["E40","SLS E40"],["E50","SLS E50"],["E63","SLS E63"],["keiner","Keiner / weiß nicht"]];
@@ -52,7 +52,8 @@ function zsSvg(zs,reihen,klein,aktiv){ const F=zs.felder, W=72, G=4, H=176, w=F.
   return `<svg class="zs-svg${klein?" klein":""}" viewBox="0 0 ${w} ${klein?H+8:H+24}" style="max-width:${F.length*(klein?28:104)}px" aria-hidden="true">${F.map(feld).join("")}</svg>`; }
 
 /* ---- Bedarf → Vorschlag (wie ein Zählerschrank-Konfigurator: erst fragen, was dran soll, dann alles ableiten) ---- */
-const ZS_HERST=[["hager","Hager","univers Z"],["schneider","Schneider Electric",""],["sj","ABB","Striebel & John"],["abn","ABN",""],["andere","Anderer / weiß nicht",""]];
+const ZS_HERST=[["hager","Hager","univers Z"],["sj","ABB","Striebel & John"],["abn","ABN",""],["andere","Anderer / weiß nicht",""]];
+const ZS_GERHERST=[["Hager","Hager",""],["Schneider Electric","Schneider Electric",""],["ABB","ABB",""],["","Gemischt / egal","alle Hersteller zeigen"]];
 const zsHerstText=k=>{ const h=ZS_HERST.find(x=>x[0]===k); return h&&k!=="andere"?[h[1],h[2]].filter(Boolean).join(" "):""; };
 const ZS_BEDARF=[["hh","Wohnungen / Haushalte","je Wohnung ein Zähler"],["allg","Allgemeinstrom","Treppenhaus, Keller, Außenlicht"],["gew","Gewerbe",""],
   ["wp","Wärmepumpe mit eigenem Zähler",""],["wb","Wallbox mit eigenem Zähler",""],["pv","PV mit eigenem Zähler","sonst Zweirichtungszähler am Haushalt"],["res","Reserveplätze","Platz für später, ohne Zähler"]];
@@ -65,14 +66,31 @@ function zsAusBedarf(b,alt){ const N=Math.max(1,zsBedarfZp(b)), felder=[], zp=[]
   for(let n=N;n>0;n-=2) felder.push({id:uid(),typ:"z",n:n>=2?2:1});
   for(let i=0;i<Math.max(1,+b.vf||1);i++) felder.push({id:uid(),typ:"v"});
   for(let i=0;i<(+b.mm||0);i++) felder.push({id:uid(),typ:"m"});
-  const liste=[]; const hh=+b.hh||0;
-  for(let i=0;i<hh;i++) liste.push(["haushalt",hh>1?`Wohnung ${i+1}`:""]);
-  [["allg","allgemein"],["gew","gewerbe"],["wp","wp"],["wb","wallbox"],["pv","pv"]].forEach(([k,z])=>{ for(let i=0;i<(+b[k]||0);i++) liste.push([z,""]); });
-  for(let i=0;i<(+b.res||0);i++) liste.push(["frei",""]);
-  while(liste.length<N) liste.push(["frei",""]);
   const zs={felder,apz:{feldId:felder.find(f=>f.typ==="v").id,lage:"unten"},zp:[],hoehe:alt&&alt.hoehe!=null?alt.hoehe:1100,nb:alt&&alt.nb,hersteller:alt&&alt.hersteller,steuerbar:!!b.steuer,bedarf:{...b}};
-  let k=0; felder.filter(f=>f.typ==="z").forEach(f=>{ for(let p=0;p<f.n;p++){ const [zw,bez]=liste[k++]||["frei",""]; zp.push({id:uid(),feldId:f.id,pos:p,zweck:zw,art:"ehz",sls:zw==="frei"?"":"E35",nr:"",bez}); } });
-  zs.zp=zp; return zs; }
+  zsZpAusBedarf(zs,b); return zs; }
+/* Zählerplätze in Feldreihenfolge mit dem Bedarf belegen: Wohnungen, Allgemein, Gewerbe, WP, Wallbox, PV, dann frei */
+function zsBedarfListe(b){ const L=[], hh=+b.hh||0;
+  for(let i=0;i<hh;i++) L.push(["haushalt",hh>1?`Wohnung ${i+1}`:""]);
+  [["allg","allgemein"],["gew","gewerbe"],["wp","wp"],["wb","wallbox"],["pv","pv"]].forEach(([k,z])=>{ for(let i=0;i<(+b[k]||0);i++) L.push([z,""]); });
+  return L; }
+function zsZpAusBedarf(zs,b){ const liste=zsBedarfListe(b); let k=0; zs.zp=[];
+  zs.felder.filter(f=>f.typ==="z").forEach(f=>{ for(let p=0;p<f.n;p++){ const [zw,bez]=liste[k++]||["frei",""]; zs.zp.push({id:uid(),feldId:f.id,pos:p,zweck:zw,art:"ehz",sls:zw==="frei"?"":"E35",nr:"",bez}); } }); }
+/* ---- Schrank-Katalog: Komplettschränke je Hersteller mit Foto; ein Modell legt Felder, Höhe und APZ fest ---- */
+const ZS_MODELLE=[];
+const zsModPlaetze=m=>m.felder.filter(f=>f.typ==="z").reduce((a,f)=>a+(f.n||1),0);
+const zsModText=m=>[`${zsModPlaetze(m)} eHZ`,...m.felder.filter(f=>f.typ==="v").map(f=>`Verteiler${f.reihen?" "+f.reihen+"-reihig":""}${f.apz?" mit APZ":""}`),m.felder.some(f=>f.typ==="m")?"Multimedia":"",m.hoehe?m.hoehe+" mm":""].filter(Boolean).join(" · ");
+function zsAusModell(m,b,alt){ const felder=m.felder.map(x=>x.typ==="z"?{id:uid(),typ:"z",n:x.n===2?2:1}:x.typ==="v"?{id:uid(),typ:"v",...(x.reihen?{reihen:x.reihen}:{})}:{id:uid(),typ:"m"});
+  if(!felder.some(f=>f.typ==="v")) felder.push({id:uid(),typ:"v"});
+  const ai=m.felder.findIndex(x=>x.typ==="v"&&x.apz), af=ai>=0?felder[ai]:felder.find(f=>f.typ==="v");
+  const zs={felder,apz:{feldId:af.id,lage:ai>=0?m.felder[ai].apz:"unten"},zp:[],hoehe:m.hoehe||1100,nb:alt&&alt.nb,hersteller:m.h,steuerbar:!!b.steuer,bedarf:{...b},modell:{h:m.h,hnr:m.hnr,name:m.name,bild:m.bild||""}};
+  zsZpAusBedarf(zs,b); return zs; }
+function zsModellFenster(d){ const need=Math.max(1,zsBedarfZp(d.bedarf)), A=ZS_MODELLE.filter(m=>m.h===d.hersteller);
+  const passt=A.filter(m=>zsModPlaetze(m)>=need).sort((a,b)=>zsModPlaetze(a)-zsModPlaetze(b)||(a.hoehe||0)-(b.hoehe||0)), klein=A.filter(m=>zsModPlaetze(m)<need);
+  const karte=m=>`<button type="button" class="aw-g zs-mod" data-act="awModell" data-v="${esc(m.hnr)}"${d.zs&&d.zs.modell&&d.zs.modell.hnr===m.hnr?' aria-pressed="true"':""}>${m.bild?`<span class="mat-foto aw-gb"><img src="${esc(typeof bildLokal==="function"?bildLokal(m.bild):m.bild)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('weg')"></span>`:`<span class="aw-gb zs-mod-svg">${zsSvg({felder:m.felder.map(x=>({...x,id:""})),apz:null},4,true)}</span>`}<b>${esc(m.name)}</b><small>${esc(zsModText(m))}</small><small class="zs-mod-nr">${esc(zsHerstText(m.h).split(" ")[0])} ${esc(m.hnr)}</small></button>`;
+  return {frage:"Welcher Schrank?",hinweis:A.length?`Passend für ${need} ${need===1?"Zählerplatz":"Zählerplätze"} – kleinster zuerst. Antippen übernimmt Felder, Höhe und APZ.`:"Für diesen Hersteller sind noch keine Modelle hinterlegt.",
+    inhalt:`${passt.length?`<div class="aw-grid">${passt.map(karte).join("")}</div>`:""}
+      ${klein.length?`<div class="aw-lbl">Zu wenige Zählerplätze</div><div class="aw-grid">${klein.map(karte).join("")}</div>`:""}
+      <div class="aw-liste" style="margin-top:14px">${awKachel("awModell","",awSvg("frei"),"Ohne Modell","Felder aus den Angaben zusammenstellen",d.zs&&!d.zs.modell)}</div>`}; }
 function zsBedarfFenster(b){ const st=(k,t,u)=>`<div class="zs-st"><span class="zs-stt"><b>${esc(t)}</b>${u?`<small>${esc(u)}</small>`:""}</span><button type="button" class="zs-stb" data-act="awBed" data-k="${k}" data-d="-1" aria-label="weniger">−</button><span class="zs-stn" id="awBed_${k}">${+b[k]||0}</span><button type="button" class="zs-stb" data-act="awBed" data-k="${k}" data-d="1" aria-label="mehr">+</button></div>`;
   return {frage:"Was soll dran?",hinweis:"Daraus stellt die App den Schrank zusammen – Felder, Höhe, APZ und Zählerplätze.",
     inhalt:`<div class="aw-lbl">Zählerplätze</div><div class="zs-sts">${ZS_BEDARF.map(([k,t,u])=>st(k,t,u)).join("")}</div>
@@ -84,11 +102,13 @@ function zsVorschlagFenster(d,ortPlz){ const zs=d.zs, nb=zs.nb, R=(k,t,u)=>`<but
   const nZ=zs.zp.filter(zsBelegt).length, nF=zs.zp.length-nZ, vf=zs.felder.filter(f=>f.typ==="v");
   return {frage:"Vorschlag",hinweis:"Aus deinen Angaben abgeleitet. Antippen zum Ändern – sonst „Passt so“.",
     inhalt:`<div class="zs-bild">${zsSvg(zs,0)}</div><div class="zs-zps">
+      ${R("modell","Schrank",zs.modell?`${zsHerstText(zs.modell.h).split(" ")[0]} ${zs.modell.hnr} · ${zs.modell.name}`:"ohne Modell – aus den Angaben")}
       ${R("bedarf","Zählerplätze",`${nZ} Zähler${nF?` + ${nF} frei`:""} · ${zs.felder.filter(f=>f.typ==="z").length} Zählerfeld${zs.felder.filter(f=>f.typ==="z").length===1?"":"er"} · eHZ (BKE-I)`)}
       ${R("felder","Felder",zs.felder.map(f=>ZS_TYP_KURZ[f.typ]).join(" · "))}
       ${R("hoehe","Schrankhöhe",+zs.hoehe?`${zs.hoehe} mm · ${vf.map(f=>zsReihenFeld(zs,f,0)+"-reihig").join(" + ")} · ${zsReihenSumme(zs,0)*12} TE`:"selbst angeben")}
       ${R("apz","APZ",zs.apz?zsApzText(zs):"kein APZ")}
       ${R("hersteller","Hersteller",zsHerstText(zs.hersteller)||"nicht festgelegt")}
+      ${R("geraete","Einbaugeräte",d.gerHerst||"gemischt")}
       ${R("montage","Montage",d.montage==="ap"?"Aufputz":"Unterputz")}
       ${R("name","Name",d.name||"HV")}
       ${R("netz","Netzform",(d.netz||"").split(" |")[0]||"nicht angegeben")}
@@ -165,10 +185,12 @@ function zsHinweise(zs){ const H=[], nb=zsNb(zs), off=zsBestOffenGesamt(zs);
   zs.zp.forEach((z,i)=>{ if(zsBelegt(z)&&z.zweck&&(!z.sls||z.sls==="keiner")) H.push(`Zähler ${i+1}: SLS im NAR fehlt – bei direkter Messung vorgeschrieben.`); });
   return H; }
 function zsMaterial(zs,reihen){ const M=new Map(), add=t=>M.set(t,(M.get(t)||0)+1);
-  zs.felder.forEach(f=>{ if(f.typ==="z"){ const Z=zs.zp.filter(x=>x.feldId===f.id), art=Z.some(z=>z.art==="3pkt")?"3-Punkt":"eHZ";
+  if(zs.modell) add(`Komplettschrank ${zsHerstText(zs.modell.h).split(" ")[0]} ${zs.modell.hnr} – ${zs.modell.name}`);
+  zs.felder.forEach(f=>{ if(zs.modell){ if(f.typ==="z") zs.zp.filter(x=>x.feldId===f.id).forEach(z=>{ if(zsBelegt(z)&&z.sls&&z.sls!=="keiner") add(`SLS ${z.sls} 3-polig`); }); return; }
+    if(f.typ==="z"){ const Z=zs.zp.filter(x=>x.feldId===f.id), art=Z.some(z=>z.art==="3pkt")?"3-Punkt":"eHZ";
       add(`Zählerfeld ${art}${f.n===2?", 2 Zähler":""}`); Z.forEach(z=>{ if(zsBelegt(z)&&z.sls&&z.sls!=="keiner") add(`SLS ${z.sls} 3-polig`); }); }
     else if(f.typ==="v") add(`Verteilerfeld ${zsReihenFeld(zs,f,reihen)}-reihig`); else add("Multimedia-Feld"); });
-  if(zs.apz) add("APZ-Einbau 300 mm");
+  if(zs.apz&&!zs.modell) add("APZ-Einbau 300 mm");
   /* Bestückung: Pflichtpunkte immer (Planung), optionale nur wenn angehakt */
   const brauch=(wo,k)=>{ const b=ZS_BEST.find(x=>x.k===k); return b.p(zs)||zsBestHat(zs,wo,k); };
   zs.felder.filter(f=>f.typ==="z").forEach(f=>{ const n=zs.zp.filter(z=>z.feldId===f.id&&zsBelegt(z)).length;
