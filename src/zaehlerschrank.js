@@ -57,8 +57,10 @@ const ZS_GERHERST=[["Hager","Hager",""],["Schneider Electric","Schneider Electri
 const zsHerstText=k=>{ const h=ZS_HERST.find(x=>x[0]===k); return h&&k!=="andere"?[h[1],h[2]].filter(Boolean).join(" "):""; };
 const ZS_BEDARF=[["hh","Wohnungen / Haushalte","je Wohnung ein Zähler"],["allg","Allgemeinstrom","Treppenhaus, Keller, Außenlicht"],["gew","Gewerbe",""],
   ["wp","Wärmepumpe mit eigenem Zähler",""],["wb","Wallbox mit eigenem Zähler",""],["pv","PV mit eigenem Zähler","sonst Zweirichtungszähler am Haushalt"],["res","Reserveplätze","Platz für später, ohne Zähler"]];
+const ZS_BEDARF_STEUER=[["wpH","Wärmepumpe","ohne eigenen Zähler, steuerbar nach §14a"],["wbH","Wallbox","ohne eigenen Zähler, steuerbar nach §14a"]];
 const ZS_BEDARF_FELD=[["vf","Verteilerfelder",""],["mm","Multimediafelder",""]];
-const zsBedarfStd=()=>({hh:1,allg:0,gew:0,wp:0,wb:0,pv:0,res:0,vf:1,mm:0,steuer:false});
+const zsBedarfSteuer=b=>!!b.steuer||(+b.wpH||0)+(+b.wbH||0)>0;
+const zsBedarfStd=()=>({hh:1,allg:0,gew:0,wp:0,wb:0,pv:0,res:0,wpH:0,wbH:0,vf:1,mm:0});
 const zsBedarfZp=b=>["hh","allg","gew","wp","wb","pv","res"].reduce((a,k)=>a+(+b[k]||0),0);
 /* PLZ → Netzbetreiber (Oberberg; RheinNetz betreibt Waldbröl seit 01.01.2026, Morsbach und Reichshof seit 2017 und die AggerEnergie-Netze) */
 const ZS_PLZ_NB={"51545":"rheinnetz","51597":"rheinnetz","51580":"rheinnetz","51643":"rheinnetz","51645":"rheinnetz","51647":"rheinnetz","51674":"rheinnetz","51702":"rheinnetz","51766":"rheinnetz","51709":"rheinnetz","51491":"rheinnetz"};
@@ -66,7 +68,7 @@ function zsAusBedarf(b,alt){ const N=Math.max(1,zsBedarfZp(b)), felder=[], zp=[]
   for(let n=N;n>0;n-=2) felder.push({id:uid(),typ:"z",n:n>=2?2:1});
   for(let i=0;i<Math.max(1,+b.vf||1);i++) felder.push({id:uid(),typ:"v"});
   for(let i=0;i<(+b.mm||0);i++) felder.push({id:uid(),typ:"m"});
-  const zs={felder,apz:{feldId:felder.find(f=>f.typ==="v").id,lage:"unten"},zp:[],hoehe:alt&&alt.hoehe!=null?alt.hoehe:1100,nb:alt&&alt.nb,hersteller:alt&&alt.hersteller,steuerbar:!!b.steuer,bedarf:{...b}};
+  const zs={felder,apz:{feldId:felder.find(f=>f.typ==="v").id,lage:"unten"},zp:[],hoehe:alt&&alt.hoehe!=null?alt.hoehe:1100,nb:alt&&alt.nb,hersteller:alt&&alt.hersteller,steuerbar:zsBedarfSteuer(b),bedarf:{...b}};
   zsZpAusBedarf(zs,b); return zs; }
 /* Zählerplätze in Feldreihenfolge mit dem Bedarf belegen: Wohnungen, Allgemein, Gewerbe, WP, Wallbox, PV, dann frei */
 function zsBedarfListe(b){ const L=[], hh=+b.hh||0;
@@ -107,22 +109,30 @@ const zsModText=m=>[`${zsModPlaetze(m)} eHZ`,...m.felder.filter(f=>f.typ==="v").
 function zsAusModell(m,b,alt){ const felder=m.felder.map(x=>x.typ==="z"?{id:uid(),typ:"z",n:x.n===2?2:1}:x.typ==="v"?{id:uid(),typ:"v",...(x.reihen?{reihen:x.reihen}:{})}:{id:uid(),typ:x.typ==="t"?"t":"m"});
   if(!felder.some(f=>f.typ==="v")) felder.push({id:uid(),typ:"v"});
   const ai=m.felder.findIndex(x=>x.typ==="v"&&x.apz), af=ai>=0?felder[ai]:felder.find(f=>f.typ==="v");
-  const zs={felder,apz:{feldId:af.id,lage:ai>=0?m.felder[ai].apz:"unten"},zp:[],hoehe:m.hoehe||1100,nb:alt&&alt.nb,hersteller:m.h,steuerbar:!!b.steuer,bedarf:{...b},modell:{h:m.h,hnr:m.hnr,name:m.name,bild:m.bild||""}};
+  const zs={felder,apz:{feldId:af.id,lage:ai>=0?m.felder[ai].apz:"unten"},zp:[],hoehe:m.hoehe||1100,nb:alt&&alt.nb,hersteller:m.h,steuerbar:zsBedarfSteuer(b),bedarf:{...b},modell:{h:m.h,hnr:m.hnr,name:m.name,bild:m.bild||""}};
   zsZpAusBedarf(zs,b); return zs; }
-function zsModellFenster(d){ const need=Math.max(1,zsBedarfZp(d.bedarf)), A=ZS_MODELLE.filter(m=>m.h===d.hersteller);
-  const passt=A.filter(m=>zsModPlaetze(m)>=need).sort((a,b)=>zsModPlaetze(a)-zsModPlaetze(b)||(a.hoehe||0)-(b.hoehe||0)), klein=A.filter(m=>zsModPlaetze(m)<need);
+const zsModAnz=(m,t)=>m.felder.filter(f=>f.typ===t).length;
+function zsModellFenster(d){ const b=d.bedarf, need=Math.max(1,zsBedarfZp(b)), vf=Math.max(1,+b.vf||1), mm=+b.mm||0, A=ZS_MODELLE.filter(m=>m.h===d.hersteller);
+  const ueber=m=>(zsModPlaetze(m)-need)+(zsModAnz(m,"v")-vf)*2+(zsModAnz(m,"m")-mm)*2;
+  const passt=A.filter(m=>zsModPlaetze(m)>=need&&zsModAnz(m,"v")>=vf&&zsModAnz(m,"m")>=mm).sort((a,c)=>ueber(a)-ueber(c)||(a.hoehe||0)-(c.hoehe||0)||(a.breite||0)-(c.breite||0));
+  const genau=passt.filter(m=>zsModPlaetze(m)===need&&zsModAnz(m,"v")===vf&&zsModAnz(m,"m")===mm), groesser=passt.filter(m=>!genau.includes(m));
+  const was=zsBedarfSumText(b).split(" · ").filter(x=>!/Zählerfeld/.test(x)).join(", ");
   const karte=m=>`<button type="button" class="aw-g zs-mod" data-act="awModell" data-v="${esc(m.hnr)}"${d.zs&&d.zs.modell&&d.zs.modell.hnr===m.hnr?' aria-pressed="true"':""}>${m.bild?`<span class="mat-foto aw-gb"><img src="${esc(typeof bildLokal==="function"?bildLokal(m.bild):m.bild)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('weg')"></span>`:`<span class="aw-gb zs-mod-svg">${zsSvg({felder:m.felder.map(x=>({...x,id:""})),apz:null},4,true)}</span>`}<b>${esc(m.name)}</b><small>${esc(zsModText(m))}</small><small class="zs-mod-nr">${esc(zsHerstText(m.h).split(" ")[0])} ${esc(m.hnr)}</small></button>`;
-  return {frage:"Welcher Schrank?",hinweis:A.length?`Passend für ${need} ${need===1?"Zählerplatz":"Zählerplätze"} – kleinster zuerst. Antippen übernimmt Felder, Höhe und APZ.`:"Für diesen Hersteller sind noch keine Modelle hinterlegt.",
-    inhalt:`${passt.length?`<div class="aw-grid">${passt.map(karte).join("")}</div>`:""}
-      ${klein.length?`<div class="aw-lbl">Zu wenige Zählerplätze</div><div class="aw-grid">${klein.map(karte).join("")}</div>`:""}
+  return {frage:"Welcher Schrank?",hinweis:passt.length?`Für ${was}. Antippen übernimmt Felder, Höhe und APZ.`:`Für ${was} gibt es kein fertiges Modell – „Ohne Modell“ stellt den Schrank aus deinen Angaben zusammen.`,
+    inhalt:`${genau.length?`<div class="aw-lbl">Passt genau</div><div class="aw-grid">${genau.map(karte).join("")}</div>`:""}
+      ${groesser.length?`<div class="aw-lbl">Größer</div><div class="aw-grid">${groesser.map(karte).join("")}</div>`:""}
       <div class="aw-liste" style="margin-top:14px">${awKachel("awModell","",awSvg("frei"),"Ohne Modell","Felder aus den Angaben zusammenstellen",d.zs&&!d.zs.modell)}</div>`}; }
 function zsBedarfFenster(b){ const st=(k,t,u)=>`<div class="zs-st"><span class="zs-stt"><b>${esc(t)}</b>${u?`<small>${esc(u)}</small>`:""}</span><button type="button" class="zs-stb" data-act="awBed" data-k="${k}" data-d="-1" aria-label="weniger">−</button><span class="zs-stn" id="awBed_${k}">${+b[k]||0}</span><button type="button" class="zs-stb" data-act="awBed" data-k="${k}" data-d="1" aria-label="mehr">+</button></div>`;
   return {frage:"Was soll dran?",hinweis:"Daraus stellt die App den Schrank zusammen – Felder, Höhe, APZ und Zählerplätze.",
     inhalt:`<div class="aw-lbl">Zählerplätze</div><div class="zs-sts">${ZS_BEDARF.map(([k,t,u])=>st(k,t,u)).join("")}</div>
-      <button type="button" class="zs-bp zs-steuer" data-act="awBedSteuer" aria-pressed="${!!b.steuer}"><span class="zs-bt"><b>Wärmepumpe oder Wallbox am Haushaltszähler</b><small>steuerbar nach §14a – braucht Steuersignalklemmleiste</small></span><span class="zs-bs">${b.steuer?"ja":"nein"}</span></button>
+      <div class="aw-lbl">Am Haushaltszähler</div><div class="zs-sts">${ZS_BEDARF_STEUER.map(([k,t,u])=>st(k,t,u)).join("")}</div>
       <div class="aw-lbl">Weitere Felder</div><div class="zs-sts">${ZS_BEDARF_FELD.map(([k,t,u])=>st(k,t,u)).join("")}</div>`,
-    fuss:`<span class="aw-fuss-info" id="awBedSum">${zsBedarfSumText(b)}</span><button type="button" class="btn-filled" data-act="awNeuWeiter">Weiter</button>`}; }
-const zsBedarfSumText=b=>{ const n=Math.max(1,zsBedarfZp(b)); return `${n} ${n===1?"Zählerplatz":"Zählerplätze"} · ${Math.ceil(n/2)} Zählerfeld${Math.ceil(n/2)===1?"":"er"}`; };
+    fuss:`<span class="aw-fuss-info zs-sum" id="awBedSum">${zsBedarfSumHtml(b)}</span><button type="button" class="btn-filled" data-act="awNeuWeiter">Weiter</button>`}; }
+const zsMz=(n,e,m)=>`${n} ${n===1?e:m}`;
+const zsBedarfSumText=b=>{ const n=Math.max(1,zsBedarfZp(b)), vf=Math.max(1,+b.vf||1), mm=+b.mm||0;
+  return [zsMz(n,"Zählerplatz","Zählerplätze"),zsMz(Math.ceil(n/2),"Zählerfeld","Zählerfelder"),zsMz(vf,"Verteilerfeld","Verteilerfelder"),mm?zsMz(mm,"Multimediafeld","Multimediafelder"):""].filter(Boolean).join(" · "); };
+/* Fuß: kleine Vorschau des Schranks plus Zusammenfassung – ändert sich mit jedem Plus/Minus */
+const zsBedarfSumHtml=b=>`${zsSvg(zsAusBedarf(b,null),0,true)}<span>${esc(zsBedarfSumText(b))}</span>`;
 function zsVorschlagFenster(d,ortPlz){ const zs=d.zs, nb=zs.nb, R=(k,t,u)=>`<button type="button" class="zs-zp" data-act="awSub" data-v="${k}"><span class="zs-zt"><b>${esc(t)}</b><small>${esc(u)}</small></span>${icon("chev")}</button>`;
   const nZ=zs.zp.filter(zsBelegt).length, nF=zs.zp.length-nZ, vf=zs.felder.filter(f=>f.typ==="v");
   return {frage:"Vorschlag",hinweis:"Aus deinen Angaben abgeleitet. Antippen zum Ändern – sonst „Passt so“.",
