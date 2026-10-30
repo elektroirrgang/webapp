@@ -6,6 +6,17 @@ const matNorm=t=>String(t||"").trim().toLowerCase().replace(/\s+/g," ").replace(
    tech: art ls|rcd|rcbo, char B/C, in (A), pole, te (Teilungseinheiten), typ (RCD-Typ), idn (mA) – daraus rechnet später der Verteiler. */
 const matHnr=n=>String(n||"").replace(/\s+/g,"").toUpperCase();
 const MAT_INFO={
+  /* SLS für die Sammelschiene im Zählerplatz (NAR) und Überspannungsschutz Typ 1+2 – Auswahl im Zählerschrank */
+  HTS335E:{bild:"https://assets.hager.com/step-content/P/HA_16230307/11/std.lang.all/HTS335E.webp",tech:{art:"sls",char:"E",in:35,pole:3}},
+  HTS340E:{bild:"https://assets.hager.com/step-content/P/HA_16230309/11/std.lang.all/HTS340E.webp",tech:{art:"sls",char:"E",in:40,pole:3}},
+  HTS350E:{bild:"https://www.zaehlerschrank24.de/pub/media/catalog/product/cache/e5e5f169cf45d7fe32369499586660c4/h/a/hager-hts350e-sls-schalter-50a-mit-adapter_2nd.jpg",tech:{art:"sls",char:"E",in:50,pole:3}},
+  HTS363E:{bild:"https://assets.hager.com/step-content/P/HA_16230325/11/std.lang.all/HTS363E.webp",tech:{art:"sls",char:"E",in:63,pole:3}},
+  "2CDS781001R4352":{bild:"https://www.zaehlerschrank24.de/pub/media/catalog/product/cache/e5e5f169cf45d7fe32369499586660c4/a/b/abb-sls-schalter-3x1-polig-35a-s751-3-e35-2cds781001r4352_1_3nd.jpg",tech:{art:"sls",char:"E",in:35,pole:3}},
+  SPA700Z:{bild:"https://assets.hager.com/step-content/P/HA_107204/11/std.lang.all/SPA700Z.webp",tech:{art:"uess"}},
+  SPA701Z:{bild:"https://assets.hager.com/step-content/P/HA_107203/11/std.lang.all/SPA701Z.webp",tech:{art:"uess"}},
+  "2CTB815799R2800":{bild:"https://www.zaehlerschrank24.de/pub/media/catalog/product/cache/e5e5f169cf45d7fe32369499586660c4/a/b/abb-ueberspannungsableiter-ovr-zp-3n-75-255-6a-sicherung-vorn.jpg",tech:{art:"uess"}},
+  "2CTB815799R1100":{bild:"https://www.zaehlerschrank24.de/pub/media/catalog/product/cache/e5e5f169cf45d7fe32369499586660c4/a/b/abb-_berspannungsableiter-ovr-zp-t1-t2-3n-7.5-255-2ctb815799r1100_1_1.jpg",tech:{art:"uess"}},
+  A9L16482:{bild:"https://eshop-ae.se.com/media/catalog/product/cache/1e79a9177ab77655b8cab8582c25a9a3/a/9/a9l16482_2.jpg",tech:{art:"uess"}},
   MBS110:{bild:"https://assets.hager.com/step-content/P/HA_16255176/11/std.lang.all/MBS110.webp",tech:{art:"ls",char:"B",in:10,pole:1,te:1}},
   MBS116:{bild:"https://assets.hager.com/step-content/P/HA_16255195/11/std.lang.all/MBS116.webp",tech:{art:"ls",char:"B",in:16,pole:1,te:1}},
   MBS120:{bild:"https://assets.hager.com/step-content/P/HA_16255196/11/std.lang.all/MBS120.webp",tech:{art:"ls",char:"B",in:20,pole:1,te:1}},
