@@ -83,9 +83,10 @@ function legView(L){ const E=legE(L);
       ${legFeld(L,"anschrift","Anschrift",{ph:"Straße, PLZ Ort"})}`}
       <div class="reihe2"><div class="tf fl"><select id="f_leg_netz" data-leg="netz" ${L.fertig?"disabled":""}>${LEG_NETZ.map(n=>`<option value="${esc(n)}" ${n===(L.netz||"")?"selected":""}>${esc(n||"nicht angeben")}</option>`).join("")}</select><label for="f_leg_netz">Netzform</label><span class="arr">${icon("drop")}</span></div>${legWerSel(L)}</div>
     </div></section>
+    ${(L.art==="hv"||L.zs)&&typeof zsKarte==="function"?zsKarte(L):""}
     ${L._geb&&typeof qrKarte==="function"?qrKarte(L):""}
     <section class="card"><div class="card-kopf leg-kopf"><h3>Stromkreise${E.length?` <small class="leg-n">${legSkZahl(L)}</small>`:""}</h3>${E.length?seg("legAnsicht",legAnsicht(),[["liste","Liste"],["verteiler","Verteiler"]],"leg-seg"):""}</div>
-      ${E.length?(legAnsicht()==="verteiler"?legVtView(L):legListeView(L)):`<p class="meta">Noch keine Stromkreise. Unten rechts über „Stromkreis“ anlegen – mit „Nächster“ im Fenster geht es Zeile für Zeile weiter, die Kennzeichnung zählt mit.</p>`}
+      ${E.length?(legAnsicht()==="verteiler"?legVtView(L):legListeView(L)):`<p class="meta">Noch keine Geräte. Unten rechts über „Gerät“ einsetzen – Gerät aus der Materialliste antippen, die Kennzeichnung zählt mit.</p>`}
     </section>
     <div class="leg-fuss">${canEdit(L)?`<button type="button" class="btn-tonal leg-del" data-act="legDelAsk">${icon("del")}Löschen</button>`:""}<span style="flex:1"></span>${L.fertig?`<button type="button" class="btn-tonal" data-act="legFertig" data-v="0">${icon("edit")}Wieder öffnen</button>`:`<button type="button" class="btn-tonal" data-act="legFertig" data-v="1">${icon("done")}Fertig</button>`}<button type="button" class="btn-filled" data-act="legPdf">${icon("pdf")}PDF erstellen</button></div>
   </div>`; }

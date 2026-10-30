@@ -140,7 +140,8 @@ function demoZfh(r,P,vor,tag){
     notiz:"Zweifamilienhaus Baujahr 1994, Elektrik 2025 erneuert. Zwei Haushaltszähler (Wohnung EG und OG), Allgemeinstrom läuft über den Zähler der Wohnung EG. Netzbetreiber: Gemeindewerke Nümbrecht."},P.bu,vor(45));
   const ET=[["kg","KG",-1,["Hausanschlussraum","Heizungsraum","Waschküche","Keller Wohnung EG","Keller Wohnung OG","Treppenhaus KG"]],["eg","EG",0,["Treppenhaus","Flur","Küche","Wohnen","Schlafen","Bad"]],["og","OG",1,["Flur OG","Küche OG","Wohnen OG","Schlafen OG","Kind OG","Bad OG"]]];
   const R={}; const etagen=ET.map(([id,name,ebene,L])=>({id:"dz-"+id,name,ebene,raeume:L.map((n,i)=>{ const rid=`dz-${id}-${i+1}`; R[n]=rid; return {id:rid,name:n}; })}));
-  const verteiler=[{id:"dz-hv",name:"Zählerschrank / HV",raumId:R["Hausanschlussraum"],qr:"BK3HV8",netz:"TN-C-S | 230/400 V",fertig:true,stand:tag(-120),ersteller:P.mp.name},
+  const verteiler=[{id:"dz-hv",name:"Zählerschrank / HV",raumId:R["Hausanschlussraum"],qr:"BK3HV8",netz:"TN-C-S | 230/400 V",art:"hv",montage:"up",reihen:4,teReihe:12,
+    zs:{felder:[{id:"dz-f1",typ:"z"},{id:"dz-f2",typ:"z"},{id:"dz-f3",typ:"v"},{id:"dz-f4",typ:"a"},{id:"dz-f5",typ:"m"}],zp:[{id:"dz-zp1",feldId:"dz-f1",zweck:"haushalt",art:"ehz",sls:"E35",nr:"1EBZ01 0012 3456",bez:"Wohnung EG"},{id:"dz-zp2",feldId:"dz-f2",zweck:"haushalt",art:"ehz",sls:"E35",nr:"1EBZ01 0012 3457",bez:"Wohnung OG"}]},fertig:true,stand:tag(-120),ersteller:P.mp.name},
     {id:"dz-uv1",name:"UV Wohnung EG",raumId:R["Flur"],vonVId:"dz-hv",vonAbgang:"Q 1",qr:"BK3EG8",netz:"TN-S | 230/400 V",fertig:true,stand:tag(-120),ersteller:P.mp.name},
     {id:"dz-uv2",name:"UV Wohnung OG",raumId:R["Flur OG"],vonVId:"dz-hv",vonAbgang:"Q 2",qr:"BK3UG8",netz:"TN-S | 230/400 V",fertig:true,stand:tag(-118),ersteller:P.ms.name}];
   const rcds=[["hv1","dz-hv"],["e1","dz-uv1"],["e2","dz-uv1"],["o1","dz-uv2"],["o2","dz-uv2"]].map(([id,vId])=>({id:"dz-r-"+id,vId,nr:"",typ:"A",in:"40",idn:"30"}));
