@@ -15,7 +15,7 @@ function zsGeo(zs,ed){ const n=zs.felder.length, H=zsHoeheMm(zs), MB=ed===false?
   zsSchraenke(n).forEach(m=>{ const B=m*ZSZ.FW+2*ZSZ.WAND; schr.push({x,B,m}); for(let k=0;k<m;k++) fx.push(x+ZSZ.WAND+k*ZSZ.FW); x+=B+ZSZ_LUECKE; });
   const vw=x-ZSZ_LUECKE+ZSZ.MR, vh=ZSZ.MT+H+MB;
   return {n,H,vw,vh,MB,schr,fx,felder:fx.map(v=>({links:v/vw*100,breite:ZSZ.FW/vw*100})),oben:ZSZ.MT/vh*100,hoehe:(H+MB)/vh*100}; }
-function zsZeichnung(zs,reihen,aktiv,selFeld){
+function zsZeichnung(zs,reihen,aktiv,selFeld,opt){
   const ed=selFeld!=null, C=ZSZ_F, g=zsGeo(zs,ed), F=zs.felder, FW=ZSZ.FW, x0=ZSZ.ML, y0=ZSZ.MT, fy=y0+ZSZ.WAND, fh=g.H-2*ZSZ.WAND, hoch=g.H===1400, k1=v=>(+v).toFixed(1);
   const R=(x,y,w,h,f,s,sw,rx,ex)=>`<rect x="${k1(x)}" y="${k1(y)}" width="${k1(Math.max(0,w))}" height="${k1(Math.max(0,h))}"${rx?` rx="${rx}"`:""} fill="${f||"none"}"${s?` stroke="${s}" stroke-width="${sw||1}"`:""}${ex||""}/>`;
   const T=(x,y,t,o={})=>`<text x="${k1(x)}" y="${k1(y)}" font-size="${o.s||22}" font-weight="${o.w||600}" fill="${o.f||C.text}" text-anchor="${o.a||"middle"}"${o.ex||""}>${t}</text>`;
@@ -45,17 +45,13 @@ function zsZeichnung(zs,reihen,aktiv,selFeld){
       if(an) s+=R(x+(p?128:6),fy+(455+off)*fh/(1050+off),116,287*fh/(1050+off),C.akt,null,0,3,` fill-opacity=".16"`);
       const kz=zz?(zz.zweck==="frei"?"frei":ZSZ_KURZ[zz.zweck]||""):""; if(kz) s+=T(x+(p?190:63),fy+(700+off)*fh/(1050+off),kz,{s:22,w:700,f:zz.zweck==="frei"?"#888":"#333"});
       /* SLS mit Nennstrom */
-      const amp=zz&&zz.sls&&zz.sls!=="keiner"?zz.sls.slice(1):"", ger=zsSlsGeraet(zs,zz), gb=ger&&ger.bild?zsBildUrl(ger.bild):"";
-      if(amp&&gb){ const sx=p?x+FW-5-100:x+2, sy=fy+(790+off)*fh/(1050+off), sw=100, sh=150;
-        s+=R(sx,sy,sw,sh,C.weiss,"#BDBDBD",1,6,` filter="url(#zsWeich2)"`)+`<image href="${gb}" x="${k1(sx+4)}" y="${k1(sy+4)}" width="${sw-8}" height="${sh-34}" preserveAspectRatio="xMidYMid meet"/>`
-          +T(sx+sw/2,sy+sh-8,amp+" A",{s:22,w:800,f:"#111"}); }
-      else if(amp){ const sx=p?x+FW-5-96:x, sy=fy+(795+off)*fh/(1050+off), sw=96, sh=170;
+      const amp=zz&&zz.sls&&zz.sls!=="keiner"?zz.sls.slice(1):"", ger=zsSlsGeraet(zs,zz);
+      if(amp){ const sx=p?x+FW-5-96:x, sy=fy+(795+off)*fh/(1050+off), sw=96, sh=170;
         s+=R(sx+1,sy+2,sw,sh,"#000",null,0,2,` fill-opacity=".18" filter="url(#zsWeich)"`)+`<svg x="${k1(sx)}" y="${k1(sy)}" width="${sw}" height="${sh}" viewBox="0 0 ${sw} ${sh}"><image href="${B}sls-schalter.png" x="${k1(-sw*.075)}" y="${k1((sh-sw*1.15*138/94)/2)}" width="${k1(sw*1.15)}" height="${k1(sw*1.15*138/94)}"/></svg>`
-          +T(sx+sw/2,sy+58,amp+"A",{s:30,w:800,f:"#111"}); } });
+          +T(sx+sw/2,sy+58,amp+"A",{s:30,w:800,f:"#111"})+(ger?T(sx+sw/2,sy+24,ger.h==="abb"?"ABB":"Hager",{s:15,w:700,f:"#555"}):""); } });
     /* Überspannungsschutz einmal im Schrank, beim ersten Zählerplatz */
     if(!uess&&zps.length){ uess=true; const u=zsUssGeraet(zs), by=fy+fh-31.8*fh/1050;
-      if(u&&u.bild){ const bx=x+(n>1?84:100), bw=n>1?82:90, bh=150, yy=fy+fh-40-bh; s+=R(bx,yy,bw,bh,C.weiss,"#BDBDBD",1,6,` filter="url(#zsWeich2)"`)+`<image href="${zsBildUrl(u.bild)}" x="${k1(bx+4)}" y="${k1(yy+4)}" width="${bw-8}" height="${bh-30}" preserveAspectRatio="xMidYMid meet"/>`+T(bx+bw/2,yy+bh-9,"ÜSS",{s:18,w:800,f:"#C8102E"}); }
-      else if(u) s+=`<image href="${B}usps.png" x="${k1(x+93)}" y="${k1(by-214)}" width="59" height="202"/>`; }
+      if(u) s+=`<image href="${B}usps.png" x="${k1(x+93)}" y="${k1(by-214)}" width="59" height="202"/>`; }
     /* Zählernummer */
     zps.forEach((_,p)=>{ const nr=zn+p+1, an=aktiv&&aktiv===`${f.id}:${p}`; s+=R(x+(p?FW-80:0),fy,80,70,an?C.akt:"#AAAAAA",null,0,4)+T(x+(p?FW-40:40),fy+50,nr,{s:40,w:600,f:an?C.weiss:"#222"}); });
     zn+=n; return s; };
@@ -76,8 +72,22 @@ function zsZeichnung(zs,reihen,aktiv,selFeld){
     +L(x0-40,y0+2,x0-12,y0+2,C.grau,1.2)+T(0,0,`Höhe ${g.H} mm`,{s:22,w:400,f:C.grau,a:"end",ex:` transform="translate(${x0-20} ${y0+16}) rotate(-90)"`})+T(x0-26,y0+250,"↓",{s:22,w:400,f:C.grau});
   const quelle=T(g.vw-ZSZ.MR,g.vh-8,"Feldgrafiken: zaehlerschrank24.de",{s:16,w:400,f:"#9A9A9A",a:"end"});
   const gehaeuse=g.schr.map(c=>R(c.x,y0,c.B,g.H,C.weiss,"#6A6A6A",2.5,2)+R(c.x+9,y0+9,c.B-18,g.H-18,"none","#B0B0B0",1)).join("");
-  return `<svg class="zs-svg zs-z" viewBox="0 0 ${g.vw} ${g.vh}" style="--n:${g.n+(g.schr.length-1)*.3};max-width:${(g.n+(g.schr.length-1)*.3)*124}px" font-family="'Open Sans',Manrope,system-ui,sans-serif" aria-hidden="true">`
+  const mini=opt&&opt.mini, vb=mini?`${x0-6} ${y0-6} ${g.vw-x0-ZSZ.MR+12} ${g.H+12}`:`0 0 ${g.vw} ${g.vh}`;
+  return `<svg class="zs-svg zs-z${mini?" klein":""}" viewBox="${vb}" style="--n:${g.n+(g.schr.length-1)*.3};max-width:${(g.n+(g.schr.length-1)*.3)*124}px" font-family="'Open Sans',Manrope,system-ui,sans-serif" aria-hidden="true">`
     +`<defs><filter id="zsWeich" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4"/></filter><filter id="zsWeich2" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity=".35"/></filter><pattern id="zsLoch" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#FFFFFF"/><circle cx="6" cy="6" r="2.4" fill="#9A9A9A"/></pattern>`
     +`<pattern id="zsLochR" width="9" height="8" patternUnits="userSpaceOnUse"><rect width="9" height="8" fill="#FFFFFF"/><circle cx="2.2" cy="2" r="1.7" fill="none" stroke="#8A8A8A" stroke-width=".7"/><circle cx="6.7" cy="6" r="1.7" fill="none" stroke="#8A8A8A" stroke-width=".7"/></pattern>`
     +`<linearGradient id="zsSchatten" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D0D0D0" stop-opacity="0"/><stop offset="1" stop-color="#C4C4C4" stop-opacity=".95"/></linearGradient></defs>`
-    +masse+gehaeuse+inn+quelle+`</svg>`; }
+    +(mini?"":masse)+gehaeuse+inn+(mini?"":quelle)+`</svg>`; }
+
+/* Zeichnung mit antippbaren Bereichen: Felder, Zählerplätze (inkl. SLS) und APZ.
+   akt = {feld:i=>'data-act=…', zp:(i)=>'…', apz:()=>'…'} – fehlende Einträge erzeugen keine Fläche. */
+function zsKlick(zs,reihen,aktiv,akt){ const g=zsGeo(zs,false), F=zs.felder, FW=ZSZ.FW, fy=ZSZ.MT+ZSZ.WAND, fh=g.H-2*ZSZ.WAND, hoch=g.H===1400, nb=g.n+(g.schr.length-1)*.3;
+  const pct=(x,y,w,h)=>`left:${(x/g.vw*100).toFixed(2)}%;top:${(y/g.vh*100).toFixed(2)}%;width:${(w/g.vw*100).toFixed(2)}%;height:${(h/g.vh*100).toFixed(2)}%`;
+  const off=hoch?300:0, Y=mm=>fy+mm*fh/(1050+off), QH=hoch?2154:1682, A0=hoch?1636:1158, sk=fh/QH; let h="", zi=0;
+  F.forEach((f,i)=>{ const x=g.fx[i];
+    if(akt.feld) h+=`<button type="button" class="feld" ${akt.feld(i)} aria-label="Feld ${i+1}" style="${pct(x,fy,FW,fh)}"></button>`;
+    if(f.typ==="z") for(let p=0;p<Math.min(2,f.n||1);p++){ const k=zs.zp.findIndex(q=>q.feldId===f.id&&(q.pos||0)===p);
+      if(k>=0&&akt.zp){ h+=`<button type="button" class="zp" ${akt.zp(k)} aria-label="Zähler ${k+1}" style="${pct(x+(p?128:6),Y(455+off),116,Y(742+off)-Y(455+off))}"></button>`;
+        h+=`<button type="button" class="zp" ${akt.zp(k)} aria-label="SLS Zähler ${k+1}" style="${pct(x+(p?FW-101:0),Y(790+off),101,Y(965+off)-Y(790+off))}"></button>`; } }
+    if(akt.apz&&zs.apz&&zs.apz.feldId===f.id){ const ob=zs.apz.lage==="oben"; h+=`<button type="button" class="apz" ${akt.apz()} aria-label="APZ" style="${pct(x,ob?fy:fy+A0*sk,FW,(QH-A0)*sk)}"></button>`; } });
+  return `<div class="zs-ki" style="--n:${nb}">${zsSvg(zs,reihen,false,aktiv)}<div class="zs-ki-h">${h}</div></div>`; }
