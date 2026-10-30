@@ -22,7 +22,7 @@ function vtEintraege(g,vId){ const R=g.rcds.filter(r=>r.vId===vId), S=g.stromkre
 /* Virtuelle Legende: alles, was der Editor braucht, aus dem Gebäude */
 function vtL(gid,vId){ const g=vtGeb(gid), v=g&&g.verteiler.find(x=>x.id===vId); if(!v) return null; const o=ecOrt(g.ortId), k=o.kunde;
   return {_geb:gid,_v:vId,id:"vt-"+vId,titel:v.name||"Verteiler",kunde:k?k.name:"",anschrift:adrText(o.standort)||adrText(k)||"",kundeId:k?k.id:"",standortId:o.standort?o.standort.id:"",ortId:g.ortId,
-    netz:v.netz||"",ersteller:v.ersteller||"",stand:v.stand||"",fertig:!!v.fertig,art:v.art,montage:v.montage,reihen:v.reihen,zs:v.zs,teReihe:v.teReihe,teMm:v.teMm,eintraege:vtEintraege(g,vId),updated:v.updated,createdBy:v.createdBy}; }
+    netz:v.netz||"",ersteller:v.ersteller||"",stand:v.stand||"",fertig:!!v.fertig,art:v.art,montage:v.montage,reihen:v.reihen,zs:v.zs,gerHerst:v.gerHerst,teReihe:v.teReihe,teMm:v.teMm,eintraege:vtEintraege(g,vId),updated:v.updated,createdBy:v.createdBy}; }
 /* Zurückschreiben in das Gebäude (vorhandene Felder der Prüfung wie Leitung oder Messwerte bleiben erhalten) */
 function vtSchreiben(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(!v) return;
   Object.assign(v,{name:L.titel||v.name,netz:L.netz||"",ersteller:L.ersteller||"",stand:L.stand||"",fertig:!!L.fertig,teReihe:L.teReihe,teMm:L.teMm,updated:Date.now()}); if(L.zs) v.zs=L.zs;
