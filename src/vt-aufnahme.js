@@ -38,10 +38,11 @@ function awNeuStart(kind,id){ const s=kind==="standorte"&&standortOf(id), k=kind
   AW={typ:"neu",kid:k?k.id:"",ort:s?s.id:k&&!ss.length?"k:"+k.id:"",ortWahl:ss.length>0,i:0,d:{art:"",montage:"",reihen:0,name:"",netz:null},unter:k?(s?[k.name,s.name].filter(Boolean).join(" · "):k.name):"Ohne Kunde"};
   awNeuZeigen(); }
 function awNeuSchritte(){ const hv=AW.d.art==="hv", zs=AW.d.zs;
-  return ["art","montage",...(hv?["aufbau",...(AW.d.zsEigen?["felder"]:[])]:[]),"reihen",...(AW.ortWahl?["ort"]:[]),"name","netz",...(hv&&zs?zs.zp.map((_,i)=>"zp"+i):[])]; }
+  return ["art","montage",...(hv?["aufbau",...(AW.d.zsEigen?["felder","apz"]:[])]:[]),"reihen",...(AW.ortWahl?["ort"]:[]),"name","netz",...(hv&&zs?zs.zp.map((_,i)=>"zp"+i):[])]; }
 function awNeuZeigen(){ const S=awNeuSchritte(), sk=S[AW.i], d=AW.d, R={titel:"Neuer Verteiler",unter:AW.unter,schritt:AW.i,schritte:S.length};
   if(sk==="aufbau") return awRahmen({...R,...zsAufbauFenster(d.zs)});
   if(sk==="felder") return awRahmen({...R,...zsFelderFenster(d.zs,4,"awNeuWeiter","Weiter")});
+  if(sk==="apz") return awRahmen({...R,...zsApzFenster(d.zs)});
   if(sk&&sk.startsWith("zp")){ const n=+sk.slice(2), letzt=AW.i===S.length-1; return awRahmen({...R,...zsZpFenster(d.zs,n,"awNeuWeiter",letzt?"Anlegen":"Weiter")}); }
   if(sk==="art") return awRahmen({...R,frage:"Was für ein Verteiler?",hinweis:"Antippen – es geht sofort weiter.",inhalt:`<div class="aw-liste">${AW_ART.map(([v,t,s])=>awKachel("awNeuW",v,awSvg(v),t,s,d.art===v)).join("")}</div>`});
   if(sk==="montage") return awRahmen({...R,frage:"Wie ist er montiert?",inhalt:`<div class="aw-liste">${awKachel("awNeuW","up",awSvg("up"),"Unterputz","in der Wand oder Hohlwand",d.montage==="up")}${awKachel("awNeuW","ap",awSvg("ap"),"Aufputz","auf der Wand",d.montage==="ap")}</div>`});
