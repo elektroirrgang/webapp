@@ -61,51 +61,65 @@ function zsZeichnung(zs,reihen,aktiv,selFeld){
   const KAB=[C.br,C.sw,C.gr,C.bl,C.gn];
   let zn=0, nv=0, nm=0, uess=false;
 
-  const zaehler=(f,x)=>{ const n=f.n||1, aH=fh*300/1050, rH=fh*150/1050, nH=fh*300/1050, zH=fh-aH-rH-nH, ix=x+18, iw=FW-36;
+  /* Zählerfeld wie im echten Schrank (Maße in mm ab Feldoberkante, auf 1050 mm Feldhöhe bezogen):
+     Zählernummer · N/PE-Zuleitung · Abdeckstreifen · Hauptleitungsabzweigklemme · BKE-I-Anschlussblöcke ·
+     Zählerplatz (BKE-I ohne Zähler – die Zähler sehen je Netzbetreiber anders aus) · NAR mit SLS, ÜSS und Sammelschiene */
+  const zaehler=(f,x)=>{ const n=f.n||1, Y=mm=>fy+mm*fh/1050, X=mm=>x+mm;
     const zps=Array.from({length:n},(_,p)=>zs.zp&&zs.zp.find(q=>q.feldId===f.id&&(q.pos||0)===p)); let s="";
-    /* Zuleitung N und PE senkrecht durch den oberen Anschlussraum */
-    s+=L(ix+iw*.42,fy+2,ix+iw*.42,fy+aH-6,C.bl,3)+L(ix+iw*.42+6,fy+2,ix+iw*.42+6,fy+aH-6,C.gn,3)+L(ix+iw*.42+6,fy+2,ix+iw*.42+6,fy+aH-6,C.ge,3,` stroke-dasharray="7 7"`);
-    /* AAR: Abgangsklemmen, Hauptschalter je Zähler, RJ45, Steuerklemmen */
-    const rh=aH/2, ky=fy+rh/2-10; s+=schiene(ix+iw*.5,ky+16,iw*.5);
-    let kx=ix+iw*.5+4; for(let p=0;p<n&&p<2;p++){ KAB.forEach((c,k)=>{ s+=klemme(kx+k*10.5,ky,9.5,k<3?C.mittel:c,k===4); }); kx+=56; }
-    s+=streifen(x,fy+rh-13);
-    const gy=fy+rh+rh/2-45; s+=schiene(ix,gy+39,iw);
-    let gx=ix+2; for(let p=0;p<n;p++){ s+=geraet(gx,gy,3,{t:n>1?`HS ${zn+p+1}`:"HS"}); gx+=56; }
-    if(gx+18<=ix+iw){ s+=geraet(gx,gy,1,{rj:1}); gx+=20; }
-    if(gx+36<=ix+iw) s+=geraet(gx,gy,2,{kl:1});
-    s+=streifen(x,fy+aH-13);
-    /* RfZ */
-    const ry=fy+aH; s+=schiene(ix,ry+rH/2-6,iw)+T(ix+4,ry+30,"RfZ",{s:15,f:C.grau,a:"start"});
-    [[ix+46,4,"SMGW"],[ix+46+78,5,"Steuerbox"]].forEach(([bx,te,t])=>{ if(bx+te*18<=ix+iw+2) s+=R(bx,ry+rH/2-40,te*18-4,80,"none","#777",1.2,3,` stroke-dasharray="6 4"`)+T(bx+te*9-2,ry+rH/2-22,t,{s:12,w:600,f:C.grau}); });
-    s+=streifen(x,ry+rH-13);
-    /* Zählerplätze (BKE-I) */
-    const zy=ry+rH, zw=(iw-(n-1)*8)/n;
-    zps.forEach((zz,p)=>{ zn++; const zx=ix+p*(zw+8), an=aktiv&&aktiv===`${f.id}:${p}`, frei=zz&&!zsBelegt(zz), drei=zz&&zz.art==="3pkt";
-      s+=R(zx,zy+16,zw,zH-30,C.weiss,C.lin,1,2);
-      if(frei){ s+=R(zx+12,zy+40,zw-24,zH-76,"none","#777",1.4,6,` stroke-dasharray="8 6"`)+T(zx+zw/2,zy+zH/2+8,"frei",{s:20,f:C.grau}); }
-      else { const mw=Math.min(zw-20,112), mh=(zH-30)*.84, mx=zx+(zw-mw)/2, my=zy+16+(zH-30-mh)/2+4;
-        s+=R(mx+mw*.12,my-10,mw*.76,16,C.mittel,C.lin,1,3); for(let k=0;k<5;k++) s+=R(mx+mw*.18+k*mw*.13,my-6,mw*.06,8,"#666",null,0,1);
-        s+=R(mx,my,mw,mh,an?C.aktH:C.weiss,an?C.akt:"#777",1.3,8);
-        if(drei){ s+=R(mx+10,my+mh*.12,mw-20,mh*.2,C.hell,C.lin,1,3); for(let k=0;k<6;k++) s+=R(mx+16+k*(mw-32)/6,my+mh*.15,(mw-32)/6-3,mh*.14,k===5?C.rot:C.sw,null,0,1);
-          s+=O(mx+mw/2,my+mh*.58,Math.min(mw,mh)*.17,C.hell,C.lin,1.2)+L(mx+mw/2-Math.min(mw,mh)*.15,my+mh*.58,mx+mw/2+Math.min(mw,mh)*.15,my+mh*.58,C.rot,2); }
-        else { s+=R(mx+9,my+mh*.12,mw-18,mh*.2,"#5B636C",null,0,3)+R(mx+13,my+mh*.12+4,mw-26,mh*.2-8,"#B5DCC0",null,0,2)
-            +T(mx+mw/2,my+mh*.12+mh*.1+5,"012345,6",{s:Math.max(10,Math.min(15,(mw-30)/6)),w:700,f:"#1E2B22",ex:` font-family="ui-monospace,monospace"`})
-            +T(mx+mw-12,my+mh*.42,"kWh",{s:11,w:600,f:C.grau,a:"end"})+O(mx+mw*.28,my+mh*.52,3.6,C.rot)+O(mx+mw*.66,my+mh*.56,10,C.weiss,"#666",1.4)+O(mx+mw*.66,my+mh*.56,3.5,C.sw)
-            +L(mx+12,my+mh*.74,mx+mw-12,my+mh*.74,C.fein,1.2)+L(mx+12,my+mh*.8,mx+mw*.6,my+mh*.8,C.fein,1.2); }
-        s+=T(mx+mw/2,my+mh-10,drei?"3-Punkt":"eHZ",{s:13,w:700,f:C.grau})+R(mx+mw*.3,my+mh-2,mw*.4,9,C.mittel,C.lin,1,2); } });
-    s+=streifen(x,zy+zH-13);
-    /* NAR: dunkle Tragholme, Sammelschiene, SLS je Zählerplatz, ÜSS Typ 1 einmal im Schrank */
-    const ny=zy+zH, b0=ny+34, bs=(nH-86)/4;
-    s+=R(ix-2,ny+12,14,nH-44,C.dunkel,null,0,2)+R(ix+iw-12,ny+12,14,nH-44,C.dunkel,null,0,2);
-    for(let k=0;k<5;k++) s+=R(ix+12,b0+k*bs,iw-24,10,C.or,C.orK,.8,1.5);
-    let sx=ix+16; const sy=ny+nH*.3;
-    zps.forEach(zz=>{ const a=zz&&zz.sls&&zz.sls!=="keiner"?zz.sls.slice(1)+" A":"SLS"; for(let k=0;k<3;k++) s+=L(sx+9+k*18,sy,sx+9+k*18,ny+2,KAB[k],2.4); s+=geraet(sx,sy,3,{t:a}); sx+=58; });
-    if(!uess){ uess=true; s+=L(sx+9,sy,sx+9,ny+2,C.bl,2.4)+geraet(sx,sy,2,{rot:1,t:"ÜSS"}); sx+=40; }
-    s+=L(ix+iw-30,ny+2,ix+iw-30,fy+fh-2,C.gn,3)+L(ix+iw-30,ny+2,ix+iw-30,fy+fh-2,C.ge,3,` stroke-dasharray="7 7"`);
+    const halb=[[18,112],[135,233]];
+    /* oberer Abschluss */
+    s+=R(X(14),Y(2),222,16,"#FCFCFC",C.lin,.8)+[30,60,90,160,190,220].map(d=>O(X(d),Y(10),2,C.weiss,"#6E6E6E",.8)).join("");
+    /* Zuleitung N und PE senkrecht, graue Steuerleitung */
+    for(let p=0;p<Math.max(1,n);p++){ const bx=p?125:0; s+=L(X(bx+77),Y(18),X(bx+77),Y(292),C.bl,3.4)+L(X(bx+84),Y(18),X(bx+84),Y(292),C.gn,3.4)+L(X(bx+84),Y(18),X(bx+84),Y(292),C.ge,3.4,` stroke-dasharray="8 8"`); }
+    s+=L(X(126),Y(30),X(126),Y(290),"#9A9A9A",2,` stroke-dasharray="14 4"`);
+    s+=streifen(x,Y(88));
+    /* Hauptleitungsabzweigklemme je Zählerplatz, Leitungen nach unten in den BKE-Block */
+    for(let p=0;p<n;p++){ const hx=X(27+p*125), hy=Y(198);
+      [0,1,2].forEach(k=>{ s+=`<path d="M${k1(hx+8+k*14)} ${k1(hy+42)}C${k1(hx+8+k*14)} ${k1(hy+62)} ${k1(hx-6+k*12)} ${k1(Y(272))} ${k1(hx-6+k*12)} ${k1(Y(300))}" stroke="${C.br}" stroke-width="5" fill="none"/>`; }); }
+    s+=streifen(x,Y(208));
+    for(let p=0;p<n;p++){ const hx=X(27+p*125), hy=Y(198); s+=R(hx,hy,56,44,"#2E2E2E",null,0,3); for(let r=0;r<3;r++) for(let c=0;c<4;c++) s+=R(hx+4+c*13,hy+4+r*13,10,10,C.weiss,null,0,2.5); }
+    /* BKE-I-Anschlussblöcke oben und darunter: Zählerplatz-Klemmen links, rechts Steueranschlüsse oder zweiter Platz */
+    const block=(y,hh)=>{ let t=""; halb.forEach(([a,b],p)=>{ const zp=p<n; t+=R(X(a),y,b-a,hh,C.weiss,C.lin,1,2);
+        if(zp){ [[0,C.br],[1,C.br],[2,C.bl],[3,C.gn]].forEach(([k,c])=>{ const cx=X(a+12+k*18), cy=y+hh*.55; t+=R(cx-6,cy-9,12,18,C.weiss,"#666",.9,2)+L(cx,y+2,cx,cy-9,c,4)+(c===C.gn?L(cx,y+2,cx,cy-9,C.ge,4,` stroke-dasharray="4 4"`):""); });
+          t+=R(X(b-26),y+hh*.25,18,hh*.5,C.weiss,"#666",.9,2); }
+        else { [[0,0],[1,0],[0,1],[1,1]].forEach(([c,r])=>{ t+=R(X(a+28+c*30),y+hh*.2+r*hh*.38,22,hh*.26,C.weiss,"#555",.9,3); }); t+=R(X(a+8),y+hh*.35,12,hh*.3,C.weiss,"#666",.9,2); } }); return t; };
+    s+=block(Y(292),Y(358)-Y(292));
+    s+=R(X(10),Y(358),230,Y(388)-Y(358),C.weiss,C.lin,1,2)+L(X(12),Y(366),X(238),Y(366),"#DADADA",1)+L(X(124),Y(358),X(124),Y(388),C.lin,.8);
+    s+=block(Y(396),Y(450)-Y(396));
+    /* Zählerplätze */
+    halb.forEach(([a,b],p)=>{ const w=b-a, ya=Y(455), yb=Y(745);
+      if(p>=n){ s+=R(X(a+4),ya,w-8,yb-ya,C.weiss,C.lin,1,6)+R(X(a+10),ya+8,w-20,yb-ya-16,"none","#D0D0D0",1,4); return; }
+      const zz=zps[p], an=aktiv&&aktiv===`${f.id}:${p}`, frei=zz&&!zsBelegt(zz), ym=Y(650);
+      s+=R(X(a),ya,w,yb-ya,an?C.aktH:C.weiss,an?C.akt:C.lin,an?1.8:1,2);
+      /* BKE-I-Adapter */
+      s+=R(X(a+6),ya+6,w-12,ym-ya-10,an?C.aktH:C.weiss,"#666",1,2)+R(X(a+8),ya+10,30,18,C.weiss,"#666",.9,1)+O(X(a+44),ya+19,3,C.weiss,"#666",.9);
+      [0,1,2,3].forEach(k=>{ s+=R(X(a+18+k*18),ya+40,9,26,C.weiss,"#666",.9,4); });
+      s+=`<path d="M${k1(X(a+26))} ${k1(ya+74)}c10 18 -10 30 0 48s-10 30 0 44M${k1(X(a+34))} ${k1(ya+74)}c-10 18 10 30 0 48s10 30 0 44" stroke="#777" stroke-width="1.2" fill="none"/>`;
+      s+=R(X(a+56),ya+82,12,22,C.weiss,"#666",.9,5)+R(X(a+72),ya+82,12,22,C.weiss,"#666",.9,5)+R(X(a+64),ya+120,10,16,C.weiss,"#666",.9,4)+R(X(a+40),ym-30,10,12,C.weiss,"#666",.9,2);
+      /* Abdeckung unten mit Zweck */
+      s+=R(X(a+6),ym,w-12,yb-ym-6,C.weiss,"#666",1,2);
+      const tx=frei?"frei":zz?(zz.bez||zsTxt(ZS_ZWECK,zz.zweck)):""; if(tx) s+=T(X(a+w/2),ym+(yb-ym)/2+5,esc(tx).slice(0,16),{s:12,w:600,f:frei?C.grau:C.text}); });
+    s+=L(X(10),Y(748),X(240),Y(748),C.lin,1);
+    /* NAR: Tragholme, Sammelschiene, SLS je Zählerplatz, ÜSS einmal im Schrank, PE-Leiter */
+    s+=R(X(2),Y(752),18,Y(1046)-Y(752),"#2E2E2E",null,0,2)+R(X(222),Y(752),18,Y(1046)-Y(752),"#2E2E2E",null,0,2);
+    [800,842,884,926,968].forEach(m=>{ s+=R(X(18),Y(m),206,Y(m+12)-Y(m),C.or,C.orK,.8,1.5); });
+    const sw=n>1?76:96; let sx=4; const sl=[];
+    zps.forEach(zz=>{ sl.push([sx,zz]); sx+=sw+4; });
+    const ue=!uess; if(ue) uess=true;
+    const pe=ue?sx+52:sx+14; s+=L(X(pe),Y(750),X(pe),Y(1044),C.gn,3.4)+L(X(pe),Y(750),X(pe),Y(1044),C.ge,3.4,` stroke-dasharray="8 8"`);
+    sl.forEach(([ax,zz])=>{ const a=X(ax), w=sw, y1=Y(795), y2=Y(968);
+      [0,1,2].forEach(k=>{ const cx=a+w*(.2+k*.3); s+=L(cx,Y(750),cx,y1+4,[C.sw,C.sw,C.bl][k],4); });
+      s+=R(a,y1,w,y2-y1,"#E9EBEE","#666",1,4);
+      [0,1,2].forEach(k=>{ const cx=a+w*(.2+k*.3); s+=R(cx-w*.11,y1+3,w*.22,26,"#2F3E55",null,0,3)+R(cx-w*.07,y1+8,w*.14,10,"#4E6A8E",null,0,2); });
+      const amp=zz&&zz.sls&&zz.sls!=="keiner"?zz.sls.slice(1)+"A":"";
+      if(amp) s+=T(a+w/2,y1+62,amp,{s:n>1?24:28,w:800,f:"#111"});
+      s+=R(a+2,y1+72,w-4,34,"#BFD3E6","#7F99B3",.8,2); [0,1,2].forEach(k=>{ const cx=a+w*(.2+k*.3); s+=R(cx-6,y1+78,12,22,"#5B6B7D",null,0,3); });
+      s+=T(a+w/2,y2-16,"SLS",{s:n>1?20:24,w:800,f:"#111"}); });
+    if(ue){ const a=X(sx), y1=Y(782), y2=Y(1000); s+=R(a,y1,46,y2-y1,C.rot,"#A8160F",1,3)+R(a+6,y1+8,34,y2-y1-16,"#EF3A2F",null,0,2)+R(a+8,y1+(y2-y1)*.36,30,28,C.weiss,"#A8160F",.8,2)+R(a+12,y1+(y2-y1)*.36+6,8,8,"#8BCB4A")+T(a+23,y2-18,"ÜSS",{s:12,w:800,f:C.weiss}); }
     /* Zählernummer groß oben links */
-    zps.forEach((_,p)=>{ const nr=zn-n+p+1, an=aktiv&&aktiv===`${f.id}:${p}`, bx=x+8+p*(zw+8); s+=R(bx,fy+8,54,54,an?C.akt:"#A8A8A8",null,0,8)+T(bx+27,fy+47,nr,{s:30,w:600,f:an?C.weiss:C.text}); });
+    for(let p=0;p<n;p++){ const nr=zn+p+1, an=aktiv&&aktiv===`${f.id}:${p}`, bx=X(6+p*125); s+=R(bx,Y(8),80,Y(84)-Y(8),an?C.akt:"#A3A3A3",null,0,10)+T(bx+40,Y(8)+(Y(84)-Y(8))/2+13,nr,{s:36,w:500,f:an?C.weiss:"#222"}); }
+    zn+=n;
     return s; };
-
   const verteiler=(f,x)=>{ const apz=zs.apz&&zs.apz.feldId===f.id?zs.apz.lage:"", oben=apz==="oben", aH=apz?fh*300/1050:0;
     const top=fy+(oben?aH:0), hh=fh-aH, r=Math.max(1,Math.min(zsReihenFeld(zs,f,reihen),12)), kH=40, rh=(hh-kH)/r, mitte=!apz&&r>=5?Math.ceil(r/2):-1; let s="";
     s+=klemmleiste(x,top+6);
