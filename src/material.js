@@ -139,6 +139,31 @@ function matKatRaten(n){ const k=String(n||"");
   return "sonst"; }
 const matSlug=t=>"mat-"+String(t).toLowerCase().replace(/×/g,"x").replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss").replace(/²/g,"2").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 const matNorm=t=>String(t||"").trim().toLowerCase().replace(/\s+/g," ").replace(/x(?=\d)/g,"×");
+/* Herstellerfotos und technische Daten je Hersteller-Artikelnummer. Die Fotos holt der Bilder-Bot auf unseren Server (tools/bilder.py).
+   tech: art ls|rcd|rcbo, char B/C, in (A), pole, te (Teilungseinheiten), typ (RCD-Typ), idn (mA) – daraus rechnet später der Verteiler. */
+const matHnr=n=>String(n||"").replace(/\s+/g,"").toUpperCase();
+const HAG="https://assets.hager.com/step-content/P/";
+const MAT_INFO={
+  MBS110:{bild:HAG+"HA_16255176/11/std.lang.all/MBS110.webp",tech:{art:"ls",char:"B",in:10,pole:1,te:1}},
+  MBS116:{bild:HAG+"HA_16255195/11/std.lang.all/MBS116.webp",tech:{art:"ls",char:"B",in:16,pole:1,te:1}},
+  MBS120:{bild:"https://www.elektrikshop.de/images/product_images/original_images/1143_0.jpg",tech:{art:"ls",char:"B",in:20,pole:1,te:1}},
+  MBS125:{bild:"https://www.elektrikshop.de/images/product_images/original_images/1144_0.jpg",tech:{art:"ls",char:"B",in:25,pole:1,te:1}},
+  MBS132:{bild:"https://www.elektrikshop.de/images/product_images/original_images/1145_0.jpg",tech:{art:"ls",char:"B",in:32,pole:1,te:1}},
+  MCS116:{bild:HAG+"HA_16256279/11/std.lang.all/MCS116.webp",tech:{art:"ls",char:"C",in:16,pole:1,te:1}},
+  MBS316:{bild:HAG+"HA_16255234/11/std.lang.all/MBS316.webp",tech:{art:"ls",char:"B",in:16,pole:3,te:3}},
+  MCS316:{bild:HAG+"HA_16256337/11/std.lang.all/MCS316.webp",tech:{art:"ls",char:"C",in:16,pole:3,te:3}},
+  CDS440D:{bild:HAG+"HA_16197936/11/std.lang.all/CDS440D.webp",tech:{art:"rcd",in:40,idn:30,typ:"A",pole:4,te:4}},
+  CDS463D:{bild:HAG+"HA_16197955/11/std.lang.all/CDS463D.webp",tech:{art:"rcd",in:63,idn:30,typ:"A",pole:4,te:4}},
+  ADS916D:{bild:HAG+"HA_16371443/11/std.lang.all/ADS916D.webp",tech:{art:"rcbo",char:"B",in:16,idn:30,typ:"A",pole:2,te:2}}};
+const matInfo=m=>m?MAT_INFO[matHnr(m.herstellerNr)]||null:null;
+const matBild=m=>m&&(m.bild||(matInfo(m)||{}).bild)||"";
+const matTech=m=>m&&(m.tech||(matInfo(m)||{}).tech)||null;
+/* Kurzbeschreibung der technischen Daten: „B 16 A · 1-polig · 1 TE“, „RCD 40 A / 30 mA Typ A · 4-polig · 4 TE“ */
+function matTechText(t){ if(!t) return ""; const p=t.pole?`${t.pole}-polig`:"", te=t.te?`${t.te} TE`:"";
+  if(t.art==="rcd") return [`RCD ${t.in} A / ${t.idn} mA Typ ${t.typ||"A"}`,p,te].filter(Boolean).join(" · ");
+  if(t.art==="rcbo") return [`FI/LS ${t.char||""}${t.in} · ${t.idn} mA Typ ${t.typ||"A"}`,p,te].filter(Boolean).join(" · ");
+  return [`${t.char||""} ${t.in} A`.trim(),p,te].filter(Boolean).join(" · "); }
+const matFoto=(m,cls)=>{ const u=matBild(m); return u?`<span class="mat-foto${cls?" "+cls:""}"><img src="${esc(typeof bildLokal==="function"?bildLokal(u):u)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('weg')"></span>`:""; };
 /* Firmen-Materialliste (MAT_FIRMA, unten) ist fest eingebaut und wird NICHT als Datensätze gespeichert – sonst müsste jedes
    Gerät ~400 Dateien hochladen. Gespeichert wird nur, was jemand ändert oder löscht (gleiche ID überschreibt das Firmen-Teil). */
 let matFirmaObj=null;
@@ -191,15 +216,15 @@ function materialListe(){
   if(!L.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:"Keine Teile in dieser Auswahl."}</p>${q?`<div style="text-align:center"><button class="btn-tonal" data-act="matStammNeu" data-name="${esc(query)}">${icon("add")}„${esc(query)}“ anlegen</button></div>`:""}`;
   const kachel=MAT_ANS()==="kacheln", gruppiert=so==="kat"&&f==="alle"&&!q;
   /* Zweitzeile: Einheit, Hersteller-Nr., andere Bestellnummern – die Hauptnummer steht im Feld unten */
-  const unter=m=>{ const nr=matNr(m); return [m.einheit||"Stück",m.herstellerNr&&`${m.hersteller?m.hersteller+" ":""}${m.herstellerNr}`,
+  const unter=m=>{ const nr=matNr(m); return [matTechText(matTech(m))||m.einheit||"Stück",m.herstellerNr&&`${m.hersteller?m.hersteller+" ":""}${m.herstellerNr}`,
     ...(m.weitere||[]).filter(w=>w&&w.nr&&w.nr!==nr).map(w=>`${w.bei||"Nr."} ${w.nr}`),m.egu&&`EGU ${m.egu}`].filter(Boolean).join(" · "); };
   const item=m=>{ const n=z[matNorm(m.name)]||0, nr=matNr(m);
     return kachel?`<button class="mk" data-act="matStammOpen" data-id="${esc(m.id)}">
-        <span class="mk-top">${matKatBadge(m.kategorie)}${m.neu?pill("wip","neu"):""}${n?`<span class="mk-n">${n}× benutzt</span>`:""}</span>
+        ${matBild(m)?matFoto(m,"mk-bild"):""}<span class="mk-top">${matBild(m)?"":matKatBadge(m.kategorie)}${m.neu?pill("wip","neu"):""}${n?`<span class="mk-n">${n}× benutzt</span>`:""}</span>
         <span class="mk-name">${esc(m.name)}</span>
         <span class="mk-sub">${esc(unter(m))}</span>${m.listeName?`<span class="mk-sub mk-liste">Liste: ${esc(m.listeName)}</span>`:""}
         <span class="mk-fuss">${nr?matNrChip(nr):`<span class="mk-ohne">Keine Nummer</span>`}</span></button>`
-      :`<button class="li ml" data-act="matStammOpen" data-id="${esc(m.id)}">${matKatBadge(m.kategorie,"av")}<span class="lt"><span class="h">${esc(m.name)}</span>
+      :`<button class="li ml" data-act="matStammOpen" data-id="${esc(m.id)}">${matBild(m)?matFoto(m,"av"):matKatBadge(m.kategorie,"av")}<span class="lt"><span class="h">${esc(m.name)}</span>
         <span class="s">${esc([unter(m),m.listeName&&"Liste: "+m.listeName].filter(Boolean).join(" · "))}</span></span>${m.neu?pill("wip","neu"):""}${n?`<span class="ml-n">${n}×</span>`:""}${matNrChip(nr)}</button>`; };
   const block=G=>kachel?`<div class="mk-grid">${G.map(item).join("")}</div>`:`<div class="list">${G.map(item).join("")}</div>`;
   if(gruppiert) return MAT_KAT.map(([k,t])=>{ const G=L.filter(m=>(m.kategorie||"sonst")===k); return G.length?`<div class="sec-lbl mat-sec">${matKatBadge(k,"sm")}<span>${esc(t)}</span><small>${G.length}</small></div>${block(G)}`:""; }).join("");
@@ -220,6 +245,7 @@ let matEd=null;
 function matStammDialog(m,name){ const r=m||{name:name||"",kategorie:matKatRaten(name),einheit:matStdEinheitRegel(name||"")}; matEd={id:m&&m.id, weitere:JSON.parse(JSON.stringify(r.weitere||[]))};
   const {z,zul}=matNutzung(), n=m?z[matNorm(m.name)]||0:0;
   dialog(m?"Material":"Neues Material",`<div class="fg1">
+    ${m&&matBild(m)?`<div class="mat-gross">${matFoto(m)}${matTech(m)?`<span class="mat-techt">${esc(matTechText(matTech(m)))}</span>`:""}</div>`:""}
     ${tf("mName","Bezeichnung",r.name,{form:true,ph:"z. B. NYM-J 3×1,5 mm²"})}
     <div class="fg2">${sf("mKat","Kategorie",r.kategorie||"sonst",MAT_KAT,{form:true})}${sf("mEinh","Einheit",r.einheit||"Stück",MAT_EINHEITEN.map(u=>[u,u]),{form:true})}</div>
     <div class="lbl" style="margin:8px 4px 0">Hersteller</div>
@@ -346,7 +372,7 @@ const MAT_FIRMA=[
 ["LS Hager 25 A/B 1-polig","schutz","","Hager","MBS 125","0606810","","","","",9],
 ["LS Hager 32 A/B 1-polig","schutz","","Hager","MBS 132","0606811","","","","",9],
 ["LS Hager 16 A/B 3-polig","schutz","","Hager","MBS 316","0606818","","","","",9],
-["LS Hager 16 A/C 3-polig","schutz","","Hager","MBS 316","0606863","","","","Liste: MBS 316 – für C-Charakteristik wäre es MCS 316, bitte prüfen",9],
+["LS Hager 16 A/C 3-polig","schutz","","Hager","MCS 316","0606863","","","","In der Firmenliste stand MBS 316 (das ist B 16) – für C 16 3-polig ist es MCS 316",9],
 ["FI Hager 40/0,03 4-polig","schutz","","Hager","CDS440D","0606663","","","","",10],
 ["FI Hager 63/0,03 4-polig","schutz","","Hager","CDS463D","0606664","","","","",10],
 ["FI/LS Hager 16A/B - 30 mA","schutz","","Hager","ADS916D","5705400","","","","",10],
