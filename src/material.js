@@ -142,19 +142,18 @@ const matNorm=t=>String(t||"").trim().toLowerCase().replace(/\s+/g," ").replace(
 /* Herstellerfotos und technische Daten je Hersteller-Artikelnummer. Die Fotos holt der Bilder-Bot auf unseren Server (tools/bilder.py).
    tech: art ls|rcd|rcbo, char B/C, in (A), pole, te (Teilungseinheiten), typ (RCD-Typ), idn (mA) – daraus rechnet später der Verteiler. */
 const matHnr=n=>String(n||"").replace(/\s+/g,"").toUpperCase();
-const HAG="https://assets.hager.com/step-content/P/";
 const MAT_INFO={
-  MBS110:{bild:HAG+"HA_16255176/11/std.lang.all/MBS110.webp",tech:{art:"ls",char:"B",in:10,pole:1,te:1}},
-  MBS116:{bild:HAG+"HA_16255195/11/std.lang.all/MBS116.webp",tech:{art:"ls",char:"B",in:16,pole:1,te:1}},
+  MBS110:{bild:"https://assets.hager.com/step-content/P/HA_16255176/11/std.lang.all/MBS110.webp",tech:{art:"ls",char:"B",in:10,pole:1,te:1}},
+  MBS116:{bild:"https://assets.hager.com/step-content/P/HA_16255195/11/std.lang.all/MBS116.webp",tech:{art:"ls",char:"B",in:16,pole:1,te:1}},
   MBS120:{bild:"https://www.elektrikshop.de/images/product_images/original_images/1143_0.jpg",tech:{art:"ls",char:"B",in:20,pole:1,te:1}},
   MBS125:{bild:"https://www.elektrikshop.de/images/product_images/original_images/1144_0.jpg",tech:{art:"ls",char:"B",in:25,pole:1,te:1}},
   MBS132:{bild:"https://www.elektrikshop.de/images/product_images/original_images/1145_0.jpg",tech:{art:"ls",char:"B",in:32,pole:1,te:1}},
-  MCS116:{bild:HAG+"HA_16256279/11/std.lang.all/MCS116.webp",tech:{art:"ls",char:"C",in:16,pole:1,te:1}},
-  MBS316:{bild:HAG+"HA_16255234/11/std.lang.all/MBS316.webp",tech:{art:"ls",char:"B",in:16,pole:3,te:3}},
-  MCS316:{bild:HAG+"HA_16256337/11/std.lang.all/MCS316.webp",tech:{art:"ls",char:"C",in:16,pole:3,te:3}},
-  CDS440D:{bild:HAG+"HA_16197936/11/std.lang.all/CDS440D.webp",tech:{art:"rcd",in:40,idn:30,typ:"A",pole:4,te:4}},
-  CDS463D:{bild:HAG+"HA_16197955/11/std.lang.all/CDS463D.webp",tech:{art:"rcd",in:63,idn:30,typ:"A",pole:4,te:4}},
-  ADS916D:{bild:HAG+"HA_16371443/11/std.lang.all/ADS916D.webp",tech:{art:"rcbo",char:"B",in:16,idn:30,typ:"A",pole:2,te:2}}};
+  MCS116:{bild:"https://assets.hager.com/step-content/P/HA_16256279/11/std.lang.all/MCS116.webp",tech:{art:"ls",char:"C",in:16,pole:1,te:1}},
+  MBS316:{bild:"https://assets.hager.com/step-content/P/HA_16255234/11/std.lang.all/MBS316.webp",tech:{art:"ls",char:"B",in:16,pole:3,te:3}},
+  MCS316:{bild:"https://assets.hager.com/step-content/P/HA_16256337/11/std.lang.all/MCS316.webp",tech:{art:"ls",char:"C",in:16,pole:3,te:3}},
+  CDS440D:{bild:"https://assets.hager.com/step-content/P/HA_16197936/11/std.lang.all/CDS440D.webp",tech:{art:"rcd",in:40,idn:30,typ:"A",pole:4,te:4}},
+  CDS463D:{bild:"https://assets.hager.com/step-content/P/HA_16197955/11/std.lang.all/CDS463D.webp",tech:{art:"rcd",in:63,idn:30,typ:"A",pole:4,te:4}},
+  ADS916D:{bild:"https://assets.hager.com/step-content/P/HA_16371443/11/std.lang.all/ADS916D.webp",tech:{art:"rcbo",char:"B",in:16,idn:30,typ:"A",pole:2,te:2}}};
 const matInfo=m=>m?MAT_INFO[matHnr(m.herstellerNr)]||null:null;
 const matBild=m=>m&&(m.bild||(matInfo(m)||{}).bild)||"";
 const matTech=m=>m&&(m.tech||(matInfo(m)||{}).tech)||null;
