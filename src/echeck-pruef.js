@@ -181,8 +181,10 @@ const EC_LISTE_ART={anlagen:"anlage",geraete:"geraete",netzwerk:"netz"};
   gruppen:[{k:"status",t:"Status",opts:[["alle","Alle"],["arbeit","In Arbeit"],["fertig","Abgeschlossen"],["maengel","Mit Mängeln"]]},{k:"wer",t:"Prüfer",opts:[["alle","Alle"],["meine","Meine"]]}],
   liste:()=>ecListeInhalt(art)}; });
 /* Installation: Verteilerlegenden stehen mit in der Liste – Filter nach Art und „Ohne Kunde“ */
-Object.assign(FDEF.ec_anlage.std,{typ:"alle",kunde:"alle"});
-FDEF.ec_anlage.gruppen.unshift({k:"typ",t:"Art",opts:[["alle","Alle"],["pruef","Prüfungen"],["leg","Verteiler und Legenden"]]});
+/* „Art“ steht als Umschalter Prüfungen | Verteiler oben in der Liste, nicht mehr im Filter */
+Object.assign(FDEF.ec_anlage.std,{typ:"pruef",kunde:"alle"});
+const ecInstVt=()=>fW("ec_anlage","typ")==="leg";
+FDEF.ec_anlage.ohne=["typ"];
 FDEF.ec_anlage.gruppen.push({k:"kunde",t:"Kunde",opts:[["alle","Alle"],["ohne","Ohne Kunde"]]});
 function ecListeInhalt(art){ const n="ec_"+art, q=query.trim().toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q), st=fW(n,"status"), wer=fW(n,"wer"), so=fW(n,"sort");
   let L=ecAlle().filter(p=>(p.art||"anlage")===art);
@@ -195,6 +197,7 @@ function ecListeInhalt(art){ const n="ec_"+art, q=query.trim().toLowerCase(), H=
   const dt=(a,b)=>String(b.datum||"").localeCompare(String(a.datum||""))||(b.updated||0)-(a.updated||0);
   L.sort(so==="alt"?(a,b)=>dt(b,a):so==="az"?(a,b)=>tit(a).localeCompare(tit(b),"de"):dt);
   const auf=L.filter(p=>p.status!=="fertig"), fertig=L.filter(p=>p.status==="fertig");
+  if(mitLeg&&!L.length&&!q&&!fAktiv(n)) return ecInstVt()?`<div class="empty">${icon("ecMess")}<h2>Noch keine Verteiler</h2><p>Verteiler legst du beim Kunden an – oder hier mit „+ Verteiler“ ohne Kunde.</p></div>`:`<div class="empty">${icon("home")}<h2>Noch keine Installationsprüfung</h2><p>Hausinstallationen und Anlagen (DIN VDE 0100-600 / 0105-100): Räume, Verteiler, Stromkreise und Steckdosen anlegen, besichtigen, messen – das Protokoll landet in der Bibliothek.</p></div>`;
   if(!L.length) return `${fInfo(n,0,ein,mehr)}<p class="meta">${mitLeg?"Nichts gefunden.":"Keine Prüfung gefunden."}</p>`;
   const hint=`<p class="hint">Rechtsklick oder lange drücken: anpinnen oder löschen</p>`;
   if(!q&&!fAktiv(n)&&L.length>EC_KURZ&&!ecListeAlle[n]){ const P=ecPins(), pin=P.map(id=>L.find(p=>p.id===id)).filter(Boolean).slice(0,EC_KURZ);
@@ -215,10 +218,11 @@ function ecListeView(art){
       h+=`<div class="sec-lbl">Fällig in den nächsten 4 Wochen</div>${listOf([...M].map(([o,G])=>`<div class="li" role="button" tabindex="0" data-act="ecNeuOrt" data-art="geraete" data-ort="${esc(o)}"><span class="av">${icon("warn")}</span>
         <span class="lt"><span class="h">${esc(ecOrt(o).titel)}</span><span class="s">${G.length} Gerät${G.length>1?"e":""} · ab ${esc(ecDatum(G[0].naechste))}</span></span>${pill(G[0].naechste<ecHeute()?"bad":"wip",G[0].naechste<ecHeute()?"überfällig":"bald fällig")}</div>`))}`; } }
   if(!L.length&&art==="netz") return h+`<div class="empty">${icon("ecNetz")}<h2>Noch keine Netzwerkprüfung</h2><p>Datenverkabelung qualifizieren (z. B. mit dem SignalTEK NT): Netzwerkschrank und Datendosen anlegen, jeden Link messen – das Protokoll landet in der Bibliothek.</p></div>${ecRkDefs()}${ecKatVorschau()}</div>`;
-  if(!L.length) return h+`<div class="empty">${icon(art==="geraete"?"ecStecker":"home")}<h2>${art==="geraete"?"Noch keine Geräteprüfung":"Noch keine Installationsprüfung"}</h2><p>${art==="geraete"
+  if(!L.length&&art!=="anlage") return h+`<div class="empty">${icon(art==="geraete"?"ecStecker":"home")}<h2>${art==="geraete"?"Noch keine Geräteprüfung":"Noch keine Installationsprüfung"}</h2><p>${art==="geraete"
       ?"Ortsveränderliche Geräte (DGUV V3, DIN VDE 0701-0702): Geräte je Kunde erfassen, prüfen, Prüffrist setzen – das Protokoll landet in der Bibliothek."
       :"Hausinstallationen und Anlagen (DIN VDE 0100-600 / 0105-100): Räume, Verteiler, Stromkreise und Steckdosen anlegen, besichtigen, messen – das Protokoll landet in der Bibliothek."}</p></div></div>`;
-  return h+`${searchBar("Ort, Kunde, Prüfer oder Datum suchen",fKnopf("ec_"+art))}<div id="res">${ecListeInhalt(art)}</div>${art==="netz"?ecRkDefs()+ecKatVorschau():""}</div>`; }
+  const seg=art==="anlage"?`<div class="ec-seg" role="group" aria-label="Anzeigen">${[["pruef","Prüfungen"],["leg","Verteiler"]].map(([k,t])=>`<button type="button" data-act="ecSeg" data-v="${k}" aria-pressed="${fW("ec_anlage","typ")===k}">${t}</button>`).join("")}</div>`:"";
+  return h+`${seg}${searchBar(art==="anlage"&&ecInstVt()?"Verteiler, Kunde oder Ort suchen":"Ort, Kunde, Prüfer oder Datum suchen",fKnopf("ec_"+art))}<div id="res">${ecListeInhalt(art)}</div>${art==="netz"?ecRkDefs()+ecKatVorschau():""}</div>`; }
 /* Abschnitt in der Kunden-/Standortansicht */
 function ecBeiKunde(kind,r){ const L=ecAlle().filter(p=>kind==="kunden"?p.kundeId===r.id:p.standortId===r.id).sort((a,b)=>String(b.datum||"").localeCompare(String(a.datum||"")));
   return kdKopf("Prüfungen","ecNeuHier","Prüfung anlegen",` data-kind="${kind}" data-id="${esc(r.id)}"`)+(L.length?listOf(L.map(ecItem)):`<p class="meta">Noch keine Prüfung.</p>`); }
@@ -1853,6 +1857,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecOeffnen": { const p=DB.echecks.get(b.dataset.id); if(p){ nav.schr=null; go({v:"ec",id:p.id,tab:p.status==="fertig"?"abschluss":ecTabGemerkt(p.id)||"auftrag"}); } return; }
   case "ecPrCtx": { const p=DB.echecks.get(b.dataset.id); if(!p) return; const an=ecPins().includes(p.id), id=p.id;
     kontextMenu(ecCtxX,ecCtxY,[{t:an?"Nicht mehr anpinnen":"Anpinnen",ic:an?"pinOff":"pin",fn:()=>ecPinUm(id)},"-",{t:"Löschen",ic:"del",gefahr:true,fn:()=>{ const x=document.createElement("button"); x.hidden=true; x.dataset.act="ecPrLoeschen"; x.dataset.id=id; document.body.appendChild(x); x.click(); x.remove(); }}]); return; }
+  case "ecSeg": query=""; fSet("ec_anlage","typ",b.dataset.v); render(); return;
   case "ecListeAlle": ecListeAlle[b.dataset.n]=!ecListeAlle[b.dataset.n]; fNeu(b.dataset.n); return;
   case "ecPrLoeschen": { const p=DB.echecks.get(b.dataset.id); if(!p) return; if(SYNC_ON&&!canEdit(p)&&!p.demo){ toast("Diese Prüfung darf nur der Ersteller oder ein Admin löschen"); return; } ecPrWeg=p.id;
     confirmDlg("Prüfung löschen?",`${ecOrt(p.ortId).titel} · ${ecDatum(p.datum)} – die Prüfung wird in allen Apps entfernt. Gebäude, Räume, Schränke und Dosen bleiben erhalten.`,"Löschen","ecPrWeg"); return; }
@@ -2098,3 +2103,4 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecGerGeh": { ecGerLesen(); const B=ecGeraeteAm(pr.ortId), i=B.findIndex(x=>x.id===ecDlg.ger), d=+b.dataset.d; if(d&&B[i+d]){ render(); ecGerDlg(B[i+d].id); return; } closeOverlays(); ecDlg=null; render(); return; }
   }
 },true);
+
