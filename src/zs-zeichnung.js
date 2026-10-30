@@ -6,6 +6,7 @@ const ZSZ={FW:250,WAND:25,ML:64,MT:58,MR:16};
 const ZSZ_F={lin:"#8C8C8C",fein:"#C4C4C4",feld:"#F2F2F2",weiss:"#FFFFFF",hell:"#F8F8F8",dunkel:"#3A3C40",text:"#262626",grau:"#7A7A7A",
   br:"#8B5A2B",sw:"#2E2E2E",gr:"#8E8E8E",bl:"#1E9BE6",gn:"#86CF3A",ge:"#E2C41C",or:"#F39020",orK:"#C06A12",rot:"#E3231B",akt:"#C8102E",aktH:"#FCE8EB"};
 const ZSZ_KURZ={haushalt:"HA",wp:"WP",wallbox:"EM",pv:"PV",allgemein:"ALG",gewerbe:"GEW",frei:"RES"};
+const ZSZ_SLS_BILD={abb:["sls-abb.png",94,163]};
 const zsBildUrl=u=>typeof bildLokal==="function"?bildLokal(u):u;
 function zsHoeheMm(zs){ return +zs.hoehe===1400?1400:1100; }
 /* Bis 5 Felder ein Schrank, darüber mehrere Schränke nebeneinander (gleichmäßig verteilt, je höchstens 5 Felder) */
@@ -46,9 +47,12 @@ function zsZeichnung(zs,reihen,aktiv,selFeld,opt){
       const kz=zz?(zz.zweck==="frei"?"frei":ZSZ_KURZ[zz.zweck]||""):""; if(kz) s+=T(x+(p?190:63),fy+(700+off)*fh/(1050+off),kz,{s:22,w:700,f:zz.zweck==="frei"?"#888":"#333"});
       /* SLS mit Nennstrom */
       const amp=zz&&zz.sls&&zz.sls!=="keiner"?zz.sls.slice(1):"", ger=zsSlsGeraet(zs,zz);
-      if(amp){ const sx=p?x+FW-5-96:x, sy=fy+(795+off)*fh/(1050+off), sw=96, sh=170;
+      /* eigene Herstellergrafik (gleicher Stil wie die Feldbilder), sonst die Standard-SLS-Grafik mit Herstellername */
+      if(amp&&ger&&ZSZ_SLS_BILD[ger.h]){ const [bn,bw0,bh0]=ZSZ_SLS_BILD[ger.h], sw=96, sh=sw*bh0/bw0, sx=p?x+FW-5-sw:x+2, sy=fy+(790+off)*fh/(1050+off);
+        s+=`<image href="${B}${bn}" x="${k1(sx)}" y="${k1(sy)}" width="${sw}" height="${k1(sh)}"/>`+R(sx+18,sy+sh*.29,sw-36,26,C.weiss,"#9A9A9A",.8,13)+T(sx+sw/2,sy+sh*.29+19,amp+" A",{s:19,w:800,f:"#111"}); }
+      else if(amp){ const sx=p?x+FW-5-96:x, sy=fy+(795+off)*fh/(1050+off), sw=96, sh=170;
         s+=R(sx+1,sy+2,sw,sh,"#000",null,0,2,` fill-opacity=".18" filter="url(#zsWeich)"`)+`<svg x="${k1(sx)}" y="${k1(sy)}" width="${sw}" height="${sh}" viewBox="0 0 ${sw} ${sh}"><image href="${B}sls-schalter.png" x="${k1(-sw*.075)}" y="${k1((sh-sw*1.15*138/94)/2)}" width="${k1(sw*1.15)}" height="${k1(sw*1.15*138/94)}"/></svg>`
-          +T(sx+sw/2,sy+58,amp+"A",{s:30,w:800,f:"#111"})+(ger?T(sx+sw/2,sy+24,ger.h==="abb"?"ABB":"Hager",{s:15,w:700,f:"#555"}):""); } });
+          +T(sx+sw/2,sy+58,amp+"A",{s:30,w:800,f:"#111"}); } });
     /* Überspannungsschutz einmal im Schrank, beim ersten Zählerplatz */
     if(!uess&&zps.length){ uess=true; const u=zsUssGeraet(zs), by=fy+fh-31.8*fh/1050;
       if(u) s+=`<image href="${B}usps.png" x="${k1(x+93)}" y="${k1(by-214)}" width="59" height="202"/>`; }
