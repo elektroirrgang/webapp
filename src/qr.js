@@ -49,13 +49,17 @@ function qrKarte(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v
   return `<section class="card qr-karte"><h3>QR-Aufkleber</h3>${v.qr?`<div class="qr-zeile">${qrSvg(v.qr,76)}<div class="qr-txt"><b class="qr-nr">${esc(qrZeig(v.qr))}</b><span class="meta">Klebt am Verteiler. Scannen öffnet diese Seite, Fremde sehen nur unsere Kontaktdaten.</span></div></div>
       <div class="qr-knoepfe"><button type="button" class="btn-tonal" data-act="qrDruck1">${icon("tag")}Drucken</button><button type="button" class="btn-text" data-act="qrScanZu">Ersetzen</button><button type="button" class="btn-text danger" data-act="qrWegAsk">Entfernen</button></div>`
     :`<p class="meta">Noch kein Aufkleber. Einen vom Bogen aufkleben und scannen – oder direkt einen neuen drucken (Brother 24 mm oder PDF).</p>
-      <div class="qr-knoepfe"><button type="button" class="btn-tonal" data-act="qrScanZu">${icon("qr")}Aufkleber scannen</button><button type="button" class="btn-tonal" data-act="qrNeu1">${icon("tag")}Neuen drucken</button></div>`}</section>`; }
+      <div class="qr-knoepfe"><button type="button" class="btn-tonal" data-act="qrScanZu">${icon("qr")}${DESK.matches?"Nummer eingeben":"Aufkleber scannen"}</button><button type="button" class="btn-tonal" data-act="qrNeu1">${icon("tag")}Neuen drucken</button></div>`}</section>`; }
 
 /* ---- Scanner (Kamera) ---- */
 let QR_CAM=null;
 function qrJsqr(){ if(window.jsQR) return Promise.resolve(window.jsQR); return new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="../vendor/jsqr.min.js"; s.onload=()=>ok(window.jsQR); s.onerror=()=>no(new Error("Scanner nicht erreichbar")); document.head.appendChild(s); }); }
 function qrStop(){ if(!QR_CAM) return; QR_CAM.aus=true; try{ QR_CAM.st&&QR_CAM.st.getTracks().forEach(t=>t.stop()); }catch(e){} QR_CAM=null; }
-function qrScan(ziel){ qrStop();
+/* PC: keine Kamera – nur die Nummer vom Aufkleber eintippen */
+function qrNrDlg(ziel){ qrStop(); QR_CAM={ziel:ziel||null,aus:true};
+  dialog(ziel?"Aufkleber zuordnen":"Aufkleber öffnen",`<div class="fg1">${tf("qrNr","Nummer vom Aufkleber","",{form:true,ph:"z. B. 4K7 P2M"})}</div><p class="hint">Steht groß auf dem Aufkleber, 6 Zeichen.</p>`,
+    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="qrNrOk">${ziel?"Zuordnen":"Öffnen"}</button>`); }
+function qrScan(ziel){ if(DESK.matches){ qrNrDlg(ziel); return; } qrStop();
   dialog("Aufkleber scannen",`<div class="qr-cam"><video id="qrVid" playsinline muted autoplay></video><span class="qr-rahmen"></span><p class="qr-cam-msg" id="qrMsg">Kamera wird gestartet …</p></div>
     <div class="fg1" style="margin-top:14px">${tf("qrNr","Oder Nummer eintippen","",{form:true,ph:"z. B. 4K7 P2M"})}</div>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="qrNrOk">Öffnen</button>`,{breit:true});
@@ -139,7 +143,7 @@ function qrBogenDlg(){ dialog("QR-Aufkleber drucken",`<p>Jeder Aufkleber bekommt
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="qr"]'); if(!b||b.disabled) return; e.stopPropagation(); const a=b.dataset.act;
   if(a==="qrScan"){ qrScan(); return; }
   if(a==="qrScanZu"){ if(nav.v!=="vt") return; qrScan({g:nav.g,id:nav.id}); return; }
-  if(a==="qrNrOk"){ const c=qrNorm((document.getElementById("f_qrNr")||{}).value); if(!c){ toast("Nummer hat 6 Zeichen, z. B. 4K7 P2M"); return; } const z=QR_CAM&&QR_CAM.ziel; qrStop(); closeOverlays(); z?qrZuweisen(z,c):qrOeffnen(c); return; }
+  if(a==="qrNrOk"){ const c=qrNorm((document.getElementById("f_qrNr")||{}).value); if(!c){ toast("Nummer hat 6 Zeichen, z. B. 4K7 P2M"); return; } const z=QR_CAM&&QR_CAM.ziel; QR_CAM=QR_CAM&&QR_CAM.aus?null:QR_CAM; qrStop(); closeOverlays(); z?qrZuweisen(z,c):qrOeffnen(c); return; }
   if(a==="qrZuOk"){ const c=qrZu.c; if(!c) return; qrSetzen(b.dataset.g,b.dataset.id,c); closeOverlays(); go({v:"vt",g:b.dataset.g,id:b.dataset.id}); toast(`Aufkleber ${qrZeig(c)} zugeordnet`); return; }
   if(a==="qrNeu1"){ if(nav.v!=="vt") return; const c=qrNeu(); qrSetzen(nav.g,nav.id,c); render(); const v=(vtGeb(nav.g)||{verteiler:[]}).verteiler.find(x=>x.id===nav.id); qrDruckDlg(c,`QR ${v&&v.name||""} ${c}`.replace(/\s+/g," ")); return; }
   if(a==="qrDruck1"){ const v=nav.v==="vt"&&(vtGeb(nav.g)||{verteiler:[]}).verteiler.find(x=>x.id===nav.id); if(v&&v.qr) qrDruckDlg(v.qr,`QR ${v.name||""} ${v.qr}`.replace(/\s+/g," ")); return; }

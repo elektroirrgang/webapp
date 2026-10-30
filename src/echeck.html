@@ -1981,7 +1981,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   document.body.classList.toggle("is-login",login);
   document.body.classList.toggle("has-nav",!login);
   const katV=nav.v==="netzkatalog"||nav.v==="netzkatmodell";   /* Netzwerk-Katalog gehört zum Bereich Netzwerk (Einstieg unten auf der Netzwerkseite) */
-  $("#backBtn").hidden=top||login; $("#navbar").hidden=login; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#qrBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]);
+  $("#backBtn").hidden=top||login; $("#navbar").hidden=login; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#qrBtn").hidden=login||DESK.matches;   /* Scanner nur auf iPad und Handy – am PC gibt es keine Kamera zum Scannen */ $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]);
   const rkS=nav.v==="ec"&&!login?ecRkOffen():null;   /* Netzwerkschrank offen: eigene Ebene wie die Ladestation in EVSE */
   $("#menuBtn").hidden=!VIEW_KIND[nav.v]&&!rkS; kdKopfKnopf();
   if(rkS&&!WIDE.matches){ $("#tabs").innerHTML=ecRkTabsHtml(); $("#tabs").hidden=false; }
