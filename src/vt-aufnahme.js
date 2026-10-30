@@ -154,7 +154,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "awNeuWeiter": { const S=awNeuSchritte(), sk=S[AW.i]||"", d=AW.d;
       if(sk==="bedarf"){ if(zsBedarfZp(d.bedarf)<1){ toast("Mindestens einen Zählerplatz angeben"); return; } d.zs=zsAusBedarf(d.bedarf,d.zs); d.zs.hersteller=d.hersteller; }
       if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); return; }
-  case "awBed": { const B=AW.d.bedarf, k=b.dataset.k; B[k]=Math.max(k==="vf"?1:0,Math.min(k==="vf"||k==="mm"?4:18,(+B[k]||0)+(+b.dataset.d))); const n=document.getElementById("awBed_"+k); if(n) n.textContent=B[k]; const sm=document.getElementById("awBedSum"); if(sm) sm.innerHTML=zsBedarfSumHtml(B); return; }
+  case "awBed": { const B=AW.d.bedarf, k=b.dataset.k; B[k]=Math.max(k==="vf"?1:0,Math.min(k==="vf"||k==="mm"?4:18,(+B[k]||0)+(+b.dataset.d))); const n=document.getElementById("awBed_"+k); if(n) n.textContent=B[k]; const sm=document.getElementById("awBedSum"); if(sm) sm.innerHTML=zsBedarfSumHtml(B); const bb=document.getElementById("awBedBild"); if(bb) bb.innerHTML=zsSvg(zsAusBedarf(B,null),0); return; }
   case "awSub": { const v=b.dataset.v; if(v==="bedarf"){ AW.i=awNeuSchritte().indexOf("bedarf"); AW.sub=null; } else AW.sub=v; awNeuZeigen(); return; }
   case "awModell": { const d=AW.d, m=ZS_MODELLE.find(x=>x.hnr===b.dataset.v); d.zs=m?zsAusModell(m,d.bedarf,d.zs):zsAusBedarf(d.bedarf,d.zs); d.zs.hersteller=d.hersteller; d.ohneModell=!m;
       if(m&&+m.hoehe!==1100&&+m.hoehe!==1400) d.reihen=d.reihen||5;

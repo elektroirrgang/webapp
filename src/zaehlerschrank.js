@@ -32,7 +32,7 @@ const zsFeldNr=(zs,id)=>zs.felder.findIndex(f=>f.id===id)+1;
 const zsApzText=zs=>{ if(!zs.apz) return ""; const f=zs.felder.find(x=>x.id===zs.apz.feldId); return f?`${ZS_TYP[f.typ]} ${zsFeldNr(zs,f.id)} · ${zs.apz.lage}`:""; };
 
 /* Vorderansicht: Zählerfeld mit AAR · RfZ · Zähler · NAR, Verteilerfeld mit APZ oben/unten, Multimediafeld */
-function zsSvg(zs,reihen,klein,aktiv,selFeld){ const F=zs.felder, W=72, G=4, H=176, w=F.length*(W+G)+G; let zn=0;
+function zsSvg(zs,reihen,klein,aktiv,selFeld){ if(!klein) return zsZeichnung(zs,reihen,aktiv,selFeld); const F=zs.felder, W=72, G=4, H=176, w=F.length*(W+G)+G; let zn=0;
   const T=(x,y,t,c)=>klein?"":`<text x="${x}" y="${y}" class="t ${c||""}">${t}</text>`;
   const feld=(f,i)=>{ const x=G+i*(W+G), y=4; let inn="";
     if(f.typ==="z"){ const n=f.n||1, zw=(W-12-(n-1)*4)/n;
@@ -124,9 +124,10 @@ function zsModellFenster(d){ const b=d.bedarf, need=Math.max(1,zsBedarfZp(b)), v
       <div class="aw-liste" style="margin-top:14px">${awKachel("awModell","",awSvg("frei"),"Ohne Modell","Felder aus den Angaben zusammenstellen",!!d.ohneModell)}</div>`}; }
 function zsBedarfFenster(b){ const st=(k,t,u)=>`<div class="zs-st"><span class="zs-stt"><b>${esc(t)}</b>${u?`<small>${esc(u)}</small>`:""}</span><button type="button" class="zs-stb" data-act="awBed" data-k="${k}" data-d="-1" aria-label="weniger">−</button><span class="zs-stn" id="awBed_${k}">${+b[k]||0}</span><button type="button" class="zs-stb" data-act="awBed" data-k="${k}" data-d="1" aria-label="mehr">+</button></div>`;
   return {frage:"Was soll dran?",hinweis:"Daraus stellt die App den Schrank zusammen – Felder, Höhe, APZ und Zählerplätze.",
-    inhalt:`<div class="aw-lbl">Zählerplätze</div><div class="zs-sts">${ZS_BEDARF.map(([k,t,u])=>st(k,t,u)).join("")}</div>
+    inhalt:`<div class="zs-vs zs-bed"><div class="zs-bild" id="awBedBild">${zsSvg(zsAusBedarf(b,null),0)}</div><div class="zs-vs-r">
+      <div class="aw-lbl">Zählerplätze</div><div class="zs-sts">${ZS_BEDARF.map(([k,t,u])=>st(k,t,u)).join("")}</div>
       <div class="aw-lbl">Am Haushaltszähler</div><div class="zs-sts">${ZS_BEDARF_STEUER.map(([k,t,u])=>st(k,t,u)).join("")}</div>
-      <div class="aw-lbl">Weitere Felder</div><div class="zs-sts">${ZS_BEDARF_FELD.map(([k,t,u])=>st(k,t,u)).join("")}</div>`,
+      <div class="aw-lbl">Weitere Felder</div><div class="zs-sts">${ZS_BEDARF_FELD.map(([k,t,u])=>st(k,t,u)).join("")}</div></div></div>`,
     fuss:`<span class="aw-fuss-info zs-sum" id="awBedSum">${zsBedarfSumHtml(b)}</span><button type="button" class="btn-filled" data-act="awNeuWeiter">Weiter</button>`}; }
 const zsMz=(n,e,m)=>`${n} ${n===1?e:m}`;
 const zsBedarfSumText=b=>{ const n=Math.max(1,zsBedarfZp(b)), vf=Math.max(1,+b.vf||1), mm=+b.mm||0;
@@ -155,8 +156,9 @@ function zsAufbauFenster(){ return {frage:"Wie ist der Schrank aufgebaut?",hinwe
   inhalt:`<div class="aw-liste">${ZS_VORL.map(([k,t,s,f])=>{ const zs={felder:f.map(zsFeldAus)}; zs.apz=(z=>z?{feldId:z.id,lage:"unten"}:null)(zs.felder.find(x=>x.typ==="v")); return awKachel("zsVorl",k,zsSvg(zs,4,true),t,s); }).join("")}${awKachel("zsVorl","eigen",awSvg("frei"),"Selbst zusammenstellen","Feld für Feld")}</div>`}; }
 function zsEdSel(zs){ if(!AW) return 0; AW.feldSel=Math.max(0,Math.min(zs.felder.length-1,AW.feldSel||0)); return AW.feldSel; }
 function zsEdBild(zs,reihen){ const n=zs.felder.length, sel=zsEdSel(zs);
-  return `<div class="zs-ed" style="width:min(100%,${n*104}px);--n:${n}" data-n="${n}"><div class="zs-ed-svg">${zsSvg(zs,reihen,false,null,sel)}</div>
-    <div class="zs-ed-hit" style="grid-template-columns:repeat(${n},1fr)">${zs.felder.map((f,i)=>`<button type="button" data-zsfeld="${i}" aria-label="Feld ${i+1}" aria-pressed="${i===sel}"></button>`).join("")}</div></div>`; }
+  const g=zsGeo(zs);
+  return `<div class="zs-ed" style="width:min(100%,${n*124}px);--n:${n}" data-n="${n}"><div class="zs-ed-svg">${zsSvg(zs,reihen,false,null,sel)}</div>
+    <div class="zs-ed-hit" style="grid-template-columns:repeat(${n},1fr);inset:auto;padding:0;left:${g.links.toFixed(2)}%;width:${g.breite.toFixed(2)}%;top:${g.oben.toFixed(2)}%;height:${g.hoehe.toFixed(2)}%">${zs.felder.map((f,i)=>`<button type="button" data-zsfeld="${i}" aria-label="Feld ${i+1}" aria-pressed="${i===sel}"></button>`).join("")}</div></div>`; }
 function zsEdKontrolle(zs){ const sel=zsEdSel(zs), f=zs.felder[sel]; if(!f) return "";
   return `<div class="zs-edk"><div class="zs-edk-t"><b>Feld ${sel+1}</b><small>${esc(ZS_TYP[f.typ]||"")}</small></div>
     <div class="zs-ftyp" role="group">${["z","v","m"].map(t=>`<button type="button" data-act="zsTyp" data-i="${sel}" data-v="${t}" aria-pressed="${f.typ===t}">${ZS_TYP_KURZ[t]}</button>`).join("")}</div>
@@ -177,7 +179,7 @@ document.addEventListener("pointermove",e=>{ const Z=ZS_ZUG; if(!Z||e.pointerId!
   if(!Z.zieht&&Math.abs(e.clientX-Z.start)<8) return; Z.zieht=true;
   const r=Z.hit.getBoundingClientRect(), n=zs.felder.length, ziel=Math.max(0,Math.min(n-1,Math.floor((e.clientX-r.left)/r.width*n)));
   if(ziel===Z.i) return; const [f]=zs.felder.splice(Z.i,1); zs.felder.splice(ziel,0,f); Z.i=ziel; AW.feldSel=ziel;
-  const sv=Z.hit.parentElement.querySelector(".zs-ed-svg"); if(sv) sv.innerHTML=zsSvg(zs,AW.reihen||(AW.d&&AW.d.reihen));
+  const sv=Z.hit.parentElement.querySelector(".zs-ed-svg"); if(sv) sv.innerHTML=zsSvg(zs,AW.reihen||(AW.d&&AW.d.reihen),false,null,ziel);
   Z.hit.querySelectorAll("[data-zsfeld]").forEach((x,k)=>x.setAttribute("aria-pressed",k===ziel)); Z.hit.classList.add("zieht"); });
 function zsZugEnde(e){ const Z=ZS_ZUG; if(!Z||e.pointerId!==Z.id) return; ZS_ZUG=null; const zs=zsAkt(); if(!zs) return;
   if(!Z.zieht) AW.feldSel=Z.i; else zsAbgleich(zs);
