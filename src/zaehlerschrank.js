@@ -15,7 +15,7 @@ const ZS_HOEHE=[[1100,"1100 mm","Zählerplatz 1050 mm · Verteilerfeld 7-reihig,
 const zsReihenFeld=(zs,f,reihen)=>{ if(+f.reihen) return +f.reihen; const h=+zs.hoehe; if(h===1100||h===1400){ const n=h===1100?7:9; return n-(zs.apz&&zs.apz.feldId===f.id?2:0); } return +reihen||4; };
 const zsReihenSumme=(zs,reihen)=>zs.felder.filter(f=>f.typ==="v").reduce((a,f)=>a+zsReihenFeld(zs,f,reihen),0);
 const ZS_ART=[["ehz","eHZ (BKE-I)","Stecktechnik"],["3pkt","3-Punkt","Schraubbefestigung"]];
-const ZS_SLS=[["E35","SLS E35"],["E40","SLS E40"],["E50","SLS E50"],["E63","SLS E63"],["keiner","Keiner / weiß nicht"]];
+const ZS_SLS=[["E35","35 A"],["E40","40 A"],["E50","50 A"],["E63","63 A"],["keiner","Keiner / weiß nicht"]];
 /* SLS je Zählerplatz und Überspannungsschutz je Schrank – Hersteller und Artikel (Sammelschiene im NAR).
    Schneider Electric: kein SLS für die Zählerplatz-Sammelschiene gefunden, darum nur Hager und ABB. */
 const ZS_SLS_HERST=[["hager","Hager"],["abb","ABB"]];
@@ -42,7 +42,7 @@ function zsAbgleich(zs){ const alt=zs.zp||[]; let n=0; zs.zp=[];
   if(zs.apz&&!zs.felder.some(f=>f.id===zs.apz.feldId&&f.typ!=="z")) zs.apz=null;
   return zs; }
 const zsKopie=zs=>JSON.parse(JSON.stringify(zs||{felder:[],apz:null,zp:[]}));
-function zsZpText(z){ if(!zsBelegt(z)) return "kein Zähler gesetzt – Platz frei für später"; if(!z.zweck) return "noch offen – später eintragen"; return [zsTxt(ZS_ART,z.art).replace(" (BKE-I)",""),z.sls&&z.sls!=="keiner"?"SLS "+z.sls:"",z.nr?"Nr. "+z.nr:"Nummer fehlt"].filter(Boolean).join(" · "); }
+function zsZpText(z){ if(!zsBelegt(z)) return "kein Zähler gesetzt – Platz frei für später"; if(!z.zweck) return "noch offen – später eintragen"; return [zsTxt(ZS_ART,z.art).replace(" (BKE-I)",""),z.sls&&z.sls!=="keiner"?"SLS "+z.sls.slice(1)+" A":"",z.nr?"Nr. "+z.nr:"Nummer fehlt"].filter(Boolean).join(" · "); }
 const zsFeldNr=(zs,id)=>zs.felder.findIndex(f=>f.id===id)+1;
 const zsApzText=zs=>{ if(!zs.apz) return ""; const f=zs.felder.find(x=>x.id===zs.apz.feldId); return f?`${ZS_TYP[f.typ]} ${zsFeldNr(zs,f.id)} · ${zs.apz.lage}`:""; };
 
