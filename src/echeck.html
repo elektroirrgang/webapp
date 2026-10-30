@@ -1274,8 +1274,8 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .aw-k[aria-pressed="true"] .aw-kt small{color:inherit;opacity:.8}
 .aw-svg{width:40px;height:40px}.aw-svg .a{fill:var(--on-sv);opacity:.28}.aw-svg .b{fill:var(--on-sv)}.aw-svg .c{stroke:var(--on-sv);stroke-width:2;fill:none;stroke-linecap:round}
 .aw-eigen{margin-top:16px}
-.aw-fuss{display:flex;align-items:center;gap:8px;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--surface)}
-@media (min-width:700px){.aw-fuss{padding-bottom:16px}}
+.aw-fuss{display:flex;align-items:center;gap:8px;padding:8px 16px calc(10px + env(safe-area-inset-bottom,0px));background:transparent}
+@media (min-width:700px){.aw-fuss{padding-bottom:12px}}
 .aw-fuss .btn-tonal,.aw-fuss .btn-filled{height:48px;border-radius:24px;padding:0 22px;box-shadow:none}
 .aw-fuss-info{flex:1;min-width:0;font-size:14px;color:var(--on-sv);line-height:1.35}
 .aw-such{display:flex;align-items:center;gap:8px;height:52px;border-radius:26px;background:var(--sc);padding:0 16px;margin-top:4px}
@@ -1303,7 +1303,7 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .aw-unbek{display:block;margin:16px auto 0;border:0;background:transparent;color:var(--primary);font:inherit;font-size:15px;font-weight:700;padding:10px 12px}
 .leg-bauart{margin:0 4px 12px;font-size:14px;color:var(--on-sv)}
 /* Zählerschrank (zaehlerschrank.js) */
-.zs-svg{display:block;width:100%;height:auto;margin:0 auto}.zs-svg .f{fill:var(--sc-high)}.zs-svg .e.an{fill:var(--primary);opacity:.55}.zs-svg .r{fill:#E9A23B;opacity:.35}.zs-svg .n{fill:var(--on-sv);opacity:.2}.zs-svg .a{fill:var(--primary);opacity:.28}.zs-svg .e{fill:var(--on-sv);opacity:.32}.zs-svg .d{fill:var(--on-sv);opacity:.14}.zs-svg .l{stroke:var(--on-sv);opacity:.45;stroke-width:2;fill:none}
+.zs-svg{display:block;width:100%;height:auto;margin:0 auto}.zs-svg .f{fill:var(--sc-high)}.zs-svg .p{fill:var(--on-sv);opacity:.18}.zs-svg .d2{fill:var(--sc-high)}.zs-svg .led{fill:#3DBA6B}.zs-svg .e.an{fill:var(--primary);opacity:.55}.zs-svg .r{fill:#E9A23B;opacity:.35}.zs-svg .n{fill:var(--on-sv);opacity:.2}.zs-svg .a{fill:var(--primary);opacity:.28}.zs-svg .e{fill:var(--on-sv);opacity:.32}.zs-svg .d{fill:var(--on-sv);opacity:.14}.zs-svg .l{stroke:var(--on-sv);opacity:.45;stroke-width:2;fill:none}
 .zs-svg .t{fill:var(--on-surface);font:700 13px Manrope,system-ui,sans-serif;text-anchor:middle}.zs-svg .t.s{font-size:11px}.zs-svg .t.k{font-size:10px;font-weight:700;fill:var(--on-sv)}.zs-svg .t.u{fill:var(--on-sv);font-weight:600;font-size:11px}
 .aw-kb .zs-svg.klein{width:48px;max-width:none!important}.aw-kb .zs-svg.klein .f{fill:var(--sc)}
 .zs-bild{background:var(--sc);border-radius:20px;padding:14px 12px 8px;margin:12px 0 4px}
@@ -1339,7 +1339,7 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 @media (min-width:1024px) and (hover:hover) and (pointer:fine){
   .dlg.aw{width:min(1840px,calc(100vw - 64px));height:calc(100dvh - 48px);max-height:none;border-radius:28px}
   .aw-kopf{padding:16px 20px 6px}.aw-fort{padding:6px 28px 10px}
-  .aw-inhalt{padding:12px 28px 28px}.aw-fuss{padding:14px 28px 18px}
+  .aw-inhalt{padding:12px 28px 20px}.aw-fuss{padding:8px 24px 14px}
   .aw-frage{font-size:28px}
   .aw-liste,.aw-liste.aw-2sp{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}
   .zs-sts{grid-template-columns:repeat(auto-fill,minmax(420px,1fr))}
@@ -1351,8 +1351,24 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
   .zs-best{grid-template-columns:repeat(auto-fill,minmax(420px,1fr))}
   .zs-felder{grid-template-columns:repeat(auto-fill,minmax(420px,1fr))}
   .aw-eigen{max-width:640px}
+  .zs-edb .zs-ed{width:min(100%,calc(var(--n,4) * 150px))!important}
 }.zs-sum .zs-svg.klein{width:auto;height:40px;flex:none}.zs-sum .zs-svg.klein .f{fill:var(--sc-high)}.zs-sum span{min-width:0}
 .zs-mod[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}.zs-mod .zs-mod-nr{opacity:.75;font-weight:600}.zs-mod-svg{display:grid;place-items:center;background:var(--sc-high);height:112px;border-radius:14px;margin-bottom:8px}.zs-mod-svg .zs-svg.klein{width:64px;max-width:none!important}
+
+/* Felder-Editor: Zeichnung antippen/ziehen, darunter das Bedienfeld des gewählten Felds */
+.zs-edb{padding:14px 12px 10px}
+.zs-ed{position:relative;margin:0 auto}.zs-ed .zs-svg{max-width:none!important}
+.zs-ed-hit{position:absolute;inset:0;display:grid;padding:0 1%}
+.zs-ed-hit button{border:0;background:transparent;border-radius:10px;cursor:grab;touch-action:none;margin:0 2px}
+.zs-ed-hit button[aria-pressed="true"]{box-shadow:inset 0 0 0 3px var(--primary)}
+.zs-ed-hit.zieht button{cursor:grabbing}
+.zs-edk{background:var(--sc);border-radius:20px;padding:12px;display:grid;gap:8px;margin-top:10px}
+.zs-edk-t{display:flex;align-items:baseline;gap:10px;padding:0 4px}.zs-edk-t b{font-size:16px}.zs-edk-t small{color:var(--on-sv);font-size:14px}
+.zs-edk-a{display:flex;align-items:center;gap:8px}
+.zs-edk-a .btn-tonal{height:44px;border-radius:22px;display:inline-flex;align-items:center;gap:6px;padding:0 16px}
+.zs-edk-a .btn-tonal .ic{width:20px;height:20px;fill:currentColor}.zs-edk-a .zs-rechts .ic{transform:rotate(180deg)}
+.zs-edk-a .btn-tonal:disabled{opacity:.4}
+.zs-edk-a .zs-weg{background:#C8102E;color:#fff}
 .zs-bs{flex:none;font-size:13px;font-weight:700;color:var(--on-sv)}.zs-bp[aria-pressed="true"] .zs-bs{color:inherit}.zs-bs.offen{color:var(--primary)}
 
 

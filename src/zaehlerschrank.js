@@ -46,7 +46,12 @@ function zsSvg(zs,reihen,klein,aktiv){ const F=zs.felder, W=72, G=4, H=176, w=F.
       inn=Array.from({length:r},(_,k)=>`<rect x="${x+8}" y="${(top+4+k*(hh/r)).toFixed(1)}" width="${W-16}" height="${Math.max(4,Math.min(14,hh/r-6)).toFixed(1)}" rx="2" class="e"/>`).join("")
         +(apz?`<rect x="${x+4}" y="${oben?y+4:y+H-46}" width="${W-8}" height="42" rx="3" class="a"/>${T(x+W/2,(oben?y+4:y+H-46)+26,"APZ")}`:""); }
     else { const apz=zs.apz&&zs.apz.feldId===f.id?zs.apz.lage:"", oben=apz==="oben";
-      inn=[0,1,2].flatMap(k=>[0,1].map(j=>`<rect x="${x+12+j*26}" y="${(oben?y+54:y+10)+k*38}" width="22" height="30" rx="3" class="e"/>`)).join("")
+      const t0=y+(oben?50:6), t1=y+H-(apz&&!oben?50:6), hh=t1-t0;
+      inn=Array.from({length:Math.floor(hh/9)},(_,k)=>Array.from({length:6},(_,j)=>`<circle cx="${x+11+j*10}" cy="${(t0+5+k*9).toFixed(1)}" r="1.2" class="p"/>`).join("")).join("")
+        +`<rect x="${x+6}" y="${t0+4}" width="${W-12}" height="13" rx="2" class="e"/>${[0,1,2,3,4,5].map(j=>`<rect x="${x+10+j*9.2}" y="${t0+8}" width="6" height="5" rx="1" class="d2"/>`).join("")}`
+        +`<rect x="${x+10}" y="${t0+26}" width="${W-20}" height="${Math.min(30,hh*0.2).toFixed(1)}" rx="5" class="e"/><path d="M${x+18} ${t0+26}v-6M${x+W-18} ${t0+26}v-6" class="l"/>${[0,1,2].map(j=>`<circle cx="${x+20+j*7}" cy="${t0+26+Math.min(30,hh*0.2)-7}" r="1.8" class="led"/>`).join("")}`
+        +`<rect x="${x+10}" y="${(t0+26+Math.min(30,hh*0.2)+10).toFixed(1)}" width="${W-20}" height="12" rx="3" class="e"/>${[0,1,2,3,4].map(j=>`<rect x="${x+14+j*9}" y="${(t0+26+Math.min(30,hh*0.2)+14).toFixed(1)}" width="5" height="4" rx="1" class="d2"/>`).join("")}`
+        +`<rect x="${x+8}" y="${(t1-22).toFixed(1)}" width="${W-16}" height="16" rx="4" class="e"/>${[0,1,2].map(j=>`<circle cx="${x+20+j*16}" cy="${(t1-14).toFixed(1)}" r="4.5" class="d2"/>`).join("")}`
         +(apz?`<rect x="${x+4}" y="${oben?y+4:y+H-46}" width="${W-8}" height="42" rx="3" class="a"/>${T(x+W/2,(oben?y+4:y+H-46)+26,"APZ")}`:""); }
     return `<rect x="${x}" y="${y}" width="${W}" height="${H}" rx="6" class="f"/>${inn}${T(x+W/2,y+H+16,ZS_TYP_KURZ[f.typ],"u")}`; };
   return `<svg class="zs-svg${klein?" klein":""}" viewBox="0 0 ${w} ${klein?H+8:H+24}" style="max-width:${F.length*(klein?28:104)}px" aria-hidden="true">${F.map(feld).join("")}</svg>`; }
@@ -148,13 +153,39 @@ function zsVorschlagFenster(d,ortPlz){ const zs=d.zs, nb=zs.nb, R=(k,t,u)=>`<but
 /* ---- Fenster (liefern frage/inhalt/fuss für awRahmen) ---- */
 function zsAufbauFenster(){ return {frage:"Wie ist der Schrank aufgebaut?",hinweis:"Vorlage antippen – Felder lassen sich danach ändern.",
   inhalt:`<div class="aw-liste">${ZS_VORL.map(([k,t,s,f])=>{ const zs={felder:f.map(zsFeldAus)}; zs.apz=(z=>z?{feldId:z.id,lage:"unten"}:null)(zs.felder.find(x=>x.typ==="v")); return awKachel("zsVorl",k,zsSvg(zs,4,true),t,s); }).join("")}${awKachel("zsVorl","eigen",awSvg("frei"),"Selbst zusammenstellen","Feld für Feld")}</div>`}; }
-function zsFelderFenster(zs,reihen,weiterAct,weiterTxt){ return {frage:"Welche Felder, von links nach rechts?",
-  inhalt:`<div class="zs-bild">${zsSvg(zs,reihen)}</div><div class="aw-lbl">Schrankhöhe</div><div class="zs-ftyp zs-hoehe" role="group">${ZS_HOEHE.map(([h,t])=>`<button type="button" data-act="zsHoeheF" data-v="${h}" aria-pressed="${(+zs.hoehe||0)===h}">${h?t:"Andere"}</button>`).join("")}</div><div class="aw-lbl">Felder</div><div class="zs-felder">${zs.felder.map((f,i)=>`<div class="zs-feld"><span class="zs-fnr">${i+1}</span><div class="zs-fre">
-      <div class="zs-ftyp" role="group">${["z","v","m"].map(t=>`<button type="button" data-act="zsTyp" data-i="${i}" data-v="${t}" aria-pressed="${f.typ===t}">${ZS_TYP_KURZ[t]}</button>`).join("")}</div>
-      ${f.typ==="z"?`<div class="zs-ftyp zs-fn" role="group">${[1,2].map(n=>`<button type="button" data-act="zsAnz" data-i="${i}" data-v="${n}" aria-pressed="${(f.n||1)===n}">${n===1?"1 Zähler":"2 Zähler"}</button>`).join("")}</div>`:""}</div>
-      <button type="button" class="icon-btn" data-act="zsFeldWeg" data-i="${i}" aria-label="Feld ${i+1} entfernen" ${zs.felder.length<2?"disabled":""}>${icon("del")}</button></div>`).join("")}</div>
-    <button type="button" class="aw-unbek zs-plus" data-act="zsFeldPlus">${icon("add")}Feld anhängen</button>`,
+function zsEdSel(zs){ if(!AW) return 0; AW.feldSel=Math.max(0,Math.min(zs.felder.length-1,AW.feldSel||0)); return AW.feldSel; }
+function zsEdBild(zs,reihen){ const n=zs.felder.length, sel=zsEdSel(zs);
+  return `<div class="zs-ed" style="width:min(100%,${n*104}px);--n:${n}" data-n="${n}"><div class="zs-ed-svg">${zsSvg(zs,reihen)}</div>
+    <div class="zs-ed-hit" style="grid-template-columns:repeat(${n},1fr)">${zs.felder.map((f,i)=>`<button type="button" data-zsfeld="${i}" aria-label="Feld ${i+1}" aria-pressed="${i===sel}"></button>`).join("")}</div></div>`; }
+function zsEdKontrolle(zs){ const sel=zsEdSel(zs), f=zs.felder[sel]; if(!f) return "";
+  return `<div class="zs-edk"><div class="zs-edk-t"><b>Feld ${sel+1}</b><small>${esc(ZS_TYP[f.typ]||"")}</small></div>
+    <div class="zs-ftyp" role="group">${["z","v","m"].map(t=>`<button type="button" data-act="zsTyp" data-i="${sel}" data-v="${t}" aria-pressed="${f.typ===t}">${ZS_TYP_KURZ[t]}</button>`).join("")}</div>
+    ${f.typ==="z"?`<div class="zs-ftyp" role="group">${[1,2].map(n=>`<button type="button" data-act="zsAnz" data-i="${sel}" data-v="${n}" aria-pressed="${(f.n||1)===n}">${n===1?"1 Zähler":"2 Zähler"}</button>`).join("")}</div>`:""}
+    <div class="zs-edk-a"><button type="button" class="btn-tonal" data-act="zsFeldZiehen" data-i="${sel}" data-d="-1" ${sel?"":"disabled"} aria-label="Nach links">${icon("back")}</button><button type="button" class="btn-tonal zs-rechts" data-act="zsFeldZiehen" data-i="${sel}" data-d="1" ${sel<zs.felder.length-1?"":"disabled"} aria-label="Nach rechts">${icon("back")}</button>
+      <span style="flex:1"></span><button type="button" class="btn-tonal zs-weg" data-act="zsFeldWeg" data-i="${sel}" ${zs.felder.length<2?"disabled":""}>${icon("del")}Entfernen</button></div></div>`; }
+function zsFelderFenster(zs,reihen,weiterAct,weiterTxt){ return {frage:"Welche Felder, von links nach rechts?",hinweis:"Feld antippen zum Ändern – ziehen zum Verschieben.",
+  inhalt:`<div class="zs-bild zs-edb" id="zsEdB">${zsEdBild(zs,reihen)}</div>
+    <div id="zsEdK">${zsEdKontrolle(zs)}</div>
+    <button type="button" class="aw-unbek zs-plus" data-act="zsFeldPlus">${icon("add")}Feld anhängen</button>
+    <div class="aw-lbl">Schrankhöhe</div><div class="zs-ftyp zs-hoehe" role="group">${ZS_HOEHE.map(([h,t])=>`<button type="button" data-act="zsHoeheF" data-v="${h}" aria-pressed="${(+zs.hoehe||0)===h}">${h?t:"Andere"}</button>`).join("")}</div>`,
   fuss:`<span style="flex:1"></span><button type="button" class="btn-filled" data-act="${weiterAct}">${weiterTxt}</button>`}; }
+/* Ziehen in der Zeichnung: Pointer-Events (Maus, Finger, Stift) – während des Ziehens wird live umsortiert */
+let ZS_ZUG=null;
+document.addEventListener("pointerdown",e=>{ const b=e.target.closest&&e.target.closest("[data-zsfeld]"); if(!b) return; const zs=zsAkt(); if(!zs) return;
+  const hit=b.parentElement; ZS_ZUG={hit,start:e.clientX,i:+b.dataset.zsfeld,zieht:false,id:e.pointerId}; try{ hit.setPointerCapture(e.pointerId); }catch(_){} e.preventDefault(); });
+document.addEventListener("pointermove",e=>{ const Z=ZS_ZUG; if(!Z||e.pointerId!==Z.id) return; const zs=zsAkt(); if(!zs) return;
+  if(!Z.zieht&&Math.abs(e.clientX-Z.start)<8) return; Z.zieht=true;
+  const r=Z.hit.getBoundingClientRect(), n=zs.felder.length, ziel=Math.max(0,Math.min(n-1,Math.floor((e.clientX-r.left)/r.width*n)));
+  if(ziel===Z.i) return; const [f]=zs.felder.splice(Z.i,1); zs.felder.splice(ziel,0,f); Z.i=ziel; AW.feldSel=ziel;
+  const sv=Z.hit.parentElement.querySelector(".zs-ed-svg"); if(sv) sv.innerHTML=zsSvg(zs,AW.reihen||(AW.d&&AW.d.reihen));
+  Z.hit.querySelectorAll("[data-zsfeld]").forEach((x,k)=>x.setAttribute("aria-pressed",k===ziel)); Z.hit.classList.add("zieht"); });
+function zsZugEnde(e){ const Z=ZS_ZUG; if(!Z||e.pointerId!==Z.id) return; ZS_ZUG=null; const zs=zsAkt(); if(!zs) return;
+  if(!Z.zieht) AW.feldSel=Z.i; else zsAbgleich(zs);
+  zsEdNeu(); }
+document.addEventListener("pointerup",zsZugEnde); document.addEventListener("pointercancel",zsZugEnde);
+/* Nur Zeichnung und Bedienfeld neu – das Fenster scrollt nicht nach oben */
+function zsEdNeu(){ const zs=zsAkt(); if(!zs) return; const B=document.getElementById("zsEdB"), K=document.getElementById("zsEdK"); if(!B||!K){ zsNeuZeichnen(); return; }
+  B.innerHTML=zsEdBild(zs,AW.reihen||(AW.d&&AW.d.reihen)); K.innerHTML=zsEdKontrolle(zs); }
 function zsHoeheFenster(zs){ return {frage:"Wie hoch ist der Schrank?",hinweis:"Daraus ergibt sich, wie viele Reihen das Verteilerfeld hat – 12 TE je Reihe.",
   inhalt:`<div class="aw-liste">${ZS_HOEHE.map(([h,t,u])=>awKachel("zsHoehe",h,"",t,u,+zs.hoehe===h&&zs.hoehe!=null)).join("")}</div>`}; }
 function zsApzFenster(zs){ const O=zs.felder.filter(f=>f.typ!=="z").flatMap(f=>["oben","unten"].map(l=>[f,l]));
@@ -281,14 +312,15 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "zsVorl": { const k=b.dataset.v, eigen=k==="eigen", neu=eigen?(zs.felder.length?zs:zsAusVorlage("1z")):zsAusVorlage(k);
       if(AW.typ==="neu"){ AW.d.zs=neu; AW.d.zsEigen=eigen; AW.i++; awNeuZeigen(); }
       else { AW.zs=neu; AW.schritte=["aufbau",...zsSchritte(neu,eigen)]; AW.i++; zsZeigen(); } return; }
-  case "zsTyp": { const f=zs.felder[+b.dataset.i]; f.typ=b.dataset.v; if(f.typ==="z"&&!f.n) f.n=1; zsAbgleich(zs); zsSchritteNeu(); zsNeuZeichnen(); return; }
-  case "zsAnz": zs.felder[+b.dataset.i].n=+b.dataset.v; zsAbgleich(zs); zsSchritteNeu(); zsNeuZeichnen(); return;
-  case "zsFeldWeg": zs.felder.splice(+b.dataset.i,1); zsAbgleich(zs); zsSchritteNeu(); zsNeuZeichnen(); return;
-  case "zsFeldPlus": zs.felder.push({id:uid(),typ:"v"}); zsAbgleich(zs); zsSchritteNeu(); zsNeuZeichnen(); return;
+  case "zsTyp": { const f=zs.felder[+b.dataset.i]; f.typ=b.dataset.v; if(f.typ==="z"&&!f.n) f.n=1; zsAbgleich(zs); zsSchritteNeu(); zsEdNeu(); return; }
+  case "zsAnz": zs.felder[+b.dataset.i].n=+b.dataset.v; zsAbgleich(zs); zsSchritteNeu(); zsEdNeu(); return;
+  case "zsFeldWeg": zs.felder.splice(+b.dataset.i,1); AW.feldSel=Math.max(0,+b.dataset.i-1); zsAbgleich(zs); zsSchritteNeu(); zsEdNeu(); return;
+  case "zsFeldPlus": zs.felder.push({id:uid(),typ:"v"}); AW.feldSel=zs.felder.length-1; zsAbgleich(zs); zsSchritteNeu(); zsEdNeu(); return;
+  case "zsFeldZiehen": { const i=+b.dataset.i, j=i+(+b.dataset.d); if(j<0||j>=zs.felder.length) return; [zs.felder[i],zs.felder[j]]=[zs.felder[j],zs.felder[i]]; AW.feldSel=j; zsAbgleich(zs); zsEdNeu(); return; }
   case "zsApz": { const [id,l]=String(b.dataset.v).split(":"); zs.apz=id?{feldId:id,lage:l}:null;
       if(AW.typ==="neu"){ if(AW.sub) AW.sub=null; else AW.i++; awNeuZeigen(); } else if(AW.modus==="apz") zsSpeichern(); else { AW.i++; zsZeigen(); } return; }
   case "zsHoehe": zs.hoehe=+b.dataset.v; if(AW.typ==="neu"){ if(AW.sub) AW.sub=+zs.hoehe?null:"reihen"; else AW.i++; awNeuZeigen(); } return;
-  case "zsHoeheF": zs.hoehe=+b.dataset.v; zsNeuZeichnen(); return;
+  case "zsHoeheF": zs.hoehe=+b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)); zsEdNeu(); return;
   case "zsSpaeter": { const z=zsAktZp(); if(z){ zsZpLesen(z); if(zsBelegt(z)){ z.zweck=""; z.sls=""; } }
       if(AW.typ==="neu"){ const S=awNeuSchritte(); if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); }
       else if(AW.schritte&&AW.i<AW.schritte.length-1){ AW.i++; zsZeigen(); } else zsSpeichern(); return; }
