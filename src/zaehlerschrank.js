@@ -16,6 +16,21 @@ const zsReihenFeld=(zs,f,reihen)=>{ if(+f.reihen) return +f.reihen; const h=+zs.
 const zsReihenSumme=(zs,reihen)=>zs.felder.filter(f=>f.typ==="v").reduce((a,f)=>a+zsReihenFeld(zs,f,reihen),0);
 const ZS_ART=[["ehz","eHZ (BKE-I)","Stecktechnik"],["3pkt","3-Punkt","Schraubbefestigung"]];
 const ZS_SLS=[["E35","SLS E35"],["E40","SLS E40"],["E50","SLS E50"],["E63","SLS E63"],["keiner","Keiner / weiß nicht"]];
+/* SLS je Zählerplatz und Überspannungsschutz je Schrank – Hersteller und Artikel (Sammelschiene im NAR).
+   Schneider Electric: kein SLS für die Zählerplatz-Sammelschiene gefunden, darum nur Hager und ABB. */
+const ZS_SLS_HERST=[["hager","Hager"],["abb","ABB"]];
+const ZS_SLS_NR={hager:{E35:"HTS335E",E40:"HTS340E",E50:"HTS350E",E63:"HTS363E"},abb:{E35:"2CDS781001R4352",E40:"2CDS781001R4402",E50:"2CDS781001R4502",E63:"2CDS781001R4632"}};
+const ZS_SLS_TYP={hager:a=>`Hager HTS3${a}E`,abb:a=>`ABB S751/3-E${a}`};
+const ZS_USS=[["SPA700Z","Hager SPA700Z","Typ 1+2+3 · 3-polig · TN-C · Sammelschiene"],["SPA701Z","Hager SPA701Z","Typ 1+2+3 · 4-polig · TT/TN-S · Sammelschiene"],
+  ["2CTB815799R2800","ABB OVR ZP 3N 7.5-255","Typ 1+2+3 · mit integriertem LS · Sammelschiene"],["2CTB815799R1100","ABB OVR ZP+ 3N 7.5-255","Typ 1+2 · 4-polig · TT/TN-S"],
+  ["A9L16482","Schneider Acti9 iPRD1 12.5r 3P+N","Typ 1+2 · TT/TN-S · Hutschiene"],["keiner","Ohne / nicht festgelegt",""]];
+const zsSlsStd=zs=>zs&&zs.hersteller==="sj"?"abb":"hager";
+const zsSlsH=(zs,z)=>z&&ZS_SLS_NR[z.slsH]?z.slsH:zsSlsStd(zs);
+function zsSlsGeraet(zs,z){ if(!z||!z.sls||z.sls==="keiner") return null; const h=zsSlsH(zs,z), a=z.sls.slice(1), nr=ZS_SLS_NR[h][z.sls];
+  const i=MAT_INFO[nr]||MAT_INFO[h==="abb"?"2CDS781001R4352":""]||null; return {h,nr,name:ZS_SLS_TYP[h](a),bild:i&&i.bild||""}; }
+const zsUssStd=zs=>zs&&zs.hersteller==="sj"?"2CTB815799R2800":"SPA700Z";
+function zsUssGeraet(zs){ const k=zs.uss||zsUssStd(zs); if(k==="keiner") return null; const e=ZS_USS.find(x=>x[0]===k)||ZS_USS[0], i=MAT_INFO[e[0]];
+  return {nr:e[0],name:e[1],info:e[2],bild:i&&i.bild||""}; }
 const zsTxt=(L,k)=>(L.find(x=>x[0]===k)||[])[1]||"";
 const zsFeldAus=c=>c[0]==="z"?{id:uid(),typ:"z",n:+c[1]||1}:{id:uid(),typ:c};
 function zsAusVorlage(k){ const v=ZS_VORL.find(x=>x[0]===k)||ZS_VORL[0], felder=v[3].map(zsFeldAus), vf=felder.find(f=>f.typ==="v")||felder.find(f=>f.typ==="m");
@@ -199,9 +214,13 @@ function zsZpFenster(zs,i,weiterAct,weiterTxt){ const z=zs.zp[i]; if(!z) return 
   return {frage:`Zähler ${i+1}`,hinweis:`Zählerfeld ${zsFeldNr(zs,z.feldId)} von links${f.n===2?(z.pos?", rechter Platz":", linker Platz"):""}`,
     inhalt:`<div class="zs-vs"><div class="zs-bild">${zsSvg(zs,4,false,`${z.feldId}:${z.pos||0}`)}</div><div class="zs-vs-r">${gr("Wofür","zsZweck",ZS_ZWECK,z.zweck)}
       ${zsBelegt(z)?`${gr("Zählerart","zsArt",ZS_ART,z.art)}${gr("SLS im NAR","zsSls",ZS_SLS,z.sls)}
+      ${z.sls&&z.sls!=="keiner"?gr("SLS-Hersteller","zsSlsH",ZS_SLS_HERST,zsSlsH(zs,z))+`<p class="aw-hinweis zs-geraet">${esc((zsSlsGeraet(zs,z)||{}).name||"")} · ${esc((zsSlsGeraet(zs,z)||{}).nr||"")}</p>`:""}
+      <div class="aw-lbl">Überspannungsschutz · einmal im Schrank</div><div class="aw-liste zs-uss">${ZS_USS.map(([k,t,u])=>awKachel("zsUss",k,"",t,u,(zs.uss||zsUssStd(zs))===k)).join("")}</div>
       <div class="fg1 aw-eigen">${tf("zsBez","Bezeichnung (optional)",z.bez||"",{form:true,ph:"z. B. Wohnung EG"})}</div>
       <div class="fg1 aw-eigen">${tf("zsNr","Zählernummer (optional)",z.nr||"",{form:true,ph:"steht auf dem Zähler, z. B. 1EBZ01…"})}</div>`:`<p class="aw-hinweis zs-frei-t">Der Platz bleibt frei – z. B. für eine spätere Wärmepumpe oder Wallbox. Unbenutzte Zählerplätze berührungssicher abdecken.</p>`}</div></div>`,
     fuss:`<button type="button" class="btn-tonal" data-act="zsSpaeter">Später</button><span style="flex:1"></span><button type="button" class="btn-filled" data-act="${weiterAct}">${weiterTxt}</button>`}; }
+function zsZpBildNeu(){ const zs=zsAkt(), z=zsAktZp(), el=document.querySelector("#dlg .zs-vs>.zs-bild"); if(!zs||!z||!el) return;
+  el.innerHTML=zsSvg(zs,4,false,`${z.feldId}:${z.pos||0}`); const h=document.querySelector("#dlg .zs-geraet"), g=zsSlsGeraet(zs,z); if(h&&g) h.textContent=`${g.name} · ${g.nr}`; }
 function zsZpLesen(z){ if(!z) return; const b=document.getElementById("f_zsBez"), n=document.getElementById("f_zsNr"); if(b) z.bez=b.value.trim(); if(n) z.nr=n.value.trim().replace(/\s+/g," "); }
 
 /* ---- Bestückung je Feld nach VDE-AR-N 4100:2026 und Netzbetreiber ----
@@ -250,9 +269,9 @@ function zsHinweise(zs){ const H=[], nb=zsNb(zs), off=zsBestOffenGesamt(zs);
   return H; }
 function zsMaterial(zs,reihen){ const M=new Map(), add=t=>M.set(t,(M.get(t)||0)+1);
   if(zs.modell) add(`Zählerschrank ${zsHerstText(zs.modell.h).split(" ")[0]} ${zs.modell.hnr} (${zs.modell.name})`);
-  zs.felder.forEach(f=>{ if(zs.modell){ if(f.typ==="z") zs.zp.filter(x=>x.feldId===f.id).forEach(z=>{ if(zsBelegt(z)&&z.sls&&z.sls!=="keiner") add(`SLS ${z.sls} 3-polig`); }); return; }
+  zs.felder.forEach(f=>{ if(zs.modell){ if(f.typ==="z") zs.zp.filter(x=>x.feldId===f.id).forEach(z=>{ const g=zsBelegt(z)&&zsSlsGeraet(zs,z); if(g) add(`SLS ${g.name} (${g.nr})`); }); return; }
     if(f.typ==="z"){ const Z=zs.zp.filter(x=>x.feldId===f.id), art=Z.some(z=>z.art==="3pkt")?"3-Punkt":"eHZ";
-      add(`Zählerfeld ${art}${f.n===2?", 2 Zähler":""}`); Z.forEach(z=>{ if(zsBelegt(z)&&z.sls&&z.sls!=="keiner") add(`SLS ${z.sls} 3-polig`); }); }
+      add(`Zählerfeld ${art}${f.n===2?", 2 Zähler":""}`); Z.forEach(z=>{ const g=zsBelegt(z)&&zsSlsGeraet(zs,z); if(g) add(`SLS ${g.name} (${g.nr})`); }); }
     else if(f.typ==="v") add(`Verteilerfeld ${zsReihenFeld(zs,f,reihen)}-reihig`); else add("Multimedia-Feld"); });
   if(zs.apz&&!zs.modell) add("APZ-Einbau 300 mm");
   /* Bestückung: Pflichtpunkte immer (Planung), optionale nur wenn angehakt */
@@ -261,7 +280,7 @@ function zsMaterial(zs,reihen){ const M=new Map(), add=t=>M.set(t,(M.get(t)||0)+
     if(brauch(f.id,"hs")) for(let i=0;i<n;i++) add("Hauptschalter 3-polig, plombierbar");
     if(brauch(f.id,"rj45")) add("RJ45-Buchse"); if(brauch(f.id,"ssk")) add("Steuersignalklemmleiste");
     if(brauch(f.id,"hlak")) add("Hauptleitungsabzweigklemme"); if(brauch(f.id,"relais")) add("Trennrelais §14a"); });
-  if(zs.felder.some(f=>f.typ==="z")){ add("Überspannungsschutz Typ 1"); add("Spannungsversorgung RfZ/APZ mit Absicherung"); }
+  if(zs.felder.some(f=>f.typ==="z")){ const u=zsUssGeraet(zs); add(u?`Überspannungsschutz ${u.name} (${u.nr})`:"Überspannungsschutz Typ 1 – noch festlegen"); add("Spannungsversorgung RfZ/APZ mit Absicherung"); }
   return [...M].map(([t,n])=>`<div class="zs-mat"><b>${n}×</b><span>${esc(t)}</span></div>`).join(""); }
 function zsKarte(L){ const zs=L.zs, zu=L.fertig;
   if(!zs||!zs.felder||!zs.felder.length) return `<section class="card zs-karte"><h3>Zählerschrank</h3><p class="meta">Zählerplätze, Zählerart, SLS, Zählernummern und APZ – Aufbau per Vorlage.</p>${zu?"":`<button type="button" class="btn-tonal" data-act="zsEinrichten">Zählerschrank einrichten</button>`}</section>`;
@@ -328,8 +347,10 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
       else if(AW.schritte&&AW.i<AW.schritte.length-1){ AW.i++; zsZeigen(); } else zsSpeichern(); return; }
   case "zsZweck": { const z=zsAktZp(); if(!z) return; const war=zsBelegt(z); zsZpLesen(z); z.zweck=b.dataset.v; if(zsBelegt(z)&&!z.sls) z.sls="E35";
       if(war!==zsBelegt(z)){ zsNeuZeichnen(); return; } b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)); return; }
-  case "zsArt": case "zsSls": { const z=zsAktZp(); if(!z) return; z[{zsArt:"art",zsSls:"sls"}[a]]=b.dataset.v;
-      b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)); return; }
+  case "zsArt": case "zsSls": case "zsSlsH": { const z=zsAktZp(); if(!z) return; zsZpLesen(z); z[{zsArt:"art",zsSls:"sls",zsSlsH:"slsH"}[a]]=b.dataset.v;
+      if(a==="zsSls"){ zsNeuZeichnen(); return; }
+      b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)); zsZpBildNeu(); return; }
+  case "zsUss": { zsZpLesen(zsAktZp()); zs.uss=b.dataset.v; zsNeuZeichnen(); return; }
   case "zsWeiter": zsZpLesen(zsAktZp()); AW.i++; zsZeigen(); return;
   case "zsSpeichern": zsSpeichern(); return;
   case "zsBest": { const wo=b.dataset.wo, k=b.dataset.k; zs.best=zs.best||{}; zs.best[wo]=zs.best[wo]||{}; zs.best[wo][k]=!zs.best[wo][k]; if(!zs.best[wo][k]) delete zs.best[wo][k];
