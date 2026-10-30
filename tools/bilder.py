@@ -41,3 +41,34 @@ if "--holen" in sys.argv:
         except Exception as e:
             fehler += 1; print("FEHLT", u, "–", e)
     print(f"vorhanden {ok}, neu {neu}, fehlgeschlagen {fehler}")
+
+# Gerätefotos der Materialliste: weißen Rand wegschneiden, damit das Gerät mittig sitzt (Hager stellt es links ins Bild),
+# und auf höchstens 640 px verkleinern (Hager liefert 2160 px). Läuft bei jedem Aufruf, schadet bereits bearbeiteten Bildern nicht.
+def zuschneiden():
+    try:
+        from PIL import Image, ImageChops
+    except ImportError:
+        print("Pillow fehlt – Gerätefotos nicht zugeschnitten"); return
+    mat = set(MUSTER.findall((root / "src" / "material.js").read_text(encoding="utf-8")))
+    zahl = 0
+    for u in sorted(mat):
+        d = ziel / liste.get(u, "")
+        if not liste.get(u) or not d.exists(): continue
+        im = Image.open(d); im.load()
+        a = im.convert("RGBA"); flach = Image.alpha_composite(Image.new("RGBA", a.size, (255, 255, 255, 255)), a).convert("RGB")
+        maske = ImageChops.difference(flach, Image.new("RGB", flach.size, (255, 255, 255))).convert("L").point(lambda v: 255 if v > 12 else 0)
+        bb = maske.getbbox()
+        if not bb: continue
+        w, h = bb[2] - bb[0], bb[3] - bb[1]
+        rand = round(max(w, h) * 0.04)
+        s = max(w, h) + 2 * rand  # quadratisch, Gerät in der Mitte
+        neu = Image.new("RGB", (s, s), (255, 255, 255)); neu.paste(flach.crop(bb), ((s - w) // 2, (s - h) // 2))
+        if s > 640: neu = neu.resize((640, 640), Image.LANCZOS)
+        if neu.size == im.size and abs(bb[0] - (im.size[0] - bb[2])) <= 4 and abs(bb[1] - (im.size[1] - bb[3])) <= 4: continue  # schon mittig
+        fmt = {"jpg": "JPEG", "png": "PNG", "webp": "WEBP"}.get(d.suffix[1:].lower())
+        if not fmt: continue
+        neu.save(d, fmt, quality=88); zahl += 1
+    print(f"Gerätefotos zugeschnitten: {zahl}")
+
+if "--holen" in sys.argv or "--zuschneiden" in sys.argv:
+    zuschneiden()
