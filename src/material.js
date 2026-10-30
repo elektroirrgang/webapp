@@ -145,15 +145,15 @@ const matHnr=n=>String(n||"").replace(/\s+/g,"").toUpperCase();
 const MAT_INFO={
   MBS110:{bild:"https://assets.hager.com/step-content/P/HA_16255176/11/std.lang.all/MBS110.webp",tech:{art:"ls",char:"B",in:10,pole:1,te:1}},
   MBS116:{bild:"https://assets.hager.com/step-content/P/HA_16255195/11/std.lang.all/MBS116.webp",tech:{art:"ls",char:"B",in:16,pole:1,te:1}},
-  MBS120:{bild:"https://www.elektrikshop.de/images/product_images/original_images/1143_0.jpg",tech:{art:"ls",char:"B",in:20,pole:1,te:1}},
-  MBS125:{bild:"https://www.elektrikshop.de/images/product_images/original_images/1144_0.jpg",tech:{art:"ls",char:"B",in:25,pole:1,te:1}},
-  MBS132:{bild:"https://www.elektrikshop.de/images/product_images/original_images/1145_0.jpg",tech:{art:"ls",char:"B",in:32,pole:1,te:1}},
+  MBS120:{bild:"https://assets.hager.com/step-content/P/HA_16255196/11/std.lang.all/MBS120.webp",tech:{art:"ls",char:"B",in:20,pole:1,te:1}},
+  MBS125:{bild:"https://assets.hager.com/step-content/P/HA_16255197/11/std.lang.all/MBS125.webp",tech:{art:"ls",char:"B",in:25,pole:1,te:1}},
+  MBS132:{bild:"https://assets.hager.com/step-content/P/HA_16255198/11/std.lang.all/MBS132.webp",tech:{art:"ls",char:"B",in:32,pole:1,te:1}},
   MCS116:{bild:"https://assets.hager.com/step-content/P/HA_16256279/11/std.lang.all/MCS116.webp",tech:{art:"ls",char:"C",in:16,pole:1,te:1}},
   MBS316:{bild:"https://assets.hager.com/step-content/P/HA_16255234/11/std.lang.all/MBS316.webp",tech:{art:"ls",char:"B",in:16,pole:3,te:3}},
   MCS316:{bild:"https://assets.hager.com/step-content/P/HA_16256337/11/std.lang.all/MCS316.webp",tech:{art:"ls",char:"C",in:16,pole:3,te:3}},
   CDS440D:{bild:"https://assets.hager.com/step-content/P/HA_16197936/11/std.lang.all/CDS440D.webp",tech:{art:"rcd",in:40,idn:30,typ:"A",pole:4,te:4}},
   CDS463D:{bild:"https://assets.hager.com/step-content/P/HA_16197955/11/std.lang.all/CDS463D.webp",tech:{art:"rcd",in:63,idn:30,typ:"A",pole:4,te:4}},
-  ADS916D:{bild:"https://assets.hager.com/step-content/P/HA_16371443/11/std.lang.all/ADS916D.webp",tech:{art:"rcbo",char:"B",in:16,idn:30,typ:"A",pole:2,te:2}}};
+  ADS916D:{bild:"https://assets.hager.com/step-content/P/HA_16371443/11/std.lang.all/ADS916D.webp",tech:{art:"rcbo",char:"B",in:16,idn:30,typ:"A",pole:"1+N",te:2}}};
 const matInfo=m=>m?MAT_INFO[matHnr(m.herstellerNr)]||null:null;
 const matBild=m=>m&&(m.bild||(matInfo(m)||{}).bild)||"";
 const matTech=m=>m&&(m.tech||(matInfo(m)||{}).tech)||null;
@@ -219,7 +219,7 @@ function materialListe(){
     ...(m.weitere||[]).filter(w=>w&&w.nr&&w.nr!==nr).map(w=>`${w.bei||"Nr."} ${w.nr}`),m.egu&&`EGU ${m.egu}`].filter(Boolean).join(" · "); };
   const item=m=>{ const n=z[matNorm(m.name)]||0, nr=matNr(m);
     return kachel?`<button class="mk" data-act="matStammOpen" data-id="${esc(m.id)}">
-        ${matBild(m)?matFoto(m,"mk-bild"):""}<span class="mk-top">${matBild(m)?"":matKatBadge(m.kategorie)}${m.neu?pill("wip","neu"):""}${n?`<span class="mk-n">${n}× benutzt</span>`:""}</span>
+        ${matBild(m)?matFoto(m,"mk-bild"):""}${matBild(m)&&!m.neu&&!n?"":`<span class="mk-top">${matBild(m)?"":matKatBadge(m.kategorie)}${m.neu?pill("wip","neu"):""}${n?`<span class="mk-n">${n}× benutzt</span>`:""}</span>`}
         <span class="mk-name">${esc(m.name)}</span>
         <span class="mk-sub">${esc(unter(m))}</span>${m.listeName?`<span class="mk-sub mk-liste">Liste: ${esc(m.listeName)}</span>`:""}
         <span class="mk-fuss">${nr?matNrChip(nr):`<span class="mk-ohne">Keine Nummer</span>`}</span></button>`
