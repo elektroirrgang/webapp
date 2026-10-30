@@ -1347,7 +1347,7 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
   .aw-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
   .aw-g .mat-foto.aw-gb,.aw-g-ic .aw-gb,.aw-g.zs-mod .zs-mod-svg{height:150px}.zs-mod-svg .zs-svg.klein{width:96px}
   .zs-vs{display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:start}.zs-vs>.zs-bild{margin:0;position:sticky;top:0}
-  .zs-vs>.zs-bild{padding:16px 18px 10px}.zs-vs>.zs-bild:not(.zs-edb) .zs-svg{width:calc(var(--n,3) * 150px);max-width:min(calc(var(--n,3) * 150px),46vw)!important;max-height:calc(100dvh - 320px)}
+  .zs-vs>.zs-bild .zs-ki{width:min(46vw,calc(var(--n,3) * 150px))}.zs-vs>.zs-bild{padding:16px 18px 10px}.zs-vs>.zs-bild:not(.zs-edb) .zs-svg{width:calc(var(--n,3) * 150px);max-width:min(calc(var(--n,3) * 150px),46vw)!important;max-height:calc(100dvh - 320px)}
   .zs-vs-r>.aw-lbl:first-child{margin-top:0}.zs-vs-r .aw-liste{margin-top:0}.zs-vs-r .zs-edk{margin-top:0}
   .zs-vs .zs-best{grid-template-columns:1fr}
   .zs-vs .zs-zps{margin-top:0}
@@ -1360,6 +1360,7 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 
 /* Felder-Editor: Zeichnung antippen/ziehen, darunter das Bedienfeld des gewählten Felds */
 .zs-edb{padding:14px 12px 10px}
+.zs-ki{position:relative;margin:0 auto;width:min(100%,calc(var(--n,3) * 124px))}.zs-ki .zs-svg{width:100%!important;max-width:none!important;max-height:none!important}.zs-ki-h button{position:absolute;border:0;padding:0;margin:0;background:transparent;border-radius:6px;cursor:pointer;transition:background .15s}.zs-ki-h button:hover,.zs-ki-h button:focus-visible{background:rgba(200,16,46,.14);outline:none}.zs-ki-h .zp,.zs-ki-h .apz{z-index:2}.zs-mod-svg{position:relative;background:#fff!important;padding:6px}.zs-mod-svg .zs-svg.klein{width:auto!important;height:100%;max-width:100%!important}.zs-mod-foto{position:absolute;right:6px;bottom:6px;width:46px;height:46px;object-fit:contain;background:#fff;border-radius:10px;padding:3px}
 .zs-ed{position:relative;margin:0 auto}.zs-ed .zs-svg{max-width:none!important}
 .zs-ed-hit{position:absolute;inset:0;display:block;padding:0}
 .zs-ed-hit button{position:absolute;top:0;bottom:0;border:0;background:transparent;border-radius:10px;cursor:grab;touch-action:none;margin:0;padding:0}
