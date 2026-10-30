@@ -38,11 +38,12 @@ function awNeuStart(kind,id){ const s=kind==="standorte"&&standortOf(id), k=kind
   AW={typ:"neu",kid:k?k.id:"",ort:s?s.id:k&&!ss.length?"k:"+k.id:"",ortWahl:ss.length>0,i:0,d:{art:"",montage:"",reihen:0,name:"",netz:null},unter:k?(s?[k.name,s.name].filter(Boolean).join(" · "):k.name):"Ohne Kunde"};
   awNeuZeigen(); }
 function awNeuSchritte(){ const hv=AW.d.art==="hv", zs=AW.d.zs;
-  return ["art","montage",...(hv?["aufbau",...(AW.d.zsEigen?["felder","apz"]:[])]:[]),"reihen",...(AW.ortWahl?["ort"]:[]),"name","netz",...(hv&&zs?zs.zp.map((_,i)=>"zp"+i):[])]; }
+  return ["art","montage",...(hv?["aufbau",...(AW.d.zsEigen?["felder","apz"]:[]),"hoehe"]:[]),...(hv&&zs&&+zs.hoehe?[]:["reihen"]),...(AW.ortWahl?["ort"]:[]),"name","netz",...(hv&&zs?zs.zp.map((_,i)=>"zp"+i):[])]; }
 function awNeuZeigen(){ const S=awNeuSchritte(), sk=S[AW.i], d=AW.d, R={titel:"Neuer Verteiler",unter:AW.unter,schritt:AW.i,schritte:S.length};
   if(sk==="aufbau") return awRahmen({...R,...zsAufbauFenster(d.zs)});
   if(sk==="felder") return awRahmen({...R,...zsFelderFenster(d.zs,4,"awNeuWeiter","Weiter")});
   if(sk==="apz") return awRahmen({...R,...zsApzFenster(d.zs)});
+  if(sk==="hoehe") return awRahmen({...R,...zsHoeheFenster(d.zs)});
   if(sk&&sk.startsWith("zp")){ const n=+sk.slice(2), letzt=AW.i===S.length-1; return awRahmen({...R,...zsZpFenster(d.zs,n,"awNeuWeiter",letzt?"Anlegen":"Weiter")}); }
   if(sk==="art") return awRahmen({...R,frage:"Was für ein Verteiler?",hinweis:"Antippen – es geht sofort weiter.",inhalt:`<div class="aw-liste">${AW_ART.map(([v,t,s])=>awKachel("awNeuW",v,awSvg(v),t,s,d.art===v)).join("")}</div>`});
   if(sk==="montage") return awRahmen({...R,frage:"Wie ist er montiert?",inhalt:`<div class="aw-liste">${awKachel("awNeuW","up",awSvg("up"),"Unterputz","in der Wand oder Hohlwand",d.montage==="up")}${awKachel("awNeuW","ap",awSvg("ap"),"Aufputz","auf der Wand",d.montage==="ap")}</div>`});
@@ -59,7 +60,7 @@ function awNeuZeigen(){ const S=awNeuSchritte(), sk=S[AW.i], d=AW.d, R={titel:"N
 function awNeuWahl(v){ const S=awNeuSchritte(), sk=S[AW.i], d=AW.d;
   if(sk==="art"){ if(d.art!==v){ d.zs=v==="hv"?zsAusVorlage("1z"):null; d.zsEigen=false; } d.art=v; } else if(sk==="montage") d.montage=v; else if(sk==="reihen") d.reihen=+v; else if(sk==="ort") AW.ort=v; else if(sk==="name") d.name=v; else if(sk==="netz") d.netz=v;
   if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); }
-function awNeuAnlegen(){ const d=AW.d, wer=(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""), extra={art:d.art,montage:d.montage,reihen:d.reihen||3,teReihe:12,...(d.art==="hv"&&d.zs?{zs:zsAbgleich(d.zs)}:{})};
+function awNeuAnlegen(){ const d=AW.d, wer=(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""), extra={art:d.art,montage:d.montage,reihen:d.art==="hv"&&d.zs&&+d.zs.hoehe?zsReihenSumme(d.zs,0):(d.reihen||3),teReihe:12,...(d.art==="hv"&&d.zs?{zs:zsAbgleich(d.zs)}:{})};
   if(AW.kid){ const g=ecGeb(AW.ort||"k:"+AW.kid), id=uid();
     g.verteiler.push({id,name:d.name||"Verteiler",netz:d.netz||"",stand:ecHeute(),ersteller:wer,...extra}); ecGebSpeichern(g);
     AW=null; $("#dlg").classList.remove("aw"); closeOverlays(); go({v:"vt",g:g.id,id}); }
@@ -91,7 +92,7 @@ function awKatalog(){ const L=legAkt(); if(!L){ awZu(); return; } AW.m=null;
   awRahmen({titel:L.titel||"Verteiler",unter:awBelegText(L),inhalt:`<div class="aw-such"><span class="aw-lupe">${icon("search")}</span><input id="awSuch" type="search" placeholder="Suchen: B16, RCD, Typ A …" value="${esc(AW.such)}" autocomplete="off"></div>
       <div class="aw-tabs" role="group">${[["ls","Automaten"],["rcd","RCD"],["rcbo","FI/LS"],["sonst","Sonstiges"]].map(([k,t])=>`<button type="button" data-act="awTab" data-v="${k}" aria-pressed="${AW.tab===k}">${t}</button>`).join("")}</div>
       <div id="awGrid">${awGrid()}</div>`,
-    fuss:`<span class="aw-fuss-info">${esc(AW.zuletzt||(legE(L).length?`${legE(L).filter(e=>e.art!=="gr").length} Geräte im Verteiler`:""))}</span><button type="button" class="btn-tonal" data-act="awZu">Fertig</button>`});
+    fuss:`<span class="aw-fuss-info">${esc(AW.zuletzt||(legE(L).length?`${legE(L).filter(e=>e.art!=="gr").length} Geräte im Verteiler`:""))}</span><button type="button" class="btn-tonal" data-act="awZu">${legE(L).length?"Fertig":"Später bestücken"}</button>`});
   const z=$("#dlg .aw-zur"); if(z) z.hidden=true; }
 function awGrid(){ const q=AW.such.trim().toLowerCase(), z=awNutzung(), L=legAkt(), E=L?legE(L):[];
   const herst=(()=>{ for(let i=E.length-1;i>=0;i--){ const m=E[i].mat&&awGeraete().find(x=>matHnr(x.herstellerNr)===E[i].mat); if(m) return m.hersteller; } return ""; })();
