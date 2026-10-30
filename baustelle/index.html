@@ -7857,7 +7857,16 @@ const MAT_INFO={
   MCS316:{bild:"https://assets.hager.com/step-content/P/HA_16256337/11/std.lang.all/MCS316.webp",tech:{art:"ls",char:"C",in:16,pole:3,te:3}},
   CDS440D:{bild:"https://assets.hager.com/step-content/P/HA_16197936/11/std.lang.all/CDS440D.webp",tech:{art:"rcd",in:40,idn:30,typ:"A",pole:4,te:4}},
   CDS463D:{bild:"https://assets.hager.com/step-content/P/HA_16197955/11/std.lang.all/CDS463D.webp",tech:{art:"rcd",in:63,idn:30,typ:"A",pole:4,te:4}},
-  ADS916D:{bild:"https://assets.hager.com/step-content/P/HA_16371443/11/std.lang.all/ADS916D.webp",tech:{art:"rcbo",char:"B",in:16,idn:30,typ:"A",pole:"1+N",te:2}}};
+  ADS916D:{bild:"https://assets.hager.com/step-content/P/HA_16371443/11/std.lang.all/ADS916D.webp",tech:{art:"rcbo",char:"B",in:16,idn:30,typ:"A",pole:"1+N",te:2}},
+  A9F03116:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2736_0.jpg",tech:{art:"ls",char:"B",in:16,pole:1,te:1}},
+  A9F04116:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2748_0.jpg",tech:{art:"ls",char:"C",in:16,pole:1,te:1}},
+  A9F03132:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2739_0.jpg",tech:{art:"ls",char:"B",in:32,pole:1,te:1}},
+  A9F03316:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2742_0.jpg",tech:{art:"ls",char:"B",in:16,pole:3,te:3}},
+  A9F04316:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2754_0.jpg",tech:{art:"ls",char:"C",in:16,pole:3,te:3}},
+  A9F03332:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2745_0.jpg",tech:{art:"ls",char:"B",in:32,pole:3,te:3}},
+  A9Z21440:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2763_0.jpg",tech:{art:"rcd",in:40,idn:30,typ:"A",pole:4,te:4}},
+  A9Z21463:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2764_0.jpg",tech:{art:"rcd",in:63,idn:30,typ:"A",pole:4,te:4}},
+  A9D56616:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2770_0.jpg",tech:{art:"rcbo",char:"B",in:16,idn:30,typ:"A",pole:"1+N",te:2}}};
 const matInfo=m=>m?MAT_INFO[matHnr(m.herstellerNr)]||null:null;
 const matBild=m=>m&&(m.bild||(matInfo(m)||{}).bild)||"";
 const matTech=m=>m&&(m.tech||(matInfo(m)||{}).tech)||null;
@@ -8081,12 +8090,12 @@ const MAT_FIRMA=[
 ["FI/LS Hager 16A/B - 30 mA","schutz","","Hager","ADS916D","5705400","","","","",10],
 ["LS Schneider 16 A/B 1-polig","schutz","","Schneider Electric","A9F03116","5706693","","","","",11],
 ["LS Schneider 16 A/C 1-polig","schutz","","Schneider Electric","A9F04116","5706760","","","","",11],
-["LS Schneider 32 A/B 1-polig","schutz","","Schneider Electric","","5706696","","","","",11],
+["LS Schneider 32 A/B 1-polig","schutz","","Schneider Electric","A9F03132","5706696","","","","Herstellernr. fehlte in der Firmenliste – A9F03132 ergänzt (iC60N B32 1-polig)",11],
 ["LS Schneider 16 A/B 3-polig","schutz","","Schneider Electric","A9F03316","5706716","","","","",11],
 ["LS Schneider 16 A/C 3-polig","schutz","","Schneider Electric","A9F04316","5706790","","","","",11],
 ["LS Schneider 32 A/B 3-polig","schutz","","Schneider Electric","A9F03332","5706719","","","","",11],
-["FI Schneider 40/0,03 4-polig","schutz","","Schneider Electric","A9Z26440","5707624","","","","",12],
-["FI Schneider 63/0,03 4-polig","schutz","","Schneider Electric","A9Z26463","5707625","","","","",12],
+["FI Schneider 40/0,03 4-polig","schutz","","Schneider Electric","A9Z26440","5707624","","","","Bitte prüfen: A9Z26440 ist laut Hersteller ein 500-mA-FI. Der 30-mA-FI Typ A 40 A heißt A9Z21440.",12],
+["FI Schneider 63/0,03 4-polig","schutz","","Schneider Electric","A9Z26463","5707625","","","","Bitte prüfen: A9Z26463 ist laut Hersteller ein 500-mA-FI. Der 30-mA-FI Typ A 63 A heißt A9Z21463.",12],
 ["FI/LS Schneider 16A/B - 30 mA","schutz","","Schneider Electric","A9D56616","5706619","","","","",12],
 ["3 Phasen Schiene","verteiler","","Schneider Electric","A9XPH312","0791687","","","","",12],
 ["BALS Quick Connect Stecker 5×16 A","schalter","","Bals","","1000111","","","","",13],
