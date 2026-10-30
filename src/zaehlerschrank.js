@@ -164,10 +164,10 @@ function zsEdKontrolle(zs){ const sel=zsEdSel(zs), f=zs.felder[sel]; if(!f) retu
     <div class="zs-edk-a"><button type="button" class="btn-tonal" data-act="zsFeldZiehen" data-i="${sel}" data-d="-1" ${sel?"":"disabled"} aria-label="Nach links">${icon("back")}</button><button type="button" class="btn-tonal zs-rechts" data-act="zsFeldZiehen" data-i="${sel}" data-d="1" ${sel<zs.felder.length-1?"":"disabled"} aria-label="Nach rechts">${icon("back")}</button>
       <span style="flex:1"></span><button type="button" class="btn-tonal zs-weg" data-act="zsFeldWeg" data-i="${sel}" ${zs.felder.length<2?"disabled":""}>${icon("del")}Entfernen</button></div></div>`; }
 function zsFelderFenster(zs,reihen,weiterAct,weiterTxt){ return {frage:"Welche Felder, von links nach rechts?",hinweis:"Feld antippen zum Ändern – ziehen zum Verschieben.",
-  inhalt:`<div class="zs-bild zs-edb" id="zsEdB">${zsEdBild(zs,reihen)}</div>
+  inhalt:`<div class="zs-vs"><div class="zs-bild zs-edb" id="zsEdB">${zsEdBild(zs,reihen)}</div><div class="zs-vs-r">
     <div id="zsEdK">${zsEdKontrolle(zs)}</div>
     <button type="button" class="aw-unbek zs-plus" data-act="zsFeldPlus">${icon("add")}Feld anhängen</button>
-    <div class="aw-lbl">Schrankhöhe</div><div class="zs-ftyp zs-hoehe" role="group">${ZS_HOEHE.map(([h,t])=>`<button type="button" data-act="zsHoeheF" data-v="${h}" aria-pressed="${(+zs.hoehe||0)===h}">${h?t:"Andere"}</button>`).join("")}</div>`,
+    <div class="aw-lbl">Schrankhöhe</div><div class="zs-ftyp zs-hoehe" role="group">${ZS_HOEHE.map(([h,t])=>`<button type="button" data-act="zsHoeheF" data-v="${h}" aria-pressed="${(+zs.hoehe||0)===h}">${h?t:"Andere"}</button>`).join("")}</div></div></div>`,
   fuss:`<span style="flex:1"></span><button type="button" class="btn-filled" data-act="${weiterAct}">${weiterTxt}</button>`}; }
 /* Ziehen in der Zeichnung: Pointer-Events (Maus, Finger, Stift) – während des Ziehens wird live umsortiert */
 let ZS_ZUG=null;
@@ -187,18 +187,18 @@ document.addEventListener("pointerup",zsZugEnde); document.addEventListener("poi
 function zsEdNeu(){ const zs=zsAkt(); if(!zs) return; const B=document.getElementById("zsEdB"), K=document.getElementById("zsEdK"); if(!B||!K){ zsNeuZeichnen(); return; }
   B.innerHTML=zsEdBild(zs,AW.reihen||(AW.d&&AW.d.reihen)); K.innerHTML=zsEdKontrolle(zs); }
 function zsHoeheFenster(zs){ return {frage:"Wie hoch ist der Schrank?",hinweis:"Daraus ergibt sich, wie viele Reihen das Verteilerfeld hat – 12 TE je Reihe.",
-  inhalt:`<div class="aw-liste">${ZS_HOEHE.map(([h,t,u])=>awKachel("zsHoehe",h,"",t,u,+zs.hoehe===h&&zs.hoehe!=null)).join("")}</div>`}; }
+  inhalt:`<div class="zs-vs"><div class="zs-bild">${zsSvg(zs,0)}</div><div class="zs-vs-r"><div class="aw-liste">${ZS_HOEHE.map(([h,t,u])=>awKachel("zsHoehe",h,"",t,u,+zs.hoehe===h&&zs.hoehe!=null)).join("")}</div></div></div>`}; }
 function zsApzFenster(zs){ const O=zs.felder.filter(f=>f.typ!=="z").flatMap(f=>["oben","unten"].map(l=>[f,l]));
   return {frage:"Wo sitzt der APZ?",hinweis:"Abschlusspunkt Zählerplatz: genau einmal im Schrank, ganz oben oder ganz unten im Verteiler- oder Multimediafeld.",
-    inhalt:`<div class="aw-liste">${O.map(([f,l])=>awKachel("zsApz",`${f.id}:${l}`,"",`${ZS_TYP[f.typ]} ${zsFeldNr(zs,f.id)} · ${l}`,"",zs.apz&&zs.apz.feldId===f.id&&zs.apz.lage===l)).join("")}
-      ${awKachel("zsApz","","","Kein APZ","Bestandsanlage – muss nicht nachgerüstet werden",!zs.apz)}</div>`}; }
+    inhalt:`<div class="zs-vs"><div class="zs-bild">${zsSvg(zs,0)}</div><div class="zs-vs-r"><div class="aw-liste">${O.map(([f,l])=>awKachel("zsApz",`${f.id}:${l}`,"",`${ZS_TYP[f.typ]} ${zsFeldNr(zs,f.id)} · ${l}`,"",zs.apz&&zs.apz.feldId===f.id&&zs.apz.lage===l)).join("")}
+      ${awKachel("zsApz","","","Kein APZ","Bestandsanlage – muss nicht nachgerüstet werden",!zs.apz)}</div></div></div>`}; }
 function zsZpFenster(zs,i,weiterAct,weiterTxt){ const z=zs.zp[i]; if(!z) return null; const f=zs.felder.find(x=>x.id===z.feldId)||{};
   const gr=(lbl,act,L,cur)=>`<div class="aw-lbl">${lbl}</div><div class="aw-wahl">${L.map(([k,t])=>`<button type="button" data-act="${act}" data-v="${k}" aria-pressed="${cur===k}">${esc(t)}</button>`).join("")}</div>`;
   return {frage:`Zähler ${i+1}`,hinweis:`Zählerfeld ${zsFeldNr(zs,z.feldId)} von links${f.n===2?(z.pos?", rechter Platz":", linker Platz"):""}`,
-    inhalt:`<div class="zs-bild">${zsSvg(zs,4,false,`${z.feldId}:${z.pos||0}`)}</div>${gr("Wofür","zsZweck",ZS_ZWECK,z.zweck)}
+    inhalt:`<div class="zs-vs"><div class="zs-bild">${zsSvg(zs,4,false,`${z.feldId}:${z.pos||0}`)}</div><div class="zs-vs-r">${gr("Wofür","zsZweck",ZS_ZWECK,z.zweck)}
       ${zsBelegt(z)?`${gr("Zählerart","zsArt",ZS_ART,z.art)}${gr("SLS im NAR","zsSls",ZS_SLS,z.sls)}
       <div class="fg1 aw-eigen">${tf("zsBez","Bezeichnung (optional)",z.bez||"",{form:true,ph:"z. B. Wohnung EG"})}</div>
-      <div class="fg1 aw-eigen">${tf("zsNr","Zählernummer (optional)",z.nr||"",{form:true,ph:"steht auf dem Zähler, z. B. 1EBZ01…"})}</div>`:`<p class="aw-hinweis zs-frei-t">Der Platz bleibt frei – z. B. für eine spätere Wärmepumpe oder Wallbox. Unbenutzte Zählerplätze berührungssicher abdecken.</p>`}`,
+      <div class="fg1 aw-eigen">${tf("zsNr","Zählernummer (optional)",z.nr||"",{form:true,ph:"steht auf dem Zähler, z. B. 1EBZ01…"})}</div>`:`<p class="aw-hinweis zs-frei-t">Der Platz bleibt frei – z. B. für eine spätere Wärmepumpe oder Wallbox. Unbenutzte Zählerplätze berührungssicher abdecken.</p>`}</div></div>`,
     fuss:`<button type="button" class="btn-tonal" data-act="zsSpaeter">Später</button><span style="flex:1"></span><button type="button" class="btn-filled" data-act="${weiterAct}">${weiterTxt}</button>`}; }
 function zsZpLesen(z){ if(!z) return; const b=document.getElementById("f_zsBez"), n=document.getElementById("f_zsNr"); if(b) z.bez=b.value.trim(); if(n) z.nr=n.value.trim().replace(/\s+/g," "); }
 
@@ -233,8 +233,8 @@ function zsBestOffenGesamt(zs){ const ziele=[...zs.felder.filter(f=>f.typ==="z")
 function zsBestFenster(zs,ziel){ const P=zsBestPunkte(zs,ziel), zonen=[...new Set(P.map(b=>b.zone))];
   const titel=ziel==="a"?"APZ":`Zählerfeld ${zsFeldNr(zs,ziel)}`;
   return {frage:`Was ist drin? · ${titel}`,hinweis:`Pflicht nach VDE-AR-N 4100:2026${zsNb(zs)!=="anderer"?" und "+zsTxt(ZS_NB,zsNb(zs)):""}. Antippen = vorhanden.`,
-    inhalt:zonen.map(zo=>`<div class="aw-lbl">${zo==="AAR"?"AAR · oben":zo==="NAR"?"NAR · unten":zo==="RfZ"?"RfZ · über dem Zähler":"APZ"}</div><div class="zs-best">${P.filter(b=>b.zone===zo).map(b=>{ const hat=zsBestHat(zs,b.wo,b.k), pf=b.p(zs), s=zsBestText(zs,b);
-      return `<button type="button" class="zs-bp" data-act="zsBest" data-wo="${esc(b.wo)}" data-k="${b.k}" aria-pressed="${hat}"><span class="zs-bt"><b>${esc(b.t)}</b>${s?`<small>${esc(s)}</small>`:""}</span><span class="zs-bs${!hat&&pf?" offen":""}">${hat?"vorhanden":pf?"fehlt":"optional"}</span></button>`; }).join("")}</div>`).join(""),
+    inhalt:`<div class="zs-vs"><div class="zs-bild">${zsSvg(zs,0)}</div><div class="zs-vs-r">`+zonen.map(zo=>`<div class="aw-lbl">${zo==="AAR"?"AAR · oben":zo==="NAR"?"NAR · unten":zo==="RfZ"?"RfZ · über dem Zähler":"APZ"}</div><div class="zs-best">${P.filter(b=>b.zone===zo).map(b=>{ const hat=zsBestHat(zs,b.wo,b.k), pf=b.p(zs), s=zsBestText(zs,b);
+      return `<button type="button" class="zs-bp" data-act="zsBest" data-wo="${esc(b.wo)}" data-k="${b.k}" aria-pressed="${hat}"><span class="zs-bt"><b>${esc(b.t)}</b>${s?`<small>${esc(s)}</small>`:""}</span><span class="zs-bs${!hat&&pf?" offen":""}">${hat?"vorhanden":pf?"fehlt":"optional"}</span></button>`; }).join("")}</div>`).join("")+`</div></div>`,
     fuss:`<span style="flex:1"></span><button type="button" class="btn-filled" data-act="zsSpeichern">Speichern</button>`}; }
 function zsNbFenster(zs){ return {frage:"Welcher Netzbetreiber?",hinweis:"Danach richten sich die Pflichtpunkte der Bestückung.",
   inhalt:`<div class="aw-liste">${ZS_NB.map(([k,t,s])=>awKachel("zsNb",k,"",t,s,zsNb(zs)===k)).join("")}</div>`}; }
