@@ -4,11 +4,12 @@ const FDEF={};
 IC.filt=IC.filt||"M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z";
 /* Filter/Sortieren-Fenster an der Suchleiste (gleich für alle Listen) */
 const fW=(n,k)=>{ const v=(META.f||{})[n+"."+k]; return v==null?FDEF[n].std[k]:v; };
-const fAktiv=n=>Object.keys(FDEF[n].std).some(k=>fW(n,k)!==FDEF[n].std[k]);
+/* FDEF[n].ohne: Schlüssel, die woanders umgeschaltet werden (z. B. Umschalter über der Liste) – zählen nicht als Filter */
+const fAktiv=n=>Object.keys(FDEF[n].std).some(k=>!(FDEF[n].ohne||[]).includes(k)&&fW(n,k)!==FDEF[n].std[k]);
 const fKnopf=n=>({act:"fPop",n,aktiv:fAktiv(n)});
 function fNeu(n){ const r=$("#res"); if(r) r.innerHTML=FDEF[n].liste(); const f=$(".such-f"); if(f) f.classList.toggle("an",fAktiv(n)); }
 function fSet(n,k,v){ META.f=Object.assign({},META.f||{},{[n+"."+k]:v}); metaSave(); fNeu(n); }
-function fWeg(n,alles){ const D=FDEF[n], f=Object.assign({},META.f||{}); Object.keys(D.std).forEach(k=>{ if(alles||k!=="sort") delete f[n+"."+k]; }); META.f=f; metaSave(); fNeu(n); }
+function fWeg(n,alles){ const D=FDEF[n], f=Object.assign({},META.f||{}); Object.keys(D.std).forEach(k=>{ if((alles||k!=="sort")&&!(D.ohne||[]).includes(k)) delete f[n+"."+k]; }); META.f=f; metaSave(); fNeu(n); }
 function fInfo(n,anz,ein,mehr){ const D=FDEF[n], t=D.gruppen.filter(g=>fW(n,g.k)!==D.std[g.k]).map(g=>(g.opts.find(o=>o[0]===fW(n,g.k))||[,""])[1]);
   return t.length?`<p class="meta f-info">${anz} ${anz===1?ein:mehr} · ${esc(t.join(" · "))} <button class="btn-text inl" data-act="fWeg" data-n="${n}">Filter aufheben</button></p>`:""; }
 const abcB=x=>{ const c=String(x||"").trim().normalize("NFD").replace(/[̀-ͯ]/g,"").charAt(0).toUpperCase(); return /[A-Z]/.test(c)?c:"#"; };

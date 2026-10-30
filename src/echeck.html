@@ -1311,6 +1311,7 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .zs-felder{display:grid;gap:8px;margin-top:12px}
 .zs-feld{display:flex;align-items:center;gap:8px;background:var(--sc);border-radius:18px;padding:6px 4px 6px 12px}
 .zs-fnr{font-weight:800;width:20px;color:var(--on-sv)}
+.ec-seg{display:flex;gap:4px;background:var(--sc);border-radius:24px;padding:4px;margin:4px 0 12px}.ec-seg button{flex:1;height:40px;border:0;border-radius:20px;background:transparent;color:var(--on-sv);font:inherit;font-weight:600;font-size:15px;cursor:pointer}.ec-seg button[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
 .zs-fre{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}.zs-ftyp{display:flex;gap:4px;min-width:0}
 .zs-ftyp button{flex:1;min-width:0;height:40px;border:0;border-radius:12px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:13px;font-weight:700;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .zs-ftyp button[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
@@ -2116,7 +2117,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
       return TOPDEST.map(([k,t,i])=>`<button class="nav-item${k==="mehr"?" nav-end":""}" data-act="nav" data-v="${k}" ${k===active?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join(""); })();
   let title="", sub="", fab=null, body="";
   if(login) body=loginView();
-  else if(nav.v==="anlagen"){ title="Installation"; body=ecListeView("anlage"); fab=["ecNeuA","Prüfung","add"]; }
+  else if(nav.v==="anlagen"){ title="Installation"; body=ecListeView("anlage"); fab=typeof ecInstVt==="function"&&ecInstVt()?["legNeu","Verteiler","add"]:["ecNeuA","Prüfung","add"]; }
   else if(nav.v==="geraete"){ title="Geräte"; body=ecListeView("geraete"); fab=["ecNeuG","Prüfung","add"]; }
   else if(nav.v==="netzwerk"){ title="Netzwerk"; body=ecListeView("netz"); fab=["ecNeuN","Prüfung","add"]; }
   else if(nav.v==="netzkatalog"){ title="Netzwerk-Katalog"; body=ecKatalogView(); }
