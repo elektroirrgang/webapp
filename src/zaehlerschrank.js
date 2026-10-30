@@ -121,7 +121,7 @@ function zsModellFenster(d){ const b=d.bedarf, need=Math.max(1,zsBedarfZp(b)), v
   return {frage:"Welcher Schrank?",hinweis:passt.length?`Für ${was}. Antippen übernimmt Felder, Höhe und APZ.`:`Für ${was} gibt es kein fertiges Modell – „Ohne Modell“ stellt den Schrank aus deinen Angaben zusammen.`,
     inhalt:`${genau.length?`<div class="aw-lbl">Passt genau</div><div class="aw-grid">${genau.map(karte).join("")}</div>`:""}
       ${groesser.length?`<div class="aw-lbl">Größer</div><div class="aw-grid">${groesser.map(karte).join("")}</div>`:""}
-      <div class="aw-liste" style="margin-top:14px">${awKachel("awModell","",awSvg("frei"),"Ohne Modell","Felder aus den Angaben zusammenstellen",d.zs&&!d.zs.modell)}</div>`}; }
+      <div class="aw-liste" style="margin-top:14px">${awKachel("awModell","",awSvg("frei"),"Ohne Modell","Felder aus den Angaben zusammenstellen",!!d.ohneModell)}</div>`}; }
 function zsBedarfFenster(b){ const st=(k,t,u)=>`<div class="zs-st"><span class="zs-stt"><b>${esc(t)}</b>${u?`<small>${esc(u)}</small>`:""}</span><button type="button" class="zs-stb" data-act="awBed" data-k="${k}" data-d="-1" aria-label="weniger">−</button><span class="zs-stn" id="awBed_${k}">${+b[k]||0}</span><button type="button" class="zs-stb" data-act="awBed" data-k="${k}" data-d="1" aria-label="mehr">+</button></div>`;
   return {frage:"Was soll dran?",hinweis:"Daraus stellt die App den Schrank zusammen – Felder, Höhe, APZ und Zählerplätze.",
     inhalt:`<div class="aw-lbl">Zählerplätze</div><div class="zs-sts">${ZS_BEDARF.map(([k,t,u])=>st(k,t,u)).join("")}</div>
@@ -136,7 +136,7 @@ const zsBedarfSumHtml=b=>`${zsSvg(zsAusBedarf(b,null),0,true)}<span>${esc(zsBeda
 function zsVorschlagFenster(d,ortPlz){ const zs=d.zs, nb=zs.nb, R=(k,t,u)=>`<button type="button" class="zs-zp" data-act="awSub" data-v="${k}"><span class="zs-zt"><b>${esc(t)}</b><small>${esc(u)}</small></span>${icon("chev")}</button>`;
   const nZ=zs.zp.filter(zsBelegt).length, nF=zs.zp.length-nZ, vf=zs.felder.filter(f=>f.typ==="v");
   return {frage:"Vorschlag",hinweis:"Aus deinen Angaben abgeleitet. Antippen zum Ändern – sonst „Passt so“.",
-    inhalt:`<div class="zs-bild">${zsSvg(zs,0)}</div><div class="zs-zps">
+    inhalt:`<div class="zs-vs"><div class="zs-bild">${zsSvg(zs,0)}</div><div class="zs-zps">
       ${R("modell","Schrank",zs.modell?`${zsHerstText(zs.modell.h).split(" ")[0]} ${zs.modell.hnr} · ${zs.modell.name}`:"ohne Modell – aus den Angaben")}
       ${R("bedarf","Zählerplätze",`${nZ} Zähler${nF?` + ${nF} frei`:""} · ${zs.felder.filter(f=>f.typ==="z").length} Zählerfeld${zs.felder.filter(f=>f.typ==="z").length===1?"":"er"} · eHZ (BKE-I)`)}
       ${R("felder","Felder",zs.felder.map(f=>ZS_TYP_KURZ[f.typ]).join(" · "))}
@@ -147,7 +147,7 @@ function zsVorschlagFenster(d,ortPlz){ const zs=d.zs, nb=zs.nb, R=(k,t,u)=>`<but
       ${R("montage","Montage",d.montage==="ap"?"Aufputz":"Unterputz")}
       ${R("name","Name",d.name||"HV")}
       ${R("netz","Netzform",(d.netz||"").split(" |")[0]||"nicht angegeben")}
-      ${R("nb","Netzbetreiber",nb?`${zsTxt(ZS_NB,nb)}${d.nbAuto?` · aus PLZ ${ortPlz}`:""}`:"unbekannt – bitte wählen")}</div>`,
+      ${R("nb","Netzbetreiber",nb?`${zsTxt(ZS_NB,nb)}${d.nbAuto?` · aus PLZ ${ortPlz}`:""}`:"unbekannt – bitte wählen")}</div></div>`,
     fuss:`<span style="flex:1"></span><button type="button" class="btn-filled" data-act="awNeuWeiter">Passt so · anlegen</button>`}; }
 
 /* ---- Fenster (liefern frage/inhalt/fuss für awRahmen) ---- */
