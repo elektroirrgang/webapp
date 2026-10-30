@@ -54,7 +54,7 @@ function zsSvg(zs,reihen,klein,aktiv){ const F=zs.felder, W=72, G=4, H=176, w=F.
         +`<rect x="${x+8}" y="${(t1-22).toFixed(1)}" width="${W-16}" height="16" rx="4" class="e"/>${[0,1,2].map(j=>`<circle cx="${x+20+j*16}" cy="${(t1-14).toFixed(1)}" r="4.5" class="d2"/>`).join("")}`
         +(apz?`<rect x="${x+4}" y="${oben?y+4:y+H-46}" width="${W-8}" height="42" rx="3" class="a"/>${T(x+W/2,(oben?y+4:y+H-46)+26,"APZ")}`:""); }
     return `<rect x="${x}" y="${y}" width="${W}" height="${H}" rx="6" class="f"/>${inn}${T(x+W/2,y+H+16,ZS_TYP_KURZ[f.typ],"u")}`; };
-  return `<svg class="zs-svg${klein?" klein":""}" viewBox="0 0 ${w} ${klein?H+8:H+24}" style="max-width:${F.length*(klein?28:104)}px" aria-hidden="true">${F.map(feld).join("")}</svg>`; }
+  return `<svg class="zs-svg${klein?" klein":""}" viewBox="0 0 ${w} ${klein?H+8:H+24}" style="--n:${F.length};max-width:${F.length*(klein?28:104)}px" aria-hidden="true">${F.map(feld).join("")}</svg>`; }
 
 /* ---- Bedarf → Vorschlag (wie ein Zählerschrank-Konfigurator: erst fragen, was dran soll, dann alles ableiten) ---- */
 const ZS_HERST=[["hager","Hager","univers Z"],["sj","ABB","Striebel & John"],["abn","ABN",""],["andere","Anderer / weiß nicht",""]];
