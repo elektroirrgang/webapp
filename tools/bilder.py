@@ -49,7 +49,7 @@ def zuschneiden():
         from PIL import Image, ImageChops
     except ImportError:
         print("Pillow fehlt – Gerätefotos nicht zugeschnitten"); return
-    mat = set(MUSTER.findall((root / "src" / "material.js").read_text(encoding="utf-8")))
+    mat = set(MUSTER.findall((root / "src" / "material-daten.js").read_text(encoding="utf-8")))
     zahl = 0
     for u in sorted(mat):
         d = ziel / liste.get(u, "")

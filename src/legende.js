@@ -77,6 +77,7 @@ function legView(L){ const E=legE(L);
   return `<div class="narrow ec-spalte leg">
     <section class="card"><h3>${L._geb?"Angaben":"Anlage"}</h3>${(()=>{ const o=kundeOf(L.kundeId)?ecOrt(L.ortId||"k:"+L.kundeId):null;
       return `<div class="ec-hinweis leg-zu">${icon(o?"firma":"folder")}<span>${o?`Gehört zu <b>${esc(o.titel)}</b>${L.anschrift?` · ${esc(L.anschrift)}`:""}`:"Liegt unter „Ohne Kunde“"}</span>${L._geb?"":`<button type="button" class="btn-tonal" data-act="legZu">Kunde zuordnen</button>`}</div>`; })()}<div class="ec-fg">
+      ${legBauart(L)?`<p class="leg-bauart">${esc(legBauart(L))}</p>`:""}
       <div class="reihe2">${legFeld(L,"titel","Verteiler",{ph:"z. B. HV Keller"})}${legFeld(L,"stand","Stand",{type:"date"})}</div>
       ${L._geb?"":`${legFeld(L,"kunde","Kunde",{ph:"Name oder Firma"})}
       ${legFeld(L,"anschrift","Anschrift",{ph:"Straße, PLZ Ort"})}`}
@@ -91,6 +92,7 @@ function legView(L){ const E=legE(L);
 
 /* ===== Ansichten der Stromkreise: Liste (je RCD eine Gruppe) und Verteiler (Reihen, Breite in TE) ===== */
 const legAnsicht=()=>META.legAnsicht==="verteiler"?"verteiler":"liste";
+const legBauart=L=>[{hv:"Zählerschrank / HV",uv:"Unterverteiler",gw:"Gewerbe / Standverteiler"}[L.art],{ap:"Aufputz",up:"Unterputz"}[L.montage],L.reihen&&`${L.reihen}-reihig · ${L.reihen*(+L.teReihe||12)} TE`].filter(Boolean).join(" · ");
 const legTE=e=>+e.te||(e.art==="rcd"?4:e.art==="sk"&&+e.pole===3?3:1);
 const legOffen=e=>e.art==="sk"&&/^\s*\??\s*$/.test(e.bez||"");
 /* Liste: RCD als Kopf, seine Automaten eingerückt darunter; Überschriften trennen */
@@ -220,6 +222,7 @@ function legSkOk(weiter){ const L=legAkt(); if(!L||!legDlg) return; const F=form
   if(a==="gr"&&!F.legBez){ toast("Bitte eine Überschrift eintragen"); return; }
   if(a!=="gr"&&!F.legKz){ toast("Bitte eine Kennzeichnung eintragen"); return; }
   const r={id:legDlg.id||uid(),art:a,kz:a==="gr"?"":F.legKz,bez:a==="res"?"":a==="rcd"&&!F.legBez?"Fehlerstromschutzschalter":F.legBez,schutz:a==="gr"?"":F.legSchutz,pole:a==="sk"?+legDlg.pole:1,...(legDlg.te?{te:+legDlg.te}:{}),...(legDlg.umbruch?{umbruch:true}:{}),...(legDlg.sym?{sym:legDlg.sym}:{})};
+  { const alt=E.find(x=>x.id===r.id); if(alt&&alt.mat&&alt.schutz===r.schutz&&alt.art===r.art) r.mat=alt.mat; }   /* Artikel aus der Materialliste bleibt, solange die Absicherung gleich ist */
   let i=E.findIndex(x=>x.id===r.id); if(i>=0) E[i]=r; else { E.splice(legDlg.pos,0,r); i=legDlg.pos; }
   legSpeichern(L); render();
   if(weiter) legSkDlg(null,i); else closeOverlays(); }
@@ -259,7 +262,7 @@ async function legPdfMachen(){ const L=legAkt(); if(!L) return; if(!legE(L).leng
 /* ---- Klicks und Eingaben ---- */
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="leg"]'); if(!b||b.disabled) return; e.stopPropagation(); const a=b.dataset.act, L=legAkt();
   switch(a){
-  case "legNeu": legNeuDlg(b.dataset.kind,b.dataset.id); return;
+  case "legNeu": awNeuStart(b.dataset.kind,b.dataset.id); return;
   case "legZu": legZuDlg(); return;
   case "legZuOk": { if(!L||L._geb) return; const F=formVals(); if(!F.legZuK){ closeOverlays(); return; }
       const z=vtAusLegende(L,F.ecOrt||"k:"+F.legZuK); closeOverlays(); go({v:"vt",g:z.g,id:z.id}); toast("Jetzt ein Verteiler beim Kunden"); return; }

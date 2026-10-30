@@ -8,9 +8,9 @@ const vtRcdSchutz=r=>{ const t=[r.in&&`${r.in} A`,r.idn&&`${r.idn} mA`].filter(B
 function vtRcdLesen(t){ t=String(t||""); const a=t.match(/(\d+)\s*A(?![a-z])/i), m=t.match(/(\d+)\s*mA/i), y=t.match(/Typ\s*([A-Z+]+)/i); return {in:a?a[1]:"",idn:m?m[1]:"",typ:y?y[1].toUpperCase():""}; }
 /* Einträge eines Verteilers in Anzeige-Reihenfolge: mit pos sortiert, ältere Einträge ohne pos hinter ihren RCD */
 function vtEintraege(g,vId){ const R=g.rcds.filter(r=>r.vId===vId), S=g.stromkreise.filter(s=>s.vId===vId), T=(g.vtTeile||[]).filter(t=>t.vId===vId);
-  const zuE=(o,art)=>art==="rcd"?{id:o.id,art:"rcd",kz:o.nr||"",bez:o.bez||"Fehlerstromschutzschalter",schutz:vtRcdSchutz(o),te:o.te,umbruch:o.umbruch,sym:o.sym,_rcd:o}
-    :art==="sk"?{id:o.id,art:"sk",kz:o.nr||"",bez:o.bez||"",schutz:o.schutz||"",pole:o.pole||1,te:o.te,umbruch:o.umbruch,sym:o.sym,_rcdId:o.rcdId}
-    :{id:o.id,art:o.art,kz:o.kz||"",bez:o.bez||"",schutz:o.schutz||"",te:o.te,umbruch:o.umbruch,sym:o.sym};
+  const zuE=(o,art)=>art==="rcd"?{id:o.id,art:"rcd",kz:o.nr||"",bez:o.bez||"Fehlerstromschutzschalter",schutz:vtRcdSchutz(o),te:o.te,umbruch:o.umbruch,sym:o.sym,mat:o.mat,_rcd:o}
+    :art==="sk"?{id:o.id,art:"sk",kz:o.nr||"",bez:o.bez||"",schutz:o.schutz||"",pole:o.pole||1,te:o.te,umbruch:o.umbruch,sym:o.sym,mat:o.mat,_rcdId:o.rcdId}
+    :{id:o.id,art:o.art,kz:o.kz||"",bez:o.bez||"",schutz:o.schutz||"",te:o.te,umbruch:o.umbruch,sym:o.sym,mat:o.mat};
   const mit=[...R.map(o=>[o,"rcd"]),...S.map(o=>[o,"sk"]),...T.map(o=>[o,o.art])].filter(([o])=>typeof o.pos==="number").sort((a,b)=>a[0].pos-b[0].pos).map(([o,a])=>zuE(o,a));
   const ohne=[]; [...R].sort(ecNr).forEach(r=>{ if(typeof r.pos!=="number") ohne.push(zuE(r,"rcd")); S.filter(s=>s.rcdId===r.id&&typeof s.pos!=="number").sort(ecNr).forEach(s=>ohne.push(zuE(s,"sk"))); });
   S.filter(s=>typeof s.pos!=="number"&&!R.some(r=>r.id===s.rcdId)).sort(ecNr).forEach(s=>ohne.push(zuE(s,"sk")));
@@ -22,12 +22,12 @@ function vtEintraege(g,vId){ const R=g.rcds.filter(r=>r.vId===vId), S=g.stromkre
 /* Virtuelle Legende: alles, was der Editor braucht, aus dem Gebäude */
 function vtL(gid,vId){ const g=vtGeb(gid), v=g&&g.verteiler.find(x=>x.id===vId); if(!v) return null; const o=ecOrt(g.ortId), k=o.kunde;
   return {_geb:gid,_v:vId,id:"vt-"+vId,titel:v.name||"Verteiler",kunde:k?k.name:"",anschrift:adrText(o.standort)||adrText(k)||"",kundeId:k?k.id:"",standortId:o.standort?o.standort.id:"",ortId:g.ortId,
-    netz:v.netz||"",ersteller:v.ersteller||"",stand:v.stand||"",fertig:!!v.fertig,teReihe:v.teReihe,teMm:v.teMm,eintraege:vtEintraege(g,vId),updated:v.updated,createdBy:v.createdBy}; }
+    netz:v.netz||"",ersteller:v.ersteller||"",stand:v.stand||"",fertig:!!v.fertig,art:v.art,montage:v.montage,reihen:v.reihen,teReihe:v.teReihe,teMm:v.teMm,eintraege:vtEintraege(g,vId),updated:v.updated,createdBy:v.createdBy}; }
 /* Zurückschreiben in das Gebäude (vorhandene Felder der Prüfung wie Leitung oder Messwerte bleiben erhalten) */
 function vtSchreiben(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(!v) return;
   Object.assign(v,{name:L.titel||v.name,netz:L.netz||"",ersteller:L.ersteller||"",stand:L.stand||"",fertig:!!L.fertig,teReihe:L.teReihe,teMm:L.teMm,updated:Date.now()});
   ["teReihe","teMm"].forEach(k=>{ if(v[k]==null) delete v[k]; });
-  const E=legE(L), ids=new Set(E.map(e=>e.id)), opt=(o,e)=>{ ["te","umbruch","sym"].forEach(k=>{ if(e[k]) o[k]=e[k]; else delete o[k]; }); };
+  const E=legE(L), ids=new Set(E.map(e=>e.id)), opt=(o,e)=>{ ["te","umbruch","sym","mat"].forEach(k=>{ if(e[k]) o[k]=e[k]; else delete o[k]; }); };
   g.vtTeile=(g.vtTeile||[]).filter(t=>t.vId!==L._v||ids.has(t.id));
   const wegSk=g.stromkreise.filter(s=>s.vId===L._v&&!ids.has(s.id)).map(s=>s.id);
   g.stellen.forEach(st=>{ if(wegSk.includes(st.skId)) st.skId=""; });
@@ -82,5 +82,5 @@ function vtZuruck(gid){ const g=vtGeb(gid), o=g&&ecOrt(g.ortId); return o&&o.sta
 
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="vt"]'); if(!b||b.disabled) return; e.stopPropagation(); const a=b.dataset.act;
   if(a==="vtAuf"){ go({v:"vt",g:b.dataset.g,id:b.dataset.id}); return; }
-  if(a==="vtNeu"){ vtNeuDlg(b.dataset.kind,b.dataset.id); return; }
+  if(a==="vtNeu"){ awNeuStart(b.dataset.kind,b.dataset.id); return; }
   if(a==="vtNeuOk"){ vtNeuOk(); return; } },true);

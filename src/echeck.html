@@ -1254,6 +1254,55 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .leg-n{font-size:13px;font-weight:600;color:var(--on-sv);margin-left:6px}
 /* QR-Aufkleber */
 .qr-karte h3{margin-bottom:12px}
+/* ===== Verteiler-Assistent (vt-aufnahme.js): eine Frage pro Fenster. Handy: ganze Seite, ab iPad: großes Fenster ===== */
+.dlg.aw{display:flex;flex-direction:column;padding:0;left:0;top:0;transform:none;width:100%;height:100dvh;max-height:100dvh;border-radius:0;background:var(--surface);overflow:hidden}
+@media (min-width:700px){.dlg.aw{left:50%;top:50%;transform:translate(-50%,-50%);width:min(640px,calc(100% - 48px));height:min(860px,calc(100dvh - 48px));border-radius:28px}}
+.aw-kopf{display:flex;align-items:center;gap:4px;padding:calc(8px + env(safe-area-inset-top,0px)) 8px 4px}
+@media (min-width:700px){.aw-kopf{padding-top:12px}}
+.aw-tt{flex:1;min-width:0;display:flex;flex-direction:column;padding:0 4px}.aw-tt b{font-size:19px;font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.aw-tt small{font-size:13px;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aw-zur[hidden]{display:grid;visibility:hidden}
+.aw-fort{display:flex;gap:6px;padding:4px 16px 8px}.aw-fort span{flex:1;height:4px;border-radius:2px;background:var(--sc-high)}.aw-fort span.an{background:var(--primary)}
+.aw-inhalt{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:8px 16px 24px}
+.aw-frage{font-size:24px;font-weight:700;line-height:1.3;margin:8px 0 4px;color:var(--on-surface)}
+.aw-hinweis{margin:0 0 4px;color:var(--on-sv);font-size:15px}
+.aw-liste{display:grid;gap:10px;margin-top:16px}.aw-liste.aw-2sp{grid-template-columns:1fr 1fr}
+.aw-k{display:flex;align-items:center;gap:16px;width:100%;min-height:76px;padding:12px 16px;border:0;border-radius:20px;background:var(--sc);color:var(--on-surface);text-align:left;font:inherit;cursor:pointer}
+.aw-k[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
+.aw-kb{width:56px;height:56px;flex:none;display:grid;place-items:center;border-radius:14px;background:var(--sc-high)}
+.aw-k[aria-pressed="true"] .aw-kb{background:rgba(255,255,255,.5)}
+.aw-kt{display:flex;flex-direction:column;min-width:0}.aw-kt b{font-size:17px;font-weight:700;line-height:1.3}.aw-kt small{font-size:14px;color:var(--on-sv);line-height:1.35}
+.aw-k[aria-pressed="true"] .aw-kt small{color:inherit;opacity:.8}
+.aw-svg{width:40px;height:40px}.aw-svg .a{fill:var(--on-sv);opacity:.28}.aw-svg .b{fill:var(--on-sv)}.aw-svg .c{stroke:var(--on-sv);stroke-width:2;fill:none;stroke-linecap:round}
+.aw-eigen{margin-top:16px}
+.aw-fuss{display:flex;align-items:center;gap:8px;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--surface)}
+@media (min-width:700px){.aw-fuss{padding-bottom:16px}}
+.aw-fuss .btn-tonal,.aw-fuss .btn-filled{height:48px;border-radius:24px;padding:0 22px;box-shadow:none}
+.aw-fuss-info{flex:1;min-width:0;font-size:14px;color:var(--on-sv);line-height:1.35}
+.aw-such{display:flex;align-items:center;gap:8px;height:52px;border-radius:26px;background:var(--sc);padding:0 16px;margin-top:4px}
+.aw-such .ic{width:22px;height:22px;fill:var(--on-sv)}.aw-lupe{display:grid}
+.aw-such input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:16px;color:var(--on-surface);outline:0;height:100%}
+.aw-tabs{display:flex;gap:4px;background:var(--sc);border-radius:24px;padding:4px;margin:12px 0 14px}
+.aw-tabs button{flex:1;min-width:0;height:40px;border:0;border-radius:20px;background:transparent;color:var(--on-sv);font:inherit;font-size:14px;font-weight:700;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aw-tabs button[aria-pressed="true"]{background:var(--surface);color:var(--on-surface);box-shadow:var(--e1)}
+.aw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px}
+.aw-g{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:2px;padding:8px 8px 12px;border:0;border-radius:20px;background:var(--sc);color:var(--on-surface);text-align:left;font:inherit;cursor:pointer;min-width:0}
+.aw-g .mat-foto.aw-gb,.aw-g-ic .aw-gb{height:112px;border-radius:14px;padding:10px;margin-bottom:8px}
+.aw-g-ic .aw-gb{display:grid;place-items:center;background:var(--sc-high)}.aw-g-ic .aw-svg{width:48px;height:48px}
+.aw-g b{font-size:15px;font-weight:700;line-height:1.3;padding:0 4px}.aw-g small{font-size:12.5px;color:var(--on-sv);line-height:1.35;padding:0 4px}
+.aw-nochmal{position:absolute;top:14px;left:14px;background:var(--primary);color:var(--on-primary);font-size:12px;font-weight:700;border-radius:10px;padding:2px 8px}
+.aw-leer{color:var(--on-sv);padding:24px 4px}
+.aw-gerat{display:flex;align-items:center;gap:14px;background:var(--pc);color:var(--on-pc);border-radius:20px;padding:10px 16px 10px 10px}
+.aw-gerat .mat-foto.aw-gerat-b{width:56px;height:56px;border-radius:14px;padding:4px}
+.aw-gerat span{display:flex;flex-direction:column;min-width:0}.aw-gerat b{font-size:17px;font-weight:700}.aw-gerat small{font-size:13.5px;opacity:.85}
+.aw-gerat+.aw-frage{margin-top:20px}
+.aw-lbl{font-size:13px;font-weight:700;color:var(--on-sv);margin:16px 4px 8px;text-transform:uppercase;letter-spacing:.06em}
+.aw-wahl{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
+.aw-wahl button{height:48px;border:0;border-radius:14px;background:var(--sc);color:var(--on-surface);font:inherit;font-size:15px;font-weight:600;padding:0 12px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aw-wahl button[aria-pressed="true"]{background:var(--pc);color:var(--on-pc);font-weight:700}
+.aw-wahl .aw-mehr{color:var(--primary);font-weight:700;background:transparent}
+.aw-unbek{display:block;margin:16px auto 0;border:0;background:transparent;color:var(--primary);font:inherit;font-size:15px;font-weight:700;padding:10px 12px}
+.leg-bauart{margin:0 4px 12px;font-size:14px;color:var(--on-sv)}
+
 .qr-zeile,.qr-neu{display:flex;align-items:center;gap:16px}
 .qr-svg{flex:none;border-radius:8px;background:#fff;padding:0;display:block}
 .qr-txt{display:flex;flex-direction:column;gap:4px;min-width:0}
@@ -1695,9 +1744,9 @@ function wann(ts){ if(!ts) return ""; const d=new Date(ts), h=new Date(); const 
 const vonText=r=>r&&r.createdBy&&r.createdBy.name?r.createdBy.name:"";
 /*DATEIEN*/
 /*KUNDE*/
-function closeOverlays(){ ["#menu","#dlg","#scrim"].forEach(s=>$(s).hidden=true); $("#scrim").classList.remove("dim"); $("#menuBtn").setAttribute("aria-expanded","false"); }
+function closeOverlays(){ ["#menu","#dlg","#scrim"].forEach(s=>$(s).hidden=true); $("#dlg").classList.remove("aw"); $("#scrim").classList.remove("dim"); $("#menuBtn").setAttribute("aria-expanded","false"); }
 function dialog(title,body,actions,opt){
-  $("#dlg").classList.toggle("breit",!!(opt&&opt.breit)); $("#dlg").innerHTML=`<h2>${esc(title)}</h2><div class="db">${body}</div>${actions?`<div class="da">${actions}</div>`:""}`;
+  $("#dlg").classList.remove("aw"); $("#dlg").classList.toggle("breit",!!(opt&&opt.breit)); $("#dlg").innerHTML=`<h2>${esc(title)}</h2><div class="db">${body}</div>${actions?`<div class="da">${actions}</div>`:""}`;
   $("#menu").hidden=true; $("#dlg").hidden=false; $("#scrim").hidden=false; $("#scrim").classList.add("dim");
   const f=$("#dlg").querySelector("input:not([type=hidden])"); if(f&&!f.value) setTimeout(()=>f.focus(),50);
 }
@@ -1998,9 +2047,9 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   else if(nav.v==="geraete"){ title="Geräte"; body=ecListeView("geraete"); fab=["ecNeuG","Prüfung","add"]; }
   else if(nav.v==="netzwerk"){ title="Netzwerk"; body=ecListeView("netz"); fab=["ecNeuN","Prüfung","add"]; }
   else if(nav.v==="netzkatalog"){ title="Netzwerk-Katalog"; body=ecKatalogView(); }
-  else if(nav.v==="vt"){ const L=vtL(nav.g,nav.id); if(!L){ nav={v:"anlagen"}; return render(); } title=L.titel; sub="Verteiler"; body=legView(L); fab=L.fertig?null:["legSkNeu","Stromkreis","add"]; }
+  else if(nav.v==="vt"){ const L=vtL(nav.g,nav.id); if(!L){ nav={v:"anlagen"}; return render(); } title=L.titel; sub="Verteiler"; body=legView(L); fab=L.fertig?null:["awStart","Gerät","add"]; }
   else if(nav.v==="ohnekunde"){ title="Ohne Kunde"; sub="Ablage für alles ohne Kunden"; body=legOhneView(); fab=["legNeu","Legende","add"]; }
-  else if(nav.v==="legende"){ const L=DB.legenden.get(nav.id); if(!L||L.deleted){ nav={v:"kunden"}; return render(); } title=L.titel||"Verteiler"; sub="Verteilerlegende"; body=legView(L); fab=L.fertig?null:["legSkNeu","Stromkreis","add"]; }
+  else if(nav.v==="legende"){ const L=DB.legenden.get(nav.id); if(!L||L.deleted){ nav={v:"kunden"}; return render(); } title=L.titel||"Verteiler"; sub="Verteilerlegende"; body=legView(L); fab=L.fertig?null:["awStart","Gerät","add"]; }
   else if(nav.v==="netzkatmodell"){ const K=ecRkKat(nav.id); if(!K){ nav={v:"netzkatalog"}; return render(); } title=K.kurz||K.modell; sub=K.hersteller; body=ecKatModellView(K); }
   else if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); if(!p||p.deleted){ nav={v:"anlagen"}; return render(); }
     title=ecOrt(p.ortId).titel; sub=`${EC_ART[p.art||"anlage"]} · ${ecDatum(p.datum)}`; if(rkS){ sub=`Netzwerkschrank · ${title}`; title=rkS.name; } body=ecView(p); }

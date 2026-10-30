@@ -2101,6 +2101,9 @@ body.kal-mit-pane .kal-wscroll{max-height:calc(100dvh - 330px)}
 .vp-pc .pav{margin-left:-4px;margin-right:6px}.vp-pc,.vg-mitc{display:inline-flex;align-items:center}
 @media (min-width:744px){.dlg.mittel{width:min(720px,calc(100% - 64px))}}
 
+/* Herstellerfoto aus der Materialliste (Baustelle: Materialliste, Gebäudetechnik: Verteiler bestücken) – weißes Bildfeld, Gerät mittig */
+.mat-foto{position:relative;display:block;background:#fff;overflow:hidden;flex:none}.mat-foto img{position:absolute;inset:0;width:100%;height:100%;padding:inherit;box-sizing:border-box;object-fit:contain;display:block}.mat-foto.weg img{display:none}
+
 /* Kunden wie in der Übersicht */
 .kd-adr3{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,.7fr) minmax(0,1.3fr);gap:12px}
 .kd-nr2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px}
@@ -2383,6 +2386,55 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .leg-n{font-size:13px;font-weight:600;color:var(--on-sv);margin-left:6px}
 /* QR-Aufkleber */
 .qr-karte h3{margin-bottom:12px}
+/* ===== Verteiler-Assistent (vt-aufnahme.js): eine Frage pro Fenster. Handy: ganze Seite, ab iPad: großes Fenster ===== */
+.dlg.aw{display:flex;flex-direction:column;padding:0;left:0;top:0;transform:none;width:100%;height:100dvh;max-height:100dvh;border-radius:0;background:var(--surface);overflow:hidden}
+@media (min-width:700px){.dlg.aw{left:50%;top:50%;transform:translate(-50%,-50%);width:min(640px,calc(100% - 48px));height:min(860px,calc(100dvh - 48px));border-radius:28px}}
+.aw-kopf{display:flex;align-items:center;gap:4px;padding:calc(8px + env(safe-area-inset-top,0px)) 8px 4px}
+@media (min-width:700px){.aw-kopf{padding-top:12px}}
+.aw-tt{flex:1;min-width:0;display:flex;flex-direction:column;padding:0 4px}.aw-tt b{font-size:19px;font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.aw-tt small{font-size:13px;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aw-zur[hidden]{display:grid;visibility:hidden}
+.aw-fort{display:flex;gap:6px;padding:4px 16px 8px}.aw-fort span{flex:1;height:4px;border-radius:2px;background:var(--sc-high)}.aw-fort span.an{background:var(--primary)}
+.aw-inhalt{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:8px 16px 24px}
+.aw-frage{font-size:24px;font-weight:700;line-height:1.3;margin:8px 0 4px;color:var(--on-surface)}
+.aw-hinweis{margin:0 0 4px;color:var(--on-sv);font-size:15px}
+.aw-liste{display:grid;gap:10px;margin-top:16px}.aw-liste.aw-2sp{grid-template-columns:1fr 1fr}
+.aw-k{display:flex;align-items:center;gap:16px;width:100%;min-height:76px;padding:12px 16px;border:0;border-radius:20px;background:var(--sc);color:var(--on-surface);text-align:left;font:inherit;cursor:pointer}
+.aw-k[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
+.aw-kb{width:56px;height:56px;flex:none;display:grid;place-items:center;border-radius:14px;background:var(--sc-high)}
+.aw-k[aria-pressed="true"] .aw-kb{background:rgba(255,255,255,.5)}
+.aw-kt{display:flex;flex-direction:column;min-width:0}.aw-kt b{font-size:17px;font-weight:700;line-height:1.3}.aw-kt small{font-size:14px;color:var(--on-sv);line-height:1.35}
+.aw-k[aria-pressed="true"] .aw-kt small{color:inherit;opacity:.8}
+.aw-svg{width:40px;height:40px}.aw-svg .a{fill:var(--on-sv);opacity:.28}.aw-svg .b{fill:var(--on-sv)}.aw-svg .c{stroke:var(--on-sv);stroke-width:2;fill:none;stroke-linecap:round}
+.aw-eigen{margin-top:16px}
+.aw-fuss{display:flex;align-items:center;gap:8px;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--surface)}
+@media (min-width:700px){.aw-fuss{padding-bottom:16px}}
+.aw-fuss .btn-tonal,.aw-fuss .btn-filled{height:48px;border-radius:24px;padding:0 22px;box-shadow:none}
+.aw-fuss-info{flex:1;min-width:0;font-size:14px;color:var(--on-sv);line-height:1.35}
+.aw-such{display:flex;align-items:center;gap:8px;height:52px;border-radius:26px;background:var(--sc);padding:0 16px;margin-top:4px}
+.aw-such .ic{width:22px;height:22px;fill:var(--on-sv)}.aw-lupe{display:grid}
+.aw-such input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:16px;color:var(--on-surface);outline:0;height:100%}
+.aw-tabs{display:flex;gap:4px;background:var(--sc);border-radius:24px;padding:4px;margin:12px 0 14px}
+.aw-tabs button{flex:1;min-width:0;height:40px;border:0;border-radius:20px;background:transparent;color:var(--on-sv);font:inherit;font-size:14px;font-weight:700;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aw-tabs button[aria-pressed="true"]{background:var(--surface);color:var(--on-surface);box-shadow:var(--e1)}
+.aw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px}
+.aw-g{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:2px;padding:8px 8px 12px;border:0;border-radius:20px;background:var(--sc);color:var(--on-surface);text-align:left;font:inherit;cursor:pointer;min-width:0}
+.aw-g .mat-foto.aw-gb,.aw-g-ic .aw-gb{height:112px;border-radius:14px;padding:10px;margin-bottom:8px}
+.aw-g-ic .aw-gb{display:grid;place-items:center;background:var(--sc-high)}.aw-g-ic .aw-svg{width:48px;height:48px}
+.aw-g b{font-size:15px;font-weight:700;line-height:1.3;padding:0 4px}.aw-g small{font-size:12.5px;color:var(--on-sv);line-height:1.35;padding:0 4px}
+.aw-nochmal{position:absolute;top:14px;left:14px;background:var(--primary);color:var(--on-primary);font-size:12px;font-weight:700;border-radius:10px;padding:2px 8px}
+.aw-leer{color:var(--on-sv);padding:24px 4px}
+.aw-gerat{display:flex;align-items:center;gap:14px;background:var(--pc);color:var(--on-pc);border-radius:20px;padding:10px 16px 10px 10px}
+.aw-gerat .mat-foto.aw-gerat-b{width:56px;height:56px;border-radius:14px;padding:4px}
+.aw-gerat span{display:flex;flex-direction:column;min-width:0}.aw-gerat b{font-size:17px;font-weight:700}.aw-gerat small{font-size:13.5px;opacity:.85}
+.aw-gerat+.aw-frage{margin-top:20px}
+.aw-lbl{font-size:13px;font-weight:700;color:var(--on-sv);margin:16px 4px 8px;text-transform:uppercase;letter-spacing:.06em}
+.aw-wahl{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
+.aw-wahl button{height:48px;border:0;border-radius:14px;background:var(--sc);color:var(--on-surface);font:inherit;font-size:15px;font-weight:600;padding:0 12px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aw-wahl button[aria-pressed="true"]{background:var(--pc);color:var(--on-pc);font-weight:700}
+.aw-wahl .aw-mehr{color:var(--primary);font-weight:700;background:transparent}
+.aw-unbek{display:block;margin:16px auto 0;border:0;background:transparent;color:var(--primary);font:inherit;font-size:15px;font-weight:700;padding:10px 12px}
+.leg-bauart{margin:0 4px 12px;font-size:14px;color:var(--on-sv)}
+
 .qr-zeile,.qr-neu{display:flex;align-items:center;gap:16px}
 .qr-svg{flex:none;border-radius:8px;background:#fff;padding:0;display:block}
 .qr-txt{display:flex;flex-direction:column;gap:4px;min-width:0}
@@ -3313,9 +3365,9 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(f==="art") kdArtAnwenden(b.dataset.v); },true);
 document.addEventListener("input",e=>{ const f=e.target&&e.target.dataset&&e.target.dataset.f; if((f==="vorname"||f==="nachname")&&e.target.closest("#dlg")) kdNameAusTeilen(); });
 
-function closeOverlays(){ ["#menu","#dlg","#scrim"].forEach(s=>$(s).hidden=true); $("#scrim").classList.remove("dim"); $("#menuBtn").setAttribute("aria-expanded","false"); }
+function closeOverlays(){ ["#menu","#dlg","#scrim"].forEach(s=>$(s).hidden=true); $("#dlg").classList.remove("aw"); $("#scrim").classList.remove("dim"); $("#menuBtn").setAttribute("aria-expanded","false"); }
 function dialog(title,body,actions,opt){
-  $("#dlg").classList.toggle("breit",!!(opt&&opt.breit)); $("#dlg").innerHTML=`<h2>${esc(title)}</h2><div class="db">${body}</div>${actions?`<div class="da">${actions}</div>`:""}`;
+  $("#dlg").classList.remove("aw"); $("#dlg").classList.toggle("breit",!!(opt&&opt.breit)); $("#dlg").innerHTML=`<h2>${esc(title)}</h2><div class="db">${body}</div>${actions?`<div class="da">${actions}</div>`:""}`;
   $("#menu").hidden=true; $("#dlg").hidden=false; $("#scrim").hidden=false; $("#scrim").classList.add("dim");
   const f=$("#dlg").querySelector("input:not([type=hidden])"); if(f&&!f.value) setTimeout(()=>f.focus(),50);
 }
@@ -7126,6 +7178,7 @@ function legView(L){ const E=legE(L);
   return `<div class="narrow ec-spalte leg">
     <section class="card"><h3>${L._geb?"Angaben":"Anlage"}</h3>${(()=>{ const o=kundeOf(L.kundeId)?ecOrt(L.ortId||"k:"+L.kundeId):null;
       return `<div class="ec-hinweis leg-zu">${icon(o?"firma":"folder")}<span>${o?`Gehört zu <b>${esc(o.titel)}</b>${L.anschrift?` · ${esc(L.anschrift)}`:""}`:"Liegt unter „Ohne Kunde“"}</span>${L._geb?"":`<button type="button" class="btn-tonal" data-act="legZu">Kunde zuordnen</button>`}</div>`; })()}<div class="ec-fg">
+      ${legBauart(L)?`<p class="leg-bauart">${esc(legBauart(L))}</p>`:""}
       <div class="reihe2">${legFeld(L,"titel","Verteiler",{ph:"z. B. HV Keller"})}${legFeld(L,"stand","Stand",{type:"date"})}</div>
       ${L._geb?"":`${legFeld(L,"kunde","Kunde",{ph:"Name oder Firma"})}
       ${legFeld(L,"anschrift","Anschrift",{ph:"Straße, PLZ Ort"})}`}
@@ -7140,6 +7193,7 @@ function legView(L){ const E=legE(L);
 
 /* ===== Ansichten der Stromkreise: Liste (je RCD eine Gruppe) und Verteiler (Reihen, Breite in TE) ===== */
 const legAnsicht=()=>META.legAnsicht==="verteiler"?"verteiler":"liste";
+const legBauart=L=>[{hv:"Zählerschrank / HV",uv:"Unterverteiler",gw:"Gewerbe / Standverteiler"}[L.art],{ap:"Aufputz",up:"Unterputz"}[L.montage],L.reihen&&`${L.reihen}-reihig · ${L.reihen*(+L.teReihe||12)} TE`].filter(Boolean).join(" · ");
 const legTE=e=>+e.te||(e.art==="rcd"?4:e.art==="sk"&&+e.pole===3?3:1);
 const legOffen=e=>e.art==="sk"&&/^\s*\??\s*$/.test(e.bez||"");
 /* Liste: RCD als Kopf, seine Automaten eingerückt darunter; Überschriften trennen */
@@ -7269,6 +7323,7 @@ function legSkOk(weiter){ const L=legAkt(); if(!L||!legDlg) return; const F=form
   if(a==="gr"&&!F.legBez){ toast("Bitte eine Überschrift eintragen"); return; }
   if(a!=="gr"&&!F.legKz){ toast("Bitte eine Kennzeichnung eintragen"); return; }
   const r={id:legDlg.id||uid(),art:a,kz:a==="gr"?"":F.legKz,bez:a==="res"?"":a==="rcd"&&!F.legBez?"Fehlerstromschutzschalter":F.legBez,schutz:a==="gr"?"":F.legSchutz,pole:a==="sk"?+legDlg.pole:1,...(legDlg.te?{te:+legDlg.te}:{}),...(legDlg.umbruch?{umbruch:true}:{}),...(legDlg.sym?{sym:legDlg.sym}:{})};
+  { const alt=E.find(x=>x.id===r.id); if(alt&&alt.mat&&alt.schutz===r.schutz&&alt.art===r.art) r.mat=alt.mat; }   /* Artikel aus der Materialliste bleibt, solange die Absicherung gleich ist */
   let i=E.findIndex(x=>x.id===r.id); if(i>=0) E[i]=r; else { E.splice(legDlg.pos,0,r); i=legDlg.pos; }
   legSpeichern(L); render();
   if(weiter) legSkDlg(null,i); else closeOverlays(); }
@@ -7308,7 +7363,7 @@ async function legPdfMachen(){ const L=legAkt(); if(!L) return; if(!legE(L).leng
 /* ---- Klicks und Eingaben ---- */
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="leg"]'); if(!b||b.disabled) return; e.stopPropagation(); const a=b.dataset.act, L=legAkt();
   switch(a){
-  case "legNeu": legNeuDlg(b.dataset.kind,b.dataset.id); return;
+  case "legNeu": awNeuStart(b.dataset.kind,b.dataset.id); return;
   case "legZu": legZuDlg(); return;
   case "legZuOk": { if(!L||L._geb) return; const F=formVals(); if(!F.legZuK){ closeOverlays(); return; }
       const z=vtAusLegende(L,F.ecOrt||"k:"+F.legZuK); closeOverlays(); go({v:"vt",g:z.g,id:z.id}); toast("Jetzt ein Verteiler beim Kunden"); return; }
@@ -7356,9 +7411,9 @@ const vtRcdSchutz=r=>{ const t=[r.in&&`${r.in} A`,r.idn&&`${r.idn} mA`].filter(B
 function vtRcdLesen(t){ t=String(t||""); const a=t.match(/(\d+)\s*A(?![a-z])/i), m=t.match(/(\d+)\s*mA/i), y=t.match(/Typ\s*([A-Z+]+)/i); return {in:a?a[1]:"",idn:m?m[1]:"",typ:y?y[1].toUpperCase():""}; }
 /* Einträge eines Verteilers in Anzeige-Reihenfolge: mit pos sortiert, ältere Einträge ohne pos hinter ihren RCD */
 function vtEintraege(g,vId){ const R=g.rcds.filter(r=>r.vId===vId), S=g.stromkreise.filter(s=>s.vId===vId), T=(g.vtTeile||[]).filter(t=>t.vId===vId);
-  const zuE=(o,art)=>art==="rcd"?{id:o.id,art:"rcd",kz:o.nr||"",bez:o.bez||"Fehlerstromschutzschalter",schutz:vtRcdSchutz(o),te:o.te,umbruch:o.umbruch,sym:o.sym,_rcd:o}
-    :art==="sk"?{id:o.id,art:"sk",kz:o.nr||"",bez:o.bez||"",schutz:o.schutz||"",pole:o.pole||1,te:o.te,umbruch:o.umbruch,sym:o.sym,_rcdId:o.rcdId}
-    :{id:o.id,art:o.art,kz:o.kz||"",bez:o.bez||"",schutz:o.schutz||"",te:o.te,umbruch:o.umbruch,sym:o.sym};
+  const zuE=(o,art)=>art==="rcd"?{id:o.id,art:"rcd",kz:o.nr||"",bez:o.bez||"Fehlerstromschutzschalter",schutz:vtRcdSchutz(o),te:o.te,umbruch:o.umbruch,sym:o.sym,mat:o.mat,_rcd:o}
+    :art==="sk"?{id:o.id,art:"sk",kz:o.nr||"",bez:o.bez||"",schutz:o.schutz||"",pole:o.pole||1,te:o.te,umbruch:o.umbruch,sym:o.sym,mat:o.mat,_rcdId:o.rcdId}
+    :{id:o.id,art:o.art,kz:o.kz||"",bez:o.bez||"",schutz:o.schutz||"",te:o.te,umbruch:o.umbruch,sym:o.sym,mat:o.mat};
   const mit=[...R.map(o=>[o,"rcd"]),...S.map(o=>[o,"sk"]),...T.map(o=>[o,o.art])].filter(([o])=>typeof o.pos==="number").sort((a,b)=>a[0].pos-b[0].pos).map(([o,a])=>zuE(o,a));
   const ohne=[]; [...R].sort(ecNr).forEach(r=>{ if(typeof r.pos!=="number") ohne.push(zuE(r,"rcd")); S.filter(s=>s.rcdId===r.id&&typeof s.pos!=="number").sort(ecNr).forEach(s=>ohne.push(zuE(s,"sk"))); });
   S.filter(s=>typeof s.pos!=="number"&&!R.some(r=>r.id===s.rcdId)).sort(ecNr).forEach(s=>ohne.push(zuE(s,"sk")));
@@ -7370,12 +7425,12 @@ function vtEintraege(g,vId){ const R=g.rcds.filter(r=>r.vId===vId), S=g.stromkre
 /* Virtuelle Legende: alles, was der Editor braucht, aus dem Gebäude */
 function vtL(gid,vId){ const g=vtGeb(gid), v=g&&g.verteiler.find(x=>x.id===vId); if(!v) return null; const o=ecOrt(g.ortId), k=o.kunde;
   return {_geb:gid,_v:vId,id:"vt-"+vId,titel:v.name||"Verteiler",kunde:k?k.name:"",anschrift:adrText(o.standort)||adrText(k)||"",kundeId:k?k.id:"",standortId:o.standort?o.standort.id:"",ortId:g.ortId,
-    netz:v.netz||"",ersteller:v.ersteller||"",stand:v.stand||"",fertig:!!v.fertig,teReihe:v.teReihe,teMm:v.teMm,eintraege:vtEintraege(g,vId),updated:v.updated,createdBy:v.createdBy}; }
+    netz:v.netz||"",ersteller:v.ersteller||"",stand:v.stand||"",fertig:!!v.fertig,art:v.art,montage:v.montage,reihen:v.reihen,teReihe:v.teReihe,teMm:v.teMm,eintraege:vtEintraege(g,vId),updated:v.updated,createdBy:v.createdBy}; }
 /* Zurückschreiben in das Gebäude (vorhandene Felder der Prüfung wie Leitung oder Messwerte bleiben erhalten) */
 function vtSchreiben(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(!v) return;
   Object.assign(v,{name:L.titel||v.name,netz:L.netz||"",ersteller:L.ersteller||"",stand:L.stand||"",fertig:!!L.fertig,teReihe:L.teReihe,teMm:L.teMm,updated:Date.now()});
   ["teReihe","teMm"].forEach(k=>{ if(v[k]==null) delete v[k]; });
-  const E=legE(L), ids=new Set(E.map(e=>e.id)), opt=(o,e)=>{ ["te","umbruch","sym"].forEach(k=>{ if(e[k]) o[k]=e[k]; else delete o[k]; }); };
+  const E=legE(L), ids=new Set(E.map(e=>e.id)), opt=(o,e)=>{ ["te","umbruch","sym","mat"].forEach(k=>{ if(e[k]) o[k]=e[k]; else delete o[k]; }); };
   g.vtTeile=(g.vtTeile||[]).filter(t=>t.vId!==L._v||ids.has(t.id));
   const wegSk=g.stromkreise.filter(s=>s.vId===L._v&&!ids.has(s.id)).map(s=>s.id);
   g.stellen.forEach(st=>{ if(wegSk.includes(st.skId)) st.skId=""; });
@@ -7430,8 +7485,622 @@ function vtZuruck(gid){ const g=vtGeb(gid), o=g&&ecOrt(g.ortId); return o&&o.sta
 
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="vt"]'); if(!b||b.disabled) return; e.stopPropagation(); const a=b.dataset.act;
   if(a==="vtAuf"){ go({v:"vt",g:b.dataset.g,id:b.dataset.id}); return; }
-  if(a==="vtNeu"){ vtNeuDlg(b.dataset.kind,b.dataset.id); return; }
+  if(a==="vtNeu"){ awNeuStart(b.dataset.kind,b.dataset.id); return; }
   if(a==="vtNeuOk"){ vtNeuOk(); return; } },true);
+
+/* Materialdaten, die mehrere Apps brauchen: Firmen-Materialliste, Herstellerfotos und technische Daten.
+   Baustelle (Materialliste) und Gebäudetechnik (Verteiler bestücken) bauen beide darauf auf. */
+const matSlug=t=>"mat-"+String(t).toLowerCase().replace(/×/g,"x").replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss").replace(/²/g,"2").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const matNorm=t=>String(t||"").trim().toLowerCase().replace(/\s+/g," ").replace(/x(?=\d)/g,"×");
+/* Herstellerfotos und technische Daten je Hersteller-Artikelnummer. Die Fotos holt der Bilder-Bot auf unseren Server (tools/bilder.py).
+   tech: art ls|rcd|rcbo, char B/C, in (A), pole, te (Teilungseinheiten), typ (RCD-Typ), idn (mA) – daraus rechnet später der Verteiler. */
+const matHnr=n=>String(n||"").replace(/\s+/g,"").toUpperCase();
+const MAT_INFO={
+  MBS110:{bild:"https://assets.hager.com/step-content/P/HA_16255176/11/std.lang.all/MBS110.webp",tech:{art:"ls",char:"B",in:10,pole:1,te:1}},
+  MBS116:{bild:"https://assets.hager.com/step-content/P/HA_16255195/11/std.lang.all/MBS116.webp",tech:{art:"ls",char:"B",in:16,pole:1,te:1}},
+  MBS120:{bild:"https://assets.hager.com/step-content/P/HA_16255196/11/std.lang.all/MBS120.webp",tech:{art:"ls",char:"B",in:20,pole:1,te:1}},
+  MBS125:{bild:"https://assets.hager.com/step-content/P/HA_16255197/11/std.lang.all/MBS125.webp",tech:{art:"ls",char:"B",in:25,pole:1,te:1}},
+  MBS132:{bild:"https://assets.hager.com/step-content/P/HA_16255198/11/std.lang.all/MBS132.webp",tech:{art:"ls",char:"B",in:32,pole:1,te:1}},
+  MCS116:{bild:"https://assets.hager.com/step-content/P/HA_16256279/11/std.lang.all/MCS116.webp",tech:{art:"ls",char:"C",in:16,pole:1,te:1}},
+  MBS316:{bild:"https://assets.hager.com/step-content/P/HA_16255234/11/std.lang.all/MBS316.webp",tech:{art:"ls",char:"B",in:16,pole:3,te:3}},
+  MCS316:{bild:"https://assets.hager.com/step-content/P/HA_16256337/11/std.lang.all/MCS316.webp",tech:{art:"ls",char:"C",in:16,pole:3,te:3}},
+  CDS440D:{bild:"https://assets.hager.com/step-content/P/HA_16197936/11/std.lang.all/CDS440D.webp",tech:{art:"rcd",in:40,idn:30,typ:"A",pole:4,te:4}},
+  CDS463D:{bild:"https://assets.hager.com/step-content/P/HA_16197955/11/std.lang.all/CDS463D.webp",tech:{art:"rcd",in:63,idn:30,typ:"A",pole:4,te:4}},
+  ADS916D:{bild:"https://assets.hager.com/step-content/P/HA_16371443/11/std.lang.all/ADS916D.webp",tech:{art:"rcbo",char:"B",in:16,idn:30,typ:"A",pole:"1+N",te:2}},
+  A9F03116:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2736_0.jpg",tech:{art:"ls",char:"B",in:16,pole:1,te:1}},
+  A9F04116:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2748_0.jpg",tech:{art:"ls",char:"C",in:16,pole:1,te:1}},
+  A9F03132:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2739_0.jpg",tech:{art:"ls",char:"B",in:32,pole:1,te:1}},
+  A9F03316:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2742_0.jpg",tech:{art:"ls",char:"B",in:16,pole:3,te:3}},
+  A9F04316:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2754_0.jpg",tech:{art:"ls",char:"C",in:16,pole:3,te:3}},
+  A9F03332:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2745_0.jpg",tech:{art:"ls",char:"B",in:32,pole:3,te:3}},
+  A9Z21440:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2763_0.jpg",tech:{art:"rcd",in:40,idn:30,typ:"A",pole:4,te:4}},
+  A9Z21463:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2764_0.jpg",tech:{art:"rcd",in:63,idn:30,typ:"A",pole:4,te:4}},
+  A9D56616:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2770_0.jpg",tech:{art:"rcbo",char:"B",in:16,idn:30,typ:"A",pole:"1+N",te:2}}};
+const matInfo=m=>m?MAT_INFO[matHnr(m.herstellerNr)]||null:null;
+const matBild=m=>m&&(m.bild||(matInfo(m)||{}).bild)||"";
+const matTech=m=>m&&(m.tech||(matInfo(m)||{}).tech)||null;
+/* Kurzbeschreibung der technischen Daten: „B 16 A · 1-polig · 1 TE“, „RCD 40 A / 30 mA Typ A · 4-polig · 4 TE“ */
+function matTechText(t){ if(!t) return ""; const p=t.pole?`${t.pole}-polig`:"", te=t.te?`${t.te} TE`:"";
+  if(t.art==="rcd") return [`RCD ${t.in} A / ${t.idn} mA Typ ${t.typ||"A"}`,p,te].filter(Boolean).join(" · ");
+  if(t.art==="rcbo") return [`FI/LS ${t.char||""}${t.in} · ${t.idn} mA Typ ${t.typ||"A"}`,p,te].filter(Boolean).join(" · ");
+  return [`${t.char||""} ${t.in} A`.trim(),p,te].filter(Boolean).join(" · "); }
+const matFoto=(m,cls)=>{ const u=matBild(m); return u?`<span class="mat-foto${cls?" "+cls:""}"><img src="${esc(typeof bildLokal==="function"?bildLokal(u):u)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('weg')"></span>`:""; };
+/* Firmen-Materialliste (MAT_FIRMA, unten) ist fest eingebaut und wird NICHT als Datensätze gespeichert – sonst müsste jedes
+   Gerät ~400 Dateien hochladen. Gespeichert wird nur, was jemand ändert oder löscht (gleiche ID überschreibt das Firmen-Teil). */
+let matFirmaObj=null;
+function matFirma(){ if(matFirmaObj) return matFirmaObj;
+  matFirmaObj=MAT_FIRMA.map(([name,kategorie,einheit,hersteller,herstellerNr,sonepar,efg,gae,kz,notiz,g])=>({id:matSlug(name),name,kategorie,einheit:einheit||"Stück",
+    hersteller:hersteller||"",herstellerNr:herstellerNr||"",sonepar:sonepar||"",weitere:[efg&&{bei:"EFG",nr:efg},gae&&{bei:"Gäfgen",nr:gae},kz&&{bei:"Kürzel",nr:kz}].filter(Boolean),
+    notiz:notiz||"",gruppe:MAT_FIRMA_GR[g]||"",firma:true}));
+  return matFirmaObj; }
+/* Die Nummer, mit der der Artikel gesucht wird: Spalte „EDV-Nummer Sonepar“ der Firmenliste – dort stehen auch die Kürzel der Pauschalen */
+function matNr(m){ if(!m) return ""; return m.sonepar||((m.weitere||[]).find(w=>w&&w.bei==="Kürzel"&&w.nr)||{}).nr||""; }
+/* MAT_FIRMA_START – erzeugt aus „MateriallisteIrrgang1125.pdf“ (Stand 03.09.2025). Felder:
+   [Bezeichnung, Kategorie, Einheit (leer = Stück), Hersteller, Artikelnr. Hersteller, Sonepar, EFG, Gäfgen, Kürzel, Notiz, Abschnitt] */
+const MAT_FIRMA_STAND="03.09.2025";
+const MAT_FIRMA_GR=["Verteilungseinbau","Kabelschuhe","Reihenklemmen","Maschinen, Messgeräte, Pauschalen","Relais / Eltako","Neozed Material","DIAZED Material","Feinsicherungen","NH Sicherungen","Sicherungsautomaten Hager","FI-Schalter Hager","Sicherungsautomaten Schneider","FI-Schalter Schneider","BALS Quick Connect","Schuko-Stecker","Nagelschellen / Nagelscheiben","Sammelhalterungen","Weiteres Installationsmaterial","Kabelbinder","CADDY / ERICO Material","Bauchemie","Unterputzdosen","Hohlwanddosen","Feuchtraum Abzweigdosen","Verschraubungen","Muffen und Zubehör","Klemmen","Bettermann Quick Schellen","Kunststoffstangenrohr FPKu-EM-F","FFKuS-EM-F schweres Betonrohr","FBY Rohr leichtes Betonrohr","Klickrohr","Bügelschellen und Zubehör","Brandschutz","Kanäle","Eckkanal","Fußleistenkanal 80 mm Tehalit","Brüstungskanäle","Stahlkanäle","Fernmeldeleitungen J-Y(St)Y","EIB-/Busleitung","SAT Material","Datenleitung / Netzwerk","Telefondosen","NYM-J","Erdkabel","Draht starr H07V-U","Ölflex","Gummikabel","Schlauchleitung","Leuchten & Zubehör","Schiffsarmaturen","Leuchtmittel","Philips LED Leuchten rund","Feuchtraum LED Leuchten","Herdanschlussdosen / Dreikammerdosen","Batterien","Einsätze","Erdungsmaterial","HILTI","Durchlauferhitzer","E Check","Rolladenzubehör","Klingel Material"];
+const MAT_FIRMA=[
+["Schalter mit Kontrolllampe grün 1×16 A","verteiler","","","SVN 413","5700144","","","","",0],
+["Schütz, 20 A Hager","verteiler","","Hager","ESC325S","5705897","QESC325SHA","4873796","","",0],
+["Schütz, 40 A Hager","verteiler","","Hager","ESC440","5706006","","1435054","","",0],
+["Schütz, 63 A Hager","verteiler","","Hager","ES463","5701710","","1435055","","",0],
+["3-Phasen Schiene für 12 TE 210 mm","verteiler","","","KDN363A","0606731","","","","",0],
+["3-Phasen Schiene für 12 TE 210 mm für FI","verteiler","","","KDN363F","0606733","","","","",0],
+["4-Phasen Schiene für FI / LS 12 TE 210 mm","verteiler","","","KDN451D","0606736","","","","",0],
+["Berührungsschutz für Phasenschienen","verteiler","","","KZ059","0603415","","","","",0],
+["Phasenschiene Senkrecht 3-fach links","verteiler","","","KCF668L","3402674","","","","",0],
+["Phasenschiene Senkrecht 2-fach links","verteiler","","","KCF663L","3402671","","","","",0],
+["1-Phasen Schiene Quick Connect","verteiler","","","KDN163 A","","","","","",0],
+["Verdrahtungsbrücken 10 mm² 250 mm lang","verteiler","","","","0611611","","","","",0],
+["Abgangskabelbaum Zähler 10 mm²","verteiler","","","","0672761","","","","",0],
+["Zugangskabelbaum Zähler 10 mm²","verteiler","","","","0672701","","","","",0],
+["Draht flexibel 1,5 mm²","leitung","m","","H07V-K1,5","7500011","","","","",0],
+["Draht flexibel 2,5 mm²","leitung","m","","","7500014","","","","",0],
+["Draht flexibel 6 mm²","leitung","m","","","7500019","","","","",0],
+["Draht flexibel 10 mm² H07V-K 10,0","leitung","m","","","0102194","","","","",0],
+["Draht flexibel 16 mm²","leitung","m","","","0102203","","","","",0],
+["Draht flexibel 25 mm²","leitung","m","","","0102226","","","","",0],
+["Aderendhülsen isoliert 1,5 mm²","klemmen","Packung","","","0352775","","","","",0],
+["Aderendhülsen isoliert 2,5 mm²","klemmen","Packung","","","0352777","","","","",0],
+["Aderendhülsen isoliert 6 mm²","klemmen","Packung","","","0351576","","","","",0],
+["Aderendhülsen isoliert 10 mm²","klemmen","Packung","","","0736819","QAEHI1018RTK","","","",0],
+["Aderendhülsen isoliert 16 mm²","klemmen","Packung","","","0736820","QAEHI1618BLK","","","",0],
+["Quetschkabelschuh 10, Gabelform","klemmen","","","","0352448","","","","",0],
+["Duohülse 10 mm²","klemmen","","","","0352390","","","","",0],
+["Stossverbinder 1,5 - 2,5 mm² Isoliert","klemmen","","","","0352676","","","","",0],
+["STOSSVERBINDER 16mm²","klemmen","","","","0352107","","","","",0],
+["STOSSVERBINDER 25 mm²","klemmen","","","","","","1121482","","",0],
+["Klingeltrafo 8 Volt 1 A","verteiler","","","St 301","0603510","","1513110","","",0],
+["Abdeckstreifen","verteiler","","","S 35S","0602180","","","","",0],
+["Maico Nachlaufrelais VZ 6","verteiler","","Maico","","1602475","","","","",0],
+["HAGER Plantasche zum Einkleben","verteiler","","Hager","FZ 794","0602195","","","","",0],
+["5-polige isolierte Hauptleitungsklemme","verteiler","","","KH25C","0604858","","1210024","","",0],
+["Hager Einspeiseadapter 1-25qmm, 5-polig","verteiler","","Hager","K96ESA5","2204265","","","","",0],
+["EHZ Adapterplatte","verteiler","","","KU33LHE","5607490","","","","",0],
+["Eaton EHZ Adapter NUR Intern","verteiler","","Eaton","ZSD-Z3","5601206","","","","",0],
+["EATON Haube für EHZ Adapter ZSD","verteiler","","Eaton","","0633011","","","","",0],
+["N / PE Klemme PTU 16/14×2,5 eltric","verteiler","","eltric","","","4922120","","","",0],
+["Hutschienenzähler EGB Sinus 85","verteiler","","","","114555","","","","",0],
+["Hutschiene gelocht","verteiler","","","","0480411","","","","",0],
+["Stiftkabelschuh 35 mm²","klemmen","","","","0352360","","","","",1],
+["Rohrkabelschuh 35 mm² / 10","klemmen","","","","0352042","","","","",1],
+["Rohrkabelschuh 35 mm² / 8","klemmen","","","","0352041","","","","",1],
+["WAGO Inst.-Etagenklemme L/N-T/PE 4 mm²","klemmen","","WAGO","2003-7641","0417367","","","","",2],
+["WAGO Inst.-Etagenklemme L/L/PE 4 mm²","klemmen","","WAGO","2003-7642","0417368","","","","",2],
+["WAGO Inst.-Etagenklemme L/N/PE 4 mm²","klemmen","","WAGO","2003-7646","0417370","","","","",2],
+["WAGO Abschlussplatte","klemmen","","WAGO","2003-7692","0417606","","","","",2],
+["WAGO Schachtelbrücker","klemmen","","WAGO","2002-482","0466262","","","","",2],
+["WAGO Sammelschienenträger","klemmen","","WAGO","2009-305","0417452","","","","",2],
+["WAGO Endklammer","klemmen","","WAGO","249-117","0452720","","","","",2],
+["Sammelschiene 10×3 mm","klemmen","","","210-133","0452670","","","","",2],
+["WAGO Inst.-Etagenklemme N/L/PE 6 mm²","klemmen","","WAGO","2005-7646","0431342","","","","",2],
+["WAGO Inst.-Etagenklemme L/L/PE 6 mm²","klemmen","","WAGO","2005-7642","0431339","","","","",2],
+["WAGO Endplatte 6 mm² Endplatte","klemmen","","WAGO","2005-7692","0431344","","","","",2],
+["Beschriftungspauschale für Reihenklemmen","pausch","Pauschale","","","","","","beschr1","",3],
+["Durchgangsklemme 16 mm grau","klemmen","","","2016-1201","0417255","","","","",2],
+["Durchgangsklemme 16 mm blau","klemmen","","","2016-1204","0417257","","","","",2],
+["Durchgangsklemme 16 mm grün gelb","klemmen","","","2016-1207","0417261","","","","",2],
+["Endplatte 2016","klemmen","","","2016-1292","0417322","","","","",2],
+["WAGO N trennklemme 16 mm²","klemmen","","WAGO","2016-7714","0479484","","","","",2],
+["Schutzleiterklemme 10 mm²","klemmen","","","783-607","0452244","","","","",2],
+["Querbrücker 70 A grau","klemmen","","","283-402","0452643","","","","",2],
+["WAGO N Trennklemme 10 mm²","klemmen","","WAGO","783-613","0452249","","","","",2],
+["Stromstoßschalter 230 Volt","verteiler","","","S 12 - 100 - 230","0665403","","","","",4],
+["Schalt-,Steuer,Koppelrelais ER12-001-8..230V UC (Hutschiene)","verteiler","","Eltako","ER12-001-UC","0632857","","","","Hutschiene",4],
+["Schalt-,Steuer,Koppelrelais ER12-001-8..230V UC (UP Version)","verteiler","","Eltako","ER61-UC","0632859","","","","UP Version",4],
+["Neozed Element komplett","pausch","Pauschale","","","","","","neozed","Leistung",5],
+["Isolierte Neozedelemente 3×16 A. D 01","schutz","","","","0630112","","","","",5],
+["Isolierte Neozedelemente 3×63 A. D 02","schutz","","","","5801813","","2261860","","",5],
+["LINOCUR-Lasttrennschalter, D02, 63A 3pol","schutz","","","","5801551","","","","",5],
+["Schraubkappen D 01 bis 16 Ampere","schutz","","","","0630485","","","","",5],
+["Schraubkappen D 02 bis 63 Ampere","schutz","","","","0630481","","2261871","","",5],
+["Neozedsicherungen 2 - 63 Ampere","schutz","","","","0630413","","2261859","","",5],
+["Passhülseneinsätze 2 - 50 Ampere","schutz","","","","0630462","","1266526","","",5],
+["DIAZED Sicherungen 2 - 63 Ampere","schutz","","","","5812065","","","","",6],
+["Feinsicherungen","schutz","","","","0639306","","","","",7],
+["NH Sicherungen Gr 00 16 - 100 Ampere","schutz","","","","0610388","","","","",8],
+["LS Hager 10 A/B 1-polig","schutz","","Hager","MBS 110","0606806","","","","",9],
+["LS Hager 16 A/B 1-polig","schutz","","Hager","MBS 116","0606808","","1275132","","",9],
+["LS Hager 16 A/C 1-polig","schutz","","Hager","MCS 116","0607120","","","","",9],
+["LS Hager 20 A/B 1-polig","schutz","","Hager","MBS 120","0606809","","","","",9],
+["LS Hager 25 A/B 1-polig","schutz","","Hager","MBS 125","0606810","","","","",9],
+["LS Hager 32 A/B 1-polig","schutz","","Hager","MBS 132","0606811","","","","",9],
+["LS Hager 16 A/B 3-polig","schutz","","Hager","MBS 316","0606818","","","","",9],
+["LS Hager 16 A/C 3-polig","schutz","","Hager","MCS 316","0606863","","","","In der Firmenliste stand MBS 316 (das ist B 16) – für C 16 3-polig ist es MCS 316",9],
+["FI Hager 40/0,03 4-polig","schutz","","Hager","CDS440D","0606663","","","","",10],
+["FI Hager 63/0,03 4-polig","schutz","","Hager","CDS463D","0606664","","","","",10],
+["FI/LS Hager 16A/B - 30 mA","schutz","","Hager","ADS916D","5705400","","","","",10],
+["LS Schneider 16 A/B 1-polig","schutz","","Schneider Electric","A9F03116","5706693","","","","",11],
+["LS Schneider 16 A/C 1-polig","schutz","","Schneider Electric","A9F04116","5706760","","","","",11],
+["LS Schneider 32 A/B 1-polig","schutz","","Schneider Electric","A9F03132","5706696","","","","Herstellernr. fehlte in der Firmenliste – A9F03132 ergänzt (iC60N B32 1-polig)",11],
+["LS Schneider 16 A/B 3-polig","schutz","","Schneider Electric","A9F03316","5706716","","","","",11],
+["LS Schneider 16 A/C 3-polig","schutz","","Schneider Electric","A9F04316","5706790","","","","",11],
+["LS Schneider 32 A/B 3-polig","schutz","","Schneider Electric","A9F03332","5706719","","","","",11],
+["FI Schneider 40/0,03 4-polig","schutz","","Schneider Electric","A9Z21440","5707624","","","","In der Firmenliste stand A9Z26440 (500-mA-FI) – auf A9Z21440 (30 mA Typ A) korrigiert, Sonepar-Nr. unverändert. Noch prüfen.",12],
+["FI Schneider 63/0,03 4-polig","schutz","","Schneider Electric","A9Z21463","5707625","","","","In der Firmenliste stand A9Z26463 (500-mA-FI) – auf A9Z21463 (30 mA Typ A) korrigiert, Sonepar-Nr. unverändert. Noch prüfen.",12],
+["FI/LS Schneider 16A/B - 30 mA","schutz","","Schneider Electric","A9D56616","5706619","","","","",12],
+["3 Phasen Schiene","verteiler","","Schneider Electric","A9XPH312","0791687","","","","",12],
+["BALS Quick Connect Stecker 5×16 A","schalter","","Bals","","1000111","","","","",13],
+["BALS Quick Connect Kupplung 5×16 A","schalter","","Bals","","1000112","","","","",13],
+["BALS Quick Connect Steckdose 5×16 A","schalter","","Bals","","1000584","","","","",13],
+["BALS Quick Connect Stecker 5×32 A","schalter","","Bals","","1002207","","","","",13],
+["BALS Quick Connect Kupplung 5×32 A","schalter","","Bals","","1002210","","","","",13],
+["BALS Quick Connect Steckdose 5×32 A","schalter","","Bals","","1022007","","","","",13],
+["SCHUKO Stecker weiß","schalter","","","122427","0921004","","","","",14],
+["SCHUKO Kupplung weiß","schalter","","","122415","","","","","",14],
+["SCHUKO Gummi Stecker schwarz","schalter","","","123551","","","","","",14],
+["SCHUKO Gummi Kupplung schwarz","schalter","","","173091","","","","","",14],
+["Befestigungspauschale Dübel Schraube 6 & 8 mm","pausch","Pauschale","","","","","","bef1","",3],
+["Nagelschellen 7 - 12, Nägel 35","befest","Packung","","","0420847","","","","",15],
+["Nagelschellen 17 - 21","befest","Packung","","","0420205","","","","",15],
+["Nagelschellen 21 - 25","befest","Packung","","","0420206","","","","",15],
+["OBO Nagelfix 1966/60 60 Nägel Nagelscheiben","befest","Packung","OBO Bettermann","","0420423","","1165758","","",15],
+["Sammelhalterungen max. 30 Leitungen","befest","","","2031","0420452","","","","",16],
+["Montageband / Lochband","befest","Rolle","","","0420374","","","","",17],
+["Obo Dübel","befest","Packung","OBO Bettermann","","0443533","","","","",17],
+["Gipskartondübel, Metall incl. Schraube","befest","Packung","","","0441260","","","","",17],
+["Hakennägel 70 mm","befest","Packung","","","0421773","","","","",17],
+["Deckenhaken","befest","","","","0420793","","","","",17],
+["F-Clip","befest","","eltric","","190100","","","","",17],
+["Cimco Kabelbinder 360×4,8","befest","Packung","Cimco","181369","0428719","","","","",18],
+["Erico Kastenklemme mit Gewinde 172060","befest","","ERICO","","2637160","","","","",19],
+["ERICO Klammer P7 für Lichtbänder","befest","","ERICO","","0438487","","","","",19],
+["Notglied P 1","befest","","ERICO","","0438495","","","","",19],
+["Knotenkette CHK 30K 900 N","befest","","ERICO","","0438285","","","","",19],
+["Silikon 310 ml","befest","","","","0441740","","","","",20],
+["Bauschaum","befest","","","","0441460","CAREMS750","","","",20],
+["Montagekleber","befest","","","","0397028","","","","",20],
+["Acryl 310 ml","befest","","","","0441347","","","","",20],
+["Kai. 1174-25 Federdeckel 70 mm","dosen","","Kaiser","","0473124","","","","",21],
+["Geräteschraube, 3,2×40 mm","dosen","Packung","","","0473092","","","","",21],
+["Putzausgleichring Höhe 24 mm","dosen","","","","0473088","","","","",21],
+["Signaldeckel / Putzdeckel","dosen","","","","0473136","","","","",21],
+["Haftputz Gips / Rotband","dosen","Sack","","","1754039","","","","",21],
+["Montagezement Raccofix","dosen","Sack","Knauf","","1754041","","","","",21],
+["KAISER Schalterklemmdose winddicht","dosen","","Kaiser","1555-21","0472879","","","","",21],
+["KAISER Electronicdose winddicht","dosen","","Kaiser","1068-21","0312032","","","","",21],
+["Wandauslassdose Schiffchen","dosen","","","","0473110","","","","",21],
+["KAISER Winddichte Hohlwand Schalterdosen","dosen","","Kaiser","9264-21","0435085","","","","",22],
+["KAISER Verbindungsstutzen","dosen","","Kaiser","9060-98","0400095","","","","",22],
+["KAISER HW-Elektronikdose ECONFlex luftdicht","dosen","","Kaiser","9268-94","8402642","","","","",22],
+["KAISER Hohlwand Schalterklemm dosen","dosen","","Kaiser","9064-01","0473240","","","","",22],
+["KAISER Hohlwand Schalterdosen","dosen","","Kaiser","9063-01","","","","","",22],
+["Thermoplast Dose 89×43×37 Mini Dose","dosen","","","mini 25","0472050","","","","",23],
+["Thermoplast Dose 85×85×37","dosen","","","","0496221","","","","OBO mit Logo",23],
+["Thermoplast Dose 130×85×38","dosen","","","i 16","0473061","","","","",23],
+["Kabelverschraubung, SKINTOP M 16 Lapp","befest","","Lapp","","0484144","","","","",24],
+["Kabelverschraubung, SKINTOP M 20 Lapp","befest","","Lapp","","0484143","","","","",24],
+["Kabelverschraubung, SKINTOP M 25 Lapp","befest","","Lapp","","0484274","","","","",24],
+["Kabelverschraubung, SKINTOP M 32 Lapp","befest","","Lapp","","0484275","","","","",24],
+["Kabelverschraubung, SKINTOP M 40 Lapp","befest","","Lapp","","0484276","","","","",24],
+["Schrumpfmuffe 5×1,5 -6 mm²","klemmen","","","","0321516","","","","",25],
+["Schrumpfmuffe 5×1,5 -16 mm²","klemmen","","","","0320079","","1103221","","",25],
+["Schrumpfmuffe 4×25 mm²","klemmen","","","","","","1103212","","",25],
+["Schrumpfschlauch SRH2 22-6","klemmen","","","","0321783","","","","",25],
+["Schrumpfschlauch SRH2 34-7","klemmen","","","","0321779","","","","",25],
+["Gießharz 286 ml. Krümmelharz Spelsberg","klemmen","","Spelsberg","","","","","","",25],
+["Cellpack Kabel Reparaturset S","klemmen","","Cellpack","SRMH3 1,5","","","5141680","","",25],
+["3M Telec. Scotchcast 8882 Kabelharz","klemmen","","3M","","0318158","","","","",25],
+["Kaltschrumpf Schlauch","klemmen","","","","0320413","","","","",25],
+["Hellermann Kabel-Reparatur-Set LVRK-24/6-200-POX-BK","klemmen","","HellermannTyton","","0312274","","","","",25],
+["WAGO Klemmen 5×2,5","klemmen","","WAGO","2273-205","0486604","","","","",26],
+["WAGO Klemmen 8×2,5","klemmen","","WAGO","2273-208","0486605","","","","",26],
+["WAGO Hebelklemme 5-polig","klemmen","","WAGO","221-415","5101553","","","","",26],
+["WAGO Hebelklemme 3-polig","klemmen","","WAGO","221-413","5101552","","","","",26],
+["WAGO Befestigungsadapter","klemmen","","WAGO","221-500","2203219","","","","",26],
+["WAGO Klemme 3×2,5 - 6 mm","klemmen","","WAGO","773-173","0463791","","","","",26],
+["WAGO MICRO Klemmen 4-polig","klemmen","","WAGO","243-304","0452211","","","","",26],
+["Telefonverbinder mit Fettfüllung","klemmen","","","","4513787","","","","",26],
+["OBO Quick-Schelle M20","rohr","","OBO Bettermann","","0409027","QQUICKM20","2134713","","",27],
+["OBO Quick-Schelle M25","rohr","","OBO Bettermann","","0409028","QQUICKM25","2134714","","",27],
+["OBO Quick-Schelle M32","rohr","","OBO Bettermann","","0409029","QQUICKM32","2134715","","",27],
+["OBO Quick-Schelle M40","rohr","","OBO Bettermann","","0409036","QQUICKM40","2134716","","",27],
+["Kunststoffrohr FPKu-EM-F M20","rohr","m","","","0500348","QKUPA20H","","","Bund 111 m",28],
+["Kunststoffrohr FPKu-EM-F M25","rohr","m","","","0500350","QKUPA25H","","","Bund 57 m",28],
+["Kunststoffrohr FPKu-EM-F M32","rohr","m","","","0500351","QKUPA32H","","","Bund 57 m",28],
+["Kunststoffrohr FPKu-EM-F M40","rohr","m","","","0500352","QKUPA40H","","","Bund 21 m",28],
+["Kunststoffrohr FPKu-EM-F M20, 2-m-Stange","rohr","","","","2127448","","","","",28],
+["Kunststoffrohr FPKu-EM-F M25, 2-m-Stange","rohr","","","","2127449","","","","",28],
+["Betonrohr FFKuS-EM-F M20 (schwer)","rohr","m","","","0500377","","","","Ring 50 m",29],
+["Betonrohr FFKuS-EM-F M25 (schwer)","rohr","m","","","0500378","","","","Ring 50 m",29],
+["Betonrohr FFKuS-EM-F M32 (schwer)","rohr","m","","","0500379","","","","Ring 25 m",29],
+["Betonrohr FFKuS-EM-F M40 (schwer)","rohr","m","","","0500380","","","","Ring 25 m",29],
+["Betonrohr FFKuS-EM-F M50 (schwer)","rohr","m","","","0500381","","","","Ring 25 m",29],
+["FBY-ELF M16 (leichtes Betonrohr)","rohr","m","","","0500355","","","","",30],
+["FBY-ELF M20 (leichtes Betonrohr)","rohr","m","","","0500356","","","","",30],
+["FBY-ELF M25 (leichtes Betonrohr)","rohr","m","","","0500357","","","","",30],
+["FBY-ELF M40 (leichtes Betonrohr)","rohr","m","","","0500359","","","","",30],
+["Fränkische Wellrohr verschließbar, geschlitzt sw CO-FLEX-PP-UV 20","rohr","m","Fränkische","","0501205","","","","",31],
+["Fränkische Wellrohr verschließbar, geschlitzt sw CO-FLEX-PP-UV 23","rohr","m","Fränkische","","0502578","","","","",31],
+["Fränkische Wellrohr verschließbar, geschlitzt sw CO-FLEX-PP-UV 45","rohr","m","Fränkische","","0502580","","","","",31],
+["Bügelschelle Niedax BK 26","befest","","Niedax","","","QNIBK26N","","","",32],
+["Bügelschelle Niedax BK 34","befest","","Niedax","","","QNIBK34N","","","",32],
+["Bügelschelle Niedax BK 50","befest","","Niedax","","","QNIBK50N","","","",32],
+["Gegenwanne Niedax GW 26","befest","","Niedax","","","QGW26N","","","",32],
+["Gegenwanne Niedax GW 34","befest","","Niedax","","","QGW34N","","","",32],
+["Gegenwanne Niedax GW 50","befest","","Niedax","","","QGW50N","","","",32],
+["OBO Profilscheine 1268 L","befest","","OBO Bettermann","","","QOBO1268SL2000","","","",32],
+["FLAMRO Brandschutzmasse Kartusche 0,4 kg","sonst","","FLAMRO","30004","","","","","",33],
+["FLAMRO Schild für","sonst","","FLAMRO","","","","","","Bezeichnung in der Liste unvollständig",33],
+["FLAMRO Dämmschichtbildner Kartusche 0,4 kg","sonst","","FLAMRO","DSB-W","","","FLDSB400","","",33],
+["FLAMRO Schild für DSB","sonst","","FLAMRO","","","","FLKSALAR","","",33],
+["Flamro Systemplatte SPN 60 mm","sonst","","FLAMRO","","","","","","",33],
+["FLAMRO Brandschutzmasse Eimer 12,5 kg","sonst","","FLAMRO","10125","","","","","",33],
+["Kanal 15 / 15","rohr","m","","LF 20020","0490317","","","","",34],
+["Kanal 15 / 30","rohr","m","","WDK 15030","0404340","","","","",34],
+["Kanal 30 / 30","rohr","m","","WDK 30030","0492149","","","","",34],
+["Kanal 40 / 40","rohr","m","","LF 40040","0492154","","","","",34],
+["Kanal 40 / 60","rohr","m","","LF 40060","0492155","","9030602","","",34],
+["Kanal 60 / 60","rohr","m","","LF 60060","0492165","","","","",34],
+["Kanal 60 / 110","rohr","m","","LF 60100","0492169","","","","",34],
+["Kanal 60 / 170","rohr","m","","WDK 60170","0404439","","","","",34],
+["Eckkanal 40 mm Tehalit","rohr","","Tehalit","EK 40040","0497018","","","","",35],
+["Eckkanal Kupplung","rohr","","Tehalit","L 2774","0497055","","","","",35],
+["Eckkanal Endstück","rohr","","Tehalit","L 2773","0497052","","","","",35],
+["Eckkanal Außeneck","rohr","","Tehalit","L 2772","0497050","","","","",35],
+["Eckkanal Inneneck","rohr","","Tehalit","L 2771","0497049","","","","",35],
+["Eckkanal T Abzeiger","rohr","","Tehalit","L 2778","0497056","","","","",35],
+["Fußleistenkanal 80 mm Unterteil","rohr","m","Tehalit","SL 200801","5207313","","","","",36],
+["Fußleistenkanal 80 mm Oberteil","rohr","m","Tehalit","SL 2008029010","5207315","","","","",36],
+["Fußleistenkanal Kupplung","rohr","","Tehalit","SL 2008079010","5207351","","","","",36],
+["Fußleistenkanal Endstück","rohr","","Tehalit","SL 2008069010","5207343","","","","",36],
+["Fußleistenkanal Außeneck","rohr","","Tehalit","SL 2008039010","5207327","","","","",36],
+["Fußleistenkanal Inneneck","rohr","","Tehalit","SL 2008049010","5207335","","","","",36],
+["Fußleistenkanal 2 fach Steckdosen Modul","rohr","","Tehalit","SL200809009010","5207370","","","","",36],
+["Fußleistenkanal Blende für Steckdosen Modul","rohr","","Tehalit","SL20080A9010","5207412","","","","",36],
+["Fußleistenkanal Geräteträger universal","rohr","","Tehalit","SL200809019010","5209084","","","","",36],
+["Tehalit Aufbodenkanal18×75mm SL 18075 gr","rohr","m","Tehalit","","5495311","","","","",36],
+["Brüstungskanal 70 / 130","rohr","m","","GK-70130RW","5207577","","","","",37],
+["Brüstungskanal Oberteil","rohr","m","","GK-OTGRW","5207641","","","","",37],
+["Endplatte 70 / 130","rohr","","","GK-E70130RW","5207601","","","","",37],
+["CEE 16 A Gerätedose komplett","rohr","","","CEE 16E2","0435090","","","","",37],
+["Gerätedose 1 fach","rohr","","","71GD6","0430441","","","","",37],
+["Gerätedose 2 fach","rohr","","","71GD7","5200596","","","","",37],
+["Flanschrahmen für blaue CEE","rohr","","OBO Bettermann","6288820","","","","","",37],
+["NIEDAX LLK 40.040 natur vz","rohr","m","Niedax","","2150830","","","","",38],
+["NIEDAX LLK 60.060 natur vz","rohr","m","Niedax","","2150832","","","","",38],
+["Fernmelde-Innenkabel J-2Y(ST)Y 2×2×0,6","leitung","m","","","0145632","","","","",39],
+["J-Y(St)Y 2×2×0,6","leitung","m","","","0140032","","1070002","","",39],
+["J-Y(St)Y 4×2×0,6","leitung","m","","","0140034","","1070004","","",39],
+["J-Y(St)Y 6×2×0,6","leitung","m","","","0140036","","1070006","","",39],
+["J-Y(St)Y 2×2×0,8","leitung","m","","","","","1070052","","",39],
+["J-Y(St)Y 4×2×0,8","leitung","m","","","","","1070054","","",39],
+["J-Y(St)Y 6×2×0,8","leitung","m","","","","","1070056","","",39],
+["J-Y(St)Y 10×2×0,8","leitung","m","","","","","1070060","","",39],
+["EIB-Busleitung 2×2×0,8","leitung","m","","","0140116","","","","",40],
+["KOAX Kabel 75 Ohm","kommu","m","","","1907327","","","","",41],
+["Astro Dachsparrenhalter","kommu","","Astro","","1922457","","","","",41],
+["Kathrein Mastkappe","kommu","","Kathrein","","1926071","","","","",41],
+["F Verbinder","kommu","","","","8738208","","","","",41],
+["F Stecker","kommu","","","","1903662","","","","",41],
+["SAT 3 Loch Anschlussdose","kommu","","","EDA 302 F","1906754","","","","",41],
+["SAT 3 Loch Durchgangsdose","kommu","","","GDA 313 F","1906755","","","","",41],
+["SAT 3 Loch Doppel Anschlussdose","kommu","","Hirschmann","","1906760","","","","",41],
+["SIMPLEX Datenleitung KAT 7 600 MHZ","kommu","m","","","2110837","QUC900SS23R","","","",42],
+["DUPLEX Datenleitung Kat 7 600 MHZ","kommu","m","","","2105091","","","","",42],
+["Draka Datenkabel, Kat.7, S/FTP AWG23","kommu","m","Draka","","4530494","","","","Erdkabel",42],
+["Datendose KAT 6 2 x RJ 45 Dose LSA plus","kommu","","","","4598529","","","","BTR E Dat Design",42],
+["Datendose KAT 6 2 x RJ 45 Rahmen & Module","kommu","","","","4598523","","","","BTR E Dat Modul",42],
+["BTR Anschlussdose Leerrahmen","kommu","","BTR","","4503842","","","","",42],
+["BTR E Dat Modul Cat 6 a","kommu","","BTR","","4528393","","","","TN E-DAT modul",42],
+["BTR E Dat Modul Cat 6 Hutschienenmontage","kommu","","BTR","","4506795","","","","",42],
+["Patchkabel 2 mtr. CAT 6","kommu","","","","4514440","","","","",42],
+["BTR Verbindungsmodul","kommu","","BTR","130863-02-f","4538291","","","","",42],
+["Cat 7 Verbindungsmodul","kommu","","","","4521067","","","","",42],
+["Modulträger 24 Port leer","kommu","","","","4598520","","","","",42],
+["Satz Patchfeldschrauben 4 Stck","kommu","Satz","","","0430866","","","","",42],
+["Dätwyler Keystone für Schneider Electric Optiline Kanal","kommu","","Dätwyler","","4527499","","","","",42],
+["R&M 24 Port Patchfeld","kommu","","R&M (Reichle & De-Massari)","R305120","4508188","","","","",42],
+["R&M Anschlussmodul Keystone","kommu","","R&M (Reichle & De-Massari)","R302372","4508187","","","","",42],
+["R&M UP Rahmen DIN Anschlussdose 2 Port weiss","kommu","","R&M (Reichle & De-Massari)","R306010","4508196","","","","",42],
+["R&M AP Dose 2 Port","kommu","","R&M (Reichle & De-Massari)","R310786","4508425","","","","",42],
+["AP TAE Dosen N/F/N","kommu","","","","1239225","","","","",43],
+["TAE UP Dose N/F/N","kommu","","","465236","0805186","","","","",43],
+["NYM-J 1×6 mm²","leitung","m","","","0110303","","","","",44],
+["NYM-J 1×16 mm²","leitung","m","","","0110319","","","","",44],
+["NYM-J 3×1,5 mm²","leitung","m","","","0110320","","1020310","","",44],
+["NYM-J 5×1,5 mm²","leitung","m","","","0110350","","1020510","","",44],
+["NYM-J 7×1,5 mm²","leitung","m","","","0110374","","1020710","","",44],
+["NYM-J 3×2,5 mm²","leitung","m","","","0110328","","1020320","","",44],
+["NYM-J 5×2,5 mm²","leitung","m","","","0110358","","1020520","","",44],
+["NYM-J 3×6 mm²","leitung","m","","","0110523","","","","",44],
+["NYM-J 4×6 mm²","leitung","m","","","0110333","","1020460","","",44],
+["NYM-J 5×4 mm²","leitung","m","","","0110362","","1020540","","",44],
+["NYM-J 5×6 mm²","leitung","m","","","0110554","","1020560","","",44],
+["NYM-J 5×10 mm²","leitung","m","","","0110558","","1020570","","",44],
+["NYM-J 5×16 mm²","leitung","m","","","0110355","","1020580","","",44],
+["NYM-J 5×25 mm²","leitung","m","","","0110356","","","","",44],
+["Lautsprecherleitung 2×1,5","leitung","m","","","1957146","","","","",44],
+["NYY-J 3×1,5 mm²","leitung","m","","","0200340","","1098031","","",45],
+["NYY-J 5×1,5 mm²","leitung","m","","","0200420","","1098063","","",45],
+["NYY-J 3×2,5 mm²","leitung","m","","","0200580","","","","",45],
+["NYY-J 5×2,5 mm²","leitung","m","","","0200587","","1098064","","",45],
+["NYY-J 5×6 mm²","leitung","m","","","0200425","","","","",45],
+["NYY 1×16 mm²","leitung","m","","","0200307","","","","",45],
+["Draht starr H07V-U 1,5 mm²","leitung","m","","","0100103","","","","",46],
+["Draht starr H07V-U 2,5 mm²","leitung","m","","","0100123","q7vu025br","","","",46],
+["ÖLFLEX CL110 5×1,5","leitung","m","Lapp","","0122549","","","","",47],
+["YSLY - IZ 4×1 Steuerleitung","leitung","m","","","0132342","","","","",47],
+["Gummikabel H07RN-F 3×1,5","leitung","m","","","","","","","",48],
+["Gummikabel H07RN-F 3×2,5","leitung","m","","","","Q7RNF3025R","","","",48],
+["Gummikabel H07RN-F 5G 1,5","leitung","m","","","","","","","",48],
+["Gummischlauchleitung H07RN-F 5G 2,5","leitung","m","","","","","","","",48],
+["Schlauchleitung H05VV-F 3×1,5","leitung","m","","","0105115","","","","",49],
+["Schlauchleitung H05VV-F 5×1,5","leitung","m","","","0105618","","","","",49],
+["Knotenkette CHK 30K 900 N (Leuchten & Zubehör)","licht","","","","1404362","","","","",50],
+["Schiffsarmaturen Megaman LED","licht","","Megaman","","4623024","","","","",51],
+["Baustellenfassung E 27","licht","","","","1403302","","","","",51],
+["Entsorgung von Leuchtstofflampen","pausch","Pauschale","","","","","","i1","",52],
+["Megaman LED Leuchten rund","licht","","Megaman","","5016646","","","","",52],
+["Megaman Bewegungsmelder für Leuchte","licht","","Megaman","","1423024","","","","",52],
+["Ersatzmodul Magnetisch","licht","","","","2517349","","","","",52],
+["Philips LED Leuchten rund","licht","","Philips","","7213122","","","","",53],
+["Philips LED Leuchten rund mit BWM","licht","","Philips","","7213118","","","","",53],
+["PHILIPS LED Leuchte 1500 mm lang","licht","","Philips","","2808859","","","","",54],
+["Ledvance 4000 K, 6200 lm, 55 W / Alt 2×58 Watt","licht","","Ledvance","","3002369","","","","",54],
+["Herdanschlussdose UP","dosen","","","","0869145","","","","",55],
+["Herdanschlussleitung 1,5 mtr. 5×2,5 mm²","dosen","","","","0916003","","","","",55],
+["Varta 4914 High Energy Mignon AA","sonst","","Varta","","1240733","","","","",56],
+["Varta 4914 High Energy Baby LR 14","sonst","","Varta","","1241324","","","","",56],
+["Varta 4914 High Energy 9 V Block","sonst","","Varta","","1240856","","","","",56],
+["Merten Einsatz Wechselschalter","schalter","","Merten","meg3116-0000","0852048","","","","",57],
+["Merten Einsatz Doppelwechsel","schalter","","Merten","meg3126-0000","0852053","","","","",57],
+["Merten Einsatz Kontrollschalter","schalter","","Merten","meg3106-0000","0852045","","","","",57],
+["Merten Einsatz Kreuzschalter","schalter","","Merten","meg3117-0000","0852049","","","","",57],
+["Merten Einsatz Rolloschalter","schalter","","Merten","meg3715-0000","0852181","","","","",57],
+["Merten Einsatz Serienschalter","schalter","","Merten","meg3115-0000","0852047","","","","",57],
+["Merten Einsatz Taster mit Meldekontakt","schalter","","Merten","meg3154-0000","0852065","","","","",57],
+["Merten Einsatz Serienkontrollschalter","schalter","","Merten","meg3105-0000","0852044","","","","",57],
+["Merten Einsatz Taster","schalter","","Merten","meg3150-0000","0852058","","","","",57],
+["Merten M-Smart 1-fach Gehäuse polarweiß","schalter","","Merten","512119","0831087","","","","",57],
+["Merten M-Smart 2-fach Gehäuse polarweiß","schalter","","Merten","512219","0831093","","","","",57],
+["Merten M-Smart 3-fach Gehäuse polarweiß","schalter","","Merten","512319","0831509","","","","",57],
+["Merten M-Smart 1-fach Rahmen M weiß & polarweiß","schalter","","Merten","484119","0808568","","","","",57],
+["Merten M-Smart 2-fach Rahmen M weiß & polarweiß","schalter","","Merten","484219","0808569","","","","",57],
+["Merten M-Smart 3-fach Rahmen M weiß & polarweiß","schalter","","Merten","484319","0808574","","","","",57],
+["Merten M-Smart 4-fach Rahmen M weiß & polarweiß","schalter","","Merten","484419","0808575","","","","",57],
+["Merten M-Smart 5-fach Rahmen M weiß & polarweiß","schalter","","Merten","484519","0808576","","","","",57],
+["Merten M-Smart Wippe","schalter","","Merten","433119","0801560","","","","",57],
+["Merten M-Smart Kontrollwippe","schalter","","Merten","431019","0837581","","","","",57],
+["Merten M-Smart Serienwippe","schalter","","Merten","433519","0801570","","","","",57],
+["Merten M-Smart Rollowippe","schalter","","Merten","435519","0801635","","","","",57],
+["Merten M-Smart Serienkontrollwippe","schalter","","Merten","Meg3420-0419","0852044","","","","",57],
+["Merten M-Smart TAE Abdeckung","schalter","","Merten","297919","0803497","","","","",57],
+["Merten M-Smart SAT Abdeckung","schalter","","Merten","297519","0803543","","","","",57],
+["Merten M-Smart UAE Abdeckung","schalter","","Merten","298019","0803500","","","","",57],
+["Merten M-Smart Blindabdeckung","schalter","","Merten","391819","0803484","","","","",57],
+["Merten M-Smart Steckdose Kinderschutz","schalter","","Merten","meg2300-0419","0851411","","","","",57],
+["Merten M-Smart SCHUKO-Doppel-Steckdose","schalter","","Merten","meg2420-1419","0866125","","","","",57],
+["Merten AQUASTAR Kombination Schalter + Steckdose","schalter","","Merten","meg3494-8019","0861786","","","","",57],
+["Merten AQUASTAR Wechselschalter","schalter","","Merten","meg3116-8019","0861770","","","","",57],
+["Merten AQUASTAR Serienschalter","schalter","","Merten","meg3115-8019","0861767","","","","",57],
+["Merten AQUASTAR Kontrollschalter","schalter","","Merten","meg3106-8019","0861763","","","","",57],
+["Merten AQUASTAR Steckdose 1-fach","schalter","","Merten","meg2300-8019","0861720","","","","",57],
+["Merten AQUASTAR Steckdose 2-fach","schalter","","Merten","meg2320-8019","0861723","","","","",57],
+["Merten AQUASTAR Steckdose 3-fach","schalter","","Merten","meg2390-8019","0861740","","","","",57],
+["Merten AQUASTAR Taster","schalter","","Merten","MEG3150-8019","0861775","","","","",57],
+["Bewegungsmelder ARGUS 220 Connect","licht","","Merten","565419","0872008","","","","",57],
+["Bewegungsmelder Esylux MDW 200i","licht","","Esylux","","6400712","","","","",57],
+["EI 650 Rauchmelder 10 Jahre","licht","","Ei Electronics","EI650","","","","","",57],
+["Wartungsheft Rauchmelder","licht","","","","","","5603908","","",57],
+["Potentialausgleichsschiene","erdung","","","","0430176","","","","",58],
+["Banderdungsschelle","erdung","","","","0430105","","","","",58],
+["OBO Staberder / Tiefenerder 1,5 Meter V4a","erdung","","OBO Bettermann","","0434473","Q620902DE","","","",58],
+["OBO Erderspitze","erdung","","OBO Bettermann","","0430217","","","","",58],
+["Dehn Anschlussklemme","erdung","","Dehn","","0434472","","","","",58],
+["DENSO Binde","erdung","Rolle","","","0434179","","","","",58],
+["OBO V4 A Kreuzverbinder","erdung","","OBO Bettermann","","","q252810v4a","","","",58],
+["OBO V4A Runddraht Edelstahl","erdung","m","OBO Bettermann","","","","","","",58],
+["Verbindungsklemme Armierung Neubau","erdung","","","","5900822","","","","",58],
+["HILTI Schraubanker HUS 3-H 10×50 5/-/-","befest","Packung","Hilti","","2079911","","","","",59],
+["HILTI Schraubanker HUS P 6×40 / 5","befest","Packung","Hilti","","428663","","","","",59],
+["HILTI Schraubanker HUS 3-A 6×35 M8/18","befest","Packung","Hilti","","416741","","","","",59],
+["Gasnagel x-GN 20 MX","befest","Packung","","","","","","","",59],
+["Schelle x-EKS 20 MX M 20","befest","","","","","","","","",59],
+["Schelle x-EKS 25 MX M 25","befest","","","","","","","","",59],
+["Stiebel-El Durchlauferhitzer DHB 24 ST thermotron","sonst","","Stiebel Eltron","","4200358","dhb24st","","","",60],
+["Solarleitung 6 mm²","leitung","m","","","1207534","","","","",60],
+["CIMCO Stecker und Buchse MS 4","sonst","","Cimco","","","","5855376","","",60],
+["Netzwerkmessgerät","pausch","Pauschale","","","","","","M1","",3],
+["E Check Messgerät","pausch","Pauschale","","","","","","M2","",3],
+["Gerätetester","pausch","Pauschale","","","","","","M3","",3],
+["SAT Messgerät","pausch","Pauschale","","","","","","M4","",3],
+["Diamantsäge oder DD pro Tag","pausch","Tag","","","","","","M5","",3],
+["Pauschale Zähler bei Versorger beantragen","pausch","Pauschale","","","","","","M6","",3],
+["Laptop","pausch","Pauschale","","","","","","M7","",3],
+["HILTI Bohr / Stemmhammer","pausch","Pauschale","Hilti","","","","","M8","",3],
+["Netzanalysegerät HT","pausch","Pauschale","","","","","","M9","",3],
+["Kernbohrmaschine","pausch","Pauschale","","","","","","M10","",3],
+["Klauke Hydraulische Presszange","pausch","Pauschale","","","","","","M11","",3],
+["E Checktester für Ladesäulen incl. E Check Messgerät","pausch","Pauschale","","","","","","EMOB","",3],
+["Beschriftungspauschale für Verteiler / Zählerschränke","pausch","Pauschale","","","","","","beschr2","",3],
+["Befestigungspauschale Dübel Schraube 10 mm","pausch","Pauschale","","","","","","bef2","",3],
+["Schnittkosten der Lieferanten","pausch","Pauschale","","","","","","schnitt","",3],
+["Baustelleneinrichtung","pausch","Pauschale","","","","","","baust1","",3],
+["Abdeckmaterial / Teppiche ca 1/2 Rolle","pausch","Pauschale","","","","","","Abd1","",3],
+["Rollgerüst Tagespauschale","pausch","Tag","","","","","","Gerüst","",3],
+["Eimer 12 l Bauschutt entsorgen","pausch","","","","","","","Bauschutt","",3],
+["Absperrung gelb Mobil","pausch","Pauschale","","","","","","Absper","",3],
+["Beschriftungsband 1 Rolle gelb","befest","Rolle","","","2108319","","","","",3],
+["E Check Aufkleber inklusive Barcode","pausch","Pauschale","","","","","","beschr3","",61],
+["RFID Kabelbinder","befest","Packung","","","6906618","","","","",61],
+["Verzinkte Achtkantstahlwelle SW60, Länge 6m","sonst","","","","1156141","","","","",62],
+["Verzinkte Teleskop-Achtkantstahlwelle SW60, variabel einsetzbar von 1,10m bis 2,10m","sonst","","","","7000753","","","","",62],
+["Kugellagereinsatz zur Montage im Gegenlager","sonst","","","","1156121","","","","",62],
+["Befestigungsfeder 140mm ab SW50 4051","sonst","","","","1156159","","","","",62],
+["Gegenlager für Fertigkasten","sonst","","","","1156112","","","","",62],
+["Walzenkapsel SW 60","sonst","","","","1156123","","","","",62],
+["Friedl.D911S Funkgong Libra+ 90dB silber","sonst","","Friedland","","","QGONGD911S","","","",63]];
+/* MAT_FIRMA_END */
+
+/* ===== Verteiler aufnehmen: Assistent mit einer Frage pro Fenster =====
+   „Neuer Verteiler“: Art → Montage → Größe → (Ort) → Name → Netzform, Kachel antippen = weiter.
+   „+ Gerät“: Gerät aus der Materialliste (mit Foto) → bei Automaten „Wofür?“ → Kennzeichnung zählt selbst mit.
+   Läuft im Dialogfeld #dlg (Handy: ganze Seite, iPad/PC: großes Fenster). Die Einträge landen im Editor der Verteilerlegende
+   (legE / legSpeichern), beim Kunden also über vtSchreiben im Gebäude. Das Gerät merkt sich seine Artikelnummer in e.mat. */
+let AW=null;
+const AW_SVG={
+  hv:'<rect x="11" y="4" width="26" height="40" rx="3" class="a"/><circle cx="24" cy="15" r="5" class="b"/><rect x="15" y="25" width="18" height="4" rx="1" class="b"/><rect x="15" y="32" width="18" height="4" rx="1" class="b"/>',
+  uv:'<rect x="7" y="9" width="34" height="30" rx="3" class="a"/><rect x="11" y="14" width="26" height="5" rx="1" class="b"/><rect x="11" y="22" width="26" height="5" rx="1" class="b"/><rect x="11" y="30" width="26" height="5" rx="1" class="b"/>',
+  gw:'<rect x="5" y="3" width="38" height="40" rx="3" class="a"/><path d="M24 3v40" class="c"/><rect x="9" y="8" width="11" height="4" rx="1" class="b"/><rect x="9" y="15" width="11" height="4" rx="1" class="b"/><rect x="28" y="8" width="11" height="4" rx="1" class="b"/><rect x="28" y="15" width="11" height="4" rx="1" class="b"/><rect x="8" y="43" width="6" height="3" class="b"/><rect x="34" y="43" width="6" height="3" class="b"/>',
+  ap:'<rect x="4" y="4" width="8" height="40" class="b"/><rect x="12" y="11" width="22" height="26" rx="3" class="a"/><path d="M34 16v16" class="c"/>',
+  up:'<rect x="4" y="4" width="20" height="40" class="b"/><rect x="10" y="11" width="16" height="26" rx="2" class="a"/><rect x="24" y="9" width="4" height="30" rx="1" class="a"/>',
+  res:'<rect x="17" y="8" width="14" height="32" rx="2" class="a"/><path d="M20 24h8" class="c"/>',
+  gr:'<rect x="7" y="12" width="34" height="6" rx="2" class="b"/><rect x="7" y="23" width="26" height="4" rx="1" class="a"/><rect x="7" y="31" width="30" height="4" rx="1" class="a"/>',
+  frei:'<rect x="17" y="8" width="14" height="32" rx="2" class="a"/><path d="M24 18v12M18 24h12" class="c"/>'};
+const awSvg=k=>`<svg class="aw-svg" viewBox="0 0 48 48" aria-hidden="true">${AW_SVG[k]||""}</svg>`;
+const awReihenSvg=n=>`<svg class="aw-svg" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="4" width="36" height="40" rx="3" class="a"/>${Array.from({length:n},(_,i)=>{ const h=Math.min(5,24/n), g=(32-n*h)/(n+1); return `<rect x="10" y="${(8+g+i*(h+g)).toFixed(1)}" width="28" height="${h.toFixed(1)}" rx="1" class="b"/>`; }).join("")}</svg>`;
+const AW_ART=[["hv","Zählerschrank / HV","mit Zählerplatz, Hauptverteilung"],["uv","Unterverteiler","Kleinverteiler, z. B. Hager volta"],["gw","Gewerbe / Standverteiler","größere Anlage, Industrie"]];
+const AW_NAMEN={hv:["HV","Zählerschrank","HV Keller","HV Hausanschlussraum"],uv:["UV KG","UV EG","UV OG","UV DG","UV Garage","UV Werkstatt"],gw:["HV","UV Halle","UV Büro","UV Werkstatt"]};
+const AW_NETZ=[["TN-C-S | 230/400 V","TN-C-S","am häufigsten im Haus"],["TN-S | 230/400 V","TN-S","getrennter N und PE ab Einspeisung"],["TT | 230/400 V","TT","eigener Erder, meist auf dem Land"],["","Weiß ich nicht","später eintragen"]];
+
+/* ---------- Rahmen ---------- */
+function awRahmen({titel,unter,schritt,schritte,frage,hinweis,inhalt,fuss}){
+  $("#dlg").classList.remove("breit"); $("#dlg").classList.add("aw");
+  $("#dlg").innerHTML=`<div class="aw-kopf"><button type="button" class="icon-btn aw-zur" data-act="awZur" aria-label="Zurück">${icon("back")}</button>
+      <div class="aw-tt"><b>${esc(titel)}</b>${unter?`<small>${esc(unter)}</small>`:""}</div><button type="button" class="icon-btn" data-act="awZu" aria-label="Schließen">${icon("close")}</button></div>
+    ${schritte?`<div class="aw-fort">${Array.from({length:schritte},(_,i)=>`<span${i<=schritt?' class="an"':""}></span>`).join("")}</div>`:""}
+    <div class="aw-inhalt">${frage?`<h2 class="aw-frage">${esc(frage)}</h2>`:""}${hinweis?`<p class="aw-hinweis">${esc(hinweis)}</p>`:""}${inhalt}</div>
+    ${fuss?`<div class="aw-fuss">${fuss}</div>`:""}`;
+  $("#menu").hidden=true; $("#dlg").hidden=false; $("#scrim").hidden=false; $("#scrim").classList.add("dim");
+  const ih=$("#dlg .aw-inhalt"); if(ih) ih.scrollTop=0; }
+const awKachel=(act,v,bild,t,s,an)=>`<button type="button" class="aw-k" data-act="${act}" data-v="${esc(v)}" aria-pressed="${!!an}">${bild?`<span class="aw-kb">${bild}</span>`:""}<span class="aw-kt"><b>${esc(t)}</b>${s?`<small>${esc(s)}</small>`:""}</span></button>`;
+function awZu(){ AW=null; $("#dlg").classList.remove("aw"); closeOverlays(); render(); }
+
+/* ---------- Neuer Verteiler ---------- */
+function awNeuStart(kind,id){ const s=kind==="standorte"&&standortOf(id), k=kind==="kunden"?kundeOf(id):s?kundeOf(s.kundeId):null;
+  const ss=k&&!s?standorteVon(k.id):[];
+  AW={typ:"neu",kid:k?k.id:"",ort:s?s.id:k&&!ss.length?"k:"+k.id:"",ortWahl:ss.length>0,i:0,d:{art:"",montage:"",reihen:0,name:"",netz:null},unter:k?(s?[k.name,s.name].filter(Boolean).join(" · "):k.name):"Ohne Kunde"};
+  awNeuZeigen(); }
+function awNeuSchritte(){ return ["art","montage","reihen",...(AW.ortWahl?["ort"]:[]),"name","netz"]; }
+function awNeuZeigen(){ const S=awNeuSchritte(), sk=S[AW.i], d=AW.d, R={titel:"Neuer Verteiler",unter:AW.unter,schritt:AW.i,schritte:S.length};
+  if(sk==="art") return awRahmen({...R,frage:"Was für ein Verteiler?",hinweis:"Antippen – es geht sofort weiter.",inhalt:`<div class="aw-liste">${AW_ART.map(([v,t,s])=>awKachel("awNeuW",v,awSvg(v),t,s,d.art===v)).join("")}</div>`});
+  if(sk==="montage") return awRahmen({...R,frage:"Wie ist er montiert?",inhalt:`<div class="aw-liste">${awKachel("awNeuW","up",awSvg("up"),"Unterputz","in der Wand oder Hohlwand",d.montage==="up")}${awKachel("awNeuW","ap",awSvg("ap"),"Aufputz","auf der Wand",d.montage==="ap")}</div>`});
+  if(sk==="reihen") return awRahmen({...R,frage:d.art==="hv"?"Wie viele Reihen im Verteilerfeld?":"Wie viele Reihen?",hinweis:"12 Teilungseinheiten (TE) je Reihe – das ist der Normalfall.",
+    inhalt:`<div class="aw-liste aw-2sp">${[1,2,3,4,5,6].map(n=>awKachel("awNeuW",n,awReihenSvg(n),`${n}-reihig`,`${n*12} TE`,d.reihen===n)).join("")}</div>`});
+  if(sk==="ort"){ const k=kundeOf(AW.kid), ss=standorteVon(AW.kid);
+    return awRahmen({...R,frage:"Wo steht der Verteiler?",inhalt:`<div class="aw-liste">${awKachel("awNeuW","k:"+k.id,"","Adresse des Kunden",adrText(k)||k.name,AW.ort==="k:"+k.id)}${ss.map(s=>awKachel("awNeuW",s.id,"",s.name||"Standort",[adrText(s)].filter(Boolean).join(""),AW.ort===s.id)).join("")}</div>`}); }
+  if(sk==="name"){ const N=AW_NAMEN[d.art]||AW_NAMEN.uv;
+    return awRahmen({...R,frage:"Wie heißt er?",hinweis:"So steht er in der Liste und auf der Legende.",
+      inhalt:`<div class="aw-liste aw-2sp">${N.map(n=>awKachel("awNeuW",n,"",n,"",d.name===n)).join("")}</div>
+        <div class="fg1 aw-eigen">${tf("awName","Eigener Name",N.includes(d.name)?"":d.name,{form:true,ph:"z. B. UV Anbau"})}</div>`,
+      fuss:`<span style="flex:1"></span><button type="button" class="btn-filled" data-act="awNameOk">Weiter</button>`}); }
+  if(sk==="netz") return awRahmen({...R,frage:"Welche Netzform?",inhalt:`<div class="aw-liste">${AW_NETZ.map(([v,t,s])=>awKachel("awNeuW",v,"",t,s,d.netz===v)).join("")}</div>`}); }
+function awNeuWahl(v){ const S=awNeuSchritte(), sk=S[AW.i], d=AW.d;
+  if(sk==="art") d.art=v; else if(sk==="montage") d.montage=v; else if(sk==="reihen") d.reihen=+v; else if(sk==="ort") AW.ort=v; else if(sk==="name") d.name=v; else if(sk==="netz") d.netz=v;
+  if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); }
+function awNeuAnlegen(){ const d=AW.d, wer=(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""), extra={art:d.art,montage:d.montage,reihen:d.reihen||3,teReihe:12};
+  if(AW.kid){ const g=ecGeb(AW.ort||"k:"+AW.kid), id=uid();
+    g.verteiler.push({id,name:d.name||"Verteiler",netz:d.netz||"",stand:ecHeute(),ersteller:wer,...extra}); ecGebSpeichern(g);
+    AW=null; $("#dlg").classList.remove("aw"); closeOverlays(); go({v:"vt",g:g.id,id}); }
+  else { const L={id:uid(),titel:d.name||"Verteiler",kunde:"",anschrift:"",kundeId:"",standortId:"",ortId:"",netz:d.netz||"",ersteller:wer,stand:ecHeute(),eintraege:[],...extra};
+    saveRec("legenden",L,true); AW=null; $("#dlg").classList.remove("aw"); closeOverlays(); go({v:"legende",id:L.id}); }
+  setTimeout(()=>{ awGeraetStart(); if(AW) { AW.zuletzt="Verteiler angelegt – jetzt die Geräte einsetzen"; awKatalog(); } },250); }
+
+/* ---------- Gerät einsetzen ---------- */
+const awGeraete=()=>matFirma().filter(m=>m.kategorie==="schutz"&&matTech(m));
+function awName(t){ return t.art==="rcd"?`RCD ${t.in} A / ${t.idn} mA`:t.art==="rcbo"?`FI/LS ${t.char||""}${t.in}`:`LS ${t.char||""}${t.in} ${t.pole}-polig`; }
+function awUnter(m){ const t=matTech(m); return [t.art==="rcd"||t.art==="rcbo"?`${t.art==="rcbo"?t.idn+" mA ":""}Typ ${t.typ||"A"}`:"",`${t.te} TE`,[m.hersteller==="Schneider Electric"?"Schneider":m.hersteller,m.herstellerNr].filter(Boolean).join(" ")].filter(Boolean).join(" · "); }
+const awSchutz=t=>t.art==="rcd"?`${t.in} A / ${t.idn} mA Typ ${t.typ||"A"}`:t.art==="rcbo"?`${t.char||""}${t.in} FI/LS ${t.idn} mA Typ ${t.typ||"A"}`:`${t.char||""}${t.in}`;
+function awNutzung(){ const z={}; const zaehl=x=>{ if(x&&x.mat) z[x.mat]=(z[x.mat]||0)+1; };
+  live("gebaeude").forEach(g=>{ (g.rcds||[]).forEach(zaehl); (g.stromkreise||[]).forEach(zaehl); }); live("legenden").forEach(L=>legE(L).forEach(zaehl)); return z; }
+/* Belegung: letzte Reihe und freie TE */
+function awBelegung(L){ const n=+L.teReihe||12, R=legReihen(L), r=R.length||1, te=R.length?R[R.length-1].te:0; return {n,r,frei:n-te,reihen:+L.reihen||0}; }
+function awBelegText(L){ const b=awBelegung(L); if(!legE(L).length) return `${b.reihen?b.reihen+"-reihig · ":""}noch leer`; return `Reihe ${b.r} · ${b.frei} von ${b.n} TE frei`; }
+/* Kennzeichnung für das nächste Gerät */
+function awKz(L,art){ const E=legE(L);
+  if(art==="rcd"){ if(!E.length) return {kz:"F 1.0",umbruch:false}; const b=awBelegung(L), neu=b.frei<4; return {kz:legRcdKz(E,E.length-1,neu),umbruch:neu}; }
+  const kz=legNaechsteKz(E,E.length-1); if(kz) return {kz,umbruch:false};
+  return {kz:`F ${awBelegung(L).r}.${E.filter(e=>e.art!=="gr").length+1}`,umbruch:false}; }
+const awRcdVor=L=>{ const E=legE(L); for(let i=E.length-1;i>=0;i--){ if(E[i].art==="gr") return null; if(E[i].art==="rcd") return E[i]; } return null; };
+function awGeraetStart(){ const L=legAkt(); if(!L||L.fertig) return; const E=legE(L);
+  AW={typ:"geraet",tab:E.some(e=>e.art==="rcd")?"ls":"rcd",such:"",letzt:null,zuletzt:"",m:null,was:"",raum:"",bez:"",bezHand:false,mehr:false};
+  awKatalog(); }
+function awKatalog(){ const L=legAkt(); if(!L){ awZu(); return; } AW.m=null;
+  $("#dlg").classList.add("aw");
+  awRahmen({titel:L.titel||"Verteiler",unter:awBelegText(L),inhalt:`<div class="aw-such"><span class="aw-lupe">${icon("search")}</span><input id="awSuch" type="search" placeholder="Suchen: B16, RCD, Typ A …" value="${esc(AW.such)}" autocomplete="off"></div>
+      <div class="aw-tabs" role="group">${[["ls","Automaten"],["rcd","RCD"],["rcbo","FI/LS"],["sonst","Sonstiges"]].map(([k,t])=>`<button type="button" data-act="awTab" data-v="${k}" aria-pressed="${AW.tab===k}">${t}</button>`).join("")}</div>
+      <div id="awGrid">${awGrid()}</div>`,
+    fuss:`<span class="aw-fuss-info">${esc(AW.zuletzt||(legE(L).length?`${legE(L).filter(e=>e.art!=="gr").length} Geräte im Verteiler`:""))}</span><button type="button" class="btn-tonal" data-act="awZu">Fertig</button>`});
+  const z=$("#dlg .aw-zur"); if(z) z.hidden=true; }
+function awGrid(){ const q=AW.such.trim().toLowerCase(), z=awNutzung(), L=legAkt(), E=L?legE(L):[];
+  const herst=(()=>{ for(let i=E.length-1;i>=0;i--){ const m=E[i].mat&&awGeraete().find(x=>matHnr(x.herstellerNr)===E[i].mat); if(m) return m.hersteller; } return ""; })();
+  if(!q&&AW.tab==="sonst") return `<div class="aw-grid">${[["res","Reserve","Platzhalter, 1 TE"],["gr","Überschrift","z. B. Erdgeschoss, Wohnung OG"],["frei","Anderes Gerät","frei eintragen – ohne Materialliste"]].map(([k,t,s])=>`<button type="button" class="aw-g aw-g-ic" data-act="awSonst" data-v="${k}"><span class="aw-gb">${awSvg(k)}</span><b>${t}</b><small>${s}</small></button>`).join("")}</div>`;
+  let A=awGeraete().map(m=>({m,t:matTech(m),hnr:matHnr(m.herstellerNr)}));
+  if(q){ const qq=q.replace(/\s+/g,""); A=A.filter(x=>{ const kurz=x.t.char?`${x.t.char}${x.t.in}`.toLowerCase():""; return kurz===qq||[awName(x.t),awUnter(x.m),x.m.name,kurz].join(" ").toLowerCase().replace(/\s+/g," ").includes(q); }); }
+  else A=A.filter(x=>x.t.art===AW.tab);
+  A.sort((a,b)=>(b.hnr===AW.letzt)-(a.hnr===AW.letzt)||(z[b.hnr]||0)-(z[a.hnr]||0)||(b.m.hersteller===herst)-(a.m.hersteller===herst)||(a.t.pole||0)-(b.t.pole||0)||String(a.t.char).localeCompare(String(b.t.char))||a.t.in-b.t.in||a.m.hersteller.localeCompare(b.m.hersteller));
+  if(!A.length) return `<p class="aw-leer">Nichts gefunden. Unter „Sonstiges“ lässt sich ein Gerät frei eintragen.</p>`;
+  return `<div class="aw-grid">${A.map(({m,t,hnr})=>`<button type="button" class="aw-g" data-act="awGeraet" data-v="${esc(hnr)}">${matFoto(m,"aw-gb")}<b>${esc(awName(t))}</b><small>${esc(awUnter(m))}</small>${hnr===AW.letzt?`<span class="aw-nochmal">Nochmal</span>`:""}</button>`).join("")}</div>`; }
+function awEinsetzen(e){ const L=legAkt(); if(!L) return; legE(L).push(e); legSpeichern(L); render(); }
+function awGeraetWahl(hnr){ const L=legAkt(), m=awGeraete().find(x=>matHnr(x.herstellerNr)===hnr); if(!L||!m) return; const t=matTech(m);
+  if(t.art==="rcd"){ const k=awKz(L,"rcd"); awEinsetzen({id:uid(),art:"rcd",kz:k.kz,bez:"Fehlerstromschutzschalter",schutz:awSchutz(t),pole:1,te:t.te,mat:hnr,...(k.umbruch?{umbruch:true}:{})});
+    AW.letzt=hnr; AW.zuletzt=`${k.kz} RCD eingesetzt – jetzt die Automaten dazu`; AW.tab="ls"; AW.such=""; awKatalog(); return; }
+  AW.m=hnr; AW.was=""; AW.raum=""; AW.bez=""; AW.bezHand=false; AW.mehr=false; awWofuer(); }
+function awRaeume(L){ const s=new Set(), add=b=>String(b||"").split(/\s+/).forEach(w=>{ if(LEG_RAUM.includes(w)) s.add(w); });
+  if(L._geb){ const g=vtGeb(L._geb); if(g) g.stromkreise.forEach(x=>add(x.bez)); } else legE(L).forEach(e=>add(e.bez));
+  return [...s,...LEG_RAUM.filter(r=>!s.has(r))]; }
+function awWofuer(){ const L=legAkt(), m=awGeraete().find(x=>matHnr(x.herstellerNr)===AW.m); if(!L||!m){ awKatalog(); return; } const t=matTech(m), k=awKz(L,"sk"), r=awRcdVor(L);
+  const gross=+t.pole===3, oben=gross?["Herd","Durchlauferhitzer","Wallbox","Wärmepumpe","PV-Anlage","Heizung"]:["Steckdosen","Licht","Herd","Waschmaschine","Spülmaschine","Trockner"];
+  const W=[...oben,...LEG_WAS.filter(w=>!oben.includes(w))], zeigW=AW.mehr?W:W.slice(0,6), Rm=awRaeume(L);
+  awRahmen({titel:awName(t),unter:`wird ${k.kz}${r?` · an RCD ${r.kz}`:""}`,
+    inhalt:`<div class="aw-gerat">${matFoto(m,"aw-gerat-b")}<span><b>${esc(awName(t))}</b><small>${esc(awUnter(m))}</small></span></div>
+      <h2 class="aw-frage">Wofür ist der Kreis?</h2>
+      <div class="aw-lbl">Was</div><div class="aw-wahl">${zeigW.map(w=>`<button type="button" data-act="awWas" data-v="${esc(w)}" aria-pressed="${AW.was===w}">${esc(w)}</button>`).join("")}${AW.mehr?"":`<button type="button" class="aw-mehr" data-act="awMehr">Weitere …</button>`}</div>
+      <div class="aw-lbl">Raum</div><div class="aw-wahl">${Rm.map(w=>`<button type="button" data-act="awRaum" data-v="${esc(w)}" aria-pressed="${AW.raum===w}">${esc(w)}</button>`).join("")}</div>
+      <div class="fg1 aw-eigen">${tf("awBez","Bezeichnung",AW.bez,{form:true,ph:"z. B. Steckdosen Küche"})}</div>
+      <button type="button" class="aw-unbek" data-act="awUnbek">Noch unbekannt – später eintragen</button>`,
+    fuss:`<button type="button" class="btn-tonal" data-act="awOk" data-weiter="0">Übernehmen</button><span style="flex:1"></span><button type="button" class="btn-filled" data-act="awOk" data-weiter="1">Übernehmen · nächstes</button>`}); }
+function awBezSetzen(){ if(AW.bezHand) return; AW.bez=[AW.was,AW.raum].filter(Boolean).join(" "); const f=document.getElementById("f_awBez"); if(f){ f.value=AW.bez; f.parentElement.classList.toggle("fl",!!AW.bez); } }
+function awOk(weiter,unbekannt){ const L=legAkt(), m=awGeraete().find(x=>matHnr(x.herstellerNr)===AW.m); if(!L||!m) return; const t=matTech(m), f=document.getElementById("f_awBez");
+  const bez=unbekannt?"?":(f?f.value.trim():AW.bez)||"?", k=awKz(L,"sk");
+  awEinsetzen({id:uid(),art:"sk",kz:k.kz,bez,schutz:awSchutz(t),pole:+t.pole===3?3:1,te:t.te,mat:AW.m});
+  AW.letzt=AW.m; AW.tab=t.art; AW.such="";
+  if(weiter){ AW.zuletzt=`${k.kz} ${bez==="?"?"(noch unbekannt)":bez} eingesetzt`; awKatalog(); } else awZu(); }
+function awSonst(k){ const L=legAkt(); if(!L) return;
+  if(k==="res"){ const z=awKz(L,"sk"); awEinsetzen({id:uid(),art:"res",kz:z.kz,bez:"",schutz:"",pole:1,te:1}); AW.zuletzt=`${z.kz} Reserve eingesetzt`; awKatalog(); return; }
+  AW=null; $("#dlg").classList.remove("aw"); legSkDlg(null,null);
+  if(k==="gr"&&legDlg){ legDlg.art="gr"; document.querySelectorAll('#dlg [data-act="legArt"]').forEach(c=>c.setAttribute("aria-pressed",c.dataset.v==="gr")); legArtZeigen(); } }
+
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="aw"]'); if(!b||b.disabled) return; e.stopPropagation(); const a=b.dataset.act;
+  switch(a){
+  case "awStart": awGeraetStart(); return;
+  case "awZu": awZu(); return;
+  case "awZur": if(!AW) return awZu(); if(AW.typ==="neu"){ if(AW.i>0){ AW.i--; awNeuZeigen(); } else awZu(); } else if(AW.m) awKatalog(); else awZu(); return;
+  case "awNeuW": awNeuWahl(b.dataset.v); return;
+  case "awNameOk": { const f=document.getElementById("f_awName"), v=f&&f.value.trim(); if(!v&&!AW.d.name){ toast("Bitte einen Namen antippen oder eintragen"); return; } awNeuWahl(v||AW.d.name); return; }
+  case "awTab": AW.tab=b.dataset.v; AW.such=""; { const s=document.getElementById("awSuch"); if(s) s.value=""; } $("#awGrid").innerHTML=awGrid(); document.querySelectorAll('#dlg [data-act="awTab"]').forEach(x=>x.setAttribute("aria-pressed",x===b)); return;
+  case "awGeraet": awGeraetWahl(b.dataset.v); return;
+  case "awSonst": awSonst(b.dataset.v); return;
+  case "awWas": AW.was=AW.was===b.dataset.v?"":b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===AW.was)); awBezSetzen(); return;
+  case "awRaum": AW.raum=AW.raum===b.dataset.v?"":b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===AW.raum)); awBezSetzen(); return;
+  case "awMehr": { const f=document.getElementById("f_awBez"); if(f) AW.bez=f.value; AW.mehr=true; awWofuer(); return; }
+  case "awUnbek": awOk(true,true); return;
+  case "awOk": awOk(b.dataset.weiter==="1"); return;
+  } },true);
+document.addEventListener("input",e=>{ if(!AW) return;
+  if(e.target.id==="awSuch"){ AW.such=e.target.value; const g=document.getElementById("awGrid"); if(g) g.innerHTML=awGrid(); document.querySelectorAll('#dlg [data-act="awTab"]').forEach(x=>x.setAttribute("aria-pressed",!AW.such.trim()&&x.dataset.v===AW.tab)); }
+  if(e.target.id==="f_awBez"){ AW.bez=e.target.value; AW.bezHand=!!e.target.value.trim(); } });
 
 /* qrcode-generator 1.4.4 · Kazuhiko Arase · MIT-Lizenz */
 var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,(function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1}))},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(n*r,o*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(t,r){var e=n("友");if(2!=e.length||38726!=(e[0]<<8|e[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},function(t){"function"==typeof define&&define.amd?define([],t):"object"==typeof exports&&(module.exports=t())}((function(){return qrcode}));
@@ -8411,9 +9080,9 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   else if(nav.v==="geraete"){ title="Geräte"; body=ecListeView("geraete"); fab=["ecNeuG","Prüfung","add"]; }
   else if(nav.v==="netzwerk"){ title="Netzwerk"; body=ecListeView("netz"); fab=["ecNeuN","Prüfung","add"]; }
   else if(nav.v==="netzkatalog"){ title="Netzwerk-Katalog"; body=ecKatalogView(); }
-  else if(nav.v==="vt"){ const L=vtL(nav.g,nav.id); if(!L){ nav={v:"anlagen"}; return render(); } title=L.titel; sub="Verteiler"; body=legView(L); fab=L.fertig?null:["legSkNeu","Stromkreis","add"]; }
+  else if(nav.v==="vt"){ const L=vtL(nav.g,nav.id); if(!L){ nav={v:"anlagen"}; return render(); } title=L.titel; sub="Verteiler"; body=legView(L); fab=L.fertig?null:["awStart","Gerät","add"]; }
   else if(nav.v==="ohnekunde"){ title="Ohne Kunde"; sub="Ablage für alles ohne Kunden"; body=legOhneView(); fab=["legNeu","Legende","add"]; }
-  else if(nav.v==="legende"){ const L=DB.legenden.get(nav.id); if(!L||L.deleted){ nav={v:"kunden"}; return render(); } title=L.titel||"Verteiler"; sub="Verteilerlegende"; body=legView(L); fab=L.fertig?null:["legSkNeu","Stromkreis","add"]; }
+  else if(nav.v==="legende"){ const L=DB.legenden.get(nav.id); if(!L||L.deleted){ nav={v:"kunden"}; return render(); } title=L.titel||"Verteiler"; sub="Verteilerlegende"; body=legView(L); fab=L.fertig?null:["awStart","Gerät","add"]; }
   else if(nav.v==="netzkatmodell"){ const K=ecRkKat(nav.id); if(!K){ nav={v:"netzkatalog"}; return render(); } title=K.kurz||K.modell; sub=K.hersteller; body=ecKatModellView(K); }
   else if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); if(!p||p.deleted){ nav={v:"anlagen"}; return render(); }
     title=ecOrt(p.ortId).titel; sub=`${EC_ART[p.art||"anlage"]} · ${ecDatum(p.datum)}`; if(rkS){ sub=`Netzwerkschrank · ${title}`; title=rkS.name; } body=ecView(p); }
