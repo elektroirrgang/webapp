@@ -2456,6 +2456,11 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .zs-zt{flex:1;min-width:0;display:flex;flex-direction:column}.zs-zt b{font-size:15px}.zs-zt small{font-size:13px;color:var(--on-sv)}.zs-zt small.fehlt{color:var(--on-sv)}
 .zs-mats{display:grid;gap:4px}.zs-mat{display:flex;gap:10px;font-size:14px;padding:2px 4px}.zs-mat b{min-width:28px}
 .zs-hinweis{margin-top:10px}
+.zs-best{display:grid;gap:6px}
+.zs-bp{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;border:0;border-radius:16px;background:var(--sc);color:var(--on-surface);padding:10px 14px;text-align:left;font:inherit}
+.zs-bp[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
+.zs-bt{flex:1;min-width:0;display:flex;flex-direction:column}.zs-bt b{font-size:15px;font-weight:700;line-height:1.3}.zs-bt small{font-size:13px;color:var(--on-sv);line-height:1.35}.zs-bp[aria-pressed="true"] .zs-bt small{color:inherit;opacity:.8}
+.zs-bs{flex:none;font-size:13px;font-weight:700;color:var(--on-sv)}.zs-bp[aria-pressed="true"] .zs-bs{color:inherit}.zs-bs.offen{color:var(--primary)}
 
 
 .qr-zeile,.qr-neu{display:flex;align-items:center;gap:16px}
@@ -8205,8 +8210,46 @@ function zsZpFenster(zs,i,weiterAct,weiterTxt){ const z=zs.zp[i]; if(!z) return 
     fuss:`<span style="flex:1"></span><button type="button" class="btn-filled" data-act="${weiterAct}">${weiterTxt}</button>`}; }
 function zsZpLesen(z){ if(!z) return; const b=document.getElementById("f_zsBez"), n=document.getElementById("f_zsNr"); if(b) z.bez=b.value.trim(); if(n) z.nr=n.value.trim().replace(/\s+/g," "); }
 
+/* ---- Bestückung je Feld nach VDE-AR-N 4100:2026 und Netzbetreiber ----
+   zs.best = {<feldId>:{k:true}, s:{…} (einmal im Schrank), a:{…} (APZ)}; zs.nb = "rheinnetz"|"westnetz"|"anderer" (Vorgabe RheinNetz: Waldbröl, Morsbach, Reichshof, AggerEnergie-Gebiet) */
+const ZS_NB=[["rheinnetz","RheinNetz","Waldbröl, Morsbach, Reichshof, Gummersbach, Wiehl …"],["westnetz","Westnetz",""],["anderer","Anderer Netzbetreiber","nur die Regeln der VDE-AR-N 4100"]];
+const zsNb=zs=>zs.nb||"rheinnetz";
+const zsSteuer=zs=>zs.zp.some(z=>z.zweck==="wp"||z.zweck==="wallbox");
+const ZS_BEST=[
+  {k:"hs",ort:"z",zone:"AAR",t:"Hauptschalter 3-polig, plombierbar – je Zähler",s:"RheinNetz: hinter jeder Messeinrichtung",p:zs=>zsNb(zs)==="rheinnetz"},
+  {k:"rj45",ort:"z",zone:"AAR",t:"RJ45-Buchse",s:"VDE-AR-N 4100:2026, bei RheinNetz auch bei Relaissteuerung",p:()=>true},
+  {k:"ssk",ort:"z",zone:"AAR",t:"Steuersignalklemmleiste (Anhang K)",s:"für steuerbare Verbraucher nach §14a (Wärmepumpe, Wallbox)",p:zsSteuer},
+  {k:"hlak",ort:"z",zone:"AAR",t:"Hauptleitungsabzweigklemme",s:"",p:()=>false},
+  {k:"relais",ort:"z",zone:"AAR",t:"Trennrelais §14a",s:"",p:()=>false},
+  {k:"fils",ort:"z",zone:"AAR",t:"FI/LS für Wallbox oder PV",s:"höchstens 3 × 16 A",p:()=>false},
+  {k:"rfzV",ort:"z",zone:"RfZ",t:"Spannungsversorgung aus dem NAR",s:"vor der Trennvorrichtung, Sicherung im NAR",p:()=>true},
+  {k:"rfzFrei",ort:"z",zone:"RfZ",t:"Frei von Kundengeräten",s:"nur für Gateway und Steuerbox des Messstellenbetreibers",p:()=>true},
+  {k:"schiene",ort:"z",zone:"NAR",t:"Sammelschiene 5-polig",s:"",p:()=>true},
+  {k:"spd",ort:"s",zone:"NAR",t:"Überspannungsschutz Typ 1",s:"einmal im Schrank – im Hauptstromversorgungssystem nur Typ 1",p:()=>true},
+  {k:"abgriff",ort:"s",zone:"NAR",t:"Spannungsabgriff für RfZ und APZ, abgesichert",s:"einmal im Schrank – 25 kA",p:()=>true},
+  {k:"apzV",ort:"a",zone:"APZ",t:"Spannungsversorgung aus dem NAR",s:"eigenes Leitungspaar Phase + N",p:()=>true},
+  {k:"apzDat",ort:"a",zone:"APZ",t:"Datenleitung RfZ – APZ",s:"mindestens Cat 5",p:()=>true},
+  {k:"ant",ort:"a",zone:"APZ",t:"Kommunikation vorbereitet",s:"",p:()=>true}];
+const zsBestText=(zs,b)=>b.k==="ant"?(zsNb(zs)==="rheinnetz"?"25-mm-Verschraubung, 32-mm-Rohr oder Koax mit Fakra-Stecker (Mobilfunk)":zsNb(zs)==="westnetz"?"Leerrohr vom HÜP zum APZ, mindestens 25 mm":"Antenne oder Leerrohr nach Vorgabe des Netzbetreibers"):b.s;
+const zsBestHat=(zs,ort,k)=>!!((zs.best||{})[ort]||{})[k];
+/* Punkte eines Ziels (Zählerfeld-ID oder "a"); schrankweite Punkte erscheinen in jedem Zählerfeld */
+const zsBestPunkte=(zs,ziel)=>ZS_BEST.filter(b=>ziel==="a"?b.ort==="a":b.ort!=="a").map(b=>({...b,wo:b.ort==="s"?"s":ziel}));
+function zsBestOffen(zs,ziel){ return zsBestPunkte(zs,ziel).filter(b=>b.p(zs)&&!zsBestHat(zs,b.wo,b.k)).length; }
+function zsBestOffenGesamt(zs){ const ziele=[...zs.felder.filter(f=>f.typ==="z").map(f=>f.id),...(zs.apz?["a"]:[])], gez=new Set();
+  let n=0; ziele.forEach(z=>zsBestPunkte(zs,z).forEach(b=>{ const key=b.wo+":"+b.k; if(gez.has(key)) return; gez.add(key); if(b.p(zs)&&!zsBestHat(zs,b.wo,b.k)) n++; })); return n; }
+function zsBestFenster(zs,ziel){ const P=zsBestPunkte(zs,ziel), zonen=[...new Set(P.map(b=>b.zone))];
+  const titel=ziel==="a"?"APZ":`Zählerfeld ${zsFeldNr(zs,ziel)}`;
+  return {frage:`Was ist drin? · ${titel}`,hinweis:`Pflicht nach VDE-AR-N 4100:2026${zsNb(zs)!=="anderer"?" und "+zsTxt(ZS_NB,zsNb(zs)):""}. Antippen = vorhanden.`,
+    inhalt:zonen.map(zo=>`<div class="aw-lbl">${zo==="AAR"?"AAR · oben":zo==="NAR"?"NAR · unten":zo==="RfZ"?"RfZ · über dem Zähler":"APZ"}</div><div class="zs-best">${P.filter(b=>b.zone===zo).map(b=>{ const hat=zsBestHat(zs,b.wo,b.k), pf=b.p(zs), s=zsBestText(zs,b);
+      return `<button type="button" class="zs-bp" data-act="zsBest" data-wo="${esc(b.wo)}" data-k="${b.k}" aria-pressed="${hat}"><span class="zs-bt"><b>${esc(b.t)}</b>${s?`<small>${esc(s)}</small>`:""}</span><span class="zs-bs${!hat&&pf?" offen":""}">${hat?"vorhanden":pf?"fehlt":"optional"}</span></button>`; }).join("")}</div>`).join(""),
+    fuss:`<span style="flex:1"></span><button type="button" class="btn-filled" data-act="zsSpeichern">Speichern</button>`}; }
+function zsNbFenster(zs){ return {frage:"Welcher Netzbetreiber?",hinweis:"Danach richten sich die Pflichtpunkte der Bestückung.",
+  inhalt:`<div class="aw-liste">${ZS_NB.map(([k,t,s])=>awKachel("zsNb",k,"",t,s,zsNb(zs)===k)).join("")}</div>`}; }
+
 /* ---- Karte auf der Verteilerseite ---- */
-function zsHinweise(zs){ const H=[];
+function zsHinweise(zs){ const H=[], nb=zsNb(zs), off=zsBestOffenGesamt(zs);
+  if(nb!=="anderer"&&zs.zp.some(z=>z.art==="3pkt")) H.push(`${zsTxt(ZS_NB,nb)}: grundsätzlich eHZ auf BKE-I – 3-Punkt nur bei Wandler- oder Lastgangmessung.`);
+  if(off) H.push(`Bestückung: ${off} Pflichtpunkt${off===1?"":"e"} noch nicht als vorhanden markiert.`);
   if(!zs.apz) H.push("Kein APZ eingetragen – bei neuen Zählerschränken Pflicht, im Bestand nicht nachzurüsten.");
   zs.zp.forEach((z,i)=>{ if(!z.sls||z.sls==="keiner") H.push(`Zähler ${i+1}: SLS im NAR fehlt – bei direkter Messung vorgeschrieben.`); });
   return H; }
@@ -8215,6 +8258,13 @@ function zsMaterial(zs,reihen){ const M=new Map(), add=t=>M.set(t,(M.get(t)||0)+
       add(`Zählerfeld ${art}${f.n===2?", 2 Zähler":""}`); Z.forEach(z=>{ if(z.sls&&z.sls!=="keiner") add(`SLS ${z.sls} 3-polig`); }); }
     else if(f.typ==="v") add(`Verteilerfeld ${reihen?reihen+"-reihig":""}`.trim()); else add("Multimedia-Feld"); });
   if(zs.apz) add("APZ-Einbau 300 mm");
+  /* Bestückung: Pflichtpunkte immer (Planung), optionale nur wenn angehakt */
+  const brauch=(wo,k)=>{ const b=ZS_BEST.find(x=>x.k===k); return b.p(zs)||zsBestHat(zs,wo,k); };
+  zs.felder.filter(f=>f.typ==="z").forEach(f=>{ const n=zs.zp.filter(z=>z.feldId===f.id).length;
+    if(brauch(f.id,"hs")) for(let i=0;i<n;i++) add("Hauptschalter 3-polig, plombierbar");
+    if(brauch(f.id,"rj45")) add("RJ45-Buchse"); if(brauch(f.id,"ssk")) add("Steuersignalklemmleiste");
+    if(brauch(f.id,"hlak")) add("Hauptleitungsabzweigklemme"); if(brauch(f.id,"relais")) add("Trennrelais §14a"); });
+  if(zs.felder.some(f=>f.typ==="z")){ add("Überspannungsschutz Typ 1"); add("Spannungsversorgung RfZ/APZ mit Absicherung"); }
   return [...M].map(([t,n])=>`<div class="zs-mat"><b>${n}×</b><span>${esc(t)}</span></div>`).join(""); }
 function zsKarte(L){ const zs=L.zs, zu=L.fertig;
   if(!zs||!zs.felder||!zs.felder.length) return `<section class="card zs-karte"><h3>Zählerschrank</h3><p class="meta">Zählerplätze, Zählerart, SLS, Zählernummern und APZ – Aufbau per Vorlage.</p>${zu?"":`<button type="button" class="btn-tonal" data-act="zsEinrichten">Zählerschrank einrichten</button>`}</section>`;
@@ -8224,6 +8274,10 @@ function zsKarte(L){ const zs=L.zs, zu=L.fertig;
     ${H.length?`<div class="zs-hw">${H.map(h=>`<p>${icon("warn")}<span>${esc(h)}</span></p>`).join("")}</div>`:""}
     <div class="zs-zps">${zs.zp.map((z,i)=>`<button type="button" class="zs-zp" data-act="zsZpAuf" data-i="${i}" ${zu?"disabled":""}><span class="zs-zn">Z${i+1}</span><span class="zs-zt"><b>${esc(z.bez||zsTxt(ZS_ZWECK,z.zweck)||"Zählerplatz")}</b><small>${esc(zsZpText(z))}</small></span>${icon("chev")}</button>`).join("")}
       <button type="button" class="zs-zp" data-act="zsApzAuf" ${zu?"disabled":""}><span class="zs-zn zs-apzn">APZ</span><span class="zs-zt"><b>${zs.apz?"Abschlusspunkt Zählerplatz":"Kein APZ"}</b><small>${esc(zs.apz?zsApzText(zs):"Bestandsanlage")}</small></span>${icon("chev")}</button></div>
+    <div class="aw-lbl">Bestückung</div><div class="zs-zps">
+      <button type="button" class="zs-zp" data-act="zsNbAuf" ${zu?"disabled":""}><span class="zs-zn zs-apzn">NB</span><span class="zs-zt"><b>${esc(zsTxt(ZS_NB,zsNb(zs)))}</b><small>Netzbetreiber${zs.nb?"":" – angenommen, bitte prüfen"}</small></span>${icon("chev")}</button>
+      ${[...zs.felder.filter(f=>f.typ==="z").map(f=>[f.id,`Zählerfeld ${zsFeldNr(zs,f.id)}`,"AAR · RfZ · NAR"]),...(zs.apz?[["a","APZ",zsApzText(zs)]]:[])].map(([z,t,u])=>{ const o=zsBestOffen(zs,z);
+        return `<button type="button" class="zs-zp" data-act="zsBestAuf" data-v="${esc(z)}" ${zu?"disabled":""}><span class="zs-zt"><b>${esc(t)}</b><small>${esc(u)}</small></span><span class="zs-bs${o?" offen":""}">${o?`${o} offen`:"vollständig"}</span>${icon("chev")}</button>`; }).join("")}</div>
     <div class="aw-lbl">Material</div><div class="zs-mats">${zsMaterial(zs,L.reihen)}</div>
     <p class="meta zs-hinweis">Artikelnummern folgen, sobald die Zählerschrank-Artikel in der Materialliste stehen.</p></section>`; }
 
@@ -8236,6 +8290,8 @@ function zsZeigen(){ const L=legAkt(); if(!L||!AW) return; const R={titel:"Zähl
   if(AW.modus==="felder") return awRahmen({...R,...zsFelderFenster(AW.zs,AW.reihen,"zsSpeichern","Speichern")});
   if(AW.modus==="zp") return awRahmen({...R,...zsZpFenster(AW.zs,AW.i,"zsSpeichern","Speichern")});
   if(AW.modus==="apz") return awRahmen({...R,...zsApzFenster(AW.zs)});
+  if(AW.modus==="best") return awRahmen({...R,...zsBestFenster(AW.zs,AW.ziel)});
+  if(AW.modus==="nb") return awRahmen({...R,...zsNbFenster(AW.zs)});
   const S=AW.schritte, sk=S[AW.i], R2={...R,schritt:AW.i,schritte:S.length}, letzt=AW.i===S.length-1;
   if(sk==="aufbau") return awRahmen({...R2,...zsAufbauFenster()});
   if(sk==="felder") return awRahmen({...R2,...zsFelderFenster(AW.zs,AW.reihen,"zsWeiter","Weiter")});
@@ -8254,6 +8310,8 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="zsAufbau"){ zsBearbeiten("felder"); return; }
   if(a==="zsZpAuf"){ zsBearbeiten("zp",+b.dataset.i); return; }
   if(a==="zsApzAuf"){ zsBearbeiten("apz"); return; }
+  if(a==="zsBestAuf"){ zsBearbeiten("best"); if(AW){ AW.ziel=b.dataset.v; zsZeigen(); } return; }
+  if(a==="zsNbAuf"){ zsBearbeiten("nb"); return; }
   const zs=zsAkt(); if(!zs) return;
   switch(a){
   case "zsVorl": { const k=b.dataset.v, eigen=k==="eigen", neu=eigen?(zs.felder.length?zs:zsAusVorlage("1z")):zsAusVorlage(k);
@@ -8269,6 +8327,9 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
       b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)); return; }
   case "zsWeiter": zsZpLesen(zsAktZp()); AW.i++; zsZeigen(); return;
   case "zsSpeichern": zsSpeichern(); return;
+  case "zsBest": { const wo=b.dataset.wo, k=b.dataset.k; zs.best=zs.best||{}; zs.best[wo]=zs.best[wo]||{}; zs.best[wo][k]=!zs.best[wo][k]; if(!zs.best[wo][k]) delete zs.best[wo][k];
+      const B=ZS_BEST.find(x=>x.k===k), hat=!!zs.best[wo][k]; document.querySelectorAll(`#dlg [data-act="zsBest"][data-wo="${wo}"][data-k="${k}"]`).forEach(x=>{ x.setAttribute("aria-pressed",hat); const st=x.querySelector(".zs-bs"); st.textContent=hat?"vorhanden":B.p(zs)?"fehlt":"optional"; st.classList.toggle("offen",!hat&&B.p(zs)); }); return; }
+  case "zsNb": zs.nb=b.dataset.v; zsSpeichern(); return;
   } },true);
 
 /* qrcode-generator 1.4.4 · Kazuhiko Arase · MIT-Lizenz */
