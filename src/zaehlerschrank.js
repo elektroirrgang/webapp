@@ -51,6 +51,50 @@ function zsSvg(zs,reihen,klein,aktiv){ const F=zs.felder, W=72, G=4, H=176, w=F.
     return `<rect x="${x}" y="${y}" width="${W}" height="${H}" rx="6" class="f"/>${inn}${T(x+W/2,y+H+16,ZS_TYP_KURZ[f.typ],"u")}`; };
   return `<svg class="zs-svg${klein?" klein":""}" viewBox="0 0 ${w} ${klein?H+8:H+24}" style="max-width:${F.length*(klein?28:104)}px" aria-hidden="true">${F.map(feld).join("")}</svg>`; }
 
+/* ---- Bedarf → Vorschlag (wie ein Zählerschrank-Konfigurator: erst fragen, was dran soll, dann alles ableiten) ---- */
+const ZS_HERST=[["hager","Hager","univers Z"],["sj","Striebel & John","ABB"],["abn","ABN",""],["andere","Anderer / weiß nicht",""]];
+const zsHerstText=k=>{ const h=ZS_HERST.find(x=>x[0]===k); return h&&k!=="andere"?[h[1],h[2]].filter(Boolean).join(" "):""; };
+const ZS_BEDARF=[["hh","Wohnungen / Haushalte","je Wohnung ein Zähler"],["allg","Allgemeinstrom","Treppenhaus, Keller, Außenlicht"],["gew","Gewerbe",""],
+  ["wp","Wärmepumpe mit eigenem Zähler",""],["wb","Wallbox mit eigenem Zähler",""],["pv","PV mit eigenem Zähler","sonst Zweirichtungszähler am Haushalt"],["res","Reserveplätze","Platz für später, ohne Zähler"]];
+const ZS_BEDARF_FELD=[["vf","Verteilerfelder",""],["mm","Multimediafelder",""]];
+const zsBedarfStd=()=>({hh:1,allg:0,gew:0,wp:0,wb:0,pv:0,res:0,vf:1,mm:0,steuer:false});
+const zsBedarfZp=b=>["hh","allg","gew","wp","wb","pv","res"].reduce((a,k)=>a+(+b[k]||0),0);
+/* PLZ → Netzbetreiber (Oberberg; RheinNetz betreibt Waldbröl seit 01.01.2026, Morsbach und Reichshof seit 2017 und die AggerEnergie-Netze) */
+const ZS_PLZ_NB={"51545":"rheinnetz","51597":"rheinnetz","51580":"rheinnetz","51643":"rheinnetz","51645":"rheinnetz","51647":"rheinnetz","51674":"rheinnetz","51702":"rheinnetz","51766":"rheinnetz","51709":"rheinnetz","51491":"rheinnetz"};
+function zsAusBedarf(b,alt){ const N=Math.max(1,zsBedarfZp(b)), felder=[], zp=[];
+  for(let n=N;n>0;n-=2) felder.push({id:uid(),typ:"z",n:n>=2?2:1});
+  for(let i=0;i<Math.max(1,+b.vf||1);i++) felder.push({id:uid(),typ:"v"});
+  for(let i=0;i<(+b.mm||0);i++) felder.push({id:uid(),typ:"m"});
+  const liste=[]; const hh=+b.hh||0;
+  for(let i=0;i<hh;i++) liste.push(["haushalt",hh>1?`Wohnung ${i+1}`:""]);
+  [["allg","allgemein"],["gew","gewerbe"],["wp","wp"],["wb","wallbox"],["pv","pv"]].forEach(([k,z])=>{ for(let i=0;i<(+b[k]||0);i++) liste.push([z,""]); });
+  for(let i=0;i<(+b.res||0);i++) liste.push(["frei",""]);
+  while(liste.length<N) liste.push(["frei",""]);
+  const zs={felder,apz:{feldId:felder.find(f=>f.typ==="v").id,lage:"unten"},zp:[],hoehe:alt&&alt.hoehe!=null?alt.hoehe:1100,nb:alt&&alt.nb,hersteller:alt&&alt.hersteller,steuerbar:!!b.steuer,bedarf:{...b}};
+  let k=0; felder.filter(f=>f.typ==="z").forEach(f=>{ for(let p=0;p<f.n;p++){ const [zw,bez]=liste[k++]||["frei",""]; zp.push({id:uid(),feldId:f.id,pos:p,zweck:zw,art:"ehz",sls:zw==="frei"?"":"E35",nr:"",bez}); } });
+  zs.zp=zp; return zs; }
+function zsBedarfFenster(b){ const st=(k,t,u)=>`<div class="zs-st"><span class="zs-stt"><b>${esc(t)}</b>${u?`<small>${esc(u)}</small>`:""}</span><button type="button" class="zs-stb" data-act="awBed" data-k="${k}" data-d="-1" aria-label="weniger">−</button><span class="zs-stn" id="awBed_${k}">${+b[k]||0}</span><button type="button" class="zs-stb" data-act="awBed" data-k="${k}" data-d="1" aria-label="mehr">+</button></div>`;
+  return {frage:"Was soll dran?",hinweis:"Daraus stellt die App den Schrank zusammen – Felder, Höhe, APZ und Zählerplätze.",
+    inhalt:`<div class="aw-lbl">Zählerplätze</div><div class="zs-sts">${ZS_BEDARF.map(([k,t,u])=>st(k,t,u)).join("")}</div>
+      <button type="button" class="zs-bp zs-steuer" data-act="awBedSteuer" aria-pressed="${!!b.steuer}"><span class="zs-bt"><b>Wärmepumpe oder Wallbox am Haushaltszähler</b><small>steuerbar nach §14a – braucht Steuersignalklemmleiste</small></span><span class="zs-bs">${b.steuer?"ja":"nein"}</span></button>
+      <div class="aw-lbl">Weitere Felder</div><div class="zs-sts">${ZS_BEDARF_FELD.map(([k,t,u])=>st(k,t,u)).join("")}</div>`,
+    fuss:`<span class="aw-fuss-info" id="awBedSum">${zsBedarfSumText(b)}</span><button type="button" class="btn-filled" data-act="awNeuWeiter">Weiter</button>`}; }
+const zsBedarfSumText=b=>{ const n=Math.max(1,zsBedarfZp(b)); return `${n} ${n===1?"Zählerplatz":"Zählerplätze"} · ${Math.ceil(n/2)} Zählerfeld${Math.ceil(n/2)===1?"":"er"}`; };
+function zsVorschlagFenster(d,ortPlz){ const zs=d.zs, nb=zs.nb, R=(k,t,u)=>`<button type="button" class="zs-zp" data-act="awSub" data-v="${k}"><span class="zs-zt"><b>${esc(t)}</b><small>${esc(u)}</small></span>${icon("chev")}</button>`;
+  const nZ=zs.zp.filter(zsBelegt).length, nF=zs.zp.length-nZ, vf=zs.felder.filter(f=>f.typ==="v");
+  return {frage:"Vorschlag",hinweis:"Aus deinen Angaben abgeleitet. Antippen zum Ändern – sonst „Passt so“.",
+    inhalt:`<div class="zs-bild">${zsSvg(zs,0)}</div><div class="zs-zps">
+      ${R("bedarf","Zählerplätze",`${nZ} Zähler${nF?` + ${nF} frei`:""} · ${zs.felder.filter(f=>f.typ==="z").length} Zählerfeld${zs.felder.filter(f=>f.typ==="z").length===1?"":"er"} · eHZ (BKE-I)`)}
+      ${R("felder","Felder",zs.felder.map(f=>ZS_TYP_KURZ[f.typ]).join(" · "))}
+      ${R("hoehe","Schrankhöhe",+zs.hoehe?`${zs.hoehe} mm · ${vf.map(f=>zsReihenFeld(zs,f,0)+"-reihig").join(" + ")} · ${zsReihenSumme(zs,0)*12} TE`:"selbst angeben")}
+      ${R("apz","APZ",zs.apz?zsApzText(zs):"kein APZ")}
+      ${R("hersteller","Hersteller",zsHerstText(zs.hersteller)||"nicht festgelegt")}
+      ${R("montage","Montage",d.montage==="ap"?"Aufputz":"Unterputz")}
+      ${R("name","Name",d.name||"HV")}
+      ${R("netz","Netzform",(d.netz||"").split(" |")[0]||"nicht angegeben")}
+      ${R("nb","Netzbetreiber",nb?`${zsTxt(ZS_NB,nb)}${d.nbAuto?` · aus PLZ ${ortPlz}`:""}`:"unbekannt – bitte wählen")}</div>`,
+    fuss:`<span style="flex:1"></span><button type="button" class="btn-filled" data-act="awNeuWeiter">Passt so · anlegen</button>`}; }
+
 /* ---- Fenster (liefern frage/inhalt/fuss für awRahmen) ---- */
 function zsAufbauFenster(){ return {frage:"Wie ist der Schrank aufgebaut?",hinweis:"Vorlage antippen – Felder lassen sich danach ändern.",
   inhalt:`<div class="aw-liste">${ZS_VORL.map(([k,t,s,f])=>{ const zs={felder:f.map(zsFeldAus)}; zs.apz=(z=>z?{feldId:z.id,lage:"unten"}:null)(zs.felder.find(x=>x.typ==="v")); return awKachel("zsVorl",k,zsSvg(zs,4,true),t,s); }).join("")}${awKachel("zsVorl","eigen",awSvg("frei"),"Selbst zusammenstellen","Feld für Feld")}</div>`}; }
@@ -81,7 +125,7 @@ function zsZpLesen(z){ if(!z) return; const b=document.getElementById("f_zsBez")
    zs.best = {<feldId>:{k:true}, s:{…} (einmal im Schrank), a:{…} (APZ)}; zs.nb = "rheinnetz"|"westnetz"|"anderer" (Vorgabe RheinNetz: Waldbröl, Morsbach, Reichshof, AggerEnergie-Gebiet) */
 const ZS_NB=[["rheinnetz","RheinNetz","Waldbröl, Morsbach, Reichshof, Gummersbach, Wiehl …"],["westnetz","Westnetz",""],["anderer","Anderer Netzbetreiber","nur die Regeln der VDE-AR-N 4100"]];
 const zsNb=zs=>zs.nb||"rheinnetz";
-const zsSteuer=zs=>zs.zp.some(z=>z.zweck==="wp"||z.zweck==="wallbox");
+const zsSteuer=zs=>!!zs.steuerbar||zs.zp.some(z=>z.zweck==="wp"||z.zweck==="wallbox");
 const ZS_BEST=[
   {k:"hs",ort:"z",zone:"AAR",t:"Hauptschalter 3-polig, plombierbar – je Zähler",s:"RheinNetz: hinter jeder Messeinrichtung",p:zs=>zsNb(zs)==="rheinnetz"},
   {k:"rj45",ort:"z",zone:"AAR",t:"RJ45-Buchse",s:"VDE-AR-N 4100:2026, bei RheinNetz auch bei Relaissteuerung",p:()=>true},
@@ -189,8 +233,8 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "zsFeldWeg": zs.felder.splice(+b.dataset.i,1); zsAbgleich(zs); zsSchritteNeu(); zsNeuZeichnen(); return;
   case "zsFeldPlus": zs.felder.push({id:uid(),typ:"v"}); zsAbgleich(zs); zsSchritteNeu(); zsNeuZeichnen(); return;
   case "zsApz": { const [id,l]=String(b.dataset.v).split(":"); zs.apz=id?{feldId:id,lage:l}:null;
-      if(AW.typ==="neu"){ AW.i++; awNeuZeigen(); } else if(AW.modus==="apz") zsSpeichern(); else { AW.i++; zsZeigen(); } return; }
-  case "zsHoehe": zs.hoehe=+b.dataset.v; if(AW.typ==="neu"){ AW.i++; awNeuZeigen(); } return;
+      if(AW.typ==="neu"){ if(AW.sub) AW.sub=null; else AW.i++; awNeuZeigen(); } else if(AW.modus==="apz") zsSpeichern(); else { AW.i++; zsZeigen(); } return; }
+  case "zsHoehe": zs.hoehe=+b.dataset.v; if(AW.typ==="neu"){ if(AW.sub) AW.sub=+zs.hoehe?null:"reihen"; else AW.i++; awNeuZeigen(); } return;
   case "zsHoeheF": zs.hoehe=+b.dataset.v; zsNeuZeichnen(); return;
   case "zsSpaeter": { const z=zsAktZp(); if(z){ zsZpLesen(z); if(zsBelegt(z)){ z.zweck=""; z.sls=""; } }
       if(AW.typ==="neu"){ const S=awNeuSchritte(); if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); }
@@ -203,5 +247,5 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "zsSpeichern": zsSpeichern(); return;
   case "zsBest": { const wo=b.dataset.wo, k=b.dataset.k; zs.best=zs.best||{}; zs.best[wo]=zs.best[wo]||{}; zs.best[wo][k]=!zs.best[wo][k]; if(!zs.best[wo][k]) delete zs.best[wo][k];
       const B=ZS_BEST.find(x=>x.k===k), hat=!!zs.best[wo][k]; document.querySelectorAll(`#dlg [data-act="zsBest"][data-wo="${wo}"][data-k="${k}"]`).forEach(x=>{ x.setAttribute("aria-pressed",hat); const st=x.querySelector(".zs-bs"); st.textContent=hat?"vorhanden":B.p(zs)?"fehlt":"optional"; st.classList.toggle("offen",!hat&&B.p(zs)); }); return; }
-  case "zsNb": zs.nb=b.dataset.v; zsSpeichern(); return;
+  case "zsNb": zs.nb=b.dataset.v; if(AW.typ==="neu"){ AW.d.nbAuto=false; AW.sub=null; awNeuZeigen(); } else zsSpeichern(); return;
   } },true);

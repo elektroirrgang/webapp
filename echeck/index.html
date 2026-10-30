@@ -2461,6 +2461,12 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .zs-bp[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
 .zs-bt{flex:1;min-width:0;display:flex;flex-direction:column}.zs-bt b{font-size:15px;font-weight:700;line-height:1.3}.zs-bt small{font-size:13px;color:var(--on-sv);line-height:1.35}.zs-bp[aria-pressed="true"] .zs-bt small{color:inherit;opacity:.8}
 .zs-svg .e.frei{opacity:.1}.zs-zn.leer{background:var(--sc-high);color:var(--on-sv)}.zs-hoehe{margin-bottom:4px}.zs-hoehe button{height:44px}.zs-frei-t{margin-top:16px}
+.zs-sts{display:grid;gap:6px}
+.zs-st{display:flex;align-items:center;gap:10px;background:var(--sc);border-radius:16px;padding:8px 8px 8px 14px;min-height:60px}
+.zs-stt{flex:1;min-width:0;display:flex;flex-direction:column}.zs-stt b{font-size:15px;font-weight:700;line-height:1.3}.zs-stt small{font-size:13px;color:var(--on-sv);line-height:1.35}
+.zs-stb{width:44px;height:44px;border:0;border-radius:22px;background:var(--sc-high);color:var(--on-surface);font:700 22px/1 Manrope,system-ui,sans-serif;flex:none}
+.zs-stn{min-width:28px;text-align:center;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.zs-steuer{margin-top:8px}
 .zs-bs{flex:none;font-size:13px;font-weight:700;color:var(--on-sv)}.zs-bp[aria-pressed="true"] .zs-bs{color:inherit}.zs-bs.offen{color:var(--primary)}
 
 
@@ -7224,7 +7230,7 @@ function legView(L){ const E=legE(L);
 
 /* ===== Ansichten der Stromkreise: Liste (je RCD eine Gruppe) und Verteiler (Reihen, Breite in TE) ===== */
 const legAnsicht=()=>META.legAnsicht==="verteiler"?"verteiler":"liste";
-const legBauart=L=>[{hv:"Zählerschrank / HV",uv:"Unterverteiler",gw:"Gewerbe / Standverteiler"}[L.art],{ap:"Aufputz",up:"Unterputz"}[L.montage],L.reihen&&`${L.reihen}-reihig · ${L.reihen*(+L.teReihe||12)} TE`].filter(Boolean).join(" · ");
+const legBauart=L=>[{hv:"Zählerschrank / HV",uv:"Unterverteiler",gw:"Gewerbe / Standverteiler"}[L.art],L.zs&&typeof zsHerstText==="function"?zsHerstText(L.zs.hersteller):"",{ap:"Aufputz",up:"Unterputz"}[L.montage],L.zs&&+L.zs.hoehe?L.zs.hoehe+" mm":"",L.reihen&&`${L.reihen}-reihig · ${L.reihen*(+L.teReihe||12)} TE`].filter(Boolean).join(" · ");
 const legTE=e=>+e.te||(e.art==="rcd"?4:e.art==="sk"&&+e.pole===3?3:1);
 const legOffen=e=>e.art==="sk"&&/^\s*\??\s*$/.test(e.bez||"");
 /* Liste: RCD als Kopf, seine Automaten eingerückt darunter; Überschriften trennen */
@@ -8023,18 +8029,22 @@ function awNeuStart(kind,id){ const s=kind==="standorte"&&standortOf(id), k=kind
   const ss=k&&!s?standorteVon(k.id):[];
   AW={typ:"neu",kid:k?k.id:"",ort:s?s.id:k&&!ss.length?"k:"+k.id:"",ortWahl:ss.length>0,i:0,d:{art:"",montage:"",reihen:0,name:"",netz:null},unter:k?(s?[k.name,s.name].filter(Boolean).join(" · "):k.name):"Ohne Kunde"};
   awNeuZeigen(); }
-function awNeuSchritte(){ const hv=AW.d.art==="hv", zs=AW.d.zs;
-  return ["art","montage",...(hv?["aufbau",...(AW.d.zsEigen?["felder","apz"]:[]),"hoehe"]:[]),...(hv&&zs&&+zs.hoehe?[]:["reihen"]),...(AW.ortWahl?["ort"]:[]),"name","netz",...(hv&&zs?zs.zp.map((_,i)=>"zp"+i):[])]; }
-function awNeuZeigen(){ const S=awNeuSchritte(), sk=S[AW.i], d=AW.d, R={titel:"Neuer Verteiler",unter:AW.unter,schritt:AW.i,schritte:S.length};
-  if(sk==="aufbau") return awRahmen({...R,...zsAufbauFenster(d.zs)});
-  if(sk==="felder") return awRahmen({...R,...zsFelderFenster(d.zs,4,"awNeuWeiter","Weiter")});
+function awNeuSchritte(){ const hv=AW.d.art==="hv";
+  if(hv) return ["art","hersteller","bedarf",...(AW.ortWahl?["ort"]:[]),"vorschlag"];
+  return ["art","montage","reihen",...(AW.ortWahl?["ort"]:[]),"name","netz"]; }
+const awOrtPlz=()=>{ if(!AW.kid) return ""; const o=ecOrt(AW.ort||"k:"+AW.kid); return String(((o.standort&&o.standort.plz)?o.standort:o.kunde||{}).plz||"").trim(); };
+function awNeuZeigen(){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d, R={titel:"Neuer Verteiler",unter:AW.unter,schritt:AW.i,schritte:S.length};
+  if(sk==="hersteller") return awRahmen({...R,frage:"Welcher Hersteller?",hinweis:"Höhe, Reihen und Felder sind genormt – der Hersteller zählt für Material und Artikelnummern.",inhalt:`<div class="aw-liste">${ZS_HERST.map(([k,t,u])=>awKachel("awNeuW",k,"",t,u,d.hersteller===k)).join("")}</div>`});
+  if(sk==="bedarf") return awRahmen({...R,...zsBedarfFenster(d.bedarf)});
+  if(sk==="vorschlag"){ const plz=awOrtPlz(); if(d.zs.nb==null&&ZS_PLZ_NB[plz]){ d.zs.nb=ZS_PLZ_NB[plz]; d.nbAuto=true; } return awRahmen({...R,...zsVorschlagFenster(d,plz)}); }
+  if(sk==="felder") return awRahmen({...R,...zsFelderFenster(d.zs,d.reihen,"awSubZu","Fertig")});
   if(sk==="apz") return awRahmen({...R,...zsApzFenster(d.zs)});
   if(sk==="hoehe") return awRahmen({...R,...zsHoeheFenster(d.zs)});
-  if(sk&&sk.startsWith("zp")){ const n=+sk.slice(2), letzt=AW.i===S.length-1; return awRahmen({...R,...zsZpFenster(d.zs,n,"awNeuWeiter",letzt?"Anlegen":"Weiter")}); }
+  if(sk==="nb") return awRahmen({...R,...zsNbFenster(d.zs)});
   if(sk==="art") return awRahmen({...R,frage:"Was für ein Verteiler?",hinweis:"Antippen – es geht sofort weiter.",inhalt:`<div class="aw-liste">${AW_ART.map(([v,t,s])=>awKachel("awNeuW",v,awSvg(v),t,s,d.art===v)).join("")}</div>`});
   if(sk==="montage") return awRahmen({...R,frage:"Wie ist er montiert?",inhalt:`<div class="aw-liste">${awKachel("awNeuW","up",awSvg("up"),"Unterputz","in der Wand oder Hohlwand",d.montage==="up")}${awKachel("awNeuW","ap",awSvg("ap"),"Aufputz","auf der Wand",d.montage==="ap")}</div>`});
   if(sk==="reihen") return awRahmen({...R,frage:d.art==="hv"?"Wie viele Reihen im Verteilerfeld?":"Wie viele Reihen?",hinweis:"12 Teilungseinheiten (TE) je Reihe – das ist der Normalfall.",
-    inhalt:`<div class="aw-liste aw-2sp">${[1,2,3,4,5,6].map(n=>awKachel("awNeuW",n,awReihenSvg(n),`${n}-reihig`,`${n*12} TE`,d.reihen===n)).join("")}</div>`});
+    inhalt:`<div class="aw-liste aw-2sp">${[1,2,3,4,5,6,7,9].map(n=>awKachel("awNeuW",n,awReihenSvg(Math.min(n,6)),`${n}-reihig`,`${n*12} TE`,d.reihen===n)).join("")}</div>`});
   if(sk==="ort"){ const k=kundeOf(AW.kid), ss=standorteVon(AW.kid);
     return awRahmen({...R,frage:"Wo steht der Verteiler?",inhalt:`<div class="aw-liste">${awKachel("awNeuW","k:"+k.id,"","Adresse des Kunden",adrText(k)||k.name,AW.ort==="k:"+k.id)}${ss.map(s=>awKachel("awNeuW",s.id,"",s.name||"Standort",[adrText(s)].filter(Boolean).join(""),AW.ort===s.id)).join("")}</div>`}); }
   if(sk==="name"){ const N=AW_NAMEN[d.art]||AW_NAMEN.uv;
@@ -8043,10 +8053,13 @@ function awNeuZeigen(){ const S=awNeuSchritte(), sk=S[AW.i], d=AW.d, R={titel:"N
         <div class="fg1 aw-eigen">${tf("awName","Eigener Name",N.includes(d.name)?"":d.name,{form:true,ph:"z. B. UV Anbau"})}</div>`,
       fuss:`<span style="flex:1"></span><button type="button" class="btn-filled" data-act="awNameOk">Weiter</button>`}); }
   if(sk==="netz") return awRahmen({...R,frage:"Welche Netzform?",inhalt:`<div class="aw-liste">${AW_NETZ.map(([v,t,s])=>awKachel("awNeuW",v,"",t,s,d.netz===v)).join("")}</div>`}); }
-function awNeuWahl(v){ const S=awNeuSchritte(), sk=S[AW.i], d=AW.d;
-  if(sk==="art"){ if(d.art!==v){ d.zs=v==="hv"?zsAusVorlage("1z"):null; d.zsEigen=false; } d.art=v; } else if(sk==="montage") d.montage=v; else if(sk==="reihen") d.reihen=+v; else if(sk==="ort") AW.ort=v; else if(sk==="name") d.name=v; else if(sk==="netz") d.netz=v;
+function awNeuWahl(v){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d;
+  if(sk==="art"){ if(d.art!==v){ d.zs=null; if(v==="hv"){ Object.assign(d,{bedarf:zsBedarfStd(),montage:"up",name:"HV",netz:"TN-C-S | 230/400 V",hersteller:d.hersteller||""}); } } d.art=v; }
+  else if(sk==="hersteller"){ d.hersteller=v; if(d.zs) d.zs.hersteller=v; }
+  else if(sk==="montage") d.montage=v; else if(sk==="reihen") d.reihen=+v; else if(sk==="ort"){ AW.ort=v; if(d.zs&&d.nbAuto){ d.zs.nb=null; d.nbAuto=false; } } else if(sk==="name") d.name=v; else if(sk==="netz") d.netz=v;
+  if(AW.sub){ AW.sub=null; awNeuZeigen(); return; }
   if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); }
-function awNeuAnlegen(){ const d=AW.d, wer=(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""), extra={art:d.art,montage:d.montage,reihen:d.art==="hv"&&d.zs&&+d.zs.hoehe?zsReihenSumme(d.zs,0):(d.reihen||3),teReihe:12,...(d.art==="hv"&&d.zs?{zs:zsAbgleich(d.zs)}:{})};
+function awNeuAnlegen(){ const d=AW.d, wer=(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""), extra={art:d.art,montage:d.montage,reihen:d.art==="hv"&&d.zs&&+d.zs.hoehe?zsReihenSumme(d.zs,0):(d.reihen||(d.art==="hv"?5:3)),teReihe:12,...(d.art==="hv"&&d.zs?{zs:zsAbgleich(d.zs)}:{})};
   if(AW.kid){ const g=ecGeb(AW.ort||"k:"+AW.kid), id=uid();
     g.verteiler.push({id,name:d.name||"Verteiler",netz:d.netz||"",stand:ecHeute(),ersteller:wer,...extra}); ecGebSpeichern(g);
     AW=null; $("#dlg").classList.remove("aw"); closeOverlays(); go({v:"vt",g:g.id,id}); }
@@ -8123,11 +8136,16 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   switch(a){
   case "awStart": awGeraetStart(); return;
   case "awZu": awZu(); return;
-  case "awZur": if(!AW) return awZu(); if(AW.typ==="neu"){ const sk=awNeuSchritte()[AW.i]||""; if(sk.startsWith("zp")) zsZpLesen(AW.d.zs.zp[+sk.slice(2)]); if(AW.i>0){ AW.i--; awNeuZeigen(); } else awZu(); }
+  case "awZur": if(!AW) return awZu(); if(AW.typ==="neu"){ if(AW.sub){ AW.sub=AW.sub==="reihen"?"hoehe":null; if(AW.d.zs) zsAbgleich(AW.d.zs); awNeuZeigen(); } else if(AW.i>0){ AW.i--; awNeuZeigen(); } else awZu(); }
     else if(AW.typ==="zs"){ if(AW.schritte&&AW.i>0){ const z=zsAktZp(); if(z) zsZpLesen(z); AW.i--; zsZeigen(); } else awZu(); } else if(AW.m) awKatalog(); else awZu(); return;
   case "awNeuW": awNeuWahl(b.dataset.v); return;
-  case "awNeuWeiter": { const S=awNeuSchritte(), sk=S[AW.i]||""; if(sk.startsWith("zp")) zsZpLesen(AW.d.zs.zp[+sk.slice(2)]);
+  case "awNeuWeiter": { const S=awNeuSchritte(), sk=S[AW.i]||"", d=AW.d;
+      if(sk==="bedarf"){ if(zsBedarfZp(d.bedarf)<1){ toast("Mindestens einen Zählerplatz angeben"); return; } d.zs=zsAusBedarf(d.bedarf,d.zs); d.zs.hersteller=d.hersteller; }
       if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); return; }
+  case "awBed": { const B=AW.d.bedarf, k=b.dataset.k; B[k]=Math.max(k==="vf"?1:0,Math.min(18,(+B[k]||0)+(+b.dataset.d))); const n=document.getElementById("awBed_"+k); if(n) n.textContent=B[k]; const sm=document.getElementById("awBedSum"); if(sm) sm.textContent=zsBedarfSumText(B); return; }
+  case "awBedSteuer": { const B=AW.d.bedarf; B.steuer=!B.steuer; b.setAttribute("aria-pressed",B.steuer); b.querySelector(".zs-bs").textContent=B.steuer?"ja":"nein"; return; }
+  case "awSub": { const v=b.dataset.v; if(v==="bedarf"){ AW.i=awNeuSchritte().indexOf("bedarf"); AW.sub=null; } else AW.sub=v; awNeuZeigen(); return; }
+  case "awSubZu": AW.sub=null; zsAbgleich(AW.d.zs); awNeuZeigen(); return;
   case "awNameOk": { const f=document.getElementById("f_awName"), v=f&&f.value.trim(); if(!v&&!AW.d.name){ toast("Bitte einen Namen antippen oder eintragen"); return; } awNeuWahl(v||AW.d.name); return; }
   case "awTab": AW.tab=b.dataset.v; AW.such=""; { const s=document.getElementById("awSuch"); if(s) s.value=""; } $("#awGrid").innerHTML=awGrid(); document.querySelectorAll('#dlg [data-act="awTab"]').forEach(x=>x.setAttribute("aria-pressed",x===b)); return;
   case "awGeraet": awGeraetWahl(b.dataset.v); return;
@@ -8195,6 +8213,50 @@ function zsSvg(zs,reihen,klein,aktiv){ const F=zs.felder, W=72, G=4, H=176, w=F.
     return `<rect x="${x}" y="${y}" width="${W}" height="${H}" rx="6" class="f"/>${inn}${T(x+W/2,y+H+16,ZS_TYP_KURZ[f.typ],"u")}`; };
   return `<svg class="zs-svg${klein?" klein":""}" viewBox="0 0 ${w} ${klein?H+8:H+24}" style="max-width:${F.length*(klein?28:104)}px" aria-hidden="true">${F.map(feld).join("")}</svg>`; }
 
+/* ---- Bedarf → Vorschlag (wie ein Zählerschrank-Konfigurator: erst fragen, was dran soll, dann alles ableiten) ---- */
+const ZS_HERST=[["hager","Hager","univers Z"],["sj","Striebel & John","ABB"],["abn","ABN",""],["andere","Anderer / weiß nicht",""]];
+const zsHerstText=k=>{ const h=ZS_HERST.find(x=>x[0]===k); return h&&k!=="andere"?[h[1],h[2]].filter(Boolean).join(" "):""; };
+const ZS_BEDARF=[["hh","Wohnungen / Haushalte","je Wohnung ein Zähler"],["allg","Allgemeinstrom","Treppenhaus, Keller, Außenlicht"],["gew","Gewerbe",""],
+  ["wp","Wärmepumpe mit eigenem Zähler",""],["wb","Wallbox mit eigenem Zähler",""],["pv","PV mit eigenem Zähler","sonst Zweirichtungszähler am Haushalt"],["res","Reserveplätze","Platz für später, ohne Zähler"]];
+const ZS_BEDARF_FELD=[["vf","Verteilerfelder",""],["mm","Multimediafelder",""]];
+const zsBedarfStd=()=>({hh:1,allg:0,gew:0,wp:0,wb:0,pv:0,res:0,vf:1,mm:0,steuer:false});
+const zsBedarfZp=b=>["hh","allg","gew","wp","wb","pv","res"].reduce((a,k)=>a+(+b[k]||0),0);
+/* PLZ → Netzbetreiber (Oberberg; RheinNetz betreibt Waldbröl seit 01.01.2026, Morsbach und Reichshof seit 2017 und die AggerEnergie-Netze) */
+const ZS_PLZ_NB={"51545":"rheinnetz","51597":"rheinnetz","51580":"rheinnetz","51643":"rheinnetz","51645":"rheinnetz","51647":"rheinnetz","51674":"rheinnetz","51702":"rheinnetz","51766":"rheinnetz","51709":"rheinnetz","51491":"rheinnetz"};
+function zsAusBedarf(b,alt){ const N=Math.max(1,zsBedarfZp(b)), felder=[], zp=[];
+  for(let n=N;n>0;n-=2) felder.push({id:uid(),typ:"z",n:n>=2?2:1});
+  for(let i=0;i<Math.max(1,+b.vf||1);i++) felder.push({id:uid(),typ:"v"});
+  for(let i=0;i<(+b.mm||0);i++) felder.push({id:uid(),typ:"m"});
+  const liste=[]; const hh=+b.hh||0;
+  for(let i=0;i<hh;i++) liste.push(["haushalt",hh>1?`Wohnung ${i+1}`:""]);
+  [["allg","allgemein"],["gew","gewerbe"],["wp","wp"],["wb","wallbox"],["pv","pv"]].forEach(([k,z])=>{ for(let i=0;i<(+b[k]||0);i++) liste.push([z,""]); });
+  for(let i=0;i<(+b.res||0);i++) liste.push(["frei",""]);
+  while(liste.length<N) liste.push(["frei",""]);
+  const zs={felder,apz:{feldId:felder.find(f=>f.typ==="v").id,lage:"unten"},zp:[],hoehe:alt&&alt.hoehe!=null?alt.hoehe:1100,nb:alt&&alt.nb,hersteller:alt&&alt.hersteller,steuerbar:!!b.steuer,bedarf:{...b}};
+  let k=0; felder.filter(f=>f.typ==="z").forEach(f=>{ for(let p=0;p<f.n;p++){ const [zw,bez]=liste[k++]||["frei",""]; zp.push({id:uid(),feldId:f.id,pos:p,zweck:zw,art:"ehz",sls:zw==="frei"?"":"E35",nr:"",bez}); } });
+  zs.zp=zp; return zs; }
+function zsBedarfFenster(b){ const st=(k,t,u)=>`<div class="zs-st"><span class="zs-stt"><b>${esc(t)}</b>${u?`<small>${esc(u)}</small>`:""}</span><button type="button" class="zs-stb" data-act="awBed" data-k="${k}" data-d="-1" aria-label="weniger">−</button><span class="zs-stn" id="awBed_${k}">${+b[k]||0}</span><button type="button" class="zs-stb" data-act="awBed" data-k="${k}" data-d="1" aria-label="mehr">+</button></div>`;
+  return {frage:"Was soll dran?",hinweis:"Daraus stellt die App den Schrank zusammen – Felder, Höhe, APZ und Zählerplätze.",
+    inhalt:`<div class="aw-lbl">Zählerplätze</div><div class="zs-sts">${ZS_BEDARF.map(([k,t,u])=>st(k,t,u)).join("")}</div>
+      <button type="button" class="zs-bp zs-steuer" data-act="awBedSteuer" aria-pressed="${!!b.steuer}"><span class="zs-bt"><b>Wärmepumpe oder Wallbox am Haushaltszähler</b><small>steuerbar nach §14a – braucht Steuersignalklemmleiste</small></span><span class="zs-bs">${b.steuer?"ja":"nein"}</span></button>
+      <div class="aw-lbl">Weitere Felder</div><div class="zs-sts">${ZS_BEDARF_FELD.map(([k,t,u])=>st(k,t,u)).join("")}</div>`,
+    fuss:`<span class="aw-fuss-info" id="awBedSum">${zsBedarfSumText(b)}</span><button type="button" class="btn-filled" data-act="awNeuWeiter">Weiter</button>`}; }
+const zsBedarfSumText=b=>{ const n=Math.max(1,zsBedarfZp(b)); return `${n} ${n===1?"Zählerplatz":"Zählerplätze"} · ${Math.ceil(n/2)} Zählerfeld${Math.ceil(n/2)===1?"":"er"}`; };
+function zsVorschlagFenster(d,ortPlz){ const zs=d.zs, nb=zs.nb, R=(k,t,u)=>`<button type="button" class="zs-zp" data-act="awSub" data-v="${k}"><span class="zs-zt"><b>${esc(t)}</b><small>${esc(u)}</small></span>${icon("chev")}</button>`;
+  const nZ=zs.zp.filter(zsBelegt).length, nF=zs.zp.length-nZ, vf=zs.felder.filter(f=>f.typ==="v");
+  return {frage:"Vorschlag",hinweis:"Aus deinen Angaben abgeleitet. Antippen zum Ändern – sonst „Passt so“.",
+    inhalt:`<div class="zs-bild">${zsSvg(zs,0)}</div><div class="zs-zps">
+      ${R("bedarf","Zählerplätze",`${nZ} Zähler${nF?` + ${nF} frei`:""} · ${zs.felder.filter(f=>f.typ==="z").length} Zählerfeld${zs.felder.filter(f=>f.typ==="z").length===1?"":"er"} · eHZ (BKE-I)`)}
+      ${R("felder","Felder",zs.felder.map(f=>ZS_TYP_KURZ[f.typ]).join(" · "))}
+      ${R("hoehe","Schrankhöhe",+zs.hoehe?`${zs.hoehe} mm · ${vf.map(f=>zsReihenFeld(zs,f,0)+"-reihig").join(" + ")} · ${zsReihenSumme(zs,0)*12} TE`:"selbst angeben")}
+      ${R("apz","APZ",zs.apz?zsApzText(zs):"kein APZ")}
+      ${R("hersteller","Hersteller",zsHerstText(zs.hersteller)||"nicht festgelegt")}
+      ${R("montage","Montage",d.montage==="ap"?"Aufputz":"Unterputz")}
+      ${R("name","Name",d.name||"HV")}
+      ${R("netz","Netzform",(d.netz||"").split(" |")[0]||"nicht angegeben")}
+      ${R("nb","Netzbetreiber",nb?`${zsTxt(ZS_NB,nb)}${d.nbAuto?` · aus PLZ ${ortPlz}`:""}`:"unbekannt – bitte wählen")}</div>`,
+    fuss:`<span style="flex:1"></span><button type="button" class="btn-filled" data-act="awNeuWeiter">Passt so · anlegen</button>`}; }
+
 /* ---- Fenster (liefern frage/inhalt/fuss für awRahmen) ---- */
 function zsAufbauFenster(){ return {frage:"Wie ist der Schrank aufgebaut?",hinweis:"Vorlage antippen – Felder lassen sich danach ändern.",
   inhalt:`<div class="aw-liste">${ZS_VORL.map(([k,t,s,f])=>{ const zs={felder:f.map(zsFeldAus)}; zs.apz=(z=>z?{feldId:z.id,lage:"unten"}:null)(zs.felder.find(x=>x.typ==="v")); return awKachel("zsVorl",k,zsSvg(zs,4,true),t,s); }).join("")}${awKachel("zsVorl","eigen",awSvg("frei"),"Selbst zusammenstellen","Feld für Feld")}</div>`}; }
@@ -8225,7 +8287,7 @@ function zsZpLesen(z){ if(!z) return; const b=document.getElementById("f_zsBez")
    zs.best = {<feldId>:{k:true}, s:{…} (einmal im Schrank), a:{…} (APZ)}; zs.nb = "rheinnetz"|"westnetz"|"anderer" (Vorgabe RheinNetz: Waldbröl, Morsbach, Reichshof, AggerEnergie-Gebiet) */
 const ZS_NB=[["rheinnetz","RheinNetz","Waldbröl, Morsbach, Reichshof, Gummersbach, Wiehl …"],["westnetz","Westnetz",""],["anderer","Anderer Netzbetreiber","nur die Regeln der VDE-AR-N 4100"]];
 const zsNb=zs=>zs.nb||"rheinnetz";
-const zsSteuer=zs=>zs.zp.some(z=>z.zweck==="wp"||z.zweck==="wallbox");
+const zsSteuer=zs=>!!zs.steuerbar||zs.zp.some(z=>z.zweck==="wp"||z.zweck==="wallbox");
 const ZS_BEST=[
   {k:"hs",ort:"z",zone:"AAR",t:"Hauptschalter 3-polig, plombierbar – je Zähler",s:"RheinNetz: hinter jeder Messeinrichtung",p:zs=>zsNb(zs)==="rheinnetz"},
   {k:"rj45",ort:"z",zone:"AAR",t:"RJ45-Buchse",s:"VDE-AR-N 4100:2026, bei RheinNetz auch bei Relaissteuerung",p:()=>true},
@@ -8333,8 +8395,8 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "zsFeldWeg": zs.felder.splice(+b.dataset.i,1); zsAbgleich(zs); zsSchritteNeu(); zsNeuZeichnen(); return;
   case "zsFeldPlus": zs.felder.push({id:uid(),typ:"v"}); zsAbgleich(zs); zsSchritteNeu(); zsNeuZeichnen(); return;
   case "zsApz": { const [id,l]=String(b.dataset.v).split(":"); zs.apz=id?{feldId:id,lage:l}:null;
-      if(AW.typ==="neu"){ AW.i++; awNeuZeigen(); } else if(AW.modus==="apz") zsSpeichern(); else { AW.i++; zsZeigen(); } return; }
-  case "zsHoehe": zs.hoehe=+b.dataset.v; if(AW.typ==="neu"){ AW.i++; awNeuZeigen(); } return;
+      if(AW.typ==="neu"){ if(AW.sub) AW.sub=null; else AW.i++; awNeuZeigen(); } else if(AW.modus==="apz") zsSpeichern(); else { AW.i++; zsZeigen(); } return; }
+  case "zsHoehe": zs.hoehe=+b.dataset.v; if(AW.typ==="neu"){ if(AW.sub) AW.sub=+zs.hoehe?null:"reihen"; else AW.i++; awNeuZeigen(); } return;
   case "zsHoeheF": zs.hoehe=+b.dataset.v; zsNeuZeichnen(); return;
   case "zsSpaeter": { const z=zsAktZp(); if(z){ zsZpLesen(z); if(zsBelegt(z)){ z.zweck=""; z.sls=""; } }
       if(AW.typ==="neu"){ const S=awNeuSchritte(); if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); }
@@ -8347,7 +8409,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "zsSpeichern": zsSpeichern(); return;
   case "zsBest": { const wo=b.dataset.wo, k=b.dataset.k; zs.best=zs.best||{}; zs.best[wo]=zs.best[wo]||{}; zs.best[wo][k]=!zs.best[wo][k]; if(!zs.best[wo][k]) delete zs.best[wo][k];
       const B=ZS_BEST.find(x=>x.k===k), hat=!!zs.best[wo][k]; document.querySelectorAll(`#dlg [data-act="zsBest"][data-wo="${wo}"][data-k="${k}"]`).forEach(x=>{ x.setAttribute("aria-pressed",hat); const st=x.querySelector(".zs-bs"); st.textContent=hat?"vorhanden":B.p(zs)?"fehlt":"optional"; st.classList.toggle("offen",!hat&&B.p(zs)); }); return; }
-  case "zsNb": zs.nb=b.dataset.v; zsSpeichern(); return;
+  case "zsNb": zs.nb=b.dataset.v; if(AW.typ==="neu"){ AW.d.nbAuto=false; AW.sub=null; awNeuZeigen(); } else zsSpeichern(); return;
   } },true);
 
 /* qrcode-generator 1.4.4 · Kazuhiko Arase · MIT-Lizenz */
