@@ -34,7 +34,10 @@ function zsZeichnung(zs,reihen,aktiv,selFeld,opt){
     if(lage==="oben"){ const ah=(QH-APZ0)*sk; return bild(apzN,x,fy,APZ0,QH)+bild(n,x,fy+ah,0,APZ0,qh); }
     return bild(n,x,fy,0,APZ0,qh)+bild(apzN,x,fy+APZ0*sk,APZ0,QH); };
   const feldGrund=x=>R(x,fy,FW,fh,"#F1F1F1")+R(x,fy+fh-180,FW,180,"url(#zsSchatten)");
-  let zn=0, nv=0, nm=0, uess=false; const eiF=zs.einspeis===false?null:(F.find(f=>f.typ==="z"&&(f.n||1)===1)||F.find(f=>f.typ==="z")); const nMM=F.filter(f=>f.typ==="m").length;
+  let zn=0, nv=0, nm=0;
+  /* NAR-Aufteilung: Einspeiseadapter im ersten Zählerfeld (links einspeisen), Überspannungsschutz im zweiten Zählerfeld, sonst im ersten.
+     PE-Leiter im Feldbild: Feld mit 1 Platz bei 107,5 mm, mit 2 Plätzen bei 98,8 mm von links */
+  const zF=F.filter(f=>f.typ==="z"), eiF=zs.einspeis===false?null:zF[0], ussF=zF[1]||zF[0]; const nMM=F.filter(f=>f.typ==="m").length;
   const zaehler=(f,x)=>{ const n=Math.min(2,f.n||1), zps=Array.from({length:n},(_,p)=>zs.zp&&zs.zp.find(q=>q.feldId===f.id&&(q.pos||0)===p));
     const drei=zps.length&&zps.every(z=>z&&z.art==="3pkt"), hs=zs.nb==="rheinnetz"?"-hs":"";
     let s="";
@@ -43,7 +46,7 @@ function zsZeichnung(zs,reihen,aktiv,selFeld,opt){
     else { const nm=`zs-z${n}-ehz${hs}.png`; s+=hoch?ehzHoch(nm,x):ganz(nm,x); }
     const off0=hoch?300:0;
     /* Einspeiseadapter für das Hausanschlusskabel – auf der Sammelschiene, bevorzugt im ersten Zählerfeld mit einem Platz */
-    if(f===eiF){ const ey=fy+(784.8+off0)*fh/(1050+off0), eh=200*fh/(1050+off0), ew=eh*202/1800; /* Klemmen N…PE genau auf den fünf Sammelschienen (Abstand 40 mm) */ s+=`<image href="${B}einspeiseadapter.png" x="${k1(x+FW-(n>1?6:30)-ew)}" y="${k1(ey)}" width="${k1(ew)}" height="${k1(eh)}"/>`; }
+    if(f===eiF){ const ey=fy+(784.8+off0)*fh/(1050+off0), eh=200*fh/(1050+off0), ew=eh*202/1800; /* Klemmen N…PE genau auf den fünf Sammelschienen (Abstand 40 mm) */ const ex=n>1?(f===ussF?x+FW-6-ew:x+122-ew/2):x+FW-30-ew; s+=`<image href="${B}einspeiseadapter.png" x="${k1(ex)}" y="${k1(ey)}" width="${k1(ew)}" height="${k1(eh)}"/>`; }
     zps.forEach((zz,p)=>{ const nr=zn+p+1, an=aktiv&&aktiv===`${f.id}:${p}`, xa=x+(p?131:8), off=hoch?300:0;
       /* aktiver Zählerplatz: rot hinterlegt */
       if(an) s+=R(x+(p?128:6),fy+(455+off)*fh/(1050+off),116,287*fh/(1050+off),C.akt,null,0,3,` fill-opacity=".16"`);
@@ -57,10 +60,10 @@ function zsZeichnung(zs,reihen,aktiv,selFeld,opt){
         s+=R(sx+1,sy+2,sw,sh,"#000",null,0,2,` fill-opacity=".18" filter="url(#zsWeich)"`)+`<svg x="${k1(sx)}" y="${k1(sy)}" width="${sw}" height="${sh}" viewBox="0 0 ${sw} ${sh}"><image href="${B}sls-schalter.png" x="${k1(-sw*.075)}" y="${k1((sh-sw*1.15*138/94)/2)}" width="${k1(sw*1.15)}" height="${k1(sw*1.15*138/94)}"/></svg>`
           +T(sx+sw/2,sy+58,amp+"A",{s:30,w:800,f:"#111"}); } });
     /* Überspannungsschutz einmal im Schrank, beim ersten Zählerplatz */
-    if(!uess&&zps.length){ uess=true; const u=zsUssGeraet(zs), by=fy+fh-31.8*fh/1050;
+    if(f===ussF&&zps.length){ const u=zsUssGeraet(zs), by=fy+fh-31.8*fh/1050, peX=x+(n>1?98.8:107.5);
       const ub=u&&ZS_USS_BILD[u.nr];
-      if(ub){ const hh=ub[4]||200, ww=Math.min(56,hh*ub[1]/ub[2]), cx=x+(n>1?125:122); s+=`<image href="${B}${ub[0]}" x="${k1(cx-ww/2)}" y="${k1(fy+fh-44-hh+(ub[3]||0)*fh/1050)}" width="${k1(ww)}" height="${hh}" preserveAspectRatio="xMidYMid meet"/>`; }
-      else if(u) s+=`<image href="${B}usps.png" x="${k1(x+93)}" y="${k1(by-214)}" width="59" height="202"/>`;
+      if(ub){ const hh=ub[4]||200, ww=Math.min(56,hh*ub[1]/ub[2]); s+=`<image href="${B}${ub[0]}" x="${k1(peX-(ub[5]==null?.5:ub[5])*ww)}" y="${k1(fy+fh-44-hh+(ub[3]||0)*fh/1050)}" width="${k1(ww)}" height="${hh}" preserveAspectRatio="xMidYMid meet"/>`; }
+      else if(u) s+=`<image href="${B}usps.png" x="${k1(peX-29.5)}" y="${k1(by-214)}" width="59" height="202"/>`;
     }
     /* Zählernummer */
     zps.forEach((_,p)=>{ const nr=zn+p+1, an=aktiv&&aktiv===`${f.id}:${p}`; s+=R(x+(p?FW-80:0),fy,80,70,an?C.akt:"#AAAAAA",null,0,4)+T(x+(p?FW-40:40),fy+50,nr,{s:40,w:600,f:an?C.weiss:"#222"}); });
