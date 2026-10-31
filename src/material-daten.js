@@ -52,6 +52,18 @@ const matFoto=(m,cls)=>{ const u=matBild(m); return u?`<span class="mat-foto${cl
 /* Firmen-Materialliste (MAT_FIRMA, unten) ist fest eingebaut und wird NICHT als Datensätze gespeichert – sonst müsste jedes
    Gerät ~400 Dateien hochladen. Gespeichert wird nur, was jemand ändert oder löscht (gleiche ID überschreibt das Firmen-Teil). */
 let matFirmaObj=null;
+/* Zusätzliche Automaten für den Verteiler-Katalog, die (noch) nicht in der Firmenliste stehen.
+   Serien: Hager QuickConnect (MBS/MCS), Hager Schraubklemme (MBN/MCN), Schneider Acti9 iC60N (A9F03/A9F04), Schneider Resi9 (R9F23/R9F24).
+   Artikelnummern aus dem Herstellerschema abgeleitet – vor der Bestellung prüfen. */
+const MAT_KAT_EXTRA=(()=>{ const L=[], ls=(h,nr,ch,i,p)=>L.push({id:matSlug("kat-"+nr),name:`LS ${h==="Hager"?"Hager":"Schneider"} ${i} A/${ch} ${p}-polig`,kategorie:"schutz",einheit:"Stück",hersteller:h,herstellerNr:nr,sonepar:"",weitere:[],notiz:"Nicht in der Firmenliste – Artikelnummer prüfen",gruppe:"",firma:false,tech:{art:"ls",char:ch,in:i,pole:p,te:p}});
+  [6,10,13,20,25].forEach(i=>ls("Hager",`MBS1${String(i).padStart(2,"0")}`,"B",i,1)); [20,25,32].forEach(i=>ls("Hager",`MBS3${i}`,"B",i,3));
+  [6,10,13,16,20,25,32].forEach(i=>ls("Hager",`MBN1${String(i).padStart(2,"0")}`,"B",i,1)); ls("Hager","MCN116","C",16,1); [16,20,25,32].forEach(i=>ls("Hager",`MBN3${i}`,"B",i,3)); ls("Hager","MCN316","C",16,3);
+  [6,10,13,20,25].forEach(i=>ls("Schneider Electric",`A9F031${String(i).padStart(2,"0")}`,"B",i,1)); [20,25].forEach(i=>ls("Schneider Electric",`A9F033${i}`,"B",i,3));
+  [6,10,13,16,20,25,32].forEach(i=>ls("Schneider Electric",`R9F231${String(i).padStart(2,"0")}`,"B",i,1)); ls("Schneider Electric","R9F24116","C",16,1); [16,20,32].forEach(i=>ls("Schneider Electric",`R9F233${i}`,"B",i,3)); ls("Schneider Electric","R9F24316","C",16,3);
+  return L; })();
+/* Serie eines Automaten aus der Herstellernummer */
+const MAT_SERIEN=[["hqc","Hager QuickConnect",/^M[BC]S/],["hsch","Hager Schraube",/^M[BC]N/],["ic60","Schneider iC60",/^A9F0[34]/],["resi","Schneider Resi9",/^R9F2[34]/]];
+const matSerie=m=>{ const n=matHnr(m&&m.herstellerNr); return MAT_SERIEN.find(x=>x[2].test(n))||null; };
 function matFirma(){ if(matFirmaObj) return matFirmaObj;
   matFirmaObj=MAT_FIRMA.map(([name,kategorie,einheit,hersteller,herstellerNr,sonepar,efg,gae,kz,notiz,g])=>({id:matSlug(name),name,kategorie,einheit:einheit||"Stück",
     hersteller:hersteller||"",herstellerNr:herstellerNr||"",sonepar:sonepar||"",weitere:[efg&&{bei:"EFG",nr:efg},gae&&{bei:"Gäfgen",nr:gae},kz&&{bei:"Kürzel",nr:kz}].filter(Boolean),
