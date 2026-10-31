@@ -291,7 +291,19 @@ function zsMaterial(zs,reihen){ const M=new Map(), add=t=>M.set(t,(M.get(t)||0)+
     if(brauch(f.id,"hlak")) add("Hauptleitungsabzweigklemme"); if(brauch(f.id,"relais")) add("Trennrelais §14a"); });
   if(zs.felder.some(f=>f.typ==="z")){ const u=zsUssGeraet(zs); add(u?`Überspannungsschutz ${u.name} (${u.nr})`:"Überspannungsschutz Typ 1 – noch festlegen"); add("Spannungsversorgung RfZ/APZ mit Absicherung"); if(zs.einspeis!==false) add("Einspeiseadapter Sammelschiene 5-polig (N, L1, L2, L3, PE)"); }
   return [...M].map(([t,n])=>`<div class="zs-mat"><b>${n}×</b><span>${esc(t)}</span></div>`).join(""); }
-function zsKarte(L){ const zs=L.zs, zu=L.fertig;
+/* Symbole für die Reiter der Verteilerseite */
+IC.zsSchrank=IC.zsSchrank||"M14.67 5v14H9.33V5h5.34zm1 14H21V5h-5.33v14zm-7.34 0V5H3v14h5.33z";
+IC.zsBlitz=IC.zsBlitz||"M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.55 11 21 11 21z";
+/* Materialliste des Zählerschranks als eigene Karte (Reiter „Material“) */
+function zsMaterialKarte(L){ const zs=L.zs; if(!zs||!zs.felder||!zs.felder.length) return `<section class="card"><h3>Material</h3><p class="meta">Erst den Zählerschrank einrichten – dann steht hier, was gebraucht wird.</p></section>`;
+  return `<section class="card"><h3>Zählerschrank</h3><div class="zs-mats">${zsMaterial(zs,L.reihen)}</div><p class="meta zs-hinweis">Artikelnummern folgen, sobald die Zählerschrank-Artikel in der Materialliste stehen.</p></section>`; }
+/* Zählerplatz nachtragen: zweiter Platz im letzten Zählerfeld, sonst ein neues Zählerfeld daneben – dann direkt den neuen Platz öffnen */
+function zsZpNeu(){ const L=legAkt(); if(!L||!L.zs) return; const zs=zsKopie(L.zs), zF=zs.felder.filter(f=>f.typ==="z"), last=zF[zF.length-1];
+  let fid; if(last&&(last.n||1)===1){ last.n=2; fid=last.id; } else { const f={id:uid(),typ:"z",n:1}, i=last?zs.felder.indexOf(last)+1:0; zs.felder.splice(i,0,f); fid=f.id; }
+  zsAbgleich(zs); const k=zs.zp.findIndex(z=>z.feldId===fid&&(z.pos||0)===(zs.felder.find(f=>f.id===fid).n-1));
+  if(k>=0){ zs.zp[k].zweck="haushalt"; zs.zp[k].sls=zs.zp[k].sls||"E35"; }
+  L.zs=zs; legSpeichern(L); render(); toast(`Zählerplatz ${k+1} angelegt`); zsBearbeiten("zp",k); }
+function zsKarte(L,ohneMaterial){ const zs=L.zs, zu=L.fertig;
   if(!zs||!zs.felder||!zs.felder.length) return `<section class="card zs-karte"><h3>Zählerschrank</h3><p class="meta">Zählerplätze, Zählerart, SLS, Zählernummern und APZ – Aufbau per Vorlage.</p>${zu?"":`<button type="button" class="btn-tonal" data-act="zsEinrichten">Zählerschrank einrichten</button>`}</section>`;
   const H=zsHinweise(zs);
   return `<section class="card zs-karte"><div class="card-kopf"><h3>Zählerschrank</h3>${zu?"":`<button type="button" class="btn-tonal" data-act="zsAufbau">Aufbau ändern</button>`}</div>
@@ -303,8 +315,8 @@ function zsKarte(L){ const zs=L.zs, zu=L.fertig;
       <button type="button" class="zs-zp" data-act="zsNbAuf" ${zu?"disabled":""}><span class="zs-zn zs-apzn">NB</span><span class="zs-zt"><b>${esc(zsTxt(ZS_NB,zsNb(zs)))}</b><small>Netzbetreiber${zs.nb?"":" – angenommen, bitte prüfen"}</small></span>${icon("chev")}</button>
       ${[...zs.felder.filter(f=>f.typ==="z").map(f=>[f.id,`Zählerfeld ${zsFeldNr(zs,f.id)}`,"AAR · RfZ · NAR"]),...(zs.apz?[["a","APZ",zsApzText(zs)]]:[])].map(([z,t,u])=>{ const o=zsBestOffen(zs,z);
         return `<button type="button" class="zs-zp" data-act="zsBestAuf" data-v="${esc(z)}" ${zu?"disabled":""}><span class="zs-zt"><b>${esc(t)}</b><small>${esc(u)}</small></span><span class="zs-bs${o?" offen":""}">${o?`${o} offen`:"vollständig"}</span>${icon("chev")}</button>`; }).join("")}</div>
-    <div class="aw-lbl">Material</div><div class="zs-mats">${zsMaterial(zs,L.reihen)}</div>
-    <p class="meta zs-hinweis">Artikelnummern folgen, sobald die Zählerschrank-Artikel in der Materialliste stehen.</p></section>`; }
+    ${ohneMaterial?"":`<div class="aw-lbl">Material</div><div class="zs-mats">${zsMaterial(zs,L.reihen)}</div>
+    <p class="meta zs-hinweis">Artikelnummern folgen, sobald die Zählerschrank-Artikel in der Materialliste stehen.</p>`}</section>`; }
 
 /* ---- Bearbeiten von der Karte aus ---- */
 function zsBearbeiten(modus,i){ const L=legAkt(); if(!L) return;
@@ -332,6 +344,7 @@ function zsSpeichern(){ const L=legAkt(); if(!L||!AW) return; zsZpLesen(zsAktZp(
 
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="zs"]'); if(!b||b.disabled) return; e.stopPropagation(); const a=b.dataset.act;
   if(a==="zsEinrichten"){ zsBearbeiten("einr"); return; }
+  if(a==="zsZpNeu"){ zsZpNeu(); return; }
   if(a==="zsAufbau"){ zsBearbeiten("felder"); return; }
   if(a==="zsZpAuf"){ zsBearbeiten("zp",+b.dataset.i); return; }
   if(a==="zsApzAuf"){ zsBearbeiten("apz"); return; }
