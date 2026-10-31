@@ -34,13 +34,16 @@ function zsZeichnung(zs,reihen,aktiv,selFeld,opt){
     if(lage==="oben"){ const ah=(QH-APZ0)*sk; return bild(apzN,x,fy,APZ0,QH)+bild(n,x,fy+ah,0,APZ0,qh); }
     return bild(n,x,fy,0,APZ0,qh)+bild(apzN,x,fy+APZ0*sk,APZ0,QH); };
   const feldGrund=x=>R(x,fy,FW,fh,"#F1F1F1")+R(x,fy+fh-180,FW,180,"url(#zsSchatten)");
-  let zn=0, nv=0, nm=0, uess=false; const nMM=F.filter(f=>f.typ==="m").length;
+  let zn=0, nv=0, nm=0, uess=false; const eiF=zs.einspeis===false?null:(F.find(f=>f.typ==="z"&&(f.n||1)===1)||F.find(f=>f.typ==="z")); const nMM=F.filter(f=>f.typ==="m").length;
   const zaehler=(f,x)=>{ const n=Math.min(2,f.n||1), zps=Array.from({length:n},(_,p)=>zs.zp&&zs.zp.find(q=>q.feldId===f.id&&(q.pos||0)===p));
     const drei=zps.length&&zps.every(z=>z&&z.art==="3pkt"), hs=zs.nb==="rheinnetz"?"-hs":"";
     let s="";
     if(drei&&n===1) s+=ganz(hoch?"zs-z1-3pkt-high-hsn.png":`zs-z1-3pkt${hs}.png`,x);
     else if(drei&&n===2&&hoch) s+=ganz("zs-z2-3pkt-hs.png",x);
     else { const nm=`zs-z${n}-ehz${hs}.png`; s+=hoch?ehzHoch(nm,x):ganz(nm,x); }
+    const off0=hoch?300:0;
+    /* Einspeiseadapter für das Hausanschlusskabel – auf der Sammelschiene, bevorzugt im ersten Zählerfeld mit einem Platz */
+    if(f===eiF){ const ey=fy+(782+off0)*fh/(1050+off0), eh=(1000-782)*fh/(1050+off0), ew=eh*102/900; s+=`<image href="${B}einspeiseadapter.png" x="${k1(x+FW-(n>1?6:30)-ew)}" y="${k1(ey)}" width="${k1(ew)}" height="${k1(eh)}"/>`; }
     zps.forEach((zz,p)=>{ const nr=zn+p+1, an=aktiv&&aktiv===`${f.id}:${p}`, xa=x+(p?131:8), off=hoch?300:0;
       /* aktiver Zählerplatz: rot hinterlegt */
       if(an) s+=R(x+(p?128:6),fy+(455+off)*fh/(1050+off),116,287*fh/(1050+off),C.akt,null,0,3,` fill-opacity=".16"`);
@@ -55,7 +58,10 @@ function zsZeichnung(zs,reihen,aktiv,selFeld,opt){
           +T(sx+sw/2,sy+58,amp+"A",{s:30,w:800,f:"#111"}); } });
     /* Überspannungsschutz einmal im Schrank, beim ersten Zählerplatz */
     if(!uess&&zps.length){ uess=true; const u=zsUssGeraet(zs), by=fy+fh-31.8*fh/1050;
-      if(u) s+=`<image href="${B}usps.png" x="${k1(x+93)}" y="${k1(by-214)}" width="59" height="202"/>`; }
+      const ub=u&&ZS_USS_BILD[u.nr];
+      if(ub){ const hh=200, ww=Math.min(56,hh*ub[1]/ub[2]), cx=x+(n>1?125:122); s+=`<image href="${B}${ub[0]}" x="${k1(cx-ww/2)}" y="${k1(fy+fh-44-hh)}" width="${k1(ww)}" height="${hh}" preserveAspectRatio="xMidYMid meet"/>`; }
+      else if(u) s+=`<image href="${B}usps.png" x="${k1(x+93)}" y="${k1(by-214)}" width="59" height="202"/>`;
+    }
     /* Zählernummer */
     zps.forEach((_,p)=>{ const nr=zn+p+1, an=aktiv&&aktiv===`${f.id}:${p}`; s+=R(x+(p?FW-80:0),fy,80,70,an?C.akt:"#AAAAAA",null,0,4)+T(x+(p?FW-40:40),fy+50,nr,{s:40,w:600,f:an?C.weiss:"#222"}); });
     zn+=n; return s; };
