@@ -27,7 +27,7 @@ const ZS_USS=[["SPA700Z","Hager SPA700Z","Typ 1+2+3 · 3-polig · TN-C · Sammel
   ["7P.04.8.255.Z007","Finder 7P.04.8.255.Z007","Typ 1+2 · mit Abgang L/N 6,3 A"],
   ["A9L16482","Schneider Acti9 iPRD1 12.5r 3P+N","Typ 1+2 · TT/TN-S · Hutschiene"],["keiner","Ohne / nicht festgelegt",""]];
 /* Eigene Gerätegrafiken (Frontansicht, transparent) für die Zeichnung: Datei, Breite, Höhe in Pixeln */
-const ZS_USS_BILD={SPA701Z:["uss-hager-spa701z.png",177,700],"5096961":["uss-obo-mcf30-nar-tt.png",153,700],"1168940":["uss-phoenix-flt-sec-zp2.png",67,700],"7P.04.8.255.Z007":["uss-finder-7p04.png",187,700]};
+const ZS_USS_BILD={SPA701Z:["uss-hager-spa701z.png",353,1400],"5096961":["uss-obo-mcf30-nar-tt.png",153,700],"1168940":["uss-phoenix-flt-sec-zp2.png",67,700],"7P.04.8.255.Z007":["uss-finder-7p04.png",187,700]};
 const zsSlsStd=zs=>zs&&zs.hersteller==="sj"?"abb":"hager";
 const zsSlsH=(zs,z)=>z&&ZS_SLS_NR[z.slsH]?z.slsH:zsSlsStd(zs);
 function zsSlsGeraet(zs,z){ if(!z||!z.sls||z.sls==="keiner") return null; const h=zsSlsH(zs,z), a=z.sls.slice(1), nr=ZS_SLS_NR[h][z.sls];
