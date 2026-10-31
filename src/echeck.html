@@ -2112,7 +2112,9 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   const active=katV?"netzwerk":top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]||nav.v==="ohnekunde"||nav.v==="legende"||nav.v==="vt"?"kunden":nav.v==="ec"?ecListeV((DB.echecks.get(nav.id)||{}).art):"anlagen";
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
-    +(()=>{ const P=nav.v==="ec"&&DB.echecks.get(nav.id); if(P&&!P.deleted){ const T=ecSchritte(P), a=ecTab(P); /* in der Prüfung: Schritte wie in EVSE */
+    +(()=>{ const LV=(nav.v==="vt"||nav.v==="legende")&&typeof legAkt==="function"&&legAkt(); if(LV){ const a=legTab(LV); /* im Verteiler: Reiter unten wie die Schritte einer Prüfung */
+        return legTabs(LV).map(([k,t,i])=>`<button class="nav-item" data-act="legTab" data-v="${k}" ${k===a?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join(""); }
+      const P=nav.v==="ec"&&DB.echecks.get(nav.id); if(P&&!P.deleted){ const T=ecSchritte(P), a=ecTab(P); /* in der Prüfung: Schritte wie in EVSE */
         return T.map(([k,t,i,gesperrt])=>`<button class="nav-item${gesperrt?" gesperrt":""}" data-act="ecTab" data-v="${k}" ${k===a?'aria-current="page"':""} ${gesperrt?'aria-disabled="true"':""}><span class="ind">${icon(gesperrt?"lock":i)}</span><span>${t}</span></button>`
 ).join(""); }
       return TOPDEST.map(([k,t,i])=>`<button class="nav-item${k==="mehr"?" nav-end":""}" data-act="nav" data-v="${k}" ${k===active?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join(""); })();
@@ -2122,9 +2124,9 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   else if(nav.v==="geraete"){ title="Geräte"; body=ecListeView("geraete"); fab=["ecNeuG","Prüfung","add"]; }
   else if(nav.v==="netzwerk"){ title="Netzwerk"; body=ecListeView("netz"); fab=["ecNeuN","Prüfung","add"]; }
   else if(nav.v==="netzkatalog"){ title="Netzwerk-Katalog"; body=ecKatalogView(); }
-  else if(nav.v==="vt"){ const L=vtL(nav.g,nav.id); if(!L){ nav={v:"anlagen"}; return render(); } title=L.titel; sub="Verteiler"; body=legView(L); fab=L.fertig?null:["awStart","Gerät","add"]; }
+  else if(nav.v==="vt"){ const L=vtL(nav.g,nav.id); if(!L){ nav={v:"anlagen"}; return render(); } title=L.titel; sub="Verteiler"; body=legView(L); fab=legFab(L); }
   else if(nav.v==="ohnekunde"){ title="Ohne Kunde"; sub="Ablage für alles ohne Kunden"; body=legOhneView(); fab=["legNeu","Legende","add"]; }
-  else if(nav.v==="legende"){ const L=DB.legenden.get(nav.id); if(!L||L.deleted){ nav={v:"kunden"}; return render(); } title=L.titel||"Verteiler"; sub="Verteilerlegende"; body=legView(L); fab=L.fertig?null:["awStart","Gerät","add"]; }
+  else if(nav.v==="legende"){ const L=DB.legenden.get(nav.id); if(!L||L.deleted){ nav={v:"kunden"}; return render(); } title=L.titel||"Verteiler"; sub="Verteilerlegende"; body=legView(L); fab=legFab(L); }
   else if(nav.v==="netzkatmodell"){ const K=ecRkKat(nav.id); if(!K){ nav={v:"netzkatalog"}; return render(); } title=K.kurz||K.modell; sub=K.hersteller; body=ecKatModellView(K); }
   else if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); if(!p||p.deleted){ nav={v:"anlagen"}; return render(); }
     title=ecOrt(p.ortId).titel; sub=`${EC_ART[p.art||"anlage"]} · ${ecDatum(p.datum)}`; if(rkS){ sub=`Netzwerkschrank · ${title}`; title=rkS.name; } body=ecView(p); }
