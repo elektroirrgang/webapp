@@ -59,7 +59,7 @@ function zsZeichnung(zs,reihen,aktiv,selFeld,opt){
     /* Überspannungsschutz einmal im Schrank, beim ersten Zählerplatz */
     if(!uess&&zps.length){ uess=true; const u=zsUssGeraet(zs), by=fy+fh-31.8*fh/1050;
       const ub=u&&ZS_USS_BILD[u.nr];
-      if(ub){ const hh=200, ww=Math.min(56,hh*ub[1]/ub[2]), cx=x+(n>1?125:122); s+=`<image href="${B}${ub[0]}" x="${k1(cx-ww/2)}" y="${k1(fy+fh-44-hh)}" width="${k1(ww)}" height="${hh}" preserveAspectRatio="xMidYMid meet"/>`; }
+      if(ub){ const hh=200, ww=Math.min(56,hh*ub[1]/ub[2]), cx=x+(n>1?125:122); s+=`<image href="${B}${ub[0]}" x="${k1(cx-ww/2)}" y="${k1(fy+fh-44-hh+(ub[3]||0)*fh/1050)}" width="${k1(ww)}" height="${hh}" preserveAspectRatio="xMidYMid meet"/>`; }
       else if(u) s+=`<image href="${B}usps.png" x="${k1(x+93)}" y="${k1(by-214)}" width="59" height="202"/>`;
     }
     /* Zählernummer */
