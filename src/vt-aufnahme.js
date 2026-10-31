@@ -82,9 +82,9 @@ function awNeuAnlegen(){ const d=AW.d, wer=(n=>legTeam().includes(n)?n:"")(ME.na
   setTimeout(()=>{ awGeraetStart(); if(AW) { AW.zuletzt="Verteiler angelegt – jetzt die Geräte einsetzen"; awKatalog(); } },250); }
 
 /* ---------- Gerät einsetzen ---------- */
-const awGeraete=()=>matFirma().filter(m=>m.kategorie==="schutz"&&matTech(m));
+const awGeraete=()=>{ const F=matFirma(), da=new Set(F.map(m=>matHnr(m.herstellerNr))); return F.concat(MAT_KAT_EXTRA.filter(m=>!da.has(matHnr(m.herstellerNr)))).filter(m=>m.kategorie==="schutz"&&matTech(m)); };
 function awName(t){ return t.art==="rcd"?`RCD ${t.in} A / ${t.idn} mA`:t.art==="rcbo"?`FI/LS ${t.char||""}${t.in}`:`LS ${t.char||""}${t.in} ${t.pole}-polig`; }
-function awUnter(m){ const t=matTech(m); return [t.art==="rcd"||t.art==="rcbo"?`${t.art==="rcbo"?t.idn+" mA ":""}Typ ${t.typ||"A"}`:"",`${t.te} TE`,[m.hersteller==="Schneider Electric"?"Schneider":m.hersteller,m.herstellerNr].filter(Boolean).join(" ")].filter(Boolean).join(" · "); }
+function awUnter(m){ const t=matTech(m); return [t.art==="rcd"||t.art==="rcbo"?`${t.art==="rcbo"?t.idn+" mA ":""}Typ ${t.typ||"A"}`:"",`${t.te} TE`,t.art==="ls"&&matSerie(m)?`${matSerie(m)[1]} · ${m.herstellerNr}`:[m.hersteller==="Schneider Electric"?"Schneider":m.hersteller,m.herstellerNr].filter(Boolean).join(" ")].filter(Boolean).join(" · "); }
 const awSchutz=t=>t.art==="rcd"?`${t.in} A / ${t.idn} mA Typ ${t.typ||"A"}`:t.art==="rcbo"?`${t.char||""}${t.in} FI/LS ${t.idn} mA Typ ${t.typ||"A"}`:`${t.char||""}${t.in}`;
 function awNutzung(){ const z={}; const zaehl=x=>{ if(x&&x.mat) z[x.mat]=(z[x.mat]||0)+1; };
   live("gebaeude").forEach(g=>{ (g.rcds||[]).forEach(zaehl); (g.stromkreise||[]).forEach(zaehl); }); live("legenden").forEach(L=>legE(L).forEach(zaehl)); return z; }
@@ -98,25 +98,31 @@ function awKz(L,art){ const E=legE(L);
   return {kz:`F ${awBelegung(L).r}.${E.filter(e=>e.art!=="gr").length+1}`,umbruch:false}; }
 const awRcdVor=L=>{ const E=legE(L); for(let i=E.length-1;i>=0;i--){ if(E[i].art==="gr") return null; if(E[i].art==="rcd") return E[i]; } return null; };
 function awGeraetStart(){ const L=legAkt(); if(!L||L.fertig) return; const E=legE(L);
-  AW={typ:"geraet",tab:E.some(e=>e.art==="rcd")?"ls":"rcd",such:"",letzt:null,zuletzt:"",m:null,was:"",raum:"",bez:"",bezHand:false,mehr:false};
+  AW={typ:"geraet",tab:E.some(e=>e.art==="rcd")?"ls":"rcd",serie:(typeof META!=="undefined"&&META.lsSerie)||"",such:"",letzt:null,zuletzt:"",m:null,was:"",raum:"",bez:"",bezHand:false,mehr:false};
   awKatalog(); }
 function awKatalog(){ const L=legAkt(); if(!L){ awZu(); return; } AW.m=null;
   $("#dlg").classList.add("aw");
   awRahmen({titel:L.titel||"Verteiler",unter:awBelegText(L),inhalt:`<div class="aw-such"><span class="aw-lupe">${icon("search")}</span><input id="awSuch" type="search" placeholder="Suchen: B16, RCD, Typ A …" value="${esc(AW.such)}" autocomplete="off"></div>
       <div class="aw-tabs" role="group">${[["ls","Automaten"],["rcd","RCD"],["rcbo","FI/LS"],["sonst","Sonstiges"]].map(([k,t])=>`<button type="button" data-act="awTab" data-v="${k}" aria-pressed="${AW.tab===k}">${t}</button>`).join("")}</div>
-      <div id="awGrid">${awGrid()}</div>`,
+      <div id="awSerie">${awSerieChips()}</div><div id="awGrid">${awGrid()}</div>`,
     fuss:`<span class="aw-fuss-info">${esc(AW.zuletzt||(legE(L).length?`${legE(L).filter(e=>e.art!=="gr").length} Geräte im Verteiler`:""))}</span><button type="button" class="btn-tonal" data-act="awZu">${legE(L).length?"Fertig":"Später bestücken"}</button>`});
   const z=$("#dlg .aw-zur"); if(z) z.hidden=true; }
+/* Platzhalter, solange kein Herstellerfoto da ist: schlichter Automat mit der richtigen Polzahl */
+function awOhneFoto(t,m){ const p=Math.max(1,Math.min(4,+t.pole||1)), w=14, x0=24-p*w/2, sch=/^R9F/.test(matHnr(m.herstellerNr))?"#3DCD58":/^A9F/.test(matHnr(m.herstellerNr))?"#3DCD58":"#2F6FD1";
+  return `<span class="mat-foto aw-gb"><svg viewBox="0 0 48 48" style="width:62%;height:62%" aria-hidden="true">${Array.from({length:p},(_,k)=>{ const x=x0+k*w; return `<rect x="${x+.5}" y="6" width="${w-1}" height="36" rx="2" fill="#F1F2F4" stroke="#C3C7CC" stroke-width=".8"/><rect x="${x+4}" y="17" width="${w-8}" height="10" rx="1.5" fill="#3A3F45"/><rect x="${x+2}" y="31" width="${w-4}" height="2.5" rx="1" fill="${sch}"/>`; }).join("")}</svg></span>`; }
+/* Serie der Automaten: Hager QuickConnect / Schraube, Schneider iC60 / Resi9 – wird je Gerät gemerkt */
+function awSerieChips(){ if(AW.tab!=="ls"||AW.such.trim()) return ""; if(AW.serie==null) AW.serie=(META.lsSerie||"");
+  return `<div class="aw-serie" role="group">${[["","Alle"],...MAT_SERIEN.map(x=>[x[0],x[1]])].map(([k,t])=>`<button type="button" data-act="awSerie" data-v="${k}" aria-pressed="${AW.serie===k}">${t}</button>`).join("")}</div>`; }
 function awGrid(){ const q=AW.such.trim().toLowerCase(), z=awNutzung(), L=legAkt(), E=L?legE(L):[];
   const herst=(()=>{ for(let i=E.length-1;i>=0;i--){ const m=E[i].mat&&awGeraete().find(x=>matHnr(x.herstellerNr)===E[i].mat); if(m) return m.hersteller; } return ""; })();
   if(!q&&AW.tab==="sonst") return `<div class="aw-grid">${[["res","Reserve","Platzhalter, 1 TE"],["gr","Überschrift","z. B. Erdgeschoss, Wohnung OG"],["kln","N-Klemme Pollmann N 14-S","blau · 14 Steck + 1 Schraub · 1 TE, hochkant"],["klpe","PE-Klemme Pollmann PE 14-S","grün · 14 Steck + 1 Schraub · 1 TE, hochkant"],["kla","Abzweigklemme Pollmann A 14-S","grau · z. B. für eine Phase · 1 TE, hochkant"],["frei","Anderes Gerät","frei eintragen – ohne Materialliste"]].map(([k,t,s])=>`<button type="button" class="aw-g aw-g-ic" data-act="awSonst" data-v="${k}"><span class="aw-gb">${awSvg(k)}</span><b>${t}</b><small>${s}</small></button>`).join("")}</div>`;
   let A=awGeraete().map(m=>({m,t:matTech(m),hnr:matHnr(m.herstellerNr)}));
   if(q){ const qq=q.replace(/\s+/g,""); A=A.filter(x=>{ const kurz=x.t.char?`${x.t.char}${x.t.in}`.toLowerCase():""; return kurz===qq||[awName(x.t),awUnter(x.m),x.m.name,kurz].join(" ").toLowerCase().replace(/\s+/g," ").includes(q); }); }
-  else A=A.filter(x=>x.t.art===AW.tab);
+  else A=A.filter(x=>x.t.art===AW.tab&&(AW.tab!=="ls"||!AW.serie||(matSerie(x.m)||[])[0]===AW.serie));
   const gh=L&&L.gerHerst||"";
   A.sort((a,b)=>(b.hnr===AW.letzt)-(a.hnr===AW.letzt)||(gh?(b.m.hersteller===gh)-(a.m.hersteller===gh):0)||(z[b.hnr]||0)-(z[a.hnr]||0)||(b.m.hersteller===herst)-(a.m.hersteller===herst)||(a.t.pole||0)-(b.t.pole||0)||String(a.t.char).localeCompare(String(b.t.char))||a.t.in-b.t.in||a.m.hersteller.localeCompare(b.m.hersteller));
   if(!A.length) return `<p class="aw-leer">Nichts gefunden. Unter „Sonstiges“ lässt sich ein Gerät frei eintragen.</p>`;
-  return `<div class="aw-grid">${A.map(({m,t,hnr})=>`<button type="button" class="aw-g" data-act="awGeraet" data-v="${esc(hnr)}">${matFoto(m,"aw-gb")}<b>${esc(awName(t))}</b><small>${esc(awUnter(m))}</small>${hnr===AW.letzt?`<span class="aw-nochmal">Nochmal</span>`:""}</button>`).join("")}</div>`; }
+  return `<div class="aw-grid">${A.map(({m,t,hnr})=>`<button type="button" class="aw-g" data-act="awGeraet" data-v="${esc(hnr)}">${matFoto(m,"aw-gb")||awOhneFoto(t,m)}<b>${esc(awName(t))}</b><small>${esc(awUnter(m))}</small>${hnr===AW.letzt?`<span class="aw-nochmal">Nochmal</span>`:""}</button>`).join("")}</div>`; }
 function awEinsetzen(e){ const L=legAkt(); if(!L) return; legE(L).push(e); legSpeichern(L); render(); }
 function awGeraetWahl(hnr){ const L=legAkt(), m=awGeraete().find(x=>matHnr(x.herstellerNr)===hnr); if(!L||!m) return; const t=matTech(m);
   if(t.art==="rcd"){ const k=awKz(L,"rcd"); awEinsetzen({id:uid(),art:"rcd",kz:k.kz,bez:"Fehlerstromschutzschalter",schutz:awSchutz(t),pole:1,te:t.te,mat:hnr,...(k.umbruch?{umbruch:true}:{})});
@@ -165,9 +171,10 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
       if(AW.sub){ AW.sub=null; awNeuZeigen(); return; } const S=awNeuSchritte(); if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); return; }
   case "awSubZu": AW.sub=null; zsAbgleich(AW.d.zs); awNeuZeigen(); return;
   case "awNameOk": { const f=document.getElementById("f_awName"), v=f&&f.value.trim(); if(!v&&!AW.d.name){ toast("Bitte einen Namen antippen oder eintragen"); return; } awNeuWahl(v||AW.d.name); return; }
-  case "awTab": AW.tab=b.dataset.v; AW.such=""; { const s=document.getElementById("awSuch"); if(s) s.value=""; } $("#awGrid").innerHTML=awGrid(); document.querySelectorAll('#dlg [data-act="awTab"]').forEach(x=>x.setAttribute("aria-pressed",x===b)); return;
+  case "awTab": AW.tab=b.dataset.v; AW.such=""; { const s=document.getElementById("awSuch"); if(s) s.value=""; } $("#awGrid").innerHTML=awGrid(); { const sc=document.getElementById("awSerie"); if(sc) sc.innerHTML=awSerieChips(); } document.querySelectorAll('#dlg [data-act="awTab"]').forEach(x=>x.setAttribute("aria-pressed",x===b)); return;
   case "awGeraet": awGeraetWahl(b.dataset.v); return;
   case "awSonst": awSonst(b.dataset.v); return;
+  case "awSerie": AW.serie=b.dataset.v; META.lsSerie=AW.serie; if(typeof metaSave==="function") metaSave(); const sc=document.getElementById("awSerie"); if(sc) sc.innerHTML=awSerieChips(); const g=document.getElementById("awGrid"); if(g) g.innerHTML=awGrid(); return;
   case "awWas": AW.was=AW.was===b.dataset.v?"":b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===AW.was)); awBezSetzen(); return;
   case "awRaum": AW.raum=AW.raum===b.dataset.v?"":b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===AW.raum)); awBezSetzen(); return;
   case "awMehr": { const f=document.getElementById("f_awBez"); if(f) AW.bez=f.value; AW.mehr=true; awWofuer(); return; }
@@ -175,5 +182,5 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "awOk": awOk(b.dataset.weiter==="1"); return;
   } },true);
 document.addEventListener("input",e=>{ if(!AW) return;
-  if(e.target.id==="awSuch"){ AW.such=e.target.value; const g=document.getElementById("awGrid"); if(g) g.innerHTML=awGrid(); document.querySelectorAll('#dlg [data-act="awTab"]').forEach(x=>x.setAttribute("aria-pressed",!AW.such.trim()&&x.dataset.v===AW.tab)); }
+  if(e.target.id==="awSuch"){ AW.such=e.target.value; const g=document.getElementById("awGrid"); if(g) g.innerHTML=awGrid(); { const sc=document.getElementById("awSerie"); if(sc) sc.innerHTML=awSerieChips(); } document.querySelectorAll('#dlg [data-act="awTab"]').forEach(x=>x.setAttribute("aria-pressed",!AW.such.trim()&&x.dataset.v===AW.tab)); }
   if(e.target.id==="f_awBez"){ AW.bez=e.target.value; AW.bezHand=!!e.target.value.trim(); } });
