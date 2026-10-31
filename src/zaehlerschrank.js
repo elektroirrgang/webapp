@@ -27,7 +27,7 @@ const ZS_USS=[["SPA700Z","Hager SPA700Z","Typ 1+2+3 · 3-polig · TN-C · Sammel
   ["7P.04.8.255.Z007","Finder 7P.04.8.255.Z007","Typ 1+2 · mit Abgang L/N 6,3 A"],
   ["A9L16482","Schneider Acti9 iPRD1 12.5r 3P+N","Typ 1+2 · TT/TN-S · Hutschiene"],["keiner","Ohne / nicht festgelegt",""]];
 /* Eigene Gerätegrafiken (Frontansicht, transparent) für die Zeichnung: Datei, Breite, Höhe in Pixeln, Versatz nach oben/unten in mm (Sammelschienen N, L1, L2, L3, PE bei 803/843/883/923/963 mm, Abstand 40 mm; Hager: Frontkasten auf Hebelhöhe der SLS (Abdeckungsausschnitt), Gerät ragt nach unten über die PE-Schiene hinaus; 5. Wert = Höhe in mm (0 = Standard 200), 6. Wert = Lage der PE-Klemme im Bild von links (0…1, Standard Mitte) – sie kommt auf den PE-Leiter) */
-const ZS_USS_BILD={SPA701Z:["uss-hager-spa701z.png",353,1400,-7,0,.258],"5096961":["uss-obo-mcf30-nar-tt.png",153,700],"1168940":["uss-phoenix-flt-sec-zp2.png",67,700],"7P.04.8.255.Z007":["uss-finder-7p04.png",187,700]};
+const ZS_USS_BILD={SPA701Z:["uss-hager-spa701z.png",181,1400,-7,0,.503],"5096961":["uss-obo-mcf30-nar-tt.png",153,700],"1168940":["uss-phoenix-flt-sec-zp2.png",67,700],"7P.04.8.255.Z007":["uss-finder-7p04.png",187,700]};
 const zsSlsStd=zs=>zs&&zs.hersteller==="sj"?"abb":"hager";
 const zsSlsH=(zs,z)=>z&&ZS_SLS_NR[z.slsH]?z.slsH:zsSlsStd(zs);
 function zsSlsGeraet(zs,z){ if(!z||!z.sls||z.sls==="keiner") return null; const h=zsSlsH(zs,z), a=z.sls.slice(1), nr=ZS_SLS_NR[h][z.sls];
@@ -272,6 +272,8 @@ function zsHinweise(zs){ const H=[], nb=zsNb(zs), off=zsBestOffenGesamt(zs);
   if(nb!=="anderer"&&zs.zp.some(z=>z.art==="3pkt")) H.push(`${zsTxt(ZS_NB,nb)}: grundsätzlich eHZ auf BKE-I – 3-Punkt nur bei Wandler- oder Lastgangmessung.`);
   if(off) H.push(`Bestückung: ${off} Pflichtpunkt${off===1?"":"e"} noch nicht als vorhanden markiert.`);
   if(!zs.apz) H.push("Kein APZ eingetragen – bei neuen Zählerschränken Pflicht, im Bestand nicht nachzurüsten.");
+  { const zF=zs.felder.filter(f=>f.typ==="z"), uf=zF[1]||zF[0], u=zsUssGeraet(zs), ub=u&&ZS_USS_BILD[u.nr];
+    if(uf&&(uf.n||1)>1&&ub&&(ub[4]||200)*ub[1]/ub[2]>32) H.push(`${u.name} ist zu breit für die Lücke zwischen den beiden SLS im Zählerfeld ${zsFeldNr(zs,uf.id)} (32 mm frei) – schmaleren Ableiter wählen oder ein Zählerfeld mit einem Platz einplanen.`); }
   zs.zp.forEach((z,i)=>{ if(zsBelegt(z)&&z.zweck&&(!z.sls||z.sls==="keiner")) H.push(`Zähler ${i+1}: SLS im NAR fehlt – bei direkter Messung vorgeschrieben.`); });
   return H; }
 function zsMaterial(zs,reihen){ const M=new Map(), add=t=>M.set(t,(M.get(t)||0)+1);
