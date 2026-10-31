@@ -120,8 +120,8 @@ function legReihen(L){ const n=+L.teReihe||12, R=[]; let r=null;
 const LEG_P=50;
 function legGeraet(e,x,w){ const P=LEG_P, X=x+2, W=w*P-4, t=legTE(e), rcd=e.art==="rcd";
   const schr=(y)=>Array.from({length:t},(_,k)=>{ const cx=x+k*P+P/2; return `<circle cx="${cx}" cy="${y}" r="5.5" fill="#CDD1D7"/><path d="M${cx-3.2} ${y+2.2}l6.4-4.4" stroke="#9AA0A8" stroke-width="1.4" stroke-linecap="round"/>`; }).join("");
-  if(e.art==="kl"){ const pe=/pe/i.test(e.bez||"")||e.farbe==="pe", f=pe?"#7CC242":"#2F8FE0", f2=pe?"#E2C41C":"#1F6FB8", n=Math.max(6,Math.round(W/12));
-    return `<rect x="${X}" y="60" width="${W}" height="46" rx="5" fill="#D5D8DC"/><rect x="${X}" y="60" width="${W}" height="24" rx="5" fill="${f}"/>${pe?`<rect x="${X}" y="84" width="${W}" height="8" fill="${f2}"/>`:""}${Array.from({length:n},(_,k)=>`<circle cx="${(X+8+k*(W-16)/(n-1)).toFixed(1)}" cy="72" r="4" fill="#fff" fill-opacity=".85"/>`).join("")}<circle cx="${X+12}" cy="98" r="5" fill="#9AA0A8"/>`; }
+  /* Pollmann N 14-S / PE 14-S als Bild (Frontansicht, Schraubklemme links), auf der Hutschiene liegend */
+  if(e.art==="kl"){ const pe=/pe/i.test(e.bez||"")||e.farbe==="pe", h=W*140/717; return `<image href="../bilder/vt/pollmann-${pe?"pe":"n"}14s.png" x="${X}" y="${(83-h/2).toFixed(1)}" width="${W}" height="${h.toFixed(1)}"/>`; }
   if(e.art==="res") return `<rect x="${X}" y="10" width="${W}" height="146" rx="5" fill="#D9DCE1"/>${Array.from({length:6},(_,k)=>`<rect x="${X+5}" y="${44+k*13}" width="${W-10}" height="3" rx="1.5" fill="#C7CBD1"/>`).join("")}`;
   let h=`<rect x="${X}" y="10" width="${W}" height="146" rx="5" fill="#F4F5F7"/><rect x="${X}" y="10" width="${W}" height="30" rx="5" fill="#E6E8EB"/><rect x="${X}" y="126" width="${W}" height="30" rx="5" fill="#E6E8EB"/>${schr(25)}${schr(141)}`;
   const sc=String(rcd?(e.schutz||"").replace(/\s*Typ.*$/i,"").replace(/\s*\/\s*/," · "):legSchutz(e).replace(/\s*3-polig$/i,""));
