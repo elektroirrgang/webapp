@@ -43,7 +43,7 @@ function zsZeichnung(zs,reihen,aktiv,selFeld,opt){
     else { const nm=`zs-z${n}-ehz${hs}.png`; s+=hoch?ehzHoch(nm,x):ganz(nm,x); }
     const off0=hoch?300:0;
     /* Einspeiseadapter für das Hausanschlusskabel – auf der Sammelschiene, bevorzugt im ersten Zählerfeld mit einem Platz */
-    if(f===eiF){ const ey=fy+(782+off0)*fh/(1050+off0), eh=(1000-782)*fh/(1050+off0), ew=eh*102/900; s+=`<image href="${B}einspeiseadapter.png" x="${k1(x+FW-(n>1?6:30)-ew)}" y="${k1(ey)}" width="${k1(ew)}" height="${k1(eh)}"/>`; }
+    if(f===eiF){ const ey=fy+(782+off0)*fh/(1050+off0), eh=(1000-782)*fh/(1050+off0), ew=eh*202/1800; s+=`<image href="${B}einspeiseadapter.png" x="${k1(x+FW-(n>1?6:30)-ew)}" y="${k1(ey)}" width="${k1(ew)}" height="${k1(eh)}"/>`; }
     zps.forEach((zz,p)=>{ const nr=zn+p+1, an=aktiv&&aktiv===`${f.id}:${p}`, xa=x+(p?131:8), off=hoch?300:0;
       /* aktiver Zählerplatz: rot hinterlegt */
       if(an) s+=R(x+(p?128:6),fy+(455+off)*fh/(1050+off),116,287*fh/(1050+off),C.akt,null,0,3,` fill-opacity=".16"`);
