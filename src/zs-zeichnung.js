@@ -46,9 +46,9 @@ function zsZeichnung(zs,reihen,aktiv,selFeld,opt){
     else { const nm=`zs-z${n}-ehz${hs}.png`; s+=hoch?ehzHoch(nm,x):ganz(nm,x); }
     const off0=hoch?300:0;
     /* SLS genau über den drei Außenleitern, die im Feldbild zum Zählerplatz hochgehen (Mitte in mm von links, gemessen) */
-    const slsM=drei?(n>1?[96,151]:hoch?[54]:hs?[86]:[101]):[54,154];
+    const slsM=drei?(n>1?[96,151]:hoch?[54]:hs?[86]:[101]):[54,170];  /* rechter SLS weiter rechts (deckt die Leiter bei 141–166 mm weiter ab) – dazwischen 32 mm frei für Einspeiseadapter bzw. Überspannungsschutz */
     /* Einspeiseadapter für das Hausanschlusskabel – auf der Sammelschiene, bevorzugt im ersten Zählerfeld mit einem Platz */
-    if(f===eiF){ const ey=fy+(784.8+off0)*fh/(1050+off0), eh=200*fh/(1050+off0), ew=eh*202/1800; /* Klemmen N…PE genau auf den fünf Sammelschienen (Abstand 40 mm) */ const ex=n>1?(f===ussF?x+FW-6-ew:x+104-ew/2):x+FW-30-ew; s+=`<image href="${B}einspeiseadapter.png" x="${k1(ex)}" y="${k1(ey)}" width="${k1(ew)}" height="${k1(eh)}"/>`; }
+    if(f===eiF){ const ey=fy+(784.8+off0)*fh/(1050+off0), eh=200*fh/(1050+off0), ew=eh*202/1800; /* Klemmen N…PE genau auf den fünf Sammelschienen (Abstand 40 mm) */ const ex=n>1?(f===ussF?x+FW-6-ew:x+112-ew/2):x+FW-30-ew; s+=`<image href="${B}einspeiseadapter.png" x="${k1(ex)}" y="${k1(ey)}" width="${k1(ew)}" height="${k1(eh)}"/>`; }
     zps.forEach((zz,p)=>{ const nr=zn+p+1, an=aktiv&&aktiv===`${f.id}:${p}`, xa=x+(p?131:8), off=hoch?300:0;
       /* aktiver Zählerplatz: rot hinterlegt */
       if(an) s+=R(x+(p?128:6),fy+(455+off)*fh/(1050+off),116,287*fh/(1050+off),C.akt,null,0,3,` fill-opacity=".16"`);
@@ -62,10 +62,10 @@ function zsZeichnung(zs,reihen,aktiv,selFeld,opt){
         s+=R(sx+1,sy+2,sw,sh,"#000",null,0,2,` fill-opacity=".18" filter="url(#zsWeich)"`)+`<svg x="${k1(sx)}" y="${k1(sy)}" width="${sw}" height="${sh}" viewBox="0 0 ${sw} ${sh}"><image href="${B}sls-schalter.png" x="${k1(-sw*.075)}" y="${k1((sh-sw*1.15*138/94)/2)}" width="${k1(sw*1.15)}" height="${k1(sw*1.15*138/94)}"/></svg>`
           +T(sx+sw/2,sy+58,amp+"A",{s:30,w:800,f:"#111"}); } });
     /* Überspannungsschutz einmal im Schrank, beim ersten Zählerplatz */
-    if(f===ussF&&zps.length){ const u=zsUssGeraet(zs), by=fy+fh-31.8*fh/1050, peX=x+(n>1?98.8:107.5);
+    if(f===ussF&&zps.length){ const u=zsUssGeraet(zs), by=fy+fh-31.8*fh/1050, peX=x+(n>1?98.8:107.5), luecke=n>1;
       const ub=u&&ZS_USS_BILD[u.nr];
-      if(ub){ const hh=ub[4]||200, ww=Math.min(56,hh*ub[1]/ub[2]); s+=`<image href="${B}${ub[0]}" x="${k1(peX-(ub[5]==null?.5:ub[5])*ww)}" y="${k1(fy+fh-44-hh+(ub[3]||0)*fh/1050)}" width="${k1(ww)}" height="${hh}" preserveAspectRatio="xMidYMid meet"/>`; }
-      else if(u) s+=`<image href="${B}usps.png" x="${k1(peX-29.5)}" y="${k1(by-214)}" width="59" height="202"/>`;
+      if(ub){ const hh=ub[4]||200, ww=Math.min(56,hh*ub[1]/ub[2]); s+=`<image href="${B}${ub[0]}" x="${k1(luecke?x+97:peX-(ub[5]==null?.5:ub[5])*ww)}" y="${k1(fy+fh-44-hh+(ub[3]||0)*fh/1050)}" width="${k1(ww)}" height="${hh}" preserveAspectRatio="xMidYMid meet"/>`; }
+      else if(u) s+=`<image href="${B}usps.png" x="${k1(luecke?x+97:peX-29.5)}" y="${k1(by-214)}" width="59" height="202"/>`;
     }
     /* Zählernummer */
     zps.forEach((_,p)=>{ const nr=zn+p+1, an=aktiv&&aktiv===`${f.id}:${p}`; s+=R(x+(p?FW-80:0),fy,80,70,an?C.akt:"#AAAAAA",null,0,4)+T(x+(p?FW-40:40),fy+50,nr,{s:40,w:600,f:an?C.weiss:"#222"}); });
