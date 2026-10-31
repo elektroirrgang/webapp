@@ -12,8 +12,8 @@ const AW_SVG={
   up:'<rect x="4" y="4" width="20" height="40" class="b"/><rect x="10" y="11" width="16" height="26" rx="2" class="a"/><rect x="24" y="9" width="4" height="30" rx="1" class="a"/>',
   res:'<rect x="17" y="8" width="14" height="32" rx="2" class="a"/><path d="M20 24h8" class="c"/>',
   gr:'<rect x="7" y="12" width="34" height="6" rx="2" class="b"/><rect x="7" y="23" width="26" height="4" rx="1" class="a"/><rect x="7" y="31" width="30" height="4" rx="1" class="a"/>',
-  kln:'<rect x="6" y="18" width="36" height="14" rx="2" fill="#2F8FE0"/><rect x="6" y="28" width="36" height="6" rx="1" class="a"/>',
-  klpe:'<rect x="6" y="18" width="36" height="14" rx="2" fill="#7CC242"/><rect x="6" y="28" width="36" height="6" rx="1" fill="#E2C41C"/>',
+  kln:'<rect x="18" y="5" width="12" height="38" rx="2" fill="#2F8FE0"/>',
+  klpe:'<rect x="18" y="5" width="12" height="38" rx="2" fill="#7CC242"/><rect x="28" y="5" width="2" height="38" fill="#E2C41C"/>',
   frei:'<rect x="17" y="8" width="14" height="32" rx="2" class="a"/><path d="M24 18v12M18 24h12" class="c"/>'};
 const awSvg=k=>`<svg class="aw-svg" viewBox="0 0 48 48" aria-hidden="true">${AW_SVG[k]||""}</svg>`;
 const awReihenSvg=n=>`<svg class="aw-svg" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="4" width="36" height="40" rx="3" class="a"/>${Array.from({length:n},(_,i)=>{ const h=Math.min(5,24/n), g=(32-n*h)/(n+1); return `<rect x="10" y="${(8+g+i*(h+g)).toFixed(1)}" width="28" height="${h.toFixed(1)}" rx="1" class="b"/>`; }).join("")}</svg>`;
@@ -108,7 +108,7 @@ function awKatalog(){ const L=legAkt(); if(!L){ awZu(); return; } AW.m=null;
   const z=$("#dlg .aw-zur"); if(z) z.hidden=true; }
 function awGrid(){ const q=AW.such.trim().toLowerCase(), z=awNutzung(), L=legAkt(), E=L?legE(L):[];
   const herst=(()=>{ for(let i=E.length-1;i>=0;i--){ const m=E[i].mat&&awGeraete().find(x=>matHnr(x.herstellerNr)===E[i].mat); if(m) return m.hersteller; } return ""; })();
-  if(!q&&AW.tab==="sonst") return `<div class="aw-grid">${[["res","Reserve","Platzhalter, 1 TE"],["gr","Überschrift","z. B. Erdgeschoss, Wohnung OG"],["kln","N-Klemme Pollmann N 14-S","blau · 14 Steck + 1 Schraub · 5 TE"],["klpe","PE-Klemme Pollmann PE 14-S","grün · 14 Steck + 1 Schraub · 5 TE"],["frei","Anderes Gerät","frei eintragen – ohne Materialliste"]].map(([k,t,s])=>`<button type="button" class="aw-g aw-g-ic" data-act="awSonst" data-v="${k}"><span class="aw-gb">${awSvg(k)}</span><b>${t}</b><small>${s}</small></button>`).join("")}</div>`;
+  if(!q&&AW.tab==="sonst") return `<div class="aw-grid">${[["res","Reserve","Platzhalter, 1 TE"],["gr","Überschrift","z. B. Erdgeschoss, Wohnung OG"],["kln","N-Klemme Pollmann N 14-S","blau · 14 Steck + 1 Schraub · 1 TE, hochkant"],["klpe","PE-Klemme Pollmann PE 14-S","grün · 14 Steck + 1 Schraub · 1 TE, hochkant"],["frei","Anderes Gerät","frei eintragen – ohne Materialliste"]].map(([k,t,s])=>`<button type="button" class="aw-g aw-g-ic" data-act="awSonst" data-v="${k}"><span class="aw-gb">${awSvg(k)}</span><b>${t}</b><small>${s}</small></button>`).join("")}</div>`;
   let A=awGeraete().map(m=>({m,t:matTech(m),hnr:matHnr(m.herstellerNr)}));
   if(q){ const qq=q.replace(/\s+/g,""); A=A.filter(x=>{ const kurz=x.t.char?`${x.t.char}${x.t.in}`.toLowerCase():""; return kurz===qq||[awName(x.t),awUnter(x.m),x.m.name,kurz].join(" ").toLowerCase().replace(/\s+/g," ").includes(q); }); }
   else A=A.filter(x=>x.t.art===AW.tab);
@@ -143,7 +143,7 @@ function awOk(weiter,unbekannt){ const L=legAkt(), m=awGeraete().find(x=>matHnr(
   if(weiter){ AW.zuletzt=`${k.kz} ${bez==="?"?"(noch unbekannt)":bez} eingesetzt`; awKatalog(); } else awZu(); }
 function awSonst(k){ const L=legAkt(); if(!L) return;
   if(k==="res"){ const z=awKz(L,"sk"); awEinsetzen({id:uid(),art:"res",kz:z.kz,bez:"",schutz:"",pole:1,te:1}); AW.zuletzt=`${z.kz} Reserve eingesetzt`; awKatalog(); return; }
-  if(k==="kln"||k==="klpe"){ const pe=k==="klpe"; awEinsetzen({id:uid(),art:"kl",farbe:pe?"pe":"n",kz:"",bez:pe?"PE-Klemme Pollmann PE 14-S":"N-Klemme Pollmann N 14-S",schutz:"",pole:1,te:5}); AW.zuletzt=`${pe?"PE":"N"}-Klemme eingesetzt`; awKatalog(); return; }
+  if(k==="kln"||k==="klpe"){ const pe=k==="klpe"; awEinsetzen({id:uid(),art:"kl",farbe:pe?"pe":"n",kz:"",bez:pe?"PE 14-S":"N 14-S",schutz:"",pole:1,te:1}); AW.zuletzt=`${pe?"PE":"N"}-Klemme eingesetzt`; awKatalog(); return; }
   AW=null; $("#dlg").classList.remove("aw"); legSkDlg(null,null);
   if(k==="gr"&&legDlg){ legDlg.art="gr"; document.querySelectorAll('#dlg [data-act="legArt"]').forEach(c=>c.setAttribute("aria-pressed",c.dataset.v==="gr")); legArtZeigen(); } }
 
