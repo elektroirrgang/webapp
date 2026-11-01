@@ -153,7 +153,9 @@ function uvZeichnung(L){ const M=uvMasse(L), s=250/400 /* mm je Pixel im Feldbil
     RR.forEach((r,k)=>{ if(k>=M.n){ ueber++; return; } const yc=schienen[k]; let tx=fx+(fw-M.te*P)/2;
       r.g.forEach(([e,i,w])=>{ g+=`<g class="leg-dev" data-act="legEdit" data-id="${esc(e.id)}"><title>${esc([e.kz,e.bez].filter(Boolean).join(" · "))}</title>${legGeraetBild(e,tx,w,yc-GH/2,P,"../bilder/vt/")}</g>`; tx+=w*P; }); }); }
   /* Gehäuse wie beim Zählerschrank; Wandstärke ergibt sich aus Volta-Maß und Feld */
-  const geh=R(x0,y0,W,H,C.weiss,"#6A6A6A",2.5,2)+R(x0+9,y0+9,W-18,H-18,"none","#B0B0B0",1);
+  const geh=R(x0,y0,W,H,C.weiss,"#6A6A6A",2.5,2)+R(x0+9,y0+9,W-18,H-18,"none","#B0B0B0",1)
+    /* Unterputz: Putzrahmen 17 mm breiter als die Einbauöffnung (348 zu 314 mm) – als zweite Kante sichtbar */
+    +(M.up?R(x0+17,y0+17,W-34,H-34,"none","#8C8C8C",1.6):"");
   const masse=L_(x0+2,y0-38,x0+2,y0-10,C.grau,1.2)+T(x0+16,y0-18,`Breite ${String(M.W).replace(".",",")} mm  →`,{s:22,w:400,f:C.grau,a:"start"})
     +L_(x0-40,y0+2,x0-12,y0+2,C.grau,1.2)+T(0,0,`Höhe ${String(M.H).replace(".",",")} mm`,{s:22,w:400,f:C.grau,a:"end",ex:` transform="translate(${x0-20} ${y0+16}) rotate(-90)"`});
   const fuss=T(x0,vh-34,esc(uvModellText(L)+" · "+(M.up?"Unterputz":"Aufputz")),{s:18,w:600,f:"#9A9A9A",a:"start"})+T(vw-MR,vh-12,"Feldgrafiken: zaehlerschrank24.de",{s:14,w:400,f:"#9A9A9A",a:"end"});
