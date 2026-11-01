@@ -98,23 +98,45 @@ function awKz(L,art){ const E=legE(L);
   return {kz:`F ${awBelegung(L).r}.${E.filter(e=>e.art!=="gr").length+1}`,umbruch:false}; }
 const awRcdVor=L=>{ const E=legE(L); for(let i=E.length-1;i>=0;i--){ if(E[i].art==="gr") return null; if(E[i].art==="rcd") return E[i]; } return null; };
 function awGeraetStart(){ const L=legAkt(); if(!L||L.fertig) return; const E=legE(L);
-  AW={typ:"geraet",tab:E.some(e=>e.art==="rcd")?"ls":"rcd",serie:(typeof META!=="undefined"&&META.lsSerie)||"",such:"",letzt:null,zuletzt:"",m:null,was:"",raum:"",bez:"",bezHand:false,mehr:false};
+  AW={typ:"geraet",tab:E.some(e=>e.art==="rcd")?"ls":"reihe",serie:(typeof META!=="undefined"&&META.lsSerie)||"",such:"",letzt:null,zuletzt:"",m:null,was:"",raum:"",bez:"",bezHand:false,mehr:false};
   awKatalog(); }
 function awKatalog(){ const L=legAkt(); if(!L){ awZu(); return; } AW.m=null;
   $("#dlg").classList.add("aw");
   awRahmen({titel:L.titel||"Verteiler",unter:awBelegText(L),inhalt:`<div class="aw-such"><span class="aw-lupe">${icon("search")}</span><input id="awSuch" type="search" placeholder="Suchen: B16, RCD, Typ A …" value="${esc(AW.such)}" autocomplete="off"></div>
-      <div class="aw-tabs" role="group">${[["ls","Automaten"],["rcd","RCD"],["rcbo","FI/LS"],["sonst","Sonstiges"]].map(([k,t])=>`<button type="button" data-act="awTab" data-v="${k}" aria-pressed="${AW.tab===k}">${t}</button>`).join("")}</div>
+      <div class="aw-tabs" role="group">${[["reihe","Reihen"],["ls","Automaten"],["rcd","RCD"],["rcbo","FI/LS"],["sonst","Sonstiges"]].map(([k,t])=>`<button type="button" data-act="awTab" data-v="${k}" aria-pressed="${AW.tab===k}">${t}</button>`).join("")}</div>
       <div id="awSerie">${awSerieChips()}</div><div id="awGrid">${awGrid()}</div>`,
-    fuss:`<span class="aw-fuss-info">${esc(AW.zuletzt||(legE(L).length?`${legE(L).filter(e=>e.art!=="gr").length} Geräte im Verteiler`:""))}</span><button type="button" class="btn-tonal" data-act="awZu">${legE(L).length?"Fertig":"Später bestücken"}</button>`});
+    fuss:`<button type="button" class="aw-fragen" data-act="awFragen" aria-pressed="${awFragen()}">Wofür gleich fragen</button><span class="aw-fuss-info">${esc(AW.zuletzt||(legE(L).length?`${legE(L).filter(e=>e.art!=="gr").length} Geräte im Verteiler`:""))}</span><button type="button" class="btn-tonal" data-act="awZu">${legE(L).length?"Fertig":"Später bestücken"}</button>`});
   const z=$("#dlg .aw-zur"); if(z) z.hidden=true; }
 /* Platzhalter, solange kein Herstellerfoto da ist: schlichter Automat mit der richtigen Polzahl */
 function awOhneFoto(t,m){ const p=Math.max(1,Math.min(4,+t.pole||1)), w=14, x0=24-p*w/2, sch=/^R9F/.test(matHnr(m.herstellerNr))?"#3DCD58":/^A9F/.test(matHnr(m.herstellerNr))?"#3DCD58":"#2F6FD1";
   return `<span class="mat-foto aw-gb"><svg viewBox="0 0 48 48" style="width:62%;height:62%" aria-hidden="true">${Array.from({length:p},(_,k)=>{ const x=x0+k*w; return `<rect x="${x+.5}" y="6" width="${w-1}" height="36" rx="2" fill="#F1F2F4" stroke="#C3C7CC" stroke-width=".8"/><rect x="${x+4}" y="17" width="${w-8}" height="10" rx="1.5" fill="#3A3F45"/><rect x="${x+2}" y="31" width="${w-4}" height="2.5" rx="1" fill="${sch}"/>`; }).join("")}</svg></span>`; }
+/* Ganze Reihen mit einem Tipp – Kennzeichnung läuft nach dem Schema der Legende (RCD, dann seine Automaten, dann der nächste RCD) */
+const AW_REIHEN=[["r6kl","RCD + 6 × B16 + N/PE-Klemme","RCD 40 A/30 mA · 6 × B16 · N 14-S · PE 14-S · 12 TE",[["rcd"],["ls",6],["kl","n"],["kl","pe"]]],
+  ["r8","RCD + 8 × B16","RCD 40 A/30 mA · 8 × B16 · 12 TE",[["rcd"],["ls",8]]],
+  ["r6","6 × B16 + N/PE-Klemme","ohne RCD · 8 TE",[["ls",6],["kl","n"],["kl","pe"]]]];
+function awReiheSvg(teile){ const T=[]; teile.forEach(([a,n])=>{ if(a==="rcd") T.push(["rcd",4]); else if(a==="ls") for(let i=0;i<n;i++) T.push(["ls",1]); else T.push([n,1]); });
+  const W=T.reduce((s,x)=>s+x[1],0), u=44/Math.max(12,W); let x=2;
+  return `<svg viewBox="0 0 48 30" style="width:90%;height:auto" aria-hidden="true"><rect x="0" y="13" width="48" height="4" rx="1" fill="#C3C7CC"/>${T.map(([a,w])=>{ const X=x, b=w*u-.6; x+=w*u;
+    const f=a==="rcd"?"#E9ECF2":a==="n"?"#2F8FE0":a==="pe"?"#7CC242":"#F4F5F7";
+    return `<rect x="${X.toFixed(2)}" y="${a==="n"||a==="pe"?3:6}" width="${b.toFixed(2)}" height="${a==="n"||a==="pe"?24:18}" rx=".8" fill="${f}" stroke="#AEB3B9" stroke-width=".3"/>${a==="rcd"||a==="ls"?`<rect x="${(X+b/2-.9).toFixed(2)}" y="11" width="1.8" height="5" rx=".4" fill="#3A3F45"/>`:""}${a==="rcd"?`<rect x="${(X+1).toFixed(2)}" y="19" width="${(b-2).toFixed(2)}" height="1.6" fill="#2F6FD1"/>`:""}`; }).join("")}</svg>`; }
+function awSerieStd(L){ if(AW&&AW.serie) return AW.serie; return L&&/schneider/i.test(L.gerHerst||"")?"ic60":"hqc"; }
+function awReiheGeraete(L){ const se=awSerieStd(L), G=awGeraete(), schn=se==="ic60"||se==="resi";
+  const ls=G.find(m=>{ const t=matTech(m); return t.art==="ls"&&t.char==="B"&&+t.in===16&&+t.pole===1&&(matSerie(m)||[])[0]===se; })||G.find(m=>{ const t=matTech(m); return t.art==="ls"&&t.char==="B"&&+t.in===16&&+t.pole===1; });
+  const rcd=G.find(m=>{ const t=matTech(m); return t.art==="rcd"&&+t.in===40&&(schn?m.hersteller==="Schneider Electric":m.hersteller==="Hager"); })||G.find(m=>matTech(m).art==="rcd");
+  return {ls,rcd}; }
+function awReihe(k){ const L=legAkt(), V=AW_REIHEN.find(x=>x[0]===k); if(!L||!V) return; const E=legE(L), {ls,rcd}=awReiheGeraete(L); let erst="", letzt="";
+  V[3].forEach(([a,n])=>{ if(a==="rcd"&&rcd){ const t=matTech(rcd), kz=awKz(L,"rcd"); E.push({id:uid(),art:"rcd",kz:kz.kz,bez:"Fehlerstromschutzschalter",schutz:awSchutz(t),pole:1,te:t.te,mat:matHnr(rcd.herstellerNr),...(kz.umbruch?{umbruch:true}:{})}); erst=erst||kz.kz; letzt=kz.kz; }
+    if(a==="ls"&&ls){ const t=matTech(ls); for(let i=0;i<n;i++){ const kz=awKz(L,"sk"); E.push({id:uid(),art:"sk",kz:kz.kz,bez:"?",schutz:awSchutz(t),pole:1,te:t.te,mat:matHnr(ls.herstellerNr)}); erst=erst||kz.kz; letzt=kz.kz; } }
+    if(a==="kl") E.push({id:uid(),art:"kl",farbe:n,kz:"",bez:n==="pe"?"PE 14-S":"N 14-S",schutz:"",pole:1,te:1}); });
+  legSpeichern(L); render(); AW.zuletzt=`Reihe eingesetzt: ${erst}${letzt&&letzt!==erst?" bis "+letzt:""}`; AW.tab="reihe"; awKatalog(); }
 /* Serie der Automaten: Hager QuickConnect / Schraube, Schneider iC60 / Resi9 – wird je Gerät gemerkt */
 function awSerieChips(){ if(AW.tab!=="ls"||AW.such.trim()) return ""; if(AW.serie==null) AW.serie=(META.lsSerie||"");
   return `<div class="aw-serie" role="group">${[["","Alle"],...MAT_SERIEN.map(x=>[x[0],x[1]])].map(([k,t])=>`<button type="button" data-act="awSerie" data-v="${k}" aria-pressed="${AW.serie===k}">${t}</button>`).join("")}</div>`; }
 function awGrid(){ const q=AW.such.trim().toLowerCase(), z=awNutzung(), L=legAkt(), E=L?legE(L):[];
   const herst=(()=>{ for(let i=E.length-1;i>=0;i--){ const m=E[i].mat&&awGeraete().find(x=>matHnr(x.herstellerNr)===E[i].mat); if(m) return m.hersteller; } return ""; })();
+  if(!q&&AW.tab==="reihe"){ const {ls,rcd}=awReiheGeraete(L);
+    return `<p class="aw-hinweis">Setzt die ganze Reihe ein – Kennzeichnung läuft automatisch weiter, „Wofür“ trägst du später in der Legende ein. Automaten: ${esc(ls?`${(matSerie(ls)||[,""])[1]} ${ls.herstellerNr}`:"–")}${rcd?` · RCD ${esc(rcd.herstellerNr)}`:""}</p>
+      <div class="aw-grid">${AW_REIHEN.map(([k,t,u,teile])=>`<button type="button" class="aw-g" data-act="awReihe" data-v="${k}"><span class="mat-foto aw-gb">${awReiheSvg(teile)}</span><b>${t}</b><small>${u}</small></button>`).join("")}</div>`; }
   if(!q&&AW.tab==="sonst") return `<div class="aw-grid">${[["res","Reserve","Platzhalter, 1 TE"],["gr","Überschrift","z. B. Erdgeschoss, Wohnung OG"],["kln","N-Klemme Pollmann N 14-S","blau · 14 Steck + 1 Schraub · 1 TE, hochkant"],["klpe","PE-Klemme Pollmann PE 14-S","grün · 14 Steck + 1 Schraub · 1 TE, hochkant"],["kla","Abzweigklemme Pollmann A 14-S","grau · z. B. für eine Phase · 1 TE, hochkant"],["frei","Anderes Gerät","frei eintragen – ohne Materialliste"]].map(([k,t,s])=>`<button type="button" class="aw-g aw-g-ic" data-act="awSonst" data-v="${k}"><span class="aw-gb">${awSvg(k)}</span><b>${t}</b><small>${s}</small></button>`).join("")}</div>`;
   let A=awGeraete().map(m=>({m,t:matTech(m),hnr:matHnr(m.herstellerNr)}));
   if(q){ const qq=q.replace(/\s+/g,""); A=A.filter(x=>{ const kurz=x.t.char?`${x.t.char}${x.t.in}`.toLowerCase():""; return kurz===qq||[awName(x.t),awUnter(x.m),x.m.name,kurz].join(" ").toLowerCase().replace(/\s+/g," ").includes(q); }); }
@@ -127,7 +149,10 @@ function awEinsetzen(e){ const L=legAkt(); if(!L) return; legE(L).push(e); legSp
 function awGeraetWahl(hnr){ const L=legAkt(), m=awGeraete().find(x=>matHnr(x.herstellerNr)===hnr); if(!L||!m) return; const t=matTech(m);
   if(t.art==="rcd"){ const k=awKz(L,"rcd"); awEinsetzen({id:uid(),art:"rcd",kz:k.kz,bez:"Fehlerstromschutzschalter",schutz:awSchutz(t),pole:1,te:t.te,mat:hnr,...(k.umbruch?{umbruch:true}:{})});
     AW.letzt=hnr; AW.zuletzt=`${k.kz} RCD eingesetzt – jetzt die Automaten dazu`; AW.tab="ls"; AW.such=""; awKatalog(); return; }
-  AW.m=hnr; AW.was=""; AW.raum=""; AW.bez=""; AW.bezHand=false; AW.mehr=false; awWofuer(); }
+  AW.m=hnr; AW.was=""; AW.raum=""; AW.bez=""; AW.bezHand=false; AW.mehr=false;
+  if(awFragen()) awWofuer(); else awOk(true,true); }
+/* „Wofür gleich fragen“: aus = erst bestücken, Wofür später in der Legende eintragen (je Gerät gemerkt) */
+const awFragen=()=>typeof META!=="undefined"&&!!META.awFragen;
 function awRaeume(L){ const s=new Set(), add=b=>String(b||"").split(/\s+/).forEach(w=>{ if(LEG_RAUM.includes(w)) s.add(w); });
   if(L._geb){ const g=vtGeb(L._geb); if(g) g.stromkreise.forEach(x=>add(x.bez)); } else legE(L).forEach(e=>add(e.bez));
   return [...s,...LEG_RAUM.filter(r=>!s.has(r))]; }
@@ -174,6 +199,8 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "awTab": AW.tab=b.dataset.v; AW.such=""; { const s=document.getElementById("awSuch"); if(s) s.value=""; } $("#awGrid").innerHTML=awGrid(); { const sc=document.getElementById("awSerie"); if(sc) sc.innerHTML=awSerieChips(); } document.querySelectorAll('#dlg [data-act="awTab"]').forEach(x=>x.setAttribute("aria-pressed",x===b)); return;
   case "awGeraet": awGeraetWahl(b.dataset.v); return;
   case "awSonst": awSonst(b.dataset.v); return;
+  case "awReihe": awReihe(b.dataset.v); return;
+  case "awFragen": META.awFragen=!META.awFragen; if(typeof metaSave==="function") metaSave(); b.setAttribute("aria-pressed",!!META.awFragen); return;
   case "awSerie": AW.serie=b.dataset.v; META.lsSerie=AW.serie; if(typeof metaSave==="function") metaSave(); const sc=document.getElementById("awSerie"); if(sc) sc.innerHTML=awSerieChips(); const g=document.getElementById("awGrid"); if(g) g.innerHTML=awGrid(); return;
   case "awWas": AW.was=AW.was===b.dataset.v?"":b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===AW.was)); awBezSetzen(); return;
   case "awRaum": AW.raum=AW.raum===b.dataset.v?"":b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===AW.raum)); awBezSetzen(); return;
