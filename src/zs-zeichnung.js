@@ -8,6 +8,13 @@ const ZSZ_F={lin:"#8C8C8C",fein:"#C4C4C4",feld:"#F2F2F2",weiss:"#FFFFFF",hell:"#
 const ZSZ_KURZ={haushalt:"HA",wp:"WP",wallbox:"EM",pv:"PV",allgemein:"ALG",gewerbe:"GEW",frei:"RES"};
 const ZSZ_SLS_BILD={abb:["sls-abb.png",198,346]};
 const zsBildUrl=u=>typeof bildLokal==="function"?bildLokal(u):u;
+/* Reihenplätze in den Verteilerfeldern (Mitte der Reihe in Pixeln des Feldbilds, gemessen zwischen den Abdeckstreifen).
+   1100: Verteilerfeld 6 Reihen (72 TE), APZ-Feld 4 Reihen (48 TE) · 1400: 8 bzw. 6 Reihen – wie im Konfigurator von zaehlerschrank24.de */
+const ZSZ_REIHEN={vt:[298,490,690,881,1246,1445],apz:[298,490,690,889],vtH:[304,500,703,924,1123,1304,1716,1927],apzH:[299,492,693,885,1258,1458]};
+/* Bestückung, die in die Verteilerfelder gezeichnet wird – setzt zsKarte vor dem Zeichnen (Verteiler L) */
+let ZSZ_L=null;
+function zsReihenPlaetze(zs){ const hoch=zsHoeheMm(zs)===1400, P=[]; zs.felder.forEach(f=>{ if(f.typ!=="v") return; const apz=zs.apz&&zs.apz.feldId===f.id?zs.apz.lage:"";
+    const Y=apz?(hoch?ZSZ_REIHEN.apzH:ZSZ_REIHEN.apz):(hoch?ZSZ_REIHEN.vtH:ZSZ_REIHEN.vt), off=apz==="oben"?(hoch?2154-1636:1682-1158):0; Y.forEach(y=>P.push({feldId:f.id,y:y+off})); }); return P; }
 function zsHoeheMm(zs){ return +zs.hoehe===1400?1400:1100; }
 /* Bis 5 Felder ein Schrank, darüber mehrere Schränke nebeneinander (gleichmäßig verteilt, je höchstens 5 Felder) */
 const ZSZ_LUECKE=70;
@@ -72,10 +79,16 @@ function zsZeichnung(zs,reihen,aktiv,selFeld,opt){
     zn+=n; return s; };
   const titel=(x,y,t)=>T(x+FW/2,y,t,{s:40,w:600,f:"#2A2A2A"});
   let inn="";
+  /* Bestückung: Reihen der Legende der Reihe nach auf die Reihenplätze der Verteilerfelder legen */
+  const BE=(()=>{ if(!ZSZ_L||typeof legReihen!=="function"||typeof legGeraetBild!=="function") return {}; const RR=legReihen(ZSZ_L), PL=zsReihenPlaetze(zs), M={}, TE=18;
+    RR.forEach((r,k)=>{ const pl=PL[k]; if(!pl) return; const x=g.fx[F.findIndex(f=>f.id===pl.feldId)], yc=fy+pl.y*sk, H=TE*400/92; let tx=x+(FW-12*TE)/2, out="";
+      r.g.forEach(([e,i,w])=>{ out+=legGeraetBild(e,tx,w,yc-H/2,TE,"../bilder/vt/"); tx+=w*TE; });
+      M[pl.feldId]=(M[pl.feldId]||"")+out; });
+    return M; })();
   F.forEach((f,i)=>{ const x=g.fx[i]; let s=feldGrund(x);
     if(f.typ==="z") s+=zaehler(f,x);
     else if(f.typ==="v"){ const apz=zs.apz&&zs.apz.feldId===f.id?zs.apz.lage:""; const vtN=hoch?"zs-vt-high.png":"zs-vt.png";
-      s+=apz?apzFeld(x,apz):ganz(vtN,x); s+=titel(x,fy+(apz==="oben"?(QH-APZ0)*sk:0)+(hoch?100:95),apz?"APZ":`VTF ${++nv}`); }
+      s+=apz?apzFeld(x,apz):ganz(vtN,x); if(BE[f.id]) s+=BE[f.id]; s+=titel(x,fy+(apz==="oben"?(QH-APZ0)*sk:0)+(hoch?100:95),apz?"APZ":`VTF ${++nv}`); }
     else if(f.typ==="m"){ nm++; const apz=zs.apz&&zs.apz.feldId===f.id?zs.apz.lage:"", mmN=hoch?"zs-mm-fw1-high.png":"zs-mm.png";
       s+=apz?apzFeld(x,apz,mmN):ganz(mmN,x); s+=titel(x,fy+(apz==="oben"?(QH-APZ0)*sk:0)+80*fh/1050,nMM>1?`MM ${nm}`:"MM"); }
     else s+=ganz("zs-tsg.png",x)+titel(x,fy+80,"TSG");

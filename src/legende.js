@@ -118,24 +118,25 @@ function legReihen(L){ const n=+L.teReihe||12, R=[]; let r=null;
   return R; }
 /* Gezeichneter Verteiler: Geräte schlicht und herstellerneutral, feste Größe (50 px je TE), darunter Beschriftung wie im Streifen */
 const LEG_P=50;
-function legGeraet(e,x,w){ const P=LEG_P, X=x+2, W=w*P-4, t=legTE(e), rcd=e.art==="rcd";
-  const schr=(y)=>Array.from({length:t},(_,k)=>{ const cx=x+k*P+P/2; return `<circle cx="${cx}" cy="${y}" r="5.5" fill="#CDD1D7"/><path d="M${cx-3.2} ${y+2.2}l6.4-4.4" stroke="#9AA0A8" stroke-width="1.4" stroke-linecap="round"/>`; }).join("");
-  /* Pollmann N 14-S / PE 14-S als Bild: hochkant auf der Hutschiene, Schraubklemme unten, 1 TE breit */
-  if(e.art==="kl"){ const fb=e.farbe||(/pe/i.test(e.bez||"")?"pe":/^\s*a\b|abzweig/i.test(e.bez||"")?"a":"n"), /* farbe geht beim Speichern verloren – Bezeichnung entscheidet */ h=w*P*717/140; /* unverzerrt: 1 TE breit, rund 92 mm hoch – höher als ein Automat, sitzt unter der Abdeckung */
-    return `<image href="../bilder/vt/pollmann-${fb==="pe"?"pe":fb==="a"?"a":"n"}14s.png" x="${x}" y="${(82-h/2).toFixed(1)}" width="${w*P}" height="${h.toFixed(1)}"/>`; }
-  if(e.art==="res") return `<rect x="${X}" y="10" width="${W}" height="146" rx="5" fill="#D9DCE1"/>${Array.from({length:6},(_,k)=>`<rect x="${X+5}" y="${44+k*13}" width="${W-10}" height="3" rx="1.5" fill="#C7CBD1"/>`).join("")}`;
-  let h=`<rect x="${X}" y="10" width="${W}" height="146" rx="5" fill="#F4F5F7"/><rect x="${X}" y="10" width="${W}" height="30" rx="5" fill="#E6E8EB"/><rect x="${X}" y="126" width="${W}" height="30" rx="5" fill="#E6E8EB"/>${schr(25)}${schr(141)}`;
-  const sc=String(rcd?(e.schutz||"").replace(/\s*Typ.*$/i,"").replace(/\s*\/\s*/," · "):legSchutz(e).replace(/\s*3-polig$/i,""));
-  if(rcd){ h+=`<rect x="${X+8}" y="66" width="18" height="36" rx="4" fill="#3A3E45"/><rect x="${X+11}" y="69" width="12" height="11" rx="2" fill="#6B7079"/>`
-      +`<circle cx="${X+W-15}" cy="76" r="7.5" fill="#F2C94C"/><text x="${X+W-15}" y="80" font-size="10" font-weight="800" text-anchor="middle" fill="#3A3E45">T</text>`
-      +`<text x="${X+34}" y="58" font-size="10.5" font-weight="700" fill="#3A3E45">${esc(sc.slice(0,22))}</text>`
-      +(/Typ\s*([A-Z+]+)/i.test(e.schutz||"")?`<text x="${X+34}" y="114" font-size="10" font-weight="600" fill="#6B7079">Typ ${esc(RegExp.$1)}</text>`:"");
-    return h; }
-  /* je Pol ein Kipphebel, bei mehrpoligen Automaten mit Verbindungssteg */
-  h+=Array.from({length:t},(_,k)=>{ const cx=x+k*P+P/2; return `<rect x="${cx-7}" y="70" width="14" height="32" rx="4" fill="#3A3E45"/><rect x="${cx-4}" y="73" width="8" height="10" rx="2" fill="#6B7079"/>`; }).join("")
-    +(t>1?`<rect x="${x+P/2-7}" y="80" width="${(t-1)*P+14}" height="5" rx="2.5" fill="#3A3E45"/>`:"")
-    +`<text x="${X+W/2}" y="58" font-size="10.5" font-weight="800" text-anchor="middle" fill="#3A3E45">${esc(sc.slice(0,t>1?14:5))}</text>`;
-  return h; }
+/* Gerätebild je Eintrag (Frontansichten aus dem Konfigurator von zaehlerschrank24.de, 92 × 400 px je TE): [Datei, Bild-TE] */
+function legBildFuer(e){ const t=legTE(e);
+  if(e.art==="rcd") return ["rcd.jpg",4];
+  if(e.art==="res") return ["blind1.jpg",1];
+  if(e.art==="sk"){ if(+e.pole===3) return t>=4?["fils3.jpg",4]:["ls3.jpg",3]; return t>=2?["fils1.jpg",2]:["ls1.jpg",1]; }
+  return ["blind1.jpg",1]; }
+const LEG_H=()=>LEG_P*400/92;   /* Höhe eines Geräts im Verhältnis zur Breite */
+/* Gerät zeichnen: x = linke Kante, w = Breite in TE, oben bei y0 (Mitte = Hutschiene) */
+function legGeraetBild(e,x,w,y0,P,bild){ const H=P*400/92, B=bild||"../bilder/vt/";
+  if(e.art==="kl"){ const fb=e.farbe||(/pe/i.test(e.bez||"")?"pe":/^\s*a\b|abzweig/i.test(e.bez||"")?"a":"n"), h=P*717/140; /* farbe geht beim Speichern verloren – Bezeichnung entscheidet; unverzerrt, höher als ein Automat */
+    return `<image href="${B}pollmann-${fb==="pe"?"pe":fb==="a"?"a":"n"}14s.png" x="${x}" y="${(y0+H/2-h/2).toFixed(1)}" width="${w*P}" height="${h.toFixed(1)}"/>`; }
+  const [f,bt]=legBildFuer(e); let s="";
+  if(f==="blind1.jpg"){ for(let k=0;k<w;k++) s+=`<image href="${B}${f}" x="${x+k*P}" y="${y0}" width="${P}" height="${H.toFixed(1)}" preserveAspectRatio="none"/>`; return s; }
+  s+=`<image href="${B}${f}" x="${x}" y="${y0}" width="${w*P}" height="${H.toFixed(1)}" preserveAspectRatio="none"/>`;
+  /* Aufdruck im weißen Feld: Nennstrom bzw. RCD-Daten */
+  const sc=e.art==="rcd"?String(e.schutz||"").replace(/\s*Typ.*$/i,"").replace(/\s*\/\s*/," "):legSchutz(e).replace(/\s*3-polig$/i,"").replace(/\s*FI\/LS.*$/i,"");
+  if(sc) s+=`<text x="${(x+w*P/2).toFixed(1)}" y="${(y0+H*.72).toFixed(1)}" font-size="${(P*(e.art==="rcd"?.3:w>1?.36:.32)).toFixed(1)}" font-weight="800" text-anchor="middle" fill="#2A2D31">${esc(sc.slice(0,e.art==="rcd"?16:8))}</text>`;
+  return s; }
+function legGeraet(e,x,w){ return legGeraetBild(e,x,w,0,LEG_P); }
 /* Text in schmale Felder umbrechen: zusammengesetzte Wörter an der Wortfuge trennen (Kinder-zimmer), sonst hart, höchstens 3 Zeilen */
 const LEG_FUGE=/(zimmer|küche|maschine|licht|steckdosen|dosen|heizung|kanal|erhitzer|pumpe|garage|keller|raum|flur|bad|wohnung|anlage|versorgung|schalter|leuchte|beleuchtung|säule|box|sicherung|steuerung)$/i;
 const legWrap=(t,max)=>{ const w=[]; String(t||"").split(/\s+/).filter(Boolean).forEach(x=>{ if(x.length>max){ const m=x.match(LEG_FUGE); if(m&&x.length-m[0].length>=3&&x.length-m[0].length<max){ w.push(x.slice(0,x.length-m[0].length)+"-"); x=x.slice(x.length-m[0].length); } }
@@ -145,14 +146,14 @@ const legWrap=(t,max)=>{ const w=[]; String(t||"").split(/\s+/).filter(Boolean).
 function legVtView(L){ const n=+L.teReihe||12, P=LEG_P, R=legReihen(L), zu=L.fertig, B=n*P;
   const opt=(k,t,vals,cur)=>`<span class="leg-o"><span>${t}</span>${vals.map(v=>`<button type="button" class="chip" data-act="legOpt" data-k="${k}" data-v="${v}" aria-pressed="${String(cur)===String(v)}" ${zu?"disabled":""}>${String(v).replace(".",",")}</button>`).join("")}</span>`;
   return `<div class="leg-vopt">${opt("teReihe","TE je Reihe",[12,18,24],n)}${opt("teMm","mm je TE",[17.5,18],+L.teMm||17.5)}</div>`
-    +R.map((r,ri)=>{ let x=0, hoch=190; const g=r.g.map(([e,i,w])=>{ const X=x*P, Wd=w*P, sym=legSymFuer(e), z=legWrap(e.art==="res"?"Reserve":legOffen(e)?"?":e.bez,w>1?w*8:8), fz=w>1?10.5:z.some(t=>t.length>7)?9:10.5;
+    +R.map((r,ri)=>{ const GH=LEG_H(1), KY=GH+10; let x=0, hoch=KY+64; const g=r.g.map(([e,i,w])=>{ const X=x*P, Wd=w*P, sym=legSymFuer(e), z=legWrap(e.art==="res"?"Reserve":legOffen(e)?"?":e.bez,w>1?w*8:8), fz=w>1?10.5:z.some(t=>t.length>7)?9:10.5;
         const out=`<g class="leg-dev" data-act="legEdit" data-id="${esc(e.id)}"><title>${esc([e.kz,e.bez,legSchutz(e)].filter(Boolean).join(" · "))}</title>${legGeraet(e,X,w)}
-          ${e.art==="kl"?"":`<rect x="${X+2}" y="166" width="${Wd-4}" height="20" rx="4" fill="${e.art==="rcd"?"#2F6FD1":e.art==="res"?"#A9AEB6":"#737A84"}"/><text x="${X+Wd/2}" y="180" font-size="10.5" font-weight="800" text-anchor="middle" fill="#fff">${esc(String(e.kz||"").slice(0,w>1?16:7))}</text>`}
-          ${sym?`<g transform="translate(${X+Wd/2-11} 194)" class="leg-sym">${legSymSvg(sym,22,true)}</g>`:""}
-          ${z.map((t,k)=>`<text x="${X+Wd/2}" y="${(sym?232:206)+(e.art==="kl"?16:0)+k*13}" font-size="${fz}" font-weight="600" text-anchor="middle" class="leg-st">${esc(t)}</text>`).join("")}</g>`; hoch=Math.max(hoch,(sym?232:206)+(z.length-1)*13+10+(e.art==="kl"?16:0)); x+=w; return out; }).join("");
+          ${e.art==="kl"?"":`<rect x="${X+2}" y="${KY+(e.art==="kl"?20:0)}" width="${Wd-4}" height="20" rx="4" fill="${e.art==="rcd"?"#2F6FD1":e.art==="res"?"#A9AEB6":"#737A84"}"/><text x="${X+Wd/2}" y="${KY+14}" font-size="10.5" font-weight="800" text-anchor="middle" fill="#fff">${esc(String(e.kz||"").slice(0,w>1?16:7))}</text>`}
+          ${sym?`<g transform="translate(${X+Wd/2-11} ${KY+28})" class="leg-sym">${legSymSvg(sym,22,true)}</g>`:""}
+          ${z.map((t,k)=>`<text x="${X+Wd/2}" y="${KY+(sym?66:40)+(e.art==="kl"?20:0)+k*13}" font-size="${fz}" font-weight="600" text-anchor="middle" class="leg-st">${esc(t)}</text>`).join("")}</g>`; hoch=Math.max(hoch,KY+(sym?66:40)+(z.length-1)*13+10+(e.art==="kl"?20:0)); x+=w; return out; }).join("");
       const frei=n-r.te, last=r.g[r.g.length-1][1];
-      const fr=frei>0?`<g class="leg-frei" ${zu?"":`data-act="legNach" data-i="${last}"`}><rect x="${x*P+2}" y="10" width="${frei*P-4}" height="146" rx="5" class="leg-fr"/><text x="${x*P+frei*P/2}" y="${frei>1?88:60}" font-size="${frei>1?12:10}" font-weight="800" text-anchor="middle" class="leg-frt">${frei>1?`${frei} TE frei`:"frei"}</text>${zu?"":`<text x="${x*P+frei*P/2}" y="${frei>1?108:80}" font-size="16" font-weight="700" text-anchor="middle" class="leg-frt">+</text>`}</g>`:"";
-      return `<div class="leg-reihe" style="width:min(100%,${Math.round(B*1.45)+28}px)"><div class="leg-rk">Reihe ${ri+1}<span>${r.te} von ${n} TE belegt</span></div><div class="leg-rs"><svg viewBox="0 ${r.g.some(([e])=>e.art==="kl")?-50:0} ${B} ${hoch+(r.g.some(([e])=>e.art==="kl")?50:0)}" class="leg-svg" role="img" aria-label="Reihe ${ri+1}"><rect x="0" y="76" width="${B}" height="12" rx="2" fill="#A3A9B1"/>${g}${fr}</svg></div></div>`; }).join(""); }
+      const fr=frei>0?`<g class="leg-frei" ${zu?"":`data-act="legNach" data-i="${last}"`}><rect x="${x*P+2}" y="${GH*.12}" width="${frei*P-4}" height="${GH*.76}" rx="5" class="leg-fr"/><text x="${x*P+frei*P/2}" y="${frei>1?GH/2-4:GH/2-18}" font-size="${frei>1?12:10}" font-weight="800" text-anchor="middle" class="leg-frt">${frei>1?`${frei} TE frei`:"frei"}</text>${zu?"":`<text x="${x*P+frei*P/2}" y="${frei>1?GH/2+16:GH/2+2}" font-size="16" font-weight="700" text-anchor="middle" class="leg-frt">+</text>`}</g>`:"";
+      return `<div class="leg-reihe" style="width:min(100%,${Math.round(B*1.45)+28}px)"><div class="leg-rk">Reihe ${ri+1}<span>${r.te} von ${n} TE belegt</span></div><div class="leg-rs"><svg viewBox="0 ${r.g.some(([e])=>e.art==="kl")?-20:0} ${B} ${hoch+(r.g.some(([e])=>e.art==="kl")?20:0)}" class="leg-svg" role="img" aria-label="Reihe ${ri+1}"><rect x="0" y="${GH/2-17}" width="${B}" height="34" rx="2" fill="#C9CDD2"/><rect x="0" y="${GH/2-11}" width="${B}" height="22" fill="#B5BAC0"/>${g}${fr}</svg></div></div>`; }).join(""); }
 
 /* ===== Symbole für Beschriftung (eigene, schlichte Piktogramme, 24er-Raster, Linien) ===== */
 const LEG_SYM={
