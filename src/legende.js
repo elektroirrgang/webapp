@@ -1,7 +1,7 @@
 /* ===== Verteilerlegende (E-Check › Installation) =====
    Stromkreisliste für die Hager-Tasche im Verteiler: eine Zeile pro Stromkreis, Zwischenüberschriften, RCDs fett, Reserven als Schreiblinie.
    Geht ohne angelegten Kunden (Kunde und Anschrift frei eintragen). PDF im Stil der Prüfprotokolle (pdfStil). */
-const LEG_ART=[["sk","Stromkreis"],["rcd","RCD"],["res","Reserve"],["gr","Überschrift"],["kl","Klemme"]];
+const LEG_ART=[["sk","Stromkreis"],["rcd","RCD"],["res","Reserve"],["gr","Überschrift"],["kl","Klemme"],["ge","Gerät"]];
 const LEG_RAUM=["Küche","Bad","WC","Wohnzimmer","Schlafzimmer","Kinderzimmer","Büro","Flur","Treppenhaus","Keller","Hauswirtschaftsraum","Technikraum","Garage","Dachboden","Außen","Allgemein"];
 const LEG_WAS=["Steckdosen","Licht","Herd","Backofen","Kochfeld","Spülmaschine","Kühlschrank","Waschmaschine","Trockner","Durchlauferhitzer","Heizung","Wärmepumpe","Wallbox","PV-Anlage","Rollläden","Brüstungskanal","EDV","Klingel","Außensteckdose"];
 const LEG_LS=["B10","B13","B16","B20","B25","B32","C16"], LEG_RCD=["40 A / 30 mA Typ A","63 A / 30 mA Typ A","40 A / 30 mA Typ B","40 A / 300 mA Typ A"];
@@ -116,7 +116,7 @@ const legTE=e=>e.art==="kl"?1:+e.te||(e.art==="rcd"?4:e.art==="sk"&&+e.pole===3?
 const legOffen=e=>e.art==="sk"&&/^\s*\??\s*$/.test(e.bez||"");
 /* Liste: RCD als Kopf, seine Automaten eingerückt darunter; Überschriften trennen */
 function legListeView(L){ const E=legE(L), zu=L.fertig, B=[]; let g=null;
-  E.forEach((e,i)=>{ if(e.art==="gr"){ B.push({gr:e}); g=null; } else if(e.art==="rcd"){ g={rcd:e,i,kids:[]}; B.push(g); } else if(g){ g.kids.push([e,i]); g.last=i; } else B.push({z:[e,i]}); });
+  E.forEach((e,i)=>{ if(e.art==="gr"){ B.push({gr:e}); g=null; } else if(e.art==="rcd"){ g={rcd:e,i,kids:[]}; B.push(g); } else if(g&&e.art!=="ge"){ g.kids.push([e,i]); g.last=i; } else B.push({z:[e,i]}); });
   const zeile=([e],kl)=>`<button type="button" class="leg-r${kl||""}${e.art==="res"?" res":""}${legOffen(e)?" offen":""}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}><span class="kz">${esc(e.kz||"–")}</span><span class="bz">${e.art==="res"?"Reserve":legOffen(e)?"? – noch unbekannt":esc(e.bez)}</span>${legSchutz(e)?`<span class="sc">${esc(legSchutz(e))}</span>`:""}</button>`;
   return `<div class="leg-gl">${B.map(b=>b.gr?`<button type="button" class="leg-ue" data-act="legEdit" data-id="${esc(b.gr.id)}" ${zu?"disabled":""}>${esc(b.gr.bez||"Überschrift")}</button>`
     :b.z?`<div class="leg-grp solo">${zeile(b.z)}</div>`
@@ -142,6 +142,7 @@ const LEG_HAGER={"mbs-1p":[1,.53,.362,"middle",.045],"mbs-3p":[3,.183,.385,"midd
   "cds-2p":[2,.97,.30,"end",.034],"cda-2p":[2,.97,.30,"end",.034],"cds-4p":[4,.97,.345,"end",.045],"cda-4p":[4,.97,.345,"end",.045],
   "ads-1pn":[2,.25,.335,"start",.045],"ada-1pn":[2,.22,.335,"start",.045],"adm-4p":[4,.27,.43,"start",.045],"adx-4p":[4,.27,.33,"start",.045]};
 function legHagerBild(e,w){ const m=String(e.mat||"").toUpperCase().replace(/[\s.-]/g,""); let k="";
+  if(typeof MAT_GE!=="undefined"){ const g=MAT_GE.find(x=>x[0]===m); if(g) return g[2]===w?{f:"hager/"+m.toLowerCase()+".webp",c:[w,0,0,"middle",0]}:null; }
   if(/^M[BC]S/.test(m)) k=w>=3?"mbs-3p":"mbs-1p";
   else if(/^M[BC]N/.test(m)) k=["mbn-1p","mbn-2p","mbn-3p","mbn-4p"][Math.min(4,w)-1];
   else if(/^CDS/.test(m)) k=w>=4?"cds-4p":"cds-2p";
@@ -221,14 +222,14 @@ function legWerSel(L){ const N=legTeam(), cur=L.ersteller||""; if(cur&&!N.includ
    Zweistellige Automaten (F 1.0.01) nur, wenn die Legende schon so zählt (alte Pläne). */
 const legKzTeile=kz=>{ const m=String(kz||"").trim().match(/^(.*?)(\d+(?:\.\d+)*)$/); return m?{vor:m[1],z:m[2].split(".")}:null; };
 const legZweistellig=E=>E.some(e=>e.art!=="rcd"&&/\.0\d$/.test(String(e.kz||"").trim()));
-function legNaechsteKz(E,i){ for(let j=i;j>=0;j--){ const e=E[j]; if(!e||e.art==="gr"||!e.kz) continue;
+function legNaechsteKz(E,i){ for(let j=i;j>=0;j--){ const e=E[j]; if(!e||e.art==="gr"||e.art==="ge"||e.art==="kl"||!e.kz) continue;
     if(e.art==="rcd") return String(e.kz).trim()+(legZweistellig(E)?".01":".1");   /* direkt nach dem RCD: sein erster Automat */
     const t=legKzTeile(e.kz); if(!t) return ""; const l=t.z.length-1, w=t.z[l]; t.z[l]=String(+w+1).padStart(w.length,"0");
     return t.vor+t.z.join("."); }
   return ""; }
 /* Nächster RCD in derselben Reihe (F 1.0 → F 1.1) bzw. erster RCD der nächsten Reihe (→ F 2.0) */
 function legRcdKz(E,i,neueReihe){ let vor="F ", reihe=1, rcd=-1;
-  for(let j=Math.min(i,E.length-1);j>=0;j--){ const e=E[j]; if(!e||e.art==="gr") continue; const t=legKzTeile(e.kz); if(!t) continue;
+  for(let j=Math.min(i,E.length-1);j>=0;j--){ const e=E[j]; if(!e||e.art==="gr"||e.art==="ge"||e.art==="kl") continue; const t=legKzTeile(e.kz); if(!t) continue;
     vor=t.vor; reihe=+t.z[0]; if(e.art==="rcd"){ rcd=+(t.z[1]||0); break; } if(rcd<0&&t.z.length>=3){ rcd=+t.z[1]; break; } }
   if(neueReihe) return `${vor}${reihe+1}.0`;
   return `${vor}${reihe}.${rcd+1}`; }
