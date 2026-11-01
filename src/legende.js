@@ -141,15 +141,18 @@ const LEG_HAGER={"mbs-1p":[1,.53,.362,"middle",.045],"mbs-3p":[3,.183,.385,"midd
   "mbn-1p":[1,.55,.355,"middle",.045],"mbn-2p":[2,.275,.355,"middle",.045],"mbn-3p":[3,.183,.355,"middle",.045],"mbn-4p":[4,.2,.355,"middle",.045],
   "cds-2p":[2,.97,.30,"end",.034],"cda-2p":[2,.97,.30,"end",.034],"cds-4p":[4,.97,.345,"end",.045],"cda-4p":[4,.97,.345,"end",.045],
   "ads-1pn":[2,.25,.335,"start",.045],"ada-1pn":[2,.22,.335,"start",.045],"adm-4p":[4,.27,.43,"start",.045],"adx-4p":[4,.27,.33,"start",.045]};
+/* Oberkante der blauen Hager-Linie im Bild (Pixel von 2000) – alle Geräte werden so verschoben, dass diese Linie
+   in einer Flucht liegt wie im echten Verteiler (Mitte der Front auf der Hutschiene). Ohne Linie: Oberkante der Front. */
+const LEG_LINIE={"ada-1pn":532,"adm-4p":640,"ads-1pn":489,"adx-4p":511,"cda-2p":511,"cda-4p":546,"cds-2p":514,"cds-4p":503,"egn100":576,"egn103":539,"egn200":554,"ehn010":470,"emn001":539,"epn510":637,"eps410b":739,"erc218":659,"esc225":548,"esc425":615,"esc440":620,"evn004":602,"ezm100":560,"him402":545,"him404":533,"him406":596,"mbn-1p":452,"mbn-2p":540,"mbn-3p":525,"mbn-4p":550,"mbs-1p":446,"mbs-3p":556,"sbn116":515,"sbn240":575,"sbn440":580,"st303":606}, LEG_LINIE_SOLL=540;
 function legHagerBild(e,w){ const m=String(e.mat||"").toUpperCase().replace(/[\s.-]/g,""); let k="";
-  if(typeof MAT_GE!=="undefined"){ const g=MAT_GE.find(x=>x[0]===m); if(g) return g[2]===w?{f:"hager/"+m.toLowerCase()+".webp",c:[w,0,0,"middle",0]}:null; }
+  if(typeof MAT_GE!=="undefined"){ const g=MAT_GE.find(x=>x[0]===m); if(g) return g[2]===w?{f:"hager/"+m.toLowerCase()+".webp",c:[w,0,0,"middle",0],k:m.toLowerCase()}:null; }
   if(/^M[BC]S/.test(m)) k=w>=3?"mbs-3p":"mbs-1p";
   else if(/^M[BC]N/.test(m)) k=["mbn-1p","mbn-2p","mbn-3p","mbn-4p"][Math.min(4,w)-1];
   else if(/^CDS/.test(m)) k=w>=4?"cds-4p":"cds-2p";
   else if(/^CD/.test(m)) k=w>=4?"cda-4p":"cda-2p";
   else if(/^ADS/.test(m)) k="ads-1pn"; else if(/^ADM/.test(m)) k="adm-4p";
   else if(/^AD/.test(m)) k=w>=4?"adx-4p":"ada-1pn";
-  const c=LEG_HAGER[k]; return c&&c[0]===w?{f:"hager/"+k+".webp",c}:null; }   /* Höhe eines Geräts im Verhältnis zur Breite */
+  const c=LEG_HAGER[k]; return c&&c[0]===w?{f:"hager/"+k+".webp",c,k}:null; }   /* Höhe eines Geräts im Verhältnis zur Breite */
 /* Gerät zeichnen: x = linke Kante, w = Breite in TE, oben bei y0 (Mitte = Hutschiene) */
 function legGeraetBild(e,x,w,y0,P,bild){ const H=P*400/92, B=bild||"../bilder/vt/";
   if(e.art==="kl"){ const fb=e.farbe||(/pe/i.test(e.bez||"")?"pe":/^\s*a\b|abzweig/i.test(e.bez||"")?"a":"n"), h=P*717/140; /* farbe geht beim Speichern verloren – Bezeichnung entscheidet; unverzerrt, höher als ein Automat */
@@ -157,9 +160,9 @@ function legGeraetBild(e,x,w,y0,P,bild){ const H=P*400/92, B=bild||"../bilder/vt
   /* Aufdruck: Nennstrom bzw. RCD-Daten */
   const sc=e.art==="rcd"?String(e.schutz||"").replace(/\s*Typ.*$/i,"").replace(/\s*\/\s*/," "):legSchutz(e).replace(/\s*3-polig$/i,"").replace(/\s*FI\/LS.*$/i,"");
   const hb=legHagerBild(e,w);
-  if(hb){ const [,fx,fy,an,fs]=hb.c, W=w*P;
-    return `<image href="${B}${hb.f}" x="${x}" y="${y0}" width="${W}" height="${H.toFixed(1)}" preserveAspectRatio="none"/>`
-      +(sc?`<text x="${(x+W*fx).toFixed(1)}" y="${(y0+H*fy).toFixed(1)}" font-size="${(H*fs).toFixed(1)}" font-weight="700" text-anchor="${an}" dominant-baseline="middle" fill="#333">${esc(sc.slice(0,e.art==="rcd"?16:8))}</text>`:""); }
+  if(hb){ const [,fx,fy,an,fs]=hb.c, W=w*P, yb=y0+(LEG_LINIE[hb.k]!=null?(LEG_LINIE_SOLL-LEG_LINIE[hb.k])/2000*H:0);
+    return `<image href="${B}${hb.f}" x="${x}" y="${yb.toFixed(1)}" width="${W}" height="${H.toFixed(1)}" preserveAspectRatio="none"/>`
+      +(sc?`<text x="${(x+W*fx).toFixed(1)}" y="${(yb+H*fy).toFixed(1)}" font-size="${(H*fs).toFixed(1)}" font-weight="700" text-anchor="${an}" dominant-baseline="middle" fill="#333">${esc(sc.slice(0,e.art==="rcd"?16:8))}</text>`:""); }
   const [f,bt]=legBildFuer(e); let s="";
   if(f==="blind1.jpg"){ for(let k=0;k<w;k++) s+=`<image href="${B}${f}" x="${x+k*P}" y="${y0}" width="${P}" height="${H.toFixed(1)}" preserveAspectRatio="none"/>`; return s; }
   s+=`<image href="${B}${f}" x="${x}" y="${y0}" width="${w*P}" height="${H.toFixed(1)}" preserveAspectRatio="none"/>`;
