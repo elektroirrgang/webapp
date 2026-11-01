@@ -121,9 +121,10 @@ function zsKlick(zs,reihen,aktiv,akt){ const g=zsGeo(zs,false), F=zs.felder, FW=
   return `<div class="zs-ki" style="--n:${nb}">${zsSvg(zs,reihen,false,aktiv)}<div class="zs-ki-h">${h}</div></div>`; }
 
 /* ===== Unterverteiler (Hager volta) =====
-   Gehäuse gezeichnet nach Hager-Datenblatt: Aufputz VA..CN 305 mm breit, Unterputz VU..NC 348 mm breit (Rahmen),
-   12 TE je Reihe, Reihenabstand 125 mm. N-/PE-Klemmen und Hutschienen sind Ausschnitte aus dem Feldbild zs-vt.png
-   (zaehlerschrank24.de), die Geräte dieselben Bilder wie im Zählerschrank. */
+   Gezeichnet im Stil der Feldbilder von zaehlerschrank24.de: gleicher Maßstab (400 px = 250 mm), schwarze Konturen 2 px,
+   flache Flächen in Weiß/Hellgrau/Dunkelgrau. Maße nach Hager-Datenblatt: Aufputz VA..CN 305 mm breit,
+   Unterputz VU..NC 348 mm breit (Rahmen), 12 TE je Reihe, Reihenabstand 125 mm.
+   N-/PE-Klemmen und Hutschienen sind Ausschnitte aus zs-vt.png, die Geräte dieselben Bilder wie im Zählerschrank. */
 const UVZ_H={ap:[245,370,515,640,765],up:[356,505.5,630.5,755.5,880.5]};
 function uvMasse(L){ const n=Math.max(1,Math.min(9,+L.reihen||3)), up=L.montage!=="ap", te=+L.teReihe||12, ext=Math.max(0,te-12)*18;
   const tab=UVZ_H[up?"up":"ap"], H=n<=5?tab[n-1]:tab[4]+125*(n-5), W=(up?348:305)+ext, unten=up?178:119;
@@ -131,46 +132,60 @@ function uvMasse(L){ const n=Math.max(1,Math.min(9,+L.reihen||3)), up=L.montage!
   const modell=te===12&&n<=5?`${up?"VU":"VA"}${n*12}${up?"NC":"CN"}`:"";
   return {n,up,te,ext,H,W,schienen,modell}; }
 const uvModellText=L=>{ const M=uvMasse(L); return M.modell?`Hager volta ${M.modell}`:`${M.n}-reihig · ${M.te} TE je Reihe`; };
-function uvZeichnung(L){ const M=uvMasse(L), k1=v=>(+v).toFixed(1), ML=58, MT=40, MR=14, MB=44, vw=ML+M.W+MR, vh=MT+M.H+MB, x0=ML, y0=MT, W=M.W, H=M.H, cx=x0+W/2, B="../bilder/zs/", s=250/400;
-  const R=(x,y,w,h,f,rx,ex)=>`<rect x="${k1(x)}" y="${k1(y)}" width="${k1(w)}" height="${k1(h)}"${rx?` rx="${rx}"`:""} fill="${f}"${ex||""}/>`;
-  const T=(x,y,t,o={})=>`<text x="${k1(x)}" y="${k1(y)}" font-size="${o.s||12}" font-weight="${o.w||600}" fill="${o.f||"#262626"}" text-anchor="${o.a||"middle"}"${o.ex||""}>${t}</text>`;
-  /* Ausschnitt (Pixel im Feldbild) unverzerrt an x/y in mm */
-  const st=(x,y,sx,sy,sw,sh)=>`<svg x="${k1(x)}" y="${k1(y)}" width="${k1(sw*s)}" height="${k1(sh*s)}" viewBox="${sx} ${sy} ${sw} ${sh}"><image href="${B}zs-vt.png" width="400" height="1682"/></svg>`;
-  /* Hutschiene 250 mm, bei 18/24 TE in der Mitte verlängert (Stück mit Langlöchern wiederholt) */
-  const schiene=yc=>{ const y=yc-30.5*s, x=cx-125-M.ext/2; let o=st(x,y,0,168,262,61), px=262*s, rest=M.ext/s;
-    while(rest>0){ const t=Math.min(72,rest); o+=st(x+px,y,190,168,t,61); px+=t*s; rest-=t; } return o+st(x+px,y,262,168,138,61); };
+function uvZeichnung(L){ const M=uvMasse(L), q=1.6 /* px je mm */, k1=v=>(+v).toFixed(1), B="../bilder/zs/";
+  const W=M.W*q, H=M.H*q, ML=92, MT=64, MR=22, MB=70, vw=ML+W+MR, vh=MT+H+MB, x0=ML, y0=MT, cx=x0+W/2, K="#000", SW=2;
+  const R=(x,y,w,h,f,rx,ex)=>`<rect x="${k1(x)}" y="${k1(y)}" width="${k1(Math.max(0,w))}" height="${k1(Math.max(0,h))}"${rx?` rx="${rx}"`:""} fill="${f}"${ex==null?` stroke="${K}" stroke-width="${SW}"`:ex}/>`;
+  const C=(x,y,r,f,sw)=>`<circle cx="${k1(x)}" cy="${k1(y)}" r="${r}" fill="${f}" stroke="${K}" stroke-width="${sw||SW}"/>`;
+  const T=(x,y,t,o={})=>`<text x="${k1(x)}" y="${k1(y)}" font-size="${o.s||20}" font-weight="${o.w||600}" fill="${o.f||"#262626"}" text-anchor="${o.a||"middle"}"${o.ex||""}>${t}</text>`;
+  /* Ausschnitt aus zs-vt.png in Originalgröße */
+  const st=(x,y,sx,sy,sw,sh)=>`<svg x="${k1(x)}" y="${k1(y)}" width="${sw}" height="${sh}" viewBox="${sx} ${sy} ${sw} ${sh}"><image href="${B}zs-vt.png" width="400" height="1682"/></svg>`;
+  /* Schraube (Kreuzschlitz) und Befestigungsdom */
+  const schraube=(x,y,r)=>C(x,y,r,"#FFFFFF")+`<path d="M${k1(x-r*.55)} ${k1(y)}H${k1(x+r*.55)}M${k1(x)} ${k1(y-r*.55)}V${k1(y+r*.55)}" stroke="${K}" stroke-width="2"/>`;
+  const dom=(x,y)=>C(x,y,17,"#FFFFFF")+C(x,y,10,"#D9D9D9")+schraube(x,y,5.5);
   let g="";
   /* Gehäuse */
-  g+=R(x0+2,y0+5,W,H,"#000",M.up?6:10,` fill-opacity=".16" filter="url(#uvWeich)"`);
-  const iL=M.up?19:12, iT=M.up?19:10;
-  g+=R(x0,y0,W,H,"url(#uvAussen)",M.up?6:10);
-  if(M.up) g+=R(x0+14,y0+14,W-28,H-28,"#D3D4D2",4);
-  g+=R(x0+iL,y0+iT,W-2*iL,H-2*iT,"url(#uvInnen)",M.up?3:6);
-  /* seitliche Stege mit Lochreihe */
-  [x0+iL,x0+W-iL-10].forEach(x=>{ g+=R(x,y0+iT+30,10,H-2*iT-60,"#F1F2F0",2); for(let y=y0+iT+44;y<y0+H-iT-40;y+=21) g+=`<circle cx="${k1(x+5)}" cy="${k1(y)}" r="1.7" fill="#BFC1BF"/>`; });
+  const rand=M.up?28:14, ix=x0+rand, iy=y0+rand, iw=W-2*rand, ih=H-2*rand;
+  g+=R(x0+5,y0+8,W,H,"#000",M.up?8:16,` fill-opacity=".18" filter="url(#uvWeich)"`);
+  g+=R(x0,y0,W,H,"#FFFFFF",M.up?8:16);
+  if(M.up){ g+=R(x0+9,y0+9,W-18,H-18,"none",5,` stroke="#8A8C8C" stroke-width="2"`);
+    /* Markierungen auf dem Rahmen wie am echten Rahmen */
+    [[cx,y0+5],[cx,y0+H-5]].forEach(([x,y])=>{ g+=R(x-14,y-2.5,28,5,"#4B4B4B",2,` stroke="${K}" stroke-width="1"`); });
+    for(let y=y0+80;y<y0+H-60;y+=Math.max(120,(H-140)/5)) [x0+5,x0+W-5].forEach(x=>{ g+=R(x-2.5,y,5,26,"#4B4B4B",2,` stroke="${K}" stroke-width="1"`); }); }
+  else { [[cx,y0+4],[cx,y0+H-4]].forEach(([x,y])=>{ g+=R(x-14,y-2,28,4,"#8A8C8C",2,` stroke="none"`); }); }
+  g+=R(ix-2,iy-2,iw+4,ih+4,"#BFC2C2",M.up?4:10);
+  g+=R(ix+4,iy+4,iw-8,ih-8,"#F1F1F1",M.up?3:8)+R(ix+4,iy+ih-4-180,iw-8,180,"url(#uvSchatten)",0,` stroke="none"`);
+  /* seitliche Stege mit Lochreihe (wie die Profile im Feldbild) */
+  const sx0=ix+10, sx1=ix+iw-10-22, sTop=iy+70, sH=ih-140;
+  [sx0,sx1].forEach(x=>{ g+=R(x,sTop,22,sH,"#FFFFFF",0)+`<path d="M${k1(x+16)} ${k1(sTop+2)}V${k1(sTop+sH-2)}" stroke="#8A8C8C" stroke-width="3"/>`;
+    for(let y=sTop+22;y<sTop+sH-12;y+=32) g+=C(x+8,y,3.4,"#FFFFFF"); });
   /* Befestigungsdome in den Ecken */
-  [[x0+iL+20,y0+iT+18],[x0+W-iL-20,y0+iT+18],[x0+iL+20,y0+H-iT-18],[x0+W-iL-20,y0+H-iT-18]].forEach(([x,y])=>{ g+=`<circle cx="${k1(x)}" cy="${k1(y)}" r="9" fill="#F4F4F2"/><circle cx="${k1(x)}" cy="${k1(y)}" r="4" fill="#CDCFCD"/>`; });
-  /* Kabeleinführung unten (Rippen) */
-  const ky=y0+H-iT-(M.up?40:30); g+=R(x0+iL+36,ky,W-2*iL-72,M.up?22:16,"url(#uvRippe)",3);
-  /* N- und PE-Klemmen oben: N links, PE rechts */
-  const ty=y0+iT+(M.up?20:8); g+=st(cx-125-M.ext/2+4,ty,43,3,121,64)+st(cx+125+M.ext/2-4-144*s,ty,163,3,144,64);
-  /* Hutschienen */
-  M.schienen.forEach(y=>{ g+=schiene(y0+y); });
+  [[ix+44,iy+30],[ix+iw-44,iy+30],[ix+44,iy+ih-30],[ix+iw-44,iy+ih-30]].forEach(([x,y])=>{ g+=dom(x,y); });
+  /* Kabeleinführung unten (Ausbrüche), beim UP auch oben */
+  const einf=(y,h)=>{ const bw=iw-2*96, bx=cx-bw/2; let s=R(bx,y,bw,h,"#FFFFFF",4); const n=Math.floor((bw-12)/16); for(let k=0;k<n;k++) s+=R(bx+8+k*((bw-16)/n)+2,y+6,(bw-16)/n-6,h-12,"#D9D9D9",2,` stroke="${K}" stroke-width="1.5"`); return s; };
+  g+=einf(iy+ih-30-20,40); if(M.up) g+=einf(iy+12,26);
+  /* N- und PE-Klemmen oben auf einem Träger mit dunklen Haltern */
+  const tb=Math.min(400+M.ext*q,iw-96), tx=cx-tb/2, ty=iy+(M.up?52:62);
+  g+=R(tx,ty+16,tb,30,"#8A8C8C",3)+R(tx-14,ty+8,22,46,"#4B4B4B",3)+R(tx+tb-8,ty+8,22,46,"#4B4B4B",3)+C(tx-3,ty+31,5,"#3C3C3C")+C(tx+tb+3,ty+31,5,"#3C3C3C");
+  g+=st(tx+10,ty-3,43,3,121,64)+st(tx+tb-10-144,ty-3,163,3,144,64);
+  /* Hutschienen mit Haltern links/rechts; bei 18/24 TE in der Mitte verlängert */
+  const ext=M.ext*q;
+  const schiene=yc=>{ const y=yc-30.5, x=cx-200-ext/2; let o=st(x,y,0,168,262,61), px=262, rest=ext;
+    while(rest>0){ const t=Math.min(72,rest); o+=st(x+px,y,190,168,t,61); px+=t; rest-=t; } o+=st(x+px,y,262,168,138,61);
+    [x-16,x+400+ext-6].forEach(hx=>{ o+=R(hx,yc-40,22,80,"#4B4B4B",3)+C(hx+11,yc-22,5,"#FFFFFF",1.8)+C(hx+11,yc+22,5,"#FFFFFF",1.8); }); return o; };
+  M.schienen.forEach(y=>{ g+=schiene(y0+y*q); });
   /* Geräte aus der Legende auf die Schienen */
   let ueber=0;
-  if(typeof legReihen==="function"&&typeof legGeraetBild==="function"){ const RR=legReihen(L), P=18, GH=P*400/92;
-    RR.forEach((r,k)=>{ if(k>=M.n){ ueber++; return; } const yc=y0+M.schienen[k]; let tx=cx-M.te*P/2;
+  if(typeof legReihen==="function"&&typeof legGeraetBild==="function"){ const RR=legReihen(L), P=18*q, GH=P*400/92;
+    RR.forEach((r,k)=>{ if(k>=M.n){ ueber++; return; } const yc=y0+M.schienen[k]*q; let tx=cx-M.te*P/2;
       r.g.forEach(([e,i,w])=>{ g+=`<g class="leg-dev" data-act="legEdit" data-id="${esc(e.id)}"><title>${esc([e.kz,e.bez].filter(Boolean).join(" · "))}</title>${legGeraetBild(e,tx,w,yc-GH/2,P,"../bilder/vt/")}`
-        +(e.art==="kl"||!e.kz?"":T(tx+w*P/2,yc+GH/2+10,esc(String(e.kz).replace(/\s+/g,w>1?" ":"").slice(0,w>1?14:8)),{s:w>1?8.5:5.6,w:700,f:"#3A3D42"}))+`</g>`; tx+=w*P; }); }); }
+        +(e.art==="kl"||!e.kz?"":T(tx+w*P/2,yc+GH/2+16,esc(String(e.kz).replace(/\s+/g,w>1?" ":"").slice(0,w>1?14:8)),{s:w>1?13:8.6,w:700,f:"#222"}))+`</g>`; tx+=w*P; }); }); }
   /* Maße und Angaben */
-  const gr="#7A7A7A";
-  g+=`<path d="M${x0+2} ${y0-30}V${y0-8}" stroke="${gr}" stroke-width="1"/>`+T(x0+12,y0-14,`Breite ${String(W).replace(".",",")} mm →`,{s:12,w:400,f:gr,a:"start"})
-    +`<path d="M${x0-34} ${y0+2}H${x0-10}" stroke="${gr}" stroke-width="1"/>`+T(0,0,`Höhe ${String(H).replace(".",",")} mm`,{s:12,w:400,f:gr,a:"end",ex:` transform="translate(${x0-16} ${y0+12}) rotate(-90)"`});
-  g+=T(x0,y0+H+22,esc(uvModellText(L)+" · "+(M.up?"Unterputz":"Aufputz")),{s:12,w:700,f:"#9A9A9A",a:"start"})
-    +T(vw-MR,vh-6,"Klemmen, Schienen, Geräte: zaehlerschrank24.de",{s:9,w:400,f:"#9A9A9A",a:"end"});
-  return {svg:`<svg class="zs-svg zs-z uv-svg" viewBox="0 0 ${k1(vw)} ${k1(vh)}" style="max-width:${Math.round(vw*1.25)}px" font-family="'Open Sans',Manrope,system-ui,sans-serif" role="img" aria-label="Unterverteiler">`
-    +`<defs><filter id="uvWeich" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="4"/></filter>`
-    +`<linearGradient id="uvAussen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FCFCFB"/><stop offset="1" stop-color="#ECECEA"/></linearGradient>`
-    +`<linearGradient id="uvInnen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EEEFED"/><stop offset="1" stop-color="#E2E3E1"/></linearGradient>`
-    +`<pattern id="uvRippe" width="7" height="10" patternUnits="userSpaceOnUse"><rect width="7" height="10" fill="#F2F2F0"/><rect x="5" width="2" height="10" fill="#D6D7D5"/></pattern></defs>`
+  const gr="#7A7A7A", mm=v=>String(v).replace(".",",");
+  g+=`<path d="M${x0+2} ${y0-42}V${y0-12}" stroke="${gr}" stroke-width="1.6"/>`+T(x0+16,y0-20,`Breite ${mm(M.W)} mm →`,{s:19,w:400,f:gr,a:"start"})
+    +`<path d="M${x0-50} ${y0+2}H${x0-14}" stroke="${gr}" stroke-width="1.6"/>`+T(0,0,`Höhe ${mm(M.H)} mm`,{s:19,w:400,f:gr,a:"end",ex:` transform="translate(${x0-24} ${y0+18}) rotate(-90)"`});
+  g+=T(x0,y0+H+34,esc(uvModellText(L)+" · "+(M.up?"Unterputz":"Aufputz")),{s:19,w:700,f:"#9A9A9A",a:"start"})
+    +T(vw-MR,vh-10,"Klemmen, Schienen, Geräte: zaehlerschrank24.de",{s:14,w:400,f:"#9A9A9A",a:"end"});
+  return {svg:`<svg class="zs-svg zs-z uv-svg" viewBox="0 0 ${k1(vw)} ${k1(vh)}" style="max-width:${Math.round(vw*.8)}px" font-family="'Open Sans',Manrope,system-ui,sans-serif" role="img" aria-label="Unterverteiler">`
+    +`<defs><filter id="uvWeich" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="6"/></filter>`
+    +`<linearGradient id="uvSchatten" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D0D0D0" stop-opacity="0"/><stop offset="1" stop-color="#C4C4C4" stop-opacity=".95"/></linearGradient></defs>`
     +g+`</svg>`,ueber}; }
