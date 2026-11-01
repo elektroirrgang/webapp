@@ -143,7 +143,6 @@ function uvZeichnung(L){ const M=uvMasse(L), s=250/400 /* mm je Pixel im Feldbil
   const stueck=(y,q0,q1)=>{ const h=q1-q0, one=(x,sx,sw)=>`<svg x="${k1(x)}" y="${k1(y)}" width="${k1(sw*s)}" height="${k1(h*s)}" viewBox="${sx} ${q0} ${sw} ${h}" preserveAspectRatio="none"><image href="${B}zs-vt.png" width="400" height="1682"/></svg>`;
     if(!M.ext) return one(fx,0,400); let o=one(fx,0,262), px=262*s, rest=M.ext/s; while(rest>0){ const t=Math.min(72,rest); o+=one(fx+px,190,t); px+=t*s; rest-=t; } return o+one(fx+px,262,138); };
   let g="", y=fy; const schienen=[];
-  const wd=Math.min(25,(W-fw)/2,(H-fh)/2); g+=R(x0+wd,y0+wd,W-2*wd,H-2*wd,"#F1F1F1")+R(x0+wd,y0+H-wd-180,W-2*wd,180,"url(#zsSchatten)");
   g+=stueck(y,KOPF[0],KOPF[1]); schienen.push(y+198*s); y+=(KOPF[1]-KOPF[0])*s;
   for(let k=1;k<M.n;k++){ g+=stueck(y,REIHE[0],REIHE[1]); schienen.push(y+(397-REIHE[0])*s); y+=(REIHE[1]-REIHE[0])*s; }
   g+=stueck(y,FUSS[0],FUSS[1]);
@@ -152,10 +151,35 @@ function uvZeichnung(L){ const M=uvMasse(L), s=250/400 /* mm je Pixel im Feldbil
   if(typeof legReihen==="function"&&typeof legGeraetBild==="function"){ const RR=legReihen(L), P=18, GH=P*400/92;
     RR.forEach((r,k)=>{ if(k>=M.n){ ueber++; return; } const yc=schienen[k]; let tx=fx+(fw-M.te*P)/2;
       r.g.forEach(([e,i,w])=>{ g+=`<g class="leg-dev" data-act="legEdit" data-id="${esc(e.id)}"><title>${esc([e.kz,e.bez].filter(Boolean).join(" · "))}</title>${legGeraetBild(e,tx,w,yc-GH/2,P,"../bilder/vt/")}</g>`; tx+=w*P; }); }); }
-  /* Gehäuse wie beim Zählerschrank; Wandstärke ergibt sich aus Volta-Maß und Feld */
-  const geh=R(x0,y0,W,H,C.weiss,"#6A6A6A",2.5,2)+R(x0+9,y0+9,W-18,H-18,"none","#B0B0B0",1)
-    /* Unterputz: Putzrahmen 17 mm breiter als die Einbauöffnung (348 zu 314 mm) – als zweite Kante sichtbar */
-    +(M.up?R(x0+17,y0+17,W-34,H-34,"none","#8C8C8C",1.6):"");
+  /* Gehäuse – Strich wie beim Zählerschrank (Kontur #6A6A6A, Details hellgrau), Form je Montageart */
+  const D="#8C8C8C", wanne=(x,y,w,h,rx)=>R(x,y,w,h,"#F1F1F1",null,0,rx)+R(x,y+Math.max(0,h-180),w,Math.min(180,h),"url(#zsSchatten)",null,0,rx);
+  const schraube=(x,y,r)=>`<circle cx="${k1(x)}" cy="${k1(y)}" r="${r}" fill="#FFFFFF" stroke="${D}" stroke-width="1.2"/><path d="M${k1(x-r*.5)} ${k1(y)}H${k1(x+r*.5)}M${k1(x)} ${k1(y-r*.5)}V${k1(y+r*.5)}" stroke="${D}" stroke-width="1.2"/>`;
+  const bandOben=[y0,fy], bandUnten=[fy+fh,y0+H];
+  let geh="";
+  if(!M.up){ const t=5;
+    /* Aufputz: Kasten steht 96,5 mm von der Wand ab – Tiefe als Versatz sichtbar, runde Ecken */
+    geh+=R(x0+5,y0+7,W,H,"#C9C9C9","#6A6A6A",2.5,12)+R(x0,y0,W,H,C.weiss,"#6A6A6A",2.5,12)+R(x0+3,y0+3,W-6,H-6,"none","#C4C4C4",1,10);
+    geh+=R(x0+t,y0+t,W-2*t,H-2*t,"none","#9A9A9A",1.2,8)+wanne(x0+t+.6,y0+t+.6,W-2*t-1.2,H-2*t-1.2,7);
+    /* Befestigungslöcher (Schlüssellöcher) in der Rückwand, je Ecke neben dem Feld */
+    const sb=(t+(W-fw)/2)/2, loch=(x,y)=>R(x-2,y,4,10,"#FFFFFF",D,1.2,2)+`<circle cx="${k1(x)}" cy="${k1(y)}" r="4.5" fill="#FFFFFF" stroke="${D}" stroke-width="1.2"/>`;
+    [[x0+sb,fy+14],[x0+W-sb,fy+14],[x0+sb,fy+fh-34],[x0+W-sb,fy+fh-34]].forEach(([x,y])=>{ geh+=loch(x,y); });
+    /* Kabeleinführung: Ausbrüche in Ober- und Unterwand */
+    [y0+t/2,y0+H-t/2].forEach(yc=>{ [.27,.73].forEach(fxr=>{ for(let k=-1;k<=1;k++) geh+=R(x0+W*fxr+k*20-8,yc-1.8,16,3.6,"#E2E2E2",D,1,1.8); }); });
+    /* Türaufnahme links, Verschluss rechts (Aussparungen in der Wand) */
+    [[x0-1.2,y0+H*.2-9],[x0-1.2,y0+H*.8-9]].forEach(([x,y])=>{ geh+=R(x,y,3.2,18,"#B5B5B5",D,1,1.5); });
+    geh+=R(x0+W-2,y0+H/2-12,3.2,24,"#B5B5B5",D,1,1.5); }
+  else { const fr=17;
+    /* Unterputz: flacher Putzrahmen, 17 mm breiter als die Einbauöffnung (348 zu 314 mm), dahinter die Einbaudose */
+    geh+=R(x0,y0,W,H,C.weiss,"#6A6A6A",2.5,3)+R(x0+4,y0+4,W-8,H-8,"none","#C4C4C4",1,2);
+    geh+=R(x0+fr,y0+fr,W-2*fr,H-2*fr,"#D8D8D8",D,1.2,2)+wanne(x0+fr+3,y0+fr+3,W-2*fr-6,H-2*fr-6,1);
+    /* Rahmenschrauben in den Ecken der Dose */
+    [[x0+fr+14,y0+fr+14],[x0+W-fr-14,y0+fr+14],[x0+fr+14,y0+H-fr-14],[x0+W-fr-14,y0+H-fr-14]].forEach(([x,y])=>{ geh+=schraube(x,y,6); });
+    /* Kabeleinführung oben und unten in der Dose (Rippen) */
+    [[y0+fr+3,fy],[fy+fh,y0+H-fr-3]].forEach(([a,b])=>{ if(b-a<26) return; const yc=(a+b)/2, bw=W-2*fr-90, bx=x0+(W-bw)/2; geh+=R(bx,yc-7,bw,14,"#FFFFFF",D,1.1,2);
+      for(let x=bx+5;x<bx+bw-3;x+=6) geh+=L_(x,yc-4.5,x,yc+4.5,"#B0B0B0",1.2); });
+    /* Scharniere links, Verschluss rechts, Markierungen oben/unten auf dem Rahmen */
+    [y0+H*.18-11,y0+H*.82-11].forEach(y=>{ geh+=R(x0+fr/2-2,y,4,22,"#B5B5B5",D,1,2); });
+    geh+=R(x0+W-fr/2-2,y0+H/2-15,4,30,"#B5B5B5",D,1,2)+R(x0+W/2-12,y0+fr/2-1.5,24,3,"#B5B5B5",null,0,1.5)+R(x0+W/2-12,y0+H-fr/2-1.5,24,3,"#B5B5B5",null,0,1.5); }
   const masse=L_(x0+2,y0-38,x0+2,y0-10,C.grau,1.2)+T(x0+16,y0-18,`Breite ${String(M.W).replace(".",",")} mm  →`,{s:22,w:400,f:C.grau,a:"start"})
     +L_(x0-40,y0+2,x0-12,y0+2,C.grau,1.2)+T(0,0,`Höhe ${String(M.H).replace(".",",")} mm`,{s:22,w:400,f:C.grau,a:"end",ex:` transform="translate(${x0-20} ${y0+16}) rotate(-90)"`});
   const fuss=T(x0,vh-34,esc(uvModellText(L)+" · "+(M.up?"Unterputz":"Aufputz")),{s:18,w:600,f:"#9A9A9A",a:"start"})+T(vw-MR,vh-12,"Feldgrafiken: zaehlerschrank24.de",{s:14,w:400,f:"#9A9A9A",a:"end"});
