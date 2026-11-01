@@ -25,8 +25,8 @@ function vtL(gid,vId){ const g=vtGeb(gid), v=g&&g.verteiler.find(x=>x.id===vId);
     netz:v.netz||"",ersteller:v.ersteller||"",stand:v.stand||"",fertig:!!v.fertig,art:v.art,montage:v.montage,reihen:v.reihen,zs:v.zs,gerHerst:v.gerHerst,teReihe:v.teReihe,teMm:v.teMm,eintraege:vtEintraege(g,vId),updated:v.updated,createdBy:v.createdBy}; }
 /* Zurückschreiben in das Gebäude (vorhandene Felder der Prüfung wie Leitung oder Messwerte bleiben erhalten) */
 function vtSchreiben(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(!v) return;
-  Object.assign(v,{name:L.titel||v.name,netz:L.netz||"",ersteller:L.ersteller||"",stand:L.stand||"",fertig:!!L.fertig,teReihe:L.teReihe,teMm:L.teMm,updated:Date.now()}); if(L.zs) v.zs=L.zs;
-  ["teReihe","teMm"].forEach(k=>{ if(v[k]==null) delete v[k]; });
+  Object.assign(v,{name:L.titel||v.name,netz:L.netz||"",ersteller:L.ersteller||"",stand:L.stand||"",fertig:!!L.fertig,teReihe:L.teReihe,teMm:L.teMm,montage:L.montage,reihen:L.reihen,updated:Date.now()}); if(L.zs) v.zs=L.zs;
+  ["teReihe","teMm","montage","reihen"].forEach(k=>{ if(v[k]==null) delete v[k]; });
   const E=legE(L), ids=new Set(E.map(e=>e.id)), opt=(o,e)=>{ ["te","umbruch","sym","mat"].forEach(k=>{ if(e[k]) o[k]=e[k]; else delete o[k]; }); };
   g.vtTeile=(g.vtTeile||[]).filter(t=>t.vId!==L._v||ids.has(t.id));
   const wegSk=g.stromkreise.filter(s=>s.vId===L._v&&!ids.has(s.id)).map(s=>s.id);
@@ -43,9 +43,9 @@ function vtSchreiben(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===
   ecGebSpeichern(g); }
 /* Legende ohne Kunde → Verteiler im Gebäude des gewählten Orts */
 function vtAusLegende(L,ortId){ const g=ecGeb(ortId), vId=uid();
-  g.verteiler.push({id:vId,name:L.titel||"Verteiler",netz:L.netz||"",ersteller:L.ersteller||"",stand:L.stand||ecHeute(),fertig:!!L.fertig,...(L.teReihe?{teReihe:L.teReihe}:{}),...(L.teMm?{teMm:L.teMm}:{})});
+  g.verteiler.push({id:vId,name:L.titel||"Verteiler",netz:L.netz||"",ersteller:L.ersteller||"",stand:L.stand||ecHeute(),fertig:!!L.fertig,...(L.teReihe?{teReihe:L.teReihe}:{}),...(L.teMm?{teMm:L.teMm}:{}),...(L.art?{art:L.art}:{}),...(L.montage?{montage:L.montage}:{}),...(L.reihen?{reihen:L.reihen}:{}),...(L.zs?{zs:L.zs}:{})});
   ecGebSpeichern(g);
-  const V={_geb:g.id,_v:vId,titel:L.titel,netz:L.netz,ersteller:L.ersteller,stand:L.stand,fertig:L.fertig,teReihe:L.teReihe,teMm:L.teMm,eintraege:legE(L).map(e=>({...e}))};
+  const V={_geb:g.id,_v:vId,titel:L.titel,netz:L.netz,ersteller:L.ersteller,stand:L.stand,fertig:L.fertig,teReihe:L.teReihe,teMm:L.teMm,montage:L.montage,reihen:L.reihen,eintraege:legE(L).map(e=>({...e}))};
   vtSchreiben(V); L.deleted=true; L.movedTo=g.id+"/"+vId; saveRec("legenden",L); return {g:g.id,id:vId}; }
 
 /* ---- Verteiler eines Kunden / Standorts ---- */

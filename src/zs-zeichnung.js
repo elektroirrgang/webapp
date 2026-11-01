@@ -8,9 +8,9 @@ const ZSZ_F={lin:"#8C8C8C",fein:"#C4C4C4",feld:"#F2F2F2",weiss:"#FFFFFF",hell:"#
 const ZSZ_KURZ={haushalt:"HA",wp:"WP",wallbox:"EM",pv:"PV",allgemein:"ALG",gewerbe:"GEW",frei:"RES"};
 const ZSZ_SLS_BILD={abb:["sls-abb.png",198,346]};
 const zsBildUrl=u=>typeof bildLokal==="function"?bildLokal(u):u;
-/* Reihenplätze in den Verteilerfeldern (Mitte der Reihe in Pixeln des Feldbilds, gemessen zwischen den Abdeckstreifen).
-   1100: Verteilerfeld 6 Reihen (72 TE), APZ-Feld 4 Reihen (48 TE) · 1400: 8 bzw. 6 Reihen – wie im Konfigurator von zaehlerschrank24.de */
-const ZSZ_REIHEN={vt:[298,490,690,881,1246,1445],apz:[298,490,690,889],vtH:[304,500,703,924,1123,1304,1716,1927],apzH:[299,492,693,885,1258,1458]};
+/* Reihenplätze in den Verteilerfeldern = Mitte der Hutschienen im Feldbild (Pixel, gemessen). Die Geräte rasten auf der Schiene ein,
+   ihre Mitte liegt also auf der Schiene. 1100: Verteilerfeld 7 Reihen, APZ-Feld 5 · 1400: 9 bzw. 7 (wie zsReihenFeld) */
+const ZSZ_REIHEN={vt:[198,397,597,796,1153,1352,1552],apz:[198,397,597,796,996],vtH:[203,407,610,813,1022,1226,1623,1826,2029],apzH:[199,399,599,799,1158,1358,1558]};
 /* Bestückung, die in die Verteilerfelder gezeichnet wird – setzt zsKarte vor dem Zeichnen (Verteiler L) */
 let ZSZ_L=null;
 function zsReihenPlaetze(zs){ const hoch=zsHoeheMm(zs)===1400, P=[]; zs.felder.forEach(f=>{ if(f.typ!=="v") return; const apz=zs.apz&&zs.apz.feldId===f.id?zs.apz.lage:"";
@@ -88,7 +88,7 @@ function zsZeichnung(zs,reihen,aktiv,selFeld,opt){
   F.forEach((f,i)=>{ const x=g.fx[i]; let s=feldGrund(x);
     if(f.typ==="z") s+=zaehler(f,x);
     else if(f.typ==="v"){ const apz=zs.apz&&zs.apz.feldId===f.id?zs.apz.lage:""; const vtN=hoch?"zs-vt-high.png":"zs-vt.png";
-      s+=apz?apzFeld(x,apz):ganz(vtN,x); if(BE[f.id]) s+=BE[f.id]; s+=titel(x,fy+(apz==="oben"?(QH-APZ0)*sk:0)+(hoch?100:95),apz?"APZ":`VTF ${++nv}`); }
+      s+=apz?apzFeld(x,apz):ganz(vtN,x); if(BE[f.id]) s+=BE[f.id]; s+=titel(x,fy+(apz==="oben"?(QH-APZ0)*sk:0)+(hoch?83:79),apz?"APZ":`VTF ${++nv}`); }
     else if(f.typ==="m"){ nm++; const apz=zs.apz&&zs.apz.feldId===f.id?zs.apz.lage:"", mmN=hoch?"zs-mm-fw1-high.png":"zs-mm.png";
       s+=apz?apzFeld(x,apz,mmN):ganz(mmN,x); s+=titel(x,fy+(apz==="oben"?(QH-APZ0)*sk:0)+80*fh/1050,nMM>1?`MM ${nm}`:"MM"); }
     else s+=ganz("zs-tsg.png",x)+titel(x,fy+80,"TSG");
@@ -119,3 +119,58 @@ function zsKlick(zs,reihen,aktiv,akt){ const g=zsGeo(zs,false), F=zs.felder, FW=
         h+=`<button type="button" class="zp" ${akt.zp(k)} aria-label="SLS Zähler ${k+1}" style="${pct(x+(p?FW-101:0),Y(790+off),101,Y(965+off)-Y(790+off))}"></button>`; } }
     if(akt.apz&&zs.apz&&zs.apz.feldId===f.id){ const ob=zs.apz.lage==="oben"; h+=`<button type="button" class="apz" ${akt.apz()} aria-label="APZ" style="${pct(x,ob?fy:fy+A0*sk,FW,(QH-A0)*sk)}"></button>`; } });
   return `<div class="zs-ki" style="--n:${nb}">${zsSvg(zs,reihen,false,aktiv)}<div class="zs-ki-h">${h}</div></div>`; }
+
+/* ===== Unterverteiler (Hager volta) =====
+   Gehäuse gezeichnet nach Hager-Datenblatt: Aufputz VA..CN 305 mm breit, Unterputz VU..NC 348 mm breit (Rahmen),
+   12 TE je Reihe, Reihenabstand 125 mm. N-/PE-Klemmen und Hutschienen sind Ausschnitte aus dem Feldbild zs-vt.png
+   (zaehlerschrank24.de), die Geräte dieselben Bilder wie im Zählerschrank. */
+const UVZ_H={ap:[245,370,515,640,765],up:[356,505.5,630.5,755.5,880.5]};
+function uvMasse(L){ const n=Math.max(1,Math.min(9,+L.reihen||3)), up=L.montage!=="ap", te=+L.teReihe||12, ext=Math.max(0,te-12)*18;
+  const tab=UVZ_H[up?"up":"ap"], H=n<=5?tab[n-1]:tab[4]+125*(n-5), W=(up?348:305)+ext, unten=up?178:119;
+  const schienen=Array.from({length:n},(_,k)=>H-unten-125*(n-1-k));
+  const modell=te===12&&n<=5?`${up?"VU":"VA"}${n*12}${up?"NC":"CN"}`:"";
+  return {n,up,te,ext,H,W,schienen,modell}; }
+const uvModellText=L=>{ const M=uvMasse(L); return M.modell?`Hager volta ${M.modell}`:`${M.n}-reihig · ${M.te} TE je Reihe`; };
+function uvZeichnung(L){ const M=uvMasse(L), k1=v=>(+v).toFixed(1), ML=58, MT=40, MR=14, MB=44, vw=ML+M.W+MR, vh=MT+M.H+MB, x0=ML, y0=MT, W=M.W, H=M.H, cx=x0+W/2, B="../bilder/zs/", s=250/400;
+  const R=(x,y,w,h,f,rx,ex)=>`<rect x="${k1(x)}" y="${k1(y)}" width="${k1(w)}" height="${k1(h)}"${rx?` rx="${rx}"`:""} fill="${f}"${ex||""}/>`;
+  const T=(x,y,t,o={})=>`<text x="${k1(x)}" y="${k1(y)}" font-size="${o.s||12}" font-weight="${o.w||600}" fill="${o.f||"#262626"}" text-anchor="${o.a||"middle"}"${o.ex||""}>${t}</text>`;
+  /* Ausschnitt (Pixel im Feldbild) unverzerrt an x/y in mm */
+  const st=(x,y,sx,sy,sw,sh)=>`<svg x="${k1(x)}" y="${k1(y)}" width="${k1(sw*s)}" height="${k1(sh*s)}" viewBox="${sx} ${sy} ${sw} ${sh}"><image href="${B}zs-vt.png" width="400" height="1682"/></svg>`;
+  /* Hutschiene 250 mm, bei 18/24 TE in der Mitte verlängert (Stück mit Langlöchern wiederholt) */
+  const schiene=yc=>{ const y=yc-30.5*s, x=cx-125-M.ext/2; let o=st(x,y,0,168,262,61), px=262*s, rest=M.ext/s;
+    while(rest>0){ const t=Math.min(72,rest); o+=st(x+px,y,190,168,t,61); px+=t*s; rest-=t; } return o+st(x+px,y,262,168,138,61); };
+  let g="";
+  /* Gehäuse */
+  g+=R(x0+2,y0+5,W,H,"#000",M.up?6:10,` fill-opacity=".16" filter="url(#uvWeich)"`);
+  const iL=M.up?19:12, iT=M.up?19:10;
+  g+=R(x0,y0,W,H,"url(#uvAussen)",M.up?6:10);
+  if(M.up) g+=R(x0+14,y0+14,W-28,H-28,"#D3D4D2",4);
+  g+=R(x0+iL,y0+iT,W-2*iL,H-2*iT,"url(#uvInnen)",M.up?3:6);
+  /* seitliche Stege mit Lochreihe */
+  [x0+iL,x0+W-iL-10].forEach(x=>{ g+=R(x,y0+iT+30,10,H-2*iT-60,"#F1F2F0",2); for(let y=y0+iT+44;y<y0+H-iT-40;y+=21) g+=`<circle cx="${k1(x+5)}" cy="${k1(y)}" r="1.7" fill="#BFC1BF"/>`; });
+  /* Befestigungsdome in den Ecken */
+  [[x0+iL+20,y0+iT+18],[x0+W-iL-20,y0+iT+18],[x0+iL+20,y0+H-iT-18],[x0+W-iL-20,y0+H-iT-18]].forEach(([x,y])=>{ g+=`<circle cx="${k1(x)}" cy="${k1(y)}" r="9" fill="#F4F4F2"/><circle cx="${k1(x)}" cy="${k1(y)}" r="4" fill="#CDCFCD"/>`; });
+  /* Kabeleinführung unten (Rippen) */
+  const ky=y0+H-iT-(M.up?40:30); g+=R(x0+iL+36,ky,W-2*iL-72,M.up?22:16,"url(#uvRippe)",3);
+  /* N- und PE-Klemmen oben: N links, PE rechts */
+  const ty=y0+iT+(M.up?20:8); g+=st(cx-125-M.ext/2+4,ty,43,3,121,64)+st(cx+125+M.ext/2-4-144*s,ty,163,3,144,64);
+  /* Hutschienen */
+  M.schienen.forEach(y=>{ g+=schiene(y0+y); });
+  /* Geräte aus der Legende auf die Schienen */
+  let ueber=0;
+  if(typeof legReihen==="function"&&typeof legGeraetBild==="function"){ const RR=legReihen(L), P=18, GH=P*400/92;
+    RR.forEach((r,k)=>{ if(k>=M.n){ ueber++; return; } const yc=y0+M.schienen[k]; let tx=cx-M.te*P/2;
+      r.g.forEach(([e,i,w])=>{ g+=`<g class="leg-dev" data-act="legEdit" data-id="${esc(e.id)}"><title>${esc([e.kz,e.bez].filter(Boolean).join(" · "))}</title>${legGeraetBild(e,tx,w,yc-GH/2,P,"../bilder/vt/")}`
+        +(e.art==="kl"||!e.kz?"":T(tx+w*P/2,yc+GH/2+10,esc(String(e.kz).replace(/\s+/g,w>1?" ":"").slice(0,w>1?14:8)),{s:w>1?8.5:5.6,w:700,f:"#3A3D42"}))+`</g>`; tx+=w*P; }); }); }
+  /* Maße und Angaben */
+  const gr="#7A7A7A";
+  g+=`<path d="M${x0+2} ${y0-30}V${y0-8}" stroke="${gr}" stroke-width="1"/>`+T(x0+12,y0-14,`Breite ${String(W).replace(".",",")} mm →`,{s:12,w:400,f:gr,a:"start"})
+    +`<path d="M${x0-34} ${y0+2}H${x0-10}" stroke="${gr}" stroke-width="1"/>`+T(0,0,`Höhe ${String(H).replace(".",",")} mm`,{s:12,w:400,f:gr,a:"end",ex:` transform="translate(${x0-16} ${y0+12}) rotate(-90)"`});
+  g+=T(x0,y0+H+22,esc(uvModellText(L)+" · "+(M.up?"Unterputz":"Aufputz")),{s:12,w:700,f:"#9A9A9A",a:"start"})
+    +T(vw-MR,vh-6,"Klemmen, Schienen, Geräte: zaehlerschrank24.de",{s:9,w:400,f:"#9A9A9A",a:"end"});
+  return {svg:`<svg class="zs-svg zs-z uv-svg" viewBox="0 0 ${k1(vw)} ${k1(vh)}" style="max-width:${Math.round(vw*1.25)}px" font-family="'Open Sans',Manrope,system-ui,sans-serif" role="img" aria-label="Unterverteiler">`
+    +`<defs><filter id="uvWeich" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="4"/></filter>`
+    +`<linearGradient id="uvAussen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FCFCFB"/><stop offset="1" stop-color="#ECECEA"/></linearGradient>`
+    +`<linearGradient id="uvInnen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EEEFED"/><stop offset="1" stop-color="#E2E3E1"/></linearGradient>`
+    +`<pattern id="uvRippe" width="7" height="10" patternUnits="userSpaceOnUse"><rect width="7" height="10" fill="#F2F2F0"/><rect x="5" width="2" height="10" fill="#D6D7D5"/></pattern></defs>`
+    +g+`</svg>`,ueber}; }
