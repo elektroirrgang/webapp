@@ -60,6 +60,8 @@ const MAT_KAT_EXTRA=(()=>{ const L=[], ls=(h,nr,ch,i,p)=>L.push({id:matSlug("kat
   [6,10,13,16,20,25,32].forEach(i=>ls("Hager",`MBN1${String(i).padStart(2,"0")}`,"B",i,1)); ls("Hager","MCN116","C",16,1); [16,20,25,32].forEach(i=>ls("Hager",`MBN3${i}`,"B",i,3)); ls("Hager","MCN316","C",16,3);
   [6,10,13,20,25].forEach(i=>ls("Schneider Electric",`A9F031${String(i).padStart(2,"0")}`,"B",i,1)); [20,25].forEach(i=>ls("Schneider Electric",`A9F033${i}`,"B",i,3));
   [6,10,13,16,20,25,32].forEach(i=>ls("Schneider Electric",`R9F231${String(i).padStart(2,"0")}`,"B",i,1)); ls("Schneider Electric","R9F24116","C",16,1); [16,20,32].forEach(i=>ls("Schneider Electric",`R9F233${i}`,"B",i,3)); ls("Schneider Electric","R9F24316","C",16,3);
+  /* Hager RCD mit Schraubklemmen (Gegenstück zum QuickConnect CDS440D) */
+  L.push({id:matSlug("kat-CDA440D"),name:"FI Hager 40/0,03 4-polig Schraube",kategorie:"schutz",einheit:"Stück",hersteller:"Hager",herstellerNr:"CDA440D",sonepar:"",weitere:[],notiz:"Nicht in der Firmenliste – Artikelnummer prüfen",gruppe:"",firma:false,tech:{art:"rcd",in:40,idn:30,typ:"A",pole:4,te:4}});
   return L; })();
 /* Serie eines Automaten aus der Herstellernummer */
 const MAT_SERIEN=[["hqc","Hager QuickConnect",/^M[BC]S/],["hsch","Hager Schraube",/^M[BC]N/],["ic60","Schneider iC60",/^A9F0[34]/],["resi","Schneider Resi9",/^R9F2[34]/]];

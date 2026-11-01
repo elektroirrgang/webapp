@@ -119,10 +119,12 @@ function awReiheSvg(teile){ const T=[]; teile.forEach(([a,n])=>{ if(a==="rcd") T
   return `<svg viewBox="0 0 48 30" style="width:90%;height:auto" aria-hidden="true"><rect x="0" y="13" width="48" height="4" rx="1" fill="#C3C7CC"/>${T.map(([a,w])=>{ const X=x, b=w*u-.6; x+=w*u;
     const f=a==="rcd"?"#E9ECF2":a==="n"?"#2F8FE0":a==="pe"?"#7CC242":"#F4F5F7";
     return `<rect x="${X.toFixed(2)}" y="${a==="n"||a==="pe"?3:6}" width="${b.toFixed(2)}" height="${a==="n"||a==="pe"?24:18}" rx=".8" fill="${f}" stroke="#AEB3B9" stroke-width=".3"/>${a==="rcd"||a==="ls"?`<rect x="${(X+b/2-.9).toFixed(2)}" y="11" width="1.8" height="5" rx=".4" fill="#3A3F45"/>`:""}${a==="rcd"?`<rect x="${(X+1).toFixed(2)}" y="19" width="${(b-2).toFixed(2)}" height="1.6" fill="#2F6FD1"/>`:""}`; }).join("")}</svg>`; }
-function awSerieStd(L){ if(AW&&AW.serie) return AW.serie; return L&&/schneider/i.test(L.gerHerst||"")?"ic60":"hqc"; }
+function awSerieStd(L){ if(AW&&AW.serie) return AW.serie; if(META.lsSerie) return META.lsSerie; return L&&/schneider/i.test(L.gerHerst||"")?"ic60":"hqc"; }
 function awReiheGeraete(L){ const se=awSerieStd(L), G=awGeraete(), schn=se==="ic60"||se==="resi";
   const ls=G.find(m=>{ const t=matTech(m); return t.art==="ls"&&t.char==="B"&&+t.in===16&&+t.pole===1&&(matSerie(m)||[])[0]===se; })||G.find(m=>{ const t=matTech(m); return t.art==="ls"&&t.char==="B"&&+t.in===16&&+t.pole===1; });
-  const rcd=G.find(m=>{ const t=matTech(m); return t.art==="rcd"&&+t.in===40&&(schn?m.hersteller==="Schneider Electric":m.hersteller==="Hager"); })||G.find(m=>matTech(m).art==="rcd");
+  /* RCD passend zur Serie: Hager Schraube → CDA, sonst QuickConnect (CDS) bzw. Schneider */
+  const rcd=(se==="hsch"&&G.find(m=>matTech(m).art==="rcd"&&+matTech(m).in===40&&/^CDA/.test(matHnr(m.herstellerNr))))
+    ||G.find(m=>{ const t=matTech(m); return t.art==="rcd"&&+t.in===40&&(schn?m.hersteller==="Schneider Electric":m.hersteller==="Hager")&&!(se!=="hsch"&&/^CDA/.test(matHnr(m.herstellerNr))); })||G.find(m=>matTech(m).art==="rcd");
   return {ls,rcd}; }
 function awReihe(k){ const L=legAkt(), V=AW_REIHEN.find(x=>x[0]===k); if(!L||!V) return; const E=legE(L), {ls,rcd}=awReiheGeraete(L); let erst="", letzt="";
   V[3].forEach(([a,n])=>{ if(a==="rcd"&&rcd){ const t=matTech(rcd), kz=awKz(L,"rcd"); E.push({id:uid(),art:"rcd",kz:kz.kz,bez:"Fehlerstromschutzschalter",schutz:awSchutz(t),pole:1,te:t.te,mat:matHnr(rcd.herstellerNr),...(kz.umbruch?{umbruch:true}:{})}); erst=erst||kz.kz; letzt=kz.kz; }
@@ -130,7 +132,7 @@ function awReihe(k){ const L=legAkt(), V=AW_REIHEN.find(x=>x[0]===k); if(!L||!V)
     if(a==="kl") E.push({id:uid(),art:"kl",farbe:n,kz:"",bez:n==="pe"?"PE 14-S":"N 14-S",schutz:"",pole:1,te:1}); });
   legSpeichern(L); render(); AW.zuletzt=`Reihe eingesetzt: ${erst}${letzt&&letzt!==erst?" bis "+letzt:""}`; AW.tab="reihe"; awKatalog(); }
 /* Serie der Automaten: Hager QuickConnect / Schraube, Schneider iC60 / Resi9 – wird je Gerät gemerkt */
-function awSerieChips(){ if(AW.tab!=="ls"||AW.such.trim()) return ""; if(AW.serie==null) AW.serie=(META.lsSerie||"");
+function awSerieChips(){ if((AW.tab!=="ls"&&AW.tab!=="reihe")||AW.such.trim()) return ""; if(AW.serie==null) AW.serie=(META.lsSerie||"");
   return `<div class="aw-serie" role="group">${[["","Alle"],...MAT_SERIEN.map(x=>[x[0],x[1]])].map(([k,t])=>`<button type="button" data-act="awSerie" data-v="${k}" aria-pressed="${AW.serie===k}">${t}</button>`).join("")}</div>`; }
 function awGrid(){ const q=AW.such.trim().toLowerCase(), z=awNutzung(), L=legAkt(), E=L?legE(L):[];
   const herst=(()=>{ for(let i=E.length-1;i>=0;i--){ const m=E[i].mat&&awGeraete().find(x=>matHnr(x.herstellerNr)===E[i].mat); if(m) return m.hersteller; } return ""; })();
