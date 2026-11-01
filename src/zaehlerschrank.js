@@ -303,9 +303,13 @@ function zsZpNeu(){ const L=legAkt(); if(!L||!L.zs) return; const zs=zsKopie(L.z
   zsAbgleich(zs); const k=zs.zp.findIndex(z=>z.feldId===fid&&(z.pos||0)===(zs.felder.find(f=>f.id===fid).n-1));
   if(k>=0){ zs.zp[k].zweck="haushalt"; zs.zp[k].sls=zs.zp[k].sls||"E35"; }
   L.zs=zs; legSpeichern(L); render(); toast(`Zählerplatz ${k+1} angelegt`); zsBearbeiten("zp",k); }
-function zsKarte(L,ohneMaterial){ const zs=L.zs, zu=L.fertig;
+function zsKarte(L,ohneMaterial){ ZSZ_L=L; try{ return zsKarteInnen(L,ohneMaterial); } finally { ZSZ_L=null; } }
+/* Passt die Bestückung in die Verteilerfelder? */
+function zsBestPlatz(L){ const zs=L.zs; if(!zs||typeof legReihen!=="function") return ""; const n=legReihen(L).length, p=zsReihenPlaetze(zs).length;
+  return n>p?`Die Bestückung braucht ${n} Reihen, die Verteilerfelder haben ${p} – ${n-p} Reihe${n-p>1?"n":""} passt nicht mehr hinein.`:""; }
+function zsKarteInnen(L,ohneMaterial){ const zs=L.zs, zu=L.fertig;
   if(!zs||!zs.felder||!zs.felder.length) return `<section class="card zs-karte"><h3>Zählerschrank</h3><p class="meta">Zählerplätze, Zählerart, SLS, Zählernummern und APZ – Aufbau per Vorlage.</p>${zu?"":`<button type="button" class="btn-tonal" data-act="zsEinrichten">Zählerschrank einrichten</button>`}</section>`;
-  const H=zsHinweise(zs);
+  const H=zsHinweise(zs), bp=zsBestPlatz(L); if(bp) H.unshift(bp);
   return `<section class="card zs-karte"><div class="card-kopf"><h3>Zählerschrank</h3>${zu?"":`<button type="button" class="btn-tonal" data-act="zsAufbau">Aufbau ändern</button>`}</div>
     <div class="zs-bild">${zu?zsSvg(zs,L.reihen):zsKlick(zs,L.reihen,null,{feld:()=>'data-act="zsAufbau"',zp:k=>`data-act="zsZpAuf" data-i="${k}"`,apz:()=>'data-act="zsApzAuf"'})}</div>
     ${H.length?`<div class="zs-hw">${H.map(h=>`<p>${icon("warn")}<span>${esc(h)}</span></p>`).join("")}</div>`:""}
