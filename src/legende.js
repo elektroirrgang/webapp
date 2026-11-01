@@ -134,16 +134,35 @@ function legBildFuer(e){ const t=legTE(e);
   if(e.art==="res") return ["blind1.jpg",1];
   if(e.art==="sk"){ if(+e.pole===3) return t>=4?["fils3.jpg",4]:["ls3.jpg",3]; return t>=2?["fils1.jpg",2]:["ls1.jpg",1]; }
   return ["blind1.jpg",1]; }
-const LEG_H=()=>LEG_P*400/92;   /* Höhe eines Geräts im Verhältnis zur Breite */
+const LEG_H=()=>LEG_P*400/92;
+/* Hager-Geräte (eigene Bilder, 184 × 800 px je TE, ohne Nennstrom-Aufdruck) nach Artikelnummer:
+   [Datei, TE im Bild, Aufdruck x-Anteil, y-Anteil, Anker, Schriftgröße als Anteil der Höhe] */
+const LEG_HAGER={"mbs-1p":[1,.53,.362,"middle",.045],"mbs-3p":[3,.183,.385,"middle",.045],
+  "mbn-1p":[1,.55,.355,"middle",.045],"mbn-2p":[2,.275,.355,"middle",.045],"mbn-3p":[3,.183,.355,"middle",.045],"mbn-4p":[4,.2,.355,"middle",.045],
+  "cds-2p":[2,.97,.30,"end",.034],"cda-2p":[2,.97,.30,"end",.034],"cds-4p":[4,.97,.345,"end",.045],"cda-4p":[4,.97,.345,"end",.045],
+  "ads-1pn":[2,.25,.335,"start",.045],"ada-1pn":[2,.22,.335,"start",.045],"adm-4p":[4,.27,.43,"start",.045],"adx-4p":[4,.27,.33,"start",.045]};
+function legHagerBild(e,w){ const m=String(e.mat||"").toUpperCase().replace(/[\s.-]/g,""); let k="";
+  if(/^M[BC]S/.test(m)) k=w>=3?"mbs-3p":"mbs-1p";
+  else if(/^M[BC]N/.test(m)) k=["mbn-1p","mbn-2p","mbn-3p","mbn-4p"][Math.min(4,w)-1];
+  else if(/^CDS/.test(m)) k=w>=4?"cds-4p":"cds-2p";
+  else if(/^CD/.test(m)) k=w>=4?"cda-4p":"cda-2p";
+  else if(/^ADS/.test(m)) k="ads-1pn"; else if(/^ADM/.test(m)) k="adm-4p";
+  else if(/^AD/.test(m)) k=w>=4?"adx-4p":"ada-1pn";
+  const c=LEG_HAGER[k]; return c&&c[0]===w?{f:"hager/"+k+".webp",c}:null; }   /* Höhe eines Geräts im Verhältnis zur Breite */
 /* Gerät zeichnen: x = linke Kante, w = Breite in TE, oben bei y0 (Mitte = Hutschiene) */
 function legGeraetBild(e,x,w,y0,P,bild){ const H=P*400/92, B=bild||"../bilder/vt/";
   if(e.art==="kl"){ const fb=e.farbe||(/pe/i.test(e.bez||"")?"pe":/^\s*a\b|abzweig/i.test(e.bez||"")?"a":"n"), h=P*717/140; /* farbe geht beim Speichern verloren – Bezeichnung entscheidet; unverzerrt, höher als ein Automat */
     return `<image href="${B}pollmann-${fb==="pe"?"pe":fb==="a"?"a":"n"}14s.png" x="${x}" y="${(y0+H/2-h/2).toFixed(1)}" width="${w*P}" height="${h.toFixed(1)}"/>`; }
+  /* Aufdruck: Nennstrom bzw. RCD-Daten */
+  const sc=e.art==="rcd"?String(e.schutz||"").replace(/\s*Typ.*$/i,"").replace(/\s*\/\s*/," "):legSchutz(e).replace(/\s*3-polig$/i,"").replace(/\s*FI\/LS.*$/i,"");
+  const hb=legHagerBild(e,w);
+  if(hb){ const [,fx,fy,an,fs]=hb.c, W=w*P;
+    return `<image href="${B}${hb.f}" x="${x}" y="${y0}" width="${W}" height="${H.toFixed(1)}" preserveAspectRatio="none"/>`
+      +(sc?`<text x="${(x+W*fx).toFixed(1)}" y="${(y0+H*fy).toFixed(1)}" font-size="${(H*fs).toFixed(1)}" font-weight="700" text-anchor="${an}" dominant-baseline="middle" fill="#333">${esc(sc.slice(0,e.art==="rcd"?16:8))}</text>`:""); }
   const [f,bt]=legBildFuer(e); let s="";
   if(f==="blind1.jpg"){ for(let k=0;k<w;k++) s+=`<image href="${B}${f}" x="${x+k*P}" y="${y0}" width="${P}" height="${H.toFixed(1)}" preserveAspectRatio="none"/>`; return s; }
   s+=`<image href="${B}${f}" x="${x}" y="${y0}" width="${w*P}" height="${H.toFixed(1)}" preserveAspectRatio="none"/>`;
-  /* Aufdruck im weißen Feld: Nennstrom bzw. RCD-Daten */
-  const sc=e.art==="rcd"?String(e.schutz||"").replace(/\s*Typ.*$/i,"").replace(/\s*\/\s*/," "):legSchutz(e).replace(/\s*3-polig$/i,"").replace(/\s*FI\/LS.*$/i,"");
+  /* Aufdruck im weißen Feld */
   if(sc) s+=`<text x="${(x+w*P/2).toFixed(1)}" y="${(y0+H*.72).toFixed(1)}" font-size="${(P*(e.art==="rcd"?.3:w>1?.36:.32)).toFixed(1)}" font-weight="800" text-anchor="middle" fill="#2A2D31">${esc(sc.slice(0,e.art==="rcd"?16:8))}</text>`;
   return s; }
 function legGeraet(e,x,w){ return legGeraetBild(e,x,w,0,LEG_P); }
