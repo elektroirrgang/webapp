@@ -40,6 +40,15 @@ const MAT_INFO={
   A9Z21440:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2763_0.jpg",tech:{art:"rcd",in:40,idn:30,typ:"A",pole:4,te:4}},
   A9Z21463:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2764_0.jpg",tech:{art:"rcd",in:63,idn:30,typ:"A",pole:4,te:4}},
   A9D56616:{bild:"https://www.elektrikshop.de/images/product_images/original_images/2770_0.jpg",tech:{art:"rcbo",char:"B",in:16,idn:30,typ:"A",pole:"1+N",te:2}}};
+/* Hager-Sondergeräte für die Hutschiene – [Artikelnummer, Bezeichnung, TE, Kennbuchstabe]. Bilder: bilder/vt/hager/<nr>.webp (184 × 800 px je TE).
+   Bezeichnungen aus den Ordnernamen von Max – Daten (Nennstrom, Kontakte) noch prüfen. */
+const MAT_GE=[["EPS410B","Stromstoßschalter QuickConnect",1,"K"],["EPN510","Stromstoßschalter",1,"K"],["ERC218","Installationsrelais",1,"K"],
+  ["SBN116","Ausschalter 1-polig 16 A",1,"Q"],["SBN240","Ausschalter 2-polig 40 A",2,"Q"],["SBN440","Ausschalter 4-polig 40 A",4,"Q"],
+  ["HIM402","Lastumschalter mit Drehgriff",8,"Q"],["HIM404","Lastumschalter mit Drehgriff",8,"Q"],["HIM406","Lastumschalter mit Drehgriff",8,"Q"],
+  ["ESC225","Installationsschütz 25 A",1,"Q"],["ESC425","Installationsschütz 25 A 4-polig",2,"Q"],["ESC440","Installationsschütz 40 A 4-polig",3,"Q"],
+  ["EMN001","Treppenlichtzeitschalter",1,"K"],["EZM100","Zeitrelais",1,"K"],["EVN004","Universaldimmer",2,"K"],["ST303","Klingeltransformator",2,"T"],
+  ["EHN010","Zeitschaltuhr analog",1,"K"],["EGN100","Zeitschaltuhr digital",1,"K"],["EGN103","Zeitschaltuhr digital",2,"K"],["EGN200","Zeitschaltuhr digital 2 Kanäle",2,"K"]];
+MAT_GE.forEach(([nr,name,te,kb])=>{ MAT_INFO[nr]=Object.assign(MAT_INFO[nr]||{},{bild:`../bilder/vt/hager/${nr.toLowerCase()}.webp`,tech:{art:"ge",name,te,kb}}); });
 const matInfo=m=>m?MAT_INFO[matHnr(m.herstellerNr)]||null:null;
 const matBild=m=>m&&(m.bild||(matInfo(m)||{}).bild)||"";
 const matTech=m=>m&&(m.tech||(matInfo(m)||{}).tech)||null;
@@ -60,6 +69,8 @@ const MAT_KAT_EXTRA=(()=>{ const L=[], ls=(h,nr,ch,i,p)=>L.push({id:matSlug("kat
   [6,10,13,16,20,25,32].forEach(i=>ls("Hager",`MBN1${String(i).padStart(2,"0")}`,"B",i,1)); ls("Hager","MCN116","C",16,1); [16,20,25,32].forEach(i=>ls("Hager",`MBN3${i}`,"B",i,3)); ls("Hager","MCN316","C",16,3);
   [6,10,13,20,25].forEach(i=>ls("Schneider Electric",`A9F031${String(i).padStart(2,"0")}`,"B",i,1)); [20,25].forEach(i=>ls("Schneider Electric",`A9F033${i}`,"B",i,3));
   [6,10,13,16,20,25,32].forEach(i=>ls("Schneider Electric",`R9F231${String(i).padStart(2,"0")}`,"B",i,1)); ls("Schneider Electric","R9F24116","C",16,1); [16,20,32].forEach(i=>ls("Schneider Electric",`R9F233${i}`,"B",i,3)); ls("Schneider Electric","R9F24316","C",16,3);
+  /* Hager-Sondergeräte (fehlen sie in der Firmenliste, stehen sie hier) */
+  MAT_GE.forEach(([nr,name,te])=>L.push({id:matSlug("kat-"+nr),name:`${name} Hager`,kategorie:"verteiler",einheit:"Stück",hersteller:"Hager",herstellerNr:nr,sonepar:"",weitere:[],notiz:"Nicht in der Firmenliste – Bezeichnung und Artikelnummer prüfen",gruppe:"",firma:false}));
   /* Hager RCD mit Schraubklemmen (Gegenstück zum QuickConnect CDS440D) */
   L.push({id:matSlug("kat-CDA440D"),name:"FI Hager 40/0,03 4-polig Schraube",kategorie:"schutz",einheit:"Stück",hersteller:"Hager",herstellerNr:"CDA440D",sonepar:"",weitere:[],notiz:"Nicht in der Firmenliste – Artikelnummer prüfen",gruppe:"",firma:false,tech:{art:"rcd",in:40,idn:30,typ:"A",pole:4,te:4}});
   return L; })();
