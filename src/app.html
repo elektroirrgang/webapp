@@ -1924,7 +1924,7 @@ function render(){ profilAnwenden();
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`+dests.map(([k,t,i])=>`<button class="nav-item${!E&&k==="mehr"?" nav-end":""}" ${E?`data-go="${k}"`:`data-act="nav" data-v="${k}"`} ${k===active?'aria-current="page"':""}${E&&k==="abschluss"&&cur&&umfangS(cur).some(x=>!fertigS(x))?' aria-disabled="true"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join("");
   let title="", sub="", fab=null, body="";
-  if(login){ body=loginView(); }
+  if(login){ body=loginSeite("EVSE",loginView()); }
   else if(nav.v==="start"){ body=startView(); fab=["fabMenu","","add"]; }
   else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=["newKunde","Kunde","add"]; }
   else if(nav.v==="pruefungen"){ title="Prüfungen"; body=pruefungenView(); fab=["newAny","Neue Prüfung","add"]; }

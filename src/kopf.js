@@ -176,3 +176,17 @@ function updNeu(){ if(updWartet) return; updWartet=true; updVersuch(); }
 document.addEventListener("visibilitychange",()=>{ if(updWartet) updVersuch(); });
 addEventListener("load",()=>{ try{ if(sessionStorage.getItem("irrgang_upd")){ sessionStorage.removeItem("irrgang_upd"); const v=typeof APP_VERSION!=="undefined"?String(APP_VERSION).split(" ")[0]:""; setTimeout(()=>toast(`Auf Version ${v} aktualisiert`),900); } }catch(e){} });
 window.__updTest=updNeu; /* nur für automatische Tests */
+
+/* ===== Anmeldeseite – gemeinsam für alle Apps =====
+   PC: links die Firmenseite (Logo, alle Apps, Adresse), rechts die Anmeldung. Handy/iPad: nur die Anmeldung wie bisher.
+   Die Apps geben ihren bisherigen loginView() hinein: body=loginSeite("EVSE",loginView()). */
+const LOGIN_APPS=[["Übersicht","Aufträge, Kunden und Kundenordner","<!--ICON_START-->"],["EVSE","Prüfung von Wallboxen und Ladesäulen","<!--ICON_EVSE-->"],
+  ["Baustelle","Tagesstand, offene Punkte und Material","<!--ICON_BAU-->"],["Gebäudetechnik","Installation, Verteiler, Geräte und Netzwerk","<!--ICON_ECHECK-->"]];
+function loginSeite(app,inhalt){
+  const ld=(document.querySelector(".logo.l-dunkel")||{}).src||"", F=typeof FIRMA!=="undefined"?FIRMA:null, V=typeof APP_VERSION!=="undefined"?String(APP_VERSION).split(" ")[0]:"";
+  const apps=LOGIN_APPS.map(([n,t,ic])=>`<div class="lm-app${n===app?" hier":""}"><img src="${ic}" alt=""><span><b>${n}</b><small>${t}</small></span>${n===app?`<em>Diese App</em>`:""}</div>`).join("");
+  const rechts=inhalt.replace("<h2>",`<img class="login-ic" src="<!--ICON-->" alt=""><h2>`);
+  return `<div class="login-seite"><aside class="login-marke" aria-hidden="true"><img class="lm-logo" src="${ld}" alt="">
+    <div class="lm-mitte"><h1>Willkommen</h1><p class="lm-unter">Ein Mitarbeiterkonto für alle Apps von ${F?F.name:"Elektro Irrgang"}.</p><div class="lm-apps">${apps}</div></div>
+    ${F?`<p class="lm-fuss">${F.name} · ${F.strasse} · ${F.ort}</p>`:""}</aside>
+    <div class="login-rechts">${rechts}${/login-ver/.test(inhalt)?"":`<p class="login-ver lv-pc">Version ${V}</p>`}</div></div>`; }
