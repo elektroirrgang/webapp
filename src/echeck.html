@@ -2123,7 +2123,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
 ).join(""); }
       return TOPDEST.map(([k,t,i])=>`<button class="nav-item${k==="mehr"?" nav-end":""}" data-act="nav" data-v="${k}" ${k===active?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join(""); })();
   let title="", sub="", fab=null, body="";
-  if(login) body=loginView();
+  if(login) body=loginSeite("Gebäudetechnik",loginView());
   else if(nav.v==="anlagen"){ title="Installation"; body=ecListeView("anlage"); fab=typeof ecInstVt==="function"&&ecInstVt()?["legNeu","Verteiler","add"]:["ecNeuA","Prüfung","add"]; }
   else if(nav.v==="geraete"){ title="Geräte"; body=ecListeView("geraete"); fab=["ecNeuG","Prüfung","add"]; }
   else if(nav.v==="netzwerk"){ title="Netzwerk"; body=ecListeView("netz"); fab=["ecNeuN","Prüfung","add"]; }
