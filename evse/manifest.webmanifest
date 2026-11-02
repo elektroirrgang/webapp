@@ -1,6 +1,6 @@
 {
   "id": "/evse/",
-  "name": "EVSE · Elektro Irrgang",
+  "name": "EVSE",
   "short_name": "EVSE",
   "description": "Prüfprotokolle für Wallboxen und Ladesäulen",
   "lang": "de",
