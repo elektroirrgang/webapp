@@ -247,20 +247,21 @@ function legSkDlg(id,nach){ const L=legAkt(); if(!L) return; const E=legE(L), i=
   legDlg={id:e?e.id:null,pos,art:v.art,pole:String(v.pole||1),auto:e?null:v.kz,te:e&&e.te?String(e.te):"",umbruch:!!(e&&e.umbruch),sym:e&&e.sym||""};
   const rcdN=legRcdKz(E,pos-1,false), rcdR=legRcdKz(E,pos-1,true);
   const vorschl=[...new Set(live("legenden").flatMap(x=>legE(x).filter(y=>y.art==="sk"&&y.bez).map(y=>y.bez)))];
-  dialog(e?"Zeile bearbeiten":"Neue Zeile",`<div class="chips ec-wahl leg-art">${LEG_ART.map(([k,t])=>`<button type="button" class="chip" data-act="legArt" data-v="${k}" aria-pressed="${k===v.art}">${t}</button>`).join("")}</div>
-    <div class="fg1" style="margin-top:14px">
-      <div class="leg-nur" data-nicht="gr">${tf("legKz","Kennzeichnung",v.kz||"",{form:true,ph:"z. B. F 1.0.1"})}</div>
+  /* Aufgeräumt (03.11.2026): Auswahlfelder statt Chip-Wänden – Art, Raum, Verbraucher, Breite und Symbol als Picker, Absicherung mit Vorschlagsliste, Selteneres unter „Mehr“ */
+  const wahl=(k,l,cur,opts,kl)=>`<div class="tf fl${kl?" "+kl:""}"><select id="legW_${k}" data-legw="${k}">${opts.map(([o,t])=>`<option value="${esc(o)}"${String(o)===String(cur)?" selected":""}>${esc(t)}</option>`).join("")}</select><label for="legW_${k}">${l}</label><span class="arr">${icon("drop")}</span></div>`;
+  const mehrOffen=!!(legDlg.te||legDlg.umbruch||legDlg.sym);
+  dialog(e?"Zeile bearbeiten":"Neue Zeile",`<div class="fg1 leg-dlg">
+      ${wahl("art","Art",v.art,LEG_ART)}
+      <div class="row2">${`<div class="leg-nur" data-nicht="gr">${tf("legKz","Kennzeichnung",v.kz||"",{form:true,ph:"z. B. 1 oder F 1.0.1"})}</div>`}
+        <div class="leg-nur" data-nicht="gr">${tf("legSchutz","Absicherung",v.schutz||"",{form:true,ph:v.art==="rcd"?"z. B. 40 A / 30 mA Typ A":"z. B. B16",list:v.art==="rcd"?"legRcdListe":"legLsListe"})}</div></div>
       <div class="chips ec-wahl leg-nur" data-nur="rcd"><button type="button" class="chip" data-act="legSetz" data-ziel="f_legKz" data-v="${esc(rcdN)}">Nächster RCD: ${esc(rcdN)}</button><button type="button" class="chip" data-act="legSetz" data-ziel="f_legKz" data-v="${esc(rcdR)}">Neue Reihe: ${esc(rcdR)}</button></div>
       <div class="leg-nur" data-nicht="res">${tf("legBez",v.art==="gr"?"Überschrift":"Bezeichnung",v.bez||"",{form:true,ph:v.art==="gr"?"z. B. Erdgeschoss":v.art==="rcd"?"Fehlerstromschutzschalter":"z. B. Küche Steckdosen",list:"legBezListe"})}</div>
-    </div>${datalist("legBezListe",vorschl)}
-    <div class="leg-nur" data-nur="sk"><div class="lbl" style="margin-top:12px">Raum</div><div class="chips ec-wahl leg-vor">${LEG_RAUM.map(x=>`<button type="button" class="chip" data-act="legWort" data-v="${esc(x)}">${esc(x)}</button>`).join("")}</div>
-      <div class="lbl" style="margin-top:12px">Verbraucher</div><div class="chips ec-wahl leg-vor">${LEG_WAS.map(x=>`<button type="button" class="chip" data-act="legWort" data-v="${esc(x)}">${esc(x)}</button>`).join("")}</div></div>
-    <div class="leg-nur" data-nicht="gr"><div class="fg1" style="margin-top:16px">${tf("legSchutz","Absicherung",v.schutz||"",{form:true,ph:v.art==="rcd"?"z. B. 40 A / 30 mA Typ A":"z. B. B16"})}</div>
-      <div class="chips ec-wahl leg-ls leg-nur" data-nicht="rcd">${LEG_LS.map(x=>`<button type="button" class="chip" data-act="legSetz" data-ziel="f_legSchutz" data-v="${x}">${x}</button>`).join("")}</div>
-      <div class="chips ec-wahl leg-nur" data-nur="rcd">${LEG_RCD.map(x=>`<button type="button" class="chip" data-act="legSetz" data-ziel="f_legSchutz" data-v="${esc(x)}">${esc(x)}</button>`).join("")}</div></div>
-    <div class="leg-nur" data-nur="sk"><div class="lbl" style="margin-top:12px">Pole</div><div class="chips ec-wahl">${[["1","1-polig"],["3","3-polig"]].map(([k,t])=>`<button type="button" class="chip" data-act="legPole" data-v="${k}" aria-pressed="${k===legDlg.pole}">${t}</button>`).join("")}</div></div>
-    <div class="leg-nur" data-nicht="gr"><div class="lbl" style="margin-top:12px">Im Verteiler</div><div class="chips ec-wahl">${[["","Breite automatisch"],["1","1 TE"],["2","2 TE"],["3","3 TE"],["4","4 TE"]].map(([k,t])=>`<button type="button" class="chip" data-act="legTe" data-v="${k}" aria-pressed="${k===legDlg.te}">${t}</button>`).join("")}<button type="button" class="chip" data-act="legNr" aria-pressed="${legDlg.umbruch}">Neue Reihe ab hier</button></div>
-      <div class="lbl" style="margin-top:12px">Symbol auf der Beschriftung</div><div class="chips ec-wahl leg-symw">${[["","Automatisch"],...LEG_SYM_LISTE,["keins","Kein Symbol"]].map(([k,t])=>`<button type="button" class="chip" data-act="legSym" data-v="${k}" aria-pressed="${k===legDlg.sym}" title="${esc(t)}">${LEG_SYM[k]?legSymSvg(k,18):""}${esc(t)}</button>`).join("")}</div></div>`,
+      <div class="row2 leg-nur" data-nur="sk">${wahl("raum","Raum ergänzen","",[["","–"],...LEG_RAUM.map(x=>[x,x])])}${wahl("was","Verbraucher ergänzen","",[["","–"],...LEG_WAS.map(x=>[x,x])])}</div>
+      <div class="leg-nur" data-nur="sk">${wahl("pole","Pole",legDlg.pole,[["1","1-polig"],["3","3-polig"]])}</div>
+      <details class="leg-mehr leg-nur" data-nicht="gr"${mehrOffen?" open":""}><summary>Mehr: Breite, Reihe, Symbol</summary>
+        <div class="fg1"><div class="row2">${wahl("te","Breite",legDlg.te,[["","automatisch"],["1","1 TE"],["2","2 TE"],["3","3 TE"],["4","4 TE"]])}${wahl("sym","Symbol",legDlg.sym,[["","automatisch"],...LEG_SYM_LISTE,["keins","kein Symbol"]])}</div>
+        <button type="button" class="leg-schalt" data-act="legNr" aria-pressed="${legDlg.umbruch}"><span>Neue Reihe ab hier</span><span class="schalter${legDlg.umbruch?" an":""}"><i></i></span></button></div></details>
+    </div>${datalist("legBezListe",vorschl)}${datalist("legLsListe",LEG_LS)}${datalist("legRcdListe",LEG_RCD)}`,
     `${e?`<button class="btn-text danger" data-act="legSkDel">Löschen</button><button class="ab-ic" data-act="legOrd" data-d="-1" ${i?"":"disabled"} aria-label="Nach oben" title="Nach oben">${icon("chev")}</button><button class="ab-ic ab" data-act="legOrd" data-d="1" ${i<E.length-1?"":"disabled"} aria-label="Nach unten" title="Nach unten">${icon("chev")}</button>`:""}<span style="flex:1"></span>
       <button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="legSkOk" data-weiter="1">${e?"Darunter neu":"Nächster"}</button><button class="btn-text" data-act="legSkOk">Speichern</button>`,{breit:true});
   legArtZeigen(); }
@@ -268,7 +269,7 @@ function legArtZeigen(){ const a=legDlg&&legDlg.art; if(!a) return;
   document.querySelectorAll("#dlg .leg-nur").forEach(x=>x.hidden=(x.dataset.nur&&x.dataset.nur!==a)||(x.dataset.nicht&&x.dataset.nicht===a));
   const lb=document.querySelector('#dlg label[for="f_legBez"]'); if(lb) lb.textContent=a==="gr"?"Überschrift":"Bezeichnung";
   const bz=document.getElementById("f_legBez"); if(bz) bz.placeholder=a==="gr"?"z. B. Erdgeschoss":a==="rcd"?"Fehlerstromschutzschalter":"z. B. Küche Steckdosen";
-  const sc=document.getElementById("f_legSchutz"); if(sc) sc.placeholder=a==="rcd"?"z. B. 40 A / 30 mA Typ A":"z. B. B16"; }
+  const sc=document.getElementById("f_legSchutz"); if(sc){ sc.placeholder=a==="rcd"?"z. B. 40 A / 30 mA Typ A":"z. B. B16"; sc.dataset.vl=a==="rcd"?"legRcdListe":"legLsListe"; } }
 function legSkOk(weiter){ const L=legAkt(); if(!L||!legDlg) return; const F=formVals(), E=legE(L), a=legDlg.art;
   if(a==="gr"&&!F.legBez){ toast("Bitte eine Überschrift eintragen"); return; }
   if(a!=="gr"&&!F.legKz){ toast("Bitte eine Kennzeichnung eintragen"); return; }
@@ -328,7 +329,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
       return; }
   case "legPole": legDlg.pole=b.dataset.v; b.parentElement.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b)); return;
   case "legTe": legDlg.te=b.dataset.v; b.parentElement.querySelectorAll('[data-act="legTe"]').forEach(c=>c.setAttribute("aria-pressed",c===b)); return;
-  case "legNr": legDlg.umbruch=!legDlg.umbruch; b.setAttribute("aria-pressed",legDlg.umbruch); return;
+  case "legNr": { legDlg.umbruch=!legDlg.umbruch; b.setAttribute("aria-pressed",legDlg.umbruch); const sw=b.querySelector(".schalter"); if(sw) sw.classList.toggle("an",legDlg.umbruch); return; }
   case "legSym": legDlg.sym=b.dataset.v; b.parentElement.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b)); return;
   case "legAnsicht": META.legAnsicht=b.dataset.v; metaSave(); render(); return;
   case "legNach": legSkDlg(null,+b.dataset.i); return;
@@ -352,3 +353,10 @@ document.addEventListener("change",e=>{ const el=e.target; if(el.id==="f_legZuK"
   if(!el.dataset||!el.dataset.leg) return; const L=legAkt(); if(!L) return;
   const k=el.dataset.leg, v=el.value.trim(); if((L[k]||"")===v) return; L[k]=v; if(k==="stand") legSave(L); else legSpeichern(L);
   if(k==="titel"){ const t=document.querySelector("#topTitle span"); if(t) t.textContent=v||"Verteiler"; } });
+
+/* Picker im Fenster „Zeile bearbeiten“ */
+document.addEventListener("change",ev=>{ const s=ev.target; if(!s||!s.dataset||!s.dataset.legw||!legDlg) return; const k=s.dataset.legw, v=s.value;
+  if(k==="art"){ legDlg.art=v; legArtZeigen(); const f=document.getElementById("f_legKz"), Lx=legAkt();
+    if(f&&Lx&&legDlg.auto!=null&&f.value.trim()===legDlg.auto){ const E=legE(Lx); legDlg.auto=v==="rcd"?legRcdKz(E,legDlg.pos-1,false):legNaechsteKz(E,legDlg.pos-1); f.value=legDlg.auto; f.parentElement.classList.toggle("fl",!!f.value); } return; }
+  if(k==="raum"||k==="was"){ if(!v) return; const f=document.getElementById("f_legBez"); if(f){ const t=f.value.trim(); f.value=!t?v:t.split(/\s+/).includes(v)?t:t+" "+v; f.parentElement.classList.add("fl"); } s.value=""; return; }
+  if(k==="pole") legDlg.pole=v; else if(k==="te") legDlg.te=v; else if(k==="sym") legDlg.sym=v; });
