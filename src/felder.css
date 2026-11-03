@@ -1207,3 +1207,13 @@ a.dz{color:inherit;text-decoration:none;border-radius:12px}
 .vti-ge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--sc-highest);margin-right:4px}
 .leg-imp{display:flex;justify-content:flex-start;margin-top:12px}
 .aw-liste-k .aw-gb{color:var(--brand)}
+/* ===== Zeile bearbeiten (legende.js legSkDlg) – Picker statt Chip-Wände ===== */
+.leg-dlg{gap:12px}
+.leg-dlg .chips{margin:-4px 0 0}
+.leg-mehr{border-radius:16px;background:var(--sc-low);padding:0 14px}
+.leg-mehr>summary{list-style:none;cursor:pointer;padding:14px 0;font-size:14px;font-weight:600;color:var(--on-sv);display:flex;align-items:center;justify-content:space-between}
+.leg-mehr>summary::-webkit-details-marker{display:none}
+.leg-mehr>summary::after{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:-4px 4px 0 0;transition:transform .15s}
+.leg-mehr[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
+.leg-mehr>.fg1{padding:0 0 14px}
+.leg-schalt{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;border:0;background:transparent;color:var(--on-surface);font:inherit;font-size:15px;padding:8px 2px;cursor:pointer;text-align:left}
