@@ -53,7 +53,7 @@ function vuView(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v)
   const belegt=E.filter(e=>e.art!=="gr").reduce((s,e)=>s+legTE(e),0), frei=kap&&!(v.art==="hv"||L.zs)?Math.max(0,kap-belegt):null;
   const kachel=(n,t,tab)=>`<button type="button" class="vu-k" data-act="legTab" data-v="${tab}"><b>${n}</b><span>${t}</span></button>`;
   const zahlen=`<section class="card"><h3>Im Verteiler</h3><div class="vu-kacheln">
-      ${kachel(sk.length-res,"Stromkreise","sk")}${kachel(rcd,"Fehlerschutz (RCD)","sk")}${kachel(res,"Reserve","sk")}${frei!=null?kachel(frei,"TE frei","uv"):kachel(L.fertig?"fertig":"offen","Legende","ab")}
+      ${kachel(sk.length-res,"Stromkreise","sk")}${kachel(rcd,"Fehlerschutz (RCD)","sk")}${kachel(res,"Reserve","sk")}${frei!=null?kachel(frei,"TE frei","uv"):kachel(belegt,"TE belegt","sk")}
     </div>${L.stand||v.updated?`<p class="m3-hinweis">${esc([L.stand&&`Stand ${ecDatum(L.stand)}`,L.ersteller&&`aufgenommen von ${L.ersteller}`,v.updated&&`zuletzt geändert ${ecDatum(vuIso(v.updated))}`].filter(Boolean).join(" · "))}</p>`:""}</section>`;
 
   /* Gebäude: Einspeisung hoch und runter – ein Tipp wechselt den Verteiler, der Reiter Übersicht bleibt */

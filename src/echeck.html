@@ -1383,10 +1383,13 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 
 .qr-zeile,.qr-neu{display:flex;align-items:center;gap:16px}
 .qr-svg{flex:none;border-radius:8px;background:#fff;padding:0;display:block}
-.qr-txt{display:flex;flex-direction:column;gap:4px;min-width:0}
-.qr-nr{font-size:22px;font-weight:800;letter-spacing:.06em;font-variant-numeric:tabular-nums}
-.qr-knoepfe{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}
-.qr-knoepfe .btn-tonal{display:inline-flex;align-items:center;gap:8px}.qr-knoepfe .ic{width:18px;height:18px}
+.qr-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.qr-txt small{font-size:13px;font-weight:700;color:var(--on-sv)}.qr-txt .meta{margin:4px 0 0;font-size:14px;line-height:20px}
+.qr-nr{font-size:26px;line-height:32px;font-weight:800;letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.qr-zeile .qr-svg{border-radius:14px}
+.qr-knoepfe{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}.qr-knoepfe.zwei{grid-template-columns:repeat(2,minmax(0,1fr))}
+.qr-k{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px 10px;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.qr-k .ic{width:22px;height:22px;color:var(--primary)}.qr-k:active{background:var(--sc-highest)}.qr-k.weg .ic{color:var(--err)}
 .qr-neu{margin-bottom:14px}.qr-neu .meta{margin:4px 0 0}
 .qr-cam{position:relative;aspect-ratio:4/3;background:#000;border-radius:16px;overflow:hidden}
 .qr-cam video{width:100%;height:100%;object-fit:cover;display:block}
@@ -1405,6 +1408,7 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .leg-fuss{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:4px 0 8px}
 .leg-fuss .btn-tonal,.leg-fuss .btn-filled{display:inline-flex;align-items:center;gap:8px}.leg-fuss .ic{width:18px;height:18px}
 .leg-fuss .leg-del{height:48px;padding:0 22px 0 18px;background:#C62828;color:#fff;border-radius:24px;font-size:15px}
+.leg-fuss .leg-pdf{height:48px;padding:0 22px 0 18px;background:var(--pc);color:var(--on-pc);border-radius:24px;font-size:15px;font-weight:700}
 .leg-vor{gap:6px}.leg-vor .chip{min-height:32px;padding:4px 12px;font-size:13px}
 .leg-ohne{margin:20px 0 0}
 /* Stromkreise: Liste (Gruppen je RCD) und Verteiler (Reihen) */
