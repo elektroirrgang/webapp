@@ -314,8 +314,8 @@ function zsBestPlatz(L){ const zs=L.zs; if(!zs||typeof legReihen!=="function") r
 function zsKarteInnen(L,ohneMaterial){ const zs=L.zs, zu=L.fertig;
   if(!zs||!zs.felder||!zs.felder.length) return `<section class="card zs-karte"><h3>Zählerschrank</h3><p class="meta">Zählerplätze, Zählerart, SLS, Zählernummern und APZ – Aufbau per Vorlage.</p>${zu?"":`<button type="button" class="btn-tonal" data-act="zsEinrichten">Zählerschrank einrichten</button>`}</section>`;
   const H=zsHinweise(zs), bp=zsBestPlatz(L); if(bp) H.unshift(bp);
-  return `<section class="card zs-karte"><div class="card-kopf"><h3>Zählerschrank</h3>${zu?"":`<button type="button" class="btn-tonal" data-act="zsAufbau">Aufbau ändern</button>`}</div>
-    <div class="zs-bild">${zu?zsSvg(zs,L.reihen):zsKlick(zs,L.reihen,null,{feld:()=>'data-act="zsAufbau"',zp:k=>`data-act="zsZpAuf" data-i="${k}"`,apz:()=>'data-act="zsApzAuf"'})}</div>
+  return `<section class="card zs-karte"><div class="card-kopf"><h3>Zählerschrank</h3><span class="zs-kopf-r">${zu?"":`<button type="button" class="btn-tonal" data-act="zsAufbau">Aufbau ändern</button>`}${legBildKnopf()}</span></div>
+    <div class="zs-bild"${legBildAn()?"":" hidden"}>${zu?zsSvg(zs,L.reihen):zsKlick(zs,L.reihen,null,{feld:()=>'data-act="zsAufbau"',zp:k=>`data-act="zsZpAuf" data-i="${k}"`,apz:()=>'data-act="zsApzAuf"'})}</div>
     ${H.length?`<div class="zs-hw">${H.map(h=>`<p>${icon("warn")}<span>${esc(h)}</span></p>`).join("")}</div>`:""}
     <div class="zs-zps">${zs.zp.map((z,i)=>`<button type="button" class="zs-zp" data-act="zsZpAuf" data-i="${i}" ${zu?"disabled":""}><span class="zs-zn${zsBelegt(z)&&z.zweck?"":" leer"}">Z${i+1}</span><span class="zs-zt"><b>${esc(zsBelegt(z)?(z.bez||zsTxt(ZS_ZWECK,z.zweck)||"Noch offen"):"Frei / Reserve")}</b><small>${esc(zsZpText(z))}</small></span>${icon("chev")}</button>`).join("")}
       <button type="button" class="zs-zp" data-act="zsApzAuf" ${zu?"disabled":""}><span class="zs-zn zs-apzn">APZ</span><span class="zs-zt"><b>${zs.apz?"Abschlusspunkt Zählerplatz":"Kein APZ"}</b><small>${esc(zs.apz?zsApzText(zs):"Bestandsanlage")}</small></span>${icon("chev")}</button></div>
