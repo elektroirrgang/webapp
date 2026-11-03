@@ -313,20 +313,35 @@ function zsKarte(L,ohneMaterial){ ZSZ_L=L; try{ return zsKarteInnen(L,ohneMateri
 /* Passt die Bestückung in die Verteilerfelder? */
 function zsBestPlatz(L){ const zs=L.zs; if(!zs||typeof legReihen!=="function") return ""; const n=legReihen(L).length, p=zsReihenPlaetze(zs).length;
   return n>p?`Die Bestückung braucht ${n} Reihen, die Verteilerfelder haben ${p} – ${n-p} Reihe${n-p>1?"n":""} passt nicht mehr hinein.`:""; }
+/* Umbau 03.11.2026 abends: eine Karte je Feld (Zählerplätze + Bestückung zusammen), freie Plätze einzeilig,
+   statt roter Warnung ein Hinweis „n Punkte offen“, Bild standardmäßig eingeklappt, kein schwebender Knopf. */
+const zsBildAn=()=>!!(typeof META!=="undefined"&&META.zsBild);
 function zsKarteInnen(L,ohneMaterial){ const zs=L.zs, zu=L.fertig;
   if(!zs||!zs.felder||!zs.felder.length) return `<section class="card zs-karte"><h3>Zählerschrank</h3><p class="meta">Zählerplätze, Zählerart, SLS, Zählernummern und APZ – Aufbau per Vorlage.</p>${zu?"":`<button type="button" class="btn-tonal" data-act="zsEinrichten">Zählerschrank einrichten</button>`}</section>`;
-  const H=zsHinweise(zs), bp=zsBestPlatz(L); if(bp) H.unshift(bp);
-  return `<section class="card zs-karte"><div class="card-kopf"><h3>Zählerschrank</h3><span class="zs-kopf-r">${zu?"":`<button type="button" class="btn-tonal" data-act="zsAufbau">Aufbau ändern</button>`}${legBildKnopf()}</span></div>
-    <div class="zs-bild"${legBildAn()?"":" hidden"}>${zu?zsSvg(zs,L.reihen):zsKlick(zs,L.reihen,null,{feld:()=>'data-act="zsAufbau"',zp:k=>`data-act="zsZpAuf" data-i="${k}"`,apz:()=>'data-act="zsApzAuf"'})}</div>
+  const off=zsBestOffenGesamt(zs), H=zsHinweise(zs).filter(h=>!/^Bestückung:/.test(h)), bp=zsBestPlatz(L); if(bp) H.unshift(bp);
+  const nZ=zs.zp.length, belegt=zs.zp.filter(zsBelegt).length, bild=zsBildAn();
+  const kurz=[zs.modell?`${zsHerstText(zs.modell.h).split(" ")[0]} ${zs.modell.hnr}`:zs.hersteller&&zsHerstText(zs.hersteller),`${zs.felder.length} Felder`,`${nZ} Zählerpl${nZ===1?"atz":"ätze"}${belegt<nZ?` (${belegt} belegt)`:""}`,+zs.hoehe?`${zs.hoehe} mm`:""].filter(Boolean).join(" · ");
+  const ersterOffen=[...zs.felder.filter(f=>f.typ==="z").map(f=>f.id),...(zs.apz?["a"]:[])].find(z=>zsBestOffen(zs,z));
+  const zeile=(act,extra,lead,leadKl,titel,unter,rechts)=>`<button type="button" class="zs-zp" data-act="${act}"${extra} ${zu?"disabled":""}>${lead!=null?`<span class="zs-zn${leadKl?" "+leadKl:""}">${lead}</span>`:""}<span class="zs-zt"><b>${titel}</b>${unter?`<small>${unter}</small>`:""}</span>${rechts||""}${icon("chev")}</button>`;
+  const best=(ziel)=>{ const o=zsBestOffen(zs,ziel); return zeile("zsBestAuf",` data-v="${esc(ziel)}"`,icon("liste"),"zs-bst","Bestückung",ziel==="a"?"APZ · Pflichtpunkte und Zubehör":"AAR · RfZ · NAR",`<span class="zs-bs${o?" offen":""}">${o?`${o} offen`:"vollständig"}</span>`); };
+  const felder=zs.felder.map(f=>{ const nr=zsFeldNr(zs,f.id), tit=`${ZS_TYP[f.typ]||"Feld"} ${nr}`;
+    if(f.typ==="z"){ const Z=zs.zp.map((z,i)=>[z,i]).filter(([z])=>z.feldId===f.id);
+      return `<div class="zsg-feld"><div class="zsg-fk">${esc(tit)}</div>${Z.map(([z,i])=>zsBelegt(z)
+          ?zeile("zsZpAuf",` data-i="${i}"`,`Z${i+1}`,z.zweck?"":"leer",esc(z.bez||zsTxt(ZS_ZWECK,z.zweck)||"Noch offen"),esc(zsZpText(z)))
+          :`<button type="button" class="zs-zp zs-frei" data-act="zsZpAuf" data-i="${i}" ${zu?"disabled":""}><span class="zs-zn leer">Z${i+1}</span><span class="zs-zt"><b>frei</b></span>${icon("chev")}</button>`).join("")}${best(f.id)}</div>`; }
+    const apz=zs.apz&&zs.apz.feldId===f.id;
+    return `<div class="zsg-feld"><div class="zsg-fk">${esc(tit)}${f.typ==="v"?`<span>${esc(zsReihenFeld(zs,f,L.reihen))} Reihen</span>`:""}</div>
+      ${apz?zeile("zsApzAuf","","APZ","zs-apzn","Abschlusspunkt Zählerplatz",esc(zs.apz.lage==="oben"?"oben im Feld":"unten im Feld"))+best("a"):f.typ==="v"?"":`<p class="meta zs-leer">ohne Zählerplatz</p>`}</div>`; }).join("");
+  return `<section class="card zs-karte"><div class="card-kopf"><h3>Zählerschrank</h3>${zu?"":`<button type="button" class="btn-tonal" data-act="zsAufbau">Aufbau ändern</button>`}</div>
+    <p class="zs-kurz">${esc(kurz)}</p>
+    ${bild?`<div class="zs-bild">${zu?zsSvg(zs,L.reihen):zsKlick(zs,L.reihen,null,{feld:()=>'data-act="zsAufbau"',zp:k=>`data-act="zsZpAuf" data-i="${k}"`,apz:()=>'data-act="zsApzAuf"'})}</div>`:""}
+    <button type="button" class="zs-bild-tg" data-act="zsBildUm" aria-expanded="${bild}">${icon(bild?"chev":"zsSchrank")}<span>${bild?"Schrankbild ausblenden":"Schrankbild anzeigen"}</span></button>
+    ${zeile("zsNbAuf","","NB","zs-apzn",esc(zsTxt(ZS_NB,zsNb(zs))),`Netzbetreiber${zs.nb?"":" – angenommen, bitte prüfen"}`)}
+    ${off&&ersterOffen?`<button type="button" class="zs-offen" data-act="zsBestAuf" data-v="${esc(ersterOffen)}" ${zu?"disabled":""}>${icon("warn")}<span>${off} Pflichtpunkt${off===1?"":"e"} der Bestückung offen</span>${icon("chev")}</button>`:""}
     ${H.length?`<div class="zs-hw">${H.map(h=>`<p>${icon("warn")}<span>${esc(h)}</span></p>`).join("")}</div>`:""}
-    <div class="zs-zps">${zs.zp.map((z,i)=>`<button type="button" class="zs-zp" data-act="zsZpAuf" data-i="${i}" ${zu?"disabled":""}><span class="zs-zn${zsBelegt(z)&&z.zweck?"":" leer"}">Z${i+1}</span><span class="zs-zt"><b>${esc(zsBelegt(z)?(z.bez||zsTxt(ZS_ZWECK,z.zweck)||"Noch offen"):"Frei / Reserve")}</b><small>${esc(zsZpText(z))}</small></span>${icon("chev")}</button>`).join("")}
-      <button type="button" class="zs-zp" data-act="zsApzAuf" ${zu?"disabled":""}><span class="zs-zn zs-apzn">APZ</span><span class="zs-zt"><b>${zs.apz?"Abschlusspunkt Zählerplatz":"Kein APZ"}</b><small>${esc(zs.apz?zsApzText(zs):"Bestandsanlage")}</small></span>${icon("chev")}</button></div>
-    <div class="aw-lbl">Bestückung</div><div class="zs-zps">
-      <button type="button" class="zs-zp" data-act="zsNbAuf" ${zu?"disabled":""}><span class="zs-zn zs-apzn">NB</span><span class="zs-zt"><b>${esc(zsTxt(ZS_NB,zsNb(zs)))}</b><small>Netzbetreiber${zs.nb?"":" – angenommen, bitte prüfen"}</small></span>${icon("chev")}</button>
-      ${[...zs.felder.filter(f=>f.typ==="z").map(f=>[f.id,`Zählerfeld ${zsFeldNr(zs,f.id)}`,"AAR · RfZ · NAR"]),...(zs.apz?[["a","APZ",zsApzText(zs)]]:[])].map(([z,t,u])=>{ const o=zsBestOffen(zs,z);
-        return `<button type="button" class="zs-zp" data-act="zsBestAuf" data-v="${esc(z)}" ${zu?"disabled":""}><span class="zs-zt"><b>${esc(t)}</b><small>${esc(u)}</small></span><span class="zs-bs${o?" offen":""}">${o?`${o} offen`:"vollständig"}</span>${icon("chev")}</button>`; }).join("")}</div>
-    ${ohneMaterial?"":`<div class="aw-lbl">Material</div><div class="zs-mats">${zsMaterial(zs,L.reihen)}</div>
-    <p class="meta zs-hinweis">Artikelnummern folgen, sobald die Zählerschrank-Artikel in der Materialliste stehen.</p>`}</section>`; }
+    <div class="zsg-felder">${felder}</div>
+    ${zu?"":`<button type="button" class="zs-neu" data-act="zsZpNeu">${icon("add")}Zählerplatz hinzufügen</button>`}
+    ${ohneMaterial?"":`<div class="aw-lbl">Material</div><div class="zs-mats">${zsMaterial(zs,L.reihen)}</div>`}</section>`; }
 
 /* ---- Bearbeiten von der Karte aus ---- */
 function zsBearbeiten(modus,i){ const L=legAkt(); if(!L) return;
@@ -354,8 +369,9 @@ function zsSpeichern(){ const L=legAkt(); if(!L||!AW) return; zsZpLesen(zsAktZp(
 
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="zs"]'); if(!b||b.disabled) return; e.stopPropagation(); const a=b.dataset.act;
   if(a==="zsEinrichten"){ zsBearbeiten("einr"); return; }
-  if(a==="zsZpNeu"){ zsZpNeu(); return; }
   if(a==="zsAufbau"){ zsBearbeiten("felder"); return; }
+  if(a==="zsBildUm"){ META.zsBild=!zsBildAn(); metaSave(); render(); return; }
+  if(a==="zsZpNeu"){ zsZpNeu(); return; }
   if(a==="zsZpAuf"){ zsBearbeiten("zp",+b.dataset.i); return; }
   if(a==="zsApzAuf"){ zsBearbeiten("apz"); return; }
   if(a==="zsBestAuf"){ zsBearbeiten("best"); if(AW){ AW.ziel=b.dataset.v; zsZeigen(); } return; }
