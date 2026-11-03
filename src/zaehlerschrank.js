@@ -337,6 +337,7 @@ function zsKarteInnen(L,ohneMaterial){ const zs=L.zs, zu=L.fertig;
     ${bild?`<div class="zs-bild">${zu?zsSvg(zs,L.reihen):zsKlick(zs,L.reihen,null,{feld:()=>'data-act="zsAufbau"',zp:k=>`data-act="zsZpAuf" data-i="${k}"`,apz:()=>'data-act="zsApzAuf"'})}</div>`:""}
     <button type="button" class="zs-bild-tg" data-act="zsBildUm" aria-expanded="${bild}">${icon(bild?"chev":"zsSchrank")}<span>${bild?"Schrankbild ausblenden":"Schrankbild anzeigen"}</span></button>
     ${zeile("zsNbAuf","","NB","zs-apzn",esc(zsTxt(ZS_NB,zsNb(zs))),`Netzbetreiber${zs.nb?"":" – angenommen, bitte prüfen"}`)}
+    ${typeof legVonFeld==="function"?legVonFeld(L):""}
     ${off&&ersterOffen?`<button type="button" class="zs-offen" data-act="zsBestAuf" data-v="${esc(ersterOffen)}" ${zu?"disabled":""}>${icon("warn")}<span>${off} Pflichtpunkt${off===1?"":"e"} der Bestückung offen</span>${icon("chev")}</button>`:""}
     ${H.length?`<div class="zs-hw">${H.map(h=>`<p>${icon("warn")}<span>${esc(h)}</span></p>`).join("")}</div>`:""}
     <div class="zsg-felder">${felder}</div>

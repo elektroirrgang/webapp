@@ -120,8 +120,6 @@ function legView(L){ const E=legE(L), tab=legTab(L);
       ${L._geb?"":`${legFeld(L,"kunde","Kunde",{ph:"Name oder Firma"})}
       ${legFeld(L,"anschrift","Anschrift",{ph:"Straße, PLZ Ort"})}`}
       <div class="reihe2"><div class="tf fl"><select id="f_leg_netz" data-leg="netz" ${L.fertig?"disabled":""}>${LEG_NETZ.map(n=>`<option value="${esc(n)}" ${n===(L.netz||"")?"selected":""}>${esc(n||"nicht angeben")}</option>`).join("")}</select><label for="f_leg_netz">Netzform</label><span class="arr">${icon("drop")}</span></div><div class="tf fl"><select id="f_leg_teReihe" data-leg="teReihe" ${L.fertig?"disabled":""}>${[12,18,24].map(v=>`<option value="${v}" ${v===(+L.teReihe||12)?"selected":""}>${v} TE</option>`).join("")}</select><label for="f_leg_teReihe">Plätze je Reihe</label><span class="arr">${icon("drop")}</span></div></div>
-      ${L._geb?(()=>{ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(!g||!v) return ""; const A=g.verteiler.filter(x=>x.id!==v.id);
-        return A.length?`<div class="tf fl"><select id="f_leg_von" ${L.fertig?"disabled":""}><option value="">– direkt (Hausanschluss / Zähler) –</option>${A.map(x=>`<option value="${esc(x.id)}" ${x.id===v.vonVId?"selected":""}>${esc(x.name||"Verteiler")}</option>`).join("")}</select><label for="f_leg_von">Eingespeist aus</label><span class="arr">${icon("drop")}</span></div>`:""; })():""}
       ${legWerSel(L)}
     </div></section>
     ${L._geb&&typeof qrKarte==="function"?qrKarte(L):""}
@@ -137,6 +135,7 @@ function legUvKarte(L){ if(typeof uvZeichnung!=="function") return ""; const Z=u
     <div class="leg-vopt"><span class="leg-o"><span>Reihen</span>${[1,2,3,4,5,...(n>5?[n]:[])].map(v=>chip("legOpt","reihen",v,v,n===v)).join("")}</span>
     <span class="leg-o"><span>Montage</span>${chip("legOptS","montage","ap","Aufputz",L.montage==="ap")}${chip("legOptS","montage","up","Unterputz",L.montage!=="ap")}</span>
     <span class="leg-o"><span>TE je Reihe</span>${[12,18,24].map(v=>chip("legOpt","teReihe",v,v,(+L.teReihe||12)===v)).join("")}</span></div>
+    ${legVonFeld(L)}
     ${legE(L).length?"":`<p class="meta">Noch keine Geräte. Unten rechts über „Gerät“ einsetzen – Reihen-Vorlagen wie RCD + 6 × B16 gehen in einem Rutsch.</p>`}</section>`; }
 /* Karte „Stromkreise“ (Reiter Stromkreise) */
 function legSkKarte(L,E){ return `<section class="card"><div class="card-kopf leg-kopf"><h3>Stromkreise${E.length?` <small class="leg-n">${legSkZahl(L)}</small>`:""}</h3>${E.length?seg("legAnsicht",legAnsicht(),[["liste","Liste"],["verteiler","Verteiler"]],"leg-seg"):""}</div>
@@ -441,7 +440,10 @@ const legBildKnopf=()=>`<button type="button" class="ab-ic zs-bild-um${legBildAn
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="legBildUm"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
   META.schrankBildAus=legBildAn(); metaSave(); render(); },true);
 
-/* „Eingespeist aus“ im Verteiler (Abschluss › Angaben): steht am Verteiler im Gebäude (vonVId), nicht in der Legende */
+/* Feld „Eingespeist aus“ – im Reiter Verteiler (UV) bzw. Zählerschrank (HV) */
+function legVonFeld(L){ if(!L||!L._geb) return ""; const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(!g||!v) return ""; const A=g.verteiler.filter(x=>x.id!==v.id);
+  if(!A.length) return ""; return `<div class="tf fl leg-von"><select id="f_leg_von" ${L.fertig?"disabled":""}><option value="">– direkt (Hausanschluss / Zähler) –</option>${A.map(x=>`<option value="${esc(x.id)}" ${x.id===v.vonVId?"selected":""}>${esc(x.name||"Verteiler")}</option>`).join("")}</select><label for="f_leg_von">Eingespeist aus</label><span class="arr">${icon("drop")}</span></div>`; }
+/* „Eingespeist aus“ im Verteiler: steht am Verteiler im Gebäude (vonVId), nicht in der Legende */
 document.addEventListener("change",ev=>{ const s=ev.target; if(!s||s.id!=="f_leg_von") return; const L=legAkt(); if(!L||!L._geb) return; const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(!v) return;
   const neu=s.value||""; let x=neu&&g.verteiler.find(y=>y.id===neu), n=0; while(x&&n++<30){ if(x.id===v.id){ toast("Ein Verteiler kann nicht aus sich selbst gespeist werden"); s.value=v.vonVId||""; return; } x=x.vonVId&&g.verteiler.find(y=>y.id===x.vonVId); }
   if(neu) v.vonVId=neu; else delete v.vonVId; v.updated=Date.now(); ecGebSpeichern(g); toast(neu?`Eingespeist aus ${(g.verteiler.find(y=>y.id===neu)||{}).name||"Verteiler"}`:"Direkt eingespeist"); });
