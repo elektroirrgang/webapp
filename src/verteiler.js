@@ -114,11 +114,12 @@ function vtiLsSchutz(t){ const s=t.replace(/\s+/g," ").trim(), m=s.match(/(^|[^A
   if(vtiRcbo(s)){ const mm=s.match(/(\d{2,3})\s*mA/i), y=s.match(/Typ\s*(A|B\+?|F|AC)\b/i); r+=` FI/LS ${mm?mm[1]:"30"} mA Typ ${y?y[1].toUpperCase():"A"}`; }
   return r; }
 const VTI_LEER=/^(leer|frei|leerplatz|leerfeld|blind\w*|abdeckung)$/i;
-const VTI_GERAET=/\b(NEOZED|NEOZET|NEOSET|Neozed|D0[1-3]|SLS|Hauptschalter|Lasttrenn\w*|Überspannung\w*|ÜSS|Schütz|Stromstoß\w*|Zeitschalt\w*|Klingeltrafo|Treppenlicht\w*|Dämmerungs\w*)\b/i;
+const VTI_GERAET=/\b(NEOZED|NEOZET|NEOSET|Neozed|D0[1-3]|SLS|Hauptschalter|Lasttrenn\w*|Überspannung\w*|ÜSS|Schütz|Stromstoß\w*|Zeitschalt\w*|Klingeltrafo|Trafo|Transformator|Netzteil|Zeitrel\w*|Relais\w*|Treppenlicht\w*|Dämmerungs\w*)\b/i;
 function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0, umbruch=false; const rcds=[];
-  const neu=e=>{ if(umbruch){ e.umbruch=true; umbruch=false; } E.push(e); return e; };
-  const zeilen=String(text||"").replace(/\r/g,"").split("\n").map(z=>z.trim()).filter(z=>z&&!z.startsWith("//"));
-  zeilen.forEach((z,zi)=>{
+  const neu=e=>{ if(umbruch){ e.umbruch=true; umbruch=false; } if(curAnz) e._anz=true; E.push(e); return e; };
+  const roh=String(text||"").replace(/\r/g,"").split("\n").map(z=>z.trim()).filter(z=>z&&!z.startsWith("//")), zeilen=[], exp=new Set(); let curAnz=false;
+  roh.forEach(z=>{ const m=z.match(/^(\d{1,2})\s*[x×]\s*(.+)$/i); if(m&&+m[1]>0){ for(let i=0;i<Math.min(+m[1],48);i++){ exp.add(zeilen.length); zeilen.push(m[2].trim()); } } else zeilen.push(z); });
+  zeilen.forEach((z,zi)=>{ curAnz=exp.has(zi);
     if(zi===0&&/\b(bezeichnung|schutz|kennz|stromkreis|nr\.?)\b/i.test(z)&&!vtiLs(z)&&!vtiRcd(z)) return;   /* Kopfzeile aus Excel */
     /* „Fi“ ohne Nummer/Werte = ein TE des FI: mehrere „Fi“ direkt hintereinander sind EIN FI mit so vielen TE (z. B. 4× Fi = 4-poliger FI, 4 TE) */
     if(/^(fi|rcd)$/i.test(z)){ const v=E[E.length-1]; if(v&&v.art==="rcd"&&v._te&&!umbruch){ v._te++; v.te=v._te; return; }
@@ -126,8 +127,6 @@ function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0, umbruch=false; con
     if(/^#/.test(z)){ neu({id:uid(),art:"gr",bez:z.replace(/^#+\s*/,""),kz:"",schutz:""}); return; }
     if(/^(-{2,}|_{2,}|=+|neue reihe|reihe\s*\d*)$/i.test(z)){ umbruch=true; return; }
     /* Anzahl nur mit x: „3x leer“ = 3 Leerplätze, „2x Reserve“ = 2 Reserve-Automaten. „6 Reserve“ = Platz 6 ist ein Reserve-Automat */
-    const anz=z.match(/^(\d+)\s*[x×]\s*(.+)$/i);
-    if(anz&&!vtiLs(anz[2])&&!vtiRcd(anz[2])){ const t=anz[2].trim(); for(let i=0;i<Math.min(+anz[1],48);i++) neu(VTI_LEER.test(t)?{id:uid(),art:"res",kz:"",bez:"",schutz:""}:{id:uid(),art:"sk",kz:"",bez:t,schutz:"",pole:1}); return; }
     if(VTI_LEER.test(z)){ neu({id:uid(),art:"res",kz:"",bez:"",schutz:""}); return; }
     if(VTI_GERAET.test(z)){ const T=(/[;\t|]/.test(z)?z.split(/[;\t|]/):[z]).map(f=>f.trim()).filter(Boolean); let kz=""; if(T.length>1&&vtiKz(T[0])) kz=T.shift();
       const typ=T.find(f=>VTI_GERAET.test(f))||"", bez=T.filter(f=>f!==typ).join(" "); neu({id:uid(),art:"ge",kz,bez:bez||typ,schutz:bez?typ:"",te:vtiPole(z)===3?3:1}); return; }
@@ -135,8 +134,8 @@ function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0, umbruch=false; con
     const F=(/[;\t|]/.test(z)?z.split(/[;\t|]/):z.split(/\s{2,}/)).map(f=>f.trim()).filter(Boolean);
     let kz="", schutz="", leitung="", ref=0; const rest=[];
     /* ohne Trennzeichen: „F3 B16 Küche“, „B16 Küche“ oder „Küche B16“ */
-    const m1=F.length===1&&!vtiRcd(z)?z.match(/^(?:(-?[FQ]\s?\d+(?:\.\d+)*)\s+)?((?:FI\/LS\s+)?[BCDKZ]\s?\d{1,3}(?:\s?A)?(?:\s+3-?p(?:olig)?)?)\s+(.+)$/i):null,
-      m2=F.length===1&&!m1&&!vtiRcd(z)?z.match(/^(?:(-?[FQ]\s?\d+(?:\.\d+)*)\s+)?(.+?)\s+((?:FI\/LS\s+)?[BCDKZ]\s?\d{1,3}(?:\s?A)?(?:\s+3-?p(?:olig)?)?)$/i):null;
+    const m1=F.length===1&&!vtiRcd(z)?z.match(/^(?:(-?[FQ]\s?\d+(?:\.\d+)*)\s+)?((?:FI\/LS\s+)?[BCDKZ]\s?\d{1,3}(?:\s?A)?(?:\s+\d{2,3}\s?mA)?(?:\s+Typ\s*[A-Z+]+)?(?:\s+3-?p(?:olig)?)?)\s+(?!\d{2,3}\s?mA(?:\s+Typ\s*[A-Z+]+)?$)(.+)$/i):null,
+      m2=F.length===1&&!m1&&!vtiRcd(z)?z.match(/^(?:(-?[FQ]\s?\d+(?:\.\d+)*)\s+)?(?!(?:FI|LS)\s*\/)(.+?)\s+((?:FI\/LS\s+)?[BCDKZ]\s?\d{1,3}(?:\s?A)?(?:\s+\d{2,3}\s?mA)?(?:\s+Typ\s*[A-Z+]+)?(?:\s+3-?p(?:olig)?)?)$/i):null;
     if(m1){ kz=m1[1]||""; schutz=m1[2]; rest.push(m1[3]); } else if(m2){ kz=m2[1]||""; schutz=m2[3]; rest.push(m2[2]); }
     else F.forEach(f=>{ if(!kz&&vtiKz(f)) kz=f;
       else if(!schutz&&(vtiRcd(f)||vtiRcbo(f)||vtiLs(f))) schutz=f; else if(schutz&&!ref&&vtiFiRef(f)) ref=vtiFiRef(f);
@@ -158,7 +157,7 @@ function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0, umbruch=false; con
     mitRef.forEach(e=>{ const r=rcds[e._ref-1]; let i=R.indexOf(r); while(i+1<R.length&&R[i+1].art==="sk"&&!R[i+1]._frei) i++; R.splice(i+1,0,e); });
     E.length=0; E.push(...R); }
   /* Wie auf euren Listen: dreimal derselbe Name direkt hintereinander (CEE, CEE, CEE / Herd ×3) = EIN 3-poliger Automat */
-  for(let i=0;i<E.length-2;i++){ const a=E[i], b=E[i+1], c=E[i+2], gl=(x,y)=>x.art==="sk"&&y.art==="sk"&&x.bez&&x.bez.toLowerCase()===y.bez.toLowerCase()&&(x.schutz||"")===(y.schutz||"")&&!y.umbruch&&+x.pole!==3&&+y.pole!==3;
+  for(let i=0;i<E.length-2;i++){ const a=E[i], b=E[i+1], c=E[i+2], gl=(x,y)=>x.art==="sk"&&y.art==="sk"&&!x._anz&&!y._anz&&x.bez&&x.bez.toLowerCase()===y.bez.toLowerCase()&&(x.schutz||"")===(y.schutz||"")&&!y.umbruch&&+x.pole!==3&&+y.pole!==3;
     if(a.bez!=="Reserve"&&gl(a,b)&&gl(a,c)){ a.pole=3; [b,c].forEach(x=>{ const j=fehlt.indexOf(x.id); if(j>=0) fehlt.splice(j,1); }); E.splice(i+1,2); } }
   return {E,fehlt}; }
 /* Fehlende Kennzeichen nach dem Schema der Legende vergeben (auch fortlaufend hinter vorhandenen Zeilen) */
@@ -216,7 +215,7 @@ function vtImpAnlegen(){ const B=vtImp; if(!B) return; const t=(document.getElem
     g.verteiler.push({id:vId,name:F.vtiName||"Verteiler",stand:ecHeute(),ersteller:(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""),...von}); ecGebSpeichern(g); }
   const L=vtL(gid,vId); if(!L){ toast("Verteiler nicht gefunden"); return; }
   if(!zi){ const RW=vtiReihen(E,L.teReihe); L.reihen=Math.max(1,...RW); }
-  vtiKzVergeben(legE(L),E); const neu=E.map(e=>{ const o={...e}; ["_auto","_ref","_nr","_te","leitung"].forEach(k=>delete o[k]); if(o.art==="rcd"&&+o.te===1) delete o.te; return o; });
+  vtiKzVergeben(legE(L),E); const neu=E.map(e=>{ const o={...e}; ["_auto","_ref","_nr","_te","_anz","leitung"].forEach(k=>delete o[k]); if(o.art==="rcd"&&+o.te===1) delete o.te; return o; });
   L.eintraege=[...legE(L),...neu]; legNummern(L.eintraege); vtSchreiben(L);
   const g2=vtGeb(gid); if(g2&&E.some(e=>e.leitung)){ E.forEach(e=>{ if(!e.leitung) return; const s=g2.stromkreise.find(x=>x.id===e.id); if(s) s.leitung=e.leitung; }); ecGebSpeichern(g2); }
   vtImp=null; closeOverlays(); go({v:"vt",g:gid,id:vId}); toast(`${E.filter(e=>e.art==="sk").length} Stromkreise und ${E.filter(e=>e.art==="rcd").length} FI übernommen`); }
