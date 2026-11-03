@@ -1223,3 +1223,25 @@ a.dz{color:inherit;text-decoration:none;border-radius:12px}
 .zs-bild-um svg{transition:transform .15s;transform:rotate(90deg)}
 .zs-bild-um.offen svg{transform:rotate(-90deg)}
 .zs-bild[hidden]{display:none!important}
+/* Verteiler › Übersicht (Landeseite nach dem QR-Scan) */
+.vu-kopf{display:grid;gap:14px}
+.vu-titel{display:flex;align-items:center;gap:14px;min-width:0}
+.vu-ic{flex:none;width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:var(--pc);color:var(--on-pc)}.vu-ic .ic{width:28px;height:28px}
+.vu-titel div{min-width:0;display:flex;flex-direction:column}.vu-titel b{font-size:22px;line-height:28px;font-weight:800;overflow-wrap:anywhere}.vu-titel span{font-size:14px;line-height:20px;color:var(--on-sv);overflow-wrap:anywhere}
+.vu-chips{display:flex;flex-wrap:wrap;gap:6px}.vu-chips span{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:8px;background:var(--sc-high);font-size:13px;font-weight:600;color:var(--on-sv)}
+.vu-chips .qr{font-variant-numeric:tabular-nums;letter-spacing:.04em}.vu-chips .ic{width:16px;height:16px}
+.vu-aktionen{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:8px}
+.vu-a{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px 10px;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.vu-a .ic{width:22px;height:22px;color:var(--primary)}.vu-a:active{background:var(--sc-highest)}
+.vu-kontakt{margin:0;font-size:13px;line-height:18px;color:var(--on-sv)}
+.vu-status{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;background:var(--sc-high);margin-bottom:8px}
+.vu-status b{display:block;font-size:18px;line-height:24px;font-weight:800}.vu-status span{font-size:14px;line-height:20px}
+.vu-st-ic{flex:none;width:44px;height:44px;border-radius:22px;display:grid;place-items:center;background:color-mix(in srgb,currentColor 14%,transparent)}.vu-st-ic .ic{width:24px;height:24px}
+.vu-status.ok{background:var(--ok-c);color:var(--on-ok-c)}.vu-status.wip{background:var(--wip-c);color:var(--on-wip-c)}.vu-status.bad{background:var(--err-c);color:var(--on-err-c)}.vu-status.open span{color:var(--on-sv)}
+.vu-mangel{display:flex;gap:12px;padding:12px 14px;margin-top:8px;border-radius:14px;background:var(--err-c);color:var(--on-err-c);font-size:14px;line-height:20px}
+.vu-mangel .ic{flex:none;width:20px;height:20px;margin-top:2px}.vu-mangel b{display:block}
+.vu-knoepfe{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.vu-kacheln{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:520px){.vu-kacheln{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.vu-k{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:14px;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);font:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.vu-k b{font-size:26px;line-height:32px;font-weight:800;font-variant-numeric:tabular-nums}.vu-k span{font-size:13px;line-height:18px;color:var(--on-sv)}.vu-k:active{background:var(--sc-highest)}
