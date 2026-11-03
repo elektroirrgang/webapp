@@ -100,10 +100,13 @@ function legZeile(e,zu){ const t=e.art==="gr";
   return `<button type="button" class="leg-z z-${e.art}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}>${t?`<span class="bz">${esc(e.bez||"Überschrift")}</span>`
     :`<span class="kz">${esc(e.kz||"–")}</span><span class="bz">${e.art==="res"?`<i>Reserve</i>`:esc(e.bez||"–")}${e.art==="rcd"?` <span class="leg-rcd">RCD</span>`:""}</span><span class="sc">${esc(legSchutz(e))}</span>`}</button>`; }
 /* Reiter der Verteilerseite – wie die Schritte einer Prüfung in EVSE unten in der Leiste */
-function legTabs(L){ return L&&(L.art==="hv"||L.zs)?[["zs","Zählerschrank","zsSchrank"],["sk","Stromkreise","zsBlitz"],["mat","Material","liste"],["ab","Abschluss","done"]]:L&&L.art==="gw"?[["sk","Stromkreise","zsBlitz"],["ab","Abschluss","done"]]:[["uv","Verteiler","zsSchrank"],["sk","Stromkreise","zsBlitz"],["ab","Abschluss","done"]]; }
-const legTab=L=>{ const T=legTabs(L); return T.some(x=>x[0]===nav.tab)?nav.tab:T[0][0]; };
+function legTabs(L){ const T=L&&(L.art==="hv"||L.zs)?[["zs","Zählerschrank","zsSchrank"],["sk","Stromkreise","zsBlitz"],["mat","Material","liste"],["ab","Abschluss","done"]]:L&&L.art==="gw"?[["sk","Stromkreise","zsBlitz"],["ab","Abschluss","done"]]:[["uv","Verteiler","zsSchrank"],["sk","Stromkreise","zsBlitz"],["ab","Abschluss","done"]];
+  return L&&L._geb&&typeof vuView==="function"?[["info","Übersicht","info"],...T]:T; }
+/* Ohne gewählten Reiter: fertig aufgenommene Verteiler öffnen mit der Übersicht, neue/leere mit dem Aufbau */
+const legTab=L=>{ const T=legTabs(L); if(T.some(x=>x[0]===nav.tab)) return nav.tab; const s=T[0][0]==="info"&&!legE(L).length&&!L.fertig?1:0; return T[s][0]; };
 function legFab(L){ if(!L||L.fertig) return null; const t=legTab(L); return t==="sk"||t==="uv"?["awStart","Gerät","add"]:t==="zs"&&L.zs&&L.zs.felder&&L.zs.felder.length?["zsZpNeu","Zählerplatz","add"]:null; }
 function legView(L){ const E=legE(L), tab=legTab(L);
+  if(tab==="info") return vuView(L);
   if(tab==="zs") return `<div class="narrow ec-spalte leg">${typeof zsKarte==="function"?zsKarte(L,true):""}</div>`;
   if(tab==="uv") return `<div class="narrow ec-spalte leg">${legUvKarte(L)}</div>`;
   if(tab==="mat") return `<div class="narrow ec-spalte leg">${typeof zsMaterialKarte==="function"?zsMaterialKarte(L):""}</div>`;

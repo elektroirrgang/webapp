@@ -20,7 +20,7 @@ function qrSvg(c,px){ const M=qrMatrix(c), n=M.length, r=n+8; let d=""; M.forEac
 /* ---- Öffnen nach Scan ---- */
 let QR_WARTET="";
 function qrOeffnen(c,nochmal){ c=qrNorm(c); if(!c){ toast("Kein Irrgang-Aufkleber erkannt"); return; }
-  const t=qrAlle().get(c); if(t){ QR_WARTET=""; go({v:"vt",g:t.g.id,id:t.v.id}); return; }
+  const t=qrAlle().get(c); if(t){ QR_WARTET=""; go({v:"vt",g:t.g.id,id:t.v.id,tab:"info"}); return; }
   if(!nochmal&&SYNC_ON&&ME.signedIn&&typeof syncNow==="function"){ toast("Aufkleber wird gesucht …"); Promise.resolve(syncNow()).catch(()=>{}).then(()=>qrOeffnen(c,true)); return; }
   qrZuDlg(c); }
 /* Aufruf über die Info-Seite: …/echeck/#qr=NUMMER – nach der Anmeldung weiter */
