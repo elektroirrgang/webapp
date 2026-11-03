@@ -1248,3 +1248,16 @@ a.dz{color:inherit;text-decoration:none;border-radius:12px}
 /* PDF erstellen im Verteiler: im Dunkeln helles Rot – sonst sieht es aus wie Löschen */
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .leg-fuss .leg-pdf{background:var(--primary);color:var(--on-primary)}}
 :root[data-theme="dark"] .leg-fuss .leg-pdf{background:var(--primary);color:var(--on-primary)}
+/* Verteiler › Material */
+.vm-kopf{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.vm-kopf>div{display:flex;flex-direction:column}.vm-kopf b{font-size:26px;line-height:32px;font-weight:800;font-variant-numeric:tabular-nums}.vm-kopf span{font-size:13px;color:var(--on-sv)}
+.vm-kopf .offen b{color:var(--wip)}
+.vm-teilen{margin-left:auto;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px 0 12px;border:0;border-radius:20px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.vm-teilen .ic{width:18px;height:18px;color:var(--primary)}
+.vm-liste{display:grid;gap:2px}
+.vm-z{display:flex;align-items:center;gap:14px;min-height:72px;padding:6px 0}
+.vm-b{flex:none;width:56px;height:60px;border-radius:12px;background:#fff;display:grid;place-items:center;overflow:hidden}
+.vm-b img{width:100%;height:100%;object-fit:contain;padding:4px;box-sizing:border-box;display:block}
+.vm-b.ic,.vm-b.weg{background:var(--sc-high);color:var(--on-sv)}.vm-b.ic .ic{width:24px;height:24px}.vm-b.weg img{display:none}
+.vm-t{flex:1;min-width:0;display:flex;flex-direction:column}.vm-t b{font-size:15px;line-height:20px;font-weight:600;overflow-wrap:anywhere}.vm-t small{font-size:13px;line-height:18px;color:var(--on-sv);overflow-wrap:anywhere}.vm-t small.offen{color:var(--wip)}
+.vm-n{flex:none;min-width:44px;height:32px;padding:0 10px;border-radius:16px;background:var(--sc-high);display:grid;place-items:center;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}

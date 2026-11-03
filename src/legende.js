@@ -101,6 +101,7 @@ function legZeile(e,zu){ const t=e.art==="gr";
     :`<span class="kz">${esc(e.kz||"–")}</span><span class="bz">${e.art==="res"?`<i>Reserve</i>`:esc(e.bez||"–")}${e.art==="rcd"?` <span class="leg-rcd">RCD</span>`:""}</span><span class="sc">${esc(legSchutz(e))}</span>`}</button>`; }
 /* Reiter der Verteilerseite – wie die Schritte einer Prüfung in EVSE unten in der Leiste */
 function legTabs(L){ const T=L&&(L.art==="hv"||L.zs)?[["zs","Zählerschrank","zsSchrank"],["sk","Stromkreise","zsBlitz"],["mat","Material","liste"],["ab","Abschluss","done"]]:L&&L.art==="gw"?[["sk","Stromkreise","zsBlitz"],["ab","Abschluss","done"]]:[["uv","Verteiler","zsSchrank"],["sk","Stromkreise","zsBlitz"],["ab","Abschluss","done"]];
+  if(L&&L._geb&&!T.some(x=>x[0]==="mat")) T.splice(T.length-1,0,["mat","Material","liste"]);   /* Material auch beim Unterverteiler */
   return L&&L._geb&&typeof vuView==="function"?[["info","Übersicht","info"],...T]:T; }
 /* Ohne gewählten Reiter: fertig aufgenommene Verteiler öffnen mit der Übersicht, neue/leere mit dem Aufbau */
 const legTab=L=>{ const T=legTabs(L); if(T.some(x=>x[0]===nav.tab)) return nav.tab; const s=T[0][0]==="info"&&!legE(L).length&&!L.fertig?1:0; return T[s][0]; };
@@ -109,7 +110,7 @@ function legView(L){ const E=legE(L), tab=legTab(L);
   if(tab==="info") return vuView(L);
   if(tab==="zs") return `<div class="narrow ec-spalte leg">${typeof zsKarte==="function"?zsKarte(L,true):""}</div>`;
   if(tab==="uv") return `<div class="narrow ec-spalte leg">${legUvKarte(L)}</div>`;
-  if(tab==="mat") return `<div class="narrow ec-spalte leg">${typeof zsMaterialKarte==="function"?zsMaterialKarte(L):""}</div>`;
+  if(tab==="mat") return typeof vmView==="function"?vmView(L):`<div class="narrow ec-spalte leg">${typeof zsMaterialKarte==="function"?zsMaterialKarte(L):""}</div>`;
   if(tab==="sk") return `<div class="narrow ec-spalte leg">${legSkKarte(L,E)}</div>`;
   return `<div class="narrow ec-spalte leg">
     <section class="card"><h3>${L._geb?"Angaben":"Anlage"}</h3>${(()=>{ const o=kundeOf(L.kundeId)?ecOrt(L.ortId||"k:"+L.kundeId):null;

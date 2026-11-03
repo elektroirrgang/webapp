@@ -280,7 +280,9 @@ function zsHinweise(zs){ const H=[], nb=zsNb(zs), off=zsBestOffenGesamt(zs);
     if(uf&&(uf.n||1)>1&&ub&&(ub[4]||200)*ub[1]/ub[2]>32) H.push(`${u.name} ist zu breit für die Lücke zwischen den beiden SLS im Zählerfeld ${zsFeldNr(zs,uf.id)} (32 mm frei) – schmaleren Ableiter wählen oder ein Zählerfeld mit einem Platz einplanen.`); }
   zs.zp.forEach((z,i)=>{ if(zsBelegt(z)&&z.zweck&&(!z.sls||z.sls==="keiner")) H.push(`Zähler ${i+1}: SLS im NAR fehlt – bei direkter Messung vorgeschrieben.`); });
   return H; }
-function zsMaterial(zs,reihen){ const M=new Map(), add=t=>M.set(t,(M.get(t)||0)+1);
+function zsMaterial(zs,reihen){ return zsMaterialDaten(zs,reihen).map(([t,n])=>`<div class="zs-mat"><b>${n}×</b><span>${esc(t)}</span></div>`).join(""); }
+/* Material des Zählerschranks als [[Text, Anzahl], …] */
+function zsMaterialDaten(zs,reihen){ const M=new Map(), add=t=>M.set(t,(M.get(t)||0)+1);
   if(zs.modell) add(`Zählerschrank ${zsHerstText(zs.modell.h).split(" ")[0]} ${zs.modell.hnr} (${zs.modell.name})`);
   zs.felder.forEach(f=>{ if(zs.modell){ if(f.typ==="z") zs.zp.filter(x=>x.feldId===f.id).forEach(z=>{ const g=zsBelegt(z)&&zsSlsGeraet(zs,z); if(g) add(`SLS ${g.name} (${g.nr})`); }); return; }
     if(f.typ==="z"){ const Z=zs.zp.filter(x=>x.feldId===f.id), art=Z.some(z=>z.art==="3pkt")?"3-Punkt":"eHZ";
@@ -294,7 +296,7 @@ function zsMaterial(zs,reihen){ const M=new Map(), add=t=>M.set(t,(M.get(t)||0)+
     if(brauch(f.id,"rj45")) add("RJ45-Buchse"); if(brauch(f.id,"ssk")) add("Steuersignalklemmleiste");
     if(brauch(f.id,"hlak")) add("Hauptleitungsabzweigklemme"); if(brauch(f.id,"relais")) add("Trennrelais §14a"); });
   if(zs.felder.some(f=>f.typ==="z")){ const u=zsUssGeraet(zs); add(u?`Überspannungsschutz ${u.name} (${u.nr})`:"Überspannungsschutz Typ 1 – noch festlegen"); add("Spannungsversorgung RfZ/APZ mit Absicherung"); if(zs.einspeis!==false) add("Einspeiseadapter Sammelschiene 5-polig (N, L1, L2, L3, PE)"); }
-  return [...M].map(([t,n])=>`<div class="zs-mat"><b>${n}×</b><span>${esc(t)}</span></div>`).join(""); }
+  return [...M]; }
 /* Symbole für die Reiter der Verteilerseite */
 IC.zsSchrank=IC.zsSchrank||"M14.67 5v14H9.33V5h5.34zm1 14H21V5h-5.33v14zm-7.34 0V5H3v14h5.33z";
 IC.zsBlitz=IC.zsBlitz||"M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.55 11 21 11 21z";
