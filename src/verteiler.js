@@ -157,9 +157,17 @@ function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0, umbruch=false; con
   if(E.some(e=>e._ref)){ const mitRef=E.filter(e=>e._ref&&rcds[e._ref-1]); const R=E.filter(e=>!mitRef.includes(e));
     mitRef.forEach(e=>{ const r=rcds[e._ref-1]; let i=R.indexOf(r); while(i+1<R.length&&R[i+1].art==="sk"&&!R[i+1]._frei) i++; R.splice(i+1,0,e); });
     E.length=0; E.push(...R); }
+  /* Wie auf euren Listen: dreimal derselbe Name direkt hintereinander (CEE, CEE, CEE / Herd ×3) = EIN 3-poliger Automat */
+  for(let i=0;i<E.length-2;i++){ const a=E[i], b=E[i+1], c=E[i+2], gl=(x,y)=>x.art==="sk"&&y.art==="sk"&&x.bez&&x.bez.toLowerCase()===y.bez.toLowerCase()&&(x.schutz||"")===(y.schutz||"")&&!y.umbruch&&+x.pole!==3&&+y.pole!==3;
+    if(a.bez!=="Reserve"&&gl(a,b)&&gl(a,c)){ a.pole=3; [b,c].forEach(x=>{ const j=fehlt.indexOf(x.id); if(j>=0) fehlt.splice(j,1); }); E.splice(i+1,2); } }
   return {E,fehlt}; }
 /* Fehlende Kennzeichen nach dem Schema der Legende vergeben (auch fortlaufend hinter vorhandenen Zeilen) */
 function vtiKzVergeben(vorher,E){ const A=[...vorher];
+  /* Ohne eigene Kennzeichen (oder schon im Schema „FI 1 / 1, 2, 3“): euer Schema – FI n, darunter je FI ab 1, 3-polig = „1-3“ */
+  const k=e=>String(e.kz||"").trim(), alle=[...vorher,...E].filter(e=>e.art==="sk"||e.art==="rcd");
+  if(!alle.some(e=>k(e))||alle.every(e=>!k(e)||(e.art==="rcd"?LEG_FI:LEG_NUM).test(k(e)))){
+    E.forEach(e=>{ if((e.art==="sk"||e.art==="rcd")&&!k(e)) e._auto=true; });
+    const kopie=[...vorher.map(x=>({...x})),...E]; if(!kopie.some(e=>k(e))&&kopie.length) E.forEach(e=>{ if(e.art==="rcd") e.kz="FI 0"; else if(e.art==="sk") e.kz="0"; }); legNummern(kopie); return E; }
   E.forEach(e=>{ if(e.art==="sk"||e.art==="rcd"){ if(!e.kz){ e.kz=e.art==="rcd"?legRcdKz(A,A.length-1,false):legNaechsteKz(A,A.length-1)||"F 1"; e._auto=true; } } A.push(e); }); return E; }
 /* Reihe je Eintrag wie im Editor: neue Reihe bei „umbruch“ oder wenn die 12 TE voll sind */
 function vtiReihen(E,teR){ const n=teR||12; let r=0, te=0, erst=true; return E.map(e=>{ if(e.art==="gr") return r||1; const w=Math.min(legTE(e),n);
@@ -207,7 +215,7 @@ function vtImpAnlegen(){ const B=vtImp; if(!B) return; const t=(document.getElem
   const L=vtL(gid,vId); if(!L){ toast("Verteiler nicht gefunden"); return; }
   if(!zi){ const RW=vtiReihen(E,L.teReihe); L.reihen=Math.max(1,...RW); }
   vtiKzVergeben(legE(L),E); const neu=E.map(e=>{ const o={...e}; ["_auto","_ref","_nr","_te","leitung"].forEach(k=>delete o[k]); if(o.art==="rcd"&&+o.te===1) delete o.te; return o; });
-  L.eintraege=[...legE(L),...neu]; vtSchreiben(L);
+  L.eintraege=[...legE(L),...neu]; legNummern(L.eintraege); vtSchreiben(L);
   const g2=vtGeb(gid); if(g2&&E.some(e=>e.leitung)){ E.forEach(e=>{ if(!e.leitung) return; const s=g2.stromkreise.find(x=>x.id===e.id); if(s) s.leitung=e.leitung; }); ecGebSpeichern(g2); }
   vtImp=null; closeOverlays(); go({v:"vt",g:gid,id:vId}); toast(`${E.filter(e=>e.art==="sk").length} Stromkreise und ${E.filter(e=>e.art==="rcd").length} FI übernommen`); }
 
