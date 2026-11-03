@@ -2,7 +2,7 @@
    1050 mm (Schrank 1100) bzw. 1350 mm (Schrank 1400) hoch, nebeneinandergesetzt. Darüber liegen Zählernummer,
    SLS mit Nennstrom und der Überspannungsschutz beim ersten Zählerplatz.
    Feldbilder: zaehlerschrank24.de (Elektrotechnik Reinhold GmbH), Nutzung freigegeben per E-Mail vom 30.10.2026. */
-const ZSZ={FW:250,WAND:25,ML:64,MT:58,MR:16};
+const ZSZ={FW:250,WAND:25,ML:64,MT:58,MR:64};  /* MR = ML: Schrank steht mittig, die Maßangaben links/oben verschieben ihn nicht */
 const ZSZ_F={lin:"#8C8C8C",fein:"#C4C4C4",feld:"#F2F2F2",weiss:"#FFFFFF",hell:"#F8F8F8",dunkel:"#3A3C40",text:"#262626",grau:"#7A7A7A",
   br:"#8B5A2B",sw:"#2E2E2E",gr:"#8E8E8E",bl:"#1E9BE6",gn:"#86CF3A",ge:"#E2C41C",or:"#F39020",orK:"#C06A12",rot:"#E3231B",akt:"#C8102E",aktH:"#FCE8EB"};
 const ZSZ_KURZ={haushalt:"HA",wp:"WP",wallbox:"EM",pv:"PV",allgemein:"ALG",gewerbe:"GEW",frei:"RES"};
@@ -88,9 +88,11 @@ function zsZeichnung(zs,reihen,aktiv,selFeld,opt){
   F.forEach((f,i)=>{ const x=g.fx[i]; let s=feldGrund(x);
     if(f.typ==="z") s+=zaehler(f,x);
     else if(f.typ==="v"){ const apz=zs.apz&&zs.apz.feldId===f.id?zs.apz.lage:""; const vtN=hoch?"zs-vt-high.png":"zs-vt.png";
-      s+=apz?apzFeld(x,apz):ganz(vtN,x); if(BE[f.id]) s+=BE[f.id]; s+=titel(x,fy+(apz==="oben"?(QH-APZ0)*sk:0)+(hoch?83:79),apz?"APZ":`VTF ${++nv}`); }
+      s+=apz?apzFeld(x,apz):ganz(vtN,x); if(BE[f.id]) s+=BE[f.id];
+      /* Feldname oben über dem Verteilerteil, „APZ“ dort, wo der APZ wirklich sitzt (unten oder oben) */
+      s+=titel(x,fy+(apz==="oben"?(QH-APZ0)*sk:0)+(hoch?83:79),`VTF ${++nv}`); if(apz) s+=titel(x,(apz==="oben"?fy:fy+APZ0*sk)+(hoch?83:79),"APZ"); }
     else if(f.typ==="m"){ nm++; const apz=zs.apz&&zs.apz.feldId===f.id?zs.apz.lage:"", mmN=hoch?"zs-mm-fw1-high.png":"zs-mm.png";
-      s+=apz?apzFeld(x,apz,mmN):ganz(mmN,x); s+=titel(x,fy+(apz==="oben"?(QH-APZ0)*sk:0)+80*fh/1050,nMM>1?`MM ${nm}`:"MM"); }
+      s+=apz?apzFeld(x,apz,mmN):ganz(mmN,x); s+=titel(x,fy+(apz==="oben"?(QH-APZ0)*sk:0)+80*fh/1050,nMM>1?`MM ${nm}`:"MM"); if(apz) s+=titel(x,(apz==="oben"?fy:fy+APZ0*sk)+(hoch?83:79),"APZ"); }
     else s+=ganz("zs-tsg.png",x)+titel(x,fy+80,"TSG");
     inn+=s;
     if(ed){ const gw=i===selFeld; if(gw) inn+=R(x+FW/2-76,y0+g.H+18,152,40,"#E3E5E8",null,0,20);
@@ -135,7 +137,7 @@ function uvZeichnung(L){ const M=uvMasse(L), s=250/400 /* mm je Pixel im Feldbil
   /* Feldstücke (Pixel im Feldbild): Kopf mit Klemmleiste und 1. Schiene, je weitere Reihe ein Stück mit Schiene, Fuß mit Eckhaltern */
   const KOPF=[0,297], REIHE=[297,497], FUSS=[1597,1682];
   const fh=((KOPF[1]-KOPF[0])+(M.n-1)*(REIHE[1]-REIHE[0])+(FUSS[1]-FUSS[0]))*s, fw=250+M.ext;
-  const W=M.W, H=Math.max(M.H,fh+30), ML=64, MT=58, MR=16, MB=62, vw=ML+W+MR, vh=MT+H+MB, x0=ML, y0=MT, fx=x0+(W-fw)/2, fy=y0+(H-fh)/2;
+  const W=M.W, H=Math.max(M.H,fh+30), ML=64, MT=58, MR=64, MB=62, vw=ML+W+MR, vh=MT+H+MB, x0=ML, y0=MT, fx=x0+(W-fw)/2, fy=y0+(H-fh)/2;
   const R=(x,y,w,h,f,st,sw,rx,ex)=>`<rect x="${k1(x)}" y="${k1(y)}" width="${k1(Math.max(0,w))}" height="${k1(Math.max(0,h))}"${rx?` rx="${rx}"`:""} fill="${f||"none"}"${st?` stroke="${st}" stroke-width="${sw||1}"`:""}${ex||""}/>`;
   const T=(x,y,t,o={})=>`<text x="${k1(x)}" y="${k1(y)}" font-size="${o.s||22}" font-weight="${o.w||600}" fill="${o.f||C.text}" text-anchor="${o.a||"middle"}"${o.ex||""}>${t}</text>`;
   const L_=(x1,y1,x2,y2,st,sw)=>`<path d="M${k1(x1)} ${k1(y1)}L${k1(x2)} ${k1(y2)}" stroke="${st}" stroke-width="${sw||2}" fill="none"/>`;
