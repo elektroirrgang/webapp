@@ -1131,34 +1131,35 @@ body.kal-mit-pane .kal-wscroll{max-height:calc(100dvh - 330px)}
 /* Herstellerfoto aus der Materialliste (Baustelle: Materialliste, Gebäudetechnik: Verteiler bestücken) – weißes Bildfeld, Gerät mittig */
 .mat-foto{position:relative;display:block;background:#fff;overflow:hidden;flex:none}.mat-foto img{position:absolute;inset:0;width:100%;height:100%;padding:inherit;box-sizing:border-box;object-fit:contain;display:block}.mat-foto.weg img{display:none}
 
-/* ===== Anmeldeseite (loginSeite in kopf.js) – PC: zweigeteilt, links Firma und Apps, rechts Anmeldung ===== */
-.login-marke,.login-ic,.lv-pc{display:none}
+/* ===== Anmeldeseite (loginSeite in kopf.js) – PC: Logo, Anmeldekarte und App-Reihe mittig auf dem Markenhintergrund ===== */
+.ls-logo,.ls-apps,.ls-fuss,.login-ic,.lv-pc{display:none}
 @media (min-width:1024px) and (hover:hover) and (pointer:fine){
-  .login-seite{position:fixed;inset:0;z-index:5;display:grid;grid-template-columns:minmax(460px,44%) 1fr;background:var(--surface)}
-  .login-marke{display:flex;flex-direction:column;justify-content:space-between;padding:48px 56px;color:#fff;overflow:hidden;
-    background:radial-gradient(120% 70% at 0% 100%,rgba(225,29,47,.55),transparent 60%),radial-gradient(70% 50% at 100% 0%,rgba(225,29,47,.18),transparent 70%),
-      repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 48px),repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 1px,transparent 1px 48px),#17171A}
-  .lm-logo{height:34px;width:auto;align-self:flex-start}
-  .lm-mitte{max-width:440px}
-  .lm-mitte h1{font-size:44px;line-height:1.1;font-weight:800;margin:0 0 12px;letter-spacing:-.01em}
-  .lm-unter{font-size:17px;line-height:1.5;color:rgba(255,255,255,.72);margin:0 0 32px}
-  .lm-apps{display:flex;flex-direction:column;gap:8px}
-  .lm-app{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:18px;background:rgba(255,255,255,.05)}
-  .lm-app.hier{background:rgba(255,255,255,.13)}
-  .lm-app img{width:44px;height:44px;border-radius:12px;flex:none}
-  .lm-app span{display:flex;flex-direction:column;min-width:0;flex:1}
-  .lm-app b{font-size:15px;font-weight:700}
-  .lm-app small{font-size:13px;color:rgba(255,255,255,.66);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .lm-app em{font-style:normal;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;background:var(--brand);color:#fff;flex:none}
-  .lm-fuss{margin:0;font-size:13px;color:rgba(255,255,255,.5)}
-  .login-rechts{position:relative;display:flex;align-items:center;justify-content:center;padding:48px;overflow:auto}
-  .login-rechts .login{margin:0;width:100%;max-width:400px;text-align:left;padding:0}
-  .login-rechts .login .logo-big{display:none!important}
-  .login-ic{display:block;width:72px;height:72px;border-radius:20px;margin:0 0 28px;box-shadow:0 8px 24px rgba(0,0,0,.14)}
-  .login-rechts .login h2{font-size:34px;font-weight:800;margin:0 0 10px;letter-spacing:-.01em}
-  .login-rechts .login>p{font-size:16px;line-height:1.55;margin:0 0 32px}
-  .login-rechts .login>.btn-filled{width:100%;height:56px;justify-content:center;font-size:16px;border-radius:16px}
-  .login-rechts .login .hint{margin:16px 0 0}
-  .login-rechts .login-ver{position:absolute;left:0;right:0;bottom:24px;text-align:center}
-  .lv-pc{display:block;margin:0;font-size:12px;color:var(--on-sv)}
+  body:has(.login-seite){overflow:hidden}
+  .login-seite{position:fixed;inset:0;z-index:5;overflow:auto;display:flex;flex-direction:column;align-items:center;padding:0 24px;
+    background:radial-gradient(60% 55% at 50% 42%,rgba(225,29,47,.20),transparent 70%),radial-gradient(55% 50% at 0% 100%,rgba(225,29,47,.32),transparent 70%),
+      repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 48px),repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0 1px,transparent 1px 48px),#141416}
+  .ls-mitte{flex:1;width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 0 24px}
+  .ls-logo{display:block;height:36px;width:auto;margin:0 0 36px}
+  .login-karte{--lk:#fff;width:100%;background:var(--lk);color:var(--on-surface);border-radius:28px;padding:40px 40px 24px;text-align:center;
+    box-shadow:0 30px 80px rgba(0,0,0,.45),0 4px 14px rgba(0,0,0,.2)}
+  .login-karte .login{margin:0;max-width:none;width:100%;text-align:center;padding:0}
+  .login-karte .login .logo-big{display:none!important}
+  .login-karte .tf label{background:var(--lk)}
+  .login-karte .login .fg1{text-align:left}
+  .login-ic{display:block;width:64px;height:64px;border-radius:18px;margin:0 auto 20px;box-shadow:0 6px 18px rgba(0,0,0,.12)}
+  .login-karte .login h2{font-size:28px;font-weight:800;margin:0 0 8px;letter-spacing:-.01em}
+  .login-karte .login>p{font-size:15px;line-height:1.5;margin:0 0 28px;text-wrap:balance}.login-karte .nw{white-space:nowrap}
+  .login-karte .login>.btn-filled{width:100%;height:54px;justify-content:center;font-size:16px;border-radius:16px}
+  .login-karte .login .hint{margin:12px 0 0;font-size:13px}.login-karte .login .hint:empty{display:none}
+  .login-karte .login-ver{position:static;display:block;margin:24px 0 0;text-align:center;font-size:12px;color:var(--on-sv)}
+  .ls-apps{display:block;margin:36px 0 0;text-align:center;color:#fff}
+  .ls-apps p{margin:0 0 16px;font-size:13px;color:rgba(255,255,255,.6)}
+  .ls-apps>div{display:flex;justify-content:center;gap:28px}
+  .ls-app{display:flex;flex-direction:column;align-items:center;gap:8px;width:76px;color:rgba(255,255,255,.5)}
+  .ls-app.hier{color:#fff}
+  .ls-app img{width:40px;height:40px;border-radius:11px}
+  .ls-app small{font-size:12px;font-weight:600;white-space:nowrap}
+  .ls-fuss{display:block;margin:0;padding:0 0 24px;font-size:12px;color:rgba(255,255,255,.4);text-align:center}
 }
+@media (min-width:1024px) and (hover:hover) and (pointer:fine) and (prefers-color-scheme:dark){:root:not([data-theme="light"]) .login-karte{--lk:#202023;box-shadow:0 30px 80px rgba(0,0,0,.55)}}
+@media (min-width:1024px) and (hover:hover) and (pointer:fine){:root[data-theme="dark"] .login-karte{--lk:#202023;box-shadow:0 30px 80px rgba(0,0,0,.55)}}
