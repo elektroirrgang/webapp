@@ -124,8 +124,8 @@ function legView(L){ const E=legE(L), tab=legTab(L);
 /* Karte „Verteiler“ beim Unterverteiler: Zeichnung mit der Bestückung, darunter Reihen und Montage direkt umstellbar */
 function legUvKarte(L){ if(typeof uvZeichnung!=="function") return ""; const Z=uvZeichnung(L), n=+L.reihen||3, zu=L.fertig;
   const chip=(act,k,v,t,an)=>`<button type="button" class="chip" data-act="${act}" data-k="${k}" data-v="${v}" aria-pressed="${an}" ${zu?"disabled":""}>${t}</button>`;
-  return `<section class="card"><div class="card-kopf"><h3>Verteiler</h3></div>
-    <div class="zs-bild">${Z.svg}</div>
+  return `<section class="card zs-karte"><div class="card-kopf"><h3>Verteiler</h3><span class="zs-kopf-r">${legBildKnopf()}</span></div>
+    <div class="zs-bild"${legBildAn()?"":" hidden"}>${Z.svg}</div>
     ${Z.ueber?`<p class="ec-hinweis">${icon("warn")}<span>${Z.ueber===1?"Eine Reihe passt":`${Z.ueber} Reihen passen`} nicht mehr in den Verteiler – mehr Reihen wählen.</span></p>`:""}
     <div class="leg-vopt"><span class="leg-o"><span>Reihen</span>${[1,2,3,4,5,...(n>5?[n]:[])].map(v=>chip("legOpt","reihen",v,v,n===v)).join("")}</span>
     <span class="leg-o"><span>Montage</span>${chip("legOptS","montage","ap","Aufputz",L.montage==="ap")}${chip("legOptS","montage","up","Unterputz",L.montage!=="ap")}</span></div>
@@ -390,3 +390,9 @@ document.addEventListener("change",ev=>{ const s=ev.target; if(!s||!s.dataset||!
     if(f&&Lx&&legDlg.auto!=null&&f.value.trim()===legDlg.auto){ const E=legE(Lx); legDlg.auto=v==="rcd"?legRcdKz(E,legDlg.pos-1,false):legNaechsteKz(E,legDlg.pos-1); f.value=legDlg.auto; f.parentElement.classList.toggle("fl",!!f.value); } return; }
   if(k==="raum"||k==="was"){ if(!v) return; const f=document.getElementById("f_legBez"); if(f){ const t=f.value.trim(); f.value=!t?v:t.split(/\s+/).includes(v)?t:t+" "+v; f.parentElement.classList.add("fl"); } s.value=""; return; }
   if(k==="pole") legDlg.pole=v; else if(k==="te") legDlg.te=v; else if(k==="sym") legDlg.sym=v; });
+
+/* Schrankbild ein-/ausblenden (vor allem am Handy) – gilt für Zählerschrank- und Verteilerbild, je Gerät gemerkt */
+const legBildAn=()=>!(META&&META.schrankBildAus);
+const legBildKnopf=()=>`<button type="button" class="ab-ic zs-bild-um${legBildAn()?" offen":""}" data-act="legBildUm" aria-label="${legBildAn()?"Bild ausblenden":"Bild einblenden"}" title="${legBildAn()?"Bild ausblenden":"Bild einblenden"}">${icon("chev")}</button>`;
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="legBildUm"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
+  META.schrankBildAus=legBildAn(); metaSave(); render(); },true);
