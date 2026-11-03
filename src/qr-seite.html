@@ -31,8 +31,7 @@ body{margin:0;background:var(--surface);color:var(--on-surface);font:16px/1.5 Ma
 .ober{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);margin:0 0 6px}
 h1{font-size:26px;line-height:1.25;margin:0 0 12px;font-weight:800}
 p{margin:0 0 12px;color:var(--on-sv)}
-.nr{display:flex;align-items:baseline;gap:12px;background:var(--sc-high);border-radius:16px;padding:12px 16px;margin:18px 0 4px}
-.nr small{font-size:13px;font-weight:700;color:var(--on-sv)}.nr b{font-size:24px;font-weight:800;letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.nr{margin:20px 0 6px}.nr b{display:block;font-size:36px;line-height:44px;font-weight:800;letter-spacing:.14em;font-variant-numeric:tabular-nums}
 .kn{display:flex;flex-direction:column;gap:10px;margin-top:20px}
 .btn{display:flex;align-items:center;justify-content:center;gap:10px;height:56px;border-radius:28px;font-weight:700;font-size:17px;text-decoration:none}
 .btn svg{width:22px;height:22px;fill:currentColor}
@@ -61,7 +60,7 @@ ol.st b{color:var(--on-surface)}
     <p class="ober">Elektrische Anlage</p>
     <h1>Diese Anlage wird von Elektro Irrgang betreut</h1>
     <p>Die Stromkreise und Prüfungen dieser Anlage sind bei uns dokumentiert. Bei Fragen oder einer Störung nennen Sie uns bitte die unten stehende <span style="white-space:nowrap">Anlagen-Nr.</span> So können wir Ihr Anliegen umgehend zuordnen.</p>
-    <div class="nr" id="nr"><small>Anlagen-Nr.</small><b id="nrT"></b></div>
+    <div class="nr" id="nr"><b id="nrT" aria-label="Anlagen-Nr."></b></div>
     <div class="kn">
       <a class="btn f" href="tel:+4922914878"><svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>Anrufen · 02291 4878</a>
       <a class="btn t" id="stoer" href="mailto:info@elektro-irrgang.de"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>Störung melden</a>
