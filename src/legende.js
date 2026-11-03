@@ -22,7 +22,13 @@ const legSchutz=e=>[e.schutz,e.art==="sk"&&+e.pole===3?"3-polig":""].filter(Bool
    Umgestellt werden Verteiler ohne Kennzeichen, mit BMK oder mit dem Zwischenschema „FI 1 / 1, 2, 3“ (bis 03.11.2026);
    Verteiler mit dem alten Schema „F 1.0.1“ bleiben, wie sie sind. */
 const LEG_BMK=/^-?[A-Z]{1,2}\s?\d+(?:\.\d+)?$/, LEG_NUM=/^\d+(?:-\d+)?$/, LEG_FI=/^(FI|RCD)\s*\d+$/i;
-const legBmkArt=e=>e.art==="rcd"||e.art==="sk"?"F":e.art==="kl"?"X":e.art==="ge"?(t=>/haupt|lasttrenn|schütz|schuetz|trenn/i.test(t)?"Q":/stromsto|zeit|treppen|dämmer|relais/i.test(t)?"K":/trafo|netzteil/i.test(t)?"T":"F")(`${e.schutz||""} ${e.bez||""}`):"";
+/* Schütz = Q, wie heute gelernt (DIN EN IEC 81346-2: Schütz schaltet Energie → Q) – auch wenn alte Software noch K schreibt. Vorrang: Schütz/Haupt-/Lasttrennschalter → Q,
+   dann der Buchstabe aus dem Gerätekatalog (MAT_GE), dann ein von Hand gesetzter Buchstabe, dann der Name */
+const legBmkArt=e=>{ if(e.art==="rcd"||e.art==="sk") return "F"; if(e.art==="kl") return "X"; if(e.art!=="ge") return "";
+  const t=`${e.schutz||""} ${e.bez||""}`; if(/schütz|schuetz|haupt\s*schalter|hauptschalter|lasttrenn|trennschalter/i.test(t)) return "Q";
+  const kb=e.mat&&typeof MAT_INFO!=="undefined"&&MAT_INFO[e.mat]&&MAT_INFO[e.mat].tech&&MAT_INFO[e.mat].tech.kb; if(kb) return kb;
+  const hand=String(e.kz||"").trim().match(/^-?([A-Z])\s?\d/); if(hand&&/[FQKTX]/.test(hand[1])) return hand[1];
+  return /stromsto|zeit|treppen|dämmer|relais|dimm|uhr/i.test(t)?"K":/trafo|transform|netzteil/i.test(t)?"T":"F"; };
 function legSchemaNum(E){ const k=e=>String(e.kz||"").trim(); return E.filter(e=>legBmkArt(e)).every(e=>!k(e)||LEG_BMK.test(k(e))||LEG_NUM.test(k(e))||LEG_FI.test(k(e))); }
 /* Gestuft (Max, 03.11.2026): Automaten hinter einem RCD tragen dessen Nummer – RCD -F1, dahinter -F1.1, -F1.2 …;
    FI/LS (eigener Fehlerstromschutz) und Automaten ohne RCD zählen auf der obersten Ebene weiter (-F2, -F3 …). Überschrift und FI/LS beenden die RCD-Gruppe. */
