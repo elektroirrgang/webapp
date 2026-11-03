@@ -46,10 +46,11 @@ function qrSetzen(gid,vId,c){ const g=vtGeb(gid), v=g&&g.verteiler.find(x=>x.id=
 
 /* ---- Karte auf der Verteiler-Seite ---- */
 function qrKarte(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(!v) return "";
-  return `<section class="card qr-karte"><h3>QR-Aufkleber</h3>${v.qr?`<div class="qr-zeile">${qrSvg(v.qr,76)}<div class="qr-txt"><b class="qr-nr">${esc(qrZeig(v.qr))}</b><span class="meta">Klebt am Verteiler. Scannen öffnet diese Seite, Fremde sehen nur unsere Kontaktdaten.</span></div></div>
-      <div class="qr-knoepfe"><button type="button" class="btn-tonal" data-act="qrDruck1">${icon("tag")}Drucken</button><button type="button" class="btn-text" data-act="qrScanZu">Ersetzen</button><button type="button" class="btn-text danger" data-act="qrWegAsk">Entfernen</button></div>`
+  const kn=(act,ic,t,kl)=>`<button type="button" class="qr-k${kl?" "+kl:""}" data-act="${act}">${icon(ic)}<span>${t}</span></button>`;
+  return `<section class="card qr-karte"><h3>QR-Aufkleber</h3>${v.qr?`<div class="qr-zeile">${qrSvg(v.qr,112)}<div class="qr-txt"><small>Anlagen-Nr.</small><b class="qr-nr">${esc(qrZeig(v.qr))}</b><span class="meta">Scannen öffnet die Übersicht. Fremde sehen nur Kontakt und Störungshilfe.</span></div></div>
+      <div class="qr-knoepfe">${kn("qrDruck1","tag","Drucken")}${kn("qrScanZu","qr","Ersetzen")}${kn("qrWegAsk","del","Entfernen","weg")}</div>`
     :`<p class="meta">Noch kein Aufkleber. Einen vom Bogen aufkleben und scannen – oder direkt einen neuen drucken (Brother 24 mm oder PDF).</p>
-      <div class="qr-knoepfe"><button type="button" class="btn-tonal" data-act="qrScanZu">${icon("qr")}${DESK.matches?"Nummer eingeben":"Aufkleber scannen"}</button><button type="button" class="btn-tonal" data-act="qrNeu1">${icon("tag")}Neuen drucken</button></div>`}</section>`; }
+      <div class="qr-knoepfe zwei">${kn("qrScanZu","qr",DESK.matches?"Nummer eingeben":"Aufkleber scannen")}${kn("qrNeu1","tag","Neuen drucken")}</div>`}</section>`; }
 
 /* ---- Scanner (Kamera) ---- */
 let QR_CAM=null;

@@ -1245,3 +1245,6 @@ a.dz{color:inherit;text-decoration:none;border-radius:12px}
 @media (max-width:520px){.vu-kacheln{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .vu-k{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:14px;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);font:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .vu-k b{font-size:26px;line-height:32px;font-weight:800;font-variant-numeric:tabular-nums}.vu-k span{font-size:13px;line-height:18px;color:var(--on-sv)}.vu-k:active{background:var(--sc-highest)}
+/* PDF erstellen im Verteiler: im Dunkeln helles Rot – sonst sieht es aus wie Löschen */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .leg-fuss .leg-pdf{background:var(--primary);color:var(--on-primary)}}
+:root[data-theme="dark"] .leg-fuss .leg-pdf{background:var(--primary);color:var(--on-primary)}
