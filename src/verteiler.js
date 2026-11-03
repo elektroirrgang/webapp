@@ -112,11 +112,18 @@ function vtiLsSchutz(t){ const s=t.replace(/\s+/g," ").trim(), m=s.match(/(^|[^A
   let r=m?m[2].toUpperCase()+m[3]:a?a[1]+" A":s;
   if(vtiRcbo(s)){ const mm=s.match(/(\d{2,3})\s*mA/i), y=s.match(/Typ\s*(A|B\+?|F|AC)\b/i); r+=` FI/LS ${mm?mm[1]:"30"} mA Typ ${y?y[1].toUpperCase():"A"}`; }
   return r; }
-function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0; const rcds=[];
+const VTI_GERAET=/\b(NEOZED|NEOZET|NEOSET|Neozed|D0[1-3]|SLS|Hauptschalter|Lasttrenn\w*|Überspannung\w*|ÜSS|Schütz|Stromstoß\w*|Zeitschalt\w*|Klingeltrafo|Treppenlicht\w*|Dämmerungs\w*)\b/i;
+function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0, umbruch=false; const rcds=[];
+  const neu=e=>{ if(umbruch){ e.umbruch=true; umbruch=false; } E.push(e); return e; };
   const zeilen=String(text||"").replace(/\r/g,"").split("\n").map(z=>z.trim()).filter(z=>z&&!z.startsWith("//"));
   zeilen.forEach((z,zi)=>{
     if(zi===0&&/\b(bezeichnung|schutz|kennz|stromkreis|nr\.?)\b/i.test(z)&&!vtiLs(z)&&!vtiRcd(z)) return;   /* Kopfzeile aus Excel */
-    if(/^#/.test(z)){ E.push({id:uid(),art:"gr",bez:z.replace(/^#+\s*/,""),kz:"",schutz:""}); return; }
+    if(/^#/.test(z)){ neu({id:uid(),art:"gr",bez:z.replace(/^#+\s*/,""),kz:"",schutz:""}); return; }
+    if(/^(-{2,}|_{2,}|=+|neue reihe|reihe\s*\d*)$/i.test(z)){ umbruch=true; return; }
+    const res=z.match(/^(\d+)\s*[x×]?\s*(reserve|reserven|frei|leer)$/i)||z.match(/^(?:reserve|frei)\s*[x×]\s*(\d+)$/i);
+    if(res){ for(let i=0;i<Math.min(+res[1],48);i++) neu({id:uid(),art:"res",kz:"",bez:"",schutz:""}); return; }
+    if(VTI_GERAET.test(z)){ const T=(/[;\t|]/.test(z)?z.split(/[;\t|]/):[z]).map(f=>f.trim()).filter(Boolean); let kz=""; if(T.length>1&&vtiKz(T[0])) kz=T.shift();
+      const typ=T.find(f=>VTI_GERAET.test(f))||"", bez=T.filter(f=>f!==typ).join(" "); neu({id:uid(),art:"ge",kz,bez:bez||typ,schutz:bez?typ:"",te:vtiPole(z)===3?3:1}); return; }
     const F=(/[;\t|]/.test(z)?z.split(/[;\t|]/):z.split(/\s{2,}/)).map(f=>f.trim()).filter(Boolean);
     let kz="", schutz="", leitung="", ref=0; const rest=[];
     /* ohne Trennzeichen: „F3 B16 Küche“, „B16 Küche“ oder „Küche B16“ */
@@ -128,11 +135,14 @@ function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0; const rcds=[];
       else if(!leitung&&vtiLeitung(f)&&!vtiLs(f)) leitung=f; else rest.push(f); });
     if(kz) kz=kz.replace(/^-/,"").replace(/^([A-Za-z]+)\s?(\d)/,(m,x,y)=>x.toUpperCase()+" "+y);
     const bez=rest.join(" ").replace(/\s+/g," ").trim(), alles=[schutz,bez].join(" ");
-    if(/^(reserve|frei|leer|res\.?)$/i.test(bez)&&!schutz){ E.push({id:uid(),art:"res",kz,bez:"",schutz:""}); return; }
-    if(schutz&&vtiRcd(schutz)||!schutz&&vtiRcd(bez)&&/\d/.test(bez)){ rcdNr++; const e={id:uid(),art:"rcd",kz,bez:/^(FI|RCD)\b/i.test(bez)||vtiRcd(bez)?"":bez,schutz:vtiRcdSchutz(schutz||bez),_nr:rcdNr};
-      const p=/\b2\s?-?\s?(p|pol|polig)\b/i.test(alles)?2:0; if(p) e.te=2; rcds.push(e); E.push(e); return; }
+    if(/^(reserve|frei|leer|res\.?)$/i.test(bez)&&!schutz){ neu({id:uid(),art:"res",kz,bez:"",schutz:""}); return; }
+    if(schutz&&vtiRcd(schutz)||!schutz&&vtiRcd(bez)&&/\d/.test(bez)){ rcdNr++;
+      /* „FI 2“ allein = so ist der FI beschriftet → Kennzeichen, keine Werte */
+      const nm=(schutz||bez).trim().match(/^(FI|RCD)\s*-?\s*(\d+)$/i); if(nm&&!kz){ kz=`${nm[1].toUpperCase()} ${nm[2]}`; if(schutz) schutz="FI"; else bez=""; }
+      const e={id:uid(),art:"rcd",kz,bez:/^(FI|RCD)\b/i.test(bez)||vtiRcd(bez)?"":bez,schutz:vtiRcdSchutz(schutz||bez),_nr:rcdNr};
+      if(nm) e.schutz=""; const p=/\b2\s?-?\s?(p|pol|polig)\b/i.test(alles)?2:0; if(p) e.te=2; rcds.push(e); neu(e); return; }
     const e={id:uid(),art:"sk",kz,bez,schutz:schutz?vtiLsSchutz(schutz):"",pole:vtiPole(alles)}; if(leitung) e.leitung=leitung; if(ref) e._ref=ref; if(!schutz) fehlt.push(e.id);
-    E.push(e); });
+    neu(e); });
   /* Verweise „FI 2“: Stromkreis hinter den zweiten FI (und dessen andere Stromkreise) setzen */
   if(E.some(e=>e._ref)){ const mitRef=E.filter(e=>e._ref&&rcds[e._ref-1]); const R=E.filter(e=>!mitRef.includes(e));
     mitRef.forEach(e=>{ const r=rcds[e._ref-1]; let i=R.indexOf(r); while(i+1<R.length&&R[i+1].art==="sk"&&!R[i+1]._frei) i++; R.splice(i+1,0,e); });
@@ -141,6 +151,9 @@ function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0; const rcds=[];
 /* Fehlende Kennzeichen nach dem Schema der Legende vergeben (auch fortlaufend hinter vorhandenen Zeilen) */
 function vtiKzVergeben(vorher,E){ const A=[...vorher];
   E.forEach(e=>{ if(e.art==="sk"||e.art==="rcd"){ if(!e.kz){ e.kz=e.art==="rcd"?legRcdKz(A,A.length-1,false):legNaechsteKz(A,A.length-1)||"F 1"; e._auto=true; } } A.push(e); }); return E; }
+/* Reihe je Eintrag wie im Editor: neue Reihe bei „umbruch“ oder wenn die 12 TE voll sind */
+function vtiReihen(E,teR){ const n=teR||12; let r=0, te=0, erst=true; return E.map(e=>{ if(e.art==="gr") return r||1; const w=Math.min(legTE(e),n);
+  if(erst){ r=1; te=0; erst=false; } else if(e.umbruch||te+w>n){ r++; te=0; } te+=w; return r; }); }
 let vtImp=null;
 function vtImpZiele(kid){ const orte=["k:"+kid,...standorteVon(kid).map(s=>s.id)], L=[]; orte.forEach(o=>{ const g=vtGeb(ecGebId(o)); if(g) g.verteiler.forEach(v=>L.push({g,v,o})); }); return L; }
 function vtImpDlg(kind,id,vorwahl){ const s=kind==="standorte"&&standortOf(id), k=kind==="kunden"?kundeOf(id):s?kundeOf(s.kundeId):null; if(!k) return;
@@ -162,11 +175,12 @@ function vtImpVorschau(){ const box=document.getElementById("vtiVorschau"); if(!
   const neu=document.querySelector("#dlg .vti-neu"); if(neu) neu.hidden=!!vtImpAktZiel();
   if(!t.trim()){ box.innerHTML=`<p class="meta">Vorschau erscheint, sobald etwas eingetragen ist.</p>`; return; }
   const {E,fehlt}=vtImpLesen(t), zi=vtImpAktZiel(), vorher=zi?legE(vtL(zi[0],zi[1])||{eintraege:[]}):[]; vtiKzVergeben(vorher,E);
-  let inFi=false; const n={sk:0,rcd:0};
-  box.innerHTML=`<div class="vti-kopf"><b>${E.filter(e=>e.art==="sk").length} Stromkreise · ${E.filter(e=>e.art==="rcd").length} FI</b>${fehlt.length?`<span class="vti-warn">${fehlt.length}× kein Schutz erkannt</span>`:""}</div>`
-   +E.map(e=>{ if(e.art==="gr"){ inFi=false; return `<div class="vti-z" data-art="gr">${esc(e.bez)}</div>`; } if(e.art==="rcd") inFi=true;
-     const ein=e.art!=="rcd"&&inFi;
-     return `<div class="vti-z" data-art="${e.art}"${ein?" data-ein":""}${fehlt.includes(e.id)?" data-warn":""}><span class="v-kz">${esc(e.kz)}${e._auto?"<i>*</i>":""}</span><span class="v-bz">${e.art==="res"?"<i>Reserve</i>":esc(e.bez||(e.art==="rcd"?"Fehlerstromschutzschalter":"–"))}</span><span class="v-sc">${esc([e.schutz,e.pole===3?"3-polig":""].filter(Boolean).join(" ")||(e.art==="res"?"":"?"))}</span><span class="v-lt">${esc(e.leitung||"")}</span></div>`; }).join("")
+  let inFi=false, rAlt=0; const RW=vtiReihen(E), RN=Math.max(0,...RW);
+  box.innerHTML=`<div class="vti-kopf"><b>${E.filter(e=>e.art==="sk").length} Stromkreise · ${E.filter(e=>e.art==="rcd").length} FI${E.some(e=>e.art==="res")?` · ${E.filter(e=>e.art==="res").length} Reserve`:""}${RN>1?` · ${RN} Reihen`:""}</b>${fehlt.length?`<span class="vti-warn">${fehlt.length}× kein Schutz erkannt</span>`:""}</div>`
+   +E.map((e,i)=>{ const rk=e.art!=="gr"&&RN>1&&RW[i]!==rAlt?`<div class="vti-reihe">Reihe ${rAlt=RW[i]}</div>`:"";
+     if(e.art==="gr"){ inFi=false; return `<div class="vti-z" data-art="gr">${esc(e.bez)}</div>`; } if(e.art==="rcd") inFi=true;
+     const ein=e.art==="sk"||e.art==="res"?inFi:false;
+     return rk+`<div class="vti-z" data-art="${e.art}"${ein?" data-ein":""}${fehlt.includes(e.id)?" data-warn":""}><span class="v-kz">${esc(e.kz)}${e._auto?"<i>*</i>":""}</span><span class="v-bz">${e.art==="ge"?`<b class="vti-ge">Gerät</b> `:""}${e.art==="res"?"<i>Reserve</i>":esc(e.bez||(e.art==="rcd"?"Fehlerstromschutzschalter":"–"))}</span><span class="v-sc">${esc([e.schutz,e.pole===3?"3-polig":""].filter(Boolean).join(" ")||(e.art==="res"||e.art==="ge"?"":"?"))}</span><span class="v-lt">${esc(e.leitung||"")}</span></div>`; }).join("")
    +(E.some(e=>e._auto)?`<p class="meta" style="margin:8px 4px 0">* Kennzeichen von der App vergeben</p>`:""); }
 document.addEventListener("input",e=>{ if(e.target&&e.target.id==="vtiText") vtImpVorschau(); });
 document.addEventListener("change",e=>{ if(e.target&&e.target.id==="f_vtiZiel") vtImpVorschau(); });
@@ -181,6 +195,7 @@ function vtImpAnlegen(){ const B=vtImp; if(!B) return; const t=(document.getElem
     const von=F.vtiVon&&g.verteiler.some(x=>x.id===F.vtiVon)?{vonVId:F.vtiVon}:{};
     g.verteiler.push({id:vId,name:F.vtiName||"Verteiler",stand:ecHeute(),ersteller:(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""),...von}); ecGebSpeichern(g); }
   const L=vtL(gid,vId); if(!L){ toast("Verteiler nicht gefunden"); return; }
+  if(!zi){ const RW=vtiReihen(E,L.teReihe); L.reihen=Math.max(1,...RW); }
   vtiKzVergeben(legE(L),E); const neu=E.map(e=>{ const o={...e}; ["_auto","_ref","_nr","leitung"].forEach(k=>delete o[k]); return o; });
   L.eintraege=[...legE(L),...neu]; vtSchreiben(L);
   const g2=vtGeb(gid); if(g2&&E.some(e=>e.leitung)){ E.forEach(e=>{ if(!e.leitung) return; const s=g2.stromkreise.find(x=>x.id===e.id); if(s) s.leitung=e.leitung; }); ecGebSpeichern(g2); }
