@@ -14,7 +14,17 @@ const legE=L=>Array.isArray(L.eintraege)?L.eintraege:(L.eintraege=[]);
 const legSkZahl=L=>legE(L).filter(e=>e.art==="sk"||e.art==="res").length;
 const legSchutz=e=>[e.schutz,e.art==="sk"&&+e.pole===3?"3-polig":""].filter(Boolean).join(" ");
 /* Speichern: freie Legende als eigener Datensatz, Verteiler zurück ins Gebäude */
-function legSave(L){ if(L._geb) vtSchreiben(L); else saveRec("legenden",L); }
+/* ===== Nummern je FI (Schema „FI 1“, darunter 1, 2, 3 …) – automatisch, sobald ein Verteiler so nummeriert ist =====
+   Gezählt wird je Automat (Max, 03.11.2026): ein 3-poliger Herd ist EINE Nummer. Ältere Bereiche „1-3“ werden beim nächsten Speichern umgestellt. Bei jeder Änderung (Pole, Einfügen, Löschen, Verschieben)
+   wird neu durchgezählt; FIs heißen FI 1, FI 2 … in ihrer Reihenfolge. Verteiler mit anderem Schema (F 1.0.1 …) bleiben unangetastet. */
+const LEG_NUM=/^\d+(?:-\d+)?$/, LEG_FI=/^(FI|RCD)\s*\d+$/i;
+function legSchemaNum(E){ const S=E.filter(e=>e.art==="sk"), R=E.filter(e=>e.art==="rcd"), k=e=>String(e.kz||"").trim();
+  if(!S.every(e=>!k(e)||LEG_NUM.test(k(e)))||!R.every(e=>!k(e)||LEG_FI.test(k(e)))) return false;
+  return S.some(e=>LEG_NUM.test(k(e)))||R.some(e=>LEG_FI.test(k(e))); }
+function legNummern(E){ if(!legSchemaNum(E)) return false; let c=1, fi=0, ch=false; const setz=(e,kz)=>{ if(e.kz!==kz){ e.kz=kz; ch=true; } };
+  E.forEach(e=>{ if(e.art==="rcd"){ fi++; c=1; setz(e,`FI ${fi}`); return; } if(e.art==="gr"){ c=1; return; } if(e.art!=="sk") return;
+    setz(e,String(c)); c++; }); return ch; }
+function legSave(L){ legNummern(legE(L)); if(L._geb) vtSchreiben(L); else saveRec("legenden",L); }
 function legSpeichern(L){ L.stand=ecHeute(); legSave(L); }
 
 /* ---- Ablage: beim Kunden/Standort, sonst im Ablageort „Ohne Kunde“ (Seite unter Kunden) ---- */
@@ -232,6 +242,7 @@ const legKzTeile=kz=>{ const m=String(kz||"").trim().match(/^(.*?)(\d+(?:\.\d+)*
 const legZweistellig=E=>E.some(e=>e.art!=="rcd"&&/\.0\d$/.test(String(e.kz||"").trim()));
 function legNaechsteKz(E,i){ for(let j=i;j>=0;j--){ const e=E[j]; if(!e||e.art==="gr"||e.art==="ge"||e.art==="kl"||!e.kz) continue;
     if(e.art==="rcd") return /^(FI|RCD)\s*\d+$/i.test(String(e.kz).trim())?"1":String(e.kz).trim()+(legZweistellig(E)?".01":".1");   /* direkt nach dem RCD: sein erster Automat – bei „FI 2“-Beschriftung zählen die Automaten je FI ab 1 */
+    const rb=String(e.kz).trim().match(/^\d+-(\d+)$/); if(rb) return String(+rb[1]+1);
     const t=legKzTeile(e.kz); if(!t) return ""; const l=t.z.length-1, w=t.z[l]; t.z[l]=String(+w+1).padStart(w.length,"0");
     return t.vor+t.z.join("."); }
   return ""; }
