@@ -22,7 +22,7 @@ function vtEintraege(g,vId){ const R=g.rcds.filter(r=>r.vId===vId), S=g.stromkre
 /* Virtuelle Legende: alles, was der Editor braucht, aus dem Gebäude */
 function vtL(gid,vId){ const g=vtGeb(gid), v=g&&g.verteiler.find(x=>x.id===vId); if(!v) return null; const o=ecOrt(g.ortId), k=o.kunde;
   return {_geb:gid,_v:vId,id:"vt-"+vId,titel:v.name||"Verteiler",kunde:k?k.name:"",anschrift:adrText(o.standort)||adrText(k)||"",kundeId:k?k.id:"",standortId:o.standort?o.standort.id:"",ortId:g.ortId,
-    netz:v.netz||"",ersteller:v.ersteller||"",stand:v.stand||"",fertig:!!v.fertig,art:v.art,montage:v.montage,reihen:v.reihen,zs:v.zs,gerHerst:v.gerHerst,teReihe:v.teReihe,teMm:v.teMm,eintraege:vtEintraege(g,vId),updated:v.updated,createdBy:v.createdBy}; }
+    netz:v.netz||"",ersteller:v.ersteller||"",stand:v.stand||"",fertig:!!v.fertig,art:v.art,montage:v.montage,reihen:v.reihen,zs:v.zs,gerHerst:v.gerHerst,teReihe:v.teReihe,teMm:v.teMm,eintraege:(E=>{ if(!v.fertig) legNummern(E); return E; })(vtEintraege(g,vId)),updated:v.updated,createdBy:v.createdBy}; }
 /* Zurückschreiben in das Gebäude (vorhandene Felder der Prüfung wie Leitung oder Messwerte bleiben erhalten) */
 function vtSchreiben(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(!v) return;
   Object.assign(v,{name:L.titel||v.name,netz:L.netz||"",ersteller:L.ersteller||"",stand:L.stand||"",fertig:!!L.fertig,teReihe:L.teReihe,teMm:L.teMm,montage:L.montage,reihen:L.reihen,updated:Date.now()}); if(L.zs) v.zs=L.zs;
@@ -163,11 +163,11 @@ function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0, umbruch=false; con
   return {E,fehlt}; }
 /* Fehlende Kennzeichen nach dem Schema der Legende vergeben (auch fortlaufend hinter vorhandenen Zeilen) */
 function vtiKzVergeben(vorher,E){ const A=[...vorher];
-  /* Ohne eigene Kennzeichen (oder schon im Schema „FI 1 / 1, 2, 3“): euer Schema – FI n, darunter je FI ab 1, 3-polig = „1-3“ */
+  /* Ohne eigene Kennzeichen oder schon im BMK-Schema: Betriebsmittelkennzeichen -F1, -F2 … fortlaufend (legNummern) */
   const k=e=>String(e.kz||"").trim(), alle=[...vorher,...E].filter(e=>e.art==="sk"||e.art==="rcd");
-  if(!alle.some(e=>k(e))||alle.every(e=>!k(e)||(e.art==="rcd"?LEG_FI:LEG_NUM).test(k(e)))){
+  if(!alle.some(e=>k(e))||legSchemaNum([...vorher,...E])){
     E.forEach(e=>{ if((e.art==="sk"||e.art==="rcd")&&!k(e)) e._auto=true; });
-    const kopie=[...vorher.map(x=>({...x})),...E]; if(!kopie.some(e=>k(e))&&kopie.length) E.forEach(e=>{ if(e.art==="rcd") e.kz="FI 0"; else if(e.art==="sk") e.kz="0"; }); legNummern(kopie); return E; }
+    const kopie=[...vorher.map(x=>({...x})),...E]; if(!kopie.some(e=>k(e))&&kopie.length) E.forEach(e=>{ if(legBmkArt(e)) e.kz="-F0"; }); legNummern(kopie); return E; }
   E.forEach(e=>{ if(e.art==="sk"||e.art==="rcd"){ if(!e.kz){ e.kz=e.art==="rcd"?legRcdKz(A,A.length-1,false):legNaechsteKz(A,A.length-1)||"F 1"; e._auto=true; } } A.push(e); }); return E; }
 /* Reihe je Eintrag wie im Editor: neue Reihe bei „umbruch“ oder wenn die 12 TE voll sind */
 function vtiReihen(E,teR){ const n=teR||12; let r=0, te=0, erst=true; return E.map(e=>{ if(e.art==="gr") return r||1; const w=Math.min(legTE(e),n);
@@ -194,11 +194,13 @@ function vtImpVorschau(){ const box=document.getElementById("vtiVorschau"); if(!
   if(!t.trim()){ box.innerHTML=`<p class="meta">Vorschau erscheint, sobald etwas eingetragen ist.</p>`; return; }
   const {E,fehlt}=vtImpLesen(t), zi=vtImpAktZiel(), vorher=zi?legE(vtL(zi[0],zi[1])||{eintraege:[]}):[]; vtiKzVergeben(vorher,E);
   let inFi=false, rAlt=0; const RW=vtiReihen(E), RN=Math.max(0,...RW);
+  /* Einbauplatz in der Vorschau (gilt so für einen neuen Verteiler; beim Anhängen verschiebt er sich hinter das Vorhandene) */
+  const PLV=(()=>{ const n=12, out=[]; let r=0, t=0, erst=true; E.forEach((e,i)=>{ if(e.art==="gr"){ out[i]=""; return; } const w=Math.min(legTE(e),n); if(erst){ r=1; t=0; erst=false; } else if(e.umbruch||t+w>n){ r++; t=0; } out[i]=zi?"":legPlatzText({r,von:t+1,bis:t+w}); t+=w; }); return out; })();
   box.innerHTML=`<div class="vti-kopf"><b>${E.filter(e=>e.art==="sk").length} Stromkreise · ${E.filter(e=>e.art==="rcd").length} FI${E.some(e=>e.art==="res")?` · ${E.filter(e=>e.art==="res").length} Reserve`:""}${RN>1?` · ${RN} Reihen`:""}</b>${fehlt.length?`<span class="vti-warn">${fehlt.length}× kein Schutz erkannt</span>`:""}</div>`
    +E.map((e,i)=>{ const rk=e.art!=="gr"&&RN>1&&RW[i]!==rAlt?`<div class="vti-reihe">Reihe ${rAlt=RW[i]}</div>`:"";
      if(e.art==="gr"){ inFi=false; return `<div class="vti-z" data-art="gr">${esc(e.bez)}</div>`; } if(e.art==="rcd") inFi=true;
      const ein=e.art==="sk"||e.art==="res"?inFi:false;
-     return rk+`<div class="vti-z" data-art="${e.art}"${ein?" data-ein":""}${fehlt.includes(e.id)?" data-warn":""}><span class="v-kz">${esc(e.kz)}${e._auto?"<i>*</i>":""}</span><span class="v-bz">${e.art==="ge"?`<b class="vti-ge">Gerät</b> `:""}${e.art==="res"?"<i>Reserve</i>":esc(e.bez||(e.art==="rcd"?"Fehlerstromschutzschalter":"–"))}</span><span class="v-sc">${esc([e.schutz,e.pole===3?"3-polig":""].filter(Boolean).join(" ")||(e.art==="res"||e.art==="ge"?"":"?"))}</span><span class="v-lt">${esc(e.leitung||"")}</span></div>`; }).join("")
+     return rk+`<div class="vti-z" data-art="${e.art}"${ein?" data-ein":""}${fehlt.includes(e.id)?" data-warn":""}><span class="v-kz">${esc(e.kz)}${e._auto?"<i>*</i>":""}</span><span class="v-bz">${e.art==="ge"?`<b class="vti-ge">Gerät</b> `:""}${e.art==="res"?"<i>Reserve</i>":esc(e.bez||(e.art==="rcd"?"Fehlerstromschutzschalter":"–"))}</span><span class="v-sc">${esc([e.schutz,e.pole===3?"3-polig":""].filter(Boolean).join(" ")||(e.art==="res"||e.art==="ge"?"":"?"))}</span><span class="v-lt">${esc(PLV[i]||e.leitung||"")}</span></div>`; }).join("")
    +(E.some(e=>e._auto)?`<p class="meta" style="margin:8px 4px 0">* Kennzeichen von der App vergeben</p>`:""); }
 document.addEventListener("input",e=>{ if(e.target&&e.target.id==="vtiText") vtImpVorschau(); });
 document.addEventListener("change",e=>{ if(e.target&&e.target.id==="f_vtiZiel") vtImpVorschau(); });
