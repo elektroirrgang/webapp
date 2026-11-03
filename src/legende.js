@@ -14,16 +14,21 @@ const legE=L=>Array.isArray(L.eintraege)?L.eintraege:(L.eintraege=[]);
 const legSkZahl=L=>legE(L).filter(e=>e.art==="sk"||e.art==="res").length;
 const legSchutz=e=>[e.schutz,e.art==="sk"&&+e.pole===3?"3-polig":""].filter(Boolean).join(" ");
 /* Speichern: freie Legende als eigener Datensatz, Verteiler zurück ins Gebäude */
-/* ===== Nummern je FI (Schema „FI 1“, darunter 1, 2, 3 …) – automatisch, sobald ein Verteiler so nummeriert ist =====
-   Gezählt wird je Automat (Max, 03.11.2026): ein 3-poliger Herd ist EINE Nummer. Ältere Bereiche „1-3“ werden beim nächsten Speichern umgestellt. Bei jeder Änderung (Pole, Einfügen, Löschen, Verschieben)
-   wird neu durchgezählt; FIs heißen FI 1, FI 2 … in ihrer Reihenfolge. Verteiler mit anderem Schema (F 1.0.1 …) bleiben unangetastet. */
-const LEG_NUM=/^\d+(?:-\d+)?$/, LEG_FI=/^(FI|RCD)\s*\d+$/i;
-function legSchemaNum(E){ const S=E.filter(e=>e.art==="sk"), R=E.filter(e=>e.art==="rcd"), k=e=>String(e.kz||"").trim();
-  if(!S.every(e=>!k(e)||LEG_NUM.test(k(e)))||!R.every(e=>!k(e)||LEG_FI.test(k(e)))) return false;
-  return S.some(e=>LEG_NUM.test(k(e)))||R.some(e=>LEG_FI.test(k(e))); }
-function legNummern(E){ if(!legSchemaNum(E)) return false; let c=1, fi=0, ch=false; const setz=(e,kz)=>{ if(e.kz!==kz){ e.kz=kz; ch=true; } };
-  E.forEach(e=>{ if(e.art==="rcd"){ fi++; c=1; setz(e,`FI ${fi}`); return; } if(e.art==="gr"){ c=1; return; } if(e.art!=="sk") return;
-    setz(e,String(c)); c++; }); return ch; }
+/* ===== Betriebsmittelkennzeichen nach DIN EN IEC 81346 – automatisch (Max, 03.11.2026) =====
+   Eine Nummer je GERÄT, fortlaufend im ganzen Verteiler in Einbaureihenfolge (links → rechts, Reihe für Reihe):
+   -F = Schutzgeräte (RCD, LS, FI/LS, Reserve-Automat, NEOZED/SLS, Überspannungsschutz), -Q = Haupt-/Lasttrennschalter, Schütze,
+   -K = Stromstoß-/Zeitrelais, Treppenlicht, -T = Trafo/Netzteil, -X = Klemmen. Leerplätze und Überschriften bekommen nichts.
+   Der Einbauplatz (Reihe, TE) ist KEINE Nummer – er ergibt sich aus der Anordnung (legPlaetze).
+   Umgestellt werden Verteiler ohne Kennzeichen, mit BMK oder mit dem Zwischenschema „FI 1 / 1, 2, 3“ (bis 03.11.2026);
+   Verteiler mit dem alten Schema „F 1.0.1“ bleiben, wie sie sind. */
+const LEG_BMK=/^-?[A-Z]{1,2}\s?\d+$/, LEG_NUM=/^\d+(?:-\d+)?$/, LEG_FI=/^(FI|RCD)\s*\d+$/i;
+const legBmkArt=e=>e.art==="rcd"||e.art==="sk"?"F":e.art==="kl"?"X":e.art==="ge"?(t=>/haupt|lasttrenn|schütz|schuetz|trenn/i.test(t)?"Q":/stromsto|zeit|treppen|dämmer|relais/i.test(t)?"K":/trafo|netzteil/i.test(t)?"T":"F")(`${e.schutz||""} ${e.bez||""}`):"";
+function legSchemaNum(E){ const k=e=>String(e.kz||"").trim(); return E.filter(e=>legBmkArt(e)).every(e=>!k(e)||LEG_BMK.test(k(e))||LEG_NUM.test(k(e))||LEG_FI.test(k(e))); }
+function legNummern(E){ if(!legSchemaNum(E)) return false; const z={}; let ch=false;
+  E.forEach(e=>{ const b=legBmkArt(e); if(!b) return; z[b]=(z[b]||0)+1; const kz=`-${b}${z[b]}`; if(e.kz!==kz){ e.kz=kz; ch=true; } }); return ch; }
+/* Einbauplatz je Gerät aus der Anordnung: Reihe und TE-Platz (wie in der Zeichnung) */
+function legPlaetze(L){ const M={}; legReihen(L).forEach((r,ri)=>{ let t=0; r.g.forEach(([e,i,w])=>{ M[e.id]={r:ri+1,von:t+1,bis:t+w}; t+=w; }); }); return M; }
+const legPlatzText=p=>p?`R${p.r} · ${p.von===p.bis?"Platz "+p.von:`Platz ${p.von}–${p.bis}`}`:"";
 function legSave(L){ legNummern(legE(L)); if(L._geb) vtSchreiben(L); else saveRec("legenden",L); }
 function legSpeichern(L){ L.stand=ecHeute(); legSave(L); }
 
@@ -126,12 +131,12 @@ const legBauart=L=>[{hv:"Zählerschrank / HV",uv:"Unterverteiler",gw:"Gewerbe / 
 const legTE=e=>e.art==="kl"?1:+e.te||(e.art==="rcd"?4:e.art==="sk"&&+e.pole===3?3:1);
 const legOffen=e=>e.art==="sk"&&/^\s*\??\s*$/.test(e.bez||"");
 /* Liste: RCD als Kopf, seine Automaten eingerückt darunter; Überschriften trennen */
-function legListeView(L){ const E=legE(L), zu=L.fertig, B=[]; let g=null;
+function legListeView(L){ const E=legE(L), zu=L.fertig, B=[], PL=legPlaetze(L); let g=null; const pl=e=>PL[e.id]?`<small class="leg-pl">${esc(legPlatzText(PL[e.id]))}</small>`:"";
   E.forEach((e,i)=>{ if(e.art==="gr"){ B.push({gr:e}); g=null; } else if(e.art==="rcd"){ g={rcd:e,i,kids:[]}; B.push(g); } else if(g&&e.art!=="ge"){ g.kids.push([e,i]); g.last=i; } else B.push({z:[e,i]}); });
-  const zeile=([e],kl)=>`<button type="button" class="leg-r${kl||""}${e.art==="res"?" res":""}${legOffen(e)?" offen":""}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}><span class="kz">${esc(e.kz||"–")}</span><span class="bz">${e.art==="res"?"Reserve":legOffen(e)?"? – noch unbekannt":esc(e.bez)}</span>${legSchutz(e)?`<span class="sc">${esc(legSchutz(e))}</span>`:""}</button>`;
+  const zeile=([e],kl)=>`<button type="button" class="leg-r${kl||""}${e.art==="res"?" res":""}${legOffen(e)?" offen":""}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}><span class="kz">${esc(e.kz||"–")}</span><span class="bz">${e.art==="res"?"Leerplatz":legOffen(e)?"? – noch unbekannt":esc(e.bez)}${pl(e)}</span>${legSchutz(e)?`<span class="sc">${esc(legSchutz(e))}</span>`:""}</button>`;
   return `<div class="leg-gl">${B.map(b=>b.gr?`<button type="button" class="leg-ue" data-act="legEdit" data-id="${esc(b.gr.id)}" ${zu?"disabled":""}>${esc(b.gr.bez||"Überschrift")}</button>`
     :b.z?`<div class="leg-grp solo">${zeile(b.z)}</div>`
-    :`<div class="leg-grp"><button type="button" class="leg-gk" data-act="legEdit" data-id="${esc(b.rcd.id)}" ${zu?"disabled":""}><span class="kz">${esc(b.rcd.kz||"–")}</span><span class="bz">${esc(b.rcd.bez||"Fehlerstromschutzschalter")}<span class="leg-rcd">RCD</span></span>${b.rcd.schutz?`<span class="sc">${esc(b.rcd.schutz)}</span>`:""}</button>
+    :`<div class="leg-grp"><button type="button" class="leg-gk" data-act="legEdit" data-id="${esc(b.rcd.id)}" ${zu?"disabled":""}><span class="kz">${esc(b.rcd.kz||"–")}</span><span class="bz">${esc(b.rcd.bez||"Fehlerstromschutzschalter")}<span class="leg-rcd">RCD</span>${pl(b.rcd)}</span>${b.rcd.schutz?`<span class="sc">${esc(b.rcd.schutz)}</span>`:""}</button>
       ${b.kids.map(k=>zeile(k," kind")).join("")}${zu?"":`<button type="button" class="leg-add" data-act="legNach" data-i="${b.last!=null?b.last:b.i}">${icon("add")}Stromkreis an ${esc(b.rcd.kz||"RCD")}</button>`}</div>`).join("")}</div>`; }
 /* Reihen bilden: Breite je Gerät in TE, „Neue Reihe ab hier“ bricht um */
 function legReihen(L){ const n=+L.teReihe||12, R=[]; let r=null;
@@ -241,6 +246,7 @@ function legWerSel(L){ const N=legTeam(), cur=L.ersteller||""; if(cur&&!N.includ
 const legKzTeile=kz=>{ const m=String(kz||"").trim().match(/^(.*?)(\d+(?:\.\d+)*)$/); return m?{vor:m[1],z:m[2].split(".")}:null; };
 const legZweistellig=E=>E.some(e=>e.art!=="rcd"&&/\.0\d$/.test(String(e.kz||"").trim()));
 function legNaechsteKz(E,i){ for(let j=i;j>=0;j--){ const e=E[j]; if(!e||e.art==="gr"||e.art==="ge"||e.art==="kl"||!e.kz) continue;
+    if(LEG_BMK.test(String(e.kz).trim())){ let m=0; E.forEach(x=>{ const t=String(x.kz||"").match(/^-?F\s?(\d+)$/); if(t) m=Math.max(m,+t[1]); }); return `-F${m+1}`; }
     if(e.art==="rcd") return /^(FI|RCD)\s*\d+$/i.test(String(e.kz).trim())?"1":String(e.kz).trim()+(legZweistellig(E)?".01":".1");   /* direkt nach dem RCD: sein erster Automat – bei „FI 2“-Beschriftung zählen die Automaten je FI ab 1 */
     const rb=String(e.kz).trim().match(/^\d+-(\d+)$/); if(rb) return String(+rb[1]+1);
     const t=legKzTeile(e.kz); if(!t) return ""; const l=t.z.length-1, w=t.z[l]; t.z[l]=String(+w+1).padStart(w.length,"0");
@@ -283,7 +289,7 @@ function legArtZeigen(){ const a=legDlg&&legDlg.art; if(!a) return;
   const sc=document.getElementById("f_legSchutz"); if(sc){ sc.placeholder=a==="rcd"?"z. B. 40 A / 30 mA Typ A":"z. B. B16"; sc.dataset.vl=a==="rcd"?"legRcdListe":"legLsListe"; } }
 function legSkOk(weiter){ const L=legAkt(); if(!L||!legDlg) return; const F=formVals(), E=legE(L), a=legDlg.art;
   if(a==="gr"&&!F.legBez){ toast("Bitte eine Überschrift eintragen"); return; }
-  if(a!=="gr"&&!F.legKz){ toast("Bitte eine Kennzeichnung eintragen"); return; }
+  if(a!=="gr"&&!F.legKz&&!legSchemaNum(E)){ toast("Bitte eine Kennzeichnung eintragen"); return; }
   const r={id:legDlg.id||uid(),art:a,kz:a==="gr"?"":F.legKz,bez:a==="res"?"":a==="rcd"&&!F.legBez?"Fehlerstromschutzschalter":F.legBez,schutz:a==="gr"?"":F.legSchutz,pole:a==="sk"?+legDlg.pole:1,...(legDlg.te?{te:+legDlg.te}:{}),...(legDlg.umbruch?{umbruch:true}:{}),...(legDlg.sym?{sym:legDlg.sym}:{})};
   { const alt=E.find(x=>x.id===r.id); if(alt&&alt.mat&&alt.schutz===r.schutz&&alt.art===r.art) r.mat=alt.mat; }   /* Artikel aus der Materialliste bleibt, solange die Absicherung gleich ist */
   let i=E.findIndex(x=>x.id===r.id); if(i>=0) E[i]=r; else { E.splice(legDlg.pos,0,r); i=legDlg.pos; }
