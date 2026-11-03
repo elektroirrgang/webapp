@@ -287,21 +287,24 @@ function legSkDlg(id,nach){ const L=legAkt(); if(!L) return; const E=legE(L), i=
   const vorschl=[...new Set(live("legenden").flatMap(x=>legE(x).filter(y=>y.art==="sk"&&y.bez).map(y=>y.bez)))];
   /* Aufgeräumt (03.11.2026): Auswahlfelder statt Chip-Wänden – Art, Raum, Verbraucher, Breite und Symbol als Picker, Absicherung mit Vorschlagsliste, Selteneres unter „Mehr“ */
   const wahl=(k,l,cur,opts,kl)=>`<div class="tf fl${kl?" "+kl:""}"><select id="legW_${k}" data-legw="${k}">${opts.map(([o,t])=>`<option value="${esc(o)}"${String(o)===String(cur)?" selected":""}>${esc(t)}</option>`).join("")}</select><label for="legW_${k}">${l}</label><span class="arr">${icon("drop")}</span></div>`;
-  const mehrOffen=!!(legDlg.te||legDlg.umbruch||legDlg.sym);
+  /* 03.11.2026 abends: kein „Mehr“-Klapper mehr; Pole + Breite in einer Zeile, Symbol und „Neue Reihe“ direkt sichtbar.
+     Unten nur noch Löschen | Abbrechen · Speichern; Duplizieren, nach oben/unten als eigene Zeile darüber */
+  const akt=(act,ic,txt,extra)=>`<button type="button" class="leg-ak" data-act="${act}"${extra||""}>${icon(ic)}<span>${txt}</span></button>`;
   dialog(e?"Zeile bearbeiten":"Neue Zeile",`<div class="fg1 leg-dlg">
       ${wahl("art","Art",v.art,LEG_ART)}
-      <div class="row2">${`<div class="leg-nur" data-nicht="gr">${tf("legKz","Kennzeichnung",v.kz||"",{form:true,ph:"z. B. 1 oder F 1.0.1"})}</div>`}
+      <div class="row2">${`<div class="leg-nur" data-nicht="gr">${tf("legKz","Kennzeichnung",v.kz||"",{form:true,ph:"z. B. -F3"})}</div>`}
         <div class="leg-nur" data-nicht="gr">${tf("legSchutz","Absicherung",v.schutz||"",{form:true,ph:v.art==="rcd"?"z. B. 40 A / 30 mA Typ A":"z. B. B16",list:v.art==="rcd"?"legRcdListe":"legLsListe"})}</div></div>
       <div class="chips ec-wahl leg-nur" data-nur="rcd"><button type="button" class="chip" data-act="legSetz" data-ziel="f_legKz" data-v="${esc(rcdN)}">Nächster RCD: ${esc(rcdN)}</button><button type="button" class="chip" data-act="legSetz" data-ziel="f_legKz" data-v="${esc(rcdR)}">Neue Reihe: ${esc(rcdR)}</button></div>
       <div class="leg-nur" data-nicht="res">${tf("legBez",v.art==="gr"?"Überschrift":"Bezeichnung",v.bez||"",{form:true,ph:v.art==="gr"?"z. B. Erdgeschoss":v.art==="rcd"?"Fehlerstromschutzschalter":"z. B. Küche Steckdosen",list:"legBezListe"})}</div>
-      <div class="row2 leg-nur" data-nur="sk">${wahl("raum","Raum ergänzen","",[["","–"],...LEG_RAUM.map(x=>[x,x])])}${wahl("was","Verbraucher ergänzen","",[["","–"],...LEG_WAS.map(x=>[x,x])])}</div>
-      <div class="leg-nur" data-nur="sk">${wahl("pole","Pole",legDlg.pole,[["1","1-polig"],["3","3-polig"]])}</div>
-      <details class="leg-mehr leg-nur" data-nicht="gr"${mehrOffen?" open":""}><summary>Mehr: Breite, Reihe, Symbol</summary>
-        <div class="fg1"><div class="row2">${wahl("te","Breite",legDlg.te,[["","automatisch"],["1","1 TE"],["2","2 TE"],["3","3 TE"],["4","4 TE"]])}${wahl("sym","Symbol",legDlg.sym,[["","automatisch"],...LEG_SYM_LISTE,["keins","kein Symbol"]])}</div>
-        <button type="button" class="leg-schalt" data-act="legNr" aria-pressed="${legDlg.umbruch}"><span>Neue Reihe ab hier</span><span class="schalter${legDlg.umbruch?" an":""}"><i></i></span></button></div></details>
+      <div class="row2 leg-nur" data-nur="sk">${wahl("raum","Raum","",[["","wählen"],...LEG_RAUM.map(x=>[x,x])])}${wahl("was","Verbraucher","",[["","wählen"],...LEG_WAS.map(x=>[x,x])])}</div>
+      <div class="row2 leg-nur" data-nicht="gr"><div class="leg-nur" data-nur="sk">${wahl("pole","Pole",legDlg.pole,[["1","1-polig"],["3","3-polig"]])}</div>${wahl("te","Breite",legDlg.te,[["","automatisch"],["1","1 TE"],["2","2 TE"],["3","3 TE"],["4","4 TE"]])}</div>
+      <div class="leg-nur" data-nicht="gr">${wahl("sym","Symbol",legDlg.sym,[["","automatisch"],...LEG_SYM_LISTE,["keins","kein Symbol"]])}</div>
+      <button type="button" class="leg-schalt leg-nur" data-nicht="gr" data-act="legNr" aria-pressed="${legDlg.umbruch}"><span>Neue Reihe ab hier</span><span class="schalter${legDlg.umbruch?" an":""}"><i></i></span></button>
+      ${e?`<div class="leg-aks">${e.art!=="gr"?akt("legDupl","copy","Duplizieren"):""}${akt("legOrd","chev","Nach oben",` data-d="-1" ${i?"":"disabled"}`)}${akt("legOrd","chev","Nach unten",` data-d="1" ${i<E.length-1?"":"disabled"}`)}</div>
+      <div class="leg-dupl" id="legDuplW" hidden><span>Wie oft darunter einfügen?</span>${[1,2,3,4,5].map(n=>`<button type="button" class="chip" data-act="legDuplN" data-n="${n}">${n}×</button>`).join("")}<small>Gleiche Absicherung und Pole, ohne Bezeichnung</small></div>`:""}
     </div>${datalist("legBezListe",vorschl)}${datalist("legLsListe",LEG_LS)}${datalist("legRcdListe",LEG_RCD)}`,
-    `${e?`<button class="btn-text danger" data-act="legSkDel">Löschen</button><button class="ab-ic" data-act="legOrd" data-d="-1" ${i?"":"disabled"} aria-label="Nach oben" title="Nach oben">${icon("chev")}</button><button class="ab-ic ab" data-act="legOrd" data-d="1" ${i<E.length-1?"":"disabled"} aria-label="Nach unten" title="Nach unten">${icon("chev")}</button>`:""}<span style="flex:1"></span>
-      <button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="legSkOk" data-weiter="1">${e?"Darunter neu":"Nächster"}</button><button class="btn-text" data-act="legSkOk">Speichern</button>`,{breit:true});
+    `${e?`<button class="btn-tonal leg-dlg-weg" data-act="legSkDel">${icon("del")}Löschen</button>`:""}<span style="flex:1"></span>
+      <button class="btn-text" data-act="cancel">Abbrechen</button>${e?"":`<button class="btn-text" data-act="legSkOk" data-weiter="1" title="Speichern und gleich die nächste Zeile anlegen">Noch einer</button>`}<button class="btn-filled leg-dlg-ok" data-act="legSkOk">Speichern</button>`,{breit:true});
   legArtZeigen(); }
 function legArtZeigen(){ const a=legDlg&&legDlg.art; if(!a) return;
   document.querySelectorAll("#dlg .leg-nur").forEach(x=>x.hidden=(x.dataset.nur&&x.dataset.nur!==a)||(x.dataset.nicht&&x.dataset.nicht===a));
@@ -314,8 +317,13 @@ function legSkOk(weiter){ const L=legAkt(); if(!L||!legDlg) return; const F=form
   const r={id:legDlg.id||uid(),art:a,kz:a==="gr"?"":F.legKz,bez:a==="res"?"":a==="rcd"&&!F.legBez?"Fehlerstromschutzschalter":F.legBez,schutz:a==="gr"?"":F.legSchutz,pole:a==="sk"?+legDlg.pole:1,...(legDlg.te?{te:+legDlg.te}:{}),...(legDlg.umbruch?{umbruch:true}:{}),...(legDlg.sym?{sym:legDlg.sym}:{})};
   { const alt=E.find(x=>x.id===r.id); if(alt&&alt.mat&&alt.schutz===r.schutz&&alt.art===r.art) r.mat=alt.mat; }   /* Artikel aus der Materialliste bleibt, solange die Absicherung gleich ist */
   let i=E.findIndex(x=>x.id===r.id); if(i>=0) E[i]=r; else { E.splice(legDlg.pos,0,r); i=legDlg.pos; }
+  if(weiter==="dupl") return i;
   legSpeichern(L); render();
   if(weiter) legSkDlg(null,i); else closeOverlays(); }
+/* Duplizieren: erst die Änderungen im Dialog übernehmen, dann n Kopien direkt darunter – gleiche Art, Absicherung, Pole, Breite, Artikel; Bezeichnung leer */
+function legDuplizieren(n){ const L=legAkt(); if(!L||!legDlg) return; const i=legSkOk("dupl"); if(i==null) return; const E=legE(L), q=E[i], num=legSchemaNum(E);
+  for(let k=1;k<=n;k++){ const c={id:uid(),art:q.art,kz:num?"":legNaechsteKz(E,i+k-1),bez:q.art==="rcd"?"Fehlerstromschutzschalter":"",schutz:q.schutz||"",pole:q.pole||1,...(q.te?{te:q.te}:{}),...(q.mat?{mat:q.mat}:{})}; E.splice(i+k,0,c); }
+  legSpeichern(L); closeOverlays(); render(); toast(n===1?"Kopie eingefügt":`${n} Kopien eingefügt`); }
 
 /* ---- PDF ---- */
 async function legPdf(L){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",format:"a4"});
@@ -377,6 +385,8 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "legWort": { const f=document.getElementById("f_legBez"); if(!f) return; const w=b.dataset.v, t=f.value.trim();
       f.value=!t?w:t.split(/\s+/).includes(w)?t:t+" "+w; f.parentElement.classList.add("fl"); return; }
   case "legSkOk": legSkOk(!!b.dataset.weiter); return;
+  case "legDupl": { const w=document.getElementById("legDuplW"); if(w){ w.hidden=!w.hidden; if(!w.hidden) w.scrollIntoView({block:"nearest",behavior:"smooth"}); } return; }
+  case "legDuplN": legDuplizieren(+b.dataset.n||1); return;
   case "legSkDel": { if(!L||!legDlg) return; L.eintraege=legE(L).filter(x=>x.id!==legDlg.id); legSpeichern(L); closeOverlays(); render(); return; }
   case "legOrd": { if(!L||!legDlg) return; const E=legE(L), i=E.findIndex(x=>x.id===legDlg.id), j=i+(+b.dataset.d); if(i<0||j<0||j>=E.length) return;
       [E[i],E[j]]=[E[j],E[i]]; legSpeichern(L); render(); legSkDlg(legDlg.id); return; }
