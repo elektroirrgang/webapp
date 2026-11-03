@@ -15,17 +15,22 @@ const legSkZahl=L=>legE(L).filter(e=>e.art==="sk"||e.art==="res").length;
 const legSchutz=e=>[e.schutz,e.art==="sk"&&+e.pole===3?"3-polig":""].filter(Boolean).join(" ");
 /* Speichern: freie Legende als eigener Datensatz, Verteiler zurück ins Gebäude */
 /* ===== Betriebsmittelkennzeichen nach DIN EN IEC 81346 – automatisch (Max, 03.11.2026) =====
-   Eine Nummer je GERÄT, fortlaufend im ganzen Verteiler in Einbaureihenfolge (links → rechts, Reihe für Reihe):
+   Eine Nummer je GERÄT in Einbaureihenfolge (links → rechts, Reihe für Reihe), Automaten am RCD gestuft (siehe legNummern):
    -F = Schutzgeräte (RCD, LS, FI/LS, Reserve-Automat, NEOZED/SLS, Überspannungsschutz), -Q = Haupt-/Lasttrennschalter, Schütze,
    -K = Stromstoß-/Zeitrelais, Treppenlicht, -T = Trafo/Netzteil, -X = Klemmen. Leerplätze und Überschriften bekommen nichts.
    Der Einbauplatz (Reihe, TE) ist KEINE Nummer – er ergibt sich aus der Anordnung (legPlaetze).
    Umgestellt werden Verteiler ohne Kennzeichen, mit BMK oder mit dem Zwischenschema „FI 1 / 1, 2, 3“ (bis 03.11.2026);
    Verteiler mit dem alten Schema „F 1.0.1“ bleiben, wie sie sind. */
-const LEG_BMK=/^-?[A-Z]{1,2}\s?\d+$/, LEG_NUM=/^\d+(?:-\d+)?$/, LEG_FI=/^(FI|RCD)\s*\d+$/i;
+const LEG_BMK=/^-?[A-Z]{1,2}\s?\d+(?:\.\d+)?$/, LEG_NUM=/^\d+(?:-\d+)?$/, LEG_FI=/^(FI|RCD)\s*\d+$/i;
 const legBmkArt=e=>e.art==="rcd"||e.art==="sk"?"F":e.art==="kl"?"X":e.art==="ge"?(t=>/haupt|lasttrenn|schütz|schuetz|trenn/i.test(t)?"Q":/stromsto|zeit|treppen|dämmer|relais/i.test(t)?"K":/trafo|netzteil/i.test(t)?"T":"F")(`${e.schutz||""} ${e.bez||""}`):"";
 function legSchemaNum(E){ const k=e=>String(e.kz||"").trim(); return E.filter(e=>legBmkArt(e)).every(e=>!k(e)||LEG_BMK.test(k(e))||LEG_NUM.test(k(e))||LEG_FI.test(k(e))); }
-function legNummern(E){ if(!legSchemaNum(E)) return false; const z={}; let ch=false;
-  E.forEach(e=>{ const b=legBmkArt(e); if(!b) return; z[b]=(z[b]||0)+1; const kz=`-${b}${z[b]}`; if(e.kz!==kz){ e.kz=kz; ch=true; } }); return ch; }
+/* Gestuft (Max, 03.11.2026): Automaten hinter einem RCD tragen dessen Nummer – RCD -F1, dahinter -F1.1, -F1.2 …;
+   FI/LS (eigener Fehlerstromschutz) und Automaten ohne RCD zählen auf der obersten Ebene weiter (-F2, -F3 …). Überschrift und FI/LS beenden die RCD-Gruppe. */
+function legNummern(E){ if(!legSchemaNum(E)) return false; const z={}; let ch=false, rcd=null, sub=0; const setz=(e,kz)=>{ if(e.kz!==kz){ e.kz=kz; ch=true; } };
+  E.forEach(e=>{ if(e.art==="gr"){ rcd=null; return; } const b=legBmkArt(e); if(!b) return;
+    if(e.art==="sk"&&rcd&&!legIstRcbo(e)){ sub++; setz(e,`${rcd.kz}.${sub}`); return; }
+    if(legIstRcbo(e)) rcd=null;
+    z[b]=(z[b]||0)+1; setz(e,`-${b}${z[b]}`); if(e.art==="rcd"){ rcd=e; sub=0; } }); return ch; }
 /* Einbauplatz je Gerät aus der Anordnung: Reihe und TE-Platz (wie in der Zeichnung) */
 function legPlaetze(L){ const M={}; legReihen(L).forEach((r,ri)=>{ let t=0; r.g.forEach(([e,i,w])=>{ M[e.id]={r:ri+1,von:t+1,bis:t+w}; t+=w; }); }); return M; }
 const legPlatzText=p=>p?`R${p.r} · ${p.von===p.bis?"Platz "+p.von:`Platz ${p.von}–${p.bis}`}`:"";
