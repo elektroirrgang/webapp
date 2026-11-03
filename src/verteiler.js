@@ -88,6 +88,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="vtNeu"){ awNeuStart(b.dataset.kind,b.dataset.id); return; }
   if(a==="vtNeuOk"){ vtNeuOk(); return; }
   if(a==="vtImp"){ vtImpDlg(b.dataset.kind,b.dataset.id); return; }
+  if(a==="vtImpHier"){ vtImpHier(); return; }
   if(a==="vtImpOk"){ vtImpAnlegen(); return; }
   if(a==="vtImpDatei"){ vtImpDatei(); return; } },true);
 
@@ -209,3 +210,8 @@ function vtImpAnlegen(){ const B=vtImp; if(!B) return; const t=(document.getElem
   L.eintraege=[...legE(L),...neu]; vtSchreiben(L);
   const g2=vtGeb(gid); if(g2&&E.some(e=>e.leitung)){ E.forEach(e=>{ if(!e.leitung) return; const s=g2.stromkreise.find(x=>x.id===e.id); if(s) s.leitung=e.leitung; }); ecGebSpeichern(g2); }
   vtImp=null; closeOverlays(); go({v:"vt",g:gid,id:vId}); toast(`${E.filter(e=>e.art==="sk").length} Stromkreise und ${E.filter(e=>e.art==="rcd").length} FI übernommen`); }
+
+/* Aus dem geöffneten Verteiler heraus: Ziel ist genau dieser Verteiler (Reiter Stromkreise und Fenster „Gerät“) */
+function vtImpHier(){ if(nav.v!=="vt") return; const g=vtGeb(nav.g); if(!g) return; const o=ecOrt(g.ortId), gid=nav.g, vId=nav.id;
+  if(typeof AW!=="undefined") AW=null; $("#dlg").classList.remove("aw"); closeOverlays();
+  if(o.standort) vtImpDlg("standorte",o.standort.id,gid+"|"+vId); else if(o.kunde) vtImpDlg("kunden",o.kunde.id,gid+"|"+vId); }

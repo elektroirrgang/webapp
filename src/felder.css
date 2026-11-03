@@ -1205,3 +1205,5 @@ a.dz{color:inherit;text-decoration:none;border-radius:12px}
 @media (max-width:600px){.vti-z{grid-template-columns:70px minmax(0,1fr) auto}.vti-z .v-lt{display:none}}
 .vti-reihe{margin:10px 4px 2px;font-size:12px;font-weight:700;color:var(--on-sv);text-transform:none}
 .vti-ge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--sc-highest);margin-right:4px}
+.leg-imp{display:flex;justify-content:flex-start;margin-top:12px}
+.aw-liste-k .aw-gb{color:var(--brand)}

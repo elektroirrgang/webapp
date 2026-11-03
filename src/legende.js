@@ -106,7 +106,8 @@ function legUvKarte(L){ if(typeof uvZeichnung!=="function") return ""; const Z=u
     ${legE(L).length?"":`<p class="meta">Noch keine Geräte. Unten rechts über „Gerät“ einsetzen – Reihen-Vorlagen wie RCD + 6 × B16 gehen in einem Rutsch.</p>`}</section>`; }
 /* Karte „Stromkreise“ (Reiter Stromkreise) */
 function legSkKarte(L,E){ return `<section class="card"><div class="card-kopf leg-kopf"><h3>Stromkreise${E.length?` <small class="leg-n">${legSkZahl(L)}</small>`:""}</h3>${E.length?seg("legAnsicht",legAnsicht(),[["liste","Liste"],["verteiler","Verteiler"]],"leg-seg"):""}</div>
-      ${E.length?(legAnsicht()==="verteiler"?legVtView(L):legListeView(L)):`<p class="meta">Noch keine Geräte. Unten rechts über „Gerät“ einsetzen – Gerät aus der Materialliste antippen, die Kennzeichnung zählt mit.</p>`}
+      ${E.length?(legAnsicht()==="verteiler"?legVtView(L):legListeView(L)):`<p class="meta">Noch keine Geräte. Unten rechts über „Gerät“ einsetzen – Gerät aus der Materialliste antippen, die Kennzeichnung zählt mit. Oder eine ganze Liste auf einmal einfügen.</p>`}
+      ${nav.v==="vt"&&!L.fertig?`<div class="leg-imp"><button type="button" class="kd-tel-neu" data-act="vtImpHier">${icon("vtListe")}<span>Liste einfügen</span></button></div>`:""}
     </section>
 `; }
 /* ===== Ansichten der Stromkreise: Liste (je RCD eine Gruppe) und Verteiler (Reihen, Breite in TE) ===== */
