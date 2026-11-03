@@ -1326,3 +1326,4 @@ a.dz{color:inherit;text-decoration:none;border-radius:12px}
 .vu-kacheln,.vu-kacheln{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px}
 .vu-k{padding:10px 8px;border-radius:14px;align-items:center;text-align:center}.vu-k b{font-size:22px;line-height:28px}.vu-k span{font-size:12px;line-height:16px}
 .zs-ende{display:grid;gap:8px;margin-top:12px}.zs-ende .zs-neu{margin-top:0}.zs-umbau{background:var(--sc)}
+.leg-von{margin-top:12px}.zs-karte .leg-von{margin:8px 0 0}
