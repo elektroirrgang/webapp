@@ -36,8 +36,8 @@ function vtSchreiben(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===
   E.forEach((e,pos)=>{ if(e.art==="gr") rcd="";
     if(e.art==="rcd"){ rcd=e.id; let r=g.rcds.find(x=>x.id===e.id); if(!r){ r={id:e.id,vId:L._v}; g.rcds.push(r); } const w=vtRcdLesen(e.schutz);
       Object.assign(r,{nr:e.kz||"",bez:e.bez||"",in:w.in||r.in||"",idn:w.idn||r.idn||"",typ:w.typ||r.typ||"",pos}); opt(r,e); return; }
-    if(e.art==="sk"){ let s=g.stromkreise.find(x=>x.id===e.id); if(!s){ s={id:e.id,vId:L._v}; g.stromkreise.push(s); }
-      Object.assign(s,{nr:e.kz||"",bez:e.bez||"",schutz:String(e.schutz||"").replace(/\s*3-polig$/i,""),pole:+e.pole||1,rcdId:rcd,pos}); opt(s,e); return; }
+    if(e.art==="sk"){ let s=g.stromkreise.find(x=>x.id===e.id); if(!s){ s={id:e.id,vId:L._v}; g.stromkreise.push(s); } const rb=legIstRcbo(e); if(rb) rcd="";
+      Object.assign(s,{nr:e.kz||"",bez:e.bez||"",schutz:String(e.schutz||"").replace(/\s*3-polig$/i,""),pole:+e.pole||1,rcdId:rb?"":rcd,pos}); opt(s,e); return; }
     let t=(g.vtTeile||[]).find(x=>x.id===e.id); if(!t){ t={id:e.id,vId:L._v}; g.vtTeile.push(t); }
     Object.assign(t,{art:e.art,kz:e.kz||"",bez:e.bez||"",schutz:e.schutz||"",pos}); opt(t,e); });
   ecGebSpeichern(g); }
@@ -151,7 +151,7 @@ function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0, umbruch=false; con
       const nm=(schutz||bez).trim().match(/^(FI|RCD)\s*-?\s*(\d+)$/i); if(nm&&!kz){ kz=`${nm[1].toUpperCase()} ${nm[2]}`; if(schutz) schutz="FI"; else bez=""; }
       const e={id:uid(),art:"rcd",kz,bez:/^(FI|RCD)\b/i.test(bez)||vtiRcd(bez)?"":bez,schutz:vtiRcdSchutz(schutz||bez),_nr:rcdNr};
       if(nm) e.schutz=""; const p=/\b2\s?-?\s?(p|pol|polig)\b/i.test(alles)?2:0; if(p) e.te=2; rcds.push(e); neu(e); return; }
-    const e={id:uid(),art:"sk",kz,bez,schutz:schutz?vtiLsSchutz(schutz):"",pole:vtiPole(alles)}; if(leitung) e.leitung=leitung; if(ref) e._ref=ref; if(!schutz) fehlt.push(e.id);
+    const e={id:uid(),art:"sk",kz,bez,schutz:schutz?vtiLsSchutz(schutz):"",pole:vtiPole(alles)}; if(vtiRcbo(schutz||"")&&e.pole!==3) e.te=2; if(leitung) e.leitung=leitung; if(ref) e._ref=ref; if(!schutz) fehlt.push(e.id);
     neu(e); });
   /* Verweise „FI 2“: Stromkreis hinter den zweiten FI (und dessen andere Stromkreise) setzen */
   if(E.some(e=>e._ref)){ const mitRef=E.filter(e=>e._ref&&rcds[e._ref-1]); const R=E.filter(e=>!mitRef.includes(e));
