@@ -50,10 +50,13 @@ function vtAusLegende(L,ortId){ const g=ecGeb(ortId), vId=uid();
 
 /* ---- Verteiler eines Kunden / Standorts ---- */
 function vtOrte(kind,r){ return kind==="kunden"?["k:"+r.id,...standorteVon(r.id).map(s=>s.id)]:[r.id]; }
-function vtListe(orte){ const L=[]; orte.forEach(o=>{ const g=vtGeb(ecGebId(o)); if(g) g.verteiler.forEach(v=>L.push({g,v})); }); return L; }
-function vtItem({g,v},mitOrt){ const n=g.stromkreise.filter(s=>s.vId===v.id).length, o=mitOrt&&!String(g.ortId).startsWith("k:")?ecOrt(g.ortId):null;
+/* Reihenfolge wie die Einspeisung: HV, darunter die daraus gespeisten UVs (vonVId) */
+function vtListe(orte){ const L=[]; orte.forEach(o=>{ const g=vtGeb(ecGebId(o)); if(!g) return; const V=g.verteiler, da=new Set(V.map(v=>v.id)), gesehen=new Set();
+  const lauf=(v,t)=>{ if(gesehen.has(v.id)) return; gesehen.add(v.id); L.push({g,v,t}); V.filter(x=>x.vonVId===v.id).forEach(x=>lauf(x,t+1)); };
+  V.filter(v=>!v.vonVId||!da.has(v.vonVId)).forEach(v=>lauf(v,0)); V.forEach(v=>lauf(v,0)); }); return L; }
+function vtItem({g,v},mitOrt){ const n=g.stromkreise.filter(s=>s.vId===v.id).length, o=mitOrt&&!String(g.ortId).startsWith("k:")?ecOrt(g.ortId):null, von=v.vonVId&&g.verteiler.find(x=>x.id===v.vonVId);
   return `<div class="li" role="button" tabindex="0" data-act="vtAuf" data-g="${esc(g.id)}" data-id="${esc(v.id)}"><span class="av">${icon("ecMess")}</span>
-    <span class="lt"><span class="h">${esc(v.name||"Verteiler")}</span><span class="s">${esc([o&&o.standort&&o.standort.name,`${n} Stromkreis${n===1?"":"e"}`,v.stand&&"Stand "+ecDatum(v.stand)].filter(Boolean).join(" · "))}</span>
+    <span class="lt"><span class="h">${esc(v.name||"Verteiler")}</span><span class="s">${esc([o&&o.standort&&o.standort.name,von&&`aus ${von.name||"Verteiler"}`,`${n} Stromkreis${n===1?"":"e"}`,v.stand&&"Stand "+ecDatum(v.stand)].filter(Boolean).join(" · "))}</span>
     ${v.fertig?`<span class="st">${pill("ok","abgeschlossen")}</span>`:""}</span>${icon("chev")}</div>`; }
 function vtBeiKunde(kind,r){ const V=vtListe(vtOrte(kind,r)), Lg=typeof legVon==="function"?legVon(kind,r.id):[];
   return kdKopf("Verteiler","vtNeu","Verteiler anlegen",` data-kind="${kind}" data-id="${esc(r.id)}"`)
