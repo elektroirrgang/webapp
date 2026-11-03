@@ -194,7 +194,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   switch(a){
   case "awStart": awGeraetStart(); return;
   case "awZu": awZu(); return;
-  case "awZur": if(!AW) return awZu(); if(AW.typ==="neu"){ if(AW.sub){ AW.sub=AW.sub==="reihen"?"hoehe":null; if(AW.d.zs) zsAbgleich(AW.d.zs); awNeuZeigen(); } else if(AW.i>0){ AW.i--; awNeuZeigen(); } else awZu(); }
+  case "awZur": if(!AW||AW.typ==="produkt") return awZu(); if(AW.typ==="neu"){ if(AW.sub){ AW.sub=AW.sub==="reihen"?"hoehe":null; if(AW.d.zs) zsAbgleich(AW.d.zs); awNeuZeigen(); } else if(AW.i>0){ AW.i--; awNeuZeigen(); } else awZu(); }
     else if(AW.typ==="zs"){ if(AW.schritte&&AW.i>0){ const z=zsAktZp(); if(z) zsZpLesen(z); AW.i--; zsZeigen(); } else awZu(); } else if(AW.m) awKatalog(); else awZu(); return;
   case "awNeuW": awNeuWahl(b.dataset.v); return;
   case "awNeuWeiter": { const S=awNeuSchritte(), sk=S[AW.i]||"", d=AW.d;
@@ -222,3 +222,28 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
 document.addEventListener("input",e=>{ if(!AW) return;
   if(e.target.id==="awSuch"){ AW.such=e.target.value; const g=document.getElementById("awGrid"); if(g) g.innerHTML=awGrid(); { const sc=document.getElementById("awSerie"); if(sc) sc.innerHTML=awSerieChips(); } document.querySelectorAll('#dlg [data-act="awTab"]').forEach(x=>x.setAttribute("aria-pressed",!AW.such.trim()&&x.dataset.v===AW.tab)); }
   if(e.target.id==="f_awBez"){ AW.bez=e.target.value; AW.bezHand=!!e.target.value.trim(); } });
+
+/* ---------- Verteiler-Ansicht: Gerät antippen = nur das Produkt wählen (Bezeichnung usw. bleibt Sache der Liste) ----------
+   Passende Artikel zuerst (gleiche Art, Charakteristik, Nennstrom, Pole), darunter die übrigen derselben Art. */
+function awProdukt(id){ const L=legAkt(); if(!L||L.fertig) return; const e=legE(L).find(x=>x.id===id); if(!e) return;
+  const rb=e.art==="sk"&&legIstRcbo(e), art=e.art==="rcd"?"rcd":rb?"rcbo":e.art==="sk"?"ls":e.art==="ge"?"ge":"";
+  if(!art){ toast("Für Klemmen und Reserve gibt es keine Produktauswahl"); return; }
+  AW={typ:"produkt",id};
+  const pole=+e.pole===3?3:1, sc=String(e.schutz||"").replace(/\s+/g,"").toUpperCase(), z=awNutzung();
+  const A=awGeraete().map(m=>({m,t:matTech(m),hnr:matHnr(m.herstellerNr)})).filter(x=>x.t&&x.t.art===art&&(art!=="ls"||+x.t.pole===pole));
+  const passt=x=>art==="ge"?true:art==="rcd"?sc.includes(`${x.t.in}A`)&&sc.includes(`${x.t.idn}MA`):sc.startsWith(`${x.t.char||""}${x.t.in}`.toUpperCase());
+  const sort=(a,b)=>(z[b.hnr]||0)-(z[a.hnr]||0)||String(a.m.herstellerNr).localeCompare(String(b.m.herstellerNr));
+  const P=A.filter(passt).sort(sort), R=A.filter(x=>!passt(x)).sort(sort);
+  const kachel=x=>`<button type="button" class="aw-g${x.hnr===e.mat?" gewaehlt":""}" data-act="awProduktOk" data-v="${esc(x.hnr)}">${matFoto(x.m,"aw-gb")||awOhneFoto(x.t,x.m)}<b>${esc(awName(x.t))}</b><small>${esc(awUnter(x.m))}</small>${x.hnr===e.mat?`<span class="aw-nochmal">Gewählt</span>`:""}</button>`;
+  awRahmen({titel:[e.kz,e.bez&&e.bez!=="?"?e.bez:""].filter(Boolean).join(" · ")||"Gerät",unter:"Produkt wählen",
+    inhalt:`${P.length?`<div class="aw-lbl">Passend zu ${esc(legSchutz(e)||awName({art,in:"",char:""}))}</div><div class="aw-grid">${P.map(kachel).join("")}</div>`:`<p class="aw-hinweis">Kein Artikel passt genau zu „${esc(legSchutz(e))}“ – unten alle derselben Art.</p>`}
+      ${R.length?`<div class="aw-lbl">Weitere</div><div class="aw-grid">${R.map(kachel).join("")}</div>`:""}`,
+    fuss:`${e.mat?`<button type="button" class="btn-text" data-act="awProduktOk" data-v="">Ohne Produkt</button>`:""}<span style="flex:1"></span><button type="button" class="btn-tonal" data-act="awZu">Schließen</button>`});
+  const zr=$("#dlg .aw-zur"); if(zr) zr.hidden=true; $("#menu").hidden=true; $("#dlg").hidden=false; $("#scrim").hidden=false; $("#scrim").classList.add("dim"); }
+function awProduktOk(hnr){ const L=legAkt(); if(!L||!AW||AW.typ!=="produkt") return; const e=legE(L).find(x=>x.id===AW.id); if(!e) return awZu();
+  if(!hnr){ delete e.mat; legSpeichern(L); awZu(); toast("Produkt entfernt"); return; }
+  const m=awGeraete().find(x=>matHnr(x.herstellerNr)===hnr); if(!m) return; const t=matTech(m);
+  e.mat=hnr; if(t.te) e.te=t.te; if(t.art!=="ge"){ e.schutz=awSchutz(t); if(t.art==="ls") e.pole=+t.pole===3?3:1; }
+  legSpeichern(L); awZu(); toast(`${e.kz||"Gerät"}: ${m.hersteller} ${m.herstellerNr}`); }
+document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act="legProdukt"],[data-act="awProduktOk"]'); if(!b) return; ev.stopPropagation();
+  if(b.dataset.act==="legProdukt") awProdukt(b.dataset.id); else awProduktOk(b.dataset.v); },true);
