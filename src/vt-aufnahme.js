@@ -42,7 +42,9 @@ function awNeuStart(kind,id){ const s=kind==="standorte"&&standortOf(id), k=kind
   awNeuZeigen(); }
 function awNeuSchritte(){ const hv=AW.d.art==="hv";
   if(hv) return ["art","hersteller","geraete","bedarf",...(ZS_MODELLE.some(m=>m.h===AW.d.hersteller)?["modell"]:[]),...(AW.ortWahl?["ort"]:[]),"vorschlag"];
-  return ["art","montage","reihen",...(AW.ortWahl?["ort"]:[]),"name","netz"]; }
+  return ["art","montage","reihen",...(AW.ortWahl?["ort"]:[]),"name",...(awVonListe().length?["von"]:[]),"netz"]; }
+/* Verteiler, die am gewählten Ort schon da sind – daraus kann der neue gespeist werden (HV → UV) */
+const awVonListe=()=>{ if(!AW||!AW.kid||!AW.ort&&AW.ortWahl) return []; const g=ecGeb(AW.ort||"k:"+AW.kid); return (g.verteiler||[]).filter(v=>v&&!v.deleted); };
 const awOrtPlz=()=>{ if(!AW.kid) return ""; const o=ecOrt(AW.ort||"k:"+AW.kid); return String(((o.standort&&o.standort.plz)?o.standort:o.kunde||{}).plz||"").trim(); };
 function awNeuZeigen(){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d, R={titel:"Neuer Verteiler",unter:AW.unter,schritt:AW.i,schritte:S.length};
   if(sk==="hersteller") return awRahmen({...R,frage:"Welcher Hersteller?",hinweis:"Höhe, Reihen und Felder sind genormt – der Hersteller zählt für Material und Artikelnummern.",inhalt:`<div class="aw-liste">${ZS_HERST.map(([k,t,u])=>awKachel("awNeuW",k,"",t,u,d.hersteller===k)).join("")}</div>`});
@@ -65,17 +67,21 @@ function awNeuZeigen(){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d, R={
       inhalt:`<div class="aw-liste aw-2sp">${N.map(n=>awKachel("awNeuW",n,"",n,"",d.name===n)).join("")}</div>
         <div class="fg1 aw-eigen">${tf("awName","Eigener Name",N.includes(d.name)?"":d.name,{form:true,ph:"z. B. UV Anbau"})}</div>`,
       fuss:`<span style="flex:1"></span><button type="button" class="btn-filled" data-act="awNameOk">Weiter</button>`}); }
+  if(sk==="von"){ const L=awVonListe(); if(d.vonVId===undefined){ const hv=L.filter(v=>v.art==="hv"); d.vonVId=hv.length===1?hv[0].id:L.length===1?L[0].id:null; }
+    return awRahmen({...R,frage:"Woher kommt die Zuleitung?",hinweis:"Dann steht der Verteiler in der Anlage unter seiner Einspeisung, z. B. HV → UV EG.",
+      inhalt:`<div class="aw-liste">${L.map(v=>awKachel("awNeuW",v.id,awSvg(v.art==="hv"?"hv":"uv"),v.name||"Verteiler",v.art==="hv"?"Zählerschrank / HV":v.art==="gw"?"Gewerbe / Standverteiler":"Unterverteiler",d.vonVId===v.id)).join("")}${awKachel("awNeuW","-","","Direkt vom Hausanschluss","oder weiß ich noch nicht",d.vonVId==="")}</div>`}); }
   if(sk==="netz") return awRahmen({...R,frage:"Welche Netzform?",inhalt:`<div class="aw-liste">${AW_NETZ.map(([v,t,s])=>awKachel("awNeuW",v,"",t,s,d.netz===v)).join("")}</div>`}); }
 function awNeuWahl(v){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d;
   if(sk==="art"){ if(d.art!==v){ d.zs=null; if(v==="hv"){ Object.assign(d,{bedarf:zsBedarfStd(),montage:"up",name:"HV",netz:"TN-C-S | 230/400 V",hersteller:d.hersteller||""}); } } d.art=v; }
   else if(sk==="hersteller"){ d.hersteller=v; if(d.zs) d.zs.hersteller=v; if(d.gerHerst==null) d.gerHerst=v==="hager"?"Hager":v==="sj"?"ABB":null; }
   else if(sk==="geraete") d.gerHerst=v;
   else if(sk==="montage") d.montage=v; else if(sk==="reihen") d.reihen=+v; else if(sk==="ort"){ AW.ort=v; if(d.zs&&d.nbAuto){ d.zs.nb=null; d.nbAuto=false; } } else if(sk==="name") d.name=v; else if(sk==="netz") d.netz=v;
+  else if(sk==="von"){ d.vonVId=v==="-"?"":v; const q=awVonListe().find(x=>x.id===d.vonVId); if(q&&q.netz&&d.netz==null) d.netz=q.netz; }
   if(AW.sub){ AW.sub=null; awNeuZeigen(); return; }
   if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); }
 function awNeuAnlegen(){ const d=AW.d, wer=(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""), extra={art:d.art,...(d.gerHerst?{gerHerst:d.gerHerst}:{}),montage:d.montage,reihen:d.art==="hv"&&d.zs&&+d.zs.hoehe?zsReihenSumme(d.zs,0):(d.reihen||(d.art==="hv"?5:3)),teReihe:12,...(d.art==="hv"&&d.zs?{zs:zsAbgleich(d.zs)}:{})};
   if(AW.kid){ const g=ecGeb(AW.ort||"k:"+AW.kid), id=uid();
-    g.verteiler.push({id,name:d.name||"Verteiler",netz:d.netz||"",stand:ecHeute(),ersteller:wer,...extra}); ecGebSpeichern(g);
+    g.verteiler.push({id,name:d.name||"Verteiler",netz:d.netz||"",stand:ecHeute(),ersteller:wer,...extra,...(d.vonVId&&g.verteiler.some(x=>x.id===d.vonVId)?{vonVId:d.vonVId}:{})}); ecGebSpeichern(g);
     AW=null; $("#dlg").classList.remove("aw"); closeOverlays(); go({v:"vt",g:g.id,id}); }
   else { const L={id:uid(),titel:d.name||"Verteiler",kunde:"",anschrift:"",kundeId:"",standortId:"",ortId:"",netz:d.netz||"",ersteller:wer,stand:ecHeute(),eintraege:[],...extra};
     saveRec("legenden",L,true); AW=null; $("#dlg").classList.remove("aw"); closeOverlays(); go({v:"legende",id:L.id}); }
