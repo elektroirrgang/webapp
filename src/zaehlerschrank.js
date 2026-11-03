@@ -332,7 +332,7 @@ function zsKarteInnen(L,ohneMaterial){ const zs=L.zs, zu=L.fertig;
     const apz=zs.apz&&zs.apz.feldId===f.id;
     return `<div class="zsg-feld"><div class="zsg-fk">${esc(tit)}${f.typ==="v"?`<span>${esc(zsReihenFeld(zs,f,L.reihen))} Reihen</span>`:""}</div>
       ${apz?zeile("zsApzAuf","","APZ","zs-apzn","Abschlusspunkt Zählerplatz",esc(zs.apz.lage==="oben"?"oben im Feld":"unten im Feld"))+best("a"):f.typ==="v"?"":`<p class="meta zs-leer">ohne Zählerplatz</p>`}</div>`; }).join("");
-  return `<section class="card zs-karte"><div class="card-kopf"><h3>Zählerschrank</h3>${zu?"":`<button type="button" class="btn-tonal" data-act="zsAufbau">Aufbau ändern</button>`}</div>
+  return `<section class="card zs-karte"><h3>Zählerschrank</h3>
     <p class="zs-kurz">${esc(kurz)}</p>
     ${bild?`<div class="zs-bild">${zu?zsSvg(zs,L.reihen):zsKlick(zs,L.reihen,null,{feld:()=>'data-act="zsAufbau"',zp:k=>`data-act="zsZpAuf" data-i="${k}"`,apz:()=>'data-act="zsApzAuf"'})}</div>`:""}
     <button type="button" class="zs-bild-tg" data-act="zsBildUm" aria-expanded="${bild}">${icon(bild?"chev":"zsSchrank")}<span>${bild?"Schrankbild ausblenden":"Schrankbild anzeigen"}</span></button>
@@ -340,7 +340,8 @@ function zsKarteInnen(L,ohneMaterial){ const zs=L.zs, zu=L.fertig;
     ${off&&ersterOffen?`<button type="button" class="zs-offen" data-act="zsBestAuf" data-v="${esc(ersterOffen)}" ${zu?"disabled":""}>${icon("warn")}<span>${off} Pflichtpunkt${off===1?"":"e"} der Bestückung offen</span>${icon("chev")}</button>`:""}
     ${H.length?`<div class="zs-hw">${H.map(h=>`<p>${icon("warn")}<span>${esc(h)}</span></p>`).join("")}</div>`:""}
     <div class="zsg-felder">${felder}</div>
-    ${zu?"":`<button type="button" class="zs-neu" data-act="zsZpNeu">${icon("add")}Zählerplatz hinzufügen</button>`}
+    ${zu?"":`<div class="zs-ende"><button type="button" class="zs-neu" data-act="zsZpNeu">${icon("add")}Zählerplatz hinzufügen</button>
+      <button type="button" class="zs-zp zs-umbau" data-act="zsAufbau"><span class="zs-zn zs-bst">${icon("edit")}</span><span class="zs-zt"><b>Felder und Schrank bearbeiten</b><small>Zählerfelder, Verteilerfelder, Höhe, Hersteller</small></span>${icon("chev")}</button></div>`}
     ${ohneMaterial?"":`<div class="aw-lbl">Material</div><div class="zs-mats">${zsMaterial(zs,L.reihen)}</div>`}</section>`; }
 
 /* ---- Bearbeiten von der Karte aus ---- */
