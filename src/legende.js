@@ -321,9 +321,29 @@ function legSkOk(weiter){ const L=legAkt(); if(!L||!legDlg) return; const F=form
   legSpeichern(L); render();
   if(weiter) legSkDlg(null,i); else closeOverlays(); }
 /* Duplizieren: erst die Änderungen im Dialog übernehmen, dann n Kopien direkt darunter – gleiche Art, Absicherung, Pole, Breite, Artikel; Bezeichnung leer */
-function legDuplizieren(n){ const L=legAkt(); if(!L||!legDlg) return; const i=legSkOk("dupl"); if(i==null) return; const E=legE(L), q=E[i], num=legSchemaNum(E);
-  for(let k=1;k<=n;k++){ const c={id:uid(),art:q.art,kz:num?"":legNaechsteKz(E,i+k-1),bez:q.art==="rcd"?"Fehlerstromschutzschalter":"",schutz:q.schutz||"",pole:q.pole||1,...(q.te?{te:q.te}:{}),...(q.mat?{mat:q.mat}:{})}; E.splice(i+k,0,c); }
+function legKopien(L,i,n){ const E=legE(L), q=E[i], num=legSchemaNum(E), neu=[];
+  for(let k=1;k<=n;k++){ const c={id:uid(),art:q.art,kz:num?"":legNaechsteKz(E,i+k-1),bez:q.art==="rcd"?"Fehlerstromschutzschalter":"",schutz:q.schutz||"",pole:q.pole||1,...(q.te?{te:q.te}:{}),...(q.mat?{mat:q.mat}:{})}; E.splice(i+k,0,c); neu.push(c.id); }
+  return neu; }
+function legDuplizieren(n){ const L=legAkt(); if(!L||!legDlg) return; const i=legSkOk("dupl"); if(i==null) return; legKopien(L,i,n);
   legSpeichern(L); closeOverlays(); render(); toast(n===1?"Kopie eingefügt":`${n} Kopien eingefügt`); }
+
+/* ---- Wischen in der Liste: nach links = löschen, nach rechts = duplizieren (beides mit „Rückgängig“) ----
+   Die Zeile bleibt stehen, nur ihr Inhalt gleitet; dahinter erscheint rot (Mülleimer) bzw. hellrot (Kopie). */
+(()=>{ let z=null, sperre=0; const SEL=".leg-r[data-id],.leg-gk[data-id],.leg-rl-z[data-id]";
+  const ende=(ok)=>{ if(!z) return; const {el,dx}=z; z=null; el.classList.remove("zieht","sw-l","sw-r"); el.style.removeProperty("--dx");
+    if(!ok) return; const L=legAkt(); if(!L||L.fertig) return; const E=legE(L), i=E.findIndex(x=>x.id===el.dataset.id); if(i<0) return; const e=E[i], name=e.kz||e.bez||"Zeile";
+    if(dx<0){ E.splice(i,1); legSpeichern(L); render(); toast(`${name} gelöscht`,"Rückgängig",()=>{ const L2=legAkt(); if(!L2) return; legE(L2).splice(Math.min(i,legE(L2).length),0,e); legSpeichern(L2); render(); }); }
+    else { const neu=legKopien(L,i,1); legSpeichern(L); render(); toast("Kopie eingefügt","Rückgängig",()=>{ const L2=legAkt(); if(!L2) return; L2.eintraege=legE(L2).filter(x=>!neu.includes(x.id)); legSpeichern(L2); render(); }); } };
+  document.addEventListener("pointerdown",ev=>{ const el=ev.target.closest&&ev.target.closest(SEL); if(!el||el.disabled||ev.button>0) return; z={el,x:ev.clientX,y:ev.clientY,dx:0,an:false,w:el.offsetWidth,id:ev.pointerId}; },{passive:true});
+  document.addEventListener("pointermove",ev=>{ if(!z||ev.pointerId!==z.id) return; const dx=ev.clientX-z.x, dy=ev.clientY-z.y;
+    if(!z.an){ if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){ z=null; return; } if(Math.abs(dx)<12) return; z.an=true; z.el.classList.add("zieht"); try{ z.el.setPointerCapture(ev.pointerId); }catch(e){} }
+    z.dx=Math.max(-z.w*.85,Math.min(z.w*.85,dx)); z.el.style.setProperty("--dx",z.dx+"px"); z.el.classList.toggle("sw-l",z.dx<0); z.el.classList.toggle("sw-r",z.dx>0);
+    z.el.classList.toggle("bereit",Math.abs(z.dx)>Math.max(80,z.w*.3)); },{passive:true});
+  const los=ev=>{ if(!z||ev.pointerId!==z.id) return; if(!z.an){ z=null; return; } sperre=Date.now(); const ok=Math.abs(z.dx)>Math.max(80,z.w*.3); z.el.classList.remove("bereit");
+    if(ok&&navigator.vibrate) navigator.vibrate(15); ende(ok&&ev.type==="pointerup"); };
+  document.addEventListener("pointerup",los); document.addEventListener("pointercancel",los);
+  /* nach dem Wischen kein „Antippen“ hinterher */
+  document.addEventListener("click",ev=>{ if(Date.now()-sperre<400&&ev.target.closest&&ev.target.closest(SEL)){ ev.stopPropagation(); ev.preventDefault(); } },true); })();
 
 /* ---- PDF ---- */
 async function legPdf(L){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",format:"a4"});
