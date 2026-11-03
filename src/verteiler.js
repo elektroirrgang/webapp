@@ -97,11 +97,11 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
    „# Text“ = Überschrift, „Reserve“ = Reserveplatz. LS-Zeilen unter einem FI gehören zu ihm; alternativ Spalte „FI1“/„FI 2“ als Verweis.
    Fehlende Kennzeichen vergibt die App nach eurem Schema (F 1.0 / F 1.0.1 …). Übernommen wird über vtSchreiben – wie aus dem Editor. */
 IC.vtListe=IC.vtListe||"M14 10H3v2h11v-2zm0-4H3v2h11V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM3 16h7v-2H3v2z";
-const VTI_BSP="F 1.0; FI 40 A 30 mA Typ A\nF 1.0.1; B16; Küche Steckdosen; NYM-J 3x2,5\nF 1.0.2; B16; Bad\n# Obergeschoss\nF 2.0; FI 40A 30mA\nB16; Schlafzimmer\nC16 3-polig; Herd\nReserve";
+const VTI_BSP="FI 1\nHerd\nHerd\nHerd\nB16; Küche\nB16; Flur\nReserve\n---\nFI 2\n1 Kinderzimmer\n2 Garage\n3x leer";
 const vtiRcbo=t=>/FI\s*\/\s*LS|LS\s*\/\s*FI|RCBO/i.test(t);
 const vtiRcd=t=>!vtiRcbo(t)&&(/\b(FI|RCD|RCCB|Fehlerstrom)/i.test(t)||/\d\s*mA\b/i.test(t)||/\b0[,.]03\s*A\b/i.test(t));
 const vtiLs=t=>/(^|[^A-Za-z])[BCDKZ]\s?(6|10|13|16|20|25|32|35|40|50|63|80|100|125)(\s?A)?(?![\d])/i.test(t)||/^(LS\s*)?\d{1,3}\s?A$/i.test(t.trim());
-const vtiKz=t=>/^-?(F|Q)\s?\d+(\.\d+)*$/i.test(t.trim());
+const vtiKz=t=>/^-?(F|Q)\s?\d+(\.\d+)*$/i.test(t.trim())||/^\d{1,3}$/.test(t.trim());
 const vtiFiRef=t=>{ const m=t.trim().match(/^(FI|RCD)\s*-?\s*(\d+)$/i); return m?+m[2]:0; };
 const vtiLeitung=t=>/\b(NYM|NYY|NHXMH|H07|H05|J-?Y|Cu|mm²|mm2)\b|\b\d\s?[x×]\s?\d+([,.]\d+)?\b/i.test(t);
 function vtiPole(t){ return /\b(3|4)\s?-?\s?(p|pol|polig)\b|\b3\s?[x×]\s?[BCD]|\b3L\b|400\s?V|3~|dreh/i.test(t)?3:1; }
@@ -112,6 +112,7 @@ function vtiLsSchutz(t){ const s=t.replace(/\s+/g," ").trim(), m=s.match(/(^|[^A
   let r=m?m[2].toUpperCase()+m[3]:a?a[1]+" A":s;
   if(vtiRcbo(s)){ const mm=s.match(/(\d{2,3})\s*mA/i), y=s.match(/Typ\s*(A|B\+?|F|AC)\b/i); r+=` FI/LS ${mm?mm[1]:"30"} mA Typ ${y?y[1].toUpperCase():"A"}`; }
   return r; }
+const VTI_LEER=/^(leer|frei|leerplatz|leerfeld|blind\w*|abdeckung)$/i;
 const VTI_GERAET=/\b(NEOZED|NEOZET|NEOSET|Neozed|D0[1-3]|SLS|Hauptschalter|Lasttrenn\w*|Überspannung\w*|ÜSS|Schütz|Stromstoß\w*|Zeitschalt\w*|Klingeltrafo|Treppenlicht\w*|Dämmerungs\w*)\b/i;
 function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0, umbruch=false; const rcds=[];
   const neu=e=>{ if(umbruch){ e.umbruch=true; umbruch=false; } E.push(e); return e; };
@@ -120,10 +121,13 @@ function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0, umbruch=false; con
     if(zi===0&&/\b(bezeichnung|schutz|kennz|stromkreis|nr\.?)\b/i.test(z)&&!vtiLs(z)&&!vtiRcd(z)) return;   /* Kopfzeile aus Excel */
     if(/^#/.test(z)){ neu({id:uid(),art:"gr",bez:z.replace(/^#+\s*/,""),kz:"",schutz:""}); return; }
     if(/^(-{2,}|_{2,}|=+|neue reihe|reihe\s*\d*)$/i.test(z)){ umbruch=true; return; }
-    const res=z.match(/^(\d+)\s*[x×]?\s*(reserve|reserven|frei|leer)$/i)||z.match(/^(?:reserve|frei)\s*[x×]\s*(\d+)$/i);
-    if(res){ for(let i=0;i<Math.min(+res[1],48);i++) neu({id:uid(),art:"res",kz:"",bez:"",schutz:""}); return; }
+    /* Anzahl nur mit x: „3x leer“ = 3 Leerplätze, „2x Reserve“ = 2 Reserve-Automaten. „6 Reserve“ = Platz 6 ist ein Reserve-Automat */
+    const anz=z.match(/^(\d+)\s*[x×]\s*(.+)$/i);
+    if(anz&&!vtiLs(anz[2])&&!vtiRcd(anz[2])){ const t=anz[2].trim(); for(let i=0;i<Math.min(+anz[1],48);i++) neu(VTI_LEER.test(t)?{id:uid(),art:"res",kz:"",bez:"",schutz:""}:{id:uid(),art:"sk",kz:"",bez:t,schutz:"",pole:1}); return; }
+    if(VTI_LEER.test(z)){ neu({id:uid(),art:"res",kz:"",bez:"",schutz:""}); return; }
     if(VTI_GERAET.test(z)){ const T=(/[;\t|]/.test(z)?z.split(/[;\t|]/):[z]).map(f=>f.trim()).filter(Boolean); let kz=""; if(T.length>1&&vtiKz(T[0])) kz=T.shift();
       const typ=T.find(f=>VTI_GERAET.test(f))||"", bez=T.filter(f=>f!==typ).join(" "); neu({id:uid(),art:"ge",kz,bez:bez||typ,schutz:bez?typ:"",te:vtiPole(z)===3?3:1}); return; }
+    let vorn=""; { const m=!/[;\t|]/.test(z)&&z.match(/^(\d{1,3})(?:[.)]\s*|\s+)(?![AaxX×]\b)(\D.*)$/); if(m){ vorn=m[1]; z=m[2].trim(); } }
     const F=(/[;\t|]/.test(z)?z.split(/[;\t|]/):z.split(/\s{2,}/)).map(f=>f.trim()).filter(Boolean);
     let kz="", schutz="", leitung="", ref=0; const rest=[];
     /* ohne Trennzeichen: „F3 B16 Küche“, „B16 Küche“ oder „Küche B16“ */
@@ -133,9 +137,11 @@ function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0, umbruch=false; con
     else F.forEach(f=>{ if(!kz&&vtiKz(f)) kz=f;
       else if(!schutz&&(vtiRcd(f)||vtiRcbo(f)||vtiLs(f))) schutz=f; else if(schutz&&!ref&&vtiFiRef(f)) ref=vtiFiRef(f);
       else if(!leitung&&vtiLeitung(f)&&!vtiLs(f)) leitung=f; else rest.push(f); });
+    if(!kz&&vorn) kz=vorn;
     if(kz) kz=kz.replace(/^-/,"").replace(/^([A-Za-z]+)\s?(\d)/,(m,x,y)=>x.toUpperCase()+" "+y);
     const bez=rest.join(" ").replace(/\s+/g," ").trim(), alles=[schutz,bez].join(" ");
-    if(/^(reserve|frei|leer|res\.?)$/i.test(bez)&&!schutz){ neu({id:uid(),art:"res",kz,bez:"",schutz:""}); return; }
+    if(VTI_LEER.test(bez)&&!schutz){ neu({id:uid(),art:"res",kz,bez:"",schutz:""}); return; }
+    if(/^(reserve|res\.?)$/i.test(bez)&&!schutz){ const e=neu({id:uid(),art:"sk",kz,bez:"Reserve",schutz:"",pole:1}); return; }
     if(schutz&&vtiRcd(schutz)||!schutz&&vtiRcd(bez)&&/\d/.test(bez)){ rcdNr++;
       /* „FI 2“ allein = so ist der FI beschriftet → Kennzeichen, keine Werte */
       const nm=(schutz||bez).trim().match(/^(FI|RCD)\s*-?\s*(\d+)$/i); if(nm&&!kz){ kz=`${nm[1].toUpperCase()} ${nm[2]}`; if(schutz) schutz="FI"; else bez=""; }
