@@ -156,7 +156,8 @@ function legListeView(L){ const E=legE(L), zu=L.fertig, B=[], PL=legPlaetze(L); 
   return `<div class="leg-gl">${B.map(b=>b.gr?`<button type="button" class="leg-ue" data-act="legEdit" data-id="${esc(b.gr.id)}" ${zu?"disabled":""}>${esc(b.gr.bez||"Überschrift")}</button>`
     :b.z?`<div class="leg-grp solo">${zeile(b.z)}</div>`
     :`<div class="leg-grp"><button type="button" class="leg-gk" data-act="legEdit" data-id="${esc(b.rcd.id)}" ${zu?"disabled":""}><span class="kz">${esc(b.rcd.kz||"–")}</span><span class="bz">${esc(b.rcd.bez||"Fehlerstromschutzschalter")}<span class="leg-rcd">RCD</span>${pl(b.rcd)}</span>${b.rcd.schutz?`<span class="sc">${esc(b.rcd.schutz)}</span>`:""}</button>
-      ${b.kids.map(k=>zeile(k," kind")).join("")}${zu?"":`<button type="button" class="leg-add" data-act="legNach" data-i="${b.last!=null?b.last:b.i}">${icon("add")}Stromkreis an ${esc(b.rcd.kz||"RCD")}</button>`}</div>`).join("")}</div>`; }
+      ${b.kids.map(k=>zeile(k," kind")).join("")}${zu?"":`<button type="button" class="leg-add" data-act="legNach" data-i="${b.last!=null?b.last:b.i}">${icon("add")}Stromkreis an ${esc(b.rcd.kz||"RCD")}</button>`}</div>`).join("")}
+    ${zu?"":`<div class="leg-neu"><button type="button" data-act="legNeuRcd">${icon("add")}Neuer RCD mit Stromkreisen</button></div>`}</div>`; }
 /* Reihen bilden: Breite je Gerät in TE, „Neue Reihe ab hier“ bricht um */
 function legReihen(L){ const n=+L.teReihe||12, R=[]; let r=null;
   legE(L).forEach((e,i)=>{ if(e.art==="gr") return; const w=Math.min(legTE(e),n); if(!r||e.umbruch||r.te+w>n){ r={te:0,g:[]}; R.push(r); } r.g.push([e,i,w]); r.te+=w; });
@@ -279,9 +280,9 @@ function legRcdKz(E,i,neueReihe){ let vor="F ", reihe=1, rcd=-1;
     vor=t.vor; reihe=+t.z[0]; if(e.art==="rcd"){ rcd=+(t.z[1]||0); break; } if(rcd<0&&t.z.length>=3){ rcd=+t.z[1]; break; } }
   if(neueReihe) return `${vor}${reihe+1}.0`;
   return `${vor}${reihe}.${rcd+1}`; }
-function legSkDlg(id,nach){ const L=legAkt(); if(!L) return; const E=legE(L), i=id?E.findIndex(x=>x.id===id):-1, e=i>=0?E[i]:null;
-  const pos=e?i:nach!=null?nach+1:E.length, art=e?e.art:"sk";
-  const v=e||{art,kz:legNaechsteKz(E,pos-1),bez:"",schutz:"",pole:1};
+function legSkDlg(id,nach,neuArt){ const L=legAkt(); if(!L) return; const E=legE(L), i=id?E.findIndex(x=>x.id===id):-1, e=i>=0?E[i]:null;
+  const pos=e?i:nach!=null?nach+1:E.length, art=e?e.art:neuArt||"sk";
+  const bmk=E.some(x=>LEG_BMK.test(String(x.kz||"").trim())), v=e||{art,kz:art==="rcd"&&!bmk?legRcdKz(E,pos-1,false):legNaechsteKz(E,pos-1),bez:art==="rcd"?"Fehlerstromschutzschalter":"",schutz:art==="rcd"?"40 A / 30 mA Typ A":"",pole:1};
   legDlg={id:e?e.id:null,pos,art:v.art,pole:String(v.pole||1),auto:e?null:v.kz,te:e&&e.te?String(e.te):"",umbruch:!!(e&&e.umbruch),sym:e&&e.sym||""};
   const rcdN=legRcdKz(E,pos-1,false), rcdR=legRcdKz(E,pos-1,true);
   const vorschl=[...new Set(live("legenden").flatMap(x=>legE(x).filter(y=>y.art==="sk"&&y.bez).map(y=>y.bez)))];
@@ -294,7 +295,7 @@ function legSkDlg(id,nach){ const L=legAkt(); if(!L) return; const E=legE(L), i=
       ${wahl("art","Art",v.art,LEG_ART)}
       <div class="row2">${`<div class="leg-nur" data-nicht="gr">${tf("legKz","Kennzeichnung",v.kz||"",{form:true,ph:"z. B. -F3"})}</div>`}
         <div class="leg-nur" data-nicht="gr">${tf("legSchutz","Absicherung",v.schutz||"",{form:true,ph:v.art==="rcd"?"z. B. 40 A / 30 mA Typ A":"z. B. B16",list:v.art==="rcd"?"legRcdListe":"legLsListe"})}</div></div>
-      <div class="chips ec-wahl leg-nur" data-nur="rcd"><button type="button" class="chip" data-act="legSetz" data-ziel="f_legKz" data-v="${esc(rcdN)}">Nächster RCD: ${esc(rcdN)}</button><button type="button" class="chip" data-act="legSetz" data-ziel="f_legKz" data-v="${esc(rcdR)}">Neue Reihe: ${esc(rcdR)}</button></div>
+      <div class="chips ec-wahl leg-nur${E.some(x=>LEG_BMK.test(String(x.kz||"").trim()))?" leg-weg":""}" data-nur="rcd"><button type="button" class="chip" data-act="legSetz" data-ziel="f_legKz" data-v="${esc(rcdN)}">Nächster RCD: ${esc(rcdN)}</button><button type="button" class="chip" data-act="legSetz" data-ziel="f_legKz" data-v="${esc(rcdR)}">Neue Reihe: ${esc(rcdR)}</button></div>
       <div class="leg-nur" data-nicht="res">${tf("legBez",v.art==="gr"?"Überschrift":"Bezeichnung",v.bez||"",{form:true,ph:v.art==="gr"?"z. B. Erdgeschoss":v.art==="rcd"?"Fehlerstromschutzschalter":"z. B. Küche Steckdosen",list:"legBezListe"})}</div>
       <div class="row2 leg-nur" data-nur="sk">${wahl("raum","Raum","",[["","wählen"],...LEG_RAUM.map(x=>[x,x])])}${wahl("was","Verbraucher","",[["","wählen"],...LEG_WAS.map(x=>[x,x])])}</div>
       <div class="row2 leg-nur" data-nicht="gr"><div class="leg-nur" data-nur="sk">${wahl("pole","Pole",legDlg.pole,[["1","1-polig"],["3","3-polig"]])}</div>${wahl("te","Breite",legDlg.te,[["","automatisch"],["1","1 TE"],["2","2 TE"],["3","3 TE"],["4","4 TE"]])}</div>
@@ -321,8 +322,10 @@ function legSkOk(weiter){ const L=legAkt(); if(!L||!legDlg) return; const F=form
   legSpeichern(L); render();
   if(weiter) legSkDlg(null,i); else closeOverlays(); }
 /* Duplizieren: erst die Änderungen im Dialog übernehmen, dann n Kopien direkt darunter – gleiche Art, Absicherung, Pole, Breite, Artikel; Bezeichnung leer */
-function legKopien(L,i,n){ const E=legE(L), q=E[i], num=legSchemaNum(E), neu=[];
-  for(let k=1;k<=n;k++){ const c={id:uid(),art:q.art,kz:num?"":legNaechsteKz(E,i+k-1),bez:q.art==="rcd"?"Fehlerstromschutzschalter":"",schutz:q.schutz||"",pole:q.pole||1,...(q.te?{te:q.te}:{}),...(q.mat?{mat:q.mat}:{})}; E.splice(i+k,0,c); neu.push(c.id); }
+/* Ende der Gruppe eines RCD: seine Automaten (nicht FI/LS, keine Geräte) folgen direkt – eine Kopie des RCD gehört HINTER sie, sonst würde sie ihm die Automaten wegnehmen */
+function legGruppenEnde(E,i){ let j=i; while(j+1<E.length&&!["rcd","gr","ge"].includes(E[j+1].art)&&!legIstRcbo(E[j+1])) j++; return j; }
+function legKopien(L,i,n){ const E=legE(L), num=legSchemaNum(E), neu=[]; const q=E[i]; if(q.art==="rcd") i=legGruppenEnde(E,i);
+  for(let k=1;k<=n;k++){ const c={id:uid(),art:q.art,kz:num?"":q.art==="rcd"?legRcdKz(E,i+k-1,false):legNaechsteKz(E,i+k-1),bez:q.art==="rcd"?"Fehlerstromschutzschalter":"",schutz:q.schutz||"",pole:q.pole||1,...(q.te?{te:q.te}:{}),...(q.mat?{mat:q.mat}:{})}; E.splice(i+k,0,c); neu.push(c.id); }
   return neu; }
 function legDuplizieren(n){ const L=legAkt(); if(!L||!legDlg) return; const i=legSkOk("dupl"); if(i==null) return; legKopien(L,i,n);
   legSpeichern(L); closeOverlays(); render(); toast(n===1?"Kopie eingefügt":`${n} Kopien eingefügt`); }
@@ -399,6 +402,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "legSym": legDlg.sym=b.dataset.v; b.parentElement.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b)); return;
   case "legAnsicht": META.legAnsicht=b.dataset.v; metaSave(); render(); return;
   case "legNach": legSkDlg(null,+b.dataset.i); return;
+  case "legNeuRcd": legSkDlg(null,legE(L).length-1,"rcd"); return;
   case "legOpt": { if(!L) return; L[b.dataset.k]=+b.dataset.v; legSave(L); render(); return; }
   case "legOptS": { if(!L) return; L[b.dataset.k]=b.dataset.v; legSave(L); render(); return; }
   case "legSetz": { const f=document.getElementById(b.dataset.ziel); if(f){ f.value=b.dataset.v; f.parentElement.classList.add("fl"); } return; }
