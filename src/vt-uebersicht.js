@@ -23,8 +23,7 @@ function vuView(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v)
   /* Kopf: Anlage, Kunde, Schnellaktionen */
   const chips=[v.art==="hv"||L.zs?"Hauptverteilung":v.art==="gw"?"Gewerbe":"Unterverteilung",L.netz,von&&`gespeist aus ${von.name||"Verteiler"}`].filter(Boolean);
   const kopf=`<section class="card vu-kopf">
-    <div class="vu-titel"><span class="vu-ic">${icon(k&&kdArt(k)!=="privat"?"firma":"person")}</span><div><b>${esc(k?k.name:"Ohne Kunde")}</b>${adr?`<span>${esc(adr)}</span>`:""}</div></div>
-    <div class="vu-chips">${chips.map(c=>`<span>${esc(c)}</span>`).join("")}${v.qr?`<span class="qr">${icon("qr")}${esc(qrZeig(v.qr))}</span>`:""}</div>
+    <div class="vu-titel"><span class="vu-ic">${icon(k&&kdArt(k)!=="privat"?"firma":"person")}</span><div><b>${esc(k?k.name:"Ohne Kunde")}</b>${adr?`<span>${esc(adr)}</span>`:""}<small class="vu-meta">${esc([...chips,v.qr&&`QR ${qrZeig(v.qr)}`].filter(Boolean).join(" · "))}</small></div></div>
     <div class="vu-aktionen">
       ${tel[0]?`<a class="vu-a" href="${esc(vuTel(tel[0].nr))}">${icon("phone")}<span>Anrufen</span></a>`:""}
       ${adr?`<a class="vu-a" href="${esc(mapsHref(adr))}" target="_blank" rel="noopener">${icon("route")}<span>Route</span></a>`:""}
@@ -37,14 +36,13 @@ function vuView(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v)
   /* Prüfstand: das, wofür man meistens scannt */
   const ergL=letzte&&vuErg(letzte), mangel=letzte&&(letzte.maengel||"").trim();
   const status=laeuft?{kl:"wip",gross:"Prüfung läuft",klein:`Begonnen ${ecDatum(laeuft.datum)}${laeuft.pruefer?` · ${laeuft.pruefer}`:""}`}
-    :!letzte?{kl:"open",gross:"Noch nicht geprüft",klein:"Für diesen Verteiler liegt noch kein Prüfprotokoll vor."}
+    :!letzte?{kl:"open",gross:"Noch nicht geprüft",klein:"Noch kein Prüfprotokoll vorhanden"}
     :{kl:f.kl,gross:f.kl==="bad"?"Prüfung überfällig":f.kl==="wip"?"Prüfung bald fällig":"Prüfung aktuell",klein:`${vuNochText(f.iso)} · ${ecDatum(f.iso)}`};
   const pruef=`<section class="card"><h3>Prüfung</h3>
-    <div class="vu-status ${status.kl}"><span class="vu-st-ic">${icon(status.kl==="ok"?"shield":status.kl==="open"?"ecMess":"warn")}</span><div><b>${esc(status.gross)}</b><span>${esc(status.klein)}</span></div></div>
+    <div class="vu-status ${status.kl}"><span class="vu-st-ic">${icon(status.kl==="ok"?"shield":status.kl==="open"?"ecMess":"warn")}</span><div><b>${esc(status.gross)}</b><span>${esc(status.klein)}</span></div>
+      ${laeuft?`<button type="button" class="vu-st-k" data-act="ecOeffnen" data-id="${esc(laeuft.id)}">Weiter</button>`:`<button type="button" class="vu-st-k" data-act="ecNeuOrt" data-art="anlage" data-ort="${esc(g.ortId)}">Prüfen</button>`}</div>
     ${letzte?ecListe([ecLi({lead:icon("ecMess"),kopf:`Zuletzt geprüft am ${esc(ecDatum(letzte.datum))}`,text:esc([letzte.pruefart,letzte.pruefer].filter(Boolean).join(" · ")),rechts:ergL==="bad"?`<span class="m3-st bad">Mängel</span>`:ecSt("ok"),act:"ecOeffnen",id:letzte.id})]):""}
     ${mangel?`<div class="vu-mangel">${icon("warn")}<div><b>Mängel aus der letzten Prüfung</b><span>${esc(mangel.split("\n").slice(0,4).join(" · "))}${mangel.split("\n").length>4?" …":""}</span></div></div>`:""}
-    <div class="vu-knoepfe">${laeuft?`<button type="button" class="btn-filled" data-act="ecOeffnen" data-id="${esc(laeuft.id)}">${icon("ecMess")}Weiterprüfen</button>`
-      :`<button type="button" class="${!letzte||f.kl!=="ok"?"btn-filled":"btn-tonal"}" data-act="ecNeuOrt" data-art="anlage" data-ort="${esc(g.ortId)}">${icon("ecMess")}Prüfung starten</button>`}</div>
   </section>`;
 
   /* Inhalt des Verteilers in Zahlen – antippen springt in die Legende */
@@ -53,7 +51,7 @@ function vuView(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v)
   const belegt=E.filter(e=>e.art!=="gr").reduce((s,e)=>s+legTE(e),0), frei=kap&&!(v.art==="hv"||L.zs)?Math.max(0,kap-belegt):null;
   const kachel=(n,t,tab)=>`<button type="button" class="vu-k" data-act="legTab" data-v="${tab}"><b>${n}</b><span>${t}</span></button>`;
   const zahlen=`<section class="card"><h3>Im Verteiler</h3><div class="vu-kacheln">
-      ${kachel(sk.length-res,"Stromkreise","sk")}${kachel(rcd,"Fehlerschutz (RCD)","sk")}${kachel(res,"Reserve","sk")}${frei!=null?kachel(frei,"TE frei","uv"):kachel(belegt,"TE belegt","sk")}
+      ${kachel(sk.length-res,"Stromkreise","sk")}${kachel(rcd,"RCD","sk")}${kachel(res,"Reserve","sk")}${frei!=null?kachel(frei,"TE frei","uv"):kachel(belegt,"TE belegt","sk")}
     </div>${L.stand||v.updated?`<p class="m3-hinweis">${esc([L.stand&&`Stand ${ecDatum(L.stand)}`,L.ersteller&&`aufgenommen von ${L.ersteller}`,v.updated&&`zuletzt geändert ${ecDatum(vuIso(v.updated))}`].filter(Boolean).join(" · "))}</p>`:""}</section>`;
 
   /* Gebäude: Einspeisung hoch und runter – ein Tipp wechselt den Verteiler, der Reiter Übersicht bleibt */

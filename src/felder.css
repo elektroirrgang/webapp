@@ -1295,3 +1295,33 @@ a.dz{color:inherit;text-decoration:none;border-radius:12px}
 .leg-neu .ic{width:20px;height:20px}
 .leg-dlg .leg-weg{display:none!important}
 .leg-dlg .row2:has(>.leg-nur[hidden]){grid-template-columns:1fr}
+/* Zählerschrank-Karte (Umbau): Kurzangabe, Bild-Umschalter, Felder als Gruppen */
+.zs-kurz{margin:-2px 0 10px;font-size:14px;color:var(--on-sv)}
+.zs-bild-tg{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:44px;margin:0 0 12px;border:0;border-radius:14px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.zs-bild-tg .ic{width:20px;height:20px;color:var(--primary)}.zs-bild-tg[aria-expanded="true"] .ic{transform:rotate(-90deg)}
+.zs-karte .zs-bild+.zs-bild-tg{margin-top:10px}
+.zs-offen{display:flex;align-items:center;gap:10px;width:100%;margin:8px 0 0;padding:12px 12px 12px 14px;border:0;border-radius:14px;background:var(--wip-c);color:var(--on-wip-c);font:inherit;font-size:14px;font-weight:700;text-align:left;cursor:pointer}
+.zs-offen span{flex:1}.zs-offen .ic{width:20px;height:20px;flex:none}
+.zs-karte .zs-hw p{background:var(--wip-c);color:var(--on-wip-c)}
+.zsg-felder{display:grid;gap:12px;margin-top:14px}
+.zsg-feld{display:grid;gap:6px;padding:12px;border-radius:18px;background:var(--sc)}
+.zsg-fk{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 4px 2px;font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--on-sv)}
+.zsg-fk span{font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;text-align:right}
+.zsg-feld .zs-zp{background:var(--sc-high)}
+.zs-zp.zs-frei{min-height:48px;padding-top:6px;padding-bottom:6px}.zs-zp.zs-frei b{font-weight:500;color:var(--on-sv)}
+.zs-zn.zs-bst{background:var(--sc-highest);color:var(--on-sv)}.zs-zn.zs-bst .ic{width:20px;height:20px}
+.zs-leer{margin:0;padding:4px}
+.zs-neu{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;margin-top:12px;border:0;border-radius:16px;background:var(--sc);color:var(--primary);font:inherit;font-size:14px;font-weight:700;cursor:pointer}.zs-neu .ic{width:20px;height:20px}
+.zs-karte>.zs-zp{margin-top:0}
+/* Übersicht kompakter (03.11.2026 abends) */
+.vu-ic{width:44px;height:44px;border-radius:14px}.vu-ic .ic{width:24px;height:24px}
+.vu-titel b{font-size:20px;line-height:26px}
+.vu-meta{display:block;margin-top:4px;font-size:13px;line-height:18px;color:var(--on-sv)}
+.vu-a{padding:10px 4px 8px;gap:4px}
+.vu-status{gap:12px;padding:12px 12px 12px 14px;margin-bottom:4px}
+.vu-status>div{flex:1;min-width:0}.vu-status b{font-size:16px;line-height:22px}.vu-status span{font-size:13px;line-height:18px}
+.vu-st-ic{width:40px;height:40px;border-radius:20px}.vu-st-ic .ic{width:22px;height:22px}
+.vu-st-k{flex:none;height:40px;padding:0 18px;border:0;border-radius:20px;background:var(--primary);color:var(--on-primary);font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.vu-status.ok .vu-st-k{background:color-mix(in srgb,currentColor 14%,transparent);color:inherit}
+.vu-kacheln,.vu-kacheln{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px}
+.vu-k{padding:10px 8px;border-radius:14px;align-items:center;text-align:center}.vu-k b{font-size:22px;line-height:28px}.vu-k span{font-size:12px;line-height:16px}
