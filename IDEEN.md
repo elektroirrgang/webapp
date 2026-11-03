@@ -1,5 +1,30 @@
 # Geplant / Hintergrund
 
+## QR-Aufkleber: öffentliche Seite für Fremde (Entscheidung Max, 03.11.2026: über Microsoft) – wartet auf Achenbach
+
+- Ziel: Wer den Aufkleber am Verteiler scannt und nicht angemeldet ist, sieht eine Irrgang-Seite mit **Verteilerlegende** und **Bedienungsanleitungen** der Anlage. Er kann **nichts bearbeiten oder löschen**, aber eine **Bemerkung** schreiben, die bei uns als Vorgang in der Übersicht landet; wir arbeiten sie danach in die Pläne ein.
+- Mitarbeiter scannen wie bisher und landen direkt im Verteiler in der App. Die vorgedruckten Bögen funktionieren weiter.
+- Öffentlich wird nur, was freigegeben ist (Schalter „Für Aufkleber freigeben“ im Verteiler, sinnvoll erst nach „abgeschlossen“). Kein Kundenname, keine Adresse.
+- Technik: kleiner Vermittler als **Azure Function** – liest mit eigener App-Berechtigung nur die freigegebenen Verteiler aus unserem SharePoint und nimmt Bemerkungen entgegen (Spam-Schutz: Name/Telefon Pflicht, Begrenzung je Aufkleber). Kosten bei unserer Menge praktisch 0 €.
+- **Von Achenbach (Microsoft-Admin) brauchen wir:**
+  1. Azure-Abonnement (nutzungsbasiert) für die Firma bzw. Zugang zu einem vorhandenen.
+  2. App-Registrierung für den Vermittler mit der Berechtigung **Sites.Selected**, freigegeben nur für die SharePoint-Seite „ElektroIrrgangApps“ (lesen; schreiben nur für den Ordner der Bemerkungen).
+  3. Eine Azure Function (Verbrauchsplan) anlegen oder uns die Rechte dafür geben; Code und Einrichtung macht Claude.
+  4. Optional: Unterdomain wie q.elektro-irrgang.de für die öffentliche Seite.
+- Noch zu klären: Soll auch das letzte Prüfprotokoll (E-Check) öffentlich sichtbar sein? Bemerkungen zusätzlich als Mail an info@?
+- Erst danach bauen. Danach den Scanner (Kamera-Ansicht) neu gestalten – gefällt Max so nicht.
+
+## Offen aus der Sitzung vom 03.11.2026
+
+- Ablauf Zählerschrank → Stromkreise → Material deutlich verkürzen (dauert für „mal eben eine Legende“ zu lange); Bugs beim Anordnen sammelt Max mit Screenshots.
+- Foto einer Papierliste direkt in der App erkennen (braucht KI-Dienst, Kosten je Foto, Datenschutz mit dem Chef klären). Bis dahin: Foto an Claude, Claude macht die Text/CSV-Datei für „Liste einfügen“.
+- Einbauplatz („R1 · Platz 5–7“) auch auf die gedruckte Legende / ins PDF?
+- Alte Verteiler im Schema „F 1.0.1“ auf Betriebsmittelkennzeichen (-F1, -F1.1 …) umstellen? (bisher bewusst nicht angefasst)
+- Stromstoßschalter, Installations- und Zeitrelais: bleiben -K oder wie Schütz -Q? (Max fragt in der Schule nach)
+- Mehrere Telefonnummern auch bei Ansprechpartnern.
+- TAB NS der GWN (Gemeindewerke Nümbrecht) besorgen → genaue Pflichtpunkte der Bestückung eintragen; prüfen, ob ganz 51588 GWN-Netz ist.
+- „Aufbau ändern“: Hersteller-Modell (z. B. ZB53S + ZK5EH24 + ZU59VT7APZ2) auch nachträglich wählbar machen, damit es in der Materialliste steht.
+
 ## Bearbeitungssperre bei gleichzeitigem Arbeiten (erst nach funktionierender Microsoft-Anbindung)
 
 - Wer ein Protokoll (EVSE-Prüfung, Aufnahmeprotokoll) offen hat, ist Bearbeiter; das Gerät meldet sich alle ~20 s über eine Sperrdatei im gemeinsamen Ordner.
