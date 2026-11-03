@@ -231,12 +231,12 @@ function awProdukt(id){ const L=legAkt(); if(!L||L.fertig) return; const e=legE(
   AW={typ:"produkt",id};
   const pole=+e.pole===3?3:1, sc=String(e.schutz||"").replace(/\s+/g,"").toUpperCase(), z=awNutzung();
   const A=awGeraete().map(m=>({m,t:matTech(m),hnr:matHnr(m.herstellerNr)})).filter(x=>x.t&&x.t.art===art&&(art!=="ls"||+x.t.pole===pole));
-  const passt=x=>art==="ge"?true:art==="rcd"?sc.includes(`${x.t.in}A`)&&sc.includes(`${x.t.idn}MA`):sc.startsWith(`${x.t.char||""}${x.t.in}`.toUpperCase());
-  const sort=(a,b)=>(z[b.hnr]||0)-(z[a.hnr]||0)||String(a.m.herstellerNr).localeCompare(String(b.m.herstellerNr));
+  const passt=x=>art==="ge"||!sc?true:art==="rcd"?sc.includes(`${x.t.in}A`)&&sc.includes(`${x.t.idn}MA`):sc.startsWith(`${x.t.char||""}${x.t.in}`.toUpperCase());
+  const si=x=>{ const s=matSerie(x.m); return s?MAT_SERIEN.indexOf(s):9; }, sort=(a,b)=>(z[b.hnr]||0)-(z[a.hnr]||0)||si(a)-si(b)||Math.abs((+a.t.in||16)-16)-Math.abs((+b.t.in||16)-16)||(+a.t.in||0)-(+b.t.in||0)||String(a.m.herstellerNr).localeCompare(String(b.m.herstellerNr));
   const P=A.filter(passt).sort(sort), R=A.filter(x=>!passt(x)).sort(sort);
   const kachel=x=>`<button type="button" class="aw-g${x.hnr===e.mat?" gewaehlt":""}" data-act="awProduktOk" data-v="${esc(x.hnr)}">${matFoto(x.m,"aw-gb")||awOhneFoto(x.t,x.m)}<b>${esc(awName(x.t))}</b><small>${esc(awUnter(x.m))}</small>${x.hnr===e.mat?`<span class="aw-nochmal">Gewählt</span>`:""}</button>`;
   awRahmen({titel:[e.kz,e.bez&&e.bez!=="?"?e.bez:""].filter(Boolean).join(" · ")||"Gerät",unter:"Produkt wählen",
-    inhalt:`${P.length?`<div class="aw-lbl">Passend zu ${esc(legSchutz(e)||awName({art,in:"",char:""}))}</div><div class="aw-grid">${P.map(kachel).join("")}</div>`:`<p class="aw-hinweis">Kein Artikel passt genau zu „${esc(legSchutz(e))}“ – unten alle derselben Art.</p>`}
+    inhalt:`${P.length?`<div class="aw-lbl">${sc?`Passend zu ${esc(legSchutz(e))}`:art==="ls"?`Automaten ${pole}-polig`:art==="rcd"?"RCD":art==="rcbo"?"FI/LS":"Geräte"}</div><div class="aw-grid">${P.map(kachel).join("")}</div>`:`<p class="aw-hinweis">Kein Artikel passt genau zu „${esc(legSchutz(e))}“ – unten alle derselben Art.</p>`}
       ${R.length?`<div class="aw-lbl">Weitere</div><div class="aw-grid">${R.map(kachel).join("")}</div>`:""}`,
     fuss:`${e.mat?`<button type="button" class="btn-text" data-act="awProduktOk" data-v="">Ohne Produkt</button>`:""}<span style="flex:1"></span><button type="button" class="btn-tonal" data-act="awZu">Schließen</button>`});
   const zr=$("#dlg .aw-zur"); if(zr) zr.hidden=true; $("#menu").hidden=true; $("#dlg").hidden=false; $("#scrim").hidden=false; $("#scrim").classList.add("dim"); }
