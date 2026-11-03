@@ -119,6 +119,9 @@ function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0, umbruch=false; con
   const zeilen=String(text||"").replace(/\r/g,"").split("\n").map(z=>z.trim()).filter(z=>z&&!z.startsWith("//"));
   zeilen.forEach((z,zi)=>{
     if(zi===0&&/\b(bezeichnung|schutz|kennz|stromkreis|nr\.?)\b/i.test(z)&&!vtiLs(z)&&!vtiRcd(z)) return;   /* Kopfzeile aus Excel */
+    /* „Fi“ ohne Nummer/Werte = ein TE des FI: mehrere „Fi“ direkt hintereinander sind EIN FI mit so vielen TE (z. B. 4× Fi = 4-poliger FI, 4 TE) */
+    if(/^(fi|rcd)$/i.test(z)){ const v=E[E.length-1]; if(v&&v.art==="rcd"&&v._te&&!umbruch){ v._te++; v.te=v._te; return; }
+      rcdNr++; const e={id:uid(),art:"rcd",kz:`FI ${rcdNr}`,bez:"",schutz:"",_nr:rcdNr,_te:1}; rcds.push(e); neu(e); return; }
     if(/^#/.test(z)){ neu({id:uid(),art:"gr",bez:z.replace(/^#+\s*/,""),kz:"",schutz:""}); return; }
     if(/^(-{2,}|_{2,}|=+|neue reihe|reihe\s*\d*)$/i.test(z)){ umbruch=true; return; }
     /* Anzahl nur mit x: „3x leer“ = 3 Leerplätze, „2x Reserve“ = 2 Reserve-Automaten. „6 Reserve“ = Platz 6 ist ein Reserve-Automat */
@@ -202,7 +205,7 @@ function vtImpAnlegen(){ const B=vtImp; if(!B) return; const t=(document.getElem
     g.verteiler.push({id:vId,name:F.vtiName||"Verteiler",stand:ecHeute(),ersteller:(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""),...von}); ecGebSpeichern(g); }
   const L=vtL(gid,vId); if(!L){ toast("Verteiler nicht gefunden"); return; }
   if(!zi){ const RW=vtiReihen(E,L.teReihe); L.reihen=Math.max(1,...RW); }
-  vtiKzVergeben(legE(L),E); const neu=E.map(e=>{ const o={...e}; ["_auto","_ref","_nr","leitung"].forEach(k=>delete o[k]); return o; });
+  vtiKzVergeben(legE(L),E); const neu=E.map(e=>{ const o={...e}; ["_auto","_ref","_nr","_te","leitung"].forEach(k=>delete o[k]); if(o.art==="rcd"&&+o.te===1) delete o.te; return o; });
   L.eintraege=[...legE(L),...neu]; vtSchreiben(L);
   const g2=vtGeb(gid); if(g2&&E.some(e=>e.leitung)){ E.forEach(e=>{ if(!e.leitung) return; const s=g2.stromkreise.find(x=>x.id===e.id); if(s) s.leitung=e.leitung; }); ecGebSpeichern(g2); }
   vtImp=null; closeOverlays(); go({v:"vt",g:gid,id:vId}); toast(`${E.filter(e=>e.art==="sk").length} Stromkreise und ${E.filter(e=>e.art==="rcd").length} FI übernommen`); }
