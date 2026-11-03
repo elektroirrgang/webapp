@@ -2134,7 +2134,7 @@ function kzAusfuehren(zid,wegIds){
   const umhaengen=(feld,alt,neu)=>{ for(const k of ["ladeparks","pruefungen","baustellen","vorgaenge"]) for(const r of DB[k].values()){ let ch=false;
       if(r[feld]===alt){ r[feld]=neu; ch=true; } if(feld==="kundeId"&&r.standortId==="k:"+alt){ r.standortId="k:"+neu; ch=true; } if(ch){ saveRec(k,r); n++; } } };
   for(const wid of wegIds){ const w=DB.kunden.get(wid); if(!w||w.deleted||wid===zid) continue;
-    for(const f of ["kdnr","strasse","plz","ort","adresse","ansprech","tel","mail","web"]) if(!z[f]&&w[f]) z[f]=w[f];
+    for(const f of ["kdnr","strasse","plz","ort","adresse","ansprech","tel","telefone","mail","web"]) if(!z[f]&&w[f]) z[f]=w[f];
     if(w.notiz&&!String(z.notiz||"").includes(w.notiz)) z.notiz=[z.notiz,w.notiz].filter(Boolean).join("\n");
     for(const x of live("standorte").filter(x=>x.kundeId===wid)){ x.kundeId=zid; saveRec("standorte",x); n++; }
     umhaengen("kundeId",wid,zid);
@@ -2146,7 +2146,7 @@ function kzAusfuehren(zid,wegIds){
   standorteVon(zid).forEach(x=>{ const k=sn(x); if(!M.has(k)) M.set(k,[]); M.get(k).push(x); });
   for(const g of M.values()) if(g.length>1){ const sRefs=x=>live("baustellen").filter(b=>b.standortId===x.id).length+live("pruefungen").filter(p=>p.standortId===x.id).length;
     const [bleibt,...rest]=[...g].sort((a,b)=>sRefs(b)-sRefs(a)||(a.created||0)-(b.created||0));
-    for(const w of rest){ for(const f of ["strasse","plz","ort","adresse","ansprech","tel","notiz"]) if(!bleibt[f]&&w[f]) bleibt[f]=w[f];
+    for(const w of rest){ for(const f of ["strasse","plz","ort","adresse","ansprech","tel","telefone","notiz"]) if(!bleibt[f]&&w[f]) bleibt[f]=w[f];
       umhaengen("standortId",w.id,bleibt.id); for(const d of DB.dateien.values()) if(d.bezugKind==="standorte"&&d.bezugId===w.id){ d.bezugId=bleibt.id; saveRec("dateien",d); }
       w.deleted=true; w.mergedInto=bleibt.id; saveRec("standorte",w); }
     saveRec("standorte",bleibt); }
