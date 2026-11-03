@@ -51,7 +51,7 @@ function awNeuZeigen(){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d, R={
   if(sk==="geraete") return awRahmen({...R,frage:"Einbaugeräte von?",hinweis:"LS, FI und FI/LS dieses Herstellers stehen beim Bestücken vorne.",inhalt:`<div class="aw-liste">${ZS_GERHERST.map(([k,t,u])=>awKachel("awNeuW",k,"",t,u,d.gerHerst===k&&d.gerHerst!=null)).join("")}</div>`});
   if(sk==="bedarf") return awRahmen({...R,...zsBedarfFenster(d.bedarf)});
   if(sk==="modell") return awRahmen({...R,...zsModellFenster(d)});
-  if(sk==="vorschlag"){ const plz=awOrtPlz(); if(d.zs.nb==null&&ZS_PLZ_NB[plz]){ d.zs.nb=ZS_PLZ_NB[plz]; d.nbAuto=true; } return awRahmen({...R,...zsVorschlagFenster(d,plz)}); }
+  if(sk==="vorschlag"){ const plz=awOrtPlz(); if(d.zs.nb==null&&ZS_PLZ_NB[plz]){ zsNbSetzen(d.zs,ZS_PLZ_NB[plz]); d.nbAuto=true; } return awRahmen({...R,...zsVorschlagFenster(d,plz)}); }
   if(sk==="felder") return awRahmen({...R,...zsFelderFenster(d.zs,d.reihen,"awSubZu","Fertig")});
   if(sk==="apz") return awRahmen({...R,...zsApzFenster(d.zs)});
   if(sk==="hoehe") return awRahmen({...R,...zsHoeheFenster(d.zs)});
@@ -75,7 +75,7 @@ function awNeuWahl(v){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d;
   if(sk==="art"){ if(d.art!==v){ d.zs=null; if(v==="hv"){ Object.assign(d,{bedarf:zsBedarfStd(),montage:"up",name:"HV",netz:"TN-C-S | 230/400 V",hersteller:d.hersteller||""}); } } d.art=v; }
   else if(sk==="hersteller"){ d.hersteller=v; if(d.zs) d.zs.hersteller=v; if(d.gerHerst==null) d.gerHerst=v==="hager"?"Hager":v==="sj"?"ABB":null; }
   else if(sk==="geraete") d.gerHerst=v;
-  else if(sk==="montage") d.montage=v; else if(sk==="reihen") d.reihen=+v; else if(sk==="ort"){ AW.ort=v; if(d.zs&&d.nbAuto){ d.zs.nb=null; d.nbAuto=false; } } else if(sk==="name") d.name=v; else if(sk==="netz") d.netz=v;
+  else if(sk==="montage") d.montage=v; else if(sk==="reihen") d.reihen=+v; else if(sk==="ort"){ AW.ort=v; if(d.zs&&d.nbAuto){ zsNbSetzen(d.zs,null); d.nbAuto=false; } } else if(sk==="name") d.name=v; else if(sk==="netz") d.netz=v;
   else if(sk==="von"){ d.vonVId=v==="-"?"":v; const q=awVonListe().find(x=>x.id===d.vonVId); if(q&&q.netz&&d.netz==null) d.netz=q.netz; }
   if(AW.sub){ AW.sub=null; awNeuZeigen(); return; }
   if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); }

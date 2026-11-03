@@ -42,7 +42,7 @@ function zsAusVorlage(k){ const v=ZS_VORL.find(x=>x[0]===k)||ZS_VORL[0], felder=
 /* Zählerplätze an die Zählerfelder angleichen (Reihenfolge: Feld von links, im Feld von links); APZ nur in Verteiler-/Multimediafeld */
 function zsAbgleich(zs){ const alt=zs.zp||[]; let n=0; zs.zp=[];
   zs.felder.forEach(f=>{ if(f.typ!=="z"){ delete f.n; return; } f.n=f.n===2?2:1;
-    for(let p=0;p<f.n;p++){ n++; const z=alt.find(x=>x.feldId===f.id&&(x.pos||0)===p); zs.zp.push(z?{...z,pos:p}:{id:uid(),feldId:f.id,pos:p,zweck:n===1?"haushalt":"",art:"ehz",sls:n===1?"E35":"",nr:"",bez:""}); } });
+    for(let p=0;p<f.n;p++){ n++; const z=alt.find(x=>x.feldId===f.id&&(x.pos||0)===p); zs.zp.push(z?{...z,pos:p}:{id:uid(),feldId:f.id,pos:p,zweck:n===1?"haushalt":"",art:zsArtStd(zs),sls:n===1?"E35":"",nr:"",bez:""}); } });
   if(zs.apz&&!zs.felder.some(f=>f.id===zs.apz.feldId&&f.typ!=="z")) zs.apz=null;
   return zs; }
 const zsKopie=zs=>JSON.parse(JSON.stringify(zs||{felder:[],apz:null,zp:[]}));
@@ -86,8 +86,8 @@ const ZS_BEDARF_FELD=[["vf","Verteilerfelder",""],["mm","Multimediafelder",""]];
 const zsBedarfSteuer=b=>!!b.steuer||(+b.wpH||0)+(+b.wbH||0)>0;
 const zsBedarfStd=()=>({hh:1,allg:0,gew:0,wp:0,wb:0,pv:0,res:0,wpH:0,wbH:0,vf:1,mm:0});
 const zsBedarfZp=b=>["hh","allg","gew","wp","wb","pv","res"].reduce((a,k)=>a+(+b[k]||0),0);
-/* PLZ → Netzbetreiber (Oberberg; RheinNetz betreibt Waldbröl seit 01.01.2026, Morsbach und Reichshof seit 2017 und die AggerEnergie-Netze) */
-const ZS_PLZ_NB={"51545":"rheinnetz","51597":"rheinnetz","51580":"rheinnetz","51643":"rheinnetz","51645":"rheinnetz","51647":"rheinnetz","51674":"rheinnetz","51702":"rheinnetz","51766":"rheinnetz","51709":"rheinnetz","51491":"rheinnetz"};
+/* PLZ → Netzbetreiber (51588 Nümbrecht = Gemeindewerke Nümbrecht GWN, angenommen fürs ganze PLZ-Gebiet; Oberberg sonst: RheinNetz betreibt Waldbröl seit 01.01.2026, Morsbach und Reichshof seit 2017 und die AggerEnergie-Netze) */
+const ZS_PLZ_NB={"51588":"gwn","51545":"rheinnetz","51597":"rheinnetz","51580":"rheinnetz","51643":"rheinnetz","51645":"rheinnetz","51647":"rheinnetz","51674":"rheinnetz","51702":"rheinnetz","51766":"rheinnetz","51709":"rheinnetz","51491":"rheinnetz"};
 function zsAusBedarf(b,alt){ const N=Math.max(1,zsBedarfZp(b)), felder=[], zp=[];
   for(let n=N;n>0;n-=2) felder.push({id:uid(),typ:"z",n:n>=2?2:1});
   for(let i=0;i<Math.max(1,+b.vf||1);i++) felder.push({id:uid(),typ:"v"});
@@ -100,7 +100,7 @@ function zsBedarfListe(b){ const L=[], hh=+b.hh||0;
   [["allg","allgemein"],["gew","gewerbe"],["wp","wp"],["wb","wallbox"],["pv","pv"]].forEach(([k,z])=>{ for(let i=0;i<(+b[k]||0);i++) L.push([z,""]); });
   return L; }
 function zsZpAusBedarf(zs,b){ const liste=zsBedarfListe(b); let k=0; zs.zp=[];
-  zs.felder.filter(f=>f.typ==="z").forEach(f=>{ for(let p=0;p<f.n;p++){ const [zw,bez]=liste[k++]||["frei",""]; zs.zp.push({id:uid(),feldId:f.id,pos:p,zweck:zw,art:"ehz",sls:zw==="frei"?"":"E35",nr:"",bez}); } }); }
+  zs.felder.filter(f=>f.typ==="z").forEach(f=>{ for(let p=0;p<f.n;p++){ const [zw,bez]=liste[k++]||["frei",""]; zs.zp.push({id:uid(),feldId:f.id,pos:p,zweck:zw,art:zsArtStd(zs),sls:zw==="frei"?"":"E35",nr:"",bez}); } }); }
 /* ---- Schrank-Katalog: Komplettschränke je Hersteller mit Foto; ein Modell legt Felder, Höhe und APZ fest ---- */
 const ZS_MODELLE=[
   /* ABB / Striebel & John – BKE-I-Komplettschränke 1100 mm (Recherche 30.10.2026; Aufbau aus den Herstellerzeichnungen: R = Reserveplatz, APZ unten rechts; Schränke mit TSG-Feld bewusst weggelassen – Steuerung läuft heute über RfZ und APZ) */
@@ -232,8 +232,11 @@ function zsZpLesen(z){ if(!z) return; const b=document.getElementById("f_zsBez")
 
 /* ---- Bestückung je Feld nach VDE-AR-N 4100:2026 und Netzbetreiber ----
    zs.best = {<feldId>:{k:true}, s:{…} (einmal im Schrank), a:{…} (APZ)}; zs.nb = "rheinnetz"|"westnetz"|"anderer" (Vorgabe RheinNetz: Waldbröl, Morsbach, Reichshof, AggerEnergie-Gebiet) */
-const ZS_NB=[["rheinnetz","RheinNetz","Waldbröl, Morsbach, Reichshof, Gummersbach, Wiehl …"],["westnetz","Westnetz",""],["anderer","Anderer Netzbetreiber","nur die Regeln der VDE-AR-N 4100"]];
+const ZS_NB=[["rheinnetz","RheinNetz","Waldbröl, Morsbach, Reichshof, Gummersbach, Wiehl …"],["gwn","GWN","Gemeindewerke Nümbrecht · Zählerplätze 3-Punkt"],["westnetz","Westnetz",""],["anderer","Anderer Netzbetreiber","nur die Regeln der VDE-AR-N 4100"]];
 const zsNb=zs=>zs.nb||"rheinnetz";
+/* Zählerart je Netzbetreiber: GWN (Gemeindewerke Nümbrecht) 3-Punkt – Vorgabe laut Max (03.11.2026), TAB NS der GWN noch nicht geprüft; sonst eHZ auf BKE-I */
+const zsArtStd=zs=>zs&&zs.nb==="gwn"?"3pkt":"ehz";
+function zsNbSetzen(zs,nb){ const alt=zs.nb; zs.nb=nb; if(nb==="gwn") zs.zp.forEach(z=>z.art="3pkt"); else if(alt==="gwn") zs.zp.forEach(z=>z.art="ehz"); }
 const zsSteuer=zs=>!!zs.steuerbar||zs.zp.some(z=>z.zweck==="wp"||z.zweck==="wallbox");
 const ZS_BEST=[
   {k:"hs",ort:"z",zone:"AAR",t:"Hauptschalter 3-polig, plombierbar – je Zähler",s:"RheinNetz: hinter jeder Messeinrichtung",p:zs=>zsNb(zs)==="rheinnetz"},
@@ -269,7 +272,8 @@ function zsNbFenster(zs){ return {frage:"Welcher Netzbetreiber?",hinweis:"Danach
 
 /* ---- Karte auf der Verteilerseite ---- */
 function zsHinweise(zs){ const H=[], nb=zsNb(zs), off=zsBestOffenGesamt(zs);
-  if(nb!=="anderer"&&zs.zp.some(z=>z.art==="3pkt")) H.push(`${zsTxt(ZS_NB,nb)}: grundsätzlich eHZ auf BKE-I – 3-Punkt nur bei Wandler- oder Lastgangmessung.`);
+  if(nb==="gwn"){ if(zs.zp.some(z=>zsBelegt(z)&&z.art!=="3pkt")) H.push("GWN: Zählerplätze in 3-Punkt-Ausführung vorgesehen – bei der Zusage des Netzbetreibers bestätigen."); }
+  else if(nb!=="anderer"&&zs.zp.some(z=>z.art==="3pkt")) H.push(`${zsTxt(ZS_NB,nb)}: grundsätzlich eHZ auf BKE-I – 3-Punkt nur bei Wandler- oder Lastgangmessung.`);
   if(off) H.push(`Bestückung: ${off} Pflichtpunkt${off===1?"":"e"} noch nicht als vorhanden markiert.`);
   if(!zs.apz) H.push("Kein APZ eingetragen – bei neuen Zählerschränken Pflicht, im Bestand nicht nachzurüsten.");
   { const zF=zs.felder.filter(f=>f.typ==="z"), uf=zF[1]||zF[0], u=zsUssGeraet(zs), ub=u&&ZS_USS_BILD[u.nr];
@@ -382,5 +386,5 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "zsSpeichern": zsSpeichern(); return;
   case "zsBest": { const wo=b.dataset.wo, k=b.dataset.k; zs.best=zs.best||{}; zs.best[wo]=zs.best[wo]||{}; zs.best[wo][k]=!zs.best[wo][k]; if(!zs.best[wo][k]) delete zs.best[wo][k];
       const B=ZS_BEST.find(x=>x.k===k), hat=!!zs.best[wo][k]; document.querySelectorAll(`#dlg [data-act="zsBest"][data-wo="${wo}"][data-k="${k}"]`).forEach(x=>{ x.setAttribute("aria-pressed",hat); const st=x.querySelector(".zs-bs"); st.textContent=hat?"vorhanden":B.p(zs)?"fehlt":"optional"; st.classList.toggle("offen",!hat&&B.p(zs)); }); return; }
-  case "zsNb": zs.nb=b.dataset.v; if(AW.typ==="neu"){ AW.d.nbAuto=false; AW.sub=null; awNeuZeigen(); } else zsSpeichern(); return;
+  case "zsNb": zsNbSetzen(zs,b.dataset.v); if(AW.typ==="neu"){ AW.d.nbAuto=false; AW.sub=null; awNeuZeigen(); } else zsSpeichern(); return;
   } },true);
