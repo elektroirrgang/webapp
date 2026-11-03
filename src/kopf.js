@@ -178,15 +178,14 @@ addEventListener("load",()=>{ try{ if(sessionStorage.getItem("irrgang_upd")){ se
 window.__updTest=updNeu; /* nur für automatische Tests */
 
 /* ===== Anmeldeseite – gemeinsam für alle Apps =====
-   PC: links die Firmenseite (Logo, alle Apps, Adresse), rechts die Anmeldung. Handy/iPad: nur die Anmeldung wie bisher.
+   PC: eine Anmeldekarte mittig auf dem Markenhintergrund, darüber das Logo, darunter die vier Apps klein. Handy/iPad: nur die Anmeldung wie bisher.
    Die Apps geben ihren bisherigen loginView() hinein: body=loginSeite("EVSE",loginView()). */
-const LOGIN_APPS=[["Übersicht","Aufträge, Kunden und Kundenordner","<!--ICON_START-->"],["EVSE","Prüfung von Wallboxen und Ladesäulen","<!--ICON_EVSE-->"],
-  ["Baustelle","Tagesstand, offene Punkte und Material","<!--ICON_BAU-->"],["Gebäudetechnik","Installation, Verteiler, Geräte und Netzwerk","<!--ICON_ECHECK-->"]];
+const LOGIN_APPS=[["Übersicht","<!--ICON_START-->"],["EVSE","<!--ICON_EVSE-->"],["Baustelle","<!--ICON_BAU-->"],["Gebäudetechnik","<!--ICON_ECHECK-->"]];
 function loginSeite(app,inhalt){
   const ld=(document.querySelector(".logo.l-dunkel")||{}).src||"", F=typeof FIRMA!=="undefined"?FIRMA:null, V=typeof APP_VERSION!=="undefined"?String(APP_VERSION).split(" ")[0]:"";
-  const apps=LOGIN_APPS.map(([n,t,ic])=>`<div class="lm-app${n===app?" hier":""}"><img src="${ic}" alt=""><span><b>${n}</b><small>${t}</small></span>${n===app?`<em>Diese App</em>`:""}</div>`).join("");
-  const rechts=inhalt.replace("<h2>",`<img class="login-ic" src="<!--ICON-->" alt=""><h2>`);
-  return `<div class="login-seite"><aside class="login-marke" aria-hidden="true"><img class="lm-logo" src="${ld}" alt="">
-    <div class="lm-mitte"><h1>Willkommen</h1><p class="lm-unter">Ein Mitarbeiterkonto für alle Apps von ${F?F.name:"Elektro Irrgang"}.</p><div class="lm-apps">${apps}</div></div>
-    ${F?`<p class="lm-fuss">${F.name} · ${F.strasse} · ${F.ort}</p>`:""}</aside>
-    <div class="login-rechts">${rechts}${/login-ver/.test(inhalt)?"":`<p class="login-ver lv-pc">Version ${V}</p>`}</div></div>`; }
+  const apps=LOGIN_APPS.map(([n,ic])=>`<span class="ls-app${n===app?" hier":""}"><img src="${ic}" alt=""><small>${n}</small></span>`).join("");
+  const karte=inhalt.replace("<h2>",`<img class="login-ic" src="<!--ICON-->" alt=""><h2>`).replace("Microsoft-Mitarbeiterkonto",`<span class="nw">Microsoft-Mitarbeiterkonto</span>`);
+  return `<div class="login-seite"><div class="ls-mitte"><img class="ls-logo" src="${ld}" alt="${F?F.name:"Elektro Irrgang"}">
+    <div class="login-karte">${karte}${/login-ver/.test(inhalt)?"":`<p class="login-ver lv-pc">Version ${V}</p>`}</div>
+    <div class="ls-apps" aria-hidden="true"><p>Ein Mitarbeiterkonto für alle Apps</p><div>${apps}</div></div></div>
+    ${F?`<p class="ls-fuss">${F.name} · ${F.strasse} · ${F.ort}</p>`:""}</div>`; }
