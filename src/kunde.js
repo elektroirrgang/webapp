@@ -2,7 +2,8 @@
    Eckdaten mit Schnellknöpfen, kleine Karte mit Anhaltspunkten, Ansprechpartner mit Rolle.
    kdOben(r,kind,ss) = Eckdaten + Karte; kontakteView(kind,r); Ablage kommt aus dateien.js. */
 function infoKarte(r,kind){
-  const adr=adrText(r), tel=r.tel&&r.tel.replace(/[^\d+]/g,""), vorschlag=kind==="kunden"&&!r.web?webVorschlag(r):"";
+  const T=kind==="kunden"?telefoneVon(r):(r.tel?[{art:"Telefon vor Ort",nr:r.tel}]:[]);
+  const adr=adrText(r), tel=T.length&&T[0].nr.replace(/[^\d+]/g,""), vorschlag=kind==="kunden"&&!r.web?webVorschlag(r):"";
   const qa=(href,ic,t,act)=>`<${href?`a href="${href}"${/^https/.test(href)?' target="_blank" rel="noopener"':""}`:`button type="button" data-act="${act}"`} class="qa"><span class="qa-ic">${icon(ic)}</span><span>${t}</span></${href?"a":"button"}>`;
   const aktionen=[tel&&qa("tel:"+tel,"phone","Anrufen"),r.mail&&qa("mailto:"+r.mail,"mail","E-Mail"),adr&&qa(mapsHref(adr),"route","Route"),
     kind==="kunden"&&(r.web?qa(webHref(r.web),"globe","Webseite"):kdArt(r)==="privat"?"":vorschlag?qa(webHref(vorschlag),"globe","Webseite"):canEdit(r)?qa("","search","Webseite suchen","webSuchen"):""),
@@ -11,7 +12,7 @@ function infoKarte(r,kind){
   const z=(ic,l,v)=>v?`<div class="dz"><span class="dz-ic">${icon(ic)}</span><span class="dz-t"><small>${l}</small><span>${esc(v)}</span></span></div>`:"";
   const art=kind==="kunden"?`${KD_ART_LANG[kdArt(r)]}${r.art?"":" (vorgeschlagen)"}${kdArt(r)==="privat"&&kdAnrede(r)?` · ${kdAnrede(r)} ${r.nachname||""}`.trimEnd():""}`:"";
   const zeilen=[z("firma","Kundenart",art),z("tag","Kundennummer",r.kdnr),z("ort","Adresse",adr),
-    z("phone","Telefon",r.tel),z("mail","E-Mail",r.mail),
+    T.map(x=>`<a class="dz dz-tel" href="tel:${esc(x.nr.replace(/[^\d+]/g,""))}"><span class="dz-ic">${icon("phone")}</span><span class="dz-t"><small>${esc(T.length>1||kind!=="kunden"?x.art:"Telefon · "+x.art)}</small><span>${esc(x.nr)}</span></span></a>`).join(""),z("mail","E-Mail",r.mail),
     z("globe",r.web?"Webseite":"Webseite (aus der E-Mail-Adresse)",r.web?webText(r.web):vorschlag),z("notes","Notiz",r.notiz)].join("");
   if(!aktionen.length&&!zeilen) return "";
   return `<div class="infok2">${aktionen.length?`<div class="qa-row">${aktionen.join("")}</div>`:""}${zeilen?`<div class="dz-list">${zeilen}</div>`:""}</div>`;
@@ -230,6 +231,8 @@ function kdDlgErweitern(kind,rec){ const d=document.getElementById("dlg"), fg=d&
         <div class="row2" style="margin-top:12px">${tf("vorname","Vorname",r.vorname||(r.art?"":t.vor)||"",{form:true})}${tf("nachname","Nachname",r.nachname||(r.art?"":t.nach)||"",{form:true})}</div></div>`);
     kdArtAnwenden(art); }
   /* Gebäude, Ebenen, Verteiler und Maschinen pflegt jetzt die Seite „Anlagen“ (Übersicht) – ein Modell für alle Apps */
+  if(kind==="kunden") telFelder(d,r);
+  adrHelfer(d);
 }
 function kdArtAnwenden(art){ const d=document.getElementById("dlg"); if(!d) return; const priv=art==="privat";
   const pv=d.querySelector(".kd-priv"); if(pv) pv.hidden=!priv;
@@ -245,3 +248,80 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   const d=document.getElementById("dlg"), f=b.dataset.act==="kdArtW"?"art":"anrede", h=d&&d.querySelector(`input[type=hidden][data-f="${f}"]`); if(h) h.value=b.dataset.v;
   if(f==="art") kdArtAnwenden(b.dataset.v); },true);
 document.addEventListener("input",e=>{ const f=e.target&&e.target.dataset&&e.target.dataset.f; if((f==="vorname"||f==="nachname")&&e.target.closest("#dlg")) kdNameAusTeilen(); });
+
+/* ===== Mehrere Telefonnummern je Kunde =====
+   r.telefone=[{art,nr}] – als JSON-Text gespeichert, weil die Apps das Bearbeiten-Fenster flach speichern (formVals → Object.assign).
+   r.tel bleibt die erste Nummer, damit EVSE, Meldungen, Aufnahme und Protokolle sie weiter zeigen. */
+const TEL_ARTEN=["Mobil","Festnetz","Privat","Geschäftlich","Fax","Sonstige"];
+const telArtRaten=n=>/^(\+49|0049|0)1[5-7]/.test(String(n||"").replace(/[\s\/().-]/g,""))?"Mobil":"Festnetz";
+function telefoneVon(r){ if(!r) return []; let L=r.telefone; if(typeof L==="string"){ try{ L=JSON.parse(L); }catch(e){ L=null; } }
+  L=(Array.isArray(L)?L:[]).filter(x=>x&&String(x.nr||"").trim()).map(x=>({art:x.art||telArtRaten(x.nr),nr:String(x.nr).trim()}));
+  return L.length||!r.tel?L:[{art:telArtRaten(r.tel),nr:String(r.tel).trim()}]; }
+let telN=0;
+const telZeile=x=>{ const i=++telN; return `<div class="kd-tel"><div class="tf fl kd-tel-art"><select id="telA${i}" data-tel="art">${TEL_ARTEN.map(a=>`<option${a===x.art?" selected":""}>${a}</option>`).join("")}</select><label for="telA${i}">Art</label><span class="arr">${icon("drop")}</span></div>
+  <div class="tf"><input id="telN${i}" data-tel="nr" type="tel" inputmode="tel" autocomplete="off" placeholder=" " value="${esc(x.nr||"")}"><label for="telN${i}">Nummer</label></div>
+  <button type="button" class="kd-tel-weg" data-act="telWeg" aria-label="Nummer entfernen" title="Nummer entfernen">${icon("close")}</button></div>`; };
+function telFelder(d,r){ const tin=d.querySelector('[data-f="tel"]'); if(!tin||d.querySelector(".kd-tels")) return;
+  const tfT=tin.closest(".tf"), reihe=tfT.parentElement; const L=telefoneVon(r);
+  const block=document.createElement("div"); block.className="kd-tels";
+  block.innerHTML=`<input type="hidden" data-f="tel" value=""><input type="hidden" data-f="telefone" value=""><div class="kd-tel-liste">${(L.length?L:[{art:"Mobil",nr:""}]).map(telZeile).join("")}</div>
+    <button type="button" class="kd-tel-neu" data-act="telNeu">${icon("add")}<span>Weitere Nummer</span></button>`;
+  if(reihe.classList.contains("fg1")) tfT.replaceWith(block);
+  else { tfT.remove(); if(reihe.classList.contains("reihe3")){ reihe.classList.remove("reihe3"); reihe.classList.add("reihe2"); } reihe.before(block); } }
+function telSammeln(d){ const b=d&&d.querySelector(".kd-tels"); if(!b) return;
+  const L=[...b.querySelectorAll(".kd-tel")].map(z=>({art:z.querySelector('[data-tel="art"]').value,nr:z.querySelector('[data-tel="nr"]').value.replace(/\s+/g," ").trim()})).filter(x=>x.nr);
+  b.querySelector('[data-f="tel"]').value=L.length?L[0].nr:""; b.querySelector('[data-f="telefone"]').value=L.length?JSON.stringify(L):""; }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('#dlg [data-act="telNeu"],#dlg [data-act="telWeg"],#dlg [data-act="saveLoc"]'); if(!b) return; const d=document.getElementById("dlg");
+  if(b.dataset.act==="saveLoc"){ telSammeln(d); adrFertig(d); return; } /* weiter zum Speichern der App */
+  e.stopPropagation(); e.preventDefault(); const liste=d.querySelector(".kd-tel-liste");
+  if(b.dataset.act==="telNeu"){ const da=[...liste.querySelectorAll('[data-tel="art"]')].map(x=>x.value); liste.insertAdjacentHTML("beforeend",telZeile({art:TEL_ARTEN.find(a=>!da.includes(a))||"Sonstige",nr:""})); liste.lastElementChild.querySelector("input").focus(); }
+  else { const z=b.closest(".kd-tel"); if(liste.children.length>1) z.remove(); else { const i=z.querySelector("input"); i.value=""; i.focus(); } } },true);
+/* Art vorschlagen, sobald eine Mobilnummer erkennbar ist (nur solange man die Art nicht selbst angefasst hat) */
+document.addEventListener("input",e=>{ const i=e.target; if(!(i&&i.dataset&&i.dataset.tel==="nr")) return; const s=i.closest(".kd-tel").querySelector('[data-tel="art"]');
+  if(!s.dataset.selbst&&["Mobil","Festnetz"].includes(s.value)&&i.value.replace(/\D/g,"").length>=4) s.value=telArtRaten(i.value); });
+document.addEventListener("change",e=>{ const s=e.target; if(s&&s.dataset&&s.dataset.tel==="art") s.dataset.selbst="1"; });
+
+/* ===== Adresse: Vorschläge beim Tippen und saubere Schreibweise =====
+   Vorschläge von Photon (OpenStreetMap-Daten, Server von Komoot in Deutschland, ohne Schlüssel). Es geht nur der getippte
+   Adresstext hinaus – kein Name, keine Kundendaten. Ein Tipp füllt Straße + Hausnummer, PLZ und Ort.
+   Schreibweise beim Verlassen des Feldes: „Hauptstr. 5 A“ → „Hauptstraße 5a“, „Kölner Str.“ → „Kölner Straße“. */
+function strasseSchoen(v){ let t=String(v||"").replace(/\s+/g," ").trim(); if(!t) return t;
+  t=t.replace(/(\p{Ll})str(?:\.|asse(?!\p{L})|(?=[\s\d]|$))/gu,"$1straße")
+     .replace(/(^|[\s-])Str(?:\.|asse(?!\p{L})|(?=[\s\d]|$))/giu,"$1Straße")
+     .replace(/(\p{L}\.?)(\d)/u,"$1 $2")
+     .replace(/(\d)\s*-\s*(\d)/g,"$1-$2")
+     .replace(/(\d)\s?([a-zA-Z])(?![\p{L}])/gu,(m,n,b)=>n+b.toLowerCase())
+     .replace(/\.(?=\S)/g,". ").replace(/\s+/g," ");
+  return t.charAt(0).toUpperCase()+t.slice(1); }
+const ortSchoen=v=>{ const t=String(v||"").replace(/\s+/g," ").trim(); return t.charAt(0).toUpperCase()+t.slice(1); };
+const ADR={t:0,ab:null,L:[],i:-1,el:null};
+function adrHelfer(d){ const s=d.querySelector('[data-f="strasse"]'); if(!s||s.dataset.helfer) return; s.dataset.helfer="1"; s.setAttribute("autocomplete","off");
+  const tf=s.closest(".tf"); tf.classList.add("adr-tf"); const box=document.createElement("div"); box.className="adr-vor"; box.hidden=true; box.setAttribute("role","listbox"); tf.appendChild(box);
+  s.addEventListener("input",()=>{ clearTimeout(ADR.t); const q=s.value.trim(); if(q.length<3||!navigator.onLine){ adrZu(box); return; } ADR.t=setTimeout(()=>adrSuchen(s,box,q),280); });
+  s.addEventListener("keydown",e=>{ if(box.hidden) return; const n=ADR.L.length;
+    if(e.key==="ArrowDown"||e.key==="ArrowUp"){ e.preventDefault(); ADR.i=(ADR.i+(e.key==="ArrowDown"?1:-1)+n)%n; adrMalen(box); }
+    else if(e.key==="Enter"&&ADR.i>=0){ e.preventDefault(); adrNehmen(d,ADR.L[ADR.i]); adrZu(box); }
+    else if(e.key==="Escape"){ e.stopPropagation(); adrZu(box); } });
+  s.addEventListener("blur",()=>setTimeout(()=>{ adrZu(box); s.value=strasseSchoen(s.value); },150));
+  const o=d.querySelector('[data-f="ort"]'); if(o) o.addEventListener("blur",()=>{ o.value=ortSchoen(o.value); });
+  const p=d.querySelector('[data-f="plz"]'); if(p) p.addEventListener("blur",()=>{ const z=p.value.replace(/\D/g,""); if(z.length===5) p.value=z; }); }
+function adrFertig(d){ const s=d&&d.querySelector('[data-f="strasse"]'), o=d&&d.querySelector('[data-f="ort"]'); if(s) s.value=strasseSchoen(s.value); if(o) o.value=ortSchoen(o.value); }
+const adrZu=box=>{ box.hidden=true; ADR.L=[]; ADR.i=-1; };
+async function adrSuchen(s,box,q){ if(ADR.ab) ADR.ab.abort(); const ab=ADR.ab=new AbortController();
+  /* Nähe Waldbröl bevorzugen, nur Deutschland */
+  const u=`https://photon.komoot.io/api/?q=${encodeURIComponent(strasseSchoen(q))}&lang=de&limit=8&lat=50.877&lon=7.616&bbox=5.86,47.27,15.04,55.06&layer=house&layer=street`;
+  let j; try{ const r=await fetch(u,{signal:ab.signal}); if(!r.ok) return; j=await r.json(); }catch(e){ return; }
+  if(s.value.trim()!==q) return;
+  const nr=(q.match(/\s(\d+\s?[a-zA-Z]?(?:\s?-\s?\d+\s?[a-zA-Z]?)?)\s*$/)||[])[1]||"", gesehen=new Set();
+  ADR.L=(j.features||[]).map(f=>{ const p=f.properties||{}, haus=p.type==="house", str=haus?p.street:(p.type==="street"?p.name:p.street);
+    if(!str||p.countrycode&&p.countrycode!=="DE") return null; const hn=haus?p.housenumber||"":nr.replace(/\s+/g,"");
+    return {strasse:strasseSchoen([str,hn].filter(Boolean).join(" ")),plz:p.postcode||"",ort:p.city||p.town||p.village||p.locality||p.district||"",teil:p.district&&p.district!==(p.city||"")?p.district:""}; })
+    .filter(x=>x&&x.plz&&!gesehen.has(x.strasse+x.plz)&&gesehen.add(x.strasse+x.plz)).slice(0,6);
+  ADR.i=-1; if(!ADR.L.length){ adrZu(box); return; } adrMalen(box);
+  box.onmousedown=e=>e.preventDefault();
+  box.onclick=e=>{ const b=e.target.closest("[data-i]"); if(!b) return; adrNehmen(s.closest("#dlg"),ADR.L[+b.dataset.i]); adrZu(box); }; }
+function adrMalen(box){ box.innerHTML=ADR.L.map((x,i)=>`<button type="button" class="adr-v${i===ADR.i?" an":""}" data-i="${i}" role="option"><span class="adr-ic">${icon("ort")}</span><span class="adr-t"><b>${esc(x.strasse)}</b><small>${esc([x.plz,x.ort].filter(Boolean).join(" ")+(x.teil?` · ${x.teil}`:""))}</small></span></button>`).join("")
+  +`<p class="adr-q">Vorschläge: OpenStreetMap</p>`; box.hidden=false; }
+function adrNehmen(d,x){ if(!d||!x) return; const setz=(f,v)=>{ const i=d.querySelector(`[data-f="${f}"]`); if(i&&v){ i.value=v; i.dispatchEvent(new Event("input",{bubbles:true})); } };
+  setz("strasse",x.strasse); setz("plz",x.plz); setz("ort",x.ort); clearTimeout(ADR.t);
+  const s=d.querySelector('[data-f="strasse"]'); if(s&&!/\d/.test(x.strasse)){ s.focus(); s.setSelectionRange(s.value.length,s.value.length); } }
