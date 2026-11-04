@@ -28,6 +28,7 @@
 - Plausibilitätsprüfung (1.7.66): Hinweise unter dem Messfeld (Tippfehler, Einheit, Quervergleich, Rechenweg Ik). In Gebäudetechnik nur mit Testdaten im Code geprüft, nicht im echten Messfenster – beim nächsten E-Check drauf achten.
 - Bedenkenanmeldung/Behinderungsanzeige (1.7.65): Brieftext vom Chef abnehmen lassen.
 - Nachschlagewerk: Max zeigt, was es schon gibt (Stand 04.11.2026) – dann entscheiden, ob ins Betriebshandbuch oder eigener Bereich.
+- Texte aus der Übergabe (1.7.67): Stundenzettel (SCC) und Berichtsheft (Ezubis, nur Azubis, die beteiligt waren) zum Kopieren; nach Regeln, mit KI-Knopf sobald KI an ist. Offen: Ezubis-Format (täglich/wöchentlich, Stunden je Tätigkeit?), Wochenbericht aus allen Übergaben der Woche.
 - Abnahmeprotokoll (1.7.64): Abnahme-Satz im PDF („… erklärt die Abnahme … (§ 640 BGB)“) vom Chef prüfen lassen.
 
 ## Lager (Gespräch 04.11.2026) – offen, Max ist unsicher, erst mit dem Chef klären

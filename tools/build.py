@@ -44,7 +44,7 @@ def baue(quelle, ziel, icon):
     html = html.replace("/*KALENDER*/", (root / "src/kalender.js").read_text(encoding="utf-8"))
     html = html.replace("/*MATERIAL*/", (root / "src/material-daten.js").read_text(encoding="utf-8") + "\n" + (root / "src/material.js").read_text(encoding="utf-8"))
     html = html.replace("/*ZEICHNEN*/", (root / "src/zeichnen.js").read_text(encoding="utf-8"))
-    html = html.replace("/*AUFNAHME*/", (root / "src/aufnahme.js").read_text(encoding="utf-8") + "\n" + (root / "src/abnahme.js").read_text(encoding="utf-8") + "\n" + (root / "src/schreiben.js").read_text(encoding="utf-8"))
+    html = html.replace("/*AUFNAHME*/", (root / "src/aufnahme.js").read_text(encoding="utf-8") + "\n" + (root / "src/abnahme.js").read_text(encoding="utf-8") + "\n" + (root / "src/schreiben.js").read_text(encoding="utf-8") + "\n" + (root / "src/texte.js").read_text(encoding="utf-8"))
     html = html.replace('href="manifest.webmanifest"', f'href="manifest.webmanifest?v={n}"')
     html = html.replace("<!--ICON_FAV-->", "data:image/png;base64," + b64(icon.split("/")[0] + "/icon-rund-64.png"))  # abgerundet für den Browser-Tab
     html = html.replace("<!--ICON-->", "data:image/png;base64," + b64(icon))

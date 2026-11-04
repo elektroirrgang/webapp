@@ -2263,7 +2263,7 @@ function ekZeile(e,erster){
 }
 function ekZeigen(e){
   const N=ekLeute(e).map(x=>{ const p=typeof profilVon==="function"&&x.mail&&profilVon(x.mail); return (p&&[p.vorname,p.nachname].filter(Boolean).join(" "))||x.name; });
-  dialog(tagText(e.datum),`<div class="ek-dlg">${N.length?`<p class="ek-wer">${icon("person")}<span>${esc(N.join(", "))}</span></p>`:""}${ekInhalt(e)}</div>`,"",{breit:true});
+  dialog(tagText(e.datum),`<div class="ek-dlg">${N.length?`<p class="ek-wer">${icon("person")}<span>${esc(N.join(", "))}</span></p>`:""}${ekInhalt(e)}${typeof txAbschnitt==="function"?txAbschnitt(e):""}</div>`,"",{breit:true});
   /* Teilen, Bearbeiten, Schließen als gefüllte Rundknöpfe oben rechts neben dem Datum (bleiben beim Scrollen stehen) */
   const k=(act,ic,t)=>`<button class="ek-kn" data-act="${act}" data-id="${e.id}" aria-label="${t}" title="${t}">${icon(ic)}</button>`;
   const h=$("#dlg h2"); if(h) h.outerHTML=`<div class="ek-kopf"><h2>${esc(tagText(e.datum))}</h2><span class="ek-kns">${k("teilen","share","Teilen")}${canEdit(e)?k("eintragEdit","edit","Bearbeiten"):""}${k("cancel","close","Schließen")}</span></div>`;
@@ -2373,7 +2373,7 @@ function entwFertig(ziel,ohneGo){ if(!entw) return; const e=entw, ok=eSpeichernS
     if(e._neu){ const b=DB.baustellen.get(e.baustelleId); if(b&&b.status==="pausiert"){ b.status="aktiv"; saveRec("baustellen",b); } } }
   else if(e._neu&&e.id){ const r=DB.eintraege.get(e.id); if(r&&!r.deleted){ r.deleted=true; saveRec("eintraege",r); } }
   entw=null; const z=entwZurueck; entwZurueck=null; if(ohneGo||ziel){ EK_BACK=null; if(ohneGo) return; }
-  go(ziel||z||{v:"baustelle",id:e.baustelleId}); if(ok&&e._neu) toast("Übergabe gespeichert"); ekWiederOeffnen(); }
+  go(ziel||z||{v:"baustelle",id:e.baustelleId}); if(ok&&e._neu){ const r=DB.eintraege.get(e.id); if(r&&String(r.stand||"").trim()) toast("Übergabe gespeichert","Texte",()=>ekZeigen(r)); else toast("Übergabe gespeichert"); } ekWiederOeffnen(); }
 async function entwFotoAufnehmen(el){
   const f=el.files[0]; el.value=""; if(!f||!entw) return;
   let data; try{ data=await fotoVerkleinern(f); }catch(e){ toast("Das Bild konnte nicht gelesen werden"); return; }
