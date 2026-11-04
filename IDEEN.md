@@ -24,6 +24,7 @@
 - Mehrere Telefonnummern auch bei Ansprechpartnern.
 - TAB NS der GWN (Gemeindewerke Nümbrecht) besorgen → genaue Pflichtpunkte der Bestückung eintragen; prüfen, ob ganz 51588 GWN-Netz ist.
 - „Aufbau ändern“: Hersteller-Modell (z. B. ZB53S + ZK5EH24 + ZU59VT7APZ2) auch nachträglich wählbar machen, damit es in der Materialliste steht.
+- 10-Jahres-Frist (Prüfprotokolle, Verteilerlegenden inkl. „Ältere Stände“) steht bisher nur im Datenschutzhinweis – es gibt noch keine automatische Löschung/Erinnerung nach Ablauf. Bei Bedarf: Liste „Frist abgelaufen“ für den Chef statt stillem Löschen.
 - Bibliothek: eigene Kategorie „Pläne“ neben Prüfprotokollen/Berichten (Legende erscheint im Filter noch unter „Prüfprotokolle“).
 
 ## Bearbeitungssperre bei gleichzeitigem Arbeiten (erst nach funktionierender Microsoft-Anbindung)
