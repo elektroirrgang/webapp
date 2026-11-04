@@ -58,6 +58,7 @@ function ecGebNorm(g){ g.etagen=g.etagen&&g.etagen.length?g.etagen:[{id:"eg",nam
   for(const s of g.stromkreise){ if(s.rcd&&!s.rcdId){ const t=ecRcdText(s.rcd), id=("r-"+(s.vId||"x")+"-"+t.idn+t.typ).replace(/[^A-Za-z0-9_-]/g,"_");
       if(!g.rcds.some(r=>r.id===id)) g.rcds.push({id,vId:s.vId||"",nr:String(g.rcds.filter(r=>r.vId===s.vId).length+1),typ:t.typ,in:"",idn:t.idn}); s.rcdId=id; }
     delete s.rcd; }
+  if(typeof gvBtMarken==="function") gvBtMarken(g);
   return g; }
 function ecGeb(ortId){ const g=DB.gebaeude.get(ecGebId(ortId)); if(g&&!g.deleted) return ecGebNorm(g); return ecGebNorm({id:ecGebId(ortId),ortId}); }
 const ecGebSpeichern=g=>{ const neu=!DB.gebaeude.has(g.id); delete g.deleted; saveRec("gebaeude",g,neu); };
@@ -75,10 +76,11 @@ function ecEbeneRaten(n){ n=String(n||"").toLowerCase().replace(/\s+/g," ").trim
   if((m=n.match(/^(level|lvl|ebene|l)\s*(-?\d+)/))) return +m[2]-1;
   return null; }
 const ecEbene=e=>e.ebene!=null&&e.ebene!==""?+e.ebene:(ecEbeneRaten(e.name)??0);
-const ecEtagen=g=>g.etagen.map((e,i)=>[e,i]).sort((a,b)=>ecEbene(a[0])-ecEbene(b[0])||a[1]-b[1]).map(x=>x[0]);
+const ecEtagen=g=>{ const B=g.bauteile||[], bi=e=>e.bauteilId?B.findIndex(b=>b.id===e.bauteilId):-1; return g.etagen.map((e,i)=>[e,i]).sort((a,b)=>bi(a[0])-bi(b[0])||ecEbene(a[0])-ecEbene(b[0])||a[1]-b[1]).map(x=>x[0]); };
 const ecEtStd=g=>{ const E=ecEtagen(g); return E.find(e=>ecEbene(e)===0)||E[0]; };
 /* Anzeige: „Level 1 (EG)“, wenn Bezeichnung und Geschoss nicht dasselbe sind */
-const ecEtLabel=e=>{ const gs=ecGeschossName(ecEbene(e)); return !gs||ecEbeneRaten(e.name)===ecEbene(e)&&!/^(level|lvl|ebene|l)\s*\d/i.test(e.name)?e.name:`${e.name} (${gs})`; };
+const ecEtLabel=e=>(e._bt?e._bt+" · ":"")+ecEtLabel0(e);
+const ecEtLabel0=e=>{ const gs=ecGeschossName(ecEbene(e)); return !gs||ecEbeneRaten(e.name)===ecEbene(e)&&!/^(level|lvl|ebene|l)\s*\d/i.test(e.name)?e.name:`${e.name} (${gs})`; };
 const ecRaumName=(g,id)=>{ for(const e of g.etagen) for(const r of e.raeume) if(r.id===id) return `${e.name} · ${r.name}`; return ""; };
 const ecRaeume=g=>ecEtagen(g).flatMap(e=>e.raeume.map(r=>({...r,etage:e,titel:`${ecEtLabel(e)} · ${r.name}`})));
 const ecSkListe=g=>[...g.stromkreise].sort((a,b)=>{ const va=g.verteiler.findIndex(v=>v.id===a.vId), vb=g.verteiler.findIndex(v=>v.id===b.vId); return (va<0?999:va)-(vb<0?999:vb)||ecNr(a,b); });

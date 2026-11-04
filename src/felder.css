@@ -1823,3 +1823,8 @@ html body.sc-eng .navbar,html body.sc-eng.rail-open .navbar{transform:translateX
 .gv-gs{font-weight:500;color:var(--on-sv);margin-left:6px}
 .gv-unten{margin-top:20px}.gv-unten .btn-tonal{display:inline-flex;align-items:center;gap:8px}.gv-unten .ic{width:18px;height:18px;fill:currentColor}
 .gv-schieb{display:flex;align-items:center;gap:6px;margin-top:14px}.gv-schieb .meta{flex:1;margin:0 4px}
+.gv-bt[aria-pressed="false"]{background:var(--sc-high);color:var(--on-surface)}.gv-bt[aria-pressed="false"] small{color:var(--on-sv)}
+.gv-bt[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}.gv-bt[aria-pressed="true"] small{color:var(--on-pc)}
+.gv-bt-titel{margin:22px 4px 0;font-size:22px;line-height:28px;font-weight:700;color:var(--on-surface)}
+.gv-zu{margin:12px 0 4px}.gv-zu b{font-size:15px}
+.gv-bts{grid-template-columns:repeat(auto-fill,minmax(124px,1fr))}.gv-bt small{white-space:nowrap}
