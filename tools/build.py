@@ -34,7 +34,7 @@ def baue(quelle, ziel, icon):
     html = html.replace("/*ECHECKPRUEF*/", (root / "src/echeck-pruef.js").read_text(encoding="utf-8"))
     html = html.replace("/*LEGENDE*/", (root / "src/legende.js").read_text(encoding="utf-8"))
     html = html.replace("/*VERTEILER*/", (root / "src/verteiler.js").read_text(encoding="utf-8") + "\n" + (root / "src/material-daten.js").read_text(encoding="utf-8") + "\n" + (root / "src/vt-aufnahme.js").read_text(encoding="utf-8") + "\n" + (root / "src/zaehlerschrank.js").read_text(encoding="utf-8") + "\n" + (root / "src/zs-zeichnung.js").read_text(encoding="utf-8") + "\n" + (root / "src/vt-uebersicht.js").read_text(encoding="utf-8"))
-    html = html.replace("/*QR*/", (root / "vendor/qrcode-generator.min.js").read_text(encoding="utf-8") + "\n" + (root / "src/qr.js").read_text(encoding="utf-8"))
+    html = html.replace("/*QR*/", (root / "vendor/qrcode-generator.min.js").read_text(encoding="utf-8") + "\n" + (root / "src/qr.js").read_text(encoding="utf-8") + "\n" + (root / "src/pdfansicht.js").read_text(encoding="utf-8"))
     html = html.replace("/*DATEIEN*/", (root / "src/dateien.js").read_text(encoding="utf-8"))
     html = html.replace("/*VORGAENGE*/", (root / "src/vorgaenge.js").read_text(encoding="utf-8"))
     html = html.replace("/*ANLAGEN*/", (root / "src/anlagen.js").read_text(encoding="utf-8"))
@@ -69,7 +69,7 @@ baue("src/baustelle.html", "baustelle/index.html", "baustelle/icon-180.png")
 baue("src/echeck.html", "echeck/index.html", "echeck/icon-180.png")
 
 
-for app in ("evse", "uebersicht", "baustelle"):
+for app in ("evse", "uebersicht", "baustelle", "echeck"):
     (root / app / "pdfjs").mkdir(exist_ok=True)
     for f in ("pdf.min.js", "pdf.worker.min.js"):
         shutil.copyfile(root / "vendor/pdfjs" / f, root / app / "pdfjs" / f)
