@@ -782,7 +782,7 @@ function ecRackView(pr,s){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", N=e
 </section>`;
   const inhalt=tab==="belegung"?`<section class="card"><h3>Belegung <span class="m3-neben">${Lk.length} Port${Lk.length===1?"":"s"}</span></h3>${beleg}</section>`
     :tab==="stueck"?`<section class="card"><h3>Stückliste</h3>${stueck}<p class="m3-hinweis">Keystones und Patchkabel = belegte Ports</p></section>`
-    :tab==="planung"?`<section class="card"><h3>Planung</h3>${planung}</section>`:ansicht;
+    :tab==="planung"?`<section class="card"><h3>Planung</h3>${planung}</section>`:ansicht+(typeof qrKarteSchrank==="function"?qrKarteSchrank(g,s,zu):"");
   return `<div class="rk-seite">
     <div class="rk-inhalt rk-${tab}">${inhalt}</div>
     ${zu||tab!=="ansicht"?"":`<button class="fab rk-fab" data-act="ecRkWahl">${icon("add")}<span>Teil einsetzen</span></button>`}</div>`; }
