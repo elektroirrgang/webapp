@@ -497,11 +497,18 @@ function ecRcdDlg(r,vId){ const pr=ecPr(), g=ecGeb(pr.ortId), v=r||{vId,nr:Strin
     <div class="lbl" style="margin-top:12px">Bemessungsstrom</div>${ecChips("in",[["25","25 A"],["40","40 A"],["63","63 A"],["80","80 A"]],String(v.in||""))}`,
     `${r?`<button class="btn-text danger" data-act="ecRcdDel">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecRcdOk">Speichern</button>`,{breit:true}); }
 /* Messfeld (großes Zahlenfeld mit Grenzwert-Ampel) und kompaktes Feld für Messpunkte */
+/* Plausibilitätsprüfung (plausi.js): Bezug zum Feld – Stromkreis (Schutzorgan, Zs, R LO), Messpunkt (über seinen Stromkreis) oder RCD (IΔN) */
+const EC_PL={riso:"riso",rlo:"rlo",zs:"zs",ub:"ub",t1:"t1",t5:"t5",idelta:"ria"};
+function plCtx(el){ const pr=typeof ecPr==="function"&&ecPr(); if(!pr) return {}; const g=ecGeb(pr.ortId); if(!g) return {}; const z=el.dataset.z, num=v=>{ const x=ecZahl(v); return x?x.n:0; };
+  const r=(g.rcds||[]).find(x=>x.id===z); if(r) return {idn:+r.idn||30};
+  let sk=(g.stromkreise||[]).find(x=>x.id===z); if(!sk) sk=(g.stromkreise||[]).find(s=>ecSkPunkte(g,s.id).some(p=>p.id===z));
+  if(!sk) return {}; const L=ecLs(sk.schutz), w=ecW(pr,sk.id), zm=ecZsMax(pr,g,sk);
+  return {In:L?L.In:0,f:L?L.Ia/L.In:0,zul:L?L.zs:0,zsHier:num(w.zs)||(zm?zm.n:0)}; }
 function ecMessFeld(pr,z,k,bezug,zu){ const d=EC_F[k], w=ecW(pr,z), gw=d.gw(bezug), st=ecWertStand(gw,w[k]);
-  return `<div class="ec-feld ${st}"><label for="m_${esc(z)}_${k}">${esc(d.l)}</label><span class="ec-ein"><input id="m_${esc(z)}_${k}" data-z="${esc(z)}" data-k="${k}" inputmode="decimal" value="${esc(w[k]||"")}" placeholder="–" autocomplete="off" ${zu?"disabled":""}><span>${d.e}</span></span><small class="ec-gw">${esc(gw.txt)}</small></div>`; }
+  return `<div class="ec-feld ${st}"><label for="m_${esc(z)}_${k}">${esc(d.l)}</label><span class="ec-ein"><input id="m_${esc(z)}_${k}" data-z="${esc(z)}" data-k="${k}" ${EC_PL[k]?`data-pl="${EC_PL[k]}"`:""} inputmode="decimal" value="${esc(w[k]||"")}" placeholder="–" autocomplete="off" ${zu?"disabled":""}><span>${d.e}</span></span><small class="ec-gw">${esc(gw.txt)}</small></div>`; }
 function ecPunktZeile(pr,g,p,zu,mitSk){ const sk=ecSkVon(g,p), w=ecW(pr,p.id), gw=EC_F.zs.gw(sk), st=sk?ecWertStand(gw,w.zs):"";
   return `<div class="ec-pz ${st}"><span class="nr">${esc(p.nr)}</span><span class="t">${esc(ecStName(p.st))}${p.st.lage?` · ${esc(p.st.lage)}`:""}<small>${mitSk?(sk?esc(ecSkName(sk)+(sk.schutz?" · "+sk.schutz:"")):'<span class="rot">kein Stromkreis</span>'):esc(ecRaumName(g,p.raumId))}${ecPflicht(p.st)?"":" · optional"}</small></span>
-    <span class="ec-ein klein"><input data-z="${esc(p.id)}" data-k="zs" inputmode="decimal" value="${esc(w.zs||"")}" placeholder="Z s" autocomplete="off" aria-label="Z s ${esc(p.nr)}" ${zu?"disabled":""}><span>Ω</span></span></div>`; }
+    <span class="ec-ein klein"><input data-z="${esc(p.id)}" data-k="zs" data-pl="zs" inputmode="decimal" value="${esc(w.zs||"")}" placeholder="Z s" autocomplete="off" aria-label="Z s ${esc(p.nr)}" ${zu?"disabled":""}><span>Ω</span></span></div>`; }
 /* Stromkreis messen: alles, was zu diesem Kreis gehört, in einem Fenster */
 function ecMessDlg(skId){ const pr=ecPr(), g=ecGeb(pr.ortId), L=ecSkListe(g).filter(s=>ecImUmfang(pr,s)), i=L.findIndex(s=>s.id===skId), sk=L[i]||g.stromkreise.find(s=>s.id===skId); if(!sk) return; ecDlg={mess:sk.id};
   const w=ecW(pr,sk.id), zu=pr.status==="fertig", r=ecRcdVon(g,sk), P=ecSkPunkte(g,sk.id), eigen=ecSkZsPflicht(g,sk), rw=r?ecW(pr,r.id):{}, vor=L[i-1], nach=L[i+1];

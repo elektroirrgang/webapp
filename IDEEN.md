@@ -25,6 +25,9 @@
 ## Neu am 04.11.2026 (live) – offen zum Nachschauen
 - Fotos markieren (1.7.62): Kundenordner legt „… markiert.jpg“ als Kopie an, Prüfungs-/Baustellenfotos werden ersetzt. Idee: gleich nach dem Fotografieren „Markieren?“ anbieten.
 - Betriebsfristen/Unterweisungen (1.7.63): Vorlagen-Intervalle sind Vorschläge (DGUV V3, ASR A2.2) – mit dem Chef abgleichen. Fahrzeuge bewusst nicht als eigene Verwaltung (Max: bei unserer Größe nicht nötig).
+- Plausibilitätsprüfung (1.7.66): Hinweise unter dem Messfeld (Tippfehler, Einheit, Quervergleich, Rechenweg Ik). In Gebäudetechnik nur mit Testdaten im Code geprüft, nicht im echten Messfenster – beim nächsten E-Check drauf achten.
+- Bedenkenanmeldung/Behinderungsanzeige (1.7.65): Brieftext vom Chef abnehmen lassen.
+- Nachschlagewerk: Max zeigt, was es schon gibt (Stand 04.11.2026) – dann entscheiden, ob ins Betriebshandbuch oder eigener Bereich.
 - Abnahmeprotokoll (1.7.64): Abnahme-Satz im PDF („… erklärt die Abnahme … (§ 640 BGB)“) vom Chef prüfen lassen.
 
 ## Offen aus der Sitzung vom 03.11.2026

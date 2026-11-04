@@ -1634,3 +1634,11 @@ body.fm-offen{overflow:hidden}
 .bs-f[aria-pressed="true"] img{opacity:1}
 .bs-f[aria-pressed="true"]::after{content:"";position:absolute;top:6px;right:6px;width:14px;height:14px;border-radius:50%;background:var(--primary);box-shadow:0 0 0 2px #fff}
 .bs-f.neu .ic{width:26px;height:26px}
+
+/* ===== Plausibilitätsprüfung (plausi.js) ===== */
+.pl-h{display:grid;gap:4px;margin-top:6px}
+.pl-h span{display:block;font-size:12.5px;line-height:1.35;border-radius:10px;padding:6px 10px}
+.pl-h .pl-warn{background:color-mix(in srgb,#f2b400 22%,transparent);color:var(--on-surface)}
+.pl-h .pl-info{background:var(--sc-high);color:var(--on-sv)}
+.ec-pz .t .pl-h{margin-top:4px}
+.mrow:has(> .pl-h){flex-wrap:wrap}.mrow > .pl-h{flex:1 1 100%;margin:0 0 4px}
