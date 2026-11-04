@@ -101,19 +101,38 @@ function wuKarte(w){ const st=w.status||"neu", ich=(w.stimmen||[]).some(wuIch)||
   return `<div class="wu-k" role="button" tabindex="0" data-act="wuAuf" data-id="${esc(w.id)}">
     <div class="wu-kk"><span class="wu-art ${esc(w.art||"wunsch")}">${esc((WU_ART.find(x=>x[0]===w.art)||WU_ART[0])[1])}</span><b>${esc(w.titel||"Ohne Titel")}</b>${pill(WU_ST_PILL[st]||"open",(WU_ST.find(x=>x[0]===st)||WU_ST[0])[1])}</div>
     ${w.text?`<p class="wu-tx">${esc(w.text)}</p>`:""}
+    ${(w.bilder||[]).length?`<div class="wu-mini">${w.bilder.slice(0,4).map(u=>`<img src="${esc(u)}" alt="">`).join("")}</div>`:""}
     ${w.antwort?`<p class="wu-ant"><em>Antwort${w.statusVon?` von ${esc(wuName(w.statusVon))}`:""}:</em> ${esc(w.antwort)}</p>`:""}
     <div class="wu-f"><span class="wu-von">${esc(wuName(w.von))} · ${esc(new Date(w.created||Date.now()).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"2-digit"}))} · ${esc((WU_APPS.find(x=>x[0]===w.app)||WU_APPS[4])[1])}${Z.length?` · mit ${Z.length} weiteren zusammengefasst`:""}</span>
       <button class="wu-plus${ich?" an":""}" data-act="wuStimme" data-id="${esc(w.id)}" ${wuIch(w.von)?"disabled":""} aria-pressed="${ich}" title="${wuIch(w.von)?"Dein Eintrag":"Ich auch"}">Ich auch<b>${wuStimmen(w)}</b></button></div></div>`; }
 
 /* ---- Fenster: neu / ansehen ---- */
-function wuNeuDialog(w){ WU_E={id:w?w.id:null,art:w?w.art||"wunsch":"wunsch",app:w?w.app||"alle":wuApp()};
+function wuNeuDialog(w){ WU_E={id:w?w.id:null,art:w?w.art||"wunsch":"wunsch",app:w?w.app||"alle":wuApp(),bilder:[...(w&&w.bilder||[])]};
   dialog(w?"Eintrag bearbeiten":"Wunsch oder Feedback",`<div class="fg1">
     <div class="vg-drw"><span>Art</span>${seg("wuArt",WU_E.art,WU_ART)}</div>
     <div class="lbl" style="margin:10px 4px 6px">Betrifft</div><div class="chips wu-appw">${WU_APPS.map(([k,t])=>`<button type="button" class="chip" data-act="wuApp" data-v="${k}" aria-pressed="${WU_E.app===k}">${t}</button>`).join("")}</div>
     ${tf("wuT","Kurz in einem Satz",w?w.titel:"",{form:true,ph:"z. B. Fotos direkt aus der Galerie hochladen"})}
     ${ta("wuX","Genauer (optional)",w?w.text:"",{form:true,ph:"Was genau, wo in der App, warum wäre es hilfreich?"})}
+    <div id="wuBilder"></div>
     <div id="wuAehnl"></div></div>`,
-    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="wuOk">${w?"Speichern":"Eintragen"}</button>`); }
+    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="wuOk">${w?"Speichern":"Eintragen"}</button>`); wuBilderZeigen(); }
+/* Screenshots anhängen (04.11.2026): bis zu 4 Bilder, verkleinert im Eintrag gespeichert; am PC auch mit Strg+V einfügen */
+const WU_MAX_B=4;
+function wuBilderZeigen(){ const z=document.getElementById("wuBilder"); if(!z||!WU_E) return; const B=WU_E.bilder||[];
+  z.innerHTML=`<div class="wu-b-kopf"><span>Screenshots${B.length?` · ${B.length} von ${WU_MAX_B}`:""}</span></div>
+    <div class="wu-bilder">${B.map((u,i)=>`<span class="wu-b"><img src="${esc(u)}" alt="Screenshot ${i+1}"><button type="button" data-act="wuBildWeg" data-i="${i}" aria-label="Screenshot entfernen">${icon("close")}</button></span>`).join("")}
+      ${B.length<WU_MAX_B?`<button type="button" class="wu-b-plus" data-act="wuBildNeu">${icon("cam")}<span>${B.length?"Weiteres":"Screenshot anhängen"}</span></button>`:""}</div>
+    ${B.length||!matchMedia("(hover:hover) and (pointer:fine)").matches?"":`<p class="hint" style="margin:6px 4px 0">Am PC geht auch: Screenshot machen und hier mit Strg+V einfügen.</p>`}`; }
+const wuBildKlein=f=>typeof kiBild==="function"?kiBild(f,1400):new Promise((ok,no)=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=no; r.readAsDataURL(f); });
+async function wuBilderDazu(F){ if(!WU_E) return; WU_E.bilder=WU_E.bilder||[]; let zuviel=false;
+  for(const f of F){ if(!/^image\//.test(f.type||"")) continue; if(WU_E.bilder.length>=WU_MAX_B){ zuviel=true; break; } try{ WU_E.bilder.push(await wuBildKlein(f)); }catch(e){ toast("Bild konnte nicht gelesen werden"); } }
+  if(zuviel) toast(`Höchstens ${WU_MAX_B} Screenshots je Eintrag`); wuBilderZeigen(); }
+function wuBildWaehlen(){ const i=document.createElement("input"); i.type="file"; i.accept="image/*"; i.multiple=true; i.style.display="none"; document.body.appendChild(i);
+  i.onchange=()=>{ const F=[...(i.files||[])]; i.remove(); wuBilderDazu(F); }; i.click(); }
+document.addEventListener("paste",e=>{ if(!WU_E||WU_E.status||!document.getElementById("wuBilder")) return; const F=[...((e.clipboardData||{}).files||[])].filter(f=>/^image\//.test(f.type||""));
+  if(F.length){ e.preventDefault(); wuBilderDazu(F); } });
+function wuBildGross(w,i){ const u=(w.bilder||[])[i]; if(!u) return; const v=document.createElement("div"); v.className="wu-gross"; v.innerHTML=`<img src="${esc(u)}" alt=""><button type="button" aria-label="Schließen">${icon("close")}</button>`;
+  v.addEventListener("click",()=>v.remove()); document.body.appendChild(v); }
 function wuAehnlichZeigen(){ const z=document.getElementById("wuAehnl"); if(!z||!WU_E) return; const F=formVals(), t=`${F.wuT||""} ${F.wuT||""} ${F.wuX||""}`;
   if(String(F.wuT||"").trim().length<4){ z.innerHTML=""; return; }
   const L=wuAlle().filter(w=>w.id!==WU_E.id).map(w=>[w,wuAehnlich(t,wuTxt(w))]).filter(x=>x[1]>=.34).sort((a,b)=>b[1]-a[1]).slice(0,3);
@@ -123,9 +142,10 @@ function wuAnsehen(w){ const dev=wuDev(), st=w.status||"neu", S=w.stimmen||[], Z
   dialog(w.titel||"Eintrag",`<div class="wu-dlg">
     <p class="wu-meta">${esc((WU_ART.find(x=>x[0]===w.art)||WU_ART[0])[1])} · ${esc((WU_APPS.find(x=>x[0]===w.app)||WU_APPS[4])[1])} · von ${esc(wuName(w.von))}, ${esc(new Date(w.created||Date.now()).toLocaleDateString("de-DE"))}</p>
     ${w.text?`<p class="wu-tx voll">${esc(w.text)}</p>`:""}
+    ${(w.bilder||[]).length?`<div class="wu-bilder ansicht">${w.bilder.map((u,i)=>`<button type="button" class="wu-b" data-act="wuBildAuf" data-id="${esc(w.id)}" data-i="${i}"><img src="${esc(u)}" alt="Screenshot ${i+1}"></button>`).join("")}</div>`:""}
     ${Z.length?`<div class="sec-lbl">Zusammengefasst</div>${Z.map(z=>`<div class="wu-zs"><b>${esc(z.titel)}</b>${z.text?`<span>${esc(z.text)}</span>`:""}<small>${esc(wuName(z.von))}</small></div>`).join("")}`:""}
     <div class="sec-lbl">Dafür · ${wuStimmen(w)}</div><p class="wu-namen">${esc([wuName(w.von),...S.map(wuName)].join(", "))}</p>
-    ${dev?`<div class="sec-lbl">Entwickler</div><div class="lbl" style="margin:0 4px 6px">Status</div>${seg("wuSt",st,WU_ST)}
+    ${dev?`<div class="sec-lbl">Entwickler</div><div class="lbl" style="margin:0 4px 6px">Status</div><div class="chips wu-stw">${WU_ST.map(([k,t])=>`<button type="button" class="chip" data-act="wuSt" data-v="${k}" aria-pressed="${st===k}">${t}</button>`).join("")}</div>
       ${ta("wuAnt","Antwort an alle (optional)",w.antwort||"",{form:true,ph:"z. B. Kommt mit Version 1.1"})}
       ${andere.length?sf("wuIn","Zusammenfassen mit …","",[["","– nicht zusammenfassen –"],...andere.map(x=>[x.id,`${x.titel} (${wuName(x.von)})`])],{form:true}):""}`
       :w.antwort?`<p class="wu-ant"><em>Antwort:</em> ${esc(w.antwort)}</p>`:""}</div>`,
@@ -134,10 +154,10 @@ function wuAnsehen(w){ const dev=wuDev(), st=w.status||"neu", S=w.stimmen||[], Z
 function wuMerge(a,b){ if(!a||!b||a.id===b.id) return; const [alt,jung]=(a.created||0)<=(b.created||0)?[a,b]:[b,a];
   alt.zusammen=[...(alt.zusammen||[]),{id:jung.id,titel:jung.titel,text:jung.text||"",von:jung.von,at:jung.created},...(jung.zusammen||[])];
   const S=[...(alt.stimmen||[])]; [jung.von,...(jung.stimmen||[])].forEach(x=>{ if(x&&x.mail&&!S.some(y=>String(y.mail).toLowerCase()===String(x.mail).toLowerCase())&&String((alt.von||{}).mail).toLowerCase()!==String(x.mail).toLowerCase()) S.push({mail:x.mail,name:x.name,at:Date.now()}); });
-  alt.stimmen=S; jung.inId=alt.id; saveRec("wuensche",alt); saveRec("wuensche",jung); toast(`Zusammengefasst in „${alt.titel}“`); }
+  alt.stimmen=S; if((jung.bilder||[]).length) alt.bilder=[...(alt.bilder||[]),...jung.bilder].slice(0,8); jung.inId=alt.id; saveRec("wuensche",alt); saveRec("wuensche",jung); toast(`Zusammengefasst in „${alt.titel}“`); }
 function wuSpeichern(){ const F=formVals(); if(!String(F.wuT||"").trim()){ toast("Bitte kurz beschreiben, worum es geht"); return; }
   const neu=!WU_E.id, w=neu?{id:uid(),von:who(),stimmen:[],status:"neu"}:DB.wuensche.get(WU_E.id); if(!w) return;
-  Object.assign(w,{art:WU_E.art,app:WU_E.app,titel:String(F.wuT).trim(),text:String(F.wuX||"").trim()}); saveRec("wuensche",w,neu); closeOverlays(); render(); toast(neu?"Danke – eingetragen":"Gespeichert"); }
+  Object.assign(w,{art:WU_E.art,app:WU_E.app,titel:String(F.wuT).trim(),text:String(F.wuX||"").trim()}); if((WU_E.bilder||[]).length) w.bilder=WU_E.bilder; else delete w.bilder; saveRec("wuensche",w,neu); closeOverlays(); render(); toast(neu?"Danke – eingetragen":"Gespeichert"); }
 function wuStimme(w){ if(!w||wuIch(w.von)) return; const S=w.stimmen||[], i=S.findIndex(wuIch); if(i>=0) S.splice(i,1); else S.push({mail:ME.mail,name:ME.name||"",at:Date.now()}); w.stimmen=S; saveRec("wuensche",w); }
 
 /* Einstieg: Einstellungen (alle) und Entwickler-Bereich (mit Zahl der neuen) */
@@ -155,6 +175,9 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="wuArt"){ WU_E.art=b.dataset.v; seg1(); }
   else if(a==="wuApp"){ WU_E.app=b.dataset.v; seg1(); }
   else if(a==="wuOk") wuSpeichern();
+  else if(a==="wuBildNeu") wuBildWaehlen();
+  else if(a==="wuBildWeg"){ if(WU_E&&WU_E.bilder){ WU_E.bilder.splice(+b.dataset.i,1); wuBilderZeigen(); } }
+  else if(a==="wuBildAuf"&&w) wuBildGross(w,+b.dataset.i);
   else if(a==="wuStimme"&&w){ wuStimme(w); render(); }
   else if(a==="wuStimmeDlg"&&w){ wuStimme(w); closeOverlays(); render(); toast(`„Ich auch“ bei „${w.titel}“`); }
   else if(a==="wuAuf"&&w) wuAnsehen(w);

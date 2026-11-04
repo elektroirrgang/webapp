@@ -1535,3 +1535,17 @@ body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dl
 .hb-link .ic{width:20px;height:20px;color:var(--primary);flex:none}.hb-link small{display:block;font-weight:400;color:var(--on-sv)}
 .hb-fuss .btn-tonal,.hb-fuss .btn-filled{display:inline-flex;align-items:center;gap:8px}.hb-fuss .ic{width:20px;height:20px}
 .hb-ed-fotos .hb-fotos{grid-template-columns:repeat(4,minmax(0,1fr))}
+/* Wünsche: Screenshots */
+.wu-b-kopf{margin:10px 4px 6px;font-size:13px;font-weight:600;color:var(--on-sv)}
+.wu-bilder{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.wu-b{position:relative;display:block;padding:0;border:0;border-radius:14px;overflow:hidden;background:var(--sc-high);aspect-ratio:9/16;cursor:pointer}
+.wu-bilder.ansicht{margin:6px 0 12px}.wu-bilder.ansicht .wu-b{aspect-ratio:3/4}
+.wu-b img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.wu-b button{position:absolute;top:6px;right:6px;width:30px;height:30px;padding:0;border:0;border-radius:15px;background:rgba(0,0,0,.6);display:grid;place-items:center;cursor:pointer}.wu-b button .ic{width:18px;height:18px;color:#fff}
+.wu-b-plus{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;aspect-ratio:9/16;border:0;border-radius:14px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:12.5px;font-weight:600;text-align:center;padding:8px;cursor:pointer}
+.wu-b-plus .ic{width:26px;height:26px;color:var(--primary)}
+.wu-mini{display:flex;gap:6px;margin:6px 0 2px}.wu-mini img{width:44px;height:64px;object-fit:cover;object-position:top;border-radius:8px;background:var(--sc-high)}
+.wu-gross{position:fixed;inset:0;z-index:400;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.85);cursor:zoom-out}
+.wu-gross img{max-width:100%;max-height:100%;border-radius:12px}
+.wu-gross button{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;width:44px;height:44px;border:0;border-radius:22px;background:rgba(255,255,255,.15);display:grid;place-items:center}.wu-gross button .ic{color:#fff;width:24px;height:24px}
+.wu-stw{margin:0 0 12px}
