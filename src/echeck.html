@@ -2273,7 +2273,7 @@ function mehrView(){
     apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../evse/","ev","EVSE","Prüfung von Wallboxen und Ladesäulen")}${link("../baustelle/","baustelle","Baustelle","Tagesstand, offene Punkte und Material")}</div></div>`,
     geraet:[geraetZeilen(false)],
     verwaltung:[row("nav:team","person","Mitarbeiter",esc(META.profil.name||"")),bkZeile(),kdoZeile()],
-    eigenes:`<div class="sec-lbl">Werkzeuge</div><div class="list">${row("rcStart","rcRech","Stromkreis-Rechner","Spannungsfall, Zs, Abschaltbedingung, maximale Länge")}${row("qrBogen","qr","QR-Aufkleber drucken","Bogen mit 24 neuen Nummern · 70 × 36 mm")}</div>`,
+    eigenes:`<div class="sec-lbl">Werkzeuge</div><div class="list">${row("rcStart","rcRech","Stromkreis-Rechner","Spannungsfall, Zs, Abschaltbedingung, maximale Länge")}${row("qrBogen","qr","QR-Aufkleber drucken","Bogen mit 24 neuen Nummern · 70 × 36 mm")}${row("knxEti","tag","KNX-Etiketten","Physikalische Adressen für den Brother · 6 mm")}</div>`,
     infoTitel:"Rechtliches und Info",info:[["nav:impressum","paragraph","Impressum",""],["nav:datenschutz","shield","Datenschutz",""]]});
 }
 function teamView(){
