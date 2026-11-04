@@ -82,7 +82,7 @@ async function bbFern(id){
 async function bbLaden(){
   try{ const d=await new Promise((res,rej)=>{ const r=indexedDB.open("evse_protokolle"); r.onupgradeneeded=()=>{ const x=r.result; if(!x.objectStoreNames.contains("meta")) x.createObjectStore("meta",{keyPath:"id"}); if(!x.objectStoreNames.contains("blob")) x.createObjectStore("blob"); }; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
     BB_PROT=d.objectStoreNames.contains("meta")?await new Promise(res=>{ const q=d.transaction("meta").objectStore("meta").getAll(); q.onsuccess=()=>res(q.result||[]); q.onerror=()=>res([]); }):[]; d.close(); }catch(e){ BB_PROT=[]; }
-  bbGeladen=true; if(nav.v==="bibliothek"){ const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); else render(); }
+  bbGeladen=true; if(nav.v==="aufbewahrung") render(); else if(nav.v==="bibliothek"){ const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); else render(); }
 }
 const bbW=k=>{ const s=(META.bb||{})[k]; return s||{sort:"neu",art:"alle",kunde:"alle"}[k]; };
 const bbSet=(k,v)=>{ META.bb=Object.assign({},META.bb||{},{[k]:v}); metaSave(); const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); const f=document.querySelector(".bb-f"); if(f) f.classList.toggle("an",bbAktiv()); };
@@ -94,13 +94,13 @@ function bbEintraege(){
   const L=[], kn=id=>(bbKunde(id)||{}).name||"", P=bbSync()?[...DB.protokolle.values()]:[], weg=new Set(P.filter(r=>r.deleted).map(r=>r.id)), hier=new Set(BB_PROT.map(x=>x.id));
   const lokal=new Set([...BB_PROT,...P.filter(r=>!r.deleted)].map(x=>x.pruefungId).filter(Boolean));
   const ortP=x=>({ort:kdOrtProt(x),file:x.pfad?String(x.pfad).split("/").pop():bbFs(x.name)+".pdf",item:x.item||(DB.protokolle&&DB.protokolle.get(x.id)||{}).item||""});
-  const protE=(x,ziel,fern)=>({...ortP(x),art:x.app==="baustelle"?"bericht":bbPlanApp(x.app)?"plan":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
+  const protE=(x,ziel,fern)=>({...ortP(x),dt:x.datum||"",art:x.app==="baustelle"?"bericht":bbPlanApp(x.app)?"plan":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
     info:[bbAppName(x.app),x.art,x.archiv&&"älterer Stand",bbDatum(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`,x.von&&x.von.name,fern&&"auf einem anderen Gerät erstellt"].filter(Boolean).join(" · "),
     pill:x.ergebnis?pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden"):"",ziel});
   const echt=new Set([...BB_PROT,...P.filter(r=>!r.deleted&&!String(r.id).startsWith("pa-"))].map(x=>x.pruefungId).filter(Boolean)); /* „pa-“ nur, solange es zur Prüfung kein richtiges Protokoll gibt */
   P.filter(r=>!r.deleted&&!hier.has(r.id)&&!(String(r.id).startsWith("pa-")&&echt.has(r.pruefungId))).forEach(r=>L.push(protE(r,`data-act="bbFern" data-id="${esc(r.id)}"`,!r.demo)));
   const demo=typeof demoAn==="function"&&demoAn();
-  BB_PROT.filter(x=>(!x.demo||(demo&&DB.protokolle&&DB.protokolle.has(x.id)))&&!weg.has(x.id)).forEach(x=>L.push({...ortP(x),art:x.app==="baustelle"?"bericht":bbPlanApp(x.app)?"plan":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
+  BB_PROT.filter(x=>(!x.demo||(demo&&DB.protokolle&&DB.protokolle.has(x.id)))&&!weg.has(x.id)).forEach(x=>L.push({...ortP(x),dt:x.datum||"",art:x.app==="baustelle"?"bericht":bbPlanApp(x.app)?"plan":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
     info:[bbAppName(x.app),x.art,x.archiv&&"älterer Stand",bbDatum(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`,x.von&&x.von.name].filter(Boolean).join(" · "),
     pill:x.ergebnis?pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden"):"",ziel:`data-act="bbOeffnen" data-id="${esc(x.id)}"`}));
   if(DB.pruefungen) [...DB.pruefungen.values()].filter(p=>!p.deleted&&p.pdfAblage&&!lokal.has(p.id)&&(!p.demo||(typeof demoAn==="function"&&demoAn()))).forEach(p=>{
@@ -410,3 +410,20 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
 document.addEventListener("keydown",e=>{ if(e.key==="Enter"&&e.target.matches&&e.target.matches('#app [data-act="bbOeffnen"]')){ e.preventDefault(); bbOeffnen(e.target.dataset.id); } });
 document.addEventListener("input",e=>{ if(e.target&&e.target.id==="q"&&typeof nav!=="undefined"&&nav.v==="bibliothek"){ query=e.target.value; const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); } });
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&bbGeladen) bbLaden(); });
+/* ===== Aufbewahrung (Übersicht › Einstellungen › Verwaltung, nur Chef/Büro) =====
+   Prüfprotokolle, Pläne und Baustellenberichte bewahren wir 10 Jahre auf (Festlegung mit Chef/Achenbach, 20.10.2026).
+   Hier steht nur, was abgelaufen ist oder bald abläuft – gelöscht wird nichts automatisch; das entscheidet der Chef. */
+const BB_AUFB_J=10;
+function bbAufbewahrung(){ if(!bbGeladen){ bbLaden(); return null; }
+  return bbEintraege().filter(x=>["prot","plan","bericht"].includes(x.art)&&(x.dt||x.t)).map(x=>{ const d=/^\d{4}-\d\d-\d\d/.test(x.dt||"")?new Date(x.dt.slice(0,10)+"T12:00"):new Date(x.t); d.setFullYear(d.getFullYear()+BB_AUFB_J); return {...x,ab:d.toISOString().slice(0,10)}; }).sort((a,b)=>a.ab.localeCompare(b.ab)); }
+function bbAufbewahrungView(){ const L=bbAufbewahrung(); if(!L) return `<div class="narrow"><p class="meta">Wird geladen …</p></div>`;
+  const t=today(), bald=(()=>{ const d=new Date(); d.setFullYear(d.getFullYear()+1); return d.toISOString().slice(0,10); })();
+  const weg=L.filter(x=>x.ab<t), naechst=L.filter(x=>x.ab>=t&&x.ab<=bald), J=new Map(); L.filter(x=>x.ab>bald).forEach(x=>{ const j=x.ab.slice(0,4); J.set(j,(J.get(j)||0)+1); });
+  const zeile=x=>`<div class="li" role="button" tabindex="0" ${x.ziel}><span class="av">${icon(BB_IC[x.art]||"doc")}</span><span class="lt"><span class="h">${esc(x.titel)}</span><span class="s">${esc([x.kunde,x.info].filter(Boolean).join(" · "))}</span><span class="st">${pill(x.ab<t?"bad":"wip",`Frist ${x.ab<t?"abgelaufen":"endet"} ${bbDatum(x.ab)}`)}</span></span>${icon("chev")}</div>`;
+  return `<div class="narrow">
+    <div class="fr-kpis"><div class="fr-kpi${weg.length?" bad":""}"><b>${weg.length}</b><span>Frist abgelaufen</span></div><div class="fr-kpi"><b>${naechst.length}</b><span>in 12 Monaten</span></div><div class="fr-kpi"><b>${L.length}</b><span>Dokumente gesamt</span></div></div>
+    ${weg.length?`<div class="sec-lbl">Frist abgelaufen</div>${listOf(weg.map(zeile))}`:""}
+    ${naechst.length?`<div class="sec-lbl">Endet in den nächsten 12 Monaten</div>${listOf(naechst.map(zeile))}`:""}
+    ${!weg.length&&!naechst.length?`<p class="meta" style="margin:8px 4px 16px">Nichts abgelaufen.${J.size?` Die ersten Fristen enden ${[...J.keys()][0]}.`:""}</p>`:""}
+    ${J.size?`<div class="sec-lbl">Später</div>${listOf([...J].map(([j,n])=>`<div class="li"><span class="av">${icon("kal")}</span><span class="lt"><span class="h">${j}</span><span class="s">${n} Dokument${n===1?"":"e"}</span></span></div>`))}`:""}
+    <p class="hint">Prüfprotokolle, Pläne und Baustellenberichte werden ${BB_AUFB_J} Jahre ab ihrem Datum aufbewahrt. Die App löscht nichts von selbst – was nach Ablauf weg kann, entscheidet der Chef (im Kundenordner in SharePoint löschen).</p></div>`; }
