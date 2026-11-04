@@ -43,7 +43,7 @@ function knxEtiDlg(){ dialog("KNX-Etiketten",`<div class="knx-felder">${tf("knxL
     <div id="knxInh">${knxEtiInhalt()}</div>
 
 `,
-    `<span style="flex:1"></span><button class="btn-text" data-act="knxDruck">Drucken</button>`);
+    `<span style="flex:1"></span><button class="btn-text" data-act="knxDruck">Etiketten-Liste erstellen</button>`);
   const neu=()=>{ const g=id=>document.getElementById(id); if(!g("f_knxLinie")) return; KNX_ETI.linie=g("f_knxLinie").value.trim(); KNX_ETI.von=+g("f_knxVon").value||0; KNX_ETI.bis=+g("f_knxBis").value||0; knxEtiMerken(); g("knxInh").innerHTML=knxEtiInhalt(); };
   ["f_knxLinie","f_knxVon","f_knxBis"].forEach(id=>{ const e=document.getElementById(id); if(e) e.addEventListener("input",neu); });
   setTimeout(()=>{ const e=document.getElementById("f_knxLinie"); if(e&&!e.value) e.focus(); },60); }
@@ -52,9 +52,9 @@ function knxEtiDlg(){ dialog("KNX-Etiketten",`<div class="knx-felder">${tf("knxL
 const KNX_ANDR=/android/i.test(navigator.userAgent);
 const knxAppAuf=()=>{ location.href="intent://#Intent;package=com.brother.ptouch.mobilecablelabeltool2;end"; };
 function knxLaden(f){ const a=document.createElement("a"); a.href=URL.createObjectURL(f); a.download=f.name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500); }
-async function knxAusgeben(F){ if(KNX_ANDR){ F.forEach((f,i)=>setTimeout(()=>knxLaden(f),i*400)); toast(`In „Downloads“ gespeichert – in der Pro-Label-App über „Öffnen“ laden`,"App öffnen",knxAppAuf); return; }
+async function knxAusgeben(F){ if(KNX_ANDR){ F.forEach((f,i)=>setTimeout(()=>knxLaden(f),i*400)); toast(`CSV in „Downloads“ – in der Pro-Label-App als Datenbank verbinden`,"App öffnen",knxAppAuf); return; }
   if(navigator.canShare&&navigator.canShare({files:F})){ try{ await navigator.share({files:F,title:F[0].name}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
-  F.forEach((f,i)=>setTimeout(()=>knxLaden(f),i*400)); toast("Datei heruntergeladen – in der Pro-Label-App öffnen"); }
+  F.forEach((f,i)=>setTimeout(()=>knxLaden(f),i*400)); toast("CSV gespeichert – in der Pro-Label-App als Datenbank verbinden"); }
 const knxTeilen=f=>knxAusgeben([f]);
 document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act^="knx"]'); if(!b) return; const a=b.dataset.act;
   if(a==="knxFmt"){ ev.stopPropagation(); KNX_ETI.fmt=b.dataset.v; knxEtiMerken(); b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); return; }
@@ -63,7 +63,6 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
   if(a==="knxNull"){ ev.stopPropagation(); KNX_ETI.null=b.dataset.v==="1"; knxEtiMerken(); b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); const h=document.getElementById("knxInh"); if(h) h.innerHTML=knxEtiInhalt(); return; }
   if(a==="knxDoppelt"){ ev.stopPropagation(); const n=+b.dataset.n, i=KNX_ETI.doppelt.indexOf(n); if(i<0) KNX_ETI.doppelt.push(n); else KNX_ETI.doppelt.splice(i,1); const h=document.getElementById("knxInh"), y=h&&h.querySelector(".knx-gitter")?.scrollTop; if(h){ h.innerHTML=knxEtiInhalt(); const gi=h.querySelector(".knx-gitter"); if(gi&&y) gi.scrollTop=y; } return; }
   if(a==="knxDruck"){ ev.stopPropagation(); const A=knxListe(); if(!A.length){ toast("Erst Linie und Bereich eingeben"); return; }
-    const L=knxLinie(KNX_ETI.linie), name=bbFs(`KNX ${L[0]}.${L[1]} ${KNX_ETI.von}-${KNX_ETI.bis}`), fmt="lbxs", F=[];
-    if(fmt!=="csv") F.push(new File([fmt==="lbx"?ecZip([{name:"label.xml",daten:knxLbx(name,A[0])},{name:"prop.xml",daten:knxLbxProp(name)}]):knxLbxs(name,A)],name+"."+fmt,{type:"application/octet-stream"}));
-    if(fmt!=="lbxs") F.push(new File([knxCsv(A)],name+".csv",{type:"text/csv"}));
-    closeOverlays(); knxAusgeben(F); return; } },true);
+    /* Pro Label Tool importiert nur Excel/CSV – wie bei den Netzwerk-Etiketten: CSV mit Kopfzeile, eine Spalte */
+    const L=knxLinie(KNX_ETI.linie), name=bbFs(`KNX ${L[0]}.${L[1]} ${KNX_ETI.von}-${KNX_ETI.bis}`);
+    closeOverlays(); knxAusgeben([new File([ecCsv([["Adresse"],...A.map(x=>[x])])],name+".csv",{type:"text/csv"})]); return; } },true);
