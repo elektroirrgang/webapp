@@ -1938,7 +1938,7 @@ applyTheme(theme);
 WIDE.addEventListener?.("change",()=>{ if(typeof render==="function"&&nav) render(); });
 
 const APP_VERSION="<!--VERSION-->";
-const TOPDEST=[["anlagen","Installation","home"],["geraete","Geräte","ecStecker"],["netzwerk","Netzwerk","ecNetz"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
+const TOPDEST=[["anlagen","Installation","home"],["geraete","Geräte","ecStecker"],["netzwerk","Netzwerk","ecNetz"],["knx","KNX","knx"],["kunden","Kunden","firma"],["bibliothek","Bibliothek","folder"]];
 const TOP=TOPDEST.map(x=>x[0]), MEHR_SUB={team:"Mitarbeiter",backup:"Backup",impressum:"Impressum",about:"Über die App"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
 const KIND_NAME={kunden:"Kunde",standorte:"Standort"};
@@ -2152,6 +2152,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   else if(nav.v==="geraete"){ title="Geräte"; body=ecListeView("geraete"); fab=["ecNeuG","Prüfung","add"]; }
   else if(nav.v==="netzwerk"){ title="Netzwerk"; body=ecListeView("netz"); fab=["ecNeuN","Prüfung","add"]; }
   else if(nav.v==="netzkatalog"){ title="Netzwerk-Katalog"; body=ecKatalogView(); }
+  else if(nav.v==="knx"){ title="KNX"; body=knxView(); }
   else if(nav.v==="vt"){ const L=vtL(nav.g,nav.id); if(!L){ nav={v:"anlagen"}; return render(); } title=L.titel; sub="Verteiler"; body=legView(L); fab=legFab(L); }
   else if(nav.v==="ohnekunde"){ title="Ohne Kunde"; sub="Ablage für alles ohne Kunden"; body=legOhneView(); fab=["legNeu","Legende","add"]; }
   else if(nav.v==="legende"){ const L=DB.legenden.get(nav.id); if(!L||L.deleted){ nav={v:"kunden"}; return render(); } title=L.titel||"Verteiler"; sub="Verteilerlegende"; body=legView(L); fab=legFab(L); }
@@ -2273,7 +2274,7 @@ function mehrView(){
     apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div><div class="list">${link("../uebersicht/","home","Übersicht","Startseite mit Statistik und Kunden")}${link("../evse/","ev","EVSE","Prüfung von Wallboxen und Ladesäulen")}${link("../baustelle/","baustelle","Baustelle","Tagesstand, offene Punkte und Material")}</div></div>`,
     geraet:[geraetZeilen(false)],
     verwaltung:[row("nav:team","person","Mitarbeiter",esc(META.profil.name||"")),bkZeile(),kdoZeile()],
-    eigenes:`<div class="sec-lbl">Werkzeuge</div><div class="list">${row("rcStart","rcRech","Stromkreis-Rechner","Spannungsfall, Zs, Abschaltbedingung, maximale Länge")}${row("qrBogen","qr","QR-Aufkleber drucken","Bogen mit 24 neuen Nummern · 70 × 36 mm")}${row("knxEti","tag","KNX-Etiketten","Physikalische Adressen für den Brother · 6 mm")}</div>`,
+    eigenes:`<div class="sec-lbl">Werkzeuge</div><div class="list">${row("rcStart","rcRech","Stromkreis-Rechner","Spannungsfall, Zs, Abschaltbedingung, maximale Länge")}${row("qrBogen","qr","QR-Aufkleber drucken","Bogen mit 24 neuen Nummern · 70 × 36 mm")}</div>`,
     infoTitel:"Rechtliches und Info",info:[["nav:impressum","paragraph","Impressum",""],["nav:datenschutz","shield","Datenschutz",""]]});
 }
 function teamView(){
