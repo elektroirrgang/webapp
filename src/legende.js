@@ -368,9 +368,10 @@ async function legPdf(L){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",f
   legPdfStromkreise(d,S,L);
   return S.ende(); }
 /* Stromkreis-Tabelle – auch im Anlagenpass verwendet */
-function legPdfStromkreise(d,S,L){ const M=S.M, CW=S.CW, sp=[32,116,34];
+function legPdfStromkreise(d,S,L){ const M=S.M, CW=S.CW, PL=legPlaetze(L), mitPl=Object.keys(PL).length>0, sp=mitPl?[28,CW-28-34-26,34,26]:[32,CW-66,34];
+  const plK=p=>p?`R${p.r} · ${p.von===p.bis?p.von:`${p.von}–${p.bis}`}`:"";   /* kurz für die Spalte: „R1 · 5–7“ */
   S.abschnitt("Stromkreise");
-  const kz=()=>{ d.setFillColor(...S.NAVY); d.rect(M,S.y-4,CW,6,"F"); d.setTextColor(255); d.setFontSize(8); d.setFont("helvetica","bold"); let x=M+2; ["Kennzeichnung","Bezeichnung","Absicherung"].forEach((t,i)=>{ d.text(t,x,S.y); x+=sp[i]; }); S.y+=6; };
+  const kz=()=>{ d.setFillColor(...S.NAVY); d.rect(M,S.y-4,CW,6,"F"); d.setTextColor(255); d.setFontSize(8); d.setFont("helvetica","bold"); let x=M+2; ["Kennzeichnung","Bezeichnung","Absicherung",...(mitPl?["Einbauplatz"]:[])].forEach((t,i)=>{ d.text(t,x,S.y); x+=sp[i]; }); S.y+=6; };
   S.platz(14); kz(); let zz=0;
   legE(L).forEach(e=>{ if(S.y>272){ S.seite(); kz(); }
     if(e.art==="gr"){ if(S.y>266){ S.seite(); kz(); } d.setFont("helvetica","bold"); d.setFontSize(8.5); d.setTextColor(...S.NAVY); d.text(pdfT(e.bez),M+2,S.y+1); d.setDrawColor(...S.LINE); d.line(M,S.y+2.6,M+CW,S.y+2.6); S.y+=7; zz=0; return; }
@@ -381,6 +382,7 @@ function legPdfStromkreise(d,S,L){ const M=S.M, CW=S.CW, sp=[32,116,34];
     if(e.art==="res"){ d.setDrawColor(150); d.setLineWidth(.2); d.line(M+2+sp[0],S.y+.6,M+sp[0]+sp[1]-4,S.y+.6); }
     else d.text(B,M+2+sp[0],S.y,{lineHeightFactor:1.2});
     d.text(pdfT(legSchutz(e)),M+2+sp[0]+sp[1],S.y);
+    if(mitPl&&PL[e.id]){ d.setFont("helvetica","normal"); d.setTextColor(...S.GR); d.text(pdfT(plK(PL[e.id])),M+2+sp[0]+sp[1]+sp[2],S.y); }
     S.y+=6+ex; });
 }
 async function legPdfMachen(){ const L=legAkt(); if(!L) return; if(!legE(L).length){ toast("Erst Stromkreise anlegen"); return; }

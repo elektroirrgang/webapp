@@ -23,13 +23,17 @@
 - Erst danach bauen. Danach den Scanner (Kamera-Ansicht) neu gestalten – gefällt Max so nicht.
 
 ## Neu am 04.11.2026 (live) – offen zum Nachschauen
-- Fotos markieren (1.7.62): Kundenordner legt „… markiert.jpg“ als Kopie an, Prüfungs-/Baustellenfotos werden ersetzt. Idee: gleich nach dem Fotografieren „Markieren?“ anbieten.
+- Fotos markieren (1.7.62, „Markieren“ direkt nach dem Foto seit 1.7.69): Kundenordner legt „… markiert.jpg“ als Kopie an, Prüfungs-/Baustellenfotos werden ersetzt.
 - Betriebsfristen/Unterweisungen (1.7.63): Vorlagen-Intervalle sind Vorschläge (DGUV V3, ASR A2.2) – mit dem Chef abgleichen. Fahrzeuge bewusst nicht als eigene Verwaltung (Max: bei unserer Größe nicht nötig).
 - Plausibilitätsprüfung (1.7.66): Hinweise unter dem Messfeld (Tippfehler, Einheit, Quervergleich, Rechenweg Ik). In Gebäudetechnik nur mit Testdaten im Code geprüft, nicht im echten Messfenster – beim nächsten E-Check drauf achten.
 - Bedenkenanmeldung/Behinderungsanzeige (1.7.65): Brieftext vom Chef abnehmen lassen.
 - Nachschlagewerk: Max zeigt, was es schon gibt (Stand 04.11.2026) – dann entscheiden, ob ins Betriebshandbuch oder eigener Bereich.
 - Texte aus der Übergabe (1.7.67): Stundenzettel (SCC) und Berichtsheft (Ezubis, nur Azubis, die beteiligt waren) zum Kopieren; nach Regeln, mit KI-Knopf sobald KI an ist. Ezubis: Tagesberichte täglich (Datum steht dort schon); Wochenbericht = ein Thema, das noch nicht dran war (z. B. erster KNX-Bewegungsmelder) – macht Max bisher mit einer KI. Später (Max: „lieber noch nicht“): Wochenbericht-Vorschlag aus den Übergaben der Woche + Liste der schon behandelten Themen, braucht KI.
 - Abnahmeprotokoll (1.7.64): Abnahme-Satz im PDF („… erklärt die Abnahme … (§ 640 BGB)“) vom Chef prüfen lassen.
+
+- Erledigt 04.11.2026 (1.7.69/1.7.70): Kopfzeile einheitlich (EVSE ohne ⋮), Bibliothek-Kategorie „Pläne“, mehrere Nummern bei Ansprechpartnern, Einbauplatz im Legenden-PDF, Aufbewahrung (Übersicht › Einstellungen › Verwaltung), Stromkreis-Rechner auch frei (EVSE Zuleitung, Einstellungen in EVSE/Gebäudetechnik). Beschriftungsstreifen und Rechner je Stromkreis gab es schon in der Legende.
+- Prüftasten-Erinnerung für Kunden über die QR-Seite: wartet auf die öffentliche QR-Seite (Achenbach).
+- QR-Scanner in allen Apps, neue Kamera-Ansicht, Aufkleber auch für Netzwerkschränke (Max 04.11.2026) – Entwürfe zeigen, dann bauen.
 
 ## Lager (Gespräch 04.11.2026) – offen, Max ist unsicher, erst mit dem Chef klären
 - Ablauf heute: 7:30 Start, 15–30 min packen, Chef sagt mündlich, was ansteht; gepackt wird nach Gefühl (meist zu viel, nach Chef-Mengen oft zu wenig). Sondermaterial wird bestellt.
@@ -42,17 +46,11 @@
 
 - Ablauf Zählerschrank → Stromkreise → Material deutlich verkürzen (dauert für „mal eben eine Legende“ zu lange); Bugs beim Anordnen sammelt Max mit Screenshots.
 - Foto einer Papierliste direkt in der App erkennen (braucht KI-Dienst, Kosten je Foto, Datenschutz mit dem Chef klären). Bis dahin: Foto an Claude, Claude macht die Text/CSV-Datei für „Liste einfügen“.
-- Einbauplatz („R1 · Platz 5–7“) auch auf die gedruckte Legende / ins PDF?
 - Alte Verteiler im Schema „F 1.0.1“ auf Betriebsmittelkennzeichen (-F1, -F1.1 …) umstellen? (bisher bewusst nicht angefasst)
 - Stromstoßschalter, Installations- und Zeitrelais: bleiben -K oder wie Schütz -Q? (Max fragt in der Schule nach)
-- Mehrere Telefonnummern auch bei Ansprechpartnern.
 - TAB NS der GWN (Gemeindewerke Nümbrecht) besorgen → genaue Pflichtpunkte der Bestückung eintragen; prüfen, ob ganz 51588 GWN-Netz ist.
 - „Aufbau ändern“: Hersteller-Modell (z. B. ZB53S + ZK5EH24 + ZU59VT7APZ2) auch nachträglich wählbar machen, damit es in der Materialliste steht.
-- 10-Jahres-Frist (Prüfprotokolle, Verteilerlegenden inkl. „Ältere Stände“) steht bisher nur im Datenschutzhinweis – es gibt noch keine automatische Löschung/Erinnerung nach Ablauf. Bei Bedarf: Liste „Frist abgelaufen“ für den Chef statt stillem Löschen.
 - EVSE Standortseite / „Ladeparks“ später klarer trennen (Max 04.11.2026): Standort = eigene Adresse (z. B. Werk Rommelsdorf, Werk Elfenroth). Mehrere Ladestellen an DERSELBEN Adresse sind kein weiterer Standort – Begriff und Darstellung für die Ebene darunter (heute „Ladepark“) überarbeiten, z. B. „Ladebereich“ (Parkplatz Nord, Tiefgarage). Standortseite danach auf den gemeinsamen Aufbau (kdSeite) bringen.
-- Kopfzeile oben rechts in allen Apps vereinheitlichen (heute: Übersicht/Baustelle Glocke, EVSE ⋮-Menü, Gebäudetechnik nur Profilbild).
-- Feature-Ideen (04.11.2026, Max will alle): (1) Beschriftungsstreifen für die Automaten-Reihen auf dem Brother P-touch drucken – je Gerät 17,5 mm × TE, BMK + Bezeichnung; (2) Stromkreis-Rechner: Länge + Querschnitt → Spannungsfall %, Zs/Abschaltbedingung, Vergleich mit Messwerten; (3) Legende diktieren (in Arbeit); (4) Prüftasten-Erinnerung für Kunden über die QR-Seite (Kalendereintrag alle 6 Monate).
-- Bibliothek: eigene Kategorie „Pläne“ neben Prüfprotokollen/Berichten (Legende erscheint im Filter noch unter „Prüfprotokolle“).
 
 ## Bearbeitungssperre bei gleichzeitigem Arbeiten (erst nach funktionierender Microsoft-Anbindung)
 
