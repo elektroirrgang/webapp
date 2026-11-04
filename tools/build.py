@@ -86,6 +86,7 @@ def baue_qr():
         html = html.replace(f"<!--F{w}-->", b64(f"vendor/fonts/manrope-latin-{w}-normal.woff2"))
     (root / "q").mkdir(exist_ok=True)
     (root / "q" / "index.html").write_text(html, encoding="utf-8")
+    shutil.copyfile(root / "src/fi-pruefung.ics", root / "q" / "fi-pruefung.ics")
     print(f"q/index.html: {len(html)} Zeichen")
 
 
