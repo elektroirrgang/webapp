@@ -305,7 +305,7 @@ function legSkDlg(id,nach,neuArt){ const L=legAkt(); if(!L) return; const E=legE
       <div class="row2 leg-nur" data-nicht="gr"><div class="leg-nur" data-nur="sk">${wahl("pole","Pole",legDlg.pole,[["1","1-polig"],["3","3-polig"]])}</div>${wahl("te","Breite",legDlg.te,[["","automatisch"],["1","1 TE"],["2","2 TE"],["3","3 TE"],["4","4 TE"]])}</div>
       <div class="leg-nur" data-nicht="gr">${wahl("sym","Symbol",legDlg.sym,[["","automatisch"],...LEG_SYM_LISTE,["keins","kein Symbol"]])}</div>
       <button type="button" class="leg-schalt leg-nur" data-nicht="gr" data-act="legNr" aria-pressed="${legDlg.umbruch}"><span>Neue Reihe ab hier</span><span class="schalter${legDlg.umbruch?" an":""}"><i></i></span></button>
-      ${e?`<div class="leg-aks">${e.art!=="gr"?akt("legDupl","copy","Duplizieren"):""}${akt("legOrd","chev","Nach oben",` data-d="-1" ${i?"":"disabled"}`)}${akt("legOrd","chev","Nach unten",` data-d="1" ${i<E.length-1?"":"disabled"}`)}</div>
+      ${e?`<div class="leg-aks">${e.art!=="gr"?akt("legDupl","copy","Duplizieren"):""}${e.art==="sk"&&L._geb?akt("legRech","calc","Berechnen"):""}${akt("legOrd","chev","Nach oben",` data-d="-1" ${i?"":"disabled"}`)}${akt("legOrd","chev","Nach unten",` data-d="1" ${i<E.length-1?"":"disabled"}`)}</div>
       <div class="leg-dupl" id="legDuplW" hidden><span>Wie oft darunter einfügen?</span>${[1,2,3,4,5].map(n=>`<button type="button" class="chip" data-act="legDuplN" data-n="${n}">${n}×</button>`).join("")}<small>Gleiche Absicherung und Pole, ohne Bezeichnung</small></div>`:""}
     </div>${datalist("legBezListe",vorschl)}${datalist("legLsListe",LEG_LS)}${datalist("legRcdListe",LEG_RCD)}`,
     `${e?`<button class="btn-tonal leg-dlg-weg" data-act="legSkDel">${icon("del")}Löschen</button>`:""}<span style="flex:1"></span>
@@ -432,6 +432,10 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
       [E[i],E[j]]=[E[j],E[i]]; legSpeichern(L); render(); legSkDlg(legDlg.id); return; }
   case "legPdf": legPdfMachen(); return;
   case "legEti": legEtiDlg(); return;
+  case "legRech": if(legDlg&&legDlg.id) legRechDlg(legDlg.id); return;
+  case "legRechQs": { if(!LR) return; LR.qs=+b.dataset.v; b.parentElement.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b)); legRechZeigen(); return; }
+  case "legRechOk": legRechOk(); return;
+  case "legRechZur": { const id=LR&&LR.id; LR=null; if(id) legSkDlg(id); return; }
   case "legEtiW": { if(!L) return; LEG_ETI[b.dataset.k]=b.dataset.k==="inh"?b.dataset.v:+b.dataset.v; legEtiMerken(); legEtiDlg(); return; }
   case "legEtiTeilen": case "legEtiLaden": if(L) legEtiAusgeben(L,a==="legEtiTeilen"); return;
   case "legFertig": { if(!L) return; L.fertig=b.dataset.v==="1"; legSave(L); render(); toast(L.fertig?"Abgeschlossen":"Wieder in Arbeit"); return; }
@@ -519,3 +523,54 @@ async function legEtiAusgeben(L,teilen){ const ST=legEtiStreifen(L); if(!ST.leng
   if(teilen&&navigator.canShare&&navigator.canShare({files:F})){ try{ await navigator.share({files:F,title:F.length===1?F[0].name:`Beschriftung ${L.titel||""}`.trim()}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
   F.forEach((f,i)=>setTimeout(()=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(f); a.download=f.name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500); },i*400));
   const was=F.length===1?"Brother-Datei":`${F.length} Brother-Dateien`; toast(teilen?`Teilen geht hier nicht – ${was} heruntergeladen`:`${was} heruntergeladen`); }
+
+/* ===== Stromkreis-Rechner: Spannungsfall, Abschaltbedingung (Zs), max. Länge, Belastbarkeit – und Vergleich mit dem letzten Messwert =====
+   Vereinfachte Rechnung wie in der Ausbildung: Kupfer κ = 56 m/(Ω·mm²) bei 20 °C, cos φ = 1, Schutzleiter gleicher Querschnitt.
+   Zs max = 230 V ÷ Ia (wie in der Prüfung), Ia = 5/10/20 × In für B/C/D. Länge, Querschnitt und Vorimpedanz werden am Stromkreis bzw. Verteiler gespeichert. */
+const LR_KAPPA=56, LR_QS=[1.5,2.5,4,6,10,16];
+/* Strombelastbarkeit Iz, Verlegeart C (auf/in der Wand), 30 °C, ohne Häufung – DIN VDE 0298-4: [2 belastete Adern, 3 belastete Adern] */
+const LR_IZ={1.5:[19.5,17.5],2.5:[27,24],4:[36,32],6:[46,41],10:[63,57],16:[85,76]};
+let LR=null;
+const lrZ=v=>{ const t=String(v??"").trim().replace(",","."); return t&&isFinite(+t)?+t:null; };
+const lrF=(n,d=2)=>(Math.round(n*10**d)/10**d).toLocaleString("de-DE",{minimumFractionDigits:0,maximumFractionDigits:d});
+const lrQsAus=t=>{ const m=String(t||"").match(/[x×]\s*(\d+(?:[.,]\d+)?)/i)||String(t||"").match(/(\d+(?:[.,]\d+)?)\s*mm/i); const q=m?+m[1].replace(",","."):0; return LR_QS.includes(q)?q:0; };
+/* letzter Messwert Zs zu diesem Stromkreis (höchster Wert an Stromkreis und seinen Messpunkten) */
+function lrGemessen(g,sk){ if(typeof ecZsMax!=="function") return null;
+  const P=live("echecks").filter(p=>p.ortId===g.ortId&&p.art==="anlage").sort((a,b)=>String(b.datum||"").localeCompare(String(a.datum||"")));
+  for(const pr of P){ const z=ecZsMax(pr,g,sk); if(z) return {n:z.n,datum:pr.datum}; } return null; }
+function legRechDlg(id){ const L=legAkt(); if(!L||!L._geb) return; const g=vtGeb(L._geb), sk=g&&g.stromkreise.find(x=>x.id===id), v=g&&g.verteiler.find(x=>x.id===L._v), e=legE(L).find(x=>x.id===id); if(!sk||!e) return;
+  /* Werte aus dem offenen Zeilen-Dialog übernehmen (noch nicht gespeichert) */
+  const F=typeof formVals==="function"?formVals():{}, schutz=F.legSchutz!=null?F.legSchutz:e.schutz, pole=legDlg&&legDlg.pole?+legDlg.pole:+e.pole||1;
+  const ls=typeof ecLs==="function"?ecLs(schutz):null;
+  LR={id,schutz,pole,ls,qs:lrQsAus(sk.leitung)||(ls&&ls.In>=20?4:ls&&ls.In>=16?2.5:1.5),mess:lrGemessen(g,sk)};
+  const kopf=[e.kz,e.bez,schutz,pole===3?"3-polig":""].filter(Boolean).join(" · ");
+  dialog("Stromkreis berechnen",`<p class="ec-sub">${esc(kopf)}</p>
+    ${ls?"":`<p class="ec-hinweis">${icon("warn")}<span>Für die Abschaltbedingung braucht der Stromkreis eine Absicherung wie B16 oder C20.</span></p>`}
+    <div class="lr-ein">${tf("lrLaenge","Leitungslänge",sk.laenge!=null?String(sk.laenge).replace(".",","):"",{form:true,ph:"z. B. 25",im:"decimal",sfx:"m"})}${tf("lrZe","Vorimpedanz",v&&v.ze!=null?String(v.ze).replace(".",","):"0,3",{form:true,im:"decimal",sfx:"Ω"})}</div>
+    <div class="lbl" style="margin-top:12px">Querschnitt</div><div class="chips ec-wahl">${LR_QS.map(q=>`<button type="button" class="chip" data-act="legRechQs" data-v="${q}" aria-pressed="${q===LR.qs}">${lrF(q,1)} mm²</button>`).join("")}</div>
+    <div id="lrErg" class="lr-erg"></div>
+    <p class="lr-hin">Vereinfacht gerechnet: Kupfer κ = 56 m/(Ω·mm²) bei 20 °C, cos φ = 1, Schutzleiter mit gleichem Querschnitt. Vorimpedanz = Schleifenimpedanz am Verteiler; 0,3 Ω ist ein Schätzwert, solange dort nicht gemessen wurde. Ersetzt keine Messung.</p>`,
+    `<button class="btn-text" data-act="legRechZur">Zurück</button><span style="flex:1"></span><button class="btn-filled" data-act="legRechOk">Speichern</button>`,{breit:true});
+  legRechZeigen(); }
+function legRechZeigen(){ const box=document.getElementById("lrErg"); if(!box||!LR) return;
+  const l=lrZ((document.getElementById("f_lrLaenge")||{}).value), ze=lrZ((document.getElementById("f_lrZe")||{}).value)??0, A=LR.qs, ls=LR.ls, drei=LR.pole===3, I=ls?ls.In:null;
+  const k=(st,t,w,s)=>`<div class="lr-k ${st}"><span class="t">${t}</span><span class="w">${w}</span><span class="s">${s}</span></div>`, B=[];
+  const rS=l!=null?2*l/(LR_KAPPA*A):null;   /* Schleife L + PE */
+  if(l!=null&&I){ const du=drei?Math.sqrt(3)*I*l/(LR_KAPPA*A):2*I*l/(LR_KAPPA*A), pz=du/(drei?400:230)*100;
+    B.push(k(pz<=3?"ok":pz<=4?"knapp":"bad","Spannungsfall bei "+lrF(I,1)+" A",lrF(pz,1)+" %",`${lrF(du,1)} V ab diesem Verteiler · Empfehlung ≤ 3 % ab Zähler (DIN 18015-1)${pz>3&&pz<=4?", 4 % nach VDE 0100-520 noch zulässig":""}`)); }
+  if(rS!=null&&ls){ const zs=ze+rS, mx=ls.zs, st=zs<=mx*2/3?"ok":zs<=mx?"knapp":"bad";
+    B.push(k(st,"Schleifenimpedanz Zs",lrF(zs)+" Ω",`${lrF(ze)} Ω Vorimpedanz + ${lrF(rS)} Ω Leitung · zulässig ${ls.c}${lrF(ls.In,1)}: ≤ ${lrF(mx)} Ω${st==="knapp"?" – knapp, bei Betriebstemperatur steigt der Widerstand":""}`)); }
+  if(ls&&I){ const lAb=Math.max(0,(ls.zs*2/3-ze)*LR_KAPPA*A/2), lDu=0.03*(drei?400:230)*LR_KAPPA*A/((drei?Math.sqrt(3):2)*I), lm=Math.min(lAb,lDu);
+    B.push(k(l!=null&&l>lm?"bad":"","Maximale Länge",`${Math.floor(lm)} m`,`Abschaltung mit Reserve: ${Math.floor(lAb)} m · Spannungsfall 3 %: ${Math.floor(lDu)} m`)); }
+  if(I){ const iz=LR_IZ[A][drei?1:0]; B.push(k(I<=iz?"ok":"bad","Belastbarkeit",I<=iz?"passt":"zu klein",`${ls.c}${lrF(I,1)} an ${lrF(A,1)} mm²: Iz = ${lrF(iz,1)} A (Verlegeart C, 30 °C, ohne Häufung)${I<=iz?"":" – größeren Querschnitt oder kleinere Absicherung"}`)); }
+  if(LR.mess&&ls){ const m=LR.mess.n, st=m<=ls.zs?"ok":"bad", erw=rS!=null?ze+rS:null, viel=erw!=null&&m>erw*1.5+0.2;
+    B.push(k(viel&&st==="ok"?"knapp":st,"Gemessen am "+new Date(LR.mess.datum+"T12:00").toLocaleDateString("de-DE"),lrF(m)+" Ω",st==="bad"?`über dem Grenzwert ${lrF(ls.zs)} Ω`:viel?`deutlich mehr als berechnet (${lrF(erw)} Ω) – Klemmstellen und Länge prüfen`:erw!=null?`passt zur Rechnung (${lrF(erw)} Ω)`:"unter dem Grenzwert")); }
+  if(l==null) B.unshift(`<p class="meta" style="margin:0 4px">Länge eintragen – dann rechnet die App Spannungsfall und Schleifenimpedanz.</p>`);
+  box.innerHTML=B.join(""); }
+function legRechOk(){ const L=legAkt(); if(!L||!LR) return; const g=vtGeb(L._geb), sk=g&&g.stromkreise.find(x=>x.id===LR.id), v=g&&g.verteiler.find(x=>x.id===L._v); if(!sk) return;
+  const l=lrZ((document.getElementById("f_lrLaenge")||{}).value), ze=lrZ((document.getElementById("f_lrZe")||{}).value);
+  if(l!=null) sk.laenge=l; else delete sk.laenge;
+  const q=lrF(LR.qs,1), alt=sk.leitung||""; if(!alt) sk.leitung=`NYM-J ${LR.pole===3?5:3}×${q}`; else if(lrQsAus(alt)&&lrQsAus(alt)!==LR.qs) sk.leitung=alt.replace(/([x×]\s*)\d+(?:[.,]\d+)?/i,"$1"+q);
+  if(v&&ze!=null) v.ze=ze;
+  ecGebSpeichern(g); const id=LR.id; LR=null; toast("Gespeichert"); legSkDlg(id); }
+document.addEventListener("input",e=>{ if(LR&&e.target&&(e.target.id==="f_lrLaenge"||e.target.id==="f_lrZe")) legRechZeigen(); });

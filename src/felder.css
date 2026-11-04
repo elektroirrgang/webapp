@@ -1269,7 +1269,7 @@ a.dz{color:inherit;text-decoration:none;border-radius:12px}
 .leg-rl-z .bz{overflow-wrap:anywhere;line-height:19px}.leg-rl-z .sc{font-size:13px;color:var(--on-sv);white-space:nowrap}
 /* Zeile bearbeiten (Stromkreise) */
 .leg-dlg select:has(option[value=""]:checked){color:var(--on-sv)}
-.leg-aks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:4px}
+.leg-aks{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;margin-top:4px}
 .leg-ak{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px 8px;border:0;border-radius:14px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .leg-ak .ic{width:22px;height:22px;color:var(--primary)}.leg-ak:disabled{opacity:.4;cursor:default}.leg-ak:active:not(:disabled){background:var(--sc-highest)}
 .leg-ak[data-d="-1"] .ic{transform:rotate(-90deg)}.leg-ak[data-d="1"] .ic{transform:rotate(90deg)}
@@ -1392,3 +1392,15 @@ body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dl
 .vti-diktat[hidden]{display:none}.vti-diktat small{grid-column:2;font-size:12px;opacity:.85}
 .vti-punkt{width:12px;height:12px;border-radius:50%;background:var(--err);animation:vtiPuls 1.2s ease-in-out infinite}
 @keyframes vtiPuls{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.5}}
+
+/* Stromkreis-Rechner */
+.lr-ein{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lr-erg{display:grid;gap:8px;margin-top:14px}
+.lr-k{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;padding:12px 14px;border-radius:16px;background:var(--sc-high)}
+.lr-k .t{font-size:13px;font-weight:600;color:var(--on-sv)}
+.lr-k .w{grid-row:span 2;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+.lr-k .s{font-size:13px;line-height:1.4;color:var(--on-sv)}
+.lr-k.ok{background:var(--ok-c)}.lr-k.ok .w,.lr-k.ok .t,.lr-k.ok .s{color:var(--on-ok-c)}
+.lr-k.knapp{background:var(--wip-c)}.lr-k.knapp .w,.lr-k.knapp .t,.lr-k.knapp .s{color:var(--on-wip-c)}
+.lr-k.bad{background:var(--err-c)}.lr-k.bad .w,.lr-k.bad .t,.lr-k.bad .s{color:var(--on-err-c)}
+.lr-hin{font-size:12.5px;line-height:1.45;color:var(--on-sv);margin:10px 4px 0}
