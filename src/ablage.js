@@ -32,7 +32,10 @@ function kdOrtProt(x){ const nm=(k,id)=>id&&DB[k]&&DB[k].get(id)?DB[k].get(id).n
   if(x.app==="anlagenpass") return [kdKat("plaene"),nm("standorte",x.standortId),"Anlagenpass",x.archiv?"Ältere Stände":""].filter(Boolean).map(bbFs);   /* Anlagenpass → Pläne und Schaltpläne › Anlagenpass */
   if(x.app==="baustelle") return [kdKat("berichte"),nm("baustellen",x.baustelleId)||String(x.titel||"").split(" · ").pop()||"Baustelle"].map(bbFs);
   return [kdKat("prot"),nm("standorte",x.standortId),nm("ladeparks",x.ladeparkId)].filter(Boolean).map(bbFs); }
+/* Raum (Gebäude): Datensatz-Ort suchen – Kunde aus ortId („k:<Kunde>“ oder Standort) */
+function kdRaumOrt(rid){ if(!DB.gebaeude||!rid) return null; for(const g of DB.gebaeude.values()){ if(g.deleted) continue; for(const e of g.etagen||[]){ const r=(e.raeume||[]).find(x=>x.id===rid); if(r) return {g,e,r}; } } return null; }
 function kdDateiKunde(d){ if(!d) return ""; if(d.bezugKind==="kunden") return d.bezugId||"";
+  if(d.bezugKind==="raeume"){ const o=kdRaumOrt(d.bezugId), ort=o&&String(o.g.ortId||""); if(!ort) return ""; if(ort.startsWith("k:")) return ort.slice(2); const st=DB.standorte&&DB.standorte.get(ort); return st?st.kundeId||"":""; }
   const s=d.bezugKind==="standorte"&&DB.standorte&&DB.standorte.get(d.bezugId); if(s) return s.kundeId||"";
   const an=d.bezugKind==="anlagen"&&DB.anlagen&&DB.anlagen.get(d.bezugId); if(an) return an.kundeId||"";
   const v=d.bezugKind==="vorgaenge"&&DB.vorgaenge&&DB.vorgaenge.get(d.bezugId); return v?v.kundeId||"":""; }
@@ -43,6 +46,8 @@ function kdVorschlag(name,kind){ const n=String(name||"").toLowerCase();
   if(/brief|schreiben|rechnung|mahnung|kündigung|\.msg$|\.eml$/.test(n)) return "post";
   return kind==="vorgaenge"?"angebote":""; }
 function kdOrtDatei(d){
+  if(d.bezugKind==="raeume"){ const o=kdRaumOrt(d.bezugId); if(o){ const ort=String(o.g.ortId||""), st=!ort.startsWith("k:")&&DB.standorte&&DB.standorte.get(ort), b=o.e.bauteilId&&(o.g.bauteile||[]).find(x=>x.id===o.e.bauteilId);
+    const a=/^image\//.test(d.typ||"")?"fotos":("ordner" in d&&d.ordner?d.ordner:(kdVorschlag(d.name,d.bezugKind)||"plaene")); return [kdKat(a)||kdKat("fotos"),st&&(st.name||"Standort"),b&&b.name,o.e.name,o.r.name].filter(Boolean).map(bbFs); } }
   /* Maschine: Kategorie › Standort › „<Nr> <Bezeichnung>“ – gleiche Maschinennummern an verschiedenen Standorten
      (z. B. M-17.1 in Rommelsdorf und in Elsenroth) landen so nie im selben Ordner. Fotos einer Meldung zu einer Maschine ebenso. */
   const vgM=d.bezugKind==="vorgaenge"&&DB.vorgaenge&&DB.vorgaenge.get(d.bezugId), an=d.bezugKind==="anlagen"&&DB.anlagen?DB.anlagen.get(d.bezugId):vgM&&vgM.anlageId&&DB.anlagen&&/^image\//.test(d.typ||"")?DB.anlagen.get(vgM.anlageId):null;

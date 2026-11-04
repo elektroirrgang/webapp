@@ -1905,3 +1905,13 @@ body:has(.gv-aktbar) #app{padding-bottom:190px}
 .gv-wzk{flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);padding:8px 16px;font:inherit;text-align:left;cursor:pointer}
 .gv-wzk b{font-size:16px}.gv-wzk small{font-size:13px;color:var(--on-sv)}.gv-wzk.leer{background:transparent;color:var(--on-sv)}.gv-wzk:active{background:var(--sc-highest)}
 #dlg .gv-artwahl{max-height:60vh}
+/* Raumseite */
+.gv-rkopf{display:flex;align-items:center;gap:14px;padding:14px 10px 14px 16px!important}
+.gv-rkopf .ra{width:48px;height:48px;border-radius:24px}.gv-rkopf .ra .ic{width:26px;height:26px}
+.gv-rkopf>div{flex:1;min-width:0;display:flex;flex-direction:column}.gv-rkopf b{font-size:18px}.gv-rkopf small{font-size:13px;color:var(--on-sv)}
+.gv-notizen{display:flex;flex-direction:column;gap:6px}
+.gv-notiz{display:flex;flex-direction:column;align-items:flex-start;gap:4px;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);padding:12px 16px;font:inherit;text-align:left;cursor:pointer;white-space:pre-wrap}
+.gv-notiz span{font-size:15px;line-height:21px}.gv-notiz small{font-size:12px;color:var(--on-sv)}
+.gv-pa{font-size:11px!important;font-weight:800;letter-spacing:-.3px}
+.gv-hws{position:absolute;bottom:8px;right:8px;display:flex;gap:2px}
+.gv-hw{flex:none;display:grid;place-items:center;width:22px;height:22px;color:var(--on-sv)}.gv-hw .ic{width:16px;height:16px;fill:currentColor}.gv-hw.warn{color:var(--err)}
