@@ -74,7 +74,8 @@ async function dateiOeffnen(id){
   const u=await dateiUrl(id), darf=canEdit(d)||ME.admin;
   const ort=ablageOrt(d), kopf=`<p class="sup" style="margin:0 0 12px">${esc([groesse(d.groesse||b.size),vonText(d),wann(d.created)].filter(Boolean).join(" · "))}${ort?`<br>${esc(ort)}`:""}</p>`;
   dialog(d.name,kopf+(istBild(d)?`<img class="dimg" src="${u}" alt="">`:`<div class="ab-dok">${icon("doc")}<span>${esc(d.name)}</span></div>`),
-    `${darf?`<button class="btn-text danger" data-act="dateiDelAsk" data-id="${id}">Löschen</button>`:""}<span style="flex:1"></span>${darf&&ort&&!istBild(d)?`<button class="btn-text" data-act="ablUmAsk" data-id="${id}">Ordner</button>`:""}<button class="btn-text" data-act="dateiSpeichern" data-id="${id}">${istBild(d)?"Speichern":"Öffnen"}</button><button class="btn-text" data-act="cancel">Schließen</button>`);
+    `${darf?`<button class="btn-text danger" data-act="dateiDelAsk" data-id="${id}">Löschen</button>`:""}<span style="flex:1"></span>${darf&&ort&&!istBild(d)?`<button class="btn-text" data-act="ablUmAsk" data-id="${id}">Ordner</button>`:""}${istBild(d)&&typeof fmKnopf==="function"?fmKnopf(()=>dateiUrl(id),async data=>{ const nm=String(d.name||"Foto").replace(/\.[^.]+$/,"").replace(/ markiert$/,"")+" markiert.jpg", f=new File([dataUrlToBlob(data)],nm,{type:"image/jpeg"});
+      const x=await dateiNeu(d.bezugKind,d.bezugId,f,Object.assign({},d.demo?{demo:true}:{},"ordner" in d?{ordner:d.ordner}:{})); render(); if(x) setTimeout(()=>dateiOeffnen(x.id),50); }):""}<button class="btn-text" data-act="dateiSpeichern" data-id="${id}">${istBild(d)?"Speichern":"Öffnen"}</button><button class="btn-text" data-act="cancel">Schließen</button>`);
 }
 
 function ablageView(kind,r){

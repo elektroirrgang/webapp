@@ -3048,8 +3048,9 @@ document.addEventListener("click",ev=>{
   case "pdfStd": { const e=$("#f_fname"); if(e) e.value=pdfSchema(cur).name; return; }
   case "openS": closeOverlays(); saveNow(); go({v:"saeule",si:+b.dataset.si,st:"geraet"}); return;
   case "sub": saveNow(); nav={...nav,st:b.dataset.v}; render(); window.scrollTo(0,0); return;
-  case "fotoShow": { const k=b.dataset.k, sl=FOTO_SLOTS.find(x=>x[0]===k), src=fotoCache.get(cur.s[nav.si].fotos[k]), ok=canEdit(cur);
-    dialog(sl[1],`<img class="dimg" src="${src}" alt="">`,`${ok?`<button class="btn-text danger" data-act="fotoDel" data-k="${k}">Löschen</button><span style="flex:1"></span><button class="btn-text" data-act="fotoAdd" data-k="${k}">Ersetzen</button>`:""}<button class="btn-text" data-act="cancel">Schließen</button>`); return; }
+  case "fotoShow": { const k=b.dataset.k, sl=FOTO_SLOTS.find(x=>x[0]===k), src=fotoCache.get(cur.s[nav.si].fotos[k]), ok=canEdit(cur), pid=cur.id, si=nav.si;
+    dialog(sl[1],`<img class="dimg" src="${src}" alt="">`,`${ok?`<button class="btn-text danger" data-act="fotoDel" data-k="${k}">Löschen</button><span style="flex:1"></span>${fmKnopf(src,async data=>{ const P=DB.pruefungen.get(pid), s=cur&&cur.id===pid?cur.s[si]:P&&P.s[si]; if(!s||!s.fotos) return; const alt=s.fotos[k]; s.fotos[k]=await fmFotoNeu(data); if(alt) fotoDel([alt]);
+      if(cur&&cur.id===pid){ commit(); if(nav.v==="saeule"&&nav.si===si){ const y=scrollY; render(); scrollTo(0,y); } } else saveRec("pruefungen",P); })}<button class="btn-text" data-act="fotoAdd" data-k="${k}">Ersetzen</button>`:""}<button class="btn-text" data-act="cancel">Schließen</button>`); return; }
   }
   if(!canEdit(cur)) return;
   switch(a){
