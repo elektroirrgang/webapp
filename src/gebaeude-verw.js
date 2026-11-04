@@ -62,7 +62,7 @@ function gvRaumNeuDlg(g,etId){ if(!g) return; gvNorm(g); const B=g.bauteile, E=e
     <div class="fg1" style="margin-top:12px">${sf("kxGs","Geschoss",et0&&gvGs(et0)!=null?String(gvGs(et0)):"",gvGsOpts(),{form:true})}</div>
     <p class="meta" style="margin:6px 4px 0">Heißt die Etage beim Kunden anders (z. B. „Level 4“), hier das echte Geschoss wählen. Gilt für die Etage überall, auch in der Prüfung.</p>
     <div class="fg1" style="margin-top:12px">${tf("kxRn","Räume","",{form:true,ph:"z. B. 403-407, 410, Flur"})}</div>
-    <p class="meta" style="margin:8px 4px 0">In der Reihenfolge eintragen, in der du durchgehst – daraus folgen später die KNX-Adressen. Bereiche mit Bindestrich.</p>`,
+    <p class="meta" style="margin:8px 4px 0">In der Reihenfolge eintragen, in der du durchgehst – daraus folgen später die KNX-Adressen. Bereiche mit Bindestrich.${B.some(gvVor)?" Ist beim Bauteil „mit Bauteil davor“ eingestellt, kommt der Zusatz automatisch (403 → B403).":""}</p>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gvRaumOk">Anlegen</button>`,{breit:true});
   setTimeout(()=>{ const e=document.getElementById("f_kxRn"); if(e) e.focus(); },60); }
 function gvRaumNamen(t){ const out=[]; String(t||"").split(/[,;\n]+/).map(s=>s.trim()).filter(Boolean).forEach(s=>{ const m=s.match(/^(\D*?)(\d+)\s*[-–]\s*\1?(\d+)$/);
@@ -73,7 +73,7 @@ function gvRaumOk(){ const g=gvAkt(); if(!g) return; const F=formVals(), N=gvRau
   if(!et){ if(btNeu){ const b=g.bauteile.find(x=>x.id===bt); if(b) g.bauteile=g.bauteile.filter(x=>x!==b); } toast("Bitte eine Etage wählen oder neu eintragen"); return; }
   if(F.kxGs!==""&&F.kxGs!=null) et.ebene=+F.kxGs; else if(F.kxEtNeu){ const eb=ecEbeneRaten(F.kxEtNeu); if(eb!=null) et.ebene=eb; }
   /* gleicher Name auf derselben Etage: vorhandenen Raum nehmen (z. B. aus der Prüfung) und ihm das Bauteil geben, statt ihn doppelt anzulegen */
-  let neu=0, zug=0; N.forEach(n=>{ const da=et.raeume.find(r=>r.name===n&&(!r.bauteilId||!bt||r.bauteilId===bt));
+  const bb=g.bauteile.find(x=>x.id===(et.bauteilId||bt)); let neu=0, zug=0; N.map(n=>gvMitVor(bb,n)).forEach(n=>{ const da=et.raeume.find(r=>r.name===n&&(!r.bauteilId||!bt||r.bauteilId===bt));
     if(da){ if(bt&&!da.bauteilId){ da.bauteilId=bt; zug++; } return; } et.raeume.push({id:uid(),name:n,...(bt?{bauteilId:bt}:{})}); neu++; });
   GV.bt=bt; if(nav.v==="geb"){ GV.sel=bt; } gvSpeichern(g); closeOverlays(); render();
   toast(neu||zug?[neu&&`${neu} ${neu>1?"Räume":"Raum"} angelegt`,zug&&`${zug} vorhandene${zug>1?"":"r"} Raum Bauteil zugeordnet`].filter(Boolean).join(" · "):"Diese Räume gibt es schon"); }
@@ -109,15 +109,28 @@ function gvEtOk(){ const g=gvAkt(); if(!g) return; const F=formVals(), n=String(
   const std=g.etagen.find(x=>x.id==="eg"&&!x.raeume.length&&x.ebene==null); if(neu&&std&&g.etagen.length>1&&!g.etagen.some(x=>x!==std&&ecEbene(x)===0&&/^eg$/i.test(x.name))&&!/^(eg|erdgeschoss)/i.test(n)) g.etagen=g.etagen.filter(x=>x!==std);
   if(nav.v==="geb") GV.sel=bt; gvSpeichern(g); closeOverlays(); render(); toast(neu?`${neu} Etage${neu>1?"n":""} hinzugefügt`:"Diese Etage gibt es schon"); }
 /* ---- Bauteil ---- */
-function gvBtDlg(id){ const g=gvAkt(); if(!g) return; const b=id&&g.bauteile.find(x=>x.id===id); GV.bt=b?b.id:""; GV.loesch=false;
-  dialog(b?"Bauteil bearbeiten":"Bauteil hinzufügen",`<div class="fg">${tf("gvBn","Bezeichnung",b?b.name:"",{form:true,ph:"z. B. B oder Halle 3"})}${tf("gvBk","Kürzel (optional)",b&&b.kurz||"",{form:true,ph:"z. B. B"})}</div>
-    <p class="meta" style="margin-top:8px">Mehrere auf einmal mit Komma: „A, B, C“.</p>`,
+/* Raumnummern mit Bauteil davor (z. B. Bauteil B: 403 → B403) – Zusatz = Kürzel, sonst Name ohne „Bauteil“ */
+const gvVorText=b=>String(b&&(b.kurz||String(b.name||"").replace(/^bauteil\s*/i,""))||"").trim();
+const gvVor=b=>b&&b.raumVor?gvVorText(b):"";
+const gvMitVor=(b,n)=>{ const v=gvVor(b); return v&&!n.toLowerCase().startsWith(v.toLowerCase())?v+n:n; };
+const gvOhneVor=(v,n)=>v&&n.toLowerCase().startsWith(v.toLowerCase())&&/^\s*\d/.test(n.slice(v.length))?n.slice(v.length).trim():n;
+let GV_VOR=false;
+function gvBtDlg(id){ const g=gvAkt(); if(!g) return; const b=id&&g.bauteile.find(x=>x.id===id); GV.bt=b?b.id:""; GV.loesch=false; GV_VOR=!!(b&&b.raumVor);
+  dialog(b?"Bauteil bearbeiten":"Bauteil hinzufügen",`<div class="fg">${tf("gvBn","Bezeichnung",b?b.name:"",{form:true,ph:"z. B. Bauteil B oder Halle 3"})}${tf("gvBk","Kürzel (optional)",b&&b.kurz||"",{form:true,ph:"z. B. B"})}</div>
+    ${b?"":`<p class="meta" style="margin-top:8px">Mehrere auf einmal mit Komma: „Bauteil A, Bauteil B“.</p>`}
+    <div class="lbl" style="margin-top:14px">Raumnummern</div><div class="knx-seg gv-vor">${[["0","nur die Nummer"],["1",`mit Bauteil davor`]].map(([v,t])=>`<button type="button" data-act="gvVorWahl" data-v="${v}" aria-pressed="${GV_VOR===(v==="1")}">${t}</button>`).join("")}</div>
+    <p class="meta" id="gvVorBsp" style="margin-top:8px">${gvVorBsp()}</p>`,
     `${b?`<button class="btn-text danger" data-act="gvBtWeg">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gvBtOk">${b?"Speichern":"Hinzufügen"}</button>`,{breit:true});
   if(!b) setTimeout(()=>{ const x=document.getElementById("f_gvBn"); if(x) x.focus(); },60); }
+function gvVorBsp(){ const n=((document.getElementById("f_gvBn")||{}).value||"").split(",")[0].trim(), k=((document.getElementById("f_gvBk")||{}).value||"").trim();
+  const v=gvVorText({name:n,kurz:k})||"B"; return GV_VOR?`Du tippst „403-407“, angelegt wird ${esc(v)}403 bis ${esc(v)}407. Vorhandene Räume dieses Bauteils bekommen den Zusatz beim Speichern auch. Davor steht das Kürzel, sonst die Bezeichnung ohne „Bauteil“.`:"Räume heißen so, wie du sie eintippst (z. B. 403)."; }
+document.addEventListener("input",ev=>{ if((ev.target.id==="f_gvBn"||ev.target.id==="f_gvBk")&&document.getElementById("gvVorBsp")) document.getElementById("gvVorBsp").innerHTML=gvVorBsp(); });
 function gvBtOk(){ const g=gvAkt(); if(!g) return; const F=formVals(), n=String(F.gvBn||"").trim(); if(!n){ toast("Bitte eine Bezeichnung eingeben"); return; }
-  if(GV.bt){ const b=g.bauteile.find(x=>x.id===GV.bt); if(!b) return; b.name=n; if(F.gvBk) b.kurz=F.gvBk; else delete b.kurz; }
-  else n.split(/\s*,\s*/).filter(Boolean).forEach((x,i)=>{ if(!g.bauteile.some(b=>b.name.toLowerCase()===x.toLowerCase())){ const b={id:"b-"+uid(),name:x,...(F.gvBk&&!/,/.test(n)?{kurz:F.gvBk}:{})}; g.bauteile.push(b); } });
-  gvSpeichern(g); closeOverlays(); render(); }
+  let geaendert=0;
+  if(GV.bt){ const b=g.bauteile.find(x=>x.id===GV.bt); if(!b) return; const alt=gvVor(b); b.name=n; if(F.gvBk) b.kurz=F.gvBk; else delete b.kurz; if(GV_VOR) b.raumVor=true; else delete b.raumVor; const neu=gvVor(b);
+    if(alt!==neu) g.etagen.forEach(e=>{ if((e.bauteilId||"")!==b.id) return; e.raeume.forEach(r=>{ const m=neu?(gvOhneVor(alt,r.name)):gvOhneVor(alt,r.name), z=neu?gvMitVor(b,m):m; if(z!==r.name){ r.name=z; geaendert++; } }); }); }
+  else n.split(/\s*,\s*/).filter(Boolean).forEach((x,i)=>{ if(!g.bauteile.some(b=>b.name.toLowerCase()===x.toLowerCase())){ const b={id:"b-"+uid(),name:x,...(F.gvBk&&!/,/.test(n)?{kurz:F.gvBk}:{}),...(GV_VOR?{raumVor:true}:{})}; g.bauteile.push(b); } });
+  gvSpeichern(g); closeOverlays(); render(); if(geaendert) toast(`${geaendert} Raumnummer${geaendert===1?"":"n"} angepasst`); }
 /* ---- Raum ---- */
 const gvRaumFinden=(g,id)=>{ for(const e of g.etagen){ const r=e.raeume.find(x=>x.id===id); if(r) return {e,r}; } return null; };
 const gvRaumBezug=(g,id)=>(g.stellen||[]).filter(s=>s.raumId===id).length+(g.dosen||[]).filter(d=>d.raumId===id).length+((g.knx&&g.knx.geraete)||[]).filter(d=>d.raumId===id).length;
@@ -145,6 +158,7 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
     g.etagen=g.etagen.filter(x=>x!==e); if(nav.et===e.id) nav.et=null; gvSpeichern(g); closeOverlays(); render(); return; }
   if(a==="gvBtNeu"){ gvBtDlg(); return; }
   if(a==="gvBt"){ gvBtDlg(b.dataset.id); return; }
+  if(a==="gvVorWahl"){ GV_VOR=b.dataset.v==="1"; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); const p=document.getElementById("gvVorBsp"); if(p) p.innerHTML=gvVorBsp(); return; }
   if(a==="gvBtSel"){ GV.sel=b.dataset.v; render(); return; }
   if(a==="gvEtZu"){ const g=gvAkt(); if(!g) return; const bt=b.dataset.v, bb=g.bauteile.find(x=>x.id===bt); let n=0; g.etagen.forEach(e=>{ if(!e.bauteilId&&(e.raeume.length||e.id!=="eg")){ e.bauteilId=bt; e.raeume.forEach(r=>{ r.bauteilId=bt; }); n++; } });
     GV.sel=bt; gvSpeichern(g); render(); toast(`${n} Etage${n===1?"":"n"} zu ${bb?bb.name:"Bauteil"}`); return; }
