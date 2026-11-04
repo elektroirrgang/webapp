@@ -8,7 +8,7 @@
 IC.scQr=IC.scQr||"M3 11h8V3H3v8zm2-6h4v4H5V5zm-2 16h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zm0 10h2v2h-2zm-6-6h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2zm2-2h2v2h-2zm0-4h2v2h-2zm2 2h2v2h-2z";
 const SC_IC={zu:"M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",licht:"M6 2v6l4 4v10h4V12l4-4V2H6zm2 2h8v1H8V4z",
   tast:"M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z",
-  vt:"M7 2v11h3v9l7-12h-4l4-8z",schrank:"M3 4h18v6H3zm0 8h18v6H3zM6 6v2h2V6zm0 8v2h2v-2z",neu:"M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"};
+  vt:"M7 2v11h3v9l7-12h-4l4-8z",schrank:"M3 4h18v6H3zm0 8h18v6H3zM6 6v2h2V6zm0 8v2h2v-2z",neu:"M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",qr:IC.scQr};
 const scSvg=k=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${SC_IC[k]}"/></svg>`;
 const SC_Z="23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 function scNorm(t){ if(typeof qrNorm==="function") return qrNorm(t); t=String(t||"").trim(); const m=t.match(/\/q\/?[#?]([0-9A-Za-z]{6})\b/)||t.match(/qr=([0-9A-Za-z]{6})\b/i); const c=(m?m[1]:t).toUpperCase().replace(/[\s-]/g,"");
@@ -32,42 +32,47 @@ const scZuord=()=>!!(SC&&(SC.opt.treffer||SC.opt.aktion));
 function scListe(){ if(!SC) return; const box=SC.el.querySelector("#scListe"); if(!box) return;
   const f=SC.filter, L=scZuletzt().map(x=>{ let T=null; try{ T=scSuche(x.c); }catch(e){} if(!T||T.ic==="neu"||/^Aufkleber /.test(T.titel)) T={titel:x.titel,sub:x.sub,ic:x.ic}; return {...x,...T}; })
     .filter(x=>f==="alles"||x.ic===f);
-  box.innerHTML=L.length?`<div class="sc-lbl">Zuletzt gescannt</div>${L.map(x=>`<button type="button" class="sc-li" data-sc="alt" data-c="${esc(x.c)}"><span class="sc-av">${scSvg(x.ic==="schrank"?"schrank":"vt")}</span><span class="sc-kt"><b>${esc(x.titel||scZeig(x.c))}</b><small>${esc([x.sub,scWann(x.t)].filter(Boolean).join(" · "))}</small></span></button>`).join("")}`
-    :`<p class="sc-leer">${f==="alles"?"Hier erscheinen die zuletzt gescannten Aufkleber.":f==="schrank"?"Noch kein Netzwerkschrank gescannt.":"Noch kein Verteiler gescannt."}</p>`; }
+  box.innerHTML=L.length?`<div class="sc-lbl">${SC.el.classList.contains("pc")?"Zuletzt geöffnet":"Zuletzt gescannt"}</div>${L.map(x=>`<button type="button" class="sc-li" data-sc="alt" data-c="${esc(x.c)}"><span class="sc-av">${scSvg(x.ic==="schrank"?"schrank":"vt")}</span><span class="sc-kt"><b>${esc(x.titel||scZeig(x.c))}</b><small>${esc([x.sub,scWann(x.t)].filter(Boolean).join(" · "))}</small></span></button>`).join("")}`
+    :`<p class="sc-leer">${f==="alles"?(SC.el.classList.contains("pc")?"Hier erscheinen die zuletzt geöffneten Anlagen.":"Hier erscheinen die zuletzt gescannten Aufkleber."):f==="schrank"?"Noch kein Netzwerkschrank gescannt.":"Noch kein Verteiler gescannt."}</p>`; }
 function scZu(){ if(!SC) return; const cam=SC; SC=null; cam.aus=true; try{ cam.st&&cam.st.getTracks().forEach(t=>t.stop()); }catch(e){}
   removeEventListener("keydown",scTaste); document.body.classList.remove("sc-offen"); cam.el.classList.add("weg"); setTimeout(()=>cam.el.remove(),220); }
 function scTaste(e){ if(e.key==="Escape"&&SC){ e.preventDefault(); e.stopPropagation(); scZu(); } }
-function scOeffnen(opt){ if(SC) scZu(); opt=opt||{};
-  const zu=!!(opt.treffer||opt.aktion), el=document.createElement("div"); el.className="sc"; el.id="sc";
+function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="function") tipWeg();
+  /* Handy: Blatt von unten · iPad: Fenster in der Mitte · PC: Fenster in der Mitte, ohne Kamera – Code eintippen (z. B. wenn jemand von der Baustelle anruft) */
+  const pc=typeof DESK!=="undefined"&&DESK.matches, mitte=pc||(typeof WIDE!=="undefined"?WIDE.matches:innerWidth>=744);
+  const zu=!!(opt.treffer||opt.aktion), el=document.createElement("div"); el.className="sc"+(mitte?" mitte":"")+(pc?" pc":""); el.id="sc";
+  if(pc&&!opt.titel) opt={...opt,titel:"Code eingeben"};
   const chip=(f,t)=>`<button type="button" class="sc-chip" data-sc="f" data-f="${f}" aria-pressed="${f==="alles"}"><span>${t}</span></button>`;
   el.innerHTML=`<div class="sc-scrim" data-sc="zu"></div><div class="sc-blatt" role="dialog" aria-modal="true" aria-label="${esc(opt.titel||"Aufkleber scannen")}">
     <div class="sc-griff"><i></i></div>
     <div class="sc-kopf"><b>${esc(opt.titel||"Aufkleber scannen")}</b><button type="button" class="sc-rk" data-sc="zu" aria-label="Schließen">${scSvg("zu")}</button></div>
     <div class="sc-cam"><video playsinline muted autoplay></video><div class="sc-loch"><i class="sc-e e1"></i><i class="sc-e e2"></i><i class="sc-e e3"></i><i class="sc-e e4"></i></div>
       <button type="button" class="sc-licht" data-sc="licht" aria-label="Taschenlampe" hidden>${scSvg("licht")}</button><p class="sc-hin" id="scHin">Kamera wird gestartet …</p>
-      <button type="button" class="sc-pill" data-sc="nr">${scSvg("tast")}<span>Nummer eintippen</span></button></div>
+      <button type="button" class="sc-pill" data-sc="nr">${scSvg("tast")}<span>Code eintippen</span></button></div>
     <div class="sc-karte" id="scKarte" hidden></div>
     <div class="sc-rest">
-      <div class="sc-ein" hidden><input id="scNr" placeholder="Nummer, z. B. 4K7 P2M" autocomplete="off" autocapitalize="characters" enterkeyhint="go" maxlength="9"><button type="button" class="sc-ok" data-sc="nrOk">${zu?"Zuordnen":"Öffnen"}</button></div>
+      <div class="sc-ein" hidden>${pc?`<span class="sc-ein-ic">${scSvg("qr")}</span>`:""}<input id="scNr" placeholder="Code, z. B. 4K7 P2M" autocomplete="off" autocapitalize="characters" enterkeyhint="go" maxlength="9"><button type="button" class="sc-ok" data-sc="nrOk">${zu?"Zuordnen":"Öffnen"}</button></div>
       ${zu?"":`<div class="sc-chips">${chip("alles","Alles")+chip("vt","Verteiler")+chip("schrank","Netzwerkschrank")}</div><div id="scListe"></div>`}</div></div>`;
   document.body.appendChild(el); document.body.classList.add("sc-offen"); addEventListener("keydown",scTaste);
   SC={el,opt,aus:false,pause:false,st:null,licht:false,filter:"alles"}; scListe();
   requestAnimationFrame(()=>el.classList.add("da"));
   el.addEventListener("click",scKlick); el.querySelector("#scNr").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); scNrOk(); } });
+  /* Eingabe gleich als „4K7 P2M“ zeigen – so wie auf dem Aufkleber */
+  el.querySelector("#scNr").addEventListener("input",e=>{ const i=e.target, r=i.value.toUpperCase().replace(/[^0-9A-Z]/g,"").slice(0,6), v=r.length>3?r.slice(0,3)+" "+r.slice(3):r; if(i.value!==v) i.value=v; });
   /* nach unten ziehen schließt */
   const bl=el.querySelector(".sc-blatt"); let y0=null, dy=0;
-  el.querySelectorAll(".sc-griff,.sc-kopf").forEach(z=>{ z.addEventListener("touchstart",e=>{ y0=e.touches[0].clientY; dy=0; bl.style.transition="none"; },{passive:true});
+  if(!mitte) el.querySelectorAll(".sc-griff,.sc-kopf").forEach(z=>{ z.addEventListener("touchstart",e=>{ y0=e.touches[0].clientY; dy=0; bl.style.transition="none"; },{passive:true});
     z.addEventListener("touchmove",e=>{ if(y0==null) return; dy=Math.max(0,e.touches[0].clientY-y0); bl.style.transform=`translateY(${dy}px)`; },{passive:true});
     z.addEventListener("touchend",()=>{ if(y0==null) return; y0=null; bl.style.transition=""; bl.style.transform=""; if(dy>90) scZu(); }); });
   const hin=t=>{ const h=el.querySelector("#scHin"); if(h) h.textContent=t; };
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||(typeof DESK!=="undefined"&&DESK.matches)){ el.classList.add("ohne"); hin("Nummer vom Aufkleber eintippen"); scEingabe(true); return; }
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||(typeof DESK!=="undefined"&&DESK.matches)){ el.classList.add("ohne"); hin(pc?"Der Code steht auf dem QR-Aufkleber unter „Anlage“ – 6 Zeichen, z. B. 4K7 P2M.":"Code vom Aufkleber eintippen"); scEingabe(true); return; }
   const cam=SC;
   navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}},audio:false}).then(async st=>{
     if(cam.aus){ st.getTracks().forEach(t=>t.stop()); return; } cam.st=st; const vid=el.querySelector("video"); vid.srcObject=st; try{ await vid.play(); }catch(e){}
     hin("Aufkleber in den Rahmen halten");
     try{ const tr=st.getVideoTracks()[0], cap=tr.getCapabilities?tr.getCapabilities():{}; if(cap.torch) el.querySelector('[data-sc="licht"]').hidden=false; }catch(e){}
     let det=null; try{ if("BarcodeDetector" in window&&(await BarcodeDetector.getSupportedFormats()).includes("qr_code")) det=new BarcodeDetector({formats:["qr_code"]}); }catch(e){}
-    let jq=null; if(!det){ try{ jq=window.jsQR||await new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="../vendor/jsqr.min.js"; s.onload=()=>ok(window.jsQR); s.onerror=()=>no(); document.head.appendChild(s); }); }catch(e){ hin("Scanner braucht einmal Internet – Nummer eintippen"); return; } }
+    let jq=null; if(!det){ try{ jq=window.jsQR||await new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="../vendor/jsqr.min.js"; s.onload=()=>ok(window.jsQR); s.onerror=()=>no(); document.head.appendChild(s); }); }catch(e){ hin("Scanner braucht einmal Internet – Code eintippen"); return; } }
     const cv=document.createElement("canvas"), cx=cv.getContext("2d",{willReadFrequently:true}); let zuletzt="";
     const runde=async()=>{ if(cam.aus) return; if(!cam.pause&&vid.readyState>=2){ let t="";
         try{ if(det){ const r=await det.detect(vid); t=r[0]&&r[0].rawValue||""; }
@@ -75,15 +80,15 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{};
         if(t){ const c=scNorm(t); if(c) scTreffer(c); else if(t!==zuletzt){ zuletzt=t; hin("Das ist kein Irrgang-Aufkleber"); setTimeout(()=>{ if(SC===cam&&!cam.pause) hin("Aufkleber in den Rahmen halten"); },1800); } } }
       setTimeout(runde,det?120:180); };
     runde();
-  }).catch(e=>{ if(cam.aus) return; el.classList.add("ohne"); hin(/NotAllowed|Permission/i.test(e&&e.name||"")?"Kamera nicht erlaubt – Nummer eintippen":"Keine Kamera – Nummer eintippen"); scEingabe(true); }); }
+  }).catch(e=>{ if(cam.aus) return; el.classList.add("ohne"); hin(/NotAllowed|Permission/i.test(e&&e.name||"")?"Kamera nicht erlaubt – Code eintippen":"Keine Kamera – Code eintippen"); scEingabe(true); }); }
 function scEingabe(an){ if(!SC) return; const e=SC.el.querySelector(".sc-ein"), n=SC.el.querySelector('[data-sc="nr"]'); e.hidden=!an; if(n) n.hidden=an; if(an) setTimeout(()=>SC&&SC.el.querySelector("#scNr").focus(),60); }
-function scNrOk(){ if(!SC) return; const c=scNorm(SC.el.querySelector("#scNr").value); if(!c){ const h=SC.el.querySelector("#scHin"); if(h) h.textContent="Die Nummer hat 6 Zeichen, z. B. 4K7 P2M"; return; } SC.el.querySelector("#scNr").blur(); scTreffer(c); }
+function scNrOk(){ if(!SC) return; const c=scNorm(SC.el.querySelector("#scNr").value); if(!c){ const h=SC.el.querySelector("#scHin"); if(h) h.textContent="Der Code hat 6 Zeichen, z. B. 4K7 P2M"; return; } SC.el.querySelector("#scNr").blur(); scTreffer(c); }
 function scTreffer(c){ if(!SC||SC.pause) return; SC.pause=true; SC.c=c; if(navigator.vibrate) try{ navigator.vibrate(40); }catch(e){}
   const T=(SC.opt.treffer||scSuche)(c)||{titel:`Aufkleber ${scZeig(c)}`,sub:"",ic:"vt",knopf:"Öffnen"}; SC.T=T;
   SC.el.classList.add("treffer"); const k=SC.el.querySelector("#scKarte");
   k.innerHTML=`<div class="sc-k"><span class="sc-av">${scSvg(T.ic||"vt")}</span><div class="sc-kt"><b>${esc(T.titel)}</b>${T.sub?`<small>${esc(T.sub)}</small>`:""}<span class="sc-nr">${esc(scZeig(c))}</span></div></div>
-    <div class="sc-kb"><button type="button" class="sc-n" data-sc="weiter">Weiter scannen</button><button type="button" class="sc-h" data-sc="los">${esc(T.knopf||"Öffnen")}</button></div>`;
-  k.hidden=false; }
+    <div class="sc-kb"><button type="button" class="sc-n" data-sc="weiter">${SC.el.classList.contains("pc")?"Anderer Code":"Weiter scannen"}</button><button type="button" class="sc-h" data-sc="los">${esc(T.knopf||"Öffnen")}</button></div>`;
+  k.hidden=false; if(SC.el.classList.contains("pc")) setTimeout(()=>{ const l=SC&&SC.el.querySelector('[data-sc="los"]'); if(l) l.focus(); },30); }
 function scLos(c,T){ const f=SC&&SC.opt.aktion, art=SC&&SC.filter; if(!f) scMerken(c,T); scZu();
   if(f){ f(c); return; } if(typeof qrOeffnen==="function"){ if(typeof qrZu!=="undefined") SC_ART=art==="schrank"?"schrank":"vt"; qrOeffnen(c); return; }
   location.href=`../echeck/#qr=${encodeURIComponent(c)}${art==="schrank"?"&art=schrank":""}`; }
@@ -95,7 +100,7 @@ function scKlick(e){ const b=e.target.closest("[data-sc]"); if(!b||!SC) return; 
   else if(a==="f"){ SC.filter=b.dataset.f; SC.el.querySelectorAll('[data-sc="f"]').forEach(x=>x.setAttribute("aria-pressed",String(x===b))); scListe(); }
   else if(a==="alt"){ const c=b.dataset.c, x=scZuletzt().find(z=>z.c===c); scLos(c,x); }
   else if(a==="licht"){ const tr=SC.st&&SC.st.getVideoTracks()[0]; if(!tr) return; SC.licht=!SC.licht; tr.applyConstraints({advanced:[{torch:SC.licht}]}).catch(()=>{}); b.classList.toggle("an",SC.licht); }
-  else if(a==="weiter"){ SC.pause=false; SC.el.classList.remove("treffer"); SC.el.querySelector("#scKarte").hidden=true; const n=SC.el.querySelector("#scNr"); if(n) n.value=""; }
+  else if(a==="weiter"){ SC.pause=false; SC.el.classList.remove("treffer"); SC.el.querySelector("#scKarte").hidden=true; const n=SC.el.querySelector("#scNr"); if(n){ n.value=""; if(SC.el.classList.contains("ohne")) n.focus(); } }
   else if(a==="los") scLos(SC.c,SC.T); }
 /* Knopf oben rechts neben der Glocke – in jeder App gleich */
 function scKnopf(){ const gl=document.getElementById("glBtn"); if(!gl||document.getElementById("scBtn")) return;
