@@ -20,7 +20,7 @@ const kxRang=id=>{ const i=kxTypen().findIndex(t=>t.id===id); return i<0?999:i; 
 const kxNorm=g=>{ g.bauteile=g.bauteile||[]; const k=g.knx=g.knx||{}; k.linien=k.linien||[]; k.geraete=k.geraete||[]; return k; };
 const kxProjekte=()=>live("gebaeude").filter(g=>g.knx&&g.knx.an).map(g0=>ecGebNorm(g0));
 function kxRaeume(g){ const B=g.bauteile||[], out=[];
-  ecEtagen(g).forEach(e=>e.raeume.forEach((r,i)=>out.push({r,e,b:r.bauteilId&&B.find(x=>x.id===r.bauteilId),i})));
+  ecEtagen(g).forEach(e=>e.raeume.forEach((r,i)=>out.push({r,e,b:(r.bauteilId||e.bauteilId)&&B.find(x=>x.id===(r.bauteilId||e.bauteilId)),i})));
   return out.sort((x,y)=>{ const bx=x.b?B.indexOf(x.b):-1, by=y.b?B.indexOf(y.b):-1; return bx-by; }); }
 const kxRaumInfo=(g,rid)=>kxRaeume(g).find(x=>x.r.id===rid);
 const kxGruppe=x=>[x.b&&(/^bauteil/i.test(x.b.name)?x.b.name:`Bauteil ${x.b.name}`),x.e.name].filter(Boolean).join(" · ");
