@@ -1814,3 +1814,12 @@ html body.sc-eng .navbar,html body.sc-eng.rail-open .navbar{transform:translateX
 #kxPop .kx-knoepfe .btn-filled,#kxPop .kx-knoepfe .btn-tonal{min-height:56px;font-size:17px}
 .kx-warte .kx-knoepfe .btn-filled{min-height:52px}
 .kx-knoepfe .btn-tonal,.kx-knoepfe .btn-filled{display:inline-flex;align-items:center;gap:8px}.kx-knoepfe .ic{width:18px;height:18px}.kx-knoepfe .btn-tonal .ic{fill:currentColor}
+/* ===== Gebäude vorab anlegen (gebaeude-verw.js) ===== */
+.gv-bts,.gv-rs{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px;margin:4px 0 8px}
+.gv-bt,.gv-r{border:0;border-radius:14px;background:var(--sc-high);color:var(--on-surface);padding:10px 6px;font:600 15px var(--font);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;min-height:52px;justify-content:center;-webkit-tap-highlight-color:transparent}
+.gv-bt{background:var(--sec-c);color:var(--on-sec-c)}
+.gv-bt small,.gv-r small{font-size:11px;font-weight:500;color:var(--on-sv)}.gv-bt small{color:var(--on-sec-c);opacity:.8}
+.gv-bt:active,.gv-r:active{background:var(--sc-highest)}
+.gv-gs{font-weight:500;color:var(--on-sv);margin-left:6px}
+.gv-unten{margin-top:20px}.gv-unten .btn-tonal{display:inline-flex;align-items:center;gap:8px}.gv-unten .ic{width:18px;height:18px;fill:currentColor}
+.gv-schieb{display:flex;align-items:center;gap:6px;margin-top:14px}.gv-schieb .meta{flex:1;margin:0 4px}

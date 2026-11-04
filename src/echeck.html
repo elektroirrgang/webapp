@@ -2137,7 +2137,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   const rkS=nav.v==="ec"&&!login?ecRkOffen():null;   /* Netzwerkschrank offen: eigene Ebene wie die Ladestation in EVSE */
   $("#menuBtn").hidden=!VIEW_KIND[nav.v]&&!rkS; kdKopfKnopf();
   if(rkS&&!WIDE.matches){ $("#tabs").innerHTML=ecRkTabsHtml(); $("#tabs").hidden=false; }
-  const active=katV?"netzwerk":top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]||nav.v==="ohnekunde"||nav.v==="legende"||nav.v==="vt"?"kunden":nav.v==="kx"?"knx":nav.v==="ec"?ecListeV((DB.echecks.get(nav.id)||{}).art):"anlagen";
+  const active=katV?"netzwerk":top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":VIEW_KIND[nav.v]||nav.v==="ohnekunde"||nav.v==="legende"||nav.v==="vt"||nav.v==="geb"?"kunden":nav.v==="kx"?"knx":nav.v==="ec"?ecListeV((DB.echecks.get(nav.id)||{}).art):"anlagen";
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
     +(()=>{ if(nav.v==="kx"&&typeof KX_TABS!=="undefined"){ const a=kxTab(); return KX_TABS.map(([k,t,i])=>`<button class="nav-item" data-act="kxTab" data-v="${k}" ${k===a?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join(""); }
@@ -2154,6 +2154,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   else if(nav.v==="netzwerk"){ title="Netzwerk"; body=ecListeView("netz"); fab=["ecNeuN","Prüfung","add"]; }
   else if(nav.v==="netzkatalog"){ title="Netzwerk-Katalog"; body=ecKatalogView(); }
   else if(nav.v==="knx"){ title="KNX"; body=knxView(); fab=["kxNeu","Projekt","add"]; }
+  else if(nav.v==="geb"){ title=ecOrt(nav.ort).titel; sub="Gebäude"; body=gvView(); fab=["gvRaumNeu","Räume","add"]; }
   else if(nav.v==="kx"){ const g=kxGebAkt(); if(!g){ nav={v:"knx"}; return render(); } ({title,sub}=kxTitel(g)); body=kxProjektView(g); fab=kxFab(g); }
   else if(nav.v==="vt"){ const L=vtL(nav.g,nav.id); if(!L){ nav={v:"anlagen"}; return render(); } title=L.titel; sub="Verteiler"; body=legView(L); fab=legFab(L); }
   else if(nav.v==="ohnekunde"){ title="Ohne Kunde"; sub="Ablage für alles ohne Kunden"; body=legOhneView(); fab=["legNeu","Legende","add"]; }
@@ -2251,8 +2252,8 @@ function kundenView(){
   if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden und Standorte sind dieselben wie in der Übersicht und den Apps EVSE und Baustelle.</p></div><div class="narrow">${legOhneEintrag(false)}</div>`;
   return `<div class="narrow">${searchBar("Kunde, Ort, Kontakt",fKnopf("kunden"))}${query?"":kDoppeltKarte()}<div id="res">${kundenListe()}</div></div>`;
 }
-function kundeView(k){ return kdSeite(k,"kunden",ecBeiKunde("kunden",k)+vtBeiKunde("kunden",k)+kxBeiKunde("kunden",k)); }
-function standortView(s){ return kdSeite(s,"standorte",ecBeiKunde("standorte",s)+vtBeiKunde("standorte",s)+kxBeiKunde("standorte",s)); }
+function kundeView(k){ return kdSeite(k,"kunden",ecBeiKunde("kunden",k)+gvBeiKunde("kunden",k)+vtBeiKunde("kunden",k)+kxBeiKunde("kunden",k)); }
+function standortView(s){ return kdSeite(s,"standorte",ecBeiKunde("standorte",s)+gvBeiKunde("standorte",s)+vtBeiKunde("standorte",s)+kxBeiKunde("standorte",s)); }
 let locForm=null;
 function locDialog(kind,rec,parentId){
   locForm={kind,id:rec&&rec.id,parentId}; const r=rec||{}; if(rec) adrSplit(r);
@@ -2330,6 +2331,7 @@ function zurueck(){
   if(nav.v==="legende"){ go(legZuruck(DB.legenden.get(nav.id))); return; }
   if(nav.v==="ohnekunde"){ go({v:"kunden"}); return; }
   if(nav.v==="vt"){ go(vtZuruck(nav.g)); return; }
+  if(nav.v==="geb"){ go(nav.von||{v:"kunden"}); return; }
   if(nav.v==="kx"&&nav.raum){ nav.raum=null; render(); scrollTo(0,0); return; }
   if(nav.v==="kx"){ go(nav.von||{v:"knx"}); return; }
   if(nav.v==="ec"&&nav.schr){ nav.schr=null; render(); scrollTo(0,0); return; }   /* erst aus dem Schrank zurück zur Infrastruktur */
