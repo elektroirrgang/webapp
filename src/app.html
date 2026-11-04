@@ -1081,6 +1081,11 @@ function newProto(){
     p:{projekt:"", auftraggeber:"", auftragsnr:"", standort:"", datum:today(), pruefer:"", geraet:"Wiha MFT one", geraetSn:"", kal:"", adapter:"Fluke FEV300", art:"Erstprüfung", normen:["DIN VDE 0100-600","DIN VDE 0100-722"], netz:"TN-C-S", umfang:DEF_UMFANG},
     s:[newSaeule(1)], a:{maengel:"", funktion:DEF_FUNKTION, naechste:"", sigP:"", sigK:"", sigPName:"", sigKName:""}};
 }
+/* Plausibilitätsprüfung (plausi.js): Art je Messzeile und Bezug aus der Ladestation */
+const PL_ART={rpe:"rlo",riso:"riso",riso12:"riso",riso13:"riso",riso23:"riso",riso1pe:"riso",riso2pe:"riso",riso3pe:"riso",u1:"u",u2:"u",u3:"u",unpe:"unpe",zs1:"zs",zs2:"zs",zs3:"zs",ub:"ub",r1:"t1",r5:"t5",ria:"ria",rcdw:"ria",rcdwt:"t1"};
+function plCtx(el){ const m=/^s\.(\d+)\.lp\.(\d+)\.v\.(\w+)$/.exec(el.dataset.bind||""); if(!m||!cur) return {}; const s=cur.s[+m[1]], lp=s&&s.lp[+m[2]]; if(!lp) return {};
+  const z=zsInfo(s), f=s.absTyp==="LS B"?5:s.absTyp==="LS C"?10:0, zs=["zs1","zs2","zs3"].filter(k=>k==="zs1"||s.phasen!==1).map(k=>num(lp.v[k])).filter(x=>!isNaN(x));
+  return {In:num(s.absIn)||0,f,zul:isNaN(z.zul)?0:z.zul,idn:num(s.idn)||30,zs,zsHier:num(lp.v.zs1)||0}; }
 function zsInfo(s){
   const In=num(s.absIn);
   if((s.absTyp==="LS B"||s.absTyp==="LS C")&&In>0){
@@ -2204,7 +2209,7 @@ function saeuleView(){
       const txt=`<div class="txt"><div class="l">${esc(r.l)}</div><div class="s"><span data-soll="${r.k}">${esc(sollOf(r,s))}</span>${r.d?` · ${esc(r.d)}`:""}</div></div>`;
       if(r.type==="chk") h+=`<div class="mrow">${txt}<div class="ctl wide">${seg("chk",val,[["ok","i.O."],["nok","n.i.O."]],"ev").replace(/data-act="chk"/g,`data-act="chk" data-path="${path}"`)}</div></div>`;
       else if(r.type==="sel") h+=`<div class="mrow" data-dot="${path}" data-state="${e}">${txt}<div class="ctl wide"><div class="tf"><select id="${path}" data-bind="${path}" aria-label="${esc(r.l)}">${["",...r.opts].map(o=>`<option value="${esc(o)}" ${o===val?"selected":""}>${o?esc(o):"–"}</option>`).join("")}</select><span class="arr">${icon("drop")}</span></div></div></div>`;
-      else h+=`<div class="mrow" data-dot="${path}" data-state="${e}">${txt}<div class="ctl"><div class="tf"><input id="${path}" data-bind="${path}" inputmode="decimal" value="${esc(val)}" placeholder=" " autocomplete="off" aria-label="${esc(r.l)} in ${esc(r.u)}"><span class="sfx">${esc(r.u)}</span></div></div></div>`;
+      else h+=`<div class="mrow" data-dot="${path}" data-state="${e}">${txt}<div class="ctl"><div class="tf"><input id="${path}" data-bind="${path}" ${PL_ART[r.k]?`data-pl="${PL_ART[r.k]}"`:""} inputmode="decimal" value="${esc(val)}" placeholder=" " autocomplete="off" aria-label="${esc(r.l)} in ${esc(r.u)}"><span class="sfx">${esc(r.u)}</span></div></div></div>`;
     }
     h+=`</div>`; if(optOpen) h+=`</details>`;
     h+=`</section>`;
