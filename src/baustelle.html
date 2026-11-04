@@ -1922,7 +1922,7 @@ function fotoNachholen(){ if(!fotoBereit||META.sync.fotoAlle===CONFIG.shareUrl) 
   META.sync.fotoQueue=[...new Set([...(META.sync.fotoQueue||[]),...fotoCache.keys()])].filter(id=>!String(id).startsWith("demo-")); META.sync.fotoAlle=CONFIG.shareUrl; metaSave(); }
 async function fotoInit(){
   try{ fotoDB=await idbOpen(); const all=await idbAll(fotoDB);
-    const used=new Set([...live("eintraege").flatMap(e=>e.fotos||[]),...live("baustellen").flatMap(b=>afFotoIds(b)),...(entw?entw.fotos:[]),...notizFotos(),...(META.sync.fotoQueue||[])]);
+    const used=new Set([...live("eintraege").flatMap(e=>e.fotos||[]),...live("baustellen").flatMap(b=>afFotoIds(b)),...live("baustellen").flatMap(b=>(b.schreiben||[]).flatMap(s=>s.fotos||[])),...(entw?entw.fotos:[]),...notizFotos(),...(META.sync.fotoQueue||[])]);
     const orphan=[]; for(const [k,v] of all){ if(used.has(k)) fotoCache.set(k,v); else orphan.push(k); } fotoDel(orphan);
   }catch(e){ fotoDB=null; }
   fotoBereit=true; if(SYNC_ON&&ME.signedIn&&META.sync.fotoAlle!==CONFIG.shareUrl) syncSoon();
@@ -2287,7 +2287,7 @@ function baustelleView(b){
   if(nav.tab==="abnahme") return h+abnahmeView(b)+`</div>`;
   const NZ=notizenAlle().filter(n=>n.baustelleId===b.id&&!n.archiv);
   h+=`<div class="sec-row"><div class="sec-lbl">Notizen</div><button class="plus-k" data-act="neueNotizHier" aria-label="Notiz anlegen" title="Notiz anlegen">${icon("add")}</button></div>${NZ.length?nGrid(NZ):`<p class="meta">Eigene Notizen zur Baustelle – z. B. Tagesablauf, Checkliste oder Skizze.</p>`}`;
-  h+=vgBauAbschnitt(b);
+  h+=vgBauAbschnitt(b); if(typeof bsAbschnitt==="function") h+=bsAbschnitt(b);
   h+=`<div class="sec-row"><div class="sec-lbl">Übergaben</div><button class="plus-k" data-act="neuerEintrag" aria-label="Übergabe schreiben" title="Übergabe schreiben">${icon("add")}</button></div>`;
   h+=E.length?listOf(E.map((e,i)=>ekZeile(e,i===0))):`<p class="meta">Noch keine Übergabe. Am Ende des Tages kurz festhalten: Stand, was offen ist und welches Material morgen gebraucht wird.</p>`;
   if(typeof hbLink==="function") h+=E.length?hbLink("hb-bs-ende","Checkliste Baustellenabschluss"):hbLink("hb-bs-start","Checkliste Baustellenstart");

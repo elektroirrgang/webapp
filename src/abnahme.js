@@ -35,7 +35,9 @@ function abnahmeView(b){ const a=abDaten(b), v=a.v, ro=!canEdit(b), k=kundeOf(b.
       h+=`${ro?"":`<div class="fg"><div class="tf fl"><input id="ab_kname" data-ab="kname" value="${esc(v.kname||(k&&k.ansprech)||"")}" placeholder=" " autocomplete="off"><label for="ab_kname">Name des Kunden / Auftraggebers</label></div></div>`}
         <div class="ab-sigs">${box("k","Kunde",a.sigK,a.sigKName)}${box("m","Monteur",a.sigM,a.sigMName)}</div>
         <p class="sup" style="margin:10px 2px 0">Mit seiner Unterschrift erklärt der Kunde die Abnahme der aufgeführten Leistungen. Restarbeiten und Mängel sind oben festgehalten.</p>`; }
-    else { if(sec.uebern&&!ro) h+=`<button class="btn-text ab-uebern" data-act="abUebern">${icon("sync")}Aus den Übergaben übernehmen</button>`; h+=`<div class="fg">${sec.f.filter(f=>afSichtbar(f,v)).map(f=>abFeld(f,v,ro)).join("")}</div>`; }
+    else {       if(sec.uebern&&!ro) h+=`<button class="btn-text ab-uebern" data-act="abUebern">${icon("sync")}Aus den Übergaben übernehmen</button>`; h+=`<div class="fg">${sec.f.filter(f=>afSichtbar(f,v)).map(f=>abFeld(f,v,ro)).join("")}</div>`;
+      if(sec.id==="offen"&&v.restJa==="Ja"){ const r=a.restVg&&DB.vorgaenge&&DB.vorgaenge.get(a.restVg);
+        h+=`<p class="sup ab-rest">${r&&!r.deleted?`Als Auftrag ans Büro gemeldet${r.s&&r.s.ausgefuehrt?" – ausgeführt":r.s&&r.s.termin?` – Termin ${esc(deDate(r.s.termin.datum))}`:""}. <button class="btn-text inl" data-act="abRestZeig">Öffnen</button>`:"Wird beim Speichern automatisch als Auftrag ans Büro gemeldet – dann geht es nicht unter."}</p>`; } }
     h+=`</section>`; }
   const P=(typeof PROT_B==="function"?PROT_B():[]).filter(x=>x.baustelleId===b.id&&x.art==="Abnahmeprotokoll");
   h+=`</div><div class="af-fuss"><span class="meta">${P.length?`${P.length} Fassung${P.length>1?"en":""} in der Bibliothek`:"Eingaben werden automatisch gesichert."}</span>${ro?"":`<button class="btn-filled" data-act="abPdf">${icon("done")}Speichern</button>`}</div>`;
@@ -44,6 +46,7 @@ const abB=()=>nav.v==="baustelle"&&nav.tab==="abnahme"?DB.baustellen.get(nav.id)
 function abPills(b){ const a=abDaten(b); ABN.forEach(sec=>{ const e=document.querySelector(`[data-abp="${sec.id}"]`); if(!e) return; const [x,y]=abStand(sec,a); e.textContent=`${x} / ${y}`; e.className=`pill ${x===0?"open":x>=y?"ok":"wip"}`; }); }
 document.addEventListener("input",e=>{ const el=e.target.closest&&e.target.closest("[data-ab]"); if(!el) return; const b=abB(); if(!b||!canEdit(b)) return; abDaten(b).v[el.dataset.ab]=el.value; afSpeichern(b); abPills(b); });
 document.addEventListener("click",e=>{ const el=e.target.closest&&e.target.closest('[data-act^="ab"]'); if(!el||!/^ab[A-Z]/.test(el.dataset.act)) return; const b=abB(); if(!b) return; e.stopPropagation();
+  if(el.dataset.act==="abRestZeig"){ const r=abDaten(b).restVg&&DB.vorgaenge.get(abDaten(b).restVg); if(r&&typeof vgOpen==="function") vgOpen(r); return; }
   if(!canEdit(b)) return; const a=abDaten(b), act=el.dataset.act, neu=()=>{ const y=scrollY; render(); scrollTo(0,y); };
   if(act==="abSeg"){ const k=el.dataset.k; a.v[k]=a.v[k]===el.dataset.v?"":el.dataset.v; afSpeichern(b,true); neu(); return; }
   if(act==="abUebern"){ const E=eintraegeVon(b.id).slice().sort((x,y)=>String(x.datum||"").localeCompare(String(y.datum||""))), L=E.filter(x=>String(x.stand||"").trim());
@@ -108,8 +111,17 @@ async function abPdf(b){
   const fz=PROT_B().filter(x=>x.baustelleId===b.id&&x.art==="Abnahmeprotokoll").length+1;
   let x=null; try{ x=await protAblegenB({art:"Abnahmeprotokoll",titel:[k&&k.name,b.name].filter(Boolean).join(" · "),name,datum:v.datum||today(),auftragsnr:b.auftragsnr||"",
     baustelleId:b.id,kundeId:b.kundeId||"",standortId:b.standortId||"",fassung:fz,unterschrift:!!a.sigK,demo:!!b.demo},blob); }catch(e){}
+  const rv=abRestAuftrag(b);
   const y0=scrollY; render(); scrollTo(0,y0);
-  if(x) toast(fz>1?`Gespeichert – Fassung ${fz} liegt in der Bibliothek`:"Gespeichert – das Abnahmeprotokoll liegt in der Bibliothek","Ansehen",()=>pvOeffnen(x.id)); else toast("Gespeichert. Ablage in der Bibliothek fehlgeschlagen"); }
+  if(x) toast(`${fz>1?`Gespeichert – Fassung ${fz} liegt in der Bibliothek`:"Gespeichert – das Abnahmeprotokoll liegt in der Bibliothek"}${rv?" · Restarbeiten ans Büro gemeldet":""}`,"Ansehen",()=>pvOeffnen(x.id)); else toast("Gespeichert. Ablage in der Bibliothek fehlgeschlagen"); }
+/* Restarbeiten ⇒ Vorgang auf der Auftragstafel (wie „Auftrag melden“: Anfrage ans Büro). Je Abnahme genau einer – beim erneuten Speichern wird er nachgezogen. */
+function abRestAuftrag(b){ const a=abDaten(b), v=a.v, t=String(v.rest||"").trim(); if(v.restJa!=="Ja"||!t||!DB.vorgaenge) return null;
+  const txt=`Restarbeiten aus der Abnahme vom ${deDate(v.datum||today())}${v.restBis?` – erledigt bis ${deDate(v.restBis)}`:""}:\n${t}`;
+  let r=a.restVg&&DB.vorgaenge.get(a.restVg);
+  if(r&&!r.deleted){ if(r.anliegen!==txt&&!(r.s&&r.s.ausgefuehrt)){ r.anliegen=txt; r.frist=v.restBis||""; saveRec("vorgaenge",r); } return r; }
+  const k=kundeOf(b.kundeId), jetzt=Date.now();
+  r=Object.assign({id:uid(),s:{anruf:{wer:who(),at:jetzt,vorOrt:true},anfrage:{wer:who(),at:jetzt}},kundeId:k?k.id:"",kundeName:k?"":b.name,tel:(k&&k.tel)||"",anliegen:txt,frist:v.restBis||"",dringend:false,vonBau:b.id,ausAbnahme:b.id},b.demo?{demo:true}:{});
+  saveRec("vorgaenge",r,true); a.restVg=r.id; afSpeichern(b,true); return r; }
 /* ohne Unterschrift des Kunden: einmal nachfragen (zweites Tippen speichert trotzdem, z. B. als Entwurf) */
 let AB_OHNE=0;
 function confirmOhne(b){ if(Date.now()-AB_OHNE<6000){ AB_OHNE=0; return true; } AB_OHNE=Date.now(); toast("Der Kunde hat noch nicht unterschrieben – noch einmal „Speichern“ tippen, um es trotzdem abzulegen"); return false; }
