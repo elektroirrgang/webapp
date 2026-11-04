@@ -1409,3 +1409,31 @@ body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dl
 .lr-k.knapp{background:var(--wip-c)}.lr-k.knapp .w,.lr-k.knapp .t,.lr-k.knapp .s{color:var(--on-wip-c)}
 .lr-k.bad{background:var(--err-c)}.lr-k.bad .w,.lr-k.bad .t,.lr-k.bad .s{color:var(--on-err-c)}
 .lr-hin{font-size:12.5px;line-height:1.45;color:var(--on-sv);margin:10px 4px 0}
+
+/* „Liste einfügen“ in Schritten */
+.tf select{padding-right:44px}
+.vti-stepper{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:-4px 0 16px}
+.vti-st{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;height:40px;padding:0 8px;border:0;border-radius:20px;background:var(--sc-high);color:var(--on-sv);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.vti-st b{display:grid;place-items:center;flex:none;width:22px;height:22px;border-radius:11px;background:var(--sc-highest);font-size:12px}
+.vti-st span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vti-st.an{background:var(--pc);color:var(--on-pc)}.vti-st.an b{background:var(--primary);color:var(--on-primary)}
+.vti-st.fertig b{background:var(--on-sv);color:var(--surface)}
+.vti-s{display:grid;gap:12px}.vti-s[hidden]{display:none!important}
+.vti-tipp code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+.vti-ziele{display:grid;gap:6px;margin:6px 0 4px}
+.vti-ziel{display:grid;grid-template-columns:40px minmax(0,1fr) 22px;gap:12px;align-items:center;width:100%;padding:10px 14px 10px 10px;border:0;border-radius:16px;background:var(--feld);color:var(--on-surface);font:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.vti-ziel .av{display:grid;place-items:center;width:40px;height:40px;border-radius:20px;background:color-mix(in srgb,var(--on-surface) 8%,transparent);color:var(--primary)}
+.vti-ziel .lt{display:grid;min-width:0}.vti-ziel .h{font-weight:700;font-size:15px}.vti-ziel .s{font-size:12.5px;color:var(--on-sv)}
+.vti-radio{width:22px;height:22px;border-radius:11px;background:color-mix(in srgb,var(--on-surface) 16%,transparent)}
+.vti-ziel[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}.vti-ziel[aria-pressed="true"] .s{color:var(--on-pc);opacity:.8}
+.vti-ziel[aria-pressed="true"] .vti-radio{background:var(--primary);box-shadow:inset 0 0 0 6px var(--primary),inset 0 0 0 11px var(--on-primary)}
+.vti-ziele+.vti-neu{margin-top:10px}
+.vti-chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:-4px -24px 2px;padding:0 24px;-webkit-overflow-scrolling:touch}
+.vti-chips::-webkit-scrollbar{display:none}.vti-chips .chip{flex:none}
+.vti-wege{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px}
+.vti-weg{display:flex;align-items:center;justify-content:center;gap:10px;height:56px;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.vti-weg .ic{width:22px;height:22px;color:var(--primary)}
+.vti-weg.vti-mic{background:var(--pc);color:var(--on-pc)}.vti-weg.vti-mic .ic{color:var(--on-pc)}
+.vti-weg.vti-mic.an{background:var(--err);color:#fff}.vti-weg.vti-mic.an .ic{color:#fff}
+.vti-s .vti-text textarea{min-height:240px}
+.vti-s .vti-tipp{margin:2px 4px 0;font-size:12.5px;line-height:1.45;color:var(--on-sv)}

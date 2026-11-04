@@ -91,6 +91,12 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="vtImpHier"){ vtImpHier(); return; }
   if(a==="vtImpOk"){ vtImpAnlegen(); return; }
   if(a==="vtImpDatei"){ vtImpDatei(); return; } },true);
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('#dlg [data-act^="vti"]'); if(!b||b.disabled) return; const a=b.dataset.act;
+  if(a==="vtiWeiter"){ e.stopPropagation(); if(vtiPruefSchritt(vtiSchritt+1)) vtiZeig(vtiSchritt+1); return; }
+  if(a==="vtiZurueck"){ e.stopPropagation(); vtiZeig(Math.max(1,vtiSchritt-1)); return; }
+  if(a==="vtiSchritt"){ e.stopPropagation(); const n=+b.dataset.s; if(n<=vtiSchritt||vtiPruefSchritt(n)) vtiZeig(n); return; }
+  if(a==="vtiZielW"){ e.stopPropagation(); const z=document.getElementById("f_vtiZiel"); if(z) z.value=b.dataset.v; b.parentElement.querySelectorAll(".vti-ziel").forEach(x=>x.setAttribute("aria-pressed",x===b));
+    const neu=document.querySelector("#dlg .vti-neu"); if(neu) neu.hidden=!!b.dataset.v; return; } },true);
 
 /* ===== Liste einfügen: Legende schnell aus einer Liste (Papierliste abgetippt, aus Excel kopiert oder als Datei) =====
    Eine Zeile pro Gerät, Spalten mit ; oder Tab (oder |). Die Reihenfolge der Spalten ist egal – erkannt wird am Inhalt:
@@ -98,14 +104,14 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
    „# Text“ = Überschrift, „Reserve“ = Reserveplatz. LS-Zeilen unter einem FI gehören zu ihm; alternativ Spalte „FI1“/„FI 2“ als Verweis.
    Fehlende Kennzeichen vergibt die App nach eurem Schema (F 1.0 / F 1.0.1 …). Übernommen wird über vtSchreiben – wie aus dem Editor. */
 IC.vtListe=IC.vtListe||"M14 10H3v2h11v-2zm0-4H3v2h11V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM3 16h7v-2H3v2z";
-const VTI_BSP="FI 1\nHerd\nHerd\nHerd\nB16; Küche\nB16; Flur\nReserve\n---\nFI 2\n1 Kinderzimmer\n2 Garage\n3x leer";
+const VTI_BSP="FI 1\nB16; Küche\nB16; Flur\nHerd 3-polig\nReserve\n---\nFI 2\nKinderzimmer\nGarage";
 const vtiRcbo=t=>/FI\s*\/\s*LS|LS\s*\/\s*FI|RCBO/i.test(t);
 const vtiRcd=t=>!vtiRcbo(t)&&(/\b(FI|RCD|RCCB|Fehlerstrom)/i.test(t)||/\d\s*mA\b/i.test(t)||/\b0[,.]03\s*A\b/i.test(t));
 const vtiLs=t=>/(^|[^A-Za-z])[BCDKZ]\s?(6|10|13|16|20|25|32|35|40|50|63|80|100|125)(\s?A)?(?![\d])/i.test(t)||/^(LS\s*)?\d{1,3}\s?A$/i.test(t.trim());
 const vtiKz=t=>/^-?(F|Q)\s?\d+(\.\d+)*$/i.test(t.trim())||/^\d{1,3}$/.test(t.trim());
 const vtiFiRef=t=>{ const m=t.trim().match(/^(FI|RCD)\s*-?\s*(\d+)$/i); return m?+m[2]:0; };
 const vtiLeitung=t=>/\b(NYM|NYY|NHXMH|H07|H05|J-?Y|Cu|mm²|mm2)\b|\b\d\s?[x×]\s?\d+([,.]\d+)?\b/i.test(t);
-function vtiPole(t){ return /\b(3|4)\s?-?\s?(p|pol|polig|phasig)\b|\b3\s?[x×]\s?[BCD]|\b3L\b|400\s?V|3~|dreh/i.test(t)?3:1; }
+function vtiPole(t){ return /\b(3|4|drei|vier)\s?-?\s?(p|pol|polig|phasig)\b|\b3\s?[x×]\s?[BCD]|\b3L\b|400\s?V|3~|dreh/i.test(t)?3:1; }
 function vtiRcdSchutz(t){ const s=t.replace(/(\d)[,.](\d)/g,"$1.$2"), A=s.match(/(\d{2,3})\s*A(?![a-z])/i), m=s.match(/(\d{2,3})\s*mA/i)||(/\b0\.03\s*A/i.test(s)?[0,"30"]:/\b0\.3\s*A/i.test(s)?[0,"300"]:null),
     y=s.match(/Typ\s*(A|B\+?|F|AC|EV)\b/i)||s.match(/\b(A|B\+?|F)\s*$/);
   const w={in:A?A[1]:"",idn:m?m[1]:"",typ:y?y[1].toUpperCase():""}; return vtRcdSchutz(w)||t.trim(); }
@@ -150,7 +156,7 @@ function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0, umbruch=false; con
       const nm=(schutz||bez).trim().match(/^(FI|RCD)\s*-?\s*(\d+)$/i); if(nm&&!kz){ kz=`${nm[1].toUpperCase()} ${nm[2]}`; if(schutz) schutz="FI"; else bez=""; }
       const e={id:uid(),art:"rcd",kz,bez:/^(FI|RCD)\b/i.test(bez)||vtiRcd(bez)?"":bez,schutz:vtiRcdSchutz(schutz||bez),_nr:rcdNr};
       if(nm) e.schutz=""; const p=/\b2\s?-?\s?(p|pol|polig)\b/i.test(alles)?2:0; if(p) e.te=2; rcds.push(e); neu(e); return; }
-    const pol=vtiPole(alles), bez2=pol===3?bez.replace(/\s*\b(?:3|4)\s?-?\s?(?:p|pol|polig|phasig)\b\.?|\s*\bdrehstrom\b/gi,"").replace(/\s+/g," ").trim()||bez:bez;   /* „Herd 3-polig“ → Herd, 3-polig */
+    const pol=vtiPole(alles), bez2=pol===3?bez.replace(/\s*\b(?:3|4|drei|vier)\s?-?\s?(?:p|pol|polig|phasig)\b\.?|\s*\bdrehstrom\b/gi,"").replace(/\s+/g," ").trim()||bez:bez;   /* „Herd 3-polig“ → Herd, 3-polig */
     const e={id:uid(),art:"sk",kz,bez:bez2,schutz:schutz?vtiLsSchutz(schutz):"",pole:pol}; if(vtiRcbo(schutz||"")&&e.pole!==3) e.te=2; if(leitung) e.leitung=leitung; if(ref) e._ref=ref; if(!schutz) fehlt.push(e.id);
     neu(e); });
   /* Verweise „FI 2“: Stromkreis hinter den zweiten FI (und dessen andere Stromkreise) setzen */
@@ -174,21 +180,46 @@ function vtiReihen(E,teR){ const n=teR||12; let r=0, te=0, erst=true; return E.m
   if(erst){ r=1; te=0; erst=false; } else if(e.umbruch||te+w>n){ r++; te=0; } te+=w; return r; }); }
 let vtImp=null;
 function vtImpZiele(kid){ const orte=["k:"+kid,...standorteVon(kid).map(s=>s.id)], L=[]; orte.forEach(o=>{ const g=vtGeb(ecGebId(o)); if(g) g.verteiler.forEach(v=>L.push({g,v,o})); }); return L; }
+/* „Liste einfügen“ in drei Schritten (04.11.2026): 1 Verteiler · 2 Stromkreise · 3 Prüfen. Alle Felder bleiben im Dialog, nur der Schritt wird umgeschaltet. */
+let vtiSchritt=1;
 function vtImpDlg(kind,id,vorwahl){ const s=kind==="standorte"&&standortOf(id), k=kind==="kunden"?kundeOf(id):s?kundeOf(s.kundeId):null; if(!k) return;
   const Z=vtImpZiele(k.id).filter(x=>!s||x.o===s.id); vtImp={kid:k.id,ort:s?s.id:null,Z};
-  const ziel=vorwahl||"";
-  dialog("Liste einfügen",`<div class="fg1">
-      ${Z.length?sf("vtiZiel","In welchen Verteiler?",ziel,[["","+ Neuer Verteiler"],...Z.map(x=>[x.g.id+"|"+x.v.id,`${x.v.name||"Verteiler"} (${x.g.stromkreise.filter(t=>t.vId===x.v.id).length} Stromkreise) – anhängen`])],{form:true}):""}
-      <div class="vti-neu"${ziel?" hidden":""}>${tf("vtiName","Name des Verteilers",Z.length?"":"HV",{form:true,ph:"z. B. UV EG"})}
-        <div class="chips ec-wahl" style="margin:8px 0 4px">${LEG_VT.map(v=>`<button type="button" class="chip" data-act="legSetz" data-ziel="f_vtiName" data-v="${esc(v)}">${esc(v)}</button>`).join("")}</div>
-        ${s?"":ecOrtFeld(k.id)}
-        ${Z.length?sf("vtiVon","Eingespeist aus",(Z.find(x=>x.v.art==="hv")||{v:{}}).v.id||"",[["","– Hausanschluss / weiß ich nicht –"],...Z.map(x=>[x.v.id,x.v.name||"Verteiler"])],{form:true}):""}</div>
-      <label class="lbl vti-lbl" for="vtiText">Liste – eine Zeile pro Gerät</label><div class="tf vti-text"><textarea id="vtiText" spellcheck="false" placeholder="${esc(VTI_BSP)}"></textarea></div>
-      <div class="vti-diktat" id="vtiDiktat" hidden><span class="vti-punkt"></span><span id="vtiHoer">Ich höre zu …</span><div class="vti-letzte" id="vtiLetzte"></div><small>z. B. „FI eins“ · „B16 Küche“ · „Herd dreipolig“ · „Reserve“ · „neue Reihe“ – Gerät für Gerät, kurze Pause dazwischen. Korrigieren geht jederzeit im Textfeld.</small></div>
-      <div class="vti-knoepfe">${vtiSR()?`<button type="button" class="kd-tel-neu vti-mic" data-act="vtiDiktat">${icon("mic")}<span>Diktieren</span></button>`:""}<button type="button" class="kd-tel-neu" data-act="vtImpDatei">${icon("ecImport")}<span>Datei laden</span></button><span class="vti-tipp">Spalten mit ; oder Tab – direkt aus Excel kopierbar. „# Text“ = Überschrift.</span></div>
-      <div id="vtiVorschau" class="vti-vor"></div></div>`,
-    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="vtImpOk">Übernehmen</button>`,{breit:true});
-  vtImpVorschau(); }
+  const ziel=vorwahl||"", ss=s?[]:standorteVon(k.id), hv=(Z.find(x=>x.v.art==="hv"||/^hv\b|haupt/i.test(x.v.name||""))||Z[0]||{v:{}}).v.id||"";
+  const wahl=(v,ic,t,u)=>`<button type="button" class="vti-ziel" data-act="vtiZielW" data-v="${esc(v)}" aria-pressed="${v===ziel}"><span class="av">${icon(ic)}</span><span class="lt"><span class="h">${esc(t)}</span>${u?`<span class="s">${esc(u)}</span>`:""}</span><span class="vti-radio"></span></button>`;
+  dialog("Liste einfügen",`<div class="vti-stepper">${["Verteiler","Liste","Prüfen"].map((t,i)=>`<button type="button" class="vti-st" data-act="vtiSchritt" data-s="${i+1}"><b>${i+1}</b><span>${t}</span></button>`).join("")}</div>
+    <div class="fg1">
+      <section class="vti-s" data-s="1">
+        <input type="hidden" id="f_vtiZiel" data-f="vtiZiel" value="${esc(ziel)}">
+        ${Z.length?`<div class="lbl">Wohin kommt die Liste?</div><div class="vti-ziele">${wahl("","add","Neuer Verteiler","Wird beim Kunden neu angelegt")}${Z.map(x=>wahl(x.g.id+"|"+x.v.id,"zsSchrank",x.v.name||"Verteiler",`${x.g.stromkreise.filter(t=>t.vId===x.v.id).length} Stromkreise · Liste wird hinten angehängt`)).join("")}</div>`:""}
+        <div class="vti-neu fg1"${ziel?" hidden":""}>
+          ${tf("vtiName","Name des Verteilers",Z.length?"":"HV",{form:true,ph:"z. B. UV EG"})}
+          <div class="vti-chips">${LEG_VT.map(v=>`<button type="button" class="chip" data-act="legSetz" data-ziel="f_vtiName" data-v="${esc(v)}">${esc(v)}</button>`).join("")}</div>
+          ${Z.length?sf("vtiVon","Eingespeist aus",hv,[["","Hausanschluss / weiß ich nicht"],...Z.map(x=>[x.v.id,x.v.name||"Verteiler"])],{form:true}):""}
+          ${ss.length?ecOrtFeld(k.id):""}
+        </div>
+      </section>
+      <section class="vti-s" data-s="2" hidden>
+        <div class="vti-wege">${vtiSR()?`<button type="button" class="vti-weg vti-mic" data-act="vtiDiktat">${icon("mic")}<span>Diktieren</span></button>`:""}<button type="button" class="vti-weg" data-act="vtImpDatei">${icon("ecImport")}<span>Datei laden</span></button></div>
+        <div class="vti-diktat" id="vtiDiktat" hidden><span class="vti-punkt"></span><span id="vtiHoer">Ich höre zu …</span><div class="vti-letzte" id="vtiLetzte"></div><small>Gerät für Gerät, kurze Pause dazwischen – z. B. „FI eins“ · „B16 Küche“ · „Herd dreipolig“ · „Reserve“ · „neue Reihe“</small></div>
+        <div class="tf vti-text"><textarea id="vtiText" spellcheck="false" placeholder="${esc(VTI_BSP)}" aria-label="Liste, eine Zeile pro Gerät"></textarea></div>
+        <p class="vti-tipp">Eine Zeile pro Gerät. Spalten mit ; oder Tab – direkt aus Excel kopierbar. <code>---</code> = neue Reihe, „# Text“ = Überschrift.</p>
+      </section>
+      <section class="vti-s" data-s="3" hidden><div id="vtiVorschau" class="vti-vor"></div></section>
+    </div>`,
+    `<button class="btn-text vti-f" data-f="1" data-act="cancel">Abbrechen</button><button class="btn-text vti-f" data-f="23" data-act="vtiZurueck">Zurück</button><span style="flex:1"></span><button class="btn-filled vti-f" data-f="12" data-act="vtiWeiter">Weiter</button><button class="btn-filled vti-f" data-f="3" data-act="vtImpOk">Übernehmen</button>`,{breit:true});
+  vtiZeig(ziel?2:1); }
+function vtiZeig(n){ if(n!==2&&VTI_SR) vtiDiktatStop(); vtiSchritt=n;
+  document.querySelectorAll("#dlg .vti-s").forEach(x=>x.hidden=+x.dataset.s!==n);
+  document.querySelectorAll("#dlg .vti-st").forEach(x=>{ const s=+x.dataset.s; x.classList.toggle("an",s===n); x.classList.toggle("fertig",s<n); });
+  document.querySelectorAll("#dlg .vti-f").forEach(x=>x.hidden=!x.dataset.f.includes(String(n)));
+  const neu=document.querySelector("#dlg .vti-neu"); if(neu) neu.hidden=!!vtImpAktZiel();
+  if(n===3) vtImpVorschau();
+  const sc=document.querySelector("#dlg .dlg-body")||document.querySelector("#dlg"); if(sc) sc.scrollTop=0;
+  if(n===2){ const ta=document.getElementById("vtiText"); if(ta&&!ta.value&&!matchMedia("(pointer:coarse)").matches) ta.focus(); } }
+function vtiPruefSchritt(n){ /* darf man von vtiSchritt nach n? */
+  if(n>1&&!vtImpAktZiel()&&!((document.getElementById("f_vtiName")||{}).value||"").trim()){ toast("Bitte einen Namen für den Verteiler eingeben"); vtiZeig(1); return false; }
+  if(n>2&&!((document.getElementById("vtiText")||{}).value||"").trim()){ toast("Noch keine Stromkreise eingetragen"); vtiZeig(2); return false; }
+  return true; }
 function vtImpAktZiel(){ const z=document.getElementById("f_vtiZiel"); return z&&z.value?z.value.split("|"):null; }
 function vtImpVorschau(){ const box=document.getElementById("vtiVorschau"); if(!box) return; const t=(document.getElementById("vtiText")||{}).value||"";
   const neu=document.querySelector("#dlg .vti-neu"); if(neu) neu.hidden=!!vtImpAktZiel();
