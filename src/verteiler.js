@@ -60,7 +60,8 @@ function vtItem({g,v},mitOrt){ const n=g.stromkreise.filter(s=>s.vId===v.id).len
     ${v.fertig?`<span class="st">${pill("ok","abgeschlossen")}</span>`:""}</span>${icon("chev")}</div>`; }
 function vtBeiKunde(kind,r){ const V=vtListe(vtOrte(kind,r)), Lg=typeof legVon==="function"?legVon(kind,r.id):[];
   return `<div class="sec-row"><div class="sec-lbl">Verteiler</div><span class="ab-btns"><button class="ab-ic" data-act="vtImp" data-kind="${kind}" data-id="${esc(r.id)}" aria-label="Liste einfügen" title="Liste einfügen – Legende schnell aus einer Liste">${icon("vtListe")}</button><button class="ab-ic" data-act="vtNeu" data-kind="${kind}" data-id="${esc(r.id)}" aria-label="Verteiler anlegen" title="Verteiler anlegen">${icon("add")}</button></span></div>`
-    +(V.length||Lg.length?listOf([...V.map(x=>vtItem(x,kind==="kunden")),...Lg.map(L=>legItem(L,kind==="kunden"))]):`<p class="meta">Noch kein Verteiler. Hier entsteht der Verteiler mit Reihen, Stromkreisen, Legende und Beschriftung – auch für die Bestandsaufnahme.</p>`); }
+    +(V.length||Lg.length?listOf([...V.map(x=>vtItem(x,kind==="kunden")),...Lg.map(L=>legItem(L,kind==="kunden"))]):`<p class="meta">Noch kein Verteiler. Hier entsteht der Verteiler mit Reihen, Stromkreisen, Legende und Beschriftung – auch für die Bestandsaufnahme.</p>`)
+    +(typeof apEintraege==="function"?(h=>h?`<div class="list ap-liste">${h}</div>`:"")(apEintraege(kind,r)):""); }
 let vtNeuBei=null;
 function vtNeuDlg(kind,id){ const s=kind==="standorte"&&standortOf(id), k=kind==="kunden"?kundeOf(id):s?kundeOf(s.kundeId):null; if(!k) return;
   vtNeuBei={kid:k.id,ort:s?s.id:null};

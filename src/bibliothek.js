@@ -15,7 +15,7 @@ let BB_PROT=[], bbGeladen=false;
    Das PDF selbst liegt in SharePoint (EVSE: Prüfprotokolle/<Kunde>/<Standort>, Baustelle: Baustellen/Berichte/<Kunde>/<Baustelle>).
    Andere Geräte zeigen den Eintrag sofort und holen das PDF beim ersten Öffnen (danach liegt es auch dort im Gerät). */
 const bbSync=()=>typeof DB!=="undefined"&&!!DB.protokolle&&typeof saveRec==="function";
-const bbAppName=a=>a==="baustelle"?"Baustelle":a==="echeck"||a==="legende"?"Gebäudetechnik":"EVSE";
+const bbAppName=a=>a==="baustelle"?"Baustelle":a==="echeck"||a==="legende"||a==="anlagenpass"?"Gebäudetechnik":"EVSE";
 const BB_FELDER=["app","pruefungId","echeckId","vtId","vtName","archiv","kundeId","standortId","ladeparkId","baustelleId","name","titel","datum","art","auftragsnr","pruefer","ergebnis","nr","unterschrift","fassung","size","von","created"];
 const bbFs=v=>String(v||"").replace(/[\\/:*?"<>|#%\u0000-\u001f]/g,"-").replace(/\s+/g," ").trim().replace(/[. ]+$/,"").slice(0,80)||"Unbenannt";
 function bbZiel(x){ const k=bbKunde(x.kundeId), nm=(M,id)=>id&&M&&M.get(id)?M.get(id).name:"";

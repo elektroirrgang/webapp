@@ -365,6 +365,10 @@ async function legPdf(L){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",f
   d.setTextColor(20); d.setFont("helvetica","bold"); d.setFontSize(12); d.text("Elektro Irrgang",M,y); d.setTextColor(...[225,29,47]); d.text("Tel. 02291 4878",x2,y);
   d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),M,y+5.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x2,y+5.2);
   S.y=y+13;
+  legPdfStromkreise(d,S,L);
+  return S.ende(); }
+/* Stromkreis-Tabelle – auch im Anlagenpass verwendet */
+function legPdfStromkreise(d,S,L){ const M=S.M, CW=S.CW, sp=[32,116,34];
   S.abschnitt("Stromkreise");
   const kz=()=>{ d.setFillColor(...S.NAVY); d.rect(M,S.y-4,CW,6,"F"); d.setTextColor(255); d.setFontSize(8); d.setFont("helvetica","bold"); let x=M+2; ["Kennzeichnung","Bezeichnung","Absicherung"].forEach((t,i)=>{ d.text(t,x,S.y); x+=sp[i]; }); S.y+=6; };
   S.platz(14); kz(); let zz=0;
@@ -378,7 +382,7 @@ async function legPdf(L){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",f
     else d.text(B,M+2+sp[0],S.y,{lineHeightFactor:1.2});
     d.text(pdfT(legSchutz(e)),M+2+sp[0]+sp[1],S.y);
     S.y+=6+ex; });
-  return S.ende(); }
+}
 async function legPdfMachen(){ const L=legAkt(); if(!L) return; if(!legE(L).length){ toast("Erst Stromkreise anlegen"); return; }
   toast("PDF wird erstellt …"); let blob; try{ blob=await legPdf(L); }catch(e){ console.error(e); toast("PDF konnte nicht erstellt werden – Internet für die PDF-Bibliothek nötig"); return; }
   /* wie das Prüfprotokoll: lokal ablegen und in den Kundenordner (Pläne und Schaltpläne) hochladen – „Öffnen“ zeigt die abgelegte Datei */
