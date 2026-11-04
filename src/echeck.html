@@ -2154,7 +2154,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   else if(nav.v==="netzwerk"){ title="Netzwerk"; body=ecListeView("netz"); fab=["ecNeuN","Prüfung","add"]; }
   else if(nav.v==="netzkatalog"){ title="Netzwerk-Katalog"; body=ecKatalogView(); }
   else if(nav.v==="knx"){ title="KNX"; body=knxView(); fab=["kxNeu","Projekt","add"]; }
-  else if(nav.v==="geb"){ body=gvView(); ({title,sub}=gvTitel()); fab=["gvRaumNeu","Räume","add"]; }
+  else if(nav.v==="geb"){ body=gvView(); ({title,sub}=gvTitel()); fab=nav.et&&GV.teil===nav.et?null:["gvRaumNeu","Räume","add"]; }
   else if(nav.v==="kx"){ const g=kxGebAkt(); if(!g){ nav={v:"knx"}; return render(); } ({title,sub}=kxTitel(g)); body=kxProjektView(g); fab=kxFab(g); }
   else if(nav.v==="vt"){ const L=vtL(nav.g,nav.id); if(!L){ nav={v:"anlagen"}; return render(); } title=L.titel; sub="Verteiler"; body=legView(L); fab=legFab(L); }
   else if(nav.v==="ohnekunde"){ title="Ohne Kunde"; sub="Ablage für alles ohne Kunden"; body=legOhneView(); fab=["legNeu","Legende","add"]; }

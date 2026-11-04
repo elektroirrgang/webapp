@@ -1883,3 +1883,9 @@ html body.sc-eng .navbar,html body.sc-eng.rail-open .navbar{transform:translateX
 .gv-k:active{background:var(--sc-highest)}
 .gv-vtw{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .gv-such .search{min-width:0}.gv-such .search input{min-width:0;width:100%}.gv-such{max-width:100%}
+/* Etagenseite schlichter: Nummer ohne Kasten, ruhigere Zeilen */
+.gv-rz{min-height:56px;padding:6px 14px 6px 8px;gap:14px}
+.gv-rz .gv-nr{background:none;padding:0;min-width:58px;text-align:left;font-size:16px}
+.gv-rz .gv-rt span{color:var(--on-sv)}
+.gv-rz.an .gv-rt span{color:inherit}
+.gv-teil .gv-rz .gv-nr{background:none}
