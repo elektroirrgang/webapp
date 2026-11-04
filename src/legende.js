@@ -119,8 +119,7 @@ function legView(L){ const E=legE(L), tab=legTab(L);
       <div class="reihe2">${legFeld(L,"titel","Verteiler",{ph:"z. B. HV Keller"})}${legFeld(L,"stand","Stand",{type:"date"})}</div>
       ${L._geb?"":`${legFeld(L,"kunde","Kunde",{ph:"Name oder Firma"})}
       ${legFeld(L,"anschrift","Anschrift",{ph:"Straße, PLZ Ort"})}`}
-      <div class="reihe2"><div class="tf fl"><select id="f_leg_netz" data-leg="netz" ${L.fertig?"disabled":""}>${LEG_NETZ.map(n=>`<option value="${esc(n)}" ${n===(L.netz||"")?"selected":""}>${esc(n||"nicht angeben")}</option>`).join("")}</select><label for="f_leg_netz">Netzform</label><span class="arr">${icon("drop")}</span></div><div class="tf fl"><select id="f_leg_teReihe" data-leg="teReihe" ${L.fertig?"disabled":""}>${[12,18,24].map(v=>`<option value="${v}" ${v===(+L.teReihe||12)?"selected":""}>${v} TE</option>`).join("")}</select><label for="f_leg_teReihe">Plätze je Reihe</label><span class="arr">${icon("drop")}</span></div></div>
-      ${legWerSel(L)}
+      <div class="reihe2"><div class="tf fl"><select id="f_leg_netz" data-leg="netz" ${L.fertig?"disabled":""}>${LEG_NETZ.map(n=>`<option value="${esc(n)}" ${n===(L.netz||"")?"selected":""}>${esc(n||"nicht angeben")}</option>`).join("")}</select><label for="f_leg_netz">Netzform</label><span class="arr">${icon("drop")}</span></div>${legWerSel(L)}</div>
     </div></section>
     ${L._geb&&typeof qrKarte==="function"?qrKarte(L):""}
         <div class="leg-fuss">${canEdit(L)?`<button type="button" class="btn-tonal leg-del" data-act="legDelAsk">${icon("del")}Löschen</button>`:""}<span style="flex:1"></span>${L.fertig?`<button type="button" class="btn-tonal" data-act="legFertig" data-v="0">${icon("edit")}Bearbeiten</button>`:""}<button type="button" class="btn-tonal leg-pdf" data-act="legPdf">${icon("pdf")}PDF erstellen</button></div>
@@ -132,9 +131,12 @@ function legUvKarte(L){ if(typeof uvZeichnung!=="function") return ""; const Z=u
   return `<section class="card zs-karte"><div class="card-kopf"><h3>Verteiler</h3><span class="zs-kopf-r">${legBildKnopf()}</span></div>
     <div class="zs-bild"${legBildAn()?"":" hidden"}>${Z.svg}</div>
     ${Z.ueber?`<p class="ec-hinweis">${icon("warn")}<span>${Z.ueber===1?"Eine Reihe passt":`${Z.ueber} Reihen passen`} nicht mehr in den Verteiler – mehr Reihen wählen.</span></p>`:""}
-    <div class="leg-vopt"><span class="leg-o"><span>Reihen</span>${[1,2,3,4,5,...(n>5?[n]:[])].map(v=>chip("legOpt","reihen",v,v,n===v)).join("")}</span>
-    <span class="leg-o"><span>Montage</span>${chip("legOptS","montage","ap","Aufputz",L.montage==="ap")}${chip("legOptS","montage","up","Unterputz",L.montage!=="ap")}</span>
-    <span class="leg-o"><span>TE je Reihe</span>${[12,18,24].map(v=>chip("legOpt","teReihe",v,v,(+L.teReihe||12)===v)).join("")}</span></div>
+    ${(()=>{ /* Verteilertyp: genormte Hager-volta-Größen legen Reihen, Montage und TE fest – frei einstellen nur bei „anderer Typ“ */
+      const M=uvMasse(L), frei=!M.modell||L.typFrei, mo=M.up?"Unterputz":"Aufputz";
+      return `<button type="button" class="zs-zp leg-typ" data-act="uvTyp" ${zu?"disabled":""}><span class="zs-zn zs-bst">${icon("zsSchrank")}</span><span class="zs-zt"><b>${esc(frei?"Anderer Verteilertyp":`Hager volta ${M.modell}`)}</b><small>${esc(`${M.n}-reihig · ${mo} · ${frei?`${M.te} TE je Reihe`:`${M.n*M.te} TE`}`)}</small></span>${icon("chev")}</button>
+      ${frei?`<div class="leg-vopt"><span class="leg-o"><span>Reihen</span>${[1,2,3,4,5,6,7,...(n>7?[n]:[])].map(v=>chip("legOpt","reihen",v,v,n===v)).join("")}</span>
+        <span class="leg-o"><span>Montage</span>${chip("legOptS","montage","ap","Aufputz",L.montage==="ap")}${chip("legOptS","montage","up","Unterputz",L.montage!=="ap")}</span>
+        <span class="leg-o"><span>TE je Reihe</span>${[12,18,24].map(v=>chip("legOpt","teReihe",v,v,(+L.teReihe||12)===v)).join("")}</span></div>`:""}`; })()}
     ${legVonFeld(L)}
     ${legE(L).length?"":`<p class="meta">Noch keine Geräte. Unten rechts über „Gerät“ einsetzen – Reihen-Vorlagen wie RCD + 6 × B16 gehen in einem Rutsch.</p>`}</section>`; }
 /* Karte „Stromkreise“ (Reiter Stromkreise) */
@@ -447,3 +449,16 @@ function legVonFeld(L){ if(!L||!L._geb) return ""; const g=vtGeb(L._geb), v=g&&g
 document.addEventListener("change",ev=>{ const s=ev.target; if(!s||s.id!=="f_leg_von") return; const L=legAkt(); if(!L||!L._geb) return; const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(!v) return;
   const neu=s.value||""; let x=neu&&g.verteiler.find(y=>y.id===neu), n=0; while(x&&n++<30){ if(x.id===v.id){ toast("Ein Verteiler kann nicht aus sich selbst gespeist werden"); s.value=v.vonVId||""; return; } x=x.vonVId&&g.verteiler.find(y=>y.id===x.vonVId); }
   if(neu) v.vonVId=neu; else delete v.vonVId; v.updated=Date.now(); ecGebSpeichern(g); toast(neu?`Eingespeist aus ${(g.verteiler.find(y=>y.id===neu)||{}).name||"Verteiler"}`:"Direkt eingespeist"); });
+
+/* Verteilertyp wählen (Unterverteiler): Hager volta UP (VU…NC) / AP (VA…CN) mit 1–5 Reihen à 12 TE, sonst „anderer Typ“ */
+function uvTypDlg(){ const L=legAkt(); if(!L) return; const M=uvMasse(L), frei=!M.modell||L.typFrei;
+  const zeile=(up,n)=>{ const nr=`${up?"VU":"VA"}${n*12}${up?"NC":"CN"}`, an=!frei&&M.modell===nr;
+    return `<button type="button" class="li${an?" an":""}" data-act="uvTypOk" data-up="${up?1:0}" data-n="${n}"><span class="av">${n}</span><span class="lt"><span class="h">Hager volta ${nr}</span><span class="s">${n}-reihig · ${n*12} TE</span></span>${an?`<span class="m3-st ok">gewählt</span>`:icon("chev")}</button>`; };
+  dialog("Verteilertyp",`<div class="sec-lbl">Unterputz</div>${listOf([1,2,3,4,5].map(n=>zeile(true,n)))}
+    <div class="sec-lbl">Aufputz</div>${listOf([1,2,3,4,5].map(n=>zeile(false,n)))}
+    <div class="sec-lbl">Sonstiges</div>${listOf([`<button type="button" class="li${frei?" an":""}" data-act="uvTypOk" data-frei="1"><span class="av">${icon("edit")}</span><span class="lt"><span class="h">Anderer Verteilertyp</span><span class="s">Reihen, Montage und TE je Reihe selbst einstellen</span></span>${frei?`<span class="m3-st ok">gewählt</span>`:icon("chev")}</button>`])}`,
+    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`,{breit:true}); }
+document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act="uvTyp"],[data-act="uvTypOk"]'); if(!b||b.disabled) return; ev.stopPropagation();
+  if(b.dataset.act==="uvTyp"){ uvTypDlg(); return; } const L=legAkt(); if(!L) return;
+  if(b.dataset.frei){ L.typFrei=true; } else { L.typFrei=false; L.reihen=+b.dataset.n; L.montage=b.dataset.up==="1"?"up":"ap"; L.teReihe=12; }
+  legSave(L); closeOverlays(); render(); },true);
