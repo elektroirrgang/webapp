@@ -963,6 +963,7 @@ body.kopf-oben .edk-platz{display:none!important}
     <img class="logo l-hell" src="<!--LOGO_HELL-->" alt="Elektro Irrgang">
     <img class="logo l-dunkel" src="<!--LOGO_DUNKEL-->" alt="Elektro Irrgang">
     <h1 class="tb-title" id="topTitle">Prüfprotokolle</h1>
+    <button class="glocke" id="glBtn" data-act="mlAuf" aria-label="Benachrichtigungen" aria-haspopup="dialog" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span class="gl-n" id="glN" hidden></span></button>
     <button class="avatar" id="avBtn" data-act="nav" data-v="mehr" aria-label="Konto und Einstellungen" hidden><span id="avTxt"></span></button>
     <button class="icon-btn" id="menuBtn" data-act="menu" aria-label="Weitere Optionen" aria-haspopup="menu" aria-expanded="false"></button>
   </div>
@@ -1141,9 +1142,9 @@ const CONFIG=Object.assign({
 const SYNC_ON=!!(CONFIG.tenantId&&CONFIG.clientId&&CONFIG.shareUrl);
 
 const TH_KEY="evse_theme", OLD_KEY="evse_protos_v1";
-const KINDS=["kunden","standorte","ladeparks","pruefungen","katalog","geraete","profile","dateien","protokolle","einstellungen","wuensche"];
-const APP_KINDS=["dateien","protokolle","einstellungen","wuensche"]; /* liegen im gemeinsamen Gerätespeicher „irrgang_apps“ (wie in Übersicht und Baustelle) */
-const DB={kunden:new Map(),standorte:new Map(),ladeparks:new Map(),pruefungen:new Map(),katalog:new Map(),geraete:new Map(),profile:new Map(),dateien:new Map(),protokolle:new Map(),einstellungen:new Map(),wuensche:new Map()};
+const KINDS=["kunden","standorte","ladeparks","pruefungen","katalog","geraete","profile","dateien","protokolle","einstellungen","wuensche","vorgaenge","anforderungen"];
+const APP_KINDS=["dateien","protokolle","einstellungen","wuensche","vorgaenge","anforderungen"]; /* liegen im gemeinsamen Gerätespeicher „irrgang_apps“ (wie in Übersicht und Baustelle) */
+const DB={kunden:new Map(),standorte:new Map(),ladeparks:new Map(),pruefungen:new Map(),katalog:new Map(),geraete:new Map(),profile:new Map(),dateien:new Map(),protokolle:new Map(),einstellungen:new Map(),wuensche:new Map(),vorgaenge:new Map(),anforderungen:new Map()};
 let META={profil:{name:""},pins:[],archiv:[],filter:"alle",sync:{}};
 let cur=null, nav={v:"start"}, saveTimer=null, dirtyCur=false, dataDB=null, aDB=null, query="";
 let ME={name:"",mail:"",admin:false,signedIn:false};
@@ -1839,7 +1840,7 @@ function render(){ profilAnwenden();
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
   f.classList.toggle("fab-rund",!!fab&&!fab[1]); $("#fabm")?.remove();
   if(fab){ f.dataset.act=fab[0]; f.setAttribute("aria-label",fab[1]||"Neu anlegen"); f.innerHTML=`${icon(fab[2])}${fab[1]?`<span>${fab[1]}</span>`:""}`; }
-  profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); syncPunkt(); profilAvatar(); bilderFuellen();
+  profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); syncPunkt(); profilAvatar(); mlGlocke(); bilderFuellen();
   if(E&&!canEdit(cur)) applyRO();
 }
 function applyRO(){
@@ -1968,6 +1969,9 @@ function wann(ts){ if(!ts) return ""; const d=new Date(ts), h=new Date(); const 
   const uhr=d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
   return tage===0?`heute, ${uhr}`:tage===1?`gestern, ${uhr}`:d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"}); }
 /*DATEIEN*/
+/*ANFORDERUNG*/
+/* Benachrichtigungen: Aufträge und Materialanforderungen öffnen in der Übersicht */
+const ML_FREMD={auftraege:"../uebersicht/",materialanf:"../uebersicht/",geraete:"../uebersicht/"};
 /*KUNDE*/
 function kundeView(k){
   const ss=standorteVon(k.id), sid="k:"+k.id, ps=pruefAt(sid,null);

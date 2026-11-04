@@ -71,7 +71,7 @@ function anfChip(e){ const a=e&&anfAlle().find(x=>x.eintragId===e.id); return a?
 
 /* ===== Benachrichtigungen (Glocke) =====
    Kleines Fenster an der Glocke wie am Laptop: wer, was, wann; anpinnen, entfernen, als gelesen markieren.
-   Berechnet aus den Daten (nichts zusätzlich gespeichert); gelesen/entfernt/angepinnt merkt sich jedes Gerät (META.ml).
+   Berechnet aus den Daten (nichts zusätzlich gespeichert); gelesen/entfernt/angepinnt merkt sich jedes Gerät – gemeinsam für alle Apps (mlSt).
    Chef/Büro: neue Anforderungen, Übergaben, fertige Prüfprotokolle anderer + Systemhinweise (Kalibrierung, fällige Prüfungen).
    Jeder: Statusänderung der eigenen Anforderungen, mit mir geteilte Notizen. */
 const ML_TAGE=14;
@@ -80,7 +80,13 @@ const ML_IC={pin:"M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 
   sys:"M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"};
 const mlSvg=k=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${ML_IC[k]}"/></svg>`;
 const mlIch=r=>!!(r&&r.mail&&String(r.mail).toLowerCase()===String(ME.mail||"").toLowerCase());
-const mlSt=()=>{ META.ml=META.ml||{gel:{},weg:{},pin:{}}; return META.ml; };
+/* gelesen/entfernt/angepinnt gilt für ALLE Apps auf diesem Gerät (gemeinsamer Speicher je Konto) – früher je App in META.ml */
+const ML_ST_KEY=()=>"irrgang_ml_st|"+String(typeof ME!=="undefined"&&ME.mail||"").toLowerCase();
+let ML_ST_C=null;
+const mlSt=()=>{ const k=ML_ST_KEY(); if(ML_ST_C&&ML_ST_C.k===k) return ML_ST_C.s; let s=null; try{ s=JSON.parse(localStorage.getItem(k)||"null"); }catch(e){}
+  if(!s){ s=META.ml||{}; } ["gel","weg","pin"].forEach(x=>{ s[x]=s[x]||{}; }); ML_ST_C={k,s}; return s; };
+addEventListener("storage",e=>{ if(e.key&&e.key.startsWith("irrgang_ml_st|")){ ML_ST_C=null; try{ mlGlocke(); }catch(x){} } });
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"){ ML_ST_C=null; try{ mlGlocke(); }catch(x){} } });
 function meldungenRoh(){
   if(!ME.mail) return [];
   const ab=Date.now()-ML_TAGE*864e5, L=[], v=anfVerw(), alle=k=>DB[k]?[...DB[k].values()].filter(r=>!r.deleted&&(typeof nurDemo==="function"&&nurDemo()?r.demo:(!r.demo||r.sim))):[]; /* Simulation: nur auf diesem Gerät, wird nie abgeglichen */
@@ -183,7 +189,9 @@ function mlPlatz(){ const pop=document.getElementById("mlPop"), z=document.query
     pop.style.top="auto"; pop.style.right="auto"; pop.style.left=Math.round(r.right+12)+"px"; pop.style.bottom=Math.max(8,Math.round(innerHeight-r.bottom))+"px"; return; }
   pop.style.bottom=""; pop.style.left=""; pop.style.top=Math.round(r.bottom+8)+"px"; pop.style.right=Math.max(8,Math.round(innerWidth-r.right-8))+"px"; }
 function mlZu(){ const p=document.getElementById("mlPop"); if(p) p.remove(); }
-function mlStSpeichern(){ /* nur IDs behalten, die es noch gibt */ const S=mlSt(), da=new Set(meldungenRoh().map(m=>m.id)); ["gel","weg","pin"].forEach(k=>Object.keys(S[k]).forEach(id=>{ if(!da.has(id)) delete S[k][id]; })); metaSave(); }
+function mlStSpeichern(){ /* nicht nach „gibt es hier noch“ ausdünnen – andere Apps kennen andere Meldungen; nur die Menge begrenzen */ const S=mlSt();
+  ["gel","weg"].forEach(k=>{ const ks=Object.keys(S[k]); if(ks.length>1500) ks.slice(0,ks.length-1500).forEach(id=>delete S[k][id]); });
+  try{ localStorage.setItem(ML_ST_KEY(),JSON.stringify(S)); }catch(e){} }
 document.addEventListener("click",e=>{
   const b=e.target.closest&&e.target.closest('[data-act="mlKat"],[data-act="mlAuf"],[data-act="mlKlick"],[data-act="mlPin"],[data-act="mlWeg"],[data-act="mlAlleGel"],[data-act="mlWiederher"]');
   if(!b){ const p=document.getElementById("mlPop"); if(p&&!p.contains(e.target)) mlZu(); return; }
@@ -203,7 +211,9 @@ addEventListener("resize",mlPlatz);
 function mlGo(z){
   if(z&&z.ml){ /* Meldung aus einem Rahmenauftrag: in der Kategorie „Meldungen“ öffnen */ META.mlKat="meldung"; metaSave(); if(nav.v!=="meldungen"){ ML_VON=nav; go({v:"meldungen"}); } else mlFuellen();
     const m=DB.vorgaenge&&DB.vorgaenge.get(z.ml), r=m&&DB.vorgaenge.get(m.rahmenId); if(r&&typeof mlDialog==="function") setTimeout(()=>mlDialog(r,m),0); return; }
-  if(["baustelle","notizen"].includes(z.v)&&typeof notizenView!=="function"){ location.href="../baustelle/"; return; } go(z); }
+  if(["baustelle","notizen"].includes(z.v)&&typeof notizenView!=="function"){ location.href="../baustelle/"; return; }
+  if(typeof ML_FREMD!=="undefined"&&ML_FREMD[z.v]){ location.href=ML_FREMD[z.v]; return; }   /* z. B. Aufträge in EVSE/Gebäudetechnik → Übersicht */
+  go(z); }
 function meldungenView(){ setTimeout(mlFuellen,0); return `<div class="narrow"><div class="ml-seite" id="mlSeite"></div></div>`; }
 
 /* ===== Neue Meldungen ankündigen =====
