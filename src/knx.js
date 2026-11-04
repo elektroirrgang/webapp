@@ -52,7 +52,13 @@ function knxEtiDlg(){ dialog("KNX-Etiketten",`<div class="knx-felder">${tf("knxL
 const KNX_ANDR=/android/i.test(navigator.userAgent);
 const knxAppAuf=()=>{ location.href="intent://#Intent;package=com.brother.ptouch.mobilecablelabeltool2;end"; };
 function knxLaden(f){ const a=document.createElement("a"); a.href=URL.createObjectURL(f); a.download=f.name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500); }
-async function knxAusgeben(F){ if(KNX_ANDR){ F.forEach((f,i)=>setTimeout(()=>knxLaden(f),i*400)); toast(`CSV in „Downloads“ – in der Pro-Label-App als Datenbank verbinden`,"App öffnen",knxAppAuf); return; }
+/* Mit Microsoft-Anbindung: Liste immer unter demselben Namen in die Firmen-Cloud legen (Bibliothek „Kundendaten“ › Ordner „Etiketten“).
+   In der Pro-Label-App: Datenbank verbinden › Durchsuchen › OneDrive › … › Etiketten › KNX-Etiketten.csv – kein Laden/Sichern auf dem Gerät.
+   Klappt das nicht (offline, nicht angemeldet), wie bisher laden bzw. teilen. */
+const KNX_CLOUD_NAME="KNX-Etiketten.csv";
+async function knxCloud(f){ if(typeof SYNC_ON==="undefined"||!SYNC_ON||typeof bbHoch!=="function"||typeof ME==="undefined"||!ME.signedIn) return false;
+  try{ if(typeof syncRoot==="function") await syncRoot(); await bbHoch(typeof BIB!=="undefined"&&BIB.kunden||"Kundendaten","Etiketten/"+KNX_CLOUD_NAME,f); return true; }catch(e){ console.warn("Etiketten in die Cloud:",e); return false; } }
+async function knxAusgeben(F){ if(F.length===1&&/\.csv$/i.test(F[0].name)){ toast("Etiketten-Liste wird abgelegt …"); if(await knxCloud(F[0])){ toast(`Liegt in OneDrive › Kundendaten › Etiketten › ${KNX_CLOUD_NAME} – in Pro Label als Datenbank wählen`); return; } } if(KNX_ANDR){ F.forEach((f,i)=>setTimeout(()=>knxLaden(f),i*400)); toast(`CSV in „Downloads“ – in der Pro-Label-App als Datenbank verbinden`,"App öffnen",knxAppAuf); return; }
   /* iPhone/iPad im Browser: direkt laden (Safari fragt einmal „Laden?“, Datei liegt dann in Dateien › Downloads) – spart „In Dateien sichern“.
      Als Home-Bildschirm-App lädt iOS nicht zuverlässig, dort bleibt das Teilen-Menü. */
   const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1), heimApp=navigator.standalone===true||matchMedia("(display-mode: standalone)").matches;
