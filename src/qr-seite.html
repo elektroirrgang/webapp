@@ -22,8 +22,8 @@
 @font-face{font-family:Manrope;font-weight:400;font-display:swap;src:url(data:font/woff2;base64,<!--F400-->) format("woff2")}
 @font-face{font-family:Manrope;font-weight:700;font-display:swap;src:url(data:font/woff2;base64,<!--F700-->) format("woff2")}
 @font-face{font-family:Manrope;font-weight:800;font-display:swap;src:url(data:font/woff2;base64,<!--F800-->) format("woff2")}
-:root{--primary:#C8102E;--on-primary:#fff;--brand:#E11D2F;--pc:#FFDAD8;--on-pc:#410006;--err-c:#FFDAD6;--on-err-c:#410002;--surface:#FCFCFD;--sc:#EFF0F3;--sc-high:#E8E9ED;--on-surface:#1F1F22;--on-sv:#4A4D55;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--primary:#FFB3AE;--on-primary:#68000F;--pc:#930019;--on-pc:#FFDAD8;--err-c:#93000A;--on-err-c:#FFDAD6;--surface:#131314;--sc:#1F1F21;--sc-high:#2A2A2C;--on-surface:#E5E5E7;--on-sv:#C1C3C9;color-scheme:dark}}
+:root{--primary:#C8102E;--on-primary:#fff;--brand:#E11D2F;--pc:#FFDAD8;--on-pc:#410006;--err-c:#FFDAD6;--on-err-c:#410002;--surface:#FCFCFD;--sc:#EFF0F3;--sc-high:#E8E9ED;--on-surface:#1F1F22;--on-sv:#4A4D55;--ok-c:#D3F0DD;--on-ok-c:#0B3A1E;--wip-c:#FFEDB8;--on-wip-c:#4A3400;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--primary:#FFB3AE;--on-primary:#68000F;--pc:#930019;--on-pc:#FFDAD8;--err-c:#93000A;--on-err-c:#FFDAD6;--surface:#131314;--sc:#1F1F21;--sc-high:#2A2A2C;--on-surface:#E5E5E7;--on-sv:#C1C3C9;--ok-c:#1F4D30;--on-ok-c:#C3EFD0;--wip-c:#5A4300;--on-wip-c:#FFE08A;color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--surface);color:var(--on-surface);font:16px/1.5 Manrope,system-ui,-apple-system,sans-serif;-webkit-text-size-adjust:100%}
 .w{max-width:480px;margin:0 auto;padding:calc(28px + env(safe-area-inset-top,0px)) 16px calc(32px + env(safe-area-inset-bottom,0px))}
@@ -77,13 +77,51 @@ ol.st b{color:var(--on-surface)}
 .klein{font-size:13px;line-height:1.45;color:var(--on-sv);margin:12px 4px 0}.klein a{color:var(--primary);font-weight:700;text-decoration:none}
 .mobil{margin:0 0 12px}
 .rst{margin-top:14px;background:var(--sc-high);border-radius:20px;padding:16px;text-align:center}
-.rst p{color:var(--on-surface);font-size:16px;margin:0 0 14px}.rst .btn2{width:100%}.rst .btn2+.btn2{margin-top:8px}
+.rst p{margin:0 0 14px}.rst .btn2{width:100%}.rst .btn2+.btn2{margin-top:8px}
 .uhr{width:132px;height:132px;margin:4px auto 14px;position:relative}.uhr svg{width:132px;height:132px;transform:rotate(-90deg)}
 .uhr circle{fill:none;stroke-width:10}.uhr .bg{stroke:var(--surface)}.uhr .vg{stroke:var(--primary);stroke-linecap:round;transition:stroke-dashoffset 1s linear}
 .uhr b{position:absolute;inset:0;display:grid;place-items:center;font-size:28px;font-variant-numeric:tabular-nums}
 .fv{margin-top:12px;display:none;gap:10px;flex-direction:column}.fv.an{display:flex}
 .fv img{width:100%;max-height:260px;object-fit:cover;border-radius:18px;background:var(--sc-high)}
 .fv .zeile{display:flex;gap:10px}.fv .zeile .btn2{flex:1}
+.mz{display:grid;gap:10px;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.mz small span{white-space:nowrap}
+.mz .n{width:30px;height:30px;border-radius:15px;background:var(--pc);color:var(--on-pc);display:grid;place-items:center;font-weight:800;font-size:14px;flex:none}
+.mz-z{display:flex;align-items:center;gap:12px;background:var(--sc-high);border-radius:18px;padding:12px 10px 12px 14px}
+.mz-z .t{flex:1;min-width:0}.mz-z b{display:block;font-size:16px;line-height:1.3}.mz-z small{display:block;color:var(--on-sv);font-size:14px;line-height:1.35;font-variant-numeric:tabular-nums}
+.mz-z.leise .n{background:var(--surface);color:var(--on-sv)}
+.rund{width:44px;height:44px;border-radius:22px;border:0;background:var(--surface);color:var(--on-surface);display:grid;place-items:center;cursor:pointer;flex:none}.rund svg{width:22px;height:22px;fill:currentColor}
+.mz-z .btn2{height:40px;padding:0 16px;font-size:15px}
+.mz-k{background:var(--sc-high);border-radius:20px;padding:16px}
+.mz-kopf{display:flex;gap:12px;align-items:center;margin-bottom:14px}.mz-kopf b{font-size:17px;line-height:1.3}.mz-kopf small{display:block;font-weight:400;color:var(--on-sv);font-size:14px}
+.mz-k .btn2{width:100%}
+.live{display:flex;align-items:baseline;justify-content:center;gap:8px;margin:4px 0 2px}.live b{font-size:52px;line-height:1.05;font-variant-numeric:tabular-nums}.live span{font-size:16px;color:var(--on-sv)}
+.mz-k .phase{text-align:center;margin:4px 0 12px;font-size:14px}
+.mz-k .lauf{margin:0}
+.fehler{color:var(--on-surface);font-size:15px;margin:0 0 12px}
+.pkt i{display:inline-block;width:4px;height:4px;border-radius:2px;background:currentColor;margin-left:3px;vertical-align:middle;animation:pkt 1.2s infinite}.pkt i:nth-child(2){animation-delay:.2s}.pkt i:nth-child(3){animation-delay:.4s}
+@keyframes pkt{0%,80%,100%{opacity:.2}40%{opacity:1}}
+.vgl{margin-top:12px;background:var(--sc-high);border-radius:20px;padding:16px}
+.vgl h3{font-size:15px;margin:0 0 10px;color:var(--on-sv);font-weight:700}
+.vgl-z{display:grid;grid-template-columns:96px 1fr 64px;align-items:center;gap:10px;font-size:14px}.vgl-z+.vgl-z{margin-top:8px}
+.bal{height:12px;border-radius:6px;background:var(--surface);overflow:hidden}.bal i{display:block;height:100%;border-radius:6px;background:var(--primary);transition:width .6s ease}
+.vgl-z b{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.vgl .urteil{margin-top:14px}
+.urteil.gut{background:var(--ok-c);color:var(--on-ok-c)}.urteil.mittel{background:var(--surface);color:var(--on-surface)}.urteil.schwach{background:var(--wip-c);color:var(--on-wip-c)}
+.rst .btn2.g{background:var(--surface)}
+.rst-pkt{display:flex;justify-content:center;gap:6px;margin:0 0 16px}.rst-pkt i{width:8px;height:8px;border-radius:4px;background:var(--surface);transition:width .2s}.rst-pkt i.an{width:24px;background:var(--primary)}.rst-pkt i.fertig{background:var(--primary);opacity:.45}
+.rst-ic{width:76px;height:76px;border-radius:38px;background:var(--pc);color:var(--on-pc);display:grid;place-items:center;margin:0 auto 14px}.rst-ic svg{width:38px;height:38px;fill:currentColor}
+.rst-ic.gut{background:var(--ok-c);color:var(--on-ok-c)}.rst-ic.puls{animation:puls2 1.6s ease-in-out infinite}
+@keyframes puls2{50%{transform:scale(1.06)}}
+.rst h3{font-size:21px;line-height:1.3;margin:0 0 6px}
+.rst p{color:var(--on-sv);font-size:15px;line-height:1.45}
+.rst-msg{min-height:22px;color:var(--on-surface)!important;font-weight:700;transition:opacity .35s}
+.stufen{text-align:left;margin:0 auto 16px;display:grid;gap:10px;max-width:280px}
+.stufe{display:flex;align-items:center;gap:12px;font-size:15px;color:var(--on-sv)}.stufe i{width:12px;height:12px;border-radius:6px;background:var(--surface);flex:none}
+.stufe.fertig{color:var(--on-surface)}.stufe.fertig i{background:var(--primary)}
+.stufe.aktiv{color:var(--on-surface);font-weight:700}.stufe.aktiv i{background:var(--primary);animation:puls 1.2s ease-in-out infinite}
+@keyframes puls{50%{transform:scale(1.5);opacity:.5}}
+
 
 .wechsel{display:block;margin:20px 4px 0;font-size:14px;font-weight:700;color:var(--primary);text-decoration:none;background:none;border:0;padding:0;font-family:inherit;cursor:pointer;text-align:left}
 .ma{display:block;margin:28px 4px 0;font-size:14px;font-weight:700;color:var(--primary);text-decoration:none}
@@ -120,19 +158,10 @@ ol.st b{color:var(--on-surface)}
   </section>
   <section class="blk" data-art="netz" hidden>
     <h2>Internet-Geschwindigkeit messen</h2>
-    <p class="u">Messen Sie am besten zweimal: direkt am Router und dort, wo es hakt. So sehen wir, ob es am WLAN oder am Anschluss liegt.</p>
+    <p class="u">Zweimal messen: erst direkt am Router, dann dort, wo es hakt. So sehen wir, ob es am WLAN oder am Anschluss liegt.</p>
     <div class="warn mobil" id="mobil" hidden><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><span><b>Sie sind über Mobilfunk verbunden.</b>Bitte schalten Sie die mobilen Daten aus und verbinden Sie sich mit Ihrem WLAN – sonst messen Sie Ihr Handynetz.</span></div>
-    <div class="mess">
-      <div class="mk" id="m_router"><div class="mk-kopf"><span class="n">1</span><b>Am Router<small>direkt daneben, höchstens 2 m entfernt</small></b></div>
-        <div class="werte"><div class="wert"><small>Download</small><b data-w="down">–</b><i>Mbit/s</i></div><div class="wert"><small>Upload</small><b data-w="up">–</b><i>Mbit/s</i></div><div class="wert"><small>Ping</small><b data-w="ping">–</b><i>ms</i></div></div>
-        <div class="lauf" hidden><i></i></div><p class="phase" hidden></p>
-        <button type="button" class="btn2 f" data-mess="router">Hier messen</button></div>
-      <div class="mk" id="m_raum"><div class="mk-kopf"><span class="n">2</span><b>Im Raum mit dem Problem<small>dort, wo das Internet hakt</small></b></div>
-        <div class="werte"><div class="wert"><small>Download</small><b data-w="down">–</b><i>Mbit/s</i></div><div class="wert"><small>Upload</small><b data-w="up">–</b><i>Mbit/s</i></div><div class="wert"><small>Ping</small><b data-w="ping">–</b><i>ms</i></div></div>
-        <div class="lauf" hidden><i></i></div><p class="phase" hidden></p>
-        <button type="button" class="btn2 f" data-mess="raum">Hier messen</button></div>
-    </div>
-    <div class="urteil" id="urteil" hidden></div>
+    <div class="mz" id="mz"></div>
+    <div class="vgl" id="vgl" hidden></div>
     <a class="anb" id="anb" hidden target="_blank" rel="noopener"></a>
     <p class="klein">Eine Messung dauert etwa 20 Sekunden und verbraucht bis zu 60 MB. Sie läuft über einen Messserver von Cloudflare, dabei wird Ihre IP-Adresse übertragen. An uns geht nichts, solange Sie uns nichts schicken.<br>Für eine Beschwerde bei Ihrem Anbieter zählt nur die offizielle Messung der Bundesnetzagentur: <a href="https://breitbandmessung.de" target="_blank" rel="noopener">breitbandmessung.de</a></p>
   </section>
@@ -198,8 +227,8 @@ ol.st b{color:var(--on-surface)}
   var f1=function(n){ return n==null?"–":n.toLocaleString("de-DE",{maximumFractionDigits:n<10?1:0}); };
   var jetzt=function(){ return performance.now(); };
   function mobil(){ var k=navigator.connection; return !!(k&&k.type==="cellular"); }
-  async function ping(){ var L=[]; for(var i=0;i<6;i++){ var t=jetzt(); var r=await fetch(CF+"/__down?bytes=0&r="+Math.random(),{cache:"no-store"}); if(!ASN) ASN=r.headers.get("cf-meta-asn")||""; await r.arrayBuffer(); if(i) L.push(jetzt()-t); }
-    L.sort(function(a,b){ return a-b; }); return L[Math.floor(L.length/2)]; }
+  async function ping(){ var L=[]; for(var i=0;i<11;i++){ var t=jetzt(); var r=await fetch(CF+"/__down?bytes=0&r="+Math.random(),{cache:"no-store"}); if(!ASN) ASN=r.headers.get("cf-meta-asn")||""; await r.arrayBuffer(); if(i) L.push(jetzt()-t); }
+    L.sort(function(a,b){ return a-b; }); return L[Math.floor(L.length/4)]; }
   /* Download: 4 Ströme gleichzeitig, Blöcke werden größer, max. 8 s bzw. 45 MB; gezählt wird ab der 1. Sekunde */
   async function runter(live){ var T0=jetzt(), DAUER=8000, MAX=45e6, b=0, b1=null, t1=0, aus=false, ctl=[];
     async function strom(){ var gr=250e3; while(!aus){ var ac=new AbortController(); ctl.push(ac); var ts=jetzt();
@@ -217,47 +246,83 @@ ol.st b{color:var(--on-surface)}
       x.onloadend=function(){ offen--; if(x.status===0&&!aus&&!alt){ ende(); return; } if(!aus) strom(jetzt()-ts<1000?Math.min(gr*2,4e6):gr); };
       x.open("POST",CF+"/__up?r="+Math.random()); x.send(daten(gr)); }
     strom(250e3); strom(250e3); strom(250e3); setTimeout(ende,DAUER+3000); }); }
-  function karte(w){ return document.getElementById("m_"+w); }
-  function setz(w,k,v){ karte(w).querySelector('[data-w="'+k+'"]').textContent=v; }
-  async function messen(w){ if(LAEUFT) return; LAEUFT=true; var K=karte(w), kn=K.querySelector("[data-mess]"), lauf=K.querySelector(".lauf"), bal=lauf.firstElementChild, ph=K.querySelector(".phase");
-    document.querySelectorAll("[data-mess]").forEach(function(x){ x.disabled=true; }); kn.hidden=true; lauf.hidden=false; ph.hidden=false; ["down","up","ping"].forEach(function(k){ setz(w,k,"…"); });
-    var anteil=function(p){ bal.style.width=Math.round(p*100)+"%"; }; var wl=null; try{ wl=navigator.wakeLock&&await navigator.wakeLock.request("screen"); }catch(e){}
-    try{ ph.textContent="Reaktionszeit wird gemessen …"; anteil(.03); var p=await ping(); setz(w,"ping",f1(Math.round(p)));
-      ph.textContent="Download wird gemessen …"; var d=await runter(function(b,t){ anteil(.08+Math.min(1,t/8000)*.46); setz(w,"down",f1(b*8/(t/1000)/1e6)); }); setz(w,"down",f1(d));
-      ph.textContent="Upload wird gemessen …"; var u=await rauf(function(b,t){ anteil(.56+Math.min(1,t/8000)*.44); setz(w,"up",f1(b*8/(t/1000)/1e6)); }); setz(w,"up",f1(u));
-      ERG[w]={down:d,up:u,ping:p,t:new Date()}; anteil(1); ph.hidden=true; kn.textContent="Nochmal messen"; }
-    catch(e){ ph.textContent="Messung nicht möglich – keine Verbindung zum Messserver. Besteht überhaupt eine Internetverbindung?"; ["down","up","ping"].forEach(function(k){ setz(w,k,"–"); }); kn.textContent="Erneut versuchen"; }
-    try{ wl&&wl.release(); }catch(e){} lauf.hidden=true; kn.hidden=false; document.querySelectorAll("[data-mess]").forEach(function(x){ x.disabled=false; }); LAEUFT=false; urteil(); anbieter(); if(window.MAILS) window.MAILS(); }
-  function urteil(){ var U=document.getElementById("urteil"), r=ERG.router, m=ERG.raum; if(!r||!m){ U.hidden=true; return; }
-    var q=r.down>0?m.down/r.down:1, pz=Math.round(q*100), t;
-    if(q>=0.75) t="<b>Das WLAN ist hier vermutlich nicht das Problem.</b>Im Raum kommt fast so viel an wie am Router ("+pz+" %)."+(r.down<16?" Am Router selbst sind es aber nur "+f1(r.down)+" Mbit/s – das spricht für ein Problem am Anschluss oder einen kleinen Tarif. Prüfen Sie zuerst die Störungsseite Ihres Anbieters.":" Hakt es trotzdem, rufen Sie uns gern an.");
-    else if(q<0.4) t="<b>Das spricht für schwaches WLAN in diesem Raum.</b>Hier kommt nur "+pz+" % von dem an, was am Router ankommt. Das lässt sich verbessern, z. B. mit einem zusätzlichen Access Point – rufen Sie uns gern an.";
-    else t="<b>Im Raum etwas langsamer als am Router ("+pz+" %).</b>Durch Wände und Abstand ist das normal. Hakt es trotzdem, melden Sie sich bei uns.";
+  /* ---- Anzeige: aktiver Schritt groß, fertige Messungen als schmale Zeile, danach Vergleich ---- */
+  var W=[["router","Am Router","Stellen Sie sich direkt neben den Router."],["raum","Im Raum mit dem Problem","Gehen Sie dorthin, wo das Internet hakt."]];
+  var IC_NEU='<svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>';
+  var PKT='<span class="pkt"><i></i><i></i><i></i></span>', LW="", FEHLER={};
+  function kurz(e){ return "<span>↓ "+f1(e.down)+" · ↑ "+f1(e.up)+" Mbit/s</span> · <span>Ping "+Math.round(e.ping)+" ms</span>"; }
+  function zeigM(){ var akt=LW||(!ERG.router?"router":!ERG.raum?"raum":""), h="";
+    W.forEach(function(x,i){ var w=x[0], e=ERG[w], n='<span class="n">'+(i+1)+'</span>';
+      if(w===LW) h+='<div class="mz-k"><div class="mz-kopf">'+n+'<b>'+x[1]+'<small>Bitte bis zum Ende hier bleiben.</small></b></div><div class="live"><b id="lvZ">–</b><span id="lvE">ms</span></div><p class="phase" id="lvP"></p><div class="lauf"><i id="lvB"></i></div></div>';
+      else if(w===akt) h+='<div class="mz-k"><div class="mz-kopf">'+n+'<b>'+x[1]+'<small>'+x[2]+'</small></b></div>'+(FEHLER[w]?'<p class="fehler">'+FEHLER[w]+'</p>':'')+'<button type="button" class="btn2 f" data-mess="'+w+'">'+(FEHLER[w]?"Erneut versuchen":x[1]+" messen")+'</button></div>';
+      else if(e) h+='<div class="mz-z">'+n+'<span class="t"><b>'+x[1]+'</b><small>'+kurz(e)+'</small></span><button type="button" class="rund" data-mess="'+w+'" aria-label="'+x[1]+' nochmal messen" title="Nochmal messen"'+(LW?" disabled":"")+'>'+IC_NEU+'</button></div>';
+      else h+='<div class="mz-z leise">'+n+'<span class="t"><b>'+x[1]+'</b><small>danach</small></span></div>'; });
+    document.getElementById("mz").innerHTML=h; }
+  document.getElementById("mz").addEventListener("click",function(ev){ var b=ev.target.closest("[data-mess]"); if(!b||LAEUFT) return; document.getElementById("mobil").hidden=!mobil(); messen(b.getAttribute("data-mess")); });
+  async function messen(w){ if(LAEUFT) return; LAEUFT=true; LW=w; FEHLER[w]=""; zeigM();
+    var el=function(id){ return document.getElementById(id); }, Z=el("lvZ"), E=el("lvE"), P=el("lvP"), B=el("lvB");
+    var anteil=function(p){ B.style.width=Math.round(p*100)+"%"; }, wl=null; try{ wl=navigator.wakeLock&&await navigator.wakeLock.request("screen"); }catch(e){}
+    try{ P.innerHTML="Reaktionszeit"+PKT; anteil(.03); var p=await ping(); Z.textContent=Math.round(p);
+      E.textContent="Mbit/s"; P.innerHTML="Download"+PKT; var d=await runter(function(b,t){ anteil(.08+Math.min(1,t/8000)*.46); Z.textContent=f1(b*8/(t/1000)/1e6); }); Z.textContent=f1(d);
+      P.innerHTML="Upload"+PKT; var u=await rauf(function(b,t){ anteil(.56+Math.min(1,t/8000)*.44); Z.textContent=f1(b*8/(t/1000)/1e6); });
+      ERG[w]={down:d,up:u,ping:p,t:new Date()}; if(navigator.vibrate) try{ navigator.vibrate(30); }catch(e){} }
+    catch(e){ FEHLER[w]="Messung nicht möglich – der Messserver ist nicht erreichbar. Besteht gerade überhaupt eine Internetverbindung?"; }
+    try{ wl&&wl.release(); }catch(e){} LAEUFT=false; LW=""; zeigM(); vergleich(); anbieter(); if(window.MAILS) window.MAILS();
+    var nx=document.querySelector("#mz .mz-k, #vgl:not([hidden])"); if(nx&&ERG[w]) nx.scrollIntoView({behavior:"smooth",block:"nearest"}); }
+  function vergleich(){ var V=document.getElementById("vgl"), r=ERG.router, m=ERG.raum; if(!r||!m){ V.hidden=true; return; }
+    var q=r.down>0?m.down/r.down:1, pz=Math.round(q*100), mx=Math.max(r.down,m.down)||1, k, t;
+    if(q>=0.75){ k="gut"; t="<b>Das WLAN ist hier vermutlich nicht das Problem.</b>"+(q>=0.9?"Im Raum kommt genauso viel an wie am Router.":"Im Raum kommt fast so viel an wie am Router ("+pz+" %).")+(r.down<16?" Am Router selbst sind es aber nur "+f1(r.down)+" Mbit/s – das spricht für ein Problem am Anschluss oder einen kleinen Tarif. Prüfen Sie zuerst die Störungsseite Ihres Anbieters.":" Hakt es trotzdem, rufen Sie uns gern an."); }
+    else if(q<0.4){ k="schwach"; t="<b>Das spricht für schwaches WLAN in diesem Raum.</b>Hier kommt nur "+pz+" % von dem an, was am Router ankommt. Ein neuer Router hilft dabei meist nicht – besser ist ein zusätzlicher Access Point in der Nähe. Rufen Sie uns gern an."; }
+    else { k="mittel"; t="<b>Im Raum etwas langsamer als am Router ("+pz+" %).</b>Durch Wände und Abstand ist das normal. Hakt es trotzdem, melden Sie sich bei uns."; }
     if(m.ping>100&&r.ping<50) t+=" Die Reaktionszeit im Raum ist hoch ("+Math.round(m.ping)+" ms) – auch das ist typisch für schwaches WLAN.";
-    U.innerHTML=t; U.hidden=false; }
+    var zl=function(n,e){ return '<div class="vgl-z"><span>'+n+'</span><div class="bal"><i style="width:'+Math.max(3,Math.round(e.down/mx*100))+'%"></i></div><b>'+f1(e.down)+'</b></div>'; };
+    V.innerHTML='<h3>Download im Vergleich (Mbit/s)</h3>'+zl("Am Router",r)+zl("Im Raum",m)+'<div class="urteil '+k+'">'+t+'</div>'; V.hidden=false; }
+  zeigM();
   function anbieter(){ var A=document.getElementById("anb"), a=ANB[ASN]; if(!a){ A.hidden=true; return; }
     A.href=a[1]; A.innerHTML='<svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><span><b>Ihr Anbieter: '+a[0].replace(/&/g,"&amp;")+'</b>Gibt es dort gerade eine Störung? Hier prüfen ›</span>'; A.hidden=false; }
   window.MESS_TXT=function(){ var L=[], n=ANB[ASN]?ANB[ASN][0]:"";
     [["router","Am Router"],["raum","Im Raum mit dem Problem"]].forEach(function(x){ var e=ERG[x[0]]; if(e) L.push(x[1]+": Download "+f1(e.down)+" Mbit/s, Upload "+f1(e.up)+" Mbit/s, Ping "+Math.round(e.ping)+" ms ("+e.t.toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+")"); });
     return L.length?"Messwerte"+(n?" (Anbieter "+n+")":"")+":\n"+L.join("\n"):""; };
-  document.querySelectorAll("[data-mess]").forEach(function(b){ b.addEventListener("click",function(){ document.getElementById("mobil").hidden=!mobil(); messen(b.getAttribute("data-mess")); }); });
   if(mobil()) document.getElementById("mobil").hidden=false;
 
-  /* ---- Geführter Neustart ---- */
-  var R=document.getElementById("rst"), RT=null;
-  var UHR=function(sek,txt,weiter,skip){ var U=2*Math.PI*56, ende=Date.now()+sek*1000;
-    R.innerHTML='<p>'+txt+'</p><div class="uhr"><svg viewBox="0 0 132 132"><circle class="bg" cx="66" cy="66" r="56"/><circle class="vg" cx="66" cy="66" r="56" stroke-dasharray="'+U+'" stroke-dashoffset="0"/></svg><b id="uhrT"></b></div>'+(skip?'<button type="button" class="btn2 g" id="rstSkip">'+skip+'</button>':'');
-    var vg=R.querySelector(".vg"), tt=R.querySelector("#uhrT");
-    var tick=function(){ var rest=Math.max(0,Math.ceil((ende-Date.now())/1000)); tt.textContent=rest>=60?Math.floor(rest/60)+":"+String(rest%60).padStart(2,"0"):rest+" s"; vg.style.strokeDashoffset=String(U*(1-rest/sek)); if(rest<=0){ clearInterval(RT); weiter(); } };
-    clearInterval(RT); tick(); RT=setInterval(tick,250); var sk=R.querySelector("#rstSkip"); if(sk) sk.onclick=function(){ clearInterval(RT); weiter(); }; };
-  var SCHRITT=function(txt,knopf,weiter,zweit,zweitFn){ clearInterval(RT); R.innerHTML='<p>'+txt+'</p><button type="button" class="btn2 f" id="rstOk">'+knopf+'</button>'+(zweit?'<button type="button" class="btn2 g" id="rstZw">'+zweit+'</button>':''); R.querySelector("#rstOk").onclick=weiter; if(zweit) R.querySelector("#rstZw").onclick=zweitFn; };
+  /* ---- Geführter Neustart: Schritt für Schritt, mit Zwischenmeldungen, am Ende prüft die Seite selbst die Verbindung ---- */
+  var R=document.getElementById("rst"), RT=null, MT=null, PT=null;
+  var SV={stecker:'<svg viewBox="0 0 24 24"><path d="M16 7V3h-2v4h-4V3H8v4h-.01C6.9 7 6 7.9 6 8.99v5.49L9.5 18v3h5v-3l3.5-3.51v-5.5c0-1.1-.9-1.99-2-1.99z"/></svg>',
+    router:'<svg viewBox="0 0 24 24"><path d="M20.2 5.9l.8-.8C19.6 3.7 17.8 3 16 3s-3.6.7-5 2.1l.8.8C13 4.8 14.5 4.2 16 4.2s3 .6 4.2 1.7zm-.9.8c-.9-.9-2.1-1.4-3.3-1.4s-2.4.5-3.3 1.4l.8.8c.7-.7 1.6-1 2.5-1 .9 0 1.8.3 2.5 1l.8-.8zM19 13h-2V9h-2v4H5c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2zM8 18H6v-2h2v2zm3.5 0h-2v-2h2v2zm3.5 0h-2v-2h2v2z"/></svg>',
+    wlan:'<svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>',
+    tel:'<svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>'};
+  function stop(){ clearInterval(RT); clearInterval(MT); clearInterval(PT); RT=MT=PT=null; }
   var WL=null; async function wach(an){ try{ if(an&&navigator.wakeLock&&!WL) WL=await navigator.wakeLock.request("screen"); if(!an&&WL){ WL.release(); WL=null; } }catch(e){} }
-  function rst1(){ wach(true); SCHRITT("<b>Schritt 1 von 3:</b> Ziehen Sie den Stromstecker des Routers. Haben Sie zusätzlich ein Glasfaser-Modem (kleines Kästchen, meist an der Wand), ziehen Sie auch dessen Stecker.","Ist ausgesteckt",rst2,"Abbrechen",rstAus); }
-  function rst2(){ UHR(30,"<b>Schritt 2 von 3:</b> Bitte 30 Sekunden warten – so startet der Router wirklich neu.",rst3); }
-  function rst3(){ SCHRITT("<b>Schritt 3 von 3:</b> Stecken Sie zuerst das Glasfaser-Modem (falls vorhanden) und dann den Router wieder ein.","Ist eingesteckt",rst4); }
-  function rst4(){ UHR(180,"Der Router startet. Das dauert einige Minuten, die Lampen blinken dabei. Bitte nichts drücken.",rst5,"Lampen leuchten wieder ruhig"); }
-  function rst5(){ wach(false); SCHRITT("<b>Fertig.</b> Prüfen Sie jetzt, ob das Internet wieder geht – am besten mit einer Messung direkt am Router.","Jetzt am Router messen",function(){ rstAus(); var k=karte("router"); k.scrollIntoView({behavior:"smooth",block:"center"}); setTimeout(function(){ messen("router"); },500); }); }
-  function rstAus(){ clearInterval(RT); wach(false); R.hidden=true; R.innerHTML=""; document.getElementById("rstStart").hidden=false; }
+  var summ=function(){ if(navigator.vibrate) try{ navigator.vibrate([60,60,60]); }catch(e){} };
+  function punkte(nr){ var h=""; for(var i=1;i<=4;i++) h+='<i class="'+(i===nr?"an":i<nr?"fertig":"")+'"></i>'; return '<div class="rst-pkt" aria-label="Schritt '+nr+' von 4">'+h+'</div>'; }
+  function knoepfe(L){ return L.map(function(k){ return k.href?'<a class="btn2 '+(k.art||"f")+'" href="'+k.href+'">'+(k.ic||"")+k.t+'</a>':'<button type="button" class="btn2 '+(k.art||"f")+'" data-r="'+k.id+'">'+k.t+'</button>'; }).join(""); }
+  function bild(nr,ic,titel,txt,L,extra,icKl){ stop(); R.innerHTML=punkte(nr)+'<div class="rst-ic'+(icKl?" "+icKl:"")+'">'+SV[ic]+'</div><h3>'+titel+'</h3><p>'+txt+'</p>'+(extra||"")+knoepfe(L||[]);
+    (L||[]).forEach(function(k){ var b=k.id&&R.querySelector('[data-r="'+k.id+'"]'); if(b) b.onclick=k.fn; }); }
+  /* Zwischenmeldungen wechseln alle paar Sekunden, damit man sieht: es passiert etwas */
+  function meldungen(L,ms){ var i=0, el=R.querySelector(".rst-msg"); if(!el) return; el.innerHTML=L[0]+PKT; clearInterval(MT);
+    MT=setInterval(function(){ i=(i+1)%L.length; el.style.opacity="0"; setTimeout(function(){ el.innerHTML=L[i]+PKT; el.style.opacity="1"; },350); },ms||6000); }
+  function uhr(sek,fertig,tick){ var U=2*Math.PI*56, ende=Date.now()+sek*1000, vg=R.querySelector(".vg"), tt=R.querySelector("#uhrT");
+    var t=function(){ var rest=Math.max(0,Math.ceil((ende-Date.now())/1000)); tt.textContent=rest>=60?Math.floor(rest/60)+":"+String(rest%60).padStart(2,"0"):rest+" s"; vg.style.strokeDashoffset=String(U*(1-rest/sek)); if(tick) tick(sek-rest); if(rest<=0){ stop(); fertig(); } };
+    t(); RT=setInterval(t,250); }
+  var UHR_HTML=function(){ var U=2*Math.PI*56; return '<div class="uhr"><svg viewBox="0 0 132 132"><circle class="bg" cx="66" cy="66" r="56"/><circle class="vg" cx="66" cy="66" r="56" stroke-dasharray="'+U+'" stroke-dashoffset="0"/></svg><b id="uhrT"></b></div>'; };
+  function rst1(){ wach(true); bild(1,"stecker","Router ausstecken","Ziehen Sie den Stromstecker des Routers. Haben Sie zusätzlich ein Glasfaser-Modem (kleines Kästchen, meist an der Wand), ziehen Sie dessen Stecker auch.",[{id:"ok",t:"Ist ausgesteckt",fn:rst2},{id:"ab",t:"Abbrechen",art:"g",fn:rstAus}]); }
+  function rst2(){ bild(2,"router","Kurz warten","Der Router braucht 30 Sekunden ohne Strom, damit er wirklich komplett neu startet.",[],'<p class="rst-msg"></p>'+UHR_HTML());
+    meldungen(["Router wird ganz ausgeschaltet","Der Zwischenspeicher wird geleert","Einen Moment noch","Gleich geht es weiter"],7000); uhr(30,function(){ summ(); rst3(); }); }
+  function rst3(){ bild(3,"stecker","Wieder einstecken","Stecken Sie zuerst das Glasfaser-Modem (falls vorhanden) und dann den Router wieder ein.",[{id:"ok",t:"Ist eingesteckt",fn:rst4}]); }
+  function rst4(){ var ST=[[0,"Router startet"],[50,"WLAN wird aufgebaut"],[110,"Verbindung zum Internet"]];
+    bild(4,"router","Der Router startet","Das dauert ein paar Minuten. Die Lampen blinken dabei – das ist ganz normal. Bitte nichts drücken.",[{id:"weiter",t:"Lampen leuchten wieder ruhig",art:"g",fn:function(){ stop(); rst5(); }}],
+      '<div class="stufen">'+ST.map(function(x,i){ return '<div class="stufe" data-s="'+i+'"><i></i>'+x[1]+'</div>'; }).join("")+'</div><p class="rst-msg"></p>'+UHR_HTML(),"puls");
+    meldungen(["Einen Moment noch","Alles läuft wie geplant","Die Verbindung wird aufgebaut","Gleich geschafft"],7000);
+    uhr(180,function(){ rst5(); },function(t){ var a=0; ST.forEach(function(x,i){ if(t>=x[0]) a=i; }); R.querySelectorAll(".stufe").forEach(function(e,i){ e.className="stufe"+(i<a?" fertig":i===a?" aktiv":""); }); });
+    /* Android: sobald das Handy wieder im WLAN ist und das Internet antwortet, geht es von selbst weiter */
+    var k=navigator.connection, t0=Date.now(); if(k&&k.type){ PT=setInterval(async function(){ if(Date.now()-t0<40000||k.type!=="wifi") return; if(await online()){ stop(); summ(); rst5(true); } },4000); } }
+  async function online(){ try{ var ac=new AbortController(), to=setTimeout(function(){ ac.abort(); },3500); var r=await fetch(CF+"/__down?bytes=0&r="+Math.random(),{cache:"no-store",signal:ac.signal}); clearTimeout(to); return r.ok; }catch(e){ return false; } }
+  async function rst5(schon){ stop(); if(!schon){ bild(4,"wlan","Verbindung wird geprüft","",[],'<p class="rst-msg"></p>',"puls"); meldungen(["Wir prüfen, ob das Internet wieder da ist"],60000); }
+    var ok=schon||await online(), zell=mobil();
+    if(ok&&!zell){ wach(false); bild(4,"wlan","Das Internet ist wieder da","Der Neustart hat funktioniert. Zur Sicherheit können Sie jetzt kurz die Geschwindigkeit am Router messen.",[{id:"mess",t:"Am Router messen",fn:function(){ rstAus(); var m=document.getElementById("mz"); m.scrollIntoView({behavior:"smooth",block:"center"}); setTimeout(function(){ messen("router"); },500); }},{id:"fertig",t:"Fertig",art:"g",fn:rstAus}],"","gut"); summ(); }
+    else bild(4,"router",zell?"Ihr Handy ist noch im Mobilfunk":"Noch keine Verbindung",zell?"Verbinden Sie Ihr Handy wieder mit dem WLAN und prüfen Sie dann erneut.":"Manche Router brauchen bis zu 5 Minuten. Warten Sie noch etwas und prüfen Sie dann erneut. Leuchtet eine Lampe rot oder geht es nach 5 Minuten immer noch nicht, rufen Sie uns an.",
+      [{id:"nochmal",t:"Nochmal prüfen",fn:function(){ rst5(); }},{href:"tel:+4922914878",t:"Anrufen · 02291 4878",art:"g",ic:SV.tel}]); }
+  function rstAus(){ stop(); wach(false); R.hidden=true; R.innerHTML=""; document.getElementById("rstStart").hidden=false; }
   document.getElementById("rstStart").addEventListener("click",function(){ this.hidden=true; R.hidden=false; rst1(); R.scrollIntoView({behavior:"smooth",block:"center"}); });
 
   /* ---- Foto senden (Teilen-Menü des Handys; ohne Teilen: Mail mit Hinweis) ---- */
