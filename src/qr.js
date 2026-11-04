@@ -80,6 +80,34 @@ function qrKarteSchrank(g,x,zu){ const kn=(act,ic,t,kl)=>`<button type="button" 
     :`<p class="meta">Noch kein Aufkleber. Einen vom Bogen aufkleben und scannen – oder direkt einen neuen drucken.</p>
       ${zu?"":`<div class="qr-knoepfe zwei">${kn("qrScanZu","qr",DESK.matches?"Nummer eingeben":"Aufkleber scannen")}${kn("qrNeu1","tag","Neuen drucken")}</div>`}`}</section>`; }
 
+
+/* ---- Pflicht: ohne QR-Aufkleber kein Abschluss (Max, 04.11.2026) ----
+   Gilt für Verteiler (Legende „Abschließen“, Installationsprüfung) und Netzwerkschränke (Netzwerkprüfung).
+   Kein „ohne Aufkleber abschließen“ – fehlt einer, bleibt es offen und steht in der Liste „ohne QR-Aufkleber“. */
+function qrFehlend(pr){ const g=ecGeb(pr.ortId), U=pr.umfang||{};
+  if(ecNz(pr)) return (g.schraenke||[]).filter(x=>!x.qr&&(!U.sIds||U.sIds.includes(x.id))).map(x=>({g,x,art:"schrank"}));
+  if(ecAn(pr)) return g.verteiler.filter(v=>!v.qr&&(!U.vIds||U.vIds.includes(v.id))).map(x=>({g,x,art:"vt"}));
+  return []; }
+let QR_PFL=null;
+function qrPflichtListe(){ return listOf(QR_PFL.filter(t=>!t.x.qr).map(t=>`<div class="li qr-pfl"><span class="av">${icon(t.art==="schrank"?"ecNetz":"qr")}</span><span class="lt"><span class="h">${esc(t.x.name||qrArtName(t))}</span><span class="s">${qrArtName(t)} · noch kein Aufkleber</span></span>
+    <button type="button" class="btn-tonal" data-act="qrPflDruck" data-g="${esc(t.g.id)}" data-id="${esc(t.x.id)}" data-art="${t.art}">${icon("tag")}Drucken</button></div>`)); }
+function qrPflicht(L,was){ QR_PFL=L;
+  dialog("QR-Aufkleber fehlt",`<p>Ohne QR-Aufkleber kann ${esc(was||"nicht abgeschlossen werden")}. Bitte erst drucken und aufkleben – außen auf den Deckel oder an die Seite.</p>
+    <div id="qrPflL">${qrPflichtListe()}</div>
+    <p class="hint">Klebt schon ein Aufkleber dran, der noch nicht zugeordnet ist? <button type="button" class="btn-text" data-act="qrPflScan" style="padding:0;min-height:0">Aufkleber scannen</button></p>`,
+    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`); }
+/* Liste „ohne QR-Aufkleber“ in Installation (Verteiler) und Netzwerk (Schränke) */
+function qrOhne(art){ const L=[]; for(const g0 of live("gebaeude")){ const g=ecGebNorm(g0);
+    if(art==="netz") (g.schraenke||[]).forEach(x=>{ if(!x.qr) L.push({g,x,art:"schrank"}); });
+    else g.verteiler.forEach(x=>{ if(!x.qr) L.push({g,x,art:"vt"}); }); } return L; }
+function qrOhneZeile(art){ if(art!=="anlage"&&art!=="netz") return ""; const n=qrOhne(art).length; if(!n) return "";
+  const t=art==="netz"?`${n} Netzwerkschr${n>1?"änke":"ank"}`:`${n} Verteiler`;
+  return `<div class="qr-ohne">${listOf([`<div class="li" role="button" tabindex="0" data-act="qrOhneDlg" data-art="${art}"><span class="av">${icon("warn")}</span><span class="lt"><span class="h">${t} ohne QR-Aufkleber</span><span class="s">Antippen und nachholen</span></span>${icon("chev")}</div>`])}</div>`; }
+function qrOhneDlg(art){ const L=qrOhne(art).sort((a,b)=>(b.g.updated||0)-(a.g.updated||0));
+  dialog(art==="netz"?"Netzwerkschränke ohne QR-Aufkleber":"Verteiler ohne QR-Aufkleber",listOf(L.map(t=>{ const o=ecOrt(t.g.ortId);
+    return `<div class="li" role="button" tabindex="0" data-act="qrOhneAuf" data-g="${esc(t.g.id)}" data-id="${esc(t.x.id)}" data-art="${t.art}"><span class="av">${icon(t.art==="schrank"?"ecNetz":"qr")}</span><span class="lt"><span class="h">${esc(t.x.name||qrArtName(t))}</span><span class="s">${esc(o.titel||"")}</span></span>${icon("chev")}</div>`; })),
+    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`,{breit:true}); }
+
 /* ---- Scanner (Kamera) ---- */
 let QR_CAM=null;
 function qrJsqr(){ if(window.jsQR) return Promise.resolve(window.jsQR); return new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="../vendor/jsqr.min.js"; s.onload=()=>ok(window.jsQR); s.onerror=()=>no(new Error("Scanner nicht erreichbar")); document.head.appendChild(s); }); }
@@ -187,5 +215,10 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="qrWegAsk"){ const z=qrZielHier(); confirmDlg("Aufkleber entfernen?",`Die Nummer gehört dann zu keinem ${z&&z.art==="schrank"?"Netzwerkschrank":"Verteiler"} mehr. Scannt jemand den alten Aufkleber, fragt die App, wohin er gehört.`,"Entfernen","qrWegOk"); return; }
   if(a==="qrWegOk"){ const z=qrZielHier(); if(z){ delete z.x.qr; z.x.updated=Date.now(); ecGebSpeichern(vtGeb(z.g)); } closeOverlays(); render(); return; }
   if(a==="qrBogen"){ qrBogenDlg(); return; }
+  if(a==="qrPflDruck"){ const art=b.dataset.art==="schrank"?"schrank":"vt", g=vtGeb(b.dataset.g), x=g&&(art==="schrank"?(g.schraenke||[]):g.verteiler).find(y=>y.id===b.dataset.id); if(!x) return;
+    const c=qrNeu(); qrSetzen(g.id,x.id,c,art); render(); qrDruckDlg(c,`QR ${x.name||""} ${c}`.replace(/\s+/g," ")); return; }
+  if(a==="qrPflScan"){ closeOverlays(); if(typeof scOeffnen==="function") scOeffnen(); return; }
+  if(a==="qrOhneDlg"){ qrOhneDlg(b.dataset.art); return; }
+  if(a==="qrOhneAuf"){ closeOverlays(); const g=vtGeb(b.dataset.g); if(!g) return; if(b.dataset.art==="schrank"){ const x=(g.schraenke||[]).find(y=>y.id===b.dataset.id); if(x) qrSchrankOeffnen(g,x); } else go({v:"vt",g:g.id,id:b.dataset.id,tab:"info"}); return; }
   if(a==="qrBogenOk"){ const n=+b.dataset.n||1, S=qrAlle(), C=[]; for(let i=0;i<n*24;i++) C.push(qrNeu(S)); closeOverlays(); qrPdfZeigen(C,false,`QR-Aufkleber ${ecHeute()} (${C.length} Stück)`); return; }
 },true);

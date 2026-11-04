@@ -35,6 +35,7 @@
 - Prüftasten-Erinnerung für Kunden über die QR-Seite: wartet auf die öffentliche QR-Seite (Achenbach).
 - QR-Scanner in allen Apps (Entwurf C: Blatt von unten, zuletzt gescannt, Filter Verteiler/Netzwerkschrank), Aufkleber auch für Netzwerkschränke – gebaut 04.11.2026 (1.7.71). Offen: in Baustelle/EVSE/Übersicht kennt der Scanner die Namen nur, wenn das Gerät den Aufkleber schon einmal gescannt hat.
 - Info-Seite für Fremde (q/): Art steht seit 1.7.73 automatisch im QR-Link (&a=netz / &a=zs), Seite zeigt Netzwerk- bzw. Zählerschrank-Text. Max hat noch Ideen für den Inhalt (04.11.2026). 1.7.74: Speedtest (am Router + im Raum, Cloudflare-Messserver), Anbieter-Störungslink nach AS-Nummer, geführter Neustart, Foto senden, „Änderung melden“ für IT-Firmen.
+- QR-Pflicht (1.7.77): Prüfung abschließen und Legende erstellen nur mit QR-Aufkleber, kein Überspringen; QR auf der Legende; Liste „ohne QR-Aufkleber“ in Installation/Netzwerk. Offen: Bögen ja/nein (Max klärt mit Chef), QR auf Netzwerk-Belegungsplan.
 - KNX in Gebäudetechnik einbauen (Max 04.11.2026) – kommt nach dem Scanner, noch nicht anfangen.
 
 ## Lager (Gespräch 04.11.2026) – offen, Max ist unsicher, erst mit dem Chef klären
