@@ -110,19 +110,31 @@ function kxGeraeteView(g){ let D=kxGeraete(g); const n={alle:D.length,offen:D.fi
     ${D.length?[...grp].map(([rid,L])=>`<div class="sec-lbl">${esc(kxRaumTitel(g,rid))}</div>${kxGerListe(g,L)}`).join(""):`<p class="meta" style="margin:16px 4px">${KX_FILTER==="problem"?"Keine Geräte mit Problem.":KX_FILTER==="offen"?"Keine offenen Geräte.":"Noch keine Geräte – unter „Räume“ bei der Begehung zählen."}</p>`}</div>`; }
 
 /* ---- Dialoge ---- */
-function kxRaumNeuDlg(){ const g=kxGebAkt(); if(!g) return; const B=g.bauteile, E=ecEtagen(g);
+let KX_GS_HAND=false;
+const kxGsOpts=()=>[["","aus der Bezeichnung erkennen"],...EC_GESCHOSS.map(([v,t])=>[String(v),t])];
+function kxRaumNeuDlg(){ const g=kxGebAkt(); if(!g) return; const B=g.bauteile, E=ecEtagen(g), et0=E.find(e=>e.raeume.length)||E[0]; KX_GS_HAND=false;
   dialog("Räume anlegen",`<div class="fg">${sf("kxBt","Bauteil","",[["","– ohne –"],...B.map(b=>[b.id,b.name])],{form:true})}${tf("kxBtNeu","oder neues Bauteil","",{form:true,ph:"z. B. B"})}</div>
-    <div class="fg" style="margin-top:12px">${sf("kxEt","Etage",(E.find(e=>e.raeume.length)||E[0]||{}).id||"",E.map(e=>[e.id,ecEtLabel(e)]),{form:true})}${tf("kxEtNeu","oder neue Etage","",{form:true,ph:"z. B. Level 4"})}</div>
+    <div class="fg" style="margin-top:12px">${sf("kxEt","Etage",(et0||{}).id||"",E.map(e=>[e.id,e.name]),{form:true})}${tf("kxEtNeu","oder neue Etage","",{form:true,ph:"z. B. Level 4"})}</div>
+    <div class="fg1" style="margin-top:12px">${sf("kxGs","Geschoss",et0&&et0.ebene!=null&&et0.ebene!==""?String(et0.ebene):"",kxGsOpts(),{form:true})}</div>
+    <p class="meta" style="margin:6px 4px 0">Heißt die Etage beim Kunden anders (z. B. „Level 4“), hier das echte Geschoss wählen. Gilt für die Etage überall, auch in der Prüfung.</p>
     <div class="fg1" style="margin-top:12px">${tf("kxRn","Räume","",{form:true,ph:"z. B. 403-407, 410, Flur"})}</div>
     <p class="meta" style="margin:8px 4px 0">In der Reihenfolge eintragen, in der du durchgehst – daraus folgen später die Adressen. Bereiche mit Bindestrich.</p>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="kxRaumOk">Anlegen</button>`,{breit:true});
   setTimeout(()=>{ const e=document.getElementById("f_kxRn"); if(e) e.focus(); },60); }
+/* Geschoss-Feld mitführen: Etage gewählt → deren Geschoss; neue Etage getippt → aus dem Namen raten, solange nicht von Hand gewählt */
+function kxGsSetzen(v){ const s=document.getElementById("f_kxGs"); if(!s) return; s.value=v==null?"":String(v); if(s.value!==(v==null?"":String(v))) s.value=""; }
+document.addEventListener("change",ev=>{ const el=ev.target, g=nav.v==="kx"&&kxGebAkt(); if(!g) return;
+  if(el.id==="f_kxGs"){ KX_GS_HAND=el.value!==""; return; }
+  if(el.id==="f_kxEt"&&!(document.getElementById("f_kxEtNeu")||{}).value){ const e=g.etagen.find(x=>x.id===el.value); KX_GS_HAND=false; kxGsSetzen(e&&e.ebene!=null&&e.ebene!==""?e.ebene:null); } });
+document.addEventListener("input",ev=>{ const el=ev.target; if(el.id!=="f_kxEtNeu"||KX_GS_HAND) return; const v=el.value.trim();
+  if(v) kxGsSetzen(ecEbeneRaten(v)); else { const g=kxGebAkt(), e=g&&g.etagen.find(x=>x.id===(document.getElementById("f_kxEt")||{}).value); kxGsSetzen(e&&e.ebene!=null&&e.ebene!==""?e.ebene:null); } });
 function kxRaumNamen(t){ const out=[]; String(t||"").split(/[,;\n]+/).map(s=>s.trim()).filter(Boolean).forEach(s=>{ const m=s.match(/^(\D*?)(\d+)\s*[-–]\s*\1?(\d+)$/);
     if(m&&+m[3]>=+m[2]&&+m[3]-+m[2]<200){ const w=m[2].length; for(let n=+m[2];n<=+m[3];n++) out.push(m[1]+String(n).padStart(m[2].startsWith("0")?w:0,"0")); } else out.push(s); }); return out; }
 function kxRaumOk(){ const g=kxGebAkt(); if(!g) return; const F=formVals(), N=kxRaumNamen(F.kxRn); if(!N.length){ toast("Bitte Raumnummern eintragen"); return; }
   let bt=F.kxBt||""; if(F.kxBtNeu){ const vorh=g.bauteile.find(b=>b.name.toLowerCase()===F.kxBtNeu.toLowerCase()); bt=vorh?vorh.id:(()=>{ const b={id:"b-"+uid(),name:F.kxBtNeu}; g.bauteile.push(b); return b.id; })(); }
   let et=g.etagen.find(e=>e.id===F.kxEt); if(F.kxEtNeu){ et=g.etagen.find(e=>e.name.toLowerCase()===F.kxEtNeu.toLowerCase()); if(!et){ et={id:uid(),name:F.kxEtNeu,raeume:[]}; g.etagen.push(et); } }
   if(!et){ toast("Bitte eine Etage wählen"); return; }
+  if(F.kxGs!==""&&F.kxGs!=null) et.ebene=+F.kxGs; else if(F.kxEtNeu){ const eb=ecEbeneRaten(F.kxEtNeu); if(eb!=null) et.ebene=eb; }
   let neu=0; N.forEach(n=>{ if(et.raeume.some(r=>r.name===n&&(r.bauteilId||"")===bt)) return; et.raeume.push({id:uid(),name:n,...(bt?{bauteilId:bt}:{})}); neu++; });
   kxSpeichern(g); closeOverlays(); render(); toast(neu?`${neu} ${neu>1?"Räume":"Raum"} angelegt`:"Diese Räume gibt es schon"); }
 /* Linie anlegen/bearbeiten: Bereich.Linie, Startnummer, Räume in Reihenfolge */
