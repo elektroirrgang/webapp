@@ -1642,3 +1642,14 @@ body.fm-offen{overflow:hidden}
 .pl-h .pl-info{background:var(--sc-high);color:var(--on-sv)}
 .ec-pz .t .pl-h{margin-top:4px}
 .mrow:has(> .pl-h){flex-wrap:wrap}.mrow > .pl-h{flex:1 1 100%;margin:0 0 4px}
+
+/* ===== Texte aus der Übergabe (texte.js) ===== */
+.tx{margin-top:18px}
+.tx-k{border-radius:18px;background:var(--sc-high);padding:12px 12px 4px;margin-top:10px}
+.tx-kopf{display:flex;align-items:center;gap:8px}
+.tx-kopf .lt{flex:1;min-width:0;display:grid}.tx-kopf b{font-size:16px}.tx-kopf small{font-size:12.5px;color:var(--on-sv)}
+.tx-b{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 14px 0 10px;border:0;border-radius:19px;background:var(--surface);color:var(--on-surface);font:inherit;font-size:14px;font-weight:700;cursor:pointer;flex:none}
+.tx-b.haupt{background:var(--fab);color:var(--on-fab)}
+.tx-b .ic{width:18px;height:18px}
+.tx-t{white-space:pre-wrap;font:inherit;font-size:14.5px;line-height:1.5;margin:10px 2px 8px;color:var(--on-surface);user-select:text;-webkit-user-select:text}
+.tx-hin{margin:8px 4px 0}
