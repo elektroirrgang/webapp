@@ -2313,7 +2313,7 @@ function eintragView(){
   return `<div class="narrow lesen ed-ueb">
     <div class="edu-datum">${tf("datum","Datum",e.datum,{type:"date",form:true})}</div>
     <div class="sec-lbl">Dabei</div>${dabeiEditor()}
-    <div class="sec-lbl">Bericht</div>
+    ${typeof kiAn==="function"&&kiAn()?`<div class="sec-row"><div class="sec-lbl">Bericht</div><button type="button" class="ki-knopf" data-act="entwErzaehlen">${icon("mic")}Erzählen</button></div>`:`<div class="sec-lbl">Bericht</div>`}
     <div class="fg1">${ta("stand","Stand – was ist heute passiert?",e.stand,{form:true,ph:"z. B. Unterverteilung OG gesetzt, Leitungen Bad gezogen"})}
       ${ta("offen","Offen / nächste Schritte",e.offen,{form:true,ph:"z. B. Bad anschließen, FI-Prüfung UV OG"})}</div>
     ${matEditor()}
@@ -2323,6 +2323,20 @@ function eintragView(){
     ${vor?`<details class="vorher"><summary>${icon("doc")}<span>Letzte Übergabe: ${esc(tagText(vor.datum))} · ${esc(vonText(vor))}</span>${icon("drop")}</summary>${eintragKarte(vor)}</details>`:""}
   </div>`;
 }
+/* Übergabe erzählen (KI, vorbereitet 04.11.2026): einfach drauflos sprechen – die KI füllt Stand, Offen und Material */
+const ENTW_KI_SYSTEM=`Du schreibst für Elektro Irrgang die Tagesübergabe einer Baustelle aus dem, was ein Elektriker erzählt hat (Spracherkennung, Pausen als „…“, kann Fehler enthalten).
+Schreibe sachlich und knapp in Stichpunkten (je Punkt eine Zeile, beginnend mit „- “), ohne Füllwörter, ohne etwas zu erfinden.
+Antworte nur mit JSON: {"stand":"- …","offen":"- …","material":[{"t":"Bezeichnung","q":Zahl,"u":"Einheit"}]}
+- stand: was heute erledigt wurde. offen: was noch zu tun ist / nächste Schritte / Probleme.
+- material: nur Material, das noch gebraucht oder besorgt werden muss. Einheiten nur aus: ${typeof MAT_EINHEITEN!=="undefined"?MAT_EINHEITEN.join(", "):"Stück, m"}. Leitungen wie „NYM-J 3×1,5 mm²“ schreiben. Ohne Menge: q = 1.
+- Fehlt etwas, bleibt der Wert leer bzw. die Liste leer.`;
+function entwErzaehlen(){ if(!entw) return; kiAufnahme({titel:"Übergabe erzählen",tipp:"Erzähl einfach, was heute gemacht wurde, was noch offen ist und welches Material morgen gebraucht wird. Die KI macht daraus die Übergabe – du prüfst sie danach.",
+  fertig:async roh=>{ const j=await kiFrage({system:ENTW_KI_SYSTEM,text:roh,json:true}); if(!entw) return;
+    const dazu=(alt,neu)=>{ neu=String(neu||"").trim(); alt=String(alt||"").trim(); return neu?(alt?alt+"\n"+neu:neu):alt; };
+    entw.stand=dazu(entw.stand,j.stand); entw.offen=dazu(entw.offen,j.offen);
+    const M=Array.isArray(j.material)?j.material:[]; if(M.length){ entw.mat=entw.mat||[]; M.forEach(x=>{ const t=String(x&&x.t||"").trim(); if(!t) return;
+      const u=typeof MAT_EINHEITEN!=="undefined"&&MAT_EINHEITEN.includes(x.u)?x.u:(typeof matStdEinheit==="function"?matStdEinheit(t):"Stück"); entw.mat.push({t,q:+x.q||1,u,ok:false}); }); }
+    render(); toast("Übergabe ausgefüllt – bitte kurz prüfen"); }}); }
 function entwLesen(){ if(!entw) return; $("#app").querySelectorAll("[data-f]").forEach(el=>entw[el.dataset.f]=el.value); matLesen(); }
 function entwNeu(b,e){
   entwZurueck=nav;
@@ -2930,6 +2944,7 @@ document.addEventListener("click",ev=>{
   case "entwVerwerfenAsk": confirmDlg("Übergabe verwerfen?","Alles, was du hier eingetragen hast, wird entfernt.","Verwerfen","entwVerwerfen"); return;
   case "entwTeilen": { eSpeichernStill(); const e=entw&&DB.eintraege.get(entw.id); if(e) teilen(e); return; }
   case "entwFoto": entwLesen(); $("#fotoFile").click(); return;
+  case "entwErzaehlen": entwLesen(); entwErzaehlen(); return;
   case "dabeiTog": { if(!entw) return; entwLesen(); const p={name:b.dataset.name,mail:b.dataset.mail||""}, i=entw.dabei.findIndex(q=>dabeiGleich(p,q));
     if(i>=0) entw.dabei.splice(i,1); else entw.dabei.push(p); render(); eAuto(); return; }
   case "dabeiPlus": if(!entw) return; entwLesen(); dialog("Weitere Person",`<div class="fg1">${tf("name","Name","",{form:true,ph:"z. B. Fa. Müller (Trockenbau)"})}</div>`,`<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="dabeiPlusOk">Hinzufügen</button>`); return;

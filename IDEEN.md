@@ -1,5 +1,12 @@
 # Geplant / Hintergrund
 
+## KI (vorbereitet 04.11.2026 – wartet auf Zugang, Entscheidung Chef/Microsoft)
+- Eingebaut, aber aus: `src/ki.js`, Einstellungen in der Übersicht › Einstellungen › KI (nur Admin). Anleitung: `server/README.md`.
+- Weg 1 Azure OpenAI mit Microsoft-Anmeldung (kein Schlüssel in der App), Weg 2 eigener Server `server/ki-worker.js`.
+- Schon angeschlossen: Liste einfügen › Foto (Verteiler ablesen), Diktieren (KI statt Regeln, Regeln als Rückfall), Baustelle › Übergabe › Erzählen.
+- Ideen für später: Mängeltext aus Stichworten ausformulieren, Prüfbericht-Zusammenfassung für den Kunden, Material aus Foto der Lieferscheine, Anlagenpass mit Kurzfazit.
+- Vor dem Einschalten: Datenschutz (Anbieter, EU-Region, Auftragsverarbeitung) mit dem Chef klären.
+
 ## QR-Aufkleber: öffentliche Seite für Fremde (Entscheidung Max, 03.11.2026: über Microsoft) – wartet auf Achenbach
 
 - Ziel: Wer den Aufkleber am Verteiler scannt und nicht angemeldet ist, sieht eine Irrgang-Seite mit **Verteilerlegende** und **Bedienungsanleitungen** der Anlage. Er kann **nichts bearbeiten oder löschen**, aber eine **Bemerkung** schreiben, die bei uns als Vorgang in der Übersicht landet; wir arbeiten sie danach in die Pläne ein.

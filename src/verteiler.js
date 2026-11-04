@@ -200,7 +200,7 @@ function vtImpDlg(kind,id,vorwahl){ const s=kind==="standorte"&&standortOf(id), 
         </div>
       </section>
       <section class="vti-s" data-s="2" hidden>
-        <div class="vti-wege">${vtiSR()?`<button type="button" class="vti-weg vti-mic" data-act="vtiDiktat">${icon("mic")}<span>Diktieren</span></button>`:""}<button type="button" class="vti-weg" data-act="vtImpDatei">${icon("ecImport")}<span>Datei laden</span></button></div>
+        <div class="vti-wege">${vtiSR()?`<button type="button" class="vti-weg vti-mic" data-act="vtiDiktat">${icon("mic")}<span>Diktieren</span></button>`:""}${typeof kiAn==="function"&&kiAn()?`<button type="button" class="vti-weg vti-ki" data-act="vtiFoto">${icon("cam")}<span>Foto</span></button>`:""}<button type="button" class="vti-weg" data-act="vtImpDatei">${icon("ecImport")}<span>Datei laden</span></button></div>
         <div class="vti-rec" id="vtiRec" hidden>
           <div class="vti-rec-kreis" id="vtiRecKreis"><span class="w1"></span><span class="w2"></span><span class="kern">${icon("mic")}</span></div>
           <div class="vti-rec-zeit" id="vtiRecZeit">0:00</div><div class="vti-rec-txt" id="vtiRecTxt">Ich höre zu</div>
@@ -214,7 +214,7 @@ function vtImpDlg(kind,id,vorwahl){ const s=kind==="standorte"&&standortOf(id), 
       <section class="vti-s" data-s="3" hidden>
         <div class="vti-nach" id="vtiNach" hidden><button type="button" class="vti-weg" data-act="vtiDiktat">${icon("mic")}<span>Weiter diktieren</span></button><button type="button" class="vti-weg" data-act="vtiSchritt" data-s="2">${icon("edit")}<span>Text ändern</span></button></div>
         <div id="vtiVorschau" class="vti-vor"></div>
-        <details class="vti-gehoert" id="vtiGehoert" hidden><summary>Was die App gehört hat</summary><p></p></details>
+        <details class="vti-gehoert" id="vtiGehoert" hidden><summary>Was die App gehört bzw. erkannt hat</summary><p></p></details>
       </section>
     </div>`,
     `<button class="btn-text vti-f" data-f="1" data-act="cancel">Abbrechen</button><button class="btn-text vti-f" data-f="23" data-act="vtiZurueck">Zurück</button><span style="flex:1"></span><button class="btn-filled vti-f" data-f="12" data-act="vtiWeiter">Weiter</button><button class="btn-filled vti-f" data-f="3" data-act="vtImpOk">Übernehmen</button>`,{breit:true});
@@ -436,7 +436,12 @@ function vtiDiktatStart(){ const SR=vtiSR(); if(!SR){ toast("Diktieren geht in d
   sitzung(); zeig(); }
 function vtiDiktatFertig(){ const R=vtiDiktatStop(false); if(!R) return; const kreis=document.getElementById("vtiRecKreis"), txt=document.getElementById("vtiRecTxt");
   if(kreis) kreis.className="vti-rec-kreis denkt"; if(txt) txt.textContent="Wird ausgewertet …";
-  setTimeout(()=>{ if(VTI_REC!==R) return; VTI_REC=null; vtiRecUi(false);
+  setTimeout(async()=>{ if(VTI_REC!==R) return;
+    if(typeof kiBereit==="function"&&kiBereit()&&R.seg.length){ if(txt) txt.textContent="Die KI wertet aus …";
+      try{ const j=await kiFrage({system:VTI_KI_SYSTEM,text:`So hat der Elektriker den Verteiler beschrieben (Spracherkennung, Pausen als „…“):\n${R.seg.join(" … ")}`,json:true});
+        if(VTI_REC!==R) return; VTI_REC=null; vtiRecUi(false); const ta=document.getElementById("vtiText"); if(ta) ta.value=R.basis; vtiKiUebernehmen(j,R.seg.join(" … ")+" (von der KI ausgewertet)"); return; }
+      catch(e){ toast("KI nicht erreichbar – ausgewertet ohne KI"); } }
+    if(VTI_REC!==R) return; VTI_REC=null; vtiRecUi(false);
     const {Z}=vtiDiktatLesen(R.seg), ta=document.getElementById("vtiText");
     if(!Z.length){ toast(R.seg.length?"Nichts Brauchbares verstanden – bitte nochmal":"Nichts gehört – Mikrofon prüfen und nochmal"); return; }
     if(ta) ta.value=R.basis+(R.basis?"\n":"")+Z.join("\n");
@@ -446,3 +451,30 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(b===null&&e.target.closest&&e.target.closest('#dlg [data-act="vtiRecOk"]')){ e.stopPropagation(); vtiDiktatFertig(); return; }
   if(e.target.closest&&e.target.closest('#dlg [data-act="vtiRecAbbr"]')){ e.stopPropagation(); vtiDiktatStop(); return; }
   if(VTI_SR&&e.target.closest&&e.target.closest('#dlg [data-act="cancel"],#dlg [data-act="vtImpOk"],#scrim')) vtiDiktatStop(); },true);
+
+/* ===== KI: Verteiler vom Foto ablesen, Diktat übersetzen (vorbereitet 04.11.2026 – aktiv erst mit KI-Zugang, siehe ki.js) =====
+   Die KI liefert Zeilen im selben Format wie „Liste einfügen“ – danach läuft alles wie gewohnt über „Prüfen“. */
+const VTI_KI_SYSTEM=`Du hilfst Elektrikern von Elektro Irrgang, die Stromkreisliste eines Verteilers zu erfassen.
+Gib die Geräte im folgenden Zeilenformat aus, eine Zeile pro Gerät, je Hutschiene von links nach rechts, die Reihen von oben nach unten:
+- "---" beginnt eine neue Reihe (Hutschiene). "# Text" ist eine Überschrift, z. B. "# Verteilerfeld 2".
+- Fehlerstromschutzschalter: "Fehlerstromschutzschalter 40A / 30mA" (Werte nur, wenn erkennbar; "2-polig" anhängen, wenn 2-polig).
+- Leitungsschutzschalter: "B16; Bezeichnung", 3-polig: "B16; Bezeichnung 3-polig". FI/LS-Schalter (RCBO): "FI/LS B16; Bezeichnung".
+- Reserve-Automat ohne Verbraucher: "B16; Reserve". Freier Platz oder Blindabdeckung: "leer".
+- Andere Geräte mit Typ vorn: "Neozed; Bezeichnung", "Hauptschalter", "Überspannungsschutz", "Schütz; Bezeichnung", "Stromstoßschalter; Bezeichnung", "Treppenlichtautomat", "Klingeltrafo".
+- Bezeichnung nur, wenn sie lesbar ist (Beschriftungsstreifen, Legende) bzw. gesagt wurde – sonst nur die Absicherung, z. B. "B16".
+- Nichts erfinden. Was du nicht sicher erkennst, lässt du weg und nennst es im Hinweis.
+Antworte nur mit JSON: {"zeilen":["…"],"hinweis":"kurz, was unsicher war oder fehlt (leer, wenn alles klar)"}`;
+function vtiKiAnzeige(txt){ vtiRecUi(true); const k=document.getElementById("vtiRecKreis"), t=document.getElementById("vtiRecTxt"), z=document.getElementById("vtiRecZeit");
+  if(k) k.className="vti-rec-kreis denkt"; if(t) t.textContent=txt; if(z) z.textContent=""; document.getElementById("dlg").classList.add("vti-ki-an"); }
+function vtiKiFertig(){ vtiRecUi(false); const d=document.getElementById("dlg"); if(d) d.classList.remove("vti-ki-an"); }
+function vtiKiUebernehmen(j,quelle){ const Z=(j&&Array.isArray(j.zeilen)?j.zeilen:[]).map(z=>String(z||"").trim()).filter(Boolean), ta=document.getElementById("vtiText");
+  if(!Z.length) throw new Error("Die KI hat keine Geräte erkannt");
+  if(ta){ const b=ta.value.replace(/\s+$/,""); ta.value=b+(b?"\n":"")+Z.join("\n"); }
+  VTI_GEHOERT=[VTI_GEHOERT,quelle+(j.hinweis?` – Hinweis der KI: ${j.hinweis}`:"")].filter(Boolean).join(" … "); vtiZeig(3); }
+async function vtiFoto(){ if(!kiAn()){ toast("KI ist nicht eingerichtet"); return; } if(vtiSchritt!==2) vtiZeig(2);
+  const F=await kiFotos(true); if(!F.length) return; vtiKiAnzeige(F.length>1?`Die KI liest ${F.length} Fotos …`:"Die KI liest den Verteiler …");
+  try{ const B=[]; for(const f of F) B.push(await kiBild(f));
+    const j=await kiFrage({system:VTI_KI_SYSTEM,text:`Hier ${B.length>1?`sind ${B.length} Fotos desselben Verteilers`:"ist ein Foto eines Verteilers"}. Erstelle die Stromkreisliste.`,bilder:B,json:true});
+    vtiKiFertig(); vtiKiUebernehmen(j,`Vom Foto (${B.length} Bild${B.length>1?"er":""}) abgelesen`); }
+  catch(e){ vtiKiFertig(); toast(e.message||"KI nicht erreichbar"); } }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('#dlg [data-act="vtiFoto"]'); if(!b) return; e.stopPropagation(); vtiFoto(); },true);
