@@ -1380,3 +1380,9 @@ body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dl
 .pv-zahl{top:calc(env(safe-area-inset-top,0px) + 76px)!important;transition:opacity .35s,top .28s cubic-bezier(.3,.7,.2,1)!important}
 .pv.kompakt .pv-zahl{top:calc(env(safe-area-inset-top,0px) + 48px)!important}
 .pv-zahl,.pv.kompakt .pv-zahl{top:auto!important;bottom:calc(20px + env(safe-area-inset-bottom,0px))!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important}
+
+/* Glocke – gemeinsam für alle Apps */
+.glocke{position:relative;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--on-surface);display:grid;place-items:center;flex:none;cursor:pointer}
+.glocke .ic{width:24px;height:24px}
+.glocke .gl-n{position:absolute;top:4px;right:2px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--fab);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;box-sizing:border-box}
+.li.ml-neu{background:color-mix(in srgb,var(--fab) 9%,var(--sc-low,var(--sc)))}

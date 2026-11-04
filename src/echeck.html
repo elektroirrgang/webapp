@@ -1516,6 +1516,7 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
     <img class="logo l-dunkel" src="<!--LOGO_DUNKEL-->" alt="Elektro Irrgang">
     <h1 class="tb-title" id="topTitle"></h1>
     <button class="icon-btn" id="qrBtn" data-act="qrScan" aria-label="QR-Aufkleber scannen" title="QR-Aufkleber scannen" hidden></button>
+    <button class="glocke" id="glBtn" data-act="mlAuf" aria-label="Benachrichtigungen" aria-haspopup="dialog" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span class="gl-n" id="glN" hidden></span></button>
     <button class="avatar" id="avBtn" data-act="nav" data-v="mehr" aria-label="Konto und Einstellungen" hidden><span id="avTxt"></span></button>
     <button class="icon-btn" id="menuBtn" data-act="menu" aria-label="Weitere Optionen" aria-haspopup="menu" aria-expanded="false"></button>
   </div>
@@ -1828,6 +1829,9 @@ function wann(ts){ if(!ts) return ""; const d=new Date(ts), h=new Date(); const 
   return tage===0?`heute, ${uhr}`:tage===1?`gestern, ${uhr}`:d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"}); }
 const vonText=r=>r&&r.createdBy&&r.createdBy.name?r.createdBy.name:"";
 /*DATEIEN*/
+/*ANFORDERUNG*/
+/* Benachrichtigungen: Aufträge und Materialanforderungen öffnen in der Übersicht */
+const ML_FREMD={auftraege:"../uebersicht/",materialanf:"../uebersicht/",geraete:"../uebersicht/"};
 /*KUNDE*/
 function closeOverlays(){ ["#menu","#dlg","#scrim"].forEach(s=>$(s).hidden=true); $("#dlg").classList.remove("aw"); $("#scrim").classList.remove("dim"); $("#menuBtn").setAttribute("aria-expanded","false"); }
 function dialog(title,body,actions,opt){
@@ -1881,8 +1885,8 @@ const TH_KEY="evse_theme";
 const RES_TXT={ok:"fertig",bad:"Mängel",open:"offen",wip:"in Arbeit"};
 /* E-Check-Daten (Gebäude, Prüfungen, Geräte der Kunden) liegen in echeck_daten und werden wie alles andere abgeglichen; Messgeräte („geraete“) pflegt die Übersicht */
 const EC_KINDS=["gebaeude","echecks","betriebsmittel","legenden"];
-const KINDS=["kunden","standorte","profile","dateien","protokolle","geraete","einstellungen","wuensche",...EC_KINDS];
-const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["dateien","protokolle","geraete","einstellungen","wuensche"];
+const KINDS=["kunden","standorte","profile","dateien","protokolle","geraete","einstellungen","wuensche","vorgaenge","anforderungen",...EC_KINDS];
+const KUNDEN_KINDS=["kunden","standorte","profile"], APP_KINDS=["dateien","protokolle","geraete","einstellungen","wuensche","vorgaenge","anforderungen"];
 const DB=Object.fromEntries(KINDS.map(k=>[k,new Map()]));
 let META={profil:{name:""},sync:{}};
 let nav={v:"anlagen"}, query="", kDB=null, eDB=null, aDB=null, warned=false, syncT=null;
@@ -2164,7 +2168,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   $("#topTitle").innerHTML=title?`<span>${esc(title)}</span>${sub?`<small>${esc(String(sub).split(/\s*›\s*/).pop())}</small>`:""}`:"";
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
   if(fab){ f.dataset.act=fab[0]; f.setAttribute("aria-label",fab[1]); f.innerHTML=`${icon(fab[2])}<span>${fab[1]}</span>`; }
-  profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); syncPunkt(); profilAvatar(); bilderFuellen();
+  profilAnwenden(); $("#avTxt").textContent=initials(ME.name||META.profil.name); syncPunkt(); profilAvatar(); mlGlocke(); bilderFuellen();
 }
 
 /* Kunden und Standorte – wie in der Übersicht (Filter, A–Z, Doppelte zusammenführen, Löschen); dazu die Prüfungen dieser App */
