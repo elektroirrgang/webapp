@@ -144,7 +144,7 @@ document.addEventListener("input",e=>{ const el=e.target.closest&&e.target.close
   if(el.dataset.af2){ a.v[k]=Object.assign({},a.v[k],{[el.dataset.af2]:el.value}); } else a.v[k]=el.value;
   afSpeichern(b); afPillsAktual(b); });
 document.addEventListener("click",e=>{ const el=e.target.closest&&e.target.closest('[data-act^="af"]'); if(!el) return; const b=afB(); if(!b) return; const a=afDaten(b), k=el.dataset.k, act=el.dataset.act;
-  if(act==="afFotoZeig"){ e.stopPropagation(); dialog("Foto",`<img class="dimg" src="${fotoCache.get(el.dataset.id)}" alt="">`,canEdit(b)?`<button class="btn-text danger" data-act="afFotoWeg" data-k="${k}" data-id="${el.dataset.id}">Löschen</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`:`<button class="btn-text" data-act="cancel">Schließen</button>`); return; }
+  if(act==="afFotoZeig"){ e.stopPropagation(); const fid=el.dataset.id; dialog("Foto",`<img class="dimg" src="${fotoCache.get(fid)}" alt="">`,canEdit(b)?`<button class="btn-text danger" data-act="afFotoWeg" data-k="${k}" data-id="${fid}">Löschen</button><span style="flex:1"></span>${fmKnopf(fotoCache.get(fid),async data=>{ const a2=afDaten(b), L=(a2.fotos[k]||[]).slice(), i=L.indexOf(fid); if(i<0) return; L[i]=await fmFotoNeu(data); a2.fotos[k]=L; fotoDel([fid]); afSpeichern(b,true); const y=scrollY; render(); scrollTo(0,y); })}<button class="btn-text" data-act="cancel">Schließen</button>`:`<button class="btn-text" data-act="cancel">Schließen</button>`); return; }
   if(act==="afPdf"){ e.stopPropagation(); afPdf(b); return; }
   if(!canEdit(b)) return; e.stopPropagation();
   if(act==="afSeg"){ a.v[k]=a.v[k]===el.dataset.v?"":el.dataset.v; afSpeichern(b,true); const y=scrollY; render(); scrollTo(0,y); return; }
