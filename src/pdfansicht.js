@@ -1,13 +1,6 @@
-/* ===== PDF-Ansicht (aus der Übersicht übernommen): Bibliothek öffnet PDFs in der App statt sie herunterzuladen =====
-   Gleicher Speicher wie die anderen Apps (IndexedDB „evse_protokolle“). bbOeffnen (bibliothek.js) ruft pvOeffnen, sobald es PROT gibt. */
+/* ===== PDF-Ansicht – EINE Fassung für alle vier Apps (wie eine eigene App in der App, überall gleich) =====
+   Wird von tools/build.py in jede App eingesetzt (Platzhalter PDFANSICHT). Die App liefert PROT, protBlob und optional PV_EXTRA (eigene Menüpunkte). */
 IC.swapV=IC.swapV||"M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z";IC.swapH=IC.swapH||"M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z";IC.moreH=IC.moreH||"M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z";IC.share=IC.share||"M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z";IC.mail=IC.mail||"M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z";IC.pdf=IC.pdf||"M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z";IC.close=IC.close||"M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z";IC.chev=IC.chev||"M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z";
-const PROT_DB="evse_protokolle"; let protDB=null, PROT=[];
-function protOpen(){ if(protDB) return Promise.resolve(protDB); return new Promise((res,rej)=>{ const r=indexedDB.open(PROT_DB,1);
-  r.onupgradeneeded=()=>{ const d=r.result; if(!d.objectStoreNames.contains("meta")) d.createObjectStore("meta",{keyPath:"id"}); if(!d.objectStoreNames.contains("blob")) d.createObjectStore("blob"); };
-  r.onsuccess=()=>{ protDB=r.result; res(protDB); }; r.onerror=()=>rej(r.error); }); }
-async function protLaden(){ try{ const d=await protOpen(); PROT=(await idbReq(d.transaction("meta").objectStore("meta").getAll()))||[]; }catch(e){ PROT=[]; } }
-async function protBlob(id){ const d=await protOpen(); return idbReq(d.transaction("blob").objectStore("blob").get(id)); }
-const PV_EXTRA=x=>[];
 let pdfjsP=null, PV=null;
 function pdfjsLaden(){ if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
   if(!pdfjsP) pdfjsP=new Promise((res,rej)=>{ const s=document.createElement("script"); s.src="pdfjs/pdf.min.js";
@@ -68,7 +61,7 @@ function pvGesten(){ const box=$("#pvSeiten"); let pinch=null, tap=0, letzte=1, 
 function pvScharf(){ if(!PV) return; clearTimeout(PV.zt); PV.zt=setTimeout(pvZeichnen,PV.pinch?400:120); }
 function pvZu(){ PV=null; $("#pv")?.remove(); document.body.classList.remove("pv-offen"); closeOverlays(); }
 function pvMenu(){ const x=PV&&PROT.find(y=>y.id===PV.id); if(!x) return;
-  const it=[PV_MODUS==="seiten"?["pvModus","Durchgehend scrollen","swapV"]:["pvModus","Seitenweise blättern","swapH"],"-",["pvMail","Per Mail senden","mail"],["pvSpeichern","Auf dem Gerät speichern","pdf"]].concat(PV_EXTRA(x));
+  const it=[PV_MODUS==="seiten"?["pvModus","Durchgehend scrollen","swapV"]:["pvModus","Seitenweise blättern","swapH"],"-",["pvMail","Per Mail senden","mail"],["pvSpeichern","Auf dem Gerät speichern","pdf"]].concat(typeof PV_EXTRA==="function"?PV_EXTRA(x):[]);
   $("#menu").innerHTML=it.map(m=>m==="-"?"<hr>":`<button class="mi ${m[3]||""}" role="menuitem" data-act="${m[0]}">${icon(m[2])}<span>${m[1]}</span></button>`).join("");
   $("#menu").hidden=false; $("#scrim").hidden=false; }
 async function pvAktion(a){ const x=PV&&PROT.find(y=>y.id===PV.id); if(!x) return; const blob=PV.blob||await protBlob(x.id); if(!blob){ toast("PDF nicht gefunden"); return; }
@@ -81,7 +74,8 @@ async function pvAktion(a){ const x=PV&&PROT.find(y=>y.id===PV.id); if(!x) retur
   saveFile(blob,x.name+".pdf"); location.href=`mailto:${an}?subject=${encodeURIComponent(x.name)}&body=${encodeURIComponent(text+"\n\n(PDF bitte anhängen)")}`; toast("PDF gespeichert – bitte in der Mail anhängen"); }
 addEventListener("keydown",e=>{ if(!PV||!$("#menu").hidden||!$("#dlg").hidden) return; if(e.key==="Escape") pvZu(); else if(e.key==="ArrowRight"||e.key==="PageDown"){ e.preventDefault(); pvGehe(pvSeite()+1,true); } else if(e.key==="ArrowLeft"||e.key==="PageUp"){ e.preventDefault(); pvGehe(pvSeite()-1,true); } });
 addEventListener("resize",()=>{ if(PV){ clearTimeout(PV.rt); PV.rt=setTimeout(pvNeuAufbau,200); } });
-document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="pv"]'); if(!b) return; e.stopPropagation(); const a=b.dataset.act;
-  if(a==="pvZu") pvZu(); else if(a==="pvKopfAuf") $("#pv")?.classList.remove("kompakt"); else if(a==="pvModus"){ closeOverlays(); pvModus(PV_MODUS==="seiten"?"scroll":"seiten"); }
-  else if(a==="pvZurueck") pvGehe(pvSeite()-1,true); else if(a==="pvWeiter") pvGehe(pvSeite()+1,true); else if(a==="pvMenu") pvMenu();
-  else if(a==="pvMail"||a==="pvTeilen"||a==="pvSpeichern"){ closeOverlays(); pvAktion(a); } },true);
+/* Knöpfe der Ansicht – nur die eigenen, App-eigene Menüpunkte (z. B. pvPruefung, pvLoesch) laufen weiter über die App */
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="pv"]'); if(!b) return; const a=b.dataset.act;
+  const F={pvZu:()=>pvZu(),pvKopfAuf:()=>$("#pv")?.classList.remove("kompakt"),pvModus:()=>{ closeOverlays(); pvModus(PV_MODUS==="seiten"?"scroll":"seiten"); },
+    pvZurueck:()=>pvGehe(pvSeite()-1,true),pvWeiter:()=>pvGehe(pvSeite()+1,true),pvMenu:()=>pvMenu(),pvMail:()=>{ closeOverlays(); pvAktion(a); },pvTeilen:()=>{ closeOverlays(); pvAktion(a); },pvSpeichern:()=>{ closeOverlays(); pvAktion(a); }};
+  if(!F[a]) return; e.stopPropagation(); F[a](); },true);
