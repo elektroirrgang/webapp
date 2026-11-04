@@ -218,7 +218,7 @@ const BB_OHNE="_ohne";
 /* Trennstellen für lange Ordnernamen – bricht dann sauber „Baustellen-berichte“ statt mitten im Wort */
 const BB_TRENN=[["Baustellenberichte","Baustellen\u00ADberichte"],["Prüfprotokolle","Prüf\u00ADprotokolle"],["Datenblätter","Daten\u00ADblätter"],["Handbücher","Hand\u00ADbücher"],["Schriftverkehr","Schrift\u00ADverkehr"]];
 const bbTrenn=n=>BB_TRENN.reduce((a,[x,y])=>a.split(x).join(y),String(n));
-function bbOrdner(L,zeile){
+function bbOrdner(L,zeile,nur){   /* nur: Kunden-IDs aus der Suche → nur deren Ordner zeigen */
   const kn=id=>id===BB_OHNE?"Ohne Kunde":(bbKunde(id)||{}).name||"Unbekannter Kunde", kk=x=>x.kundeId||BB_OHNE;
   const tag=t=>t?new Date(t).toLocaleDateString("de-DE"):"";
   const mappe=(attrs,name,art,n,t,stil,menu)=>`<div class="bb-m" ${attrs}><button class="bb-mk" data-act="bbOrdner" ${attrs} aria-label="${esc(name)} öffnen">${bbOrdnerBild(stil.farbe,stil.sym)}</button>
@@ -230,11 +230,11 @@ function bbOrdner(L,zeile){
   const nach=(a,b)=>a[2].localeCompare(b[2],"de",{numeric:true})||kdnr(a[0]).localeCompare(kdnr(b[0]),"de",{numeric:true})||String(a[0]).localeCompare(String(b[0]));
   /* ohne Filter: jeder Kunde hat seinen Ordner, auch wenn noch nichts drin liegt */
   const alle=bbW("art")==="alle"&&bbW("kunde")==="alle";
-  if(!BB_ORT.k||!(L.some(x=>kk(x)===BB_ORT.k)||(alle&&BB_ORT.k!==BB_OHNE&&bbKunde(BB_ORT.k)))){ BB_ORT={k:null,p:[]};
-    const M=new Map(); if(alle&&DB.kunden) [...DB.kunden.values()].filter(k=>!k.deleted).forEach(k=>M.set(k.id,[]));
-    L.forEach(x=>{ const k=kk(x); if(!M.has(k)) M.set(k,[]); M.get(k).push(x); });
+  if(nur||!BB_ORT.k||!(L.some(x=>kk(x)===BB_ORT.k)||(alle&&BB_ORT.k!==BB_OHNE&&bbKunde(BB_ORT.k)))){ if(!nur) BB_ORT={k:null,p:[]};
+    const M=new Map(); if(nur) nur.forEach(id=>M.set(id,[])); else if(alle&&DB.kunden) [...DB.kunden.values()].filter(k=>!k.deleted).forEach(k=>M.set(k.id,[]));
+    L.forEach(x=>{ const k=kk(x); if(nur&&!M.has(k)) return; if(!M.has(k)) M.set(k,[]); M.get(k).push(x); });
     const O=[...M].map(([k,G])=>[k,G,kn(k)]).sort((a,b)=>(a[0]===BB_OHNE)-(b[0]===BB_OHNE)||nach(a,b));
-    if(!O.length) return `<p class="meta">Noch keine Kunden.</p>`;
+    if(!O.length) return nur?"":`<p class="meta">Noch keine Kunden.</p>`;
     return `<div class="bb-oraster">${O.map(([k,G,n])=>mappe(`data-k="${esc(k)}"`,n,"",G.length,Math.max(0,...G.map(x=>x.t||0)),kStil(k),true)).join("")}</div>`; }
   const k=BB_ORT.k, ohne=k===BB_OHNE, p=BB_ORT.p, K=L.filter(x=>kk(x)===k), gleich=x=>p.every((s,i)=>x.ort[i]===s);
   const sub=new Map(), add=(n,c,t)=>{ const o=sub.get(n)||{n:0,t:0}; o.n+=c; o.t=Math.max(o.t,t||0); sub.set(n,o); };
@@ -290,19 +290,22 @@ function bbAufOeffnen(k,id){
   if(k==="bau"){ if(typeof baustelleView==="function"&&DB.baustellen&&DB.baustellen.get(id)) return go({v:"baustelle",id}); return weiter("Baustelle","../baustelle/","Die Baustelle"); } }
 function bibListe(){
   if(!bbGeladen){ bbLaden(); return ""; }
-  const art=bbW("art"), ku=bbW("kunde"), so=bbW("sort"), q=String(query||"").toLowerCase(), H=v=>suPasst(q,v);
+  const art=bbW("art"), ku=bbW("kunde"), so=bbW("sort"), q=String(query||"").toLowerCase().trim(), H=v=>suPasst(q,v), ordner=bbAnsicht()==="ordner";
   const A=bbEintraege(), zahl=a=>a==="alle"?A.length:A.filter(x=>x.art===a).length;
-  const nurOrdner=!A.length&&bbAnsicht()==="ordner"&&!q&&DB.kunden&&[...DB.kunden.values()].some(k=>!k.deleted); /* Kundenordner gibt es auch ohne Dateien */
-  if(nurOrdner) return bbOrdner(bbAuftraege().filter(x=>ku==="alle"||x.kundeId===ku),bbZeile);
+  const kunden=DB.kunden?[...DB.kunden.values()].filter(k=>!k.deleted):[];
+  /* Suche findet auch Kundenordner – ein Kunde ohne passende Datei (oder ganz ohne Dateien) hat trotzdem seinen Ordner */
+  const KO=q?kunden.filter(k=>(ku==="alle"||k.id===ku)&&suPasst(q,k.name,k.kdnr,k.ort,k.strasse,(typeof standorteVon==="function"?standorteVon(k.id):[]).map(s=>[s.name,s.ort]))).sort((a,b)=>String(a.name).localeCompare(String(b.name),"de")).slice(0,24):[];
+  const nichts=`<div class="empty bib-leer klein">${icon("search")}<h2>Nichts gefunden</h2><p>Andere Suche oder anderen Filter versuchen.</p></div>`;
+  if(!A.length&&ordner&&kunden.length){ /* Kundenordner gibt es auch ohne Dateien */
+    if(!q) return bbOrdner(bbAuftraege().filter(x=>ku==="alle"||x.kundeId===ku),bbZeile);
+    const AQ=bbAuftraege().filter(x=>(ku==="alle"||x.kundeId===ku)&&suPasst(q,x.titel,x.kunde,x.info));
+    const OR=KO.length?bbOrdner(bbAuftraege(),bbZeile,KO.map(k=>k.id)):"";
+    return (OR?`<div class="sec-lbl">Kundenordner</div>${OR}`:"")+(AQ.length?`<div class="sec-lbl">Einträge</div>${listOf(AQ.map(bbZeile))}`:"")||nichts; }
   if(!A.length) return `<div class="empty bib-leer">${icon("folder")}<h2>Noch nichts in der Bibliothek</h2><p>Hier landen fertige Prüfprotokolle aus EVSE, Berichte aus Baustelle sowie Dokumente und Fotos aus den Kundenablagen.</p></div>`;
   const chips=`<div class="chips bib-chips">${BB_ART.filter(([a])=>a==="alle"||zahl(a)).map(([a,t])=>`<button class="chip" data-act="bbArt" data-v="${a}" aria-pressed="${art===a}">${esc(t)}<span class="chip-n">${zahl(a)}</span></button>`).join("")}</div>`;
   const L=A.filter(x=>(art==="alle"||x.art===art)&&(ku==="alle"||x.kundeId===ku)&&(!q||suPasst(q,x.titel,x.kunde,x.info,(bbKunde(x.kundeId)||{}).name,(bbKunde(x.kundeId)||{}).kdnr)));
   L.sort(so==="alt"?(a,b)=>a.t-b.t:so==="name"?(a,b)=>String(a.titel).localeCompare(String(b.titel),"de",{numeric:true}):so==="kunde"?(a,b)=>String(a.kunde||"~").localeCompare(String(b.kunde||"~"),"de")||b.t-a.t:(a,b)=>b.t-a.t);
   const info=bbAktiv()?`<p class="meta f-info">${L.length} ${L.length===1?"Eintrag":"Einträge"}${ku!=="alle"?` · ${esc((bbKunde(ku)||{}).name||"")}`:""} <button class="btn-text inl" data-act="bbReset">Filter aufheben</button></p>`:"";
-  /* Suche findet auch Kundenordner (Kunde ohne passende Datei hat trotzdem seinen Ordner) */
-  const KO=q&&DB.kunden?[...DB.kunden.values()].filter(k=>!k.deleted&&(ku==="alle"||k.id===ku)&&suPasst(q,k.name,k.kdnr,k.ort,k.strasse,(typeof standorteVon==="function"?standorteVon(k.id):[]).map(s=>[s.name,s.ort]))).sort((a,b)=>String(a.name).localeCompare(String(b.name),"de")).slice(0,12):[];
-  const ko=KO.length?`<div class="sec-lbl">Kundenordner</div>${listOf(KO.map(k=>`<div class="li" role="button" tabindex="0" data-act="bbKdOrdner" data-k="${esc(k.id)}"><span class="av">${icon("folder")}</span><span class="lt"><span class="h">${esc(k.name)}</span><span class="s">${esc([k.kdnr,k.ort].filter(Boolean).join(" · ")||"Kundenordner")}</span></span>${icon("chev")}</div>`))}${L.length?`<div class="sec-lbl">Dateien</div>`:""}`:"";
-  if(!L.length) return chips+info+(ko||`<div class="empty bib-leer klein">${icon("search")}<h2>Nichts gefunden</h2><p>Andere Suche oder anderen Filter versuchen.</p></div>`);
   const tag=x=>x.ziel.startsWith("data-href")?"a":"div", attr=x=>x.ziel.startsWith("data-href")?`href="${x.ziel.slice(11,-1)}" style="text-decoration:none;color:inherit"`:`role="button" tabindex="0" ${x.ziel}`;
   const zeile=x=>`<${tag(x)} class="li" ${attr(x)}>${x.bild?`<span class="av bib-thumb"><img data-datei="${esc(x.bild)}" alt=""></span>`:`<span class="av">${x.sym?bbSymIc(x.sym):icon(BB_IC[x.art])}</span>`}
     <span class="lt"><span class="h">${esc(x.titel)}</span><span class="s">${esc(x.info)}</span>${x.pill?`<span class="st">${x.pill}</span>`:""}</span>${icon("chev")}</${tag(x)}>`;
@@ -310,7 +313,14 @@ function bibListe(){
   const kachel=x=>`<${tag(x)} class="bib-k" ${attr(x)}><span class="bib-kb${x.bild?" foto":""}${pid(x)?" pdf":""}" ${pid(x)?`data-pdf="${esc(pid(x))}"`:""}>${x.bild?`<img data-datei="${esc(x.bild)}" alt="">`:BB_VORSCHAU.get(pid(x))?`<img src="${BB_VORSCHAU.get(pid(x))}" alt="">`:icon(BB_IC[x.art])}</span>
     <span class="bib-kt"><b>${esc(x.titel)}</b><small>${esc(x.info)}</small>${x.pill?`<span class="st">${x.pill}</span>`:""}</span></${tag(x)}>`;
   setTimeout(()=>{ if(typeof bilderFuellen==="function") bilderFuellen(); bbVorschauen(); },0);
-  if(bbAnsicht()==="ordner"&&!q) return chips+info+bbOrdner(art==="alle"?[...L,...bbAuftraege().filter(x=>ku==="alle"||x.kundeId===ku)]:L,zeile);
+  if(ordner&&!q) return chips+info+bbOrdner(art==="alle"?[...L,...bbAuftraege().filter(x=>ku==="alle"||x.kundeId===ku)]:L,zeile);
+  if(ordner){ /* Ordneransicht mit Suche: passende Kundenordner als Mappen, darunter passende Dateien und Einträge */
+    const AQ=art==="alle"?bbAuftraege().filter(x=>(ku==="alle"||x.kundeId===ku)&&suPasst(q,x.titel,x.kunde,x.info)):[];
+    const OR=KO.length?bbOrdner([...A,...bbAuftraege()],zeile,KO.map(k=>k.id)):"", Z=[...L,...AQ];
+    const unten=Z.length?`<div class="sec-lbl">Dateien und Einträge</div>${listOf(Z.map(zeile))}`:"";
+    return chips+info+((OR?`<div class="sec-lbl">Kundenordner</div>${OR}`:"")+unten||nichts); }
+  const ko=KO.length?`<div class="sec-lbl">Kundenordner</div>${listOf(KO.slice(0,12).map(k=>`<div class="li" role="button" tabindex="0" data-act="bbKdOrdner" data-k="${esc(k.id)}"><span class="av">${icon("folder")}</span><span class="lt"><span class="h">${esc(k.name)}</span><span class="s">${esc([k.kdnr,k.ort].filter(Boolean).join(" · ")||"Kundenordner")}</span></span>${icon("chev")}</div>`))}${L.length?`<div class="sec-lbl">Dateien</div>`:""}`:"";
+  if(!L.length) return chips+info+(ko||nichts);
   const inhalt=bbAnsicht()==="kacheln"?`<div class="bib-raster">${L.map(kachel).join("")}</div>`
     :so==="name"?bbGruppe(L,x=>x.titel,zeile):so==="kunde"?bbGruppe(L,x=>x.kunde||"#",zeile):bbMonate(L,zeile);
   return chips+info+ko+inhalt;
@@ -383,6 +393,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="bbFilter") bbFilterFenster(b);
   else if(a==="bbReset"){ bbSet("sort","neu"); bbSet("kunde","alle"); }
   else if(a==="bbKdOrdner"){ query=""; META.bibAnsicht="ordner"; metaSave(); BB_ORT={k:b.dataset.k,p:[]}; render(); scrollTo(0,0); }
+  else if(a==="bbOrdner"&&String(query||"").trim()){ query=""; BB_ORT={k:b.dataset.k||null,p:bbPDec(b.dataset.p)}; render(); scrollTo(0,0); }
   else if(a==="bbOrdner"){ BB_ORT={k:b.dataset.k||null,p:bbPDec(b.dataset.p)}; const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); scrollTo(0,0); }
   else if(a==="bbSp") bbSpOeffnen(b.dataset.id);
   else if(a==="bbAuf") bbAufOeffnen(b.dataset.k,b.dataset.id);
