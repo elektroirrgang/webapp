@@ -22,6 +22,11 @@
 - Noch zu klären: Soll auch das letzte Prüfprotokoll (E-Check) öffentlich sichtbar sein? Bemerkungen zusätzlich als Mail an info@?
 - Erst danach bauen. Danach den Scanner (Kamera-Ansicht) neu gestalten – gefällt Max so nicht.
 
+## Neu am 04.11.2026 (live) – offen zum Nachschauen
+- Fotos markieren (1.7.62): Kundenordner legt „… markiert.jpg“ als Kopie an, Prüfungs-/Baustellenfotos werden ersetzt. Idee: gleich nach dem Fotografieren „Markieren?“ anbieten.
+- Betriebsfristen/Unterweisungen (1.7.63): Vorlagen-Intervalle sind Vorschläge (DGUV V3, ASR A2.2) – mit dem Chef abgleichen. Fahrzeuge bewusst nicht als eigene Verwaltung (Max: bei unserer Größe nicht nötig).
+- Abnahmeprotokoll (1.7.64): Abnahme-Satz im PDF („… erklärt die Abnahme … (§ 640 BGB)“) vom Chef prüfen lassen.
+
 ## Offen aus der Sitzung vom 03.11.2026
 
 - Ablauf Zählerschrank → Stromkreise → Material deutlich verkürzen (dauert für „mal eben eine Legende“ zu lange); Bugs beim Anordnen sammelt Max mit Screenshots.

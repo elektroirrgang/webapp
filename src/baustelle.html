@@ -2280,10 +2280,11 @@ function baustelleView(b){
   if(kdB||s) h+=`<button class="bk-karte" data-act="bKunde" data-id="${esc((kdB||{}).id||"")}" data-s="${esc((s||{}).id||"")}"><span class="bkk-ic">${icon("firma")}</span>
     <span class="bkk-t"><b>${esc(kdB?kdB.name:s.name)}</b><small>${esc([s&&kdB?s.name:"",adr].filter(Boolean).join(" · ")||"Kunde öffnen")}</small></span>${icon("chev")}</button>`;
   const [an,am]=afGesamt(b);
-  h+=`<div class="b-zeile"><div class="b-tabs">${seg("bTab",nav.tab||"uebergaben",[["aufnahme",`Aufnahme${an?` · ${Math.round(an/am*100)} %`:""}`],["uebergaben",`Übergaben${E.length?` · ${E.length}`:""}`]])}</div>
+  h+=`<div class="b-zeile"><div class="b-tabs">${seg("bTab",nav.tab||"uebergaben",[["aufnahme",`Aufnahme${an?` · ${Math.round(an/am*100)} %`:""}`],["uebergaben",`Übergaben${E.length?` · ${E.length}`:""}`],["abnahme","Abnahme"]])}</div>
     ${canEdit(b)?bStatusKnopf(b):`<span class="spick bs-pick nur"><i class="bs-dot ${b.status||"aktiv"}"></i><span class="spick-t">${STATUS_TXT[b.status||"aktiv"]}</span></span>`}${canEdit(b)?`<button class="b-stift" data-act="bEdit" aria-label="Baustelle bearbeiten" title="Baustelle bearbeiten">${icon("edit")}</button>`:""}</div>
     ${b.notiz?`<p class="bk-notiz">${esc(b.notiz)}</p>`:""}`;
   if(nav.tab==="aufnahme") return h+aufnahmeView(b)+`</div>`;
+  if(nav.tab==="abnahme") return h+abnahmeView(b)+`</div>`;
   const NZ=notizenAlle().filter(n=>n.baustelleId===b.id&&!n.archiv);
   h+=`<div class="sec-row"><div class="sec-lbl">Notizen</div><button class="plus-k" data-act="neueNotizHier" aria-label="Notiz anlegen" title="Notiz anlegen">${icon("add")}</button></div>${NZ.length?nGrid(NZ):`<p class="meta">Eigene Notizen zur Baustelle – z. B. Tagesablauf, Checkliste oder Skizze.</p>`}`;
   h+=vgBauAbschnitt(b);
