@@ -9,9 +9,11 @@
 <title>Elektrische Anlage · Elektro Irrgang</title>
 <link rel="icon" href="<!--ICON_FAV-->">
 <script>
-/* Mitarbeiter, die in diesem Browser schon angemeldet sind, gehen direkt in die App zum Verteiler. Alle anderen sehen nur diese Seite – ohne Daten. */
+/* Mitarbeiter, die in diesem Browser schon angemeldet sind, gehen direkt in die App zum Verteiler bzw. Netzwerkschrank. Alle anderen sehen nur diese Seite – ohne Daten. */
 (function(){ var c=(location.hash||location.search||"").replace(/^[#?]/,"").toUpperCase().replace(/[^0-9A-Z]/g,"").slice(0,6);
   window.QR_NR=/^[0-9A-Z]{6}$/.test(c)?c:"";
+  /* Art steht im Link (&a=netz / &a=zs), gesetzt von der App beim Drucken – Bogen-Aufkleber haben keine */
+  var a=((location.hash||"")+"&"+(location.search||"")).match(/[&?#]a=(netz|zs)\b/i); window.QR_ART=a?a[1].toLowerCase():"";
   var an=false; try{ var l=JSON.parse(localStorage.getItem("irrgang_login")||"null"); if(l&&l.mail&&!l.aus) an=true;
     if(!an){ var k=JSON.parse(localStorage.getItem("msal.account.keys")||"[]"); if(k&&k.length) an=true; } }catch(e){}
   if(an&&window.QR_NR&&!/[?&]info\b/.test(location.search)) location.replace("../echeck/#qr="+window.QR_NR); })();
@@ -52,6 +54,8 @@ ol.st b{color:var(--on-surface)}
 .kh{margin:10px 4px 0;font-size:13px;line-height:1.45;text-align:center}
 .kh+.tipp{margin-top:22px}
 .adr{margin:24px 4px 0;font-size:14px;color:var(--on-sv)}.adr b{color:var(--on-surface)}
+[hidden]{display:none!important}
+.wechsel{display:block;margin:20px 4px 0;font-size:14px;font-weight:700;color:var(--primary);text-decoration:none;background:none;border:0;padding:0;font-family:inherit;cursor:pointer;text-align:left}
 .ma{display:block;margin:28px 4px 0;font-size:14px;font-weight:700;color:var(--primary);text-decoration:none}
 </style>
 </head>
@@ -59,16 +63,16 @@ ol.st b{color:var(--on-surface)}
 <div class="w">
   <img class="logo h" src="<!--LOGO_HELL-->" alt="Elektro Irrgang"><img class="logo d" src="<!--LOGO_DUNKEL-->" alt="Elektro Irrgang">
   <div class="karte">
-    <p class="ober">Elektrische Anlage</p>
-    <h1>Diese Anlage wird von Elektro Irrgang betreut</h1>
-    <p>Die Stromkreise und Prüfungen dieser Anlage sind bei uns dokumentiert. Bei Fragen oder einer Störung nennen Sie uns bitte die unten stehende <span style="white-space:nowrap">Anlagen-Nr.</span> So können wir Ihr Anliegen umgehend zuordnen.</p>
+    <p class="ober" id="ober">Elektrische Anlage</p>
+    <h1 id="h1">Diese Anlage wird von Elektro Irrgang betreut</h1>
+    <p><span id="einl">Die Stromkreise und Prüfungen dieser Anlage sind bei uns dokumentiert.</span> Bei Fragen oder einer Störung nennen Sie uns bitte die unten stehende <span style="white-space:nowrap">Anlagen-Nr.</span> So können wir Ihr Anliegen umgehend zuordnen.</p>
     <div class="nr" id="nr"><b id="nrT" aria-label="Anlagen-Nr."></b></div>
     <div class="kn">
       <a class="btn f" href="tel:+4922914878"><svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>Anrufen · 02291 4878</a>
       <a class="btn t" id="stoer" href="mailto:info@elektro-irrgang.de"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>Störung melden</a>
     </div>
   </div>
-  <section class="blk">
+  <section class="blk" data-art="strom">
     <h2>Stromausfall: Was Sie selbst prüfen können</h2>
     <p class="u">Häufig hat lediglich eine Schutzeinrichtung ausgelöst.</p>
     <ol class="st">
@@ -78,25 +82,49 @@ ol.st b{color:var(--on-surface)}
       <li><span><b>Erneute Auslösung ohne Geräte:</b> Löst der Schalter sofort wieder aus oder ist kein Schalter ausgelöst, unternehmen Sie bitte keine weiteren Versuche und rufen Sie uns an. Sind auch Ihre Nachbarn ohne Strom, liegt die Störung in der Regel beim Netzbetreiber.</span></li>
     </ol>
     <div class="warn"><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><span><b>Bitte keine Abdeckungen entfernen.</b>Berühren Sie bei Brandgeruch, Rauch, Funken oder Feuchtigkeit am Verteiler nichts. Rufen Sie bei Feuer sofort die 112 an.</span></div>
+    <div class="warn" data-art="zs" hidden><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg><span><b>Zähler und Plomben nicht öffnen.</b>Der Zählerplatz und verplombte Bereiche gehören dem Netzbetreiber. Arbeiten daran dürfen nur der Netzbetreiber oder ein eingetragener Fachbetrieb ausführen.</span></div>
+  </section>
+  <section class="blk" data-art="netz" hidden>
+    <h2>Kein Internet oder Netzwerk: Was Sie selbst prüfen können</h2>
+    <p class="u">Oft reicht ein Neustart oder ein lockeres Kabel.</p>
+    <ol class="st">
+      <li><span><b>Nur ein Arbeitsplatz betroffen:</b> Prüfen Sie, ob das Netzwerkkabel an der Wanddose und am Gerät fest eingesteckt ist. Leuchtet am Anschluss des Geräts keine Lampe, testen Sie ein anderes Kabel.</span></li>
+      <li><span><b>Alle Geräte ohne Netzwerk:</b> Prüfen Sie, ob die Geräte im Schrank Strom haben (Lampen an Router, Switch und Steckdosenleiste). Ist alles dunkel, prüfen Sie die Sicherung bzw. den Schalter der Steckdosenleiste.</span></li>
+      <li><span><b>Netzwerk geht, Internet nicht:</b> Trennen Sie Router bzw. Glasfaser-Modem für etwa 30 Sekunden vom Strom und schalten Sie ihn wieder ein. Der Start dauert einige Minuten.</span></li>
+      <li><span><b>Weiterhin keine Verbindung:</b> Prüfen Sie auf der Störungsseite Ihres Internetanbieters, ob dort eine Störung gemeldet ist. Andernfalls rufen Sie uns an.</span></li>
+    </ol>
+    <div class="warn"><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><span><b>Bitte keine Kabel im Schrank umstecken.</b>Die Belegung der Patchfelder ist dokumentiert. Umgesteckte Kabel führen oft zu neuen Störungen, die sich nur schwer finden lassen.</span></div>
   </section>
   <section class="blk">
     <h2>Gut zu wissen</h2>
-    <div class="tipp"><i><svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg></i><span><b>FI-Schutzschalter regelmäßig prüfen</b>Die Hersteller empfehlen, etwa alle sechs Monate die Prüftaste „T“ zu betätigen. Der Schalter muss dabei auslösen und kann anschließend wieder eingeschaltet werden. Bitte fahren Sie vorher Computer und ähnliche Geräte herunter. Löst der Schalter nicht aus, informieren Sie uns bitte.</span></div>
-    <div class="kn"><a class="btn t" id="kal" href="fi-pruefung.ics"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm-7-8.5 1.18 2.39 2.64.38-1.91 1.86.45 2.62L12 17.5l-2.36 1.25.45-2.62-1.91-1.86 2.64-.38L12 11.5z"/></svg>Erinnerung in den Kalender</a></div>
-    <p class="kh">Sie werden zweimal im Jahr erinnert, jeweils am letzten Samstag im März und im Oktober, passend zur Zeitumstellung.</p>
-    <div class="tipp"><i><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></i><span><b>Dokumentation für Vermieter, Hausverwaltungen und Fachbetriebe</b>Stromkreisliste und Prüfprotokolle dieser Anlage liegen uns vor. Bitte geben Sie bei Ihrer Anfrage die Anlagen-Nr. an.</span></div>
+    <div class="tipp" data-art="strom"><i><svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg></i><span><b>FI-Schutzschalter regelmäßig prüfen</b>Die Hersteller empfehlen, etwa alle sechs Monate die Prüftaste „T“ zu betätigen. Der Schalter muss dabei auslösen und kann anschließend wieder eingeschaltet werden. Bitte fahren Sie vorher Computer und ähnliche Geräte herunter. Löst der Schalter nicht aus, informieren Sie uns bitte.</span></div>
+    <div class="kn" data-art="strom"><a class="btn t" id="kal" href="fi-pruefung.ics"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm-7-8.5 1.18 2.39 2.64.38-1.91 1.86.45 2.62L12 17.5l-2.36 1.25.45-2.62-1.91-1.86 2.64-.38L12 11.5z"/></svg>Erinnerung in den Kalender</a></div>
+    <p class="kh" data-art="strom">Sie werden zweimal im Jahr erinnert, jeweils am letzten Samstag im März und im Oktober, passend zur Zeitumstellung.</p>
+    <div class="tipp"><i><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></i><span><b>Dokumentation für Vermieter, Hausverwaltungen und Fachbetriebe</b><span id="doku">Stromkreisliste und Prüfprotokolle dieser Anlage liegen uns vor.</span> Bitte geben Sie bei Ihrer Anfrage die Anlagen-Nr. an.</span></div>
     <div class="kn"><a class="btn t" id="mail" href="mailto:info@elektro-irrgang.de"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>Dokumentation anfragen</a></div>
   </section>
+  <button type="button" class="wechsel" id="wechsel" hidden></button>
   <p class="adr"><b>Elektro Irrgang</b><br>Hahner Weg 2 · 51545 Waldbröl<br>info@elektro-irrgang.de · <a href="https://www.elektro-irrgang.de" rel="noopener" style="color:inherit">elektro-irrgang.de</a></p>
   <a class="ma" id="ma" href="../echeck/">Mitarbeiter von Elektro Irrgang: in der App öffnen ›</a>
 </div>
 <script>
 (function(){ var c=window.QR_NR||"", z=c?c.slice(0,3)+" "+c.slice(3):"";
+  /* Inhalt je Art: Netzwerkschrank, Zählerschrank oder Verteiler (Standard). Ohne Art (Bogen-Aufkleber) gibt es unten den Wechsel zum Netzwerkschrank. */
+  var T={netz:{ober:"Netzwerk",h1:"Dieser Netzwerkschrank wird von Elektro Irrgang betreut",einl:"Verkabelung, Patchfelder und Belegung dieses Schranks sind bei uns dokumentiert.",doku:"Patchplan, Belegung und Messprotokolle dieses Netzwerks liegen uns vor.",titel:"Netzwerkschrank · Elektro Irrgang",was:"am Netzwerk"},
+    zs:{ober:"Zählerschrank",h1:"Dieser Zählerschrank wird von Elektro Irrgang betreut",einl:"Die Stromkreise und Prüfungen dieser Anlage sind bei uns dokumentiert.",doku:"Stromkreisliste und Prüfprotokolle dieser Anlage liegen uns vor.",titel:"Zählerschrank · Elektro Irrgang",was:"an der elektrischen Anlage"},
+    "":{ober:"Elektrische Anlage",h1:"Diese Anlage wird von Elektro Irrgang betreut",einl:"Die Stromkreise und Prüfungen dieser Anlage sind bei uns dokumentiert.",doku:"Stromkreisliste und Prüfprotokolle dieser Anlage liegen uns vor.",titel:"Elektrische Anlage · Elektro Irrgang",was:"an der elektrischen Anlage"}};
+  var ohneArt=!window.QR_ART;
+  function zeig(art){ var t=T[art]||T[""];
+    ["ober","h1","einl","doku"].forEach(function(k){ document.getElementById(k).textContent=t[k]; }); document.title=t.titel;
+    [].forEach.call(document.querySelectorAll("[data-art]"),function(e){ var d=e.getAttribute("data-art"); e.hidden=d==="netz"?art!=="netz":d==="zs"?art!=="zs":art==="netz"; });
+    var w=document.getElementById("wechsel"); w.hidden=!ohneArt; w.textContent=art==="netz"?"Hier ist ein Stromverteiler? Zur Stromseite ›":"Hier ist ein Netzwerkschrank? Zur Netzwerkseite ›"; w.onclick=function(){ zeig(art==="netz"?"":"netz"); scrollTo(0,0); };
+    mails(t.was); }
   if(c){ document.getElementById("nrT").textContent=z; } else document.getElementById("nr").style.display="none";
-  var b="Sehr geehrte Damen und Herren,\n\nhiermit bitte ich um die Dokumentation zur elektrischen Anlage"+(c?" mit der Anlagen-Nr. "+z:"")+".\n\nName:\nFirma:\nTelefon:\nAnschrift der Anlage:\nGrund der Anfrage:\n\nMit freundlichen Grüßen";
+  function mails(was){ var b="Sehr geehrte Damen und Herren,\n\nhiermit bitte ich um die Dokumentation zur Anlage"+(c?" mit der Anlagen-Nr. "+z:"")+".\n\nName:\nFirma:\nTelefon:\nAnschrift der Anlage:\nGrund der Anfrage:\n\nMit freundlichen Grüßen";
   document.getElementById("mail").href="mailto:info@elektro-irrgang.de?subject="+encodeURIComponent("Dokumentation Anlage"+(c?" "+z:""))+"&body="+encodeURIComponent(b);
-  var s="Sehr geehrte Damen und Herren,\n\nhiermit melde ich eine Störung an der elektrischen Anlage"+(c?" mit der Anlagen-Nr. "+z:"")+".\n\nWas ist passiert:\nSeit wann:\nBetroffene Räume oder Geräte:\n\nName:\nTelefon für Rückruf:\nAnschrift der Anlage:\n\nMit freundlichen Grüßen";
-  document.getElementById("stoer").href="mailto:info@elektro-irrgang.de?subject="+encodeURIComponent("Störung Anlage"+(c?" "+z:""))+"&body="+encodeURIComponent(s);
+  var s="Sehr geehrte Damen und Herren,\n\nhiermit melde ich eine Störung "+was+(c?" mit der Anlagen-Nr. "+z:"")+".\n\nWas ist passiert:\nSeit wann:\nBetroffene Räume oder Geräte:\n\nName:\nTelefon für Rückruf:\nAnschrift der Anlage:\n\nMit freundlichen Grüßen";
+  document.getElementById("stoer").href="mailto:info@elektro-irrgang.de?subject="+encodeURIComponent("Störung Anlage"+(c?" "+z:""))+"&body="+encodeURIComponent(s); }
+  zeig(window.QR_ART||"");
   if(c) document.getElementById("ma").href="../echeck/#qr="+c; })();
 </script>
 </body>
