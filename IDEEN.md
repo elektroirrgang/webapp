@@ -30,6 +30,13 @@
 - Nachschlagewerk: Max zeigt, was es schon gibt (Stand 04.11.2026) – dann entscheiden, ob ins Betriebshandbuch oder eigener Bereich.
 - Abnahmeprotokoll (1.7.64): Abnahme-Satz im PDF („… erklärt die Abnahme … (§ 640 BGB)“) vom Chef prüfen lassen.
 
+## Lager (Gespräch 04.11.2026) – offen, Max ist unsicher, erst mit dem Chef klären
+- Ablauf heute: 7:30 Start, 15–30 min packen, Chef sagt mündlich, was ansteht; gepackt wird nach Gefühl (meist zu viel, nach Chef-Mengen oft zu wenig). Sondermaterial wird bestellt.
+- Lager: Gerätelager (Code), Hauptlager (links Lampen, vorne Mitte Kommissionsregal mit Zetteln – „noch Arsch“, Mitte Schalter/Steckdosen, hinten Hohlwand), Wandregal rechts (Verteilung/Automaten, Einzeladern, Abzweigdosen, Schrauben, oben Wago/Netzwerk/SAT/TK), Kabellager (Kanäle/Rohr, Kabel, Bauschaum/Trassen, Neuware).
+- Ideen: Lagerplan mit Zonen + Suche; Kommissionsregal digital (K1, K2 … mit QR); Packliste nach Laufweg; Packvorlagen je Auftragsart mit Mengen pro Einheit, die aus „was kam zurück“ lernen.
+- Verworfen/zurückgestellt: Inventur (nur bei Bilanzpflicht, Chef/Steuerberater fragen), Kabelreste (unklar, ob nötig), echte Bestandsführung.
+- Vorschlag: zwei Wochen nur beobachten (was mitgenommen, was zurück), dann entscheiden.
+
 ## Offen aus der Sitzung vom 03.11.2026
 
 - Ablauf Zählerschrank → Stromkreise → Material deutlich verkürzen (dauert für „mal eben eine Legende“ zu lange); Bugs beim Anordnen sammelt Max mit Screenshots.
