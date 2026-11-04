@@ -114,7 +114,7 @@ const vtiLeitung=t=>/\b(NYM|NYY|NHXMH|H07|H05|J-?Y|Cu|mm²|mm2)\b|\b\d\s?[x×]\s
 function vtiPole(t){ return /\b(3|4|drei|vier)\s?-?\s?(p|pol|polig|phasig)\b|\b3\s?[x×]\s?[BCD]|\b3L\b|400\s?V|3~|dreh/i.test(t)?3:1; }
 function vtiRcdSchutz(t){ const s=t.replace(/(\d)[,.](\d)/g,"$1.$2"), A=s.match(/(\d{2,3})\s*A(?![a-z])/i), m=s.match(/(\d{2,3})\s*mA/i)||(/\b0\.03\s*A/i.test(s)?[0,"30"]:/\b0\.3\s*A/i.test(s)?[0,"300"]:null),
     y=s.match(/Typ\s*(A|B\+?|F|AC|EV)\b/i)||s.match(/\b(A|B\+?|F)\s*$/);
-  const w={in:A?A[1]:"",idn:m?m[1]:"",typ:y?y[1].toUpperCase():""}; return vtRcdSchutz(w)||t.trim(); }
+  const w={in:A?A[1]:"",idn:m?m[1]:"",typ:y?y[1].toUpperCase():""}; return vtRcdSchutz(w)||(/^(fi|rcd|rccb|fehlerstrom\w*)$/i.test(t.trim())?"":t.trim()); }
 function vtiLsSchutz(t){ const s=t.replace(/\s+/g," ").trim(), m=s.match(/(^|[^A-Za-z])([BCDKZ])\s?(\d{1,3})(\s?A)?(?!\d)/i), a=s.match(/^(?:LS\s*)?(\d{1,3})\s?A$/i);
   let r=m?m[2].toUpperCase()+m[3]:a?a[1]+" A":s;
   if(vtiRcbo(s)){ const mm=s.match(/(\d{2,3})\s*mA/i), y=s.match(/Typ\s*(A|B\+?|F|AC)\b/i); r+=` FI/LS ${mm?mm[1]:"30"} mA Typ ${y?y[1].toUpperCase():"A"}`; }
@@ -242,7 +242,7 @@ function vtImpVorschau(){ const box=document.getElementById("vtiVorschau"); if(!
    +E.map((e,i)=>{ const rk=e.art!=="gr"&&RN>1&&RW[i]!==rAlt?`<div class="vti-reihe">Reihe ${rAlt=RW[i]}</div>`:"";
      if(e.art==="gr"){ inFi=false; return `<div class="vti-z" data-art="gr">${esc(e.bez)}</div>`; } if(e.art==="rcd") inFi=true;
      const ein=e.art==="sk"||e.art==="res"?inFi:false;
-     return rk+`<div class="vti-z" data-art="${e.art}"${ein?" data-ein":""}${fehlt.includes(e.id)?" data-warn":""}><span class="v-kz">${esc(e.kz)}${e._auto?"<i>*</i>":""}</span><span class="v-bz">${e.art==="ge"?`<b class="vti-ge">Gerät</b> `:""}${e.art==="res"?"<i>Reserve</i>":esc(e.bez||(e.art==="rcd"?"Fehlerstromschutzschalter":"–"))}</span><span class="v-sc">${esc([e.schutz,e.pole===3?"3-polig":""].filter(Boolean).join(" ")||(e.art==="res"||e.art==="ge"?"":"?"))}</span><span class="v-lt">${esc(PLV[i]||e.leitung||"")}</span></div>`; }).join("")
+     return rk+`<div class="vti-z" data-art="${e.art}"${ein?" data-ein":""}${fehlt.includes(e.id)?" data-warn":""}><span class="v-kz">${esc(e.kz)}${e._auto?"<i>*</i>":""}</span><span class="v-bz">${e.art==="ge"?`<b class="vti-ge">Gerät</b> `:""}${e.art==="res"?"<i>Leerplatz</i>":esc(e.bez||(e.art==="rcd"?"Fehlerstromschutzschalter":"–"))}</span><span class="v-sc">${esc([e.schutz,e.pole===3?"3-polig":""].filter(Boolean).join(" ")||(e.art==="res"||e.art==="ge"?"":"?"))}</span><span class="v-lt">${esc(PLV[i]||e.leitung||"")}</span></div>`; }).join("")
    +(E.some(e=>e._auto)?`<p class="meta" style="margin:8px 4px 0">* Kennzeichen von der App vergeben</p>`:""); }
 document.addEventListener("input",e=>{ if(e.target&&e.target.id==="vtiText") vtImpVorschau(); });
 document.addEventListener("change",e=>{ if(e.target&&e.target.id==="f_vtiZiel") vtImpVorschau(); });
@@ -304,56 +304,104 @@ function vtiSprache(roh){ const Z=[];
    „löschen“ / „streichen“ / „falsch“ nimmt das letzte Gerät wieder raus. */
 const VTI_NR={eins:1,ein:1,zwei:2,zwo:2,drei:3,vier:4,fünf:5,sechs:6,sieben:7,acht:8,neun:9,zehn:10,elf:11,zwölf:12,dreizehn:13,vierzehn:14,fünfzehn:15,sechzehn:16,siebzehn:17,achtzehn:18,zwanzig:20,fünfundzwanzig:25,zweiunddreißig:32,vierzig:40,fünfzig:50,sechzig:60,dreiundsechzig:63};
 const VTI_VERHOERT=[[/^(kehrt|kert|hert|herz|heard|hört)$/i,"Herd"]];
-function vtiDiktatLesen(seg){
+/* Erzähltes in Bausteine übersetzen: Füllwörter raus, Ordnungszahlen/„Reihe“, Geräte, Mengen („zwei B16 für A und B“) */
+const VTI_ORD={erste:1,ersten:1,erster:1,zweite:2,zweiten:2,zweiter:2,dritte:3,dritten:3,dritter:3,vierte:4,vierten:4,vierter:4,fünfte:5,fünften:5,sechste:6,sechsten:6,siebte:7,siebten:7,achte:8,achten:8};
+function vtiDiktatNorm(seg){
   let t=" "+seg.map(x=>String(x||"").trim()).filter(Boolean).join(" | ")+" ";
-  t=t.replace(/\b(neue|nächste)\s*\|?\s*reihe\b/gi," ⏎ ").replace(/\s*[,;]\s*|\b(nächster|nächste|nächstes|weiter|komma)\b/gi," , ");
+  t=t.replace(/[.!?,;:]+(?=\s|$)/g," | ").replace(/(\d)-(?=[A-Za-zÄÖÜäöü])/g,"$1 ").replace(/([A-Za-zÄÖÜäöüß])-(?=[A-Za-zÄÖÜäöü])/g,"$1 ");
+  t=t.replace(/\bneo\s*z(?:ed|et)?\b(?:\s*(?:element|sockel|sicherung|lasttrenner))?/gi," Neozed ").replace(/\bneozed\s+(element|sockel|sicherung)\b/gi,"Neozed");
+  t=t.replace(/\b(fi\s*\/\s*ls|fi\s+ls|ls\s*\/\s*fi|rcbos?|rcbo\s*schalter)\b/gi," RCBO ");
+  t=t.replace(/\b(?:mit\s+)?(?:ein\s+bisschen|etwas|bisschen|einem|ein)?\s*(?:platz|lücke)(?:\s+(?:frei|dazwischen|daneben))?\b/gi," leer ");
+  t=t.replace(/\b(?:in\s+)?(?:der|die|dem)?\s*(erste|ersten|erster|zweite|zweiten|zweiter|dritte|dritten|dritter|vierte|vierten|vierter|fünfte|fünften|sechste|sechsten|siebte|siebten|achte|achten)\s+reihe\b/gi," ⏎ ");
+  t=t.replace(/\breihe\s+(\d|eins|zwei|drei|vier|fünf|sechs)\b/gi," ⏎ ").replace(/\b(neue|nächste)\s*\|?\s*reihe\b/gi," ⏎ ");
+  t=t.replace(/\b(?:im|in\s+dem|in\s+der)?\s*(erste|ersten|zweite|zweiten|dritte|dritten)?\s*verteiler\s*feld\s*(\d|eins|zwei|drei)?\b/gi,(m,o,n)=>` ⧉${o?VTI_ORD[o.toLowerCase()]:n?(VTI_NR[n.toLowerCase()]||n):""} `);
+  t=t.replace(/\b(und\s+)?einmal\b/gi," ‡ ").replace(/\bplus\b/gi," und ");
   t=t.replace(/\b(eins|zwei|zwo|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|sechzehn|siebzehn|achtzehn|zwanzig|fünfundzwanzig|zweiunddreißig|vierzig|fünfzig|sechzig|dreiundsechzig)\b/gi,w=>VTI_NR[w.toLowerCase()]);
-  t=t.replace(/\b(drei|vier|ein)(polig|phasig|mal)\b/gi,(m,n,w)=>VTI_NR[n.toLowerCase()]+" "+w);
+  t=t.replace(/\b(ein|zwei|drei|vier)(polig|phasig)(e|en|er|es)?\b/gi,(m,n,w)=>(VTI_NR[n.toLowerCase()]||1)+" polig").replace(/\b(\d)\s*-?\s*(polig|phasig)(e|en|er|es)\b/gi,"$1 polig");
+  t=t.replace(/\b(drei|vier|zwei)mal\b/gi,(m,n)=>VTI_NR[n.toLowerCase()]+" mal");
+  /* Füllwörter */
+  t=t.replace(/\b(sicherungs)?automat(en)?\b|\bleitungsschutzschalter\b|\bls\s*schalter\b|\bsicherungen?\b/gi," ");
+  t=t.replace(/\b(also|ähm?|ähh|öhm|hm|dann|danach|daneben|dort|hier|da|drin|drinnen|haben|hat|habe|wir|ich|gibt|es|ist|sind|noch|wieder|nochmal|ja|jetzt|verbaut|eingebaut|sitzt|sitzen|zuständig|absichert|absichern|abgesichert|die|der|das|den|dem|des|ein|eine|einen|einem|einer|für|vom|zum|zur|was|welche|welcher|welches|in|auf|mit|dazu|okay|gut|genau)\b/gi," ");
   t=t.replace(/(\d)\s*\|\s*(?=-?\s*(polig|phasig|pol|mal|x)\b)/gi,"$1 ").replace(/\b([bcdk]|be|bee|zeh|ce|tse|f|ef|eff)\s*\|\s*(?=\d)/gi,"$1 ");
-  const T=[]; let r=t.trim(), m;
-  const RE=[["sep",/^,/],["pause",/^\|/],["reihe",/^⏎/],["weg",/^(löschen|lösch|streichen|streich|falsch)\b/i],
-    ["fi",/^(fehlerstrom[\s-]?schutz[\s-]?schalter|fehlerstromschutz|fi[\s-]?schalter|fi|rcd|f\s?i)\b(?:\s*(\d{1,2})\b(?!\s*(?:a|ampere)\b))?/i],
+  t=t.replace(/\b(nächster|nächste|nächstes|weiter|komma)\b/gi," , ").replace(/(\s*\|\s*)+/g," | ");
+  return t.replace(/\s+/g," ").trim(); }
+function vtiDiktatLesen(seg){
+  const t=vtiDiktatNorm(seg);
+  const T=[]; let r=t, m;
+  const RE=[["sep",/^,/],["pause",/^\|/],["reihe",/^⏎/],["feld",/^⧉(\d*)/],["teil",/^‡/],["weg",/^(löschen|lösch|streichen|streich|falsch)\b/i],
+    ["kommentar",/^(aber|weil|wobei|obwohl|sondern|allerdings|macht|keinen|sinn)\b/i],
+    ["rcbo",/^RCBO\b/],
+    ["fi",/^(fehlerstrom\s*schutz\s*schalter|fehlerstromschutz|fi\s*schalter|fi|rcd|rccb|f\s?i)\b(?:\s*(\d{1,2})\b(?!\s*(?:a|ampere|ma|milliampere)\b))?/i],
     ["kz",/^-?(?:f|ef|eff)\s*-?\s*(\d{1,2})(?:\s*(?:\.|punkt)\s*(\d{1,2}))?\b/i],
-    ["ls",/^(b|c|d|k|be|bee|zeh|ce|tse)\s*-?\s*(\d{1,2})\s*(?:a|ampere)?\b/i],
-    ["pol",/^(\d)\s*-?\s*(polig|phasig|pol)\b/i],["pol3",/^(drehstrom|dreipolig|dreiphasig|400\s?volt)\b/i],["pol1",/^(einpolig|1\s*-?\s*polig)\b/i],
-    ["mal",/^(\d{1,2})\s*(mal|x)\b/i],["res",/^(reserve|reserven)\b/i],["leer",/^(leerplatz|leer|frei)\b/i],["wort",/^[^\s|,⏎]+/]];
+    ["ls",/^(b|c|d|k|be|bee|zeh|ce|tse)\s*-?\s*(\d{1,3})\s*(?:a|ampere)?\b/i],
+    ["ma",/^(\d{2,3})\s*(ma|milliampere)\b/i],["amp",/^(?:(typ\s*)?(a|f|b)\s+)?(\d{1,3})\s*(a|ampere)\b/i],["typ",/^typ\s*(a|b|f|ac)\b/i],
+    ["anz",/^(\d)\s+(?=(?:(?:b|c|d|k|be|zeh)\s*-?\s*\d{1,3}\b|RCBO\b|reserve|neozed|leer))/i],
+    ["pol",/^(\d)\s*-?\s*(polig|phasig|pol)\b/i],["pol3",/^(drehstrom|400\s?volt)\b/i],
+    ["mal",/^(\d{1,2})\s*(mal|x)\b/i],["res",/^(reserve|reserven)\b/i],["leer",/^(leerplatz|leer|frei)\b/i],
+    ["ge",new RegExp("^"+VTI_GERAET.source.replace(/^\\b/,""),"i")],["wort",/^[^\s|,⏎⧉‡]+/]];
   while(r){ r=r.replace(/^\s+/,""); if(!r) break; let ok=false;
     for(const [k,re] of RE){ if((m=r.match(re))){ T.push([k,m]); r=r.slice(m[0].length); ok=true; break; } }
     if(!ok) r=r.slice(1); }
-  /* Reihenfolge erkennen: sagt er „Küche B16“ (Name zuerst) oder „B16 Küche“? Zählt, was im ganzen Diktat häufiger vorkommt */
+  /* Reihenfolge erkennen: „Küche B16“ (Name zuerst) oder „B16 Küche“? */
   let wl=0, lw=0; { const Q=T.filter(([k])=>k!=="pause"); for(let i=1;i<Q.length;i++){ if(Q[i-1][0]==="wort"&&Q[i][0]==="ls") wl++; if(Q[i-1][0]==="ls"&&Q[i][0]==="wort"&&!(i>1&&Q[i-2][0]==="kz")) lw++; } }
   const nameZuerst=wl>lw;
-  const G=[]; let cur=null, vor="", weich=false;
-  const neu=o=>{ cur={name:[],...o}; G.push(cur); weich=false; return cur; };
+  const STARK=["sep","reihe","feld","fi","rcbo","kz","ls","anz","res","leer","ge","weg"];
+  const G=[]; let cur=null, vor="", weich=false, kom=false, anz=0, pol=0;
+  const neu=o=>{ cur={name:[],...o}; if(anz){ cur.anz=anz; anz=0; } if(pol){ cur.pol=pol; pol=0; } G.push(cur); weich=false; return cur; };
   const offen=()=>cur&&!cur.art&&!weich;
-  T.forEach(([k,m])=>{
+  const naechst=i=>{ for(let j=i+1;j<T.length;j++) if(T[j][0]!=="pause") return T[j]; return null; };
+  T.forEach(([k,m],i)=>{
+    if(STARK.includes(k)) kom=false;
+    if(k==="kommentar"){ kom=true; return; }
+    if(kom&&k==="wort") return;
     if(k==="sep"){ cur=null; }
-    else if(k==="pause"){ if(cur&&cur.name.length&&!/^(und|mit|für|im|in|am|an|vom|zum|zur|der|die|das|und\/oder)$/i.test(cur.name[cur.name.length-1])) weich=true; return; }
+    else if(k==="pause"){ if(cur&&cur.name&&cur.name.length&&!/^(und|im|am|an|bis)$/i.test(cur.name[cur.name.length-1])) weich=true; return; }
     else if(k==="reihe"){ G.push({art:"reihe"}); cur=null; }
-    else if(k==="weg"){ const i=G.map(x=>x.art!=="reihe").lastIndexOf(true); if(i>=0) G.splice(i,1); cur=null; }
-    else if(k==="fi"){ G.push({art:"fi",n:m[2]||""}); cur=null; }
+    else if(k==="feld"){ G.push({art:"feld",n:m[1]||""}); cur=null; }
+    else if(k==="teil"){ if(cur&&!cur.art) cur.name.push("‡"); weich=false; }
+    else if(k==="weg"){ const j=G.map(x=>x.art!=="reihe"&&x.art!=="feld").lastIndexOf(true); if(j>=0) G.splice(j,1); cur=null; }
+    else if(k==="fi"){ cur={art:"fi",n:m[2]||"",pol}; pol=0; anz=0; G.push(cur); }
+    else if(k==="rcbo") neu({rcbo:true});
+    else if(k==="ma"||k==="typ"){ const z=G[G.length-1]; if(z&&(z.art==="fi"||z.rcbo)){ if(k==="ma") z.ma=m[1]; } }
+    else if(k==="amp"){ const z=cur&&(cur.art==="fi"||cur.rcbo)?cur:null; if(z){ if(z.art==="fi") z.a=m[3]; else if(!z.ls) z.ls="B"+m[3]; } }
     else if(k==="kz") neu({kz:"F"+m[1]+(m[2]?"."+m[2]:"")});
-    else if(k==="ls"){ const ls={b:"B",be:"B",bee:"B",c:"C",zeh:"C",ce:"C",tse:"C",d:"D",k:"K"}[m[1].toLowerCase()]+m[2];
-      if(nameZuerst&&cur&&!cur.art&&!cur.ls&&!cur.res&&cur.name.length) cur.ls=ls;   /* „Küche … B16“: gehört zum Namen davor, auch nach einer Pause */
-      else if(offen()&&!cur.ls&&!cur.res&&(nameZuerst||!cur.name.length)) cur.ls=ls; else neu({ls}); }
-    else if(k==="pol"||k==="pol3"||k==="pol1"){ const z=G.filter(x=>!x.art).pop(); if(z) z.pol=k==="pol1"?1:k==="pol3"?3:+m[1]; }
+    else if(k==="ls"){ const ls={b:"B",be:"B",bee:"B",c:"C",zeh:"C",ce:"C",tse:"C",d:"D",k:"K"}[m[1].toLowerCase()]+m[2], nx=naechst(i);
+      if(cur&&cur.rcbo&&!cur.ls&&!cur.name.length) cur.ls=ls;
+      else if(cur&&!cur.art&&!cur.ls&&!cur.res&&!cur.ge&&cur.name.length&&(nameZuerst||!nx||nx[0]!=="wort"||/^und$/i.test(nx[1][0]))) cur.ls=ls;   /* „Küche … B16“ */
+      else if(offen()&&!cur.ls&&!cur.res&&!cur.ge&&!cur.name.length) cur.ls=ls; else neu({ls}); }
+    else if(k==="anz"){ anz=+m[1]; cur=null; }
+    else if(k==="pol"||k==="pol3"){ const n=k==="pol3"?3:+m[1], nx=naechst(i);
+      if(nx&&["fi","rcbo","ls","ge","anz"].includes(nx[0])&&(vor===""||!cur||cur.ls||cur.art||["sep","reihe","feld","pause"].includes(vor))) pol=n;   /* „vierpoliger RCD“ */
+      else { const z=cur&&cur.art==="fi"?cur:G.filter(x=>!x.art||x.art==="fi").pop(); if(z) z.pol=n; } }
     else if(k==="mal"){ const z=G.filter(x=>!x.art).pop(); if(z) z.mal=+m[1]; }
-    else if(k==="res"){ if(offen()&&!cur.name.length&&!cur.res) cur.res=true; else neu({res:true}); }
-    else if(k==="leer"){ G.push({art:"leer"}); cur=null; }
-    else { const w=m[0], dran=offen()&&!cur.res&&(cur.name.length?vor==="wort":!(nameZuerst&&cur.ls&&!cur.kz)); if(dran) cur.name.push(w); else neu({}).name.push(w); }
+    else if(k==="res"){ if(offen()&&!cur.name.length&&!cur.res&&!cur.ge) cur.res=true; else neu({res:true}); }
+    else if(k==="leer"){ G.push({art:"leer",anz}); anz=0; cur=null; }
+    else if(k==="ge") neu({ge:m[0]});
+    else { const w=m[0];
+      if(/^und$/i.test(w)){ const nx=naechst(i); if(!(cur&&!cur.art&&cur.name.length&&vor==="wort"&&nx&&nx[0]==="wort")) { vor=k; return; } }   /* „und“ nur mitten im Namen */
+      const dran=offen()&&!cur.res&&(cur.name.length?vor==="wort"||vor==="teil":!(nameZuerst&&cur.ls&&!cur.kz));
+      if(dran) cur.name.push(w); else neu({}).name.push(w); }
     vor=k; });
   /* Zeilen im Importformat */
-  const Z=[], K=[];
-  G.forEach(g=>{
-    if(g.art==="reihe"){ Z.push("---"); K.push("neue Reihe"); return; }
-    if(g.art==="fi"){ Z.push(g.n?`FI ${g.n}`:"FI"); K.push(g.n?`FI ${g.n}`:"FI"); return; }
-    if(g.art==="leer"){ Z.push("leer"); K.push("Leerplatz"); return; }
-    let nm=g.res?"Reserve":g.name.join(" ").replace(/^\S+/,w=>{ const v=VTI_VERHOERT.find(([re])=>re.test(w)); return v?v[1]:w; });
-    nm=nm.charAt(0).toUpperCase()+nm.slice(1);
-    const pol=g.pol===3||g.pol===4?" 3-polig":"";
-    const z=[g.kz,g.ls,(nm+pol).trim()].filter(Boolean).join("; ");
-    if(g.mal===3&&!pol&&!g.ls&&!g.kz){ Z.push(nm,nm,nm); K.push(`${nm} · 3-polig`); return; }
-    Z.push(g.mal>1?`${g.mal}x ${z}`:z); K.push([g.kz,nm,g.ls,pol.trim(),g.mal>1?`${g.mal}×`:""].filter(Boolean).join(" · ")); });
+  const Z=[], K=[]; let ersteReihe=true;
+  const gross=s=>s.charAt(0).toUpperCase()+s.slice(1);
+  G.forEach((g,gi)=>{
+    if(g.art==="reihe"){ if(!Z.length||Z[Z.length-1]==="---"||/^#/.test(Z[Z.length-1])){ return; } Z.push("---"); K.push("neue Reihe"); return; }
+    if(g.art==="feld"){ Z.push(`# Verteilerfeld${g.n?" "+g.n:""}`); K.push(`Verteilerfeld${g.n?" "+g.n:""}`); return; }
+    if(g.art==="fi"){ const w=[g.a?g.a+"A":"",g.ma?g.ma+"mA":""].filter(Boolean).join(" / "), p=g.pol===2?" 2-polig":"";
+      const z=(g.n?`FI ${g.n}`:"Fehlerstromschutzschalter")+(w?" "+w:"")+p; Z.push(g.n&&!w&&!p?`FI ${g.n}`:z); K.push(["FI"+(g.n?" "+g.n:""),w,g.pol?g.pol+"-polig":""].filter(Boolean).join(" · ")); return; }
+    if(g.art==="leer"){ const n=Math.max(1,g.anz||1); Z.push(n>1?`${n}x leer`:"leer"); K.push(n>1?`${n}× Leerplatz`:"Leerplatz"); return; }
+    let roh=g.res?"Reserve":g.name.join(" ").replace(/^\S+/,w=>{ const v=VTI_VERHOERT.find(([re])=>re.test(w)); return v?v[1]:w; });
+    const sch=g.rcbo?("FI/LS"+(g.ls?" "+g.ls:"")):g.ls||"", polT=g.pol===3||g.pol===4?" 3-polig":"";
+    const zeile=nm=>{ nm=gross(nm.replace(/\s*‡\s*/g," ").replace(/\s+/g," ").trim()); return g.ge?[g.kz,g.ge,(nm+polT).trim()].filter(Boolean).join("; "):[g.kz,sch,(nm+polT).trim()].filter(Boolean).join("; "); };
+    const kurz=nm=>[g.kz,g.ge||"",gross(nm.replace(/\s*‡\s*/g," ").trim()),sch,polT.trim()].filter(Boolean).join(" · ");
+    const n=g.anz||g.mal||1;
+    if(n>1){ const teile=roh.split(/\s*‡\s*|\s+und\s+/).map(x=>x.trim()).filter(Boolean);
+      if(teile.length===n){ teile.forEach(x=>{ Z.push(zeile(x)); K.push(kurz(x)); }); return; }   /* „zwei B16 für Kinderzimmer 1 und Kinderzimmer 2“ */
+      if(g.mal===3&&!polT&&!sch&&!g.kz&&!g.ge){ const nm=gross(roh); Z.push(nm,nm,nm); K.push(`${nm} · 3-polig`); return; }
+      Z.push(`${n}x ${zeile(roh)}`); K.push(`${n}× ${kurz(roh)}`); return; }
+    Z.push(zeile(roh)); K.push(kurz(roh)); });
+  while(Z.length&&Z[Z.length-1]==="---"){ Z.pop(); K.pop(); }
   return {Z,K}; }
 let VTI_SR=null;
 /* Aufnahme: erst nur zuhören (Animation, Zeit, Wortzahl), bei „Fertig“ alles zusammen auswerten und in „Prüfen“ zeigen */
