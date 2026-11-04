@@ -1677,7 +1677,14 @@ body.sc-offen{overflow:hidden}
 .sc-blatt{position:absolute;left:0;right:0;bottom:0;max-height:calc(100dvh - 40px);overflow:auto;overscroll-behavior:contain;background:var(--surface);color:var(--on-surface);border-radius:28px 28px 0 0;padding:0 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box;transform:translateY(100%);transition:transform .22s cubic-bezier(.2,.8,.2,1)}
 .sc.da .sc-scrim{opacity:1}.sc.da .sc-blatt{transform:none}
 .sc.weg .sc-scrim{opacity:0}.sc.weg .sc-blatt{transform:translateY(100%)}
-@media (min-width:700px){.sc-blatt{left:50%;right:auto;width:480px;margin-left:-240px}}
+/* iPad und PC: Fenster in der Mitte statt Blatt von unten */
+.sc.mitte .sc-blatt{left:50%;right:auto;top:50%;bottom:auto;width:min(520px,calc(100vw - 48px));max-height:calc(100dvh - 48px);border-radius:28px;padding:20px 20px 20px;opacity:0;transform:translate(-50%,-50%) scale(.96);transition:transform .2s cubic-bezier(.2,.8,.2,1),opacity .2s}
+.sc.mitte.da .sc-blatt{opacity:1;transform:translate(-50%,-50%)}.sc.mitte.weg .sc-blatt{opacity:0;transform:translate(-50%,-50%) scale(.96)}
+.sc.mitte .sc-griff{display:none}.sc.mitte .sc-cam{height:min(380px,46dvh)}
+.sc.pc .sc-blatt{width:460px}
+.sc.pc .sc-hin{padding:0 4px 4px;font-size:14px;line-height:1.4}
+.sc-ein-ic{width:48px;height:48px;border-radius:24px;background:var(--pc);color:var(--brand);display:grid;place-items:center;flex:none}.sc-ein-ic svg{width:24px;height:24px;fill:currentColor}
+.sc.pc .sc-ein input{font-size:18px;letter-spacing:.12em}
 .sc-griff{display:flex;justify-content:center;padding:10px 0 4px;touch-action:none}.sc-griff i{width:40px;height:5px;border-radius:3px;background:var(--sc-highest)}
 .sc-kopf{display:flex;align-items:center;gap:8px;padding:0 0 10px 4px;touch-action:none}
 .sc-kopf b{flex:1;font-size:18px;font-weight:800}
@@ -1722,3 +1729,6 @@ body.sc-offen{overflow:hidden}
 .sc-leer{margin:14px 4px 4px;color:var(--on-sv);font-size:14px}
 .sc-btn{margin-right:-4px}
 html body.sc-eng .navbar,html body.sc-eng.rail-open .navbar{transform:translateX(calc(-50% - var(--sc-rueck,0px)))!important}
+.sc button:focus-visible,.sc input:focus-visible{outline:none}
+.sc .sc-h:focus-visible,.sc .sc-ok:focus-visible{background:color-mix(in srgb,var(--fab) 82%,#000)}
+.sc .sc-n:focus-visible,.sc .sc-chip:focus-visible,.sc .sc-li:focus-visible,.sc .sc-rk:focus-visible{background:var(--sc-highest);filter:brightness(.94)}
