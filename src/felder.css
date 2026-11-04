@@ -1614,3 +1614,14 @@ body.fm-offen{overflow:hidden}
 .bf-tz{gap:12px}
 .bf-ans{display:grid;gap:10px}
 .bf-vorl{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -20px 14px;padding:0 20px}.bf-vorl::-webkit-scrollbar{display:none}.bf-vorl .chip{flex:none}
+
+/* ===== Abnahmeprotokoll (abnahme.js) ===== */
+.ab-sigs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+@media (max-width:600px){.ab-sigs{grid-template-columns:1fr}}
+.ab-sigbox{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:12px;border-radius:16px;background:var(--sc-high)}
+.ab-sigbox img{width:100%;max-width:280px;height:auto;border-radius:10px;background:#fff}
+.ab-sigbox span{font-size:13px;color:var(--on-sv)}
+.ab-uebern{display:inline-flex;align-items:center;gap:6px;margin:0 0 6px}
+.ab-uebern .ic{width:18px;height:18px}
+.ab-sigbox img{width:auto;max-width:100%;max-height:120px;object-fit:contain}
+@media (max-width:599px){.b-zeile{flex-wrap:wrap}.b-zeile .b-tabs{flex:1 1 100%}.b-zeile .bs-pick{margin-left:auto}}
