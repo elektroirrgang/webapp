@@ -1390,6 +1390,11 @@ body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dl
 .vti-mic.an{background:var(--err);color:#fff}.vti-mic.an .ic{color:#fff}
 .vti-diktat{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:center;margin-top:10px;padding:12px 14px;border-radius:14px;background:var(--pc);color:var(--on-pc);font-size:14px}
 .vti-diktat[hidden]{display:none}.vti-diktat small{grid-column:2;font-size:12px;opacity:.85}
+#vtiHoer{font-weight:700}#vtiHoer.zw{font-weight:600;font-style:italic}
+.vti-letzte{grid-column:2;display:grid;gap:4px}.vti-letzte:empty{display:none}
+.vti-letzte span{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:6px 10px;border-radius:10px;background:rgba(0,0,0,.08);font-size:14px;line-height:1.35}
+.vti-letzte i{font-style:normal;opacity:.75;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.vti-letzte b{font-weight:800;text-align:right}
+.vti-diktat{margin:10px 0 0}
 .vti-punkt{width:12px;height:12px;border-radius:50%;background:var(--err);animation:vtiPuls 1.2s ease-in-out infinite}
 @keyframes vtiPuls{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.5}}
 

@@ -105,7 +105,7 @@ const vtiLs=t=>/(^|[^A-Za-z])[BCDKZ]\s?(6|10|13|16|20|25|32|35|40|50|63|80|100|1
 const vtiKz=t=>/^-?(F|Q)\s?\d+(\.\d+)*$/i.test(t.trim())||/^\d{1,3}$/.test(t.trim());
 const vtiFiRef=t=>{ const m=t.trim().match(/^(FI|RCD)\s*-?\s*(\d+)$/i); return m?+m[2]:0; };
 const vtiLeitung=t=>/\b(NYM|NYY|NHXMH|H07|H05|J-?Y|Cu|mm²|mm2)\b|\b\d\s?[x×]\s?\d+([,.]\d+)?\b/i.test(t);
-function vtiPole(t){ return /\b(3|4)\s?-?\s?(p|pol|polig)\b|\b3\s?[x×]\s?[BCD]|\b3L\b|400\s?V|3~|dreh/i.test(t)?3:1; }
+function vtiPole(t){ return /\b(3|4)\s?-?\s?(p|pol|polig|phasig)\b|\b3\s?[x×]\s?[BCD]|\b3L\b|400\s?V|3~|dreh/i.test(t)?3:1; }
 function vtiRcdSchutz(t){ const s=t.replace(/(\d)[,.](\d)/g,"$1.$2"), A=s.match(/(\d{2,3})\s*A(?![a-z])/i), m=s.match(/(\d{2,3})\s*mA/i)||(/\b0\.03\s*A/i.test(s)?[0,"30"]:/\b0\.3\s*A/i.test(s)?[0,"300"]:null),
     y=s.match(/Typ\s*(A|B\+?|F|AC|EV)\b/i)||s.match(/\b(A|B\+?|F)\s*$/);
   const w={in:A?A[1]:"",idn:m?m[1]:"",typ:y?y[1].toUpperCase():""}; return vtRcdSchutz(w)||t.trim(); }
@@ -150,7 +150,8 @@ function vtImpLesen(text){ const E=[], fehlt=[]; let rcdNr=0, umbruch=false; con
       const nm=(schutz||bez).trim().match(/^(FI|RCD)\s*-?\s*(\d+)$/i); if(nm&&!kz){ kz=`${nm[1].toUpperCase()} ${nm[2]}`; if(schutz) schutz="FI"; else bez=""; }
       const e={id:uid(),art:"rcd",kz,bez:/^(FI|RCD)\b/i.test(bez)||vtiRcd(bez)?"":bez,schutz:vtiRcdSchutz(schutz||bez),_nr:rcdNr};
       if(nm) e.schutz=""; const p=/\b2\s?-?\s?(p|pol|polig)\b/i.test(alles)?2:0; if(p) e.te=2; rcds.push(e); neu(e); return; }
-    const e={id:uid(),art:"sk",kz,bez,schutz:schutz?vtiLsSchutz(schutz):"",pole:vtiPole(alles)}; if(vtiRcbo(schutz||"")&&e.pole!==3) e.te=2; if(leitung) e.leitung=leitung; if(ref) e._ref=ref; if(!schutz) fehlt.push(e.id);
+    const pol=vtiPole(alles), bez2=pol===3?bez.replace(/\s*\b(?:3|4)\s?-?\s?(?:p|pol|polig|phasig)\b\.?|\s*\bdrehstrom\b/gi,"").replace(/\s+/g," ").trim()||bez:bez;   /* „Herd 3-polig“ → Herd, 3-polig */
+    const e={id:uid(),art:"sk",kz,bez:bez2,schutz:schutz?vtiLsSchutz(schutz):"",pole:pol}; if(vtiRcbo(schutz||"")&&e.pole!==3) e.te=2; if(leitung) e.leitung=leitung; if(ref) e._ref=ref; if(!schutz) fehlt.push(e.id);
     neu(e); });
   /* Verweise „FI 2“: Stromkreis hinter den zweiten FI (und dessen andere Stromkreise) setzen */
   if(E.some(e=>e._ref)){ const mitRef=E.filter(e=>e._ref&&rcds[e._ref-1]); const R=E.filter(e=>!mitRef.includes(e));
@@ -183,8 +184,8 @@ function vtImpDlg(kind,id,vorwahl){ const s=kind==="standorte"&&standortOf(id), 
         ${s?"":ecOrtFeld(k.id)}
         ${Z.length?sf("vtiVon","Eingespeist aus",(Z.find(x=>x.v.art==="hv")||{v:{}}).v.id||"",[["","– Hausanschluss / weiß ich nicht –"],...Z.map(x=>[x.v.id,x.v.name||"Verteiler"])],{form:true}):""}</div>
       <label class="lbl vti-lbl" for="vtiText">Liste – eine Zeile pro Gerät</label><div class="tf vti-text"><textarea id="vtiText" spellcheck="false" placeholder="${esc(VTI_BSP)}"></textarea></div>
+      <div class="vti-diktat" id="vtiDiktat" hidden><span class="vti-punkt"></span><span id="vtiHoer">Ich höre zu …</span><div class="vti-letzte" id="vtiLetzte"></div><small>z. B. „FI eins“ · „B16 Küche“ · „Herd dreipolig“ · „Reserve“ · „neue Reihe“ – Gerät für Gerät, kurze Pause dazwischen. Korrigieren geht jederzeit im Textfeld.</small></div>
       <div class="vti-knoepfe">${vtiSR()?`<button type="button" class="kd-tel-neu vti-mic" data-act="vtiDiktat">${icon("mic")}<span>Diktieren</span></button>`:""}<button type="button" class="kd-tel-neu" data-act="vtImpDatei">${icon("ecImport")}<span>Datei laden</span></button><span class="vti-tipp">Spalten mit ; oder Tab – direkt aus Excel kopierbar. „# Text“ = Überschrift.</span></div>
-      <div class="vti-diktat" id="vtiDiktat" hidden><span class="vti-punkt"></span><span id="vtiHoer">Ich höre zu … Gerät für Gerät sprechen, kurze Pause dazwischen.</span><small>z. B. „FI eins“ · „Herd dreimal“ · „B16 Küche“ · „Reserve“ · „neue Reihe“</small></div>
       <div id="vtiVorschau" class="vti-vor"></div></div>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="vtImpOk">Übernehmen</button>`,{breit:true});
   vtImpVorschau(); }
@@ -236,6 +237,8 @@ const VTI_ZAHL={ein:1,eins:1,einmal:1,zwei:2,zweimal:2,drei:3,dreimal:3,vier:4,v
 function vtiSprache(roh){ const Z=[];
   String(roh||"").split(/\s*(?:[,;]|\bnächster\b|\bnächste\b|\bweiter\b)\s*/i).map(s=>s.trim()).filter(Boolean).forEach(s=>{
     let z=s.replace(/[.!?]+$/,"").replace(/\s+/g," ").trim(); if(!z) return;
+    /* typische Verhörer der Spracherkennung bei Elektro-Begriffen */
+    z=z.replace(/^(kehrt|kert|hert|herz|heard|hört)\b/i,"Herd").replace(/\b(be|bee|beh)\s*(\d{1,2})\b/gi,"B$2").replace(/\b(ce|zeh|tse)\s*(\d{1,2})\b/gi,"C$2").replace(/\b(ef ih|eff i|f\.\s?i\.?)\b/gi,"FI").replace(/\breserven?\b/gi,"Reserve");
     /* Zahlwörter → Ziffern (nicht in Wörtern wie „Einfahrt“) */
     z=z.replace(/\b(einmal|zweimal|dreimal|viermal|fünfmal|sechsmal|siebenmal|achtmal|neunmal|zehnmal)\b/gi,w=>VTI_ZAHL[w.toLowerCase()]+"x").replace(/\b(\d+)\s*mal\b/gi,"$1x");
     z=z.replace(/\b([bck])\s*(\d{1,2}|sechzehn|zehn|dreizehn|zwanzig|fünfundzwanzig|zweiunddreißig)\b/gi,(m,c,n)=>c.toUpperCase()+(VTI_ZAHL[String(n).toLowerCase()]||n));
@@ -243,7 +246,7 @@ function vtiSprache(roh){ const Z=[];
     if(/^(neue|nächste) reihe$/i.test(z)){ Z.push("---"); return; }
     /* „Herd 3x“ → „3x Herd“ */
     const hinten=z.match(/^(.+?)\s+(\d{1,2})x$/i); if(hinten) z=`${hinten[2]}x ${hinten[1]}`;
-    z=z.replace(/\b(drei|ein|vier)polig\b/gi,(m,n)=>({drei:3,ein:1,vier:4}[n.toLowerCase()])+"-polig");
+    z=z.replace(/\b(drei|ein|vier|3|1|4)\s*-?\s*(polig|phasig|pol)\b/gi,(m,n)=>({drei:3,ein:1,vier:4}[n.toLowerCase()]||n)+"-polig").replace(/\b1-polig\b\s*/gi,"").trim();
     /* „Herd dreimal“ = dreimal untereinander → wird beim Einlesen ein 3-poliger Automat (Irrgang-Schreibweise); andere Anzahlen bleiben „Nx“ = einzelne Geräte */
     const drei=z.match(/^3x\s+(.+)$/i); if(drei){ const n=drei[1].charAt(0).toUpperCase()+drei[1].slice(1); Z.push(n,n,n); return; }
     /* Absicherung vorne mit ; trennen: „B16 Küche“ → „B16; Küche“ */
@@ -252,17 +255,29 @@ function vtiSprache(roh){ const Z=[];
     Z.push(z); });
   return Z; }
 let VTI_SR=null;
-function vtiDiktatStop(){ const r=VTI_SR; VTI_SR=null; if(r){ r._aus=true; try{ r.stop(); }catch(e){} }
+function vtiDiktatStop(){ const r=VTI_SR; VTI_SR=null; if(r){ r._aus=true; if(r._fertig) r._fertig(); try{ r.stop(); }catch(e){} }
   const b=document.querySelector(".vti-mic"), d=document.getElementById("vtiDiktat"); if(b){ b.classList.remove("an"); b.querySelector("span").textContent="Diktieren"; } if(d) d.hidden=true; }
 function vtiDiktatStart(){ const SR=vtiSR(); if(!SR){ toast("Diktieren geht in diesem Browser nicht"); return; } vtiDiktatStop();
-  const r=new SR(); r.lang="de-DE"; r.continuous=true; r.interimResults=true; VTI_SR=r;
-  const b=document.querySelector(".vti-mic"), d=document.getElementById("vtiDiktat"), h=document.getElementById("vtiHoer"); if(b){ b.classList.add("an"); b.querySelector("span").textContent="Stopp"; } if(d) d.hidden=false;
-  r.onresult=e=>{ let zw=""; for(let i=e.resultIndex;i<e.results.length;i++){ const x=e.results[i], t=x[0].transcript;
-      if(x.isFinal){ const L=vtiSprache(t); if(L.length){ const ta=document.getElementById("vtiText"); if(ta){ ta.value=(ta.value.replace(/\s+$/,"")+(ta.value.trim()?"\n":"")+L.join("\n")); ta.scrollTop=ta.scrollHeight; vtImpVorschau(); } } }
-      else zw+=t; }
-    if(h) h.textContent=zw?`„${zw.trim()}“`:"Ich höre zu …"; };
-  r.onerror=e=>{ if(e.error==="not-allowed"||e.error==="service-not-allowed"){ toast("Mikrofon nicht erlaubt – in den Browser-Einstellungen freigeben"); vtiDiktatStop(); } else if(e.error==="network"){ toast("Diktieren braucht Internet"); vtiDiktatStop(); } };
-  r.onend=()=>{ if(VTI_SR===r&&!r._aus&&document.getElementById("vtiText")){ try{ r.start(); }catch(e){ vtiDiktatStop(); } } else if(VTI_SR===r) vtiDiktatStop(); };   /* Chrome hört nach Stille auf – weiterhören, bis Stopp */
-  try{ r.start(); }catch(e){ toast("Diktieren konnte nicht starten"); vtiDiktatStop(); } }
+  const b=document.querySelector(".vti-mic"), d=document.getElementById("vtiDiktat"); if(b){ b.classList.add("an"); b.querySelector("span").textContent="Stopp"; } if(d) d.hidden=false;
+  const H=[];   /* zuletzt erkannt: [gehört, eingetragen] */
+  const zeig=zw=>{ const h=document.getElementById("vtiHoer"), l=document.getElementById("vtiLetzte"); if(h) h.textContent=zw?`„${zw}“`:"Ich höre zu …"; h&&h.classList.toggle("zw",!!zw);
+    if(l) l.innerHTML=H.slice(-2).reverse().map(([roh,L])=>`<span><i>${esc(roh)}</i><b>${L.length?esc(L.map(x=>x==="---"?"neue Reihe":x).join(" · ")):"nicht verstanden"}</b></span>`).join(""); };
+  const rein=roh=>{ roh=String(roh||"").trim(); if(!roh) return; const L=vtiSprache(roh); H.push([roh,L]);
+    if(L.length){ const ta=document.getElementById("vtiText"); if(ta){ ta.value=(ta.value.replace(/\s+$/,"")+(ta.value.trim()?"\n":"")+L.join("\n")); ta.scrollTop=ta.scrollHeight; vtImpVorschau(); } } zeig(""); };
+  const sitzung=()=>{ const r=new SR(); r.lang="de-DE"; r.continuous=true; r.interimResults=true; r.maxAlternatives=1; VTI_SR=r;
+    let n=0, letzte="", zw="";
+    r.onresult=e=>{ let z="";
+      for(let i=n;i<e.results.length;i++){ const x=e.results[i], t=String(x[0].transcript||"").trim();
+        if(x.isFinal){ n=i+1; zw="";
+          /* Chrome auf Android liefert manchmal den ganzen bisherigen Satz noch einmal – dann nur das Neue nehmen */
+          const neu=letzte&&t.length>letzte.length&&t.toLowerCase().startsWith(letzte.toLowerCase()+" ")?t.slice(letzte.length):t; letzte=t; rein(neu); }
+        else z+=(z?" ":"")+t; }
+      zw=z; zeig(z); };
+    r.onerror=e=>{ if(e.error==="not-allowed"||e.error==="service-not-allowed"){ toast("Mikrofon nicht erlaubt – in den Browser-Einstellungen freigeben"); vtiDiktatStop(); } else if(e.error==="network"){ toast("Diktieren braucht Internet"); vtiDiktatStop(); } };
+    /* Chrome hört nach Stille auf: was noch nicht bestätigt war, trotzdem übernehmen – dann weiterhören, bis Stopp */
+    r.onend=()=>{ if(zw){ rein(zw); zw=""; } if(VTI_SR===r&&!r._aus&&document.getElementById("vtiText")) sitzung(); else if(VTI_SR===r) vtiDiktatStop(); };
+    r._fertig=()=>{ if(zw){ rein(zw); zw=""; } };
+    try{ r.start(); }catch(e){ toast("Diktieren konnte nicht starten"); vtiDiktatStop(); } };
+  sitzung(); zeig(""); }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="vtiDiktat"]'); if(b){ e.stopPropagation(); if(VTI_SR) vtiDiktatStop(); else vtiDiktatStart(); return; }
   if(VTI_SR&&e.target.closest&&e.target.closest('#dlg [data-act="cancel"],#dlg [data-act="vtImpOk"],#scrim')) vtiDiktatStop(); },true);
