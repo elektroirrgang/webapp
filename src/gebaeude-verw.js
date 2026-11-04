@@ -71,11 +71,13 @@ function gvRaumHtml(g,x,o){ o=o||{}; const z=gvNr(x.r.name), a=raArt(x.art), V=g
   const txt=z.txt||(z.nr?(a?a.name:""):x.r.name), ort=o.ort?[gvEtName(g,x.e),ber&&ber.name].filter(Boolean).join(" · "):"";
   const vt=V.length?`<span class="gv-vt" title="Verteiler: ${esc(V.map(v=>v.name).join(", "))}">${icon("ra_verteil")}${GV_ANS==="liste"||o.teil?esc(V.map(v=>v.name).join(", ")):""}</span>`:"";
   const act=o.act||"gvRaum", an=o.an?" an":"";
-  if(GV_ANS==="kachel"&&!o.teil) return `<button type="button" class="gv-k${an}" data-act="${act}" data-id="${esc(x.r.id)}">${raIcon(x.art,"klein")}<b>${esc(z.nr||txt)}</b><small>${esc(z.nr?txt:(a?a.name:""))}</small>${ort?`<small class="gv-ort">${esc(ort)}</small>`:""}${vt}</button>`;
-  return `<button type="button" class="gv-rz${an}" data-act="${act}" data-id="${esc(x.r.id)}">${raIcon(x.art)}<span class="gv-nr${z.nr?"":" leer"}">${esc(z.nr||"–")}</span><span class="gv-rt"><span>${esc(txt)}</span>${ort?`<small>${esc(ort)}</small>`:""}</span>${vt}${o.rechts||""}</button>`; }
+  const prob=g.knx&&g.knx.an&&(g.knx.geraete||[]).some(d=>d.raumId===x.r.id&&d.problem), nF=typeof dateienVon==="function"?dateienVon("raeume",x.r.id).length:0, nN=(x.r.notizen||[]).length;
+  const hinw=o.teil?"":`${prob?`<span class="gv-hw warn" title="Gerät defekt oder Problem">${icon("warn")}</span>`:""}${nN?`<span class="gv-hw" title="${nN} Notiz${nN===1?"":"en"}">${icon("gvEdit")}</span>`:""}${nF?`<span class="gv-hw" title="${nF} Fotos/Dateien">${icon("cam")}</span>`:""}`;
+  if(GV_ANS==="kachel"&&!o.teil) return `<button type="button" class="gv-k${an}" data-act="${act}" data-id="${esc(x.r.id)}">${raIcon(x.art,"klein")}<b>${esc(z.nr||txt)}</b><small>${esc(z.nr?txt:(a?a.name:""))}</small>${ort?`<small class="gv-ort">${esc(ort)}</small>`:""}${vt}${hinw?`<span class="gv-hws">${hinw}</span>`:""}</button>`;
+  return `<button type="button" class="gv-rz${an}" data-act="${act}" data-id="${esc(x.r.id)}">${raIcon(x.art)}<span class="gv-nr${z.nr?"":" leer"}">${esc(z.nr||"–")}</span><span class="gv-rt"><span>${esc(txt)}</span>${ort?`<small>${esc(ort)}</small>`:""}</span>${hinw}${vt}${o.rechts||""}</button>`; }
 const gvRaeumeHtml=(g,L,o)=>`<div class="${GV_ANS==="kachel"&&!(o&&o.teil)?"gv-kl":"gv-rl"}">${L.map(x=>gvRaumHtml(g,x,o)).join("")}</div>`;
 /* Etagenseite */
-function gvEtSeite(g,e){ const R=e.raeume||[];
+function gvEtSeite(g,e){ const R=e.raeume||[]; if(nav.raum){ const r=R.find(x=>x.id===nav.raum); if(r) return gvRaumSeite(g,e,r); nav.raum=null; }
   const verw=`<div class="sec-lbl" style="margin-top:24px">Etage</div>${listOf([
     `<div class="li" role="button" tabindex="0" data-act="gvTeilAn" data-id="${esc(e.id)}"><span class="av">${icon("kxUeb")}</span><span class="lt"><span class="h">Räume auswählen und einteilen</span><span class="s">Mehrere Räume auf einmal: Bereich (links, Mitte, rechts …), Raumart oder Etage</span></span>${icon("chev")}</div>`,
     `<div class="li" role="button" tabindex="0" data-act="gvEt" data-id="${esc(e.id)}"><span class="av">${icon("gvEdit")}</span><span class="lt"><span class="h">Etage bearbeiten</span><span class="s">Name, Geschoss, Bauteil</span></span>${icon("chev")}</div>`])}`;
@@ -115,7 +117,29 @@ function gvBerDlg(id){ const g=gvAkt(), e=g&&g.etagen.find(x=>x.id===nav.et); if
   dialog(b?"Bereich bearbeiten":"Neuer Bereich",`<div class="fg1">${tf("gvBen","Bezeichnung",b?b.name:"",{form:true,ph:"z. B. Links, Mitte/WCs, Rechts, Flur"})}</div>${b?"":`<p class="meta" style="margin-top:8px">Mehrere auf einmal mit Komma: „Links, Mitte, Rechts, Flur“.</p>`}`,
     `${b?`<button class="btn-text danger" data-act="gvBerWeg">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gvBerOk">${b?"Speichern":"Anlegen"}</button>`,{breit:true});
   setTimeout(()=>{ const x=document.getElementById("f_gvBen"); if(x) x.focus(); },60); }
+/* ===== Raumseite: was ist im Raum (Verteiler, Anschlusspunkte, Netzwerk, KNX), dazu Notizen und Fotos ===== */
+const gvNotizen=r=>(r.notizen=r.notizen||[]);
+function gvRaumSeite(g,e,r){ const a=raArt(raVon(g,r,e)), z=r.bereichId&&gvBer(e).find(b=>b.id===r.bereichId), bt=gvEtBt(g,e);
+  const V=gvVtIm(g,r), S=(g.stellen||[]).filter(x=>x.raumId===r.id).sort((x,y)=>(x.ord||0)-(y.ord||0)), D=(g.dosen||[]).filter(x=>x.raumId===r.id).sort((x,y)=>(x.ord||0)-(y.ord||0)), SR=(g.schraenke||[]).filter(x=>x.raumId===r.id);
+  const K=g.knx&&g.knx.an?(g.knx.geraete||[]).filter(d=>d.raumId===r.id):[], KP=K.filter(d=>d.problem), N=gvNotizen(r);
+  const kopf=`<section class="card gv-rkopf">${raIcon(a?a.id:"sonst")}<div><b>${esc(a?a.name:"Ohne Raumart")}</b><small>${esc([z&&z.name,e.name,bt&&bt.name].filter(Boolean).join(" · "))}</small></div><button type="button" class="ab-ic" data-act="gvRaumEd" data-id="${esc(r.id)}" aria-label="Raum bearbeiten" title="Raum bearbeiten">${icon("gvEdit")}</button></section>`;
+  const prob=KP.length?`<section class="card kx-prob"><h3>Funktioniert nicht</h3>${ecListe(KP.map(d=>ecLi({lead:icon("warn"),ton:d.problem.art==="defekt"?"bad":"wip",kopf:esc([typeof kxPA==="function"&&kxPA(g,d),typeof kxTyp==="function"?kxTyp(d.typ).name:d.typ].filter(Boolean).join(" · ")),text:esc([d.problem.art==="defekt"?"defekt":"Problem",d.problem.notiz,d.problem.von].filter(Boolean).join(" · ")),act:"gvZuKnx",id:r.id})))}</section>`:"";
+  const notizen=`<div class="sec-row"><div class="sec-lbl">Notizen${N.length?` · ${N.length}`:""}</div><span class="ab-btns"><button class="ab-ic" data-act="gvNotiz" aria-label="Notiz hinzufügen" title="Notiz hinzufügen">${icon("add")}</button></span></div>
+    ${N.length?`<div class="gv-notizen">${N.slice().sort((x,y)=>(y.at||0)-(x.at||0)).map(n=>`<button type="button" class="gv-notiz" data-act="gvNotiz" data-id="${esc(n.id)}"><span>${esc(n.text)}</span><small>${esc([n.von,n.at&&new Date(n.at).toLocaleDateString("de-DE")].filter(Boolean).join(" · "))}</small></button>`).join("")}</div>`:`<p class="meta">Noch keine Notiz – z. B. „Decke abgehängt, Revisionsöffnung links“.</p>`}`;
+  const blk=(t,L)=>L.length?`<div class="sec-lbl" style="margin-top:20px">${t} · ${L.length}</div>${listOf(L)}`:"";
+  const vt=blk("Verteiler",V.map(v=>`<div class="li" role="button" tabindex="0" data-act="gvZuVt" data-id="${esc(v.id)}"><span class="av">${icon("ra_verteil")}</span><span class="lt"><span class="h">${esc(v.name||"Verteiler")}</span><span class="s">${esc((n=>`${n} Stromkreis${n===1?"":"e"}`)((g.stromkreise||[]).filter(k=>k.vId===v.id).length))}</span></span>${icon("chev")}</div>`));
+  const st=blk("Anschlusspunkte",S.map(x=>{ const k=x.skId&&(g.stromkreise||[]).find(y=>y.id===x.skId); return `<div class="li"><span class="av">${icon("ecStecker")}</span><span class="lt"><span class="h">${esc((x.ord?x.ord+" · ":"")+(typeof ecStName==="function"?ecStName(x):"Anschlusspunkt"))}</span><span class="s">${esc([x.lage,k&&(typeof ecSkName==="function"?ecSkName(k):k.nr)].filter(Boolean).join(" · ")||"ohne Stromkreis")}</span></span></div>`; }));
+  const nz=blk("Netzwerk",[...SR.map(x=>`<div class="li"><span class="av">${icon("ecNetz")}</span><span class="lt"><span class="h">${esc(x.name||"Netzwerkschrank")}</span><span class="s">Netzwerkschrank</span></span></div>`),...D.map(x=>`<div class="li"><span class="av">${icon("ra_server")}</span><span class="lt"><span class="h">${esc((x.ord?x.ord+" · ":"")+(typeof ecDoseName==="function"?ecDoseName(x):"Datendose"))}</span><span class="s">${esc(x.lage||"")}</span></span></div>`)]);
+  const knx=K.length?`<div class="sec-row" style="margin-top:20px"><div class="sec-lbl">KNX · ${K.length}</div></div>${listOf(K.slice().sort((x,y)=>(typeof kxRang==="function"?kxRang(x.typ)-kxRang(y.typ):0)).map(d=>{ const pa=typeof kxPA==="function"?kxPA(g,d):"", t=typeof kxTyp==="function"?kxTyp(d.typ):{name:d.typ};
+    return `<div class="li" role="button" tabindex="0" data-act="gvZuKnx" data-id="${esc(r.id)}"><span class="av gv-pa">${esc(pa||"–")}</span><span class="lt"><span class="h">${esc(t.name)}</span><span class="s">${esc(typeof kxZustandText==="function"?kxZustandText(d):"")}</span>${d.problem?`<span class="st">${pill(d.problem.art==="defekt"?"bad":"wip",d.problem.art==="defekt"?"defekt":"Problem")}</span>`:""}</span>${icon("chev")}</div>`; }))}`:"";
+  const leer=!V.length&&!S.length&&!D.length&&!SR.length&&!K.length?`<p class="meta" style="margin:20px 4px 0">Noch nichts aus Prüfung, Verteiler oder KNX in diesem Raum.</p>`:"";
+  return `<div class="narrow gv-seite">${kopf}${prob}${notizen}${vt}${st}${nz}${knx}${leer}<div style="margin-top:20px">${typeof ablageView==="function"?ablageView("raeume",{id:r.id}):""}</div></div>`; }
+function gvNotizDlg(id){ const g=gvAkt(), f=g&&gvRaumFinden(g,nav.raum); if(!f) return; const n=id&&gvNotizen(f.r).find(x=>x.id===id); GV.notiz=n?n.id:"";
+  dialog(n?"Notiz bearbeiten":"Neue Notiz",`<div class="fg1">${ta("gvNt","Notiz",n?n.text:"",{form:true,ph:"z. B. Decke abgehängt, Revisionsöffnung links"})}</div>`,
+    `${n?`<button class="btn-text danger" data-act="gvNotizWeg">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gvNotizOk">Speichern</button>`,{breit:true});
+  setTimeout(()=>{ const x=document.getElementById("f_gvNt"); if(x){ x.focus(); x.setSelectionRange(x.value.length,x.value.length); } },60); }
 function gvTitel(){ const g=gvGeb(nav.ort), e=nav.et&&g.etagen.find(x=>x.id===nav.et); if(!e) return {title:ecOrt(nav.ort).titel,sub:"Gebäude"};
+  const rr=nav.raum&&e.raeume.find(x=>x.id===nav.raum); if(rr){ const a=raArt(raVon(g,rr,e)); return {title:rr.name,sub:[a&&a.name,e.name].filter(Boolean).join(" · ")}; }
   const b=gvEtBt(g,e), gs=gvGs(e), gsT=gs!=null?ecGeschossName(gs):""; return {title:e.name,sub:[b&&b.name,gsT&&gsT!==e.name?gsT:""].filter(Boolean).join(" · ")||"Etage"}; }
 const gvAkt=()=>{ const g=nav.v==="geb"?gvGeb(nav.ort):nav.v==="kx"&&typeof kxGebAkt==="function"?kxGebAkt():null; return g?gvNorm(g):null; };
 const gvSpeichern=g=>{ if(g.knx) g.knx.updated=Date.now(); ecGebSpeichern(g); };
@@ -218,7 +242,7 @@ function gvRaumSp(){ const g=gvAkt(), f=g&&gvRaumFinden(g,GV.raum); if(!f) retur
   (g.verteiler||[]).forEach(v=>{ if(GV.vtSel.has(v.id)) v.raumId=f.r.id; else if(v.raumId===f.r.id) v.raumId=""; });
   if(String(F.gvRvtNeu||"").trim()) g.verteiler.push({id:uid(),name:String(F.gvRvtNeu).trim(),raumId:f.r.id,stand:ecHeute(),ersteller:(typeof ME!=="undefined"&&ME.name)||""});
   if(F.gvRber!==undefined){ if(F.gvRber) f.r.bereichId=F.gvRber; else delete f.r.bereichId; }
-  if(F.gvRe&&F.gvRe!==f.e.id){ const z=g.etagen.find(x=>x.id===F.gvRe); if(z){ f.e.raeume=f.e.raeume.filter(x=>x!==f.r); z.raeume.push(f.r); delete f.r.bereichId; if(z.bauteilId) f.r.bauteilId=z.bauteilId; else delete f.r.bauteilId; } }
+  if(F.gvRe&&F.gvRe!==f.e.id){ const z=g.etagen.find(x=>x.id===F.gvRe); if(z){ f.e.raeume=f.e.raeume.filter(x=>x!==f.r); z.raeume.push(f.r); if(nav.raum===f.r.id) nav.et=z.id; delete f.r.bereichId; if(z.bauteilId) f.r.bauteilId=z.bauteilId; else delete f.r.bauteilId; } }
   gvSpeichern(g); closeOverlays(); render(); }
 
 /* ===== Klicks ===== */
@@ -282,13 +306,22 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
     if(n&&!GV.loesch){ GV.loesch=true; b.textContent=`Trotzdem löschen (Etagen, Räume und Verteiler verlieren das Bauteil)`; return; }
     g.bauteile=g.bauteile.filter(x=>x.id!==id); g.etagen.forEach(e=>{ if(e.bauteilId===id) delete e.bauteilId; e.raeume.forEach(r=>{ if(r.bauteilId===id) delete r.bauteilId; }); }); g.verteiler.forEach(v=>{ if(v.bauteilId===id) v.bauteilId=""; }); GV.bt="";
     gvSpeichern(g); closeOverlays(); render(); return; }
-  if(a==="gvRaum"){ gvRaumDlg(b.dataset.id); return; }
+  if(a==="gvRaum"){ const g=gvAkt(), f=g&&gvRaumFinden(g,b.dataset.id); if(!f) return; if(nav.v==="geb"){ nav.et=f.e.id; nav.raum=f.r.id; render(); scrollTo(0,0); } else gvRaumDlg(b.dataset.id); return; }
+  if(a==="gvRaumEd"){ gvRaumDlg(b.dataset.id); return; }
+  if(a==="gvNotiz"){ gvNotizDlg(b.dataset.id); return; }
+  if(a==="gvNotizOk"){ const g=gvAkt(), f=g&&gvRaumFinden(g,nav.raum); if(!f) return; const t=String((document.getElementById("f_gvNt")||{}).value||"").trim(); const N=gvNotizen(f.r);
+    if(GV.notiz){ const n=N.find(x=>x.id===GV.notiz); if(n){ if(!t){ f.r.notizen=N.filter(x=>x!==n); } else { n.text=t; n.geaendert=Date.now(); } } } else if(t) N.push({id:uid(),text:t,von:(typeof ME!=="undefined"&&ME.name)||"",at:Date.now()});
+    gvSpeichern(g); closeOverlays(); render(); return; }
+  if(a==="gvNotizWeg"){ const g=gvAkt(), f=g&&gvRaumFinden(g,nav.raum); if(!f) return; f.r.notizen=gvNotizen(f.r).filter(x=>x.id!==GV.notiz); gvSpeichern(g); closeOverlays(); render(); return; }
+  if(a==="gvZuVt"){ const g=gvAkt(); if(!g) return; go({v:"vt",g:g.id,id:b.dataset.id}); return; }
+  if(a==="gvZuKnx"){ const g=gvAkt(); if(!g||!g.knx||!g.knx.an) return; go({v:"kx",g:g.id,tab:"raeume",raum:b.dataset.id}); return; }
   if(a==="gvRaumSp"){ gvRaumSp(); return; }
   if(a==="gvRAuf"||a==="gvRAb"){ const g=gvAkt(), f=g&&gvRaumFinden(g,GV.raum); if(!f) return; const L=f.e.raeume, i=L.indexOf(f.r), j=a==="gvRAuf"?i-1:i+1; if(j<0||j>=L.length) return; [L[i],L[j]]=[L[j],L[i]]; gvSpeichern(g); render(); toast(`${f.r.name} ist jetzt an Stelle ${j+1}`); return; }
   if(a==="gvRaumWeg"){ const g=gvAkt(), id=GV.raum, n=g?gvRaumBezug(g,id):0; if(!g) return;
     if(n&&!GV.loesch){ GV.loesch=true; b.textContent=`Mit ${n} Einträgen löschen`; return; }
     g.etagen.forEach(e=>{ e.raeume=e.raeume.filter(x=>x.id!==id); }); g.stellen=(g.stellen||[]).filter(s=>s.raumId!==id); g.dosen=(g.dosen||[]).filter(d=>d.raumId!==id);
     (g.schraenke||[]).forEach(s=>{ if(s.raumId===id) s.raumId=""; }); g.verteiler.forEach(v=>{ if(v.raumId===id) v.raumId=""; });
+    if(nav.raum===id) nav.raum=null;
     if(g.knx){ g.knx.geraete=(g.knx.geraete||[]).filter(d=>d.raumId!==id); (g.knx.linien||[]).forEach(l=>{ l.raeume=(l.raeume||[]).filter(r=>r!==id); }); }
     gvSpeichern(g); closeOverlays(); render(); return; }
 },true);
