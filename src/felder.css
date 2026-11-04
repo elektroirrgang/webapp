@@ -1594,3 +1594,23 @@ body.fm-offen{overflow:hidden}
 .fm-rahmen{position:relative}
 .fm-auf{position:absolute;right:10px;bottom:10px;display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 16px 0 12px;border:0;border-radius:20px;background:rgba(255,255,255,.94);color:#1B1B1F;font:inherit;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.25)}
 .fm-auf .fm-ic{width:20px;height:20px}
+
+/* ===== Betriebsfristen / Unterweisungen (betrieb.js) ===== */
+.fr-tabs{display:flex;width:100%;margin:0 0 14px}
+.fr-tabs button{flex:1}
+.kal-fr{--c:#B7791F}
+.kp-q.kal-fr,.kal-fd.kal-fr{background:#B7791F}
+.fr-z[role="button"]{cursor:pointer}
+.bf-ukopf,.bf-pkopf{display:flex;align-items:center;gap:12px;cursor:default}
+.bf-pkopf .av-p,.bf-pkopf>.pav,.bf-pkopf>span:first-child{flex:none}
+.bf-ukopf .fr-d{margin-left:auto}
+.bf-pkopf .lt{flex:1;min-width:0}
+.bf-pkopf .ab-ic{margin-left:auto}
+.bf-vorl{margin:0 0 14px}
+.bf-hin:empty{display:none}
+.bf-verlauf{display:flex;flex-wrap:wrap;gap:6px;margin:0 4px}
+.bf-verlauf span{padding:6px 12px;border-radius:14px;background:var(--sc-high);font-size:13px}
+.bf-thl{margin:0 4px 0 22px;padding:0;line-height:1.6}
+.bf-tz{gap:12px}
+.bf-ans{display:grid;gap:10px}
+.bf-vorl{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -20px 14px;padding:0 20px}.bf-vorl::-webkit-scrollbar{display:none}.bf-vorl .chip{flex:none}
