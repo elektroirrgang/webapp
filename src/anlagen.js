@@ -68,10 +68,10 @@ let AN_Q="", AN_BT="";
 function anSeite(ortId){ const tab=META.anTab||"masch", g=anGeb(ortId);
   const tabs=`<div class="seg an-tabs" role="tablist">${AN_TABS.map(([k,t])=>`<button type="button" data-act="anTab" data-v="${k}" aria-pressed="${tab===k}">${t}</button>`).join("")}</div>`;
   let inhalt="";
-  if(tab==="masch"){ const q=AN_Q.trim().toLowerCase(), H=x=>String(x||"").toLowerCase().includes(q);
-    let M=anMaschinen(ortId); if(AN_BT) M=M.filter(m=>m.bauteilId===AN_BT); if(q) M=M.filter(m=>H(m.nr)||H(m.bez)||H(m.hersteller)||H(m.typ)||H(m.sn)||H(anOrtText(g,m.bauteilId,m.etageId,m.raum)));
+  if(tab==="masch"){ const q=AN_Q.trim().toLowerCase(), H=x=>suPasst(q,x);
+    let M=anMaschinen(ortId); if(AN_BT) M=M.filter(m=>m.bauteilId===AN_BT); if(q) M=M.filter(m=>suPasst(q,m.nr,m.bez,m.hersteller,m.typ,m.sn,anOrtText(g,m.bauteilId,m.etageId,m.raum)));
     const chips=g.bauteile.length?`<div class="chips vg-chips an-bt"><button class="chip" data-act="anBtF" data-v="" aria-pressed="${!AN_BT}">Alle</button>${g.bauteile.map(b=>`<button class="chip" data-act="anBtF" data-v="${esc(b.id)}" aria-pressed="${AN_BT===b.id}">${esc(b.name)}</button>`).join("")}</div>`:"";
-    inhalt=`<div class="search an-such">${icon("search")}<input id="anQ" type="search" placeholder="Nummer, Bezeichnung, Ort" value="${esc(AN_Q)}" autocomplete="off" aria-label="Maschinen suchen"></div>${chips}
+    inhalt=`<div class="search an-such">${icon("search")}<input id="anQ" type="search" placeholder="Nummer, Bezeichnung" value="${esc(AN_Q)}" autocomplete="off" aria-label="Maschinen suchen"></div>${chips}
       <div id="anRes">${anMListe(M,g)}</div>`; }
   else if(tab==="vt") inhalt=anVtBaum(g,ortId);
   else inhalt=anGebView(g,ortId);
@@ -173,7 +173,7 @@ function anPDialog(m){ anE={mid:m.id,erg:"ok"};
   dialog("Prüfung eintragen",`<div class="fg1">${tf("anPd","Datum",today(),{form:true,type:"date"})}<div class="vg-drw"><span>Ergebnis</span>${seg("anPErg","ok",[["ok","Bestanden"],["maengel","Mit Mängeln"]])}</div>${ta("anPn","Notiz (optional)","",{form:true,ph:"z. B. nach DIN VDE 0113-1 / 0105-100, Protokoll-Nr."})}</div>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="anPOk">Eintragen</button>`); }
 
-document.addEventListener("input",e=>{ if(e.target&&e.target.id==="anQ"){ AN_Q=e.target.value; const r=document.getElementById("anRes"); if(r&&nav.v==="anl"){ const g=anGeb(nav.id), q=AN_Q.trim().toLowerCase(), H=x=>String(x||"").toLowerCase().includes(q);
+document.addEventListener("input",e=>{ if(e.target&&e.target.id==="anQ"){ AN_Q=e.target.value; const r=document.getElementById("anRes"); if(r&&nav.v==="anl"){ const g=anGeb(nav.id), q=AN_Q.trim().toLowerCase(), H=x=>suPasst(q,x);
   let M=anMaschinen(nav.id); if(AN_BT) M=M.filter(m=>m.bauteilId===AN_BT); if(q) M=M.filter(m=>H(m.nr)||H(m.bez)||H(m.hersteller)||H(m.typ)||H(m.sn)||H(anOrtText(g,m.bauteilId,m.etageId,m.raum))); r.innerHTML=anMListe(M,g); } } });
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="an"]'); if(!b||!/^an[A-Z]/.test(b.dataset.act)) return; e.stopImmediatePropagation(); e.preventDefault();
   const a=b.dataset.act, id=b.dataset.id, seg1=()=>{ b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); if(typeof segInd==="function") segInd(); };

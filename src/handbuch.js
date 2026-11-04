@@ -28,14 +28,14 @@ let HB_Q="", HB_F="alle";
 function hbUebersicht(){ const A=hbAlle(), G=hbGelesenMap(), q=HB_Q.trim().toLowerCase();
   const ung=A.filter(a=>hbGilt(a)&&+G[a.id]!==+a.stand), entw=A.filter(a=>!hbGilt(a)), vor=A.filter(a=>a.vorschlaege.length);
   let L=A; if(HB_F==="neu") L=ung; else if(HB_F==="entwurf") L=entw; else if(HB_F==="vorschlag") L=vor;
-  if(q) L=L.filter(a=>[a.titel,a.inhalt,...a.checkliste].join(" ").toLowerCase().includes(q));
+  if(q) L=L.filter(a=>suPasst(q,a.titel,a.inhalt,a.checkliste));
   const chip=(v,t,n)=>`<button type="button" class="chip" data-act="hbFilter" data-v="${v}" aria-pressed="${HB_F===v}">${t}${n!=null?` · ${n}`:""}</button>`;
   const item=a=>{ const gel=hbGilt(a)&&+G[a.id]===+a.stand, st=!hbGilt(a)?pill("open","Entwurf"):gel?"":pill("wip",G[a.id]?"geändert":"neu");
     return `<div class="li" role="button" tabindex="0" data-act="hbAuf" data-id="${esc(a.id)}"><span class="av">${icon(a.checkliste.length?"check":"book")}</span><span class="lt"><span class="h">${esc(a.titel)}</span>
       <span class="s">${esc(hbGilt(a)?`Stand ${a.stand} · ${ecDatumKurz(a.frei&&a.frei.am)}`:"noch nicht freigegeben")}${a.vorschlaege.length?` · ${a.vorschlaege.length} Vorschlag${a.vorschlaege.length===1?"":"e"}`:""}</span><span class="st">${st}</span></span>${icon("chev")}</div>`; };
   const nachKap=HB_KAPITEL.map(([k,t])=>[t,L.filter(a=>a.kapitel===k)]).concat([["Weitere",L.filter(a=>!HB_KAPITEL.some(([k])=>k===a.kapitel))]]).filter(([,X])=>X.length);
   return `<div class="narrow hb">
-    <div class="tf hb-such"><input id="hbQ" type="search" value="${esc(HB_Q)}" placeholder="Im Handbuch suchen" autocomplete="off" aria-label="Im Handbuch suchen"><span class="hb-lupe">${icon("search")}</span></div>
+    <div class="search">${icon("search")}<input id="hbQ" type="search" value="${esc(HB_Q)}" placeholder="Im Handbuch suchen" autocomplete="off" aria-label="Im Handbuch suchen"></div>
     <div class="chips ec-wahl hb-filter">${chip("alle","Alle")}${chip("neu","Zu lesen",ung.length)}${chip("entwurf","Entwürfe",entw.length)}${hbDarf()||vor.length?chip("vorschlag","Vorschläge",vor.length):""}</div>
     ${nachKap.length?nachKap.map(([t,X])=>`<div class="sec-lbl">${esc(t)}</div>${listOf(X.map(item))}`).join(""):`<p class="meta" style="margin:16px 4px">${q?"Nichts gefunden.":"Hier ist gerade nichts."}</p>`}
     <p class="hint">${hbDarf()?"Entwürfe sind Vorschläge – erst nach deiner Freigabe gelten sie. Änderungsvorschläge der Kollegen landen unter „Vorschläge“.":"Fehlt etwas oder stimmt etwas nicht? Im Artikel „Änderung vorschlagen“ – der Chef gibt frei."}</p></div>`; }

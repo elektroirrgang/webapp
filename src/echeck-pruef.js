@@ -186,11 +186,11 @@ Object.assign(FDEF.ec_anlage.std,{typ:"pruef",kunde:"alle"});
 const ecInstVt=()=>fW("ec_anlage","typ")==="leg";
 FDEF.ec_anlage.ohne=["typ"];
 FDEF.ec_anlage.gruppen.push({k:"kunde",t:"Kunde",opts:[["alle","Alle"],["ohne","Ohne Kunde"]]});
-function ecListeInhalt(art){ const n="ec_"+art, q=query.trim().toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q), st=fW(n,"status"), wer=fW(n,"wer"), so=fW(n,"sort");
+function ecListeInhalt(art){ const n="ec_"+art, q=query.trim().toLowerCase(), H=v=>suPasst(q,v), st=fW(n,"status"), wer=fW(n,"wer"), so=fW(n,"sort");
   let L=ecAlle().filter(p=>(p.art||"anlage")===art);
   const mitLeg=art==="anlage"&&typeof legAlle==="function";
   if(mitLeg){ const typ=fW(n,"typ"); if(typ==="leg") L=[]; if(typ!=="pruef") L=L.concat(legListenAlle()); if(fW(n,"kunde")==="ohne") L=L.filter(p=>!kundeOf(p.kundeId)); }
-  if(q) L=L.filter(p=>{ if(p.leg) return [p.leg.titel,p.leg.kunde,p.leg.anschrift,p.leg.ersteller,"Verteilerlegende",ecDatum(p.datum)].some(H); if(p.vt) return H(p.such)||H(ecDatum(p.datum)); const o=ecOrt(p.ortId); return H(o.titel)||H(o.name)||H(p.bez)||H(p.pruefer)||H(p.pruefart)||H(p.auftragsnr)||H(ecDatum(p.datum)); });
+  if(q) L=L.filter(p=>{ if(p.leg) return suPasst(q,p.leg.titel,p.leg.kunde,p.leg.anschrift,p.leg.ersteller,"Verteilerlegende",ecDatum(p.datum)); if(p.vt) return suPasst(q,p.such,ecDatum(p.datum)); const o=ecOrt(p.ortId); return suPasst(q,o.titel,o.name,p.bez,p.pruefer,p.pruefart,p.auftragsnr,ecDatum(p.datum)); });
   if(st==="arbeit") L=L.filter(p=>p.status!=="fertig"); else if(st==="fertig") L=L.filter(p=>p.status==="fertig"); else if(st==="maengel") L=L.filter(p=>!p.leg&&!p.vt&&ecErgebnis(p)==="bad");
   if(wer==="meine") L=L.filter(p=>p.pruefer===who().name||(p.createdBy&&p.createdBy.mail===ME.mail));
   const tit=p=>p.leg?p.titel:ecOrt(p.ortId).titel, item=p=>p.leg?legListenItem(p.leg):p.vt?vtListenItem(p.vt):ecItem(p), [ein,mehr]=mitLeg?["Eintrag","Einträge"]:["Prüfung","Prüfungen"];
@@ -222,7 +222,7 @@ function ecListeView(art){
       ?"Ortsveränderliche Geräte (DGUV V3, DIN VDE 0701-0702): Geräte je Kunde erfassen, prüfen, Prüffrist setzen – das Protokoll landet in der Bibliothek."
       :"Hausinstallationen und Anlagen (DIN VDE 0100-600 / 0105-100): Räume, Verteiler, Stromkreise und Steckdosen anlegen, besichtigen, messen – das Protokoll landet in der Bibliothek."}</p></div></div>`;
   const seg=art==="anlage"?`<div class="ec-seg" role="group" aria-label="Anzeigen">${[["pruef","Prüfungen"],["leg","Verteiler"]].map(([k,t])=>`<button type="button" data-act="ecSeg" data-v="${k}" aria-pressed="${fW("ec_anlage","typ")===k}">${t}</button>`).join("")}</div>`:"";
-  return h+`${seg}${searchBar(art==="anlage"&&ecInstVt()?"Verteiler, Kunde oder Ort suchen":"Ort, Kunde, Prüfer oder Datum suchen",fKnopf("ec_"+art))}<div id="res">${ecListeInhalt(art)}</div>${art==="netz"?ecRkDefs()+ecKatVorschau():""}</div>`; }
+  return h+`${seg}${searchBar(art==="anlage"&&ecInstVt()?"Verteiler, Kunde, Ort":"Ort, Kunde, Prüfer",fKnopf("ec_"+art))}<div id="res">${ecListeInhalt(art)}</div>${art==="netz"?ecRkDefs()+ecKatVorschau():""}</div>`; }
 /* Abschnitt in der Kunden-/Standortansicht */
 function ecBeiKunde(kind,r){ const L=ecAlle().filter(p=>kind==="kunden"?p.kundeId===r.id:p.standortId===r.id).sort((a,b)=>String(b.datum||"").localeCompare(String(a.datum||"")));
   return kdKopf("Prüfungen","ecNeuHier","Prüfung anlegen",` data-kind="${kind}" data-id="${esc(r.id)}"`)+(L.length?listOf(L.map(ecItem)):`<p class="meta">Noch keine Prüfung.</p>`); }
@@ -883,7 +883,7 @@ function ecKatListe(){ const n="ec_kat", q=String(query||"").trim().toLowerCase(
   const grp=new Map(), key=so==="typ"?K=>(EC_KATGR.find(g=>g[0]===ecKatHaupt(K))||[,"Sonstiges"])[1]:K=>K.hersteller;
   (so==="typ"?EC_KATGR.slice(1).flatMap(g=>L.filter(K=>ecKatHaupt(K)===g[0])):[...L].sort((x,y)=>x.hersteller.localeCompare(y.hersteller,"de"))).forEach(K=>{ const k=key(K); if(!grp.has(k)) grp.set(k,[]); grp.get(k).push(K); });
   return info+[...grp].map(([h,G])=>`<div class="sec-lbl">${esc(h)}</div><div class="katgrid">${G.map(ecKatKachel).join("")}</div>`).join(""); }
-function ecKatalogView(){ return `<div class="narrow">${ecRkDefs()}${searchBar("Hersteller, Modell, Art.-Nr.",fKnopf("ec_kat"))}<div id="res">${ecKatListe()}</div></div>`; }
+function ecKatalogView(){ return `<div class="narrow">${ecRkDefs()}${searchBar("Hersteller, Modell",fKnopf("ec_kat"))}<div id="res">${ecKatListe()}</div></div>`; }
 /* Vorschau auf der Netzwerk-Startseite: was bei uns am meisten verbaut ist, aufgefüllt mit je einem Gerät pro Gruppe */
 function ecKatVorschau(){ const cnt=new Map();
   for(const g0 of live("gebaeude")) for(const sc of ecGebNorm(g0).schraenke||[]) for(const t of ecSchrTeile(sc)) if(t.kat&&ecRkKat(t.kat)) cnt.set(t.kat,(cnt.get(t.kat)||0)+1);

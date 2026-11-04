@@ -290,13 +290,13 @@ function bbAufOeffnen(k,id){
   if(k==="bau"){ if(typeof baustelleView==="function"&&DB.baustellen&&DB.baustellen.get(id)) return go({v:"baustelle",id}); return weiter("Baustelle","../baustelle/","Die Baustelle"); } }
 function bibListe(){
   if(!bbGeladen){ bbLaden(); return ""; }
-  const art=bbW("art"), ku=bbW("kunde"), so=bbW("sort"), q=String(query||"").toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
+  const art=bbW("art"), ku=bbW("kunde"), so=bbW("sort"), q=String(query||"").toLowerCase(), H=v=>suPasst(q,v);
   const A=bbEintraege(), zahl=a=>a==="alle"?A.length:A.filter(x=>x.art===a).length;
   const nurOrdner=!A.length&&bbAnsicht()==="ordner"&&!q&&DB.kunden&&[...DB.kunden.values()].some(k=>!k.deleted); /* Kundenordner gibt es auch ohne Dateien */
   if(nurOrdner) return bbOrdner(bbAuftraege().filter(x=>ku==="alle"||x.kundeId===ku),bbZeile);
   if(!A.length) return `<div class="empty bib-leer">${icon("folder")}<h2>Noch nichts in der Bibliothek</h2><p>Hier landen fertige Prüfprotokolle aus EVSE, Berichte aus Baustelle sowie Dokumente und Fotos aus den Kundenablagen.</p></div>`;
   const chips=`<div class="chips bib-chips">${BB_ART.filter(([a])=>a==="alle"||zahl(a)).map(([a,t])=>`<button class="chip" data-act="bbArt" data-v="${a}" aria-pressed="${art===a}">${esc(t)}<span class="chip-n">${zahl(a)}</span></button>`).join("")}</div>`;
-  const L=A.filter(x=>(art==="alle"||x.art===art)&&(ku==="alle"||x.kundeId===ku)&&(!q||H(x.titel)||H(x.kunde)||H(x.info)||H((bbKunde(x.kundeId)||{}).kdnr)));
+  const L=A.filter(x=>(art==="alle"||x.art===art)&&(ku==="alle"||x.kundeId===ku)&&(!q||suPasst(q,x.titel,x.kunde,x.info,(bbKunde(x.kundeId)||{}).kdnr)));
   L.sort(so==="alt"?(a,b)=>a.t-b.t:so==="name"?(a,b)=>String(a.titel).localeCompare(String(b.titel),"de",{numeric:true}):so==="kunde"?(a,b)=>String(a.kunde||"~").localeCompare(String(b.kunde||"~"),"de")||b.t-a.t:(a,b)=>b.t-a.t);
   const info=bbAktiv()?`<p class="meta f-info">${L.length} ${L.length===1?"Eintrag":"Einträge"}${ku!=="alle"?` · ${esc((bbKunde(ku)||{}).name||"")}`:""} <button class="btn-text inl" data-act="bbReset">Filter aufheben</button></p>`:"";
   if(!L.length) return chips+info+`<div class="empty bib-leer klein">${icon("search")}<h2>Nichts gefunden</h2><p>Andere Suche oder anderen Filter versuchen.</p></div>`;
@@ -314,7 +314,7 @@ function bibListe(){
 }
 function bibliothekView(){
   const an=bbAnsicht(), k=an==="kacheln"; if(bbGeladen) setTimeout(bbLaden,0); /* neu abgelegte PDFs sofort zeigen */
-  return `<div class="narrow"><div class="bib-kopf"><div class="search mit-f">${icon("search")}<input id="q" type="search" placeholder="Name, Kunde, Auftrag" value="${esc(query||"")}" autocomplete="off" aria-label="Suchen"><button type="button" class="such-f bb-f${bbAktiv()?" an":""}" data-act="bbFilter" aria-label="Filtern und sortieren" title="Filtern und sortieren">${bbIc("filt")}</button><button type="button" class="such-f such-ans" data-act="ansMenue" aria-label="Ansicht wechseln" title="Ansicht">${bbIc(an==="ordner"?"ordner":k?"kacheln":"liste")}</button></div>
+  return `<div class="narrow"><div class="bib-kopf"><div class="search mit-f">${icon("search")}<input id="q" type="search" placeholder="Name, Kunde" value="${esc(query||"")}" autocomplete="off" aria-label="Suchen"><button type="button" class="such-f bb-f${bbAktiv()?" an":""}" data-act="bbFilter" aria-label="Filtern und sortieren" title="Filtern und sortieren">${bbIc("filt")}</button><button type="button" class="such-f such-ans" data-act="ansMenue" aria-label="Ansicht wechseln" title="Ansicht">${bbIc(an==="ordner"?"ordner":k?"kacheln":"liste")}</button></div>
     <div class="seg ans-seg" role="group" aria-label="Ansicht"><button data-act="bbAnsicht" data-v="ordner" aria-pressed="${an==="ordner"}" title="Ordner nach Kunde">${bbIc("ordner")}</button><button data-act="bbAnsicht" data-v="kacheln" aria-pressed="${k}" title="Kacheln">${bbIc("kacheln")}</button><button data-act="bbAnsicht" data-v="liste" aria-pressed="${an==="liste"}" title="Liste">${bbIc("liste")}</button></div></div>
     <div id="res">${bibListe()}</div></div>`;
 }

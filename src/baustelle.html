@@ -2215,7 +2215,7 @@ function bItem(b){
       ${e?`${String(e.stand||"").trim()?`<span class="b-stand">${esc(e.stand)}</span>`:""}<span class="s b-von">${icon("person")}${esc(vonText(e)||"–")} · ${esc(e.datum===today()?"heute":tagText(e.datum))}</span>`:`<span class="s">Noch keine Übergabe</span>`}
       <span class="st">${tm}${b.status&&b.status!=="aktiv"?pill(b.status==="fertig"?"ok":"open",STATUS_TXT[b.status]):""}${e&&String(e.material||"").trim()?pill("wip","Material offen"):""}</span></span>${icon("chev")}</div>`;
 }
-function kundenKacheln(){ const q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
+function kundenKacheln(){ const q=query.toLowerCase(), H=v=>suPasst(q,v);
   const ks=live("kunden").map(k=>({k,B:live("baustellen").filter(b=>b.kundeId===k.id)})).filter(x=>x.B.length&&(!q||H(x.k.name)||x.B.some(b=>H(b.name)))).sort((a,b)=>a.k.name.localeCompare(b.k.name,"de"));
   if(!ks.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:"Noch keine Kunden mit Baustellen."}</p>`;
   return `<div class="k-kacheln">${ks.map(({k,B})=>{ const z=STATUS.map(([v,t])=>[v,t,B.filter(b=>(b.status||"aktiv")===v).length]).filter(x=>x[2]);
@@ -2223,16 +2223,16 @@ function kundenKacheln(){ const q=query.toLowerCase(), H=v=>String(v||"").toLowe
       <span class="kk-z">${z.map(([v,t,c])=>`<span class="kk-s"><i class="bs-dot ${v}"></i>${c} ${esc(t)}</span>`).join("")}</span></button>`; }).join("")}</div>`; }
 function baustellenListe(){
   if(META.filter==="kunden") return kundenKacheln();
-  const q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
+  const q=query.toLowerCase(), H=v=>suPasst(q,v);
   const alle=META.filter==="alle", rang=b=>b.status==="fertig"?1:0;
-  const L=live("baustellen").filter(b=>(q||alle?true:(b.status||"aktiv")===META.filter)&&(!q||H(b.name)||H(b.auftragsnr)||H(pfadText(b))||H((ortVon(b)||{}).ort))).sort((a,b)=>(alle||q?rang(a)-rang(b):0)||aktiv(b)-aktiv(a));
+  const L=live("baustellen").filter(b=>(q||alle?true:(b.status||"aktiv")===META.filter)&&(!q||suPasst(q,b.name,b.auftragsnr,pfadText(b),(ortVon(b)||{}).ort))).sort((a,b)=>(alle||q?rang(a)-rang(b):0)||aktiv(b)-aktiv(a));
   if(!L.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:alle?"Keine Baustellen.":META.filter==="aktiv"?"Keine aktiven Baustellen.":`Keine Baustellen im Status „${STATUS_TXT[META.filter]}“.`}</p>`;
   return listOf(L.map(bItem));
 }
 function startView(){
   if(!live("baustellen").length) return `<div class="empty">${icon("baustelle")}<h2>Noch keine Baustellen</h2><p>Lege mit „Baustelle“ die erste an. Danach schreibt jeder am Ende des Tages kurz rein, was der Stand ist – der Nächste ist sofort im Bild.</p></div>`;
   const n=s=>live("baustellen").filter(b=>(b.status||"aktiv")===s).length;
-  return `<div class="narrow">${vgMeineKarte()}${searchBar("Baustelle, Kunde, Ort oder Auftragsnr. suchen")}
+  return `<div class="narrow">${vgMeineKarte()}${searchBar("Baustelle, Kunde, Ort")}
     <div class="chips filt"><button class="chip" data-act="filter" data-v="alle" aria-pressed="${META.filter==="alle"}">Alle (${live("baustellen").length})</button><button class="chip" data-act="filter" data-v="kunden" aria-pressed="${META.filter==="kunden"}">${icon("firma")}Kunden</button>${STATUS.map(([v,t])=>`<button class="chip" data-act="filter" data-v="${v}" aria-pressed="${META.filter===v}"><i class="bs-dot ${v}"></i>${t} (${n(v)})</button>`).join("")}</div>
     <div id="res">${baustellenListe()}</div></div>`;
 }
@@ -2397,13 +2397,13 @@ function locItem(kind,r){
     <span class="lt"><span class="h">${esc(r.name)}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}${n?`<span class="st">${pill("open",`${n} Baustelle${n>1?"n":""}`)}</span>`:""}</span>${icon("chev")}</div>`;
 }
 function kundenListe(){
-  const q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
-  const ks=live("kunden").sort((a,b)=>a.name.localeCompare(b.name,"de")).filter(k=>!q||H(k.name)||H(k.kdnr)||H(k.ort)||standorteVon(k.id).some(s=>H(s.name)||H(s.ort)));
+  const q=query.toLowerCase(), H=v=>suPasst(q,v);
+  const ks=live("kunden").sort((a,b)=>a.name.localeCompare(b.name,"de")).filter(k=>!q||suPasst(q,k.name,k.kdnr,k.ort,k.plz,k.strasse,k.ansprech,k.tel,standorteVon(k.id).map(s=>[s.name,s.ort,s.strasse])));
   return ks.length?listOf(ks.map(k=>locItem("kunden",k))):`<p class="meta">Kein Kunde gefunden.</p>`;
 }
 function kundenView(){
   if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden und Standorte sind dieselben wie in EVSE – was dort angelegt ist, erscheint hier automatisch.</p></div>`;
-  return `<div class="narrow">${searchBar("Kunde, Kundennr. oder Ort suchen")}<div id="res">${kundenListe()}</div></div>`;
+  return `<div class="narrow">${searchBar("Kunde, Nr., Ort")}<div id="res">${kundenListe()}</div></div>`;
 }
 function kundeView(k){ const bs=live("baustellen").filter(b=>b.kundeId===k.id).sort((a,b)=>aktiv(b)-aktiv(a));
   return kdSeite(k,"kunden",kdKopf("Baustellen","neueBaustelleKunde","Baustelle anlegen")+(bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle bei diesem Kunden.</p>`)); }
@@ -2482,7 +2482,7 @@ function nSortiert(L){ const s=META.nsort||"geaendert", t=META.ntyp||"";
   const cmp=s==="titel"?(a,b)=>nTitel(a).localeCompare(nTitel(b),"de"):s==="erstellt"?(a,b)=>(b.created||0)-(a.created||0):s==="baustelle"?(a,b)=>bn(a).localeCompare(bn(b),"de")||(b.updated||0)-(a.updated||0):(a,b)=>(b.updated||0)-(a.updated||0);
   return L.slice().sort(cmp); }
 function notizenListe(){
-  const q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q);
+  const q=query.toLowerCase(), H=v=>suPasst(q,v);
   const f=META.nfilter||"meine";
   let L=notizenAlle().filter(n=>q?(H(n.titel)||(n.bloecke||[]).some(b=>H(b.text)||(b.items||[]).some(i=>H(i.t))||(b.striche||[]).some(x=>x.s&&H(x.s)))):f==="archiv"?istMeine(n)&&n.archiv:!n.archiv&&(f==="meine"?istMeine(n):!istMeine(n)));
   L=nSortiert(L);

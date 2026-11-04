@@ -1700,12 +1700,12 @@ document.addEventListener("click",()=>setTimeout(segInd,0));
   document.addEventListener("click",e=>{ if(e.isTrusted&&Date.now()<sperre&&e.target.closest(".seg")){ sperre=0; e.stopPropagation(); e.preventDefault(); } },true);
 })();
 function kpListe(q,sel){ q=String(q||"").toLowerCase().trim(); const grp={};
-  live("katalog").filter(r=>!q||katVoll(r).toLowerCase().includes(q)||String(r.hersteller||"").toLowerCase().includes(q)).forEach(r=>(grp[r.hersteller||"Sonstige"]=grp[r.hersteller||"Sonstige"]||[]).push(r));
+  live("katalog").filter(r=>!q||suPasst(q,katVoll(r),r.hersteller)).forEach(r=>(grp[r.hersteller||"Sonstige"]=grp[r.hersteller||"Sonstige"]||[]).push(r));
   const ks=Object.keys(grp).sort((a,b)=>a.localeCompare(b,"de")); if(!ks.length) return `<p class="meta">Kein Modell gefunden.</p>`;
   return ks.map(h=>`<div class="sec-lbl">${esc(h)}</div><div class="list">${grp[h].sort((a,b)=>katName(a).localeCompare(katName(b),"de")).map(r=>{ const src=katBildSrc(r);
     return `<button type="button" class="li kp-i${r.id===sel?" an":""}" data-act="kpWahl" data-v="${esc(r.id)}"><span class="av${src?" av-img":""}">${src?katImg(r):icon("ev")}</span><span class="lt"><span class="h">${esc(katName(r))}</span><span class="s">${esc(katKurz(r)||"")}</span></span>${r.id===sel?icon("check"):""}</button>`; }).join("")}</div>`).join(""); }
 function katPickOeffnen(){ const sel=$("#katWahl"); if(!sel) return;
-  dialog("Modell aus dem Katalog",`<div class="kp"><div class="search kp-s">${icon("search")}<input id="kpQ" type="search" placeholder="Hersteller oder Modell suchen" autocomplete="off" aria-label="Suchen"></div><div class="kp-l" id="kpL">${kpListe("",sel.value)}</div></div>`,
+  dialog("Modell aus dem Katalog",`<div class="kp"><div class="search kp-s">${icon("search")}<input id="kpQ" type="search" placeholder="Hersteller, Modell" autocomplete="off" aria-label="Suchen"></div><div class="kp-l" id="kpL">${kpListe("",sel.value)}</div></div>`,
     `<button class="btn-text" data-act="kpWahl" data-v="__neu">+ Neues Modell</button><span style="flex:1"></span><button class="btn-text" data-act="kpWahl" data-v="">Ohne Katalogmodell</button><button class="btn-text" data-act="cancel">Abbrechen</button>`); $("#dlg").classList.add("kp-dlg"); }
 const tlIni=m=>String(m.name||m.mail).split(/[\s.@]+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("");
 document.addEventListener("click",e=>{
@@ -1891,19 +1891,19 @@ const listOf=items=>items.length?`<div class="list">${items.join("")}</div>`:"";
 const isDemo=r=>!!r.demo;
 
 function suche(q){
-  q=q.toLowerCase(); const hit=s=>String(s||"").toLowerCase().includes(q);
-  const k=live("kunden").filter(r=>hit(r.name)||hit(adrText(r))||hit(r.kdnr)||hit(r.ansprech)).map(r=>locItem("kunden",r));
-  const s=live("standorte").filter(r=>hit(r.name)||hit(adrText(r))).map(r=>locItem("standorte",r));
+  const hit=v=>suPasst(q,v);
+  const k=live("kunden").filter(r=>suPasst(q,r.name,adrText(r),r.kdnr,r.ansprech)).map(r=>locItem("kunden",r));
+  const s=live("standorte").filter(r=>suPasst(q,r.name,adrText(r))).map(r=>locItem("standorte",r));
   const l=live("ladeparks").filter(r=>hit(r.name)).map(r=>locItem("ladeparks",r));
-  const p=live("pruefungen").filter(r=>hit(r.p.auftragsnr)||hit(r.p.projekt)||hit(r.p.pruefer)||r.s.some(x=>hit(x.sn)||hit(x.typ))).sort(byDate).slice(0,30).map(r=>pItem(r,true));
-  const kt=live("katalog").filter(r=>hit(r.hersteller)||hit(r.modell)||hit(r.artnr)).slice(0,10).map(katItem);
+  const p=live("pruefungen").filter(r=>suPasst(q,r.p.auftragsnr,r.p.projekt,r.p.pruefer,pfadText(r),r.s.map(x=>[x.sn,x.typ]))).sort(byDate).slice(0,30).map(r=>pItem(r,true));
+  const kt=live("katalog").filter(r=>suPasst(q,r.hersteller,r.modell,r.artnr)).slice(0,10).map(katItem);
   const out=[k.length&&`<div class="sec-lbl">Kunden</div>${listOf(k)}`,kt.length&&`<div class="sec-lbl">Katalog</div>${listOf(kt)}`,s.length&&`<div class="sec-lbl">Standorte</div>${listOf(s)}`,l.length&&`<div class="sec-lbl">Ladeparks</div>${listOf(l)}`,p.length&&`<div class="sec-lbl">Prüfungen</div>${listOf(p)}`].filter(Boolean).join("");
   return out||`<p class="meta" style="text-align:center;margin-top:24px">Nichts gefunden für „${esc(q)}“.</p>`;
 }
 function startView(){
   const all=live("pruefungen"), empty=!all.length&&!live("kunden").length;
   if(empty) return `<div class="empty">${icon("doc")}<h2>Noch keine Prüfungen</h2><p>Lege mit „Neue Prüfung“ die erste an – Kunde und Standort werden dabei gleich mit angelegt.</p></div>`;
-  let h=`<div class="narrow">${searchBar("Kunde, Ort, Auftrag oder SN suchen")}<div id="res">`;
+  let h=`<div class="narrow">${searchBar("Kunde, Ort, SN")}<div id="res">`;
   h+=query?suche(query):startListen();
   return h+`</div></div>`;
 }
@@ -1943,8 +1943,8 @@ const K_STATUS=[["alle","Alle"],["wip","In Arbeit"],["bad","Nicht bestanden"],["
 function kundeFaellig(k){ const grenze=new Date(Date.now()+90*864e5).toISOString().slice(0,10), ges=new Set();
   return pruefUnter("kunden",k.id).some(p=>{ const o=p.standortId+"|"+(p.ladeparkId||""); if(ges.has(o)) return false; ges.add(o); return !!(p.a&&p.a.naechste&&p.a.naechste<=grenze); }); }
 function kundenListe(){
-  const q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q), so=fW("kunden","sort"), st=fW("kunden","status");
-  let ks=live("kunden").filter(k=>!q||H(k.name)||H(k.kdnr)||H(k.ort)||standorteVon(k.id).some(s=>H(s.name)||H(s.ort)));
+  const q=query.toLowerCase(), H=v=>suPasst(q,v), so=fW("kunden","sort"), st=fW("kunden","status");
+  let ks=live("kunden").filter(k=>!q||suPasst(q,k.name,k.kdnr,k.ort,k.plz,k.strasse,k.ansprech,k.tel,standorteVon(k.id).map(s=>[s.name,s.ort,s.strasse])));
   const last=new Map(ks.map(k=>[k.id,pruefUnter("kunden",k.id)[0]]));
   if(st!=="alle") ks=ks.filter(k=>{ const l=last.get(k.id); return st==="ohne"?!l:st==="faellig"?kundeFaellig(k):!!l&&protoState(l)===st; });
   const nm=(a,b)=>a.name.localeCompare(b.name,"de");
@@ -1958,7 +1958,7 @@ function kundenListe(){
 FDEF.kunden={std:{sort:"az",status:"alle"},sort:[["az","Name A–Z"],["za","Name Z–A"],["zuletzt","Zuletzt geprüft"],["kdnr","Kundennummer"]],gruppen:[{k:"status",t:"Status",opts:K_STATUS}],liste:()=>kundenListe()};
 function kundenView(){
   if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Lege mit „Kunde“ den ersten an, zum Beispiel eine Firma mit mehreren Standorten.</p></div>`;
-  return `<div class="narrow">${searchBar("Kunde, Kundennr. oder Ort suchen",fKnopf("kunden"))}<div id="res">${kundenListe()}</div></div><p class="hint">Nach rechts wischen: anpinnen · nach links: löschen</p>`;
+  return `<div class="narrow">${searchBar("Kunde, Nr., Ort",fKnopf("kunden"))}<div id="res">${kundenListe()}</div></div><p class="hint">Nach rechts wischen: anpinnen · nach links: löschen</p>`;
 }
 const FREEMAIL=/^(gmail|googlemail|web|gmx|t-online|outlook|hotmail|live|icloud|me|mac|yahoo|aol|freenet|arcor|posteo|mailbox|online|vodafone|1und1|ionos)\./i;
 const webHref=w=>!w?"":/^https?:\/\//i.test(w)?w:"https://"+w;
@@ -2001,8 +2001,8 @@ const P_ART=[["alle","Alle"],...PRUEFARTEN.map(x=>[x,x==="Wiederholungsprüfung"
 FDEF.pruef={std:{sort:"neu",status:"alle",art:"alle",wer:"alle"},sort:[["neu","Neueste zuerst"],["alt","Älteste zuerst"],["kunde","Kunde A–Z"],["auftrag","Auftragsnummer"]],
   gruppen:[{k:"status",t:"Status",opts:[["alle","Alle"],["wip","In Arbeit"],["bad","Mit Mängeln"],["ok","Fertig"]]},{k:"art",t:"Prüfart",opts:P_ART},{k:"wer",t:"Prüfer",opts:[["alle","Alle"],["meine","Nur meine"]]}],liste:()=>pruefungenListe()};
 function pruefungenListe(){
-  const n="pruef", f=fW(n,"status"), art=fW(n,"art"), wer=fW(n,"wer"), so=fW(n,"sort"), q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q), ich=String(who().name||"").toLowerCase();
-  const L=live("pruefungen").filter(p=>{ const st=protoState(p); return (f==="alle"||(f==="wip"?(st==="wip"||st==="open"):st===f))&&(art==="alle"||p.p.art===art)&&(wer==="alle"||(ich&&String(p.p.pruefer||"").toLowerCase()===ich)||sameUser(p.createdBy,ME))&&(!q||H(pfadText(p))||H(p.p.auftragsnr)||H(p.p.pruefer)||H(p.p.art)); });
+  const n="pruef", f=fW(n,"status"), art=fW(n,"art"), wer=fW(n,"wer"), so=fW(n,"sort"), q=query.toLowerCase(), H=v=>suPasst(q,v), ich=String(who().name||"").toLowerCase();
+  const L=live("pruefungen").filter(p=>{ const st=protoState(p); return (f==="alle"||(f==="wip"?(st==="wip"||st==="open"):st===f))&&(art==="alle"||p.p.art===art)&&(wer==="alle"||(ich&&String(p.p.pruefer||"").toLowerCase()===ich)||sameUser(p.createdBy,ME))&&(!q||suPasst(q,pfadText(p),p.p.auftragsnr,p.p.pruefer,p.p.art,deDate(p.p.datum))); });
   if(so==="alt") L.sort((a,b)=>byDate(b,a)); else if(so==="kunde") L.sort((a,b)=>pfadText(a).localeCompare(pfadText(b),"de")||byDate(a,b));
   else if(so==="auftrag") L.sort((a,b)=>String(a.p.auftragsnr||"~").localeCompare(String(b.p.auftragsnr||"~"),"de",{numeric:true})); else L.sort(byDate);
   const info=fInfo(n,L.length,"Prüfung","Prüfungen");
@@ -2010,7 +2010,7 @@ function pruefungenListe(){
   return info+(so==="kunde"?abcListe(L,p=>pfadText(p),p=>pItem(p,true)):listOf(L.map(p=>pItem(p,true))));
 }
 function pruefungenView(){
-  return `<div class="narrow">${searchBar("Kunde, Ort, Auftrag oder Prüfer",fKnopf("pruef"))}<div id="res">${pruefungenListe()}</div></div>`;
+  return `<div class="narrow">${searchBar("Kunde, Ort, Prüfer",fKnopf("pruef"))}<div id="res">${pruefungenListe()}</div></div>`;
 }
 function faelligListe(){
   const m=new Map();
@@ -2356,7 +2356,7 @@ function katKachel(r){
 }
 function katalogView(){
   fotoFetch(live("katalog").map(r=>r.bild).filter(Boolean));
-  return `<div class="narrow">${searchBar("Hersteller, Modell, Art.-Nr.")}<div id="res">${katalogListe()}</div>
+  return `<div class="narrow">${searchBar("Hersteller, Modell")}<div id="res">${katalogListe()}</div>
     <div class="kat-teilen"><button class="btn-tonal" data-act="katExport">${icon("backup")}Katalog als Datei sichern</button><button class="btn-tonal" data-act="katImport">${icon("upload")}Katalog-Datei laden</button></div>
     <p class="hint">Nur Modelle, Steckbriefe und Hinweise mit Fotos – keine Kunden oder Prüfungen. Immer erst laden, dann sichern – und im Share-Ordner die vorhandene Datei „EVSE-Katalog“ ersetzen. Beim Laden wird ergänzt, nichts geht verloren.</p></div>`;
 }

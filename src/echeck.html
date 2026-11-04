@@ -2189,8 +2189,8 @@ function locItem(kind,r){
 }
 FDEF.kunden={std:{sort:"az"},sort:[["az","Name A–Z"],["za","Name Z–A"],["kdnr","Kundennummer"],["neu","Zuletzt angelegt"]],gruppen:[],liste:()=>kundenListe()};
 function kundenListe(){
-  const q=query.toLowerCase(), H=v=>String(v||"").toLowerCase().includes(q), so=fW("kunden","sort"), nm=(a,b)=>a.name.localeCompare(b.name,"de");
-  const ks=live("kunden").filter(k=>!q||H(k.name)||H(k.kdnr)||H(k.ort)||H(k.ansprech)||standorteVon(k.id).some(s=>H(s.name)||H(s.ort)||H(s.strasse)));
+  const q=query.toLowerCase(), H=v=>suPasst(q,v), so=fW("kunden","sort"), nm=(a,b)=>a.name.localeCompare(b.name,"de");
+  const ks=live("kunden").filter(k=>!q||suPasst(q,k.name,k.kdnr,k.ort,k.plz,k.strasse,k.ansprech,(k.kontakte||[]).map(x=>[x.name,x.tel]),k.tel,k.mail,standorteVon(k.id).map(s=>[s.name,s.ort,s.strasse])));
   ks.sort(so==="za"?(a,b)=>nm(b,a):so==="kdnr"?(a,b)=>String(a.kdnr||"~").localeCompare(String(b.kdnr||"~"),"de",{numeric:true})||nm(a,b):so==="neu"?(a,b)=>(b.created||0)-(a.created||0):nm);
   if(!ks.length) return `<p class="meta">Kein Kunde gefunden.</p>`;
   const abc=so==="az"||so==="za";
@@ -2246,7 +2246,7 @@ function kzAusfuehren(zid,wegIds){
 }
 function kundenView(){
   if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden und Standorte sind dieselben wie in der Übersicht und den Apps EVSE und Baustelle.</p></div><div class="narrow">${legOhneEintrag(false)}</div>`;
-  return `<div class="narrow">${searchBar("Kunde, Ort, Ansprechpartner suchen",fKnopf("kunden"))}${query?"":kDoppeltKarte()}<div id="res">${kundenListe()}</div></div>`;
+  return `<div class="narrow">${searchBar("Kunde, Ort, Kontakt",fKnopf("kunden"))}${query?"":kDoppeltKarte()}<div id="res">${kundenListe()}</div></div>`;
 }
 function kundeView(k){ return kdSeite(k,"kunden",ecBeiKunde("kunden",k)+vtBeiKunde("kunden",k)); }
 function standortView(s){ return kdSeite(s,"standorte",ecBeiKunde("standorte",s)+vtBeiKunde("standorte",s)); }
