@@ -361,10 +361,13 @@ async function legPdf(L){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",f
   S.abschnitt("Hinweis für den Betreiber");
   S.text("Fehlerstromschutzschalter (RCD) alle 6 Monate über die Prüftaste „T“ auslösen. Schaltet der RCD dabei nicht ab, könnte er defekt sein. In diesem Fall bitte Elektro Irrgang informieren.");
   /* Kontakt groß wie im alten Verteilerplan */
-  S.platz(14); const y=S.y+1, x2=M+CW/2;
+  const qrC=L._geb&&typeof qrMatrix==="function"&&((vtGeb(L._geb)||{verteiler:[]}).verteiler.find(x=>x.id===L._v)||{}).qr;
+  S.platz(qrC?30:14); const y=S.y+1, x2=qrC?M+68:M+CW/2;
+  if(qrC){ const Mx=qrMatrix(qrC), n=Mx.length, gr=21, z=gr/n, qx=M+CW-gr, qy=y-4; d.setFillColor(0,0,0); Mx.forEach((r,yy)=>r.forEach((on,xx)=>{ if(on) d.rect(qx+xx*z,qy+yy*z,z+0.02,z+0.02,"F"); }));
+    d.setFont("helvetica","bold"); d.setFontSize(9); d.setTextColor(20); d.text("Anlage "+qrZeig(qrC),qx+gr/2,qy+gr+4,{align:"center"}); }
   d.setTextColor(20); d.setFont("helvetica","bold"); d.setFontSize(12); d.text("Elektro Irrgang",M,y); d.setTextColor(...[225,29,47]); d.text("Tel. 02291 4878",x2,y);
   d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),M,y+5.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x2,y+5.2);
-  S.y=y+13;
+  S.y=y+(qrC?29:13);
   legPdfStromkreise(d,S,L);
   return S.ende(); }
 /* Stromkreis-Tabelle – auch im Anlagenpass verwendet */
@@ -386,6 +389,8 @@ function legPdfStromkreise(d,S,L){ const M=S.M, CW=S.CW, PL=legPlaetze(L), mitPl
     S.y+=6+ex; });
 }
 async function legPdfMachen(){ const L=legAkt(); if(!L) return; if(!legE(L).length){ toast("Erst Stromkreise anlegen"); return; }
+  /* Pflicht: erst QR-Aufkleber, dann Legende – der Code steht dann auch auf dem Ausdruck */
+  if(L._geb&&typeof qrPflicht==="function"){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(v&&!v.qr){ qrPflicht([{g,x:v,art:"vt"}],"die Legende nicht erstellt werden"); return; } }
   toast("PDF wird erstellt …"); let blob; try{ blob=await legPdf(L); }catch(e){ console.error(e); toast("PDF konnte nicht erstellt werden – Internet für die PDF-Bibliothek nötig"); return; }
   /* wie das Prüfprotokoll: lokal ablegen und in den Kundenordner (Pläne und Schaltpläne) hochladen – „Öffnen“ zeigt die abgelegte Datei */
   const k=kundeOf(L.kundeId), datum=ecHeute(), name=bbFs(`${datum} Legende ${L.titel||""}`), vtId=L._v||L.id;
@@ -444,7 +449,9 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "legRechZur": { const id=LR&&LR.id; LR=null; if(id) legSkDlg(id); return; }
   case "legEtiW": { if(!L) return; LEG_ETI[b.dataset.k]=b.dataset.k==="inh"?b.dataset.v:+b.dataset.v; legEtiMerken(); legEtiDlg(); return; }
   case "legEtiTeilen": case "legEtiLaden": if(L) legEtiAusgeben(L,a==="legEtiTeilen"); return;
-  case "legFertig": { if(!L) return; L.fertig=b.dataset.v==="1"; legSave(L); render(); toast(L.fertig?"Abgeschlossen":"Wieder in Arbeit"); return; }
+  case "legFertig": { if(!L) return;
+    if(b.dataset.v==="1"&&L._geb&&typeof qrPflicht==="function"){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(v&&!v.qr){ qrPflicht([{g,x:v,art:"vt"}],"der Verteiler nicht abgeschlossen werden"); return; } }
+    L.fertig=b.dataset.v==="1"; legSave(L); render(); toast(L.fertig?"Abgeschlossen":"Wieder in Arbeit"); return; }
   case "legTab": nav.tab=b.dataset.v; closeOverlays(); render(); scrollTo(0,0); return;
   case "legDelAsk": confirmDlg(L&&L._geb?"Verteiler löschen?":"Legende löschen?",L&&L._geb?`„${L.titel}“ mit allen RCDs und Stromkreisen löschen? Messwerte früherer Prüfungen zu diesen Stromkreisen werden dann nicht mehr zugeordnet.`:`„${L&&L.titel||"Verteiler"}“ mit allen Zeilen löschen?`,"Löschen","legDelOk"); return;
   case "legDelOk": { if(!L) return; if(L._geb){ const g=vtGeb(L._geb); if(g){ L.eintraege=[]; vtSchreiben(L); const g2=vtGeb(L._geb); g2.verteiler=g2.verteiler.filter(v=>v.id!==L._v); ecGebSpeichern(g2); } go(vtZuruck(L._geb)); toast("Verteiler gelöscht"); return; }

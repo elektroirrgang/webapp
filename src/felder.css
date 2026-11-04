@@ -1732,3 +1732,8 @@ html body.sc-eng .navbar,html body.sc-eng.rail-open .navbar{transform:translateX
 .sc button:focus-visible,.sc input:focus-visible{outline:none}
 .sc .sc-h:focus-visible,.sc .sc-ok:focus-visible{background:color-mix(in srgb,var(--fab) 82%,#000)}
 .sc .sc-n:focus-visible,.sc .sc-chip:focus-visible,.sc .sc-li:focus-visible,.sc .sc-rk:focus-visible{background:var(--sc-highest);filter:brightness(.94)}
+.qr-ohne{margin:0 0 12px}
+.qr-pfl .btn-tonal{flex:none;margin-left:8px}
+.qr-pfl .lt{min-width:0}
+.qr-pfl .btn-tonal{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;padding:0 14px;height:40px}.qr-pfl .btn-tonal .ic{width:18px;height:18px}
+.qr-pfl .av{display:none}

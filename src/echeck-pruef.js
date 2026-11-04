@@ -222,7 +222,7 @@ function ecListeView(art){
       ?"Ortsveränderliche Geräte (DGUV V3, DIN VDE 0701-0702): Geräte je Kunde erfassen, prüfen, Prüffrist setzen – das Protokoll landet in der Bibliothek."
       :"Hausinstallationen und Anlagen (DIN VDE 0100-600 / 0105-100): Räume, Verteiler, Stromkreise und Steckdosen anlegen, besichtigen, messen – das Protokoll landet in der Bibliothek."}</p></div></div>`;
   const seg=art==="anlage"?`<div class="ec-seg" role="group" aria-label="Anzeigen">${[["pruef","Prüfungen"],["leg","Verteiler"]].map(([k,t])=>`<button type="button" data-act="ecSeg" data-v="${k}" aria-pressed="${fW("ec_anlage","typ")===k}">${t}</button>`).join("")}</div>`:"";
-  return h+`${seg}${searchBar(art==="anlage"&&ecInstVt()?"Verteiler, Kunde, Ort":"Ort, Kunde, Prüfer",fKnopf("ec_"+art))}<div id="res">${ecListeInhalt(art)}</div>${art==="netz"?ecRkDefs()+ecKatVorschau():""}</div>`; }
+  return h+`${seg}${typeof qrOhneZeile==="function"?qrOhneZeile(art):""}${searchBar(art==="anlage"&&ecInstVt()?"Verteiler, Kunde, Ort":"Ort, Kunde, Prüfer",fKnopf("ec_"+art))}<div id="res">${ecListeInhalt(art)}</div>${art==="netz"?ecRkDefs()+ecKatVorschau():""}</div>`; }
 /* Abschnitt in der Kunden-/Standortansicht */
 function ecBeiKunde(kind,r){ const L=ecAlle().filter(p=>kind==="kunden"?p.kundeId===r.id:p.standortId===r.id).sort((a,b)=>String(b.datum||"").localeCompare(String(a.datum||"")));
   return kdKopf("Prüfungen","ecNeuHier","Prüfung anlegen",` data-kind="${kind}" data-id="${esc(r.id)}"`)+(L.length?listOf(L.map(ecItem)):`<p class="meta">Noch keine Prüfung.</p>`); }
@@ -1978,6 +1978,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecImportOk": ecImportOk(); return;
   case "ecMaengelAuto": { if(!nichtZu()) return; const t=ecMaengelText(pr); if(!t){ toast("Keine Mängel gefunden"); return; } pr.maengel=[pr.maengel,t].filter(Boolean).join(pr.maengel?"\n":""); saveRec("echecks",pr); render(); return; }
   case "ecFertig": { const F=ecFehlt(pr); if(F.length){ toast(`Noch offen: ${F.join(", ")}`); return; }
+    const Q=typeof qrFehlend==="function"?qrFehlend(pr):[]; if(Q.length){ qrPflicht(Q,"die Prüfung nicht abgeschlossen werden"); return; }
     pr.status="fertig"; pr.fertigAm=ecHeute(); if(pr.art==="geraete") ecGeraeteAm(pr.ortId).forEach(bm=>{ const st=ecGerStand(pr,bm); if(st==="ok"||st==="bad"){ bm.zuletzt=pr.datum; bm.naechste=ecPlus(pr.datum,pr.fristM||12); bm.erg=st; saveRec("betriebsmittel",bm); } });
     saveRec("echecks",pr); render(); toast("Prüfung abgeschlossen","PDF erstellen",()=>ecPdfAblegen(DB.echecks.get(pr.id))); return; }
   case "ecAuf": pr.status="laeuft"; delete pr.fertigAm; saveRec("echecks",pr); render(); return;
