@@ -38,6 +38,14 @@
 - QR-Pflicht (1.7.77): Prüfung abschließen und Legende erstellen nur mit QR-Aufkleber, kein Überspringen; QR auf der Legende; Liste „ohne QR-Aufkleber“ in Installation/Netzwerk. Offen: Bögen ja/nein (Max klärt mit Chef), QR auf Netzwerk-Belegungsplan.
 - KNX in Gebäudetechnik einbauen (Max 04.11.2026) – kommt nach dem Scanner, noch nicht anfangen.
 
+## QR-Aufkleber drucken – mit dem Chef besprechen (04.11.2026)
+Problem: Den Kollegen ist der Druckweg zu umständlich (in der App „Drucken“ → Teilen-Menü → Pro Label Tool → Drucken). Direkt aus der Web-App per Bluetooth drucken geht nicht: Browser auf iPhone/iPad dürfen kein Bluetooth, Chrome auf Android nur Bluetooth LE (PT-E560BT funkt vermutlich klassisch – nicht geprüft).
+Zu entscheiden:
+- Bögen ja/nein: Im Büro vorgedruckte A4-Bögen (24 Stück, 70 × 36 mm, Folien-Etiketten) liegen im Auto; vor Ort nur aufkleben und scannen – kein Etikettendrucker, keine Brother-App. Nachteil: Etiketten kaufen; Art (Netzwerk/Zählerschrank) steht nicht im Code, Fremde müssen auf der Info-Seite selbst umschalten.
+- Ohne Bögen: in der App „Drucken“ direkt ins Teilen-Menü (ein Schritt weniger) plus bebilderte Kurzanleitung inkl. einmaligem Verbinden mit dem Drucker. Dann den kleinen Knopf „Aufkleber scannen“ im Pflicht-Dialog weglassen.
+- Eigene App mit Brother-SDK (echtes Drucken per Knopfdruck): großer Schritt, für iPhone Apple-Entwicklerkonto (99 € im Jahr) und Verteilung über Apple – Sache für Chef bzw. EDV Achenbach.
+- Gilt auch: QR-Pflicht ist streng (kein Abschluss ohne Aufkleber). Streikt der Brother, bleibt die Prüfung an dem Tag offen.
+
 ## Lager (Gespräch 04.11.2026) – offen, Max ist unsicher, erst mit dem Chef klären
 - Ablauf heute: 7:30 Start, 15–30 min packen, Chef sagt mündlich, was ansteht; gepackt wird nach Gefühl (meist zu viel, nach Chef-Mengen oft zu wenig). Sondermaterial wird bestellt.
 - Lager: Gerätelager (Code), Hauptlager (links Lampen, vorne Mitte Kommissionsregal mit Zetteln – „noch Arsch“, Mitte Schalter/Steckdosen, hinten Hohlwand), Wandregal rechts (Verteilung/Automaten, Einzeladern, Abzweigdosen, Schrauben, oben Wago/Netzwerk/SAT/TK), Kabellager (Kanäle/Rohr, Kabel, Bauschaum/Trassen, Neuware).
