@@ -149,7 +149,8 @@ function legSkKarte(L,E){ return `<section class="card"><div class="card-kopf le
 /* ===== Ansichten der Stromkreise: Liste (je RCD eine Gruppe) und Verteiler (Reihen, Breite in TE) ===== */
 const legAnsicht=()=>META.legAnsicht==="verteiler"?"verteiler":"liste";
 const legBauart=L=>[{hv:"Zählerschrank / HV",uv:"Unterverteiler",gw:"Gewerbe / Standverteiler"}[L.art],L.zs&&typeof zsHerstText==="function"?zsHerstText(L.zs.hersteller):"",{ap:"Aufputz",up:"Unterputz"}[L.montage],L.zs&&+L.zs.hoehe?L.zs.hoehe+" mm":"",L.reihen&&`${L.reihen}-reihig · ${L.reihen*(+L.teReihe||12)} TE`].filter(Boolean).join(" · ");
-const legTE=e=>e.art==="kl"?1:+e.te||(e.art==="rcd"?4:e.art==="sk"&&+e.pole===3?3:1);
+/* Breite in TE. Dreipolige LS sind mindestens 3 TE breit – auch wenn aus der Aufnahme noch die Breite eines 1-poligen Artikels (1 TE) gespeichert ist */
+const legTE=e=>e.art==="kl"?1:e.art==="sk"&&+e.pole===3?Math.max(3,+e.te||3):+e.te||(e.art==="rcd"?4:1);
 /* FI/LS (RCBO) hat seinen eigenen Fehlerstromschutz: gehört NIE unter den RCD davor und beendet dessen Gruppe */
 const legIstRcbo=e=>!!e&&e.art==="sk"&&/FI\s*\/\s*LS|LS\s*\/\s*FI|RCBO/i.test(e.schutz||"");
 const legOffen=e=>e.art==="sk"&&/^\s*\??\s*$/.test(e.bez||"");
@@ -319,8 +320,8 @@ function legArtZeigen(){ const a=legDlg&&legDlg.art; if(!a) return;
 function legSkOk(weiter){ const L=legAkt(); if(!L||!legDlg) return; const F=formVals(), E=legE(L), a=legDlg.art;
   if(a==="gr"&&!F.legBez){ toast("Bitte eine Überschrift eintragen"); return; }
   if(a!=="gr"&&!F.legKz&&!legSchemaNum(E)){ toast("Bitte eine Kennzeichnung eintragen"); return; }
-  const r={id:legDlg.id||uid(),art:a,kz:a==="gr"?"":F.legKz,bez:a==="res"?"":a==="rcd"&&!F.legBez?"Fehlerstromschutzschalter":F.legBez,schutz:a==="gr"?"":F.legSchutz,pole:a==="sk"?+legDlg.pole:1,...(legDlg.te?{te:+legDlg.te}:{}),...(legDlg.umbruch?{umbruch:true}:{}),...(legDlg.sym?{sym:legDlg.sym}:{})};
-  { const alt=E.find(x=>x.id===r.id); if(alt&&alt.mat&&alt.schutz===r.schutz&&alt.art===r.art) r.mat=alt.mat; }   /* Artikel aus der Materialliste bleibt, solange die Absicherung gleich ist */
+  const r={id:legDlg.id||uid(),art:a,kz:a==="gr"?"":F.legKz,bez:a==="res"?"":a==="rcd"&&!F.legBez?"Fehlerstromschutzschalter":F.legBez,schutz:a==="gr"?"":F.legSchutz,pole:a==="sk"?+legDlg.pole:1,...(legDlg.te&&!(a==="sk"&&+legDlg.pole===3&&+legDlg.te<3)?{te:+legDlg.te}:{}),...(legDlg.umbruch?{umbruch:true}:{}),...(legDlg.sym?{sym:legDlg.sym}:{})};
+  { const alt=E.find(x=>x.id===r.id); if(alt&&alt.mat&&alt.schutz===r.schutz&&alt.art===r.art&&(+alt.pole||1)===(+r.pole||1)) r.mat=alt.mat; }   /* Artikel aus der Materialliste bleibt, solange die Absicherung gleich ist */
   let i=E.findIndex(x=>x.id===r.id); if(i>=0) E[i]=r; else { E.splice(legDlg.pos,0,r); i=legDlg.pos; }
   if(weiter==="dupl") return i;
   legSpeichern(L); render();
@@ -467,7 +468,7 @@ document.addEventListener("change",ev=>{ const s=ev.target; if(!s||!s.dataset||!
   if(k==="art"){ legDlg.art=v; legArtZeigen(); const f=document.getElementById("f_legKz"), Lx=legAkt();
     if(f&&Lx&&legDlg.auto!=null&&f.value.trim()===legDlg.auto){ const E=legE(Lx); legDlg.auto=v==="rcd"?legRcdKz(E,legDlg.pos-1,false):legNaechsteKz(E,legDlg.pos-1); f.value=legDlg.auto; f.parentElement.classList.toggle("fl",!!f.value); } return; }
   if(k==="raum"||k==="was"){ if(!v) return; const f=document.getElementById("f_legBez"); if(f){ const t=f.value.trim(); f.value=!t?v:t.split(/\s+/).includes(v)?t:t+" "+v; f.parentElement.classList.add("fl"); } s.value=""; return; }
-  if(k==="pole") legDlg.pole=v; else if(k==="te") legDlg.te=v; else if(k==="sym") legDlg.sym=v; });
+  if(k==="pole"){ legDlg.pole=v; if(v==="3"&&+legDlg.te&&+legDlg.te<3){ legDlg.te=""; const t=document.getElementById("legW_te"); if(t) t.value=""; } } else if(k==="te") legDlg.te=v; else if(k==="sym") legDlg.sym=v; });
 
 /* Schrankbild ein-/ausblenden (vor allem am Handy) – gilt für Zählerschrank- und Verteilerbild, je Gerät gemerkt */
 const legBildAn=()=>!(META&&META.schrankBildAus);
