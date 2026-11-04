@@ -1,4 +1,4 @@
-const CACHE = "evse-v1.7.85-eb03ab54", BILDER = "evse-bilder";
+const CACHE = "evse-v1.7.86-9b0b3c60", BILDER = "evse-bilder";
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll([new Request("./", {cache: "reload"}), new Request("./index.html", {cache: "reload"}), new Request("./pdfjs/pdf.min.js", {cache: "reload"}), new Request("./pdfjs/pdf.worker.min.js", {cache: "reload"})]))); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith("evse-v") && k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
 self.addEventListener("fetch", e => {
