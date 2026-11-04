@@ -73,6 +73,6 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
   if(a==="knxNull"){ ev.stopPropagation(); KNX_ETI.null=b.dataset.v==="1"; knxEtiMerken(); b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); const h=document.getElementById("knxInh"); if(h) h.innerHTML=knxEtiInhalt(); return; }
   if(a==="knxDoppelt"){ ev.stopPropagation(); const n=+b.dataset.n, i=KNX_ETI.doppelt.indexOf(n); if(i<0) KNX_ETI.doppelt.push(n); else KNX_ETI.doppelt.splice(i,1); const h=document.getElementById("knxInh"), y=h&&h.querySelector(".knx-gitter")?.scrollTop; if(h){ h.innerHTML=knxEtiInhalt(); const gi=h.querySelector(".knx-gitter"); if(gi&&y) gi.scrollTop=y; } return; }
   if(a==="knxDruck"){ ev.stopPropagation(); const A=knxListe(); if(!A.length){ toast("Erst Linie und Bereich eingeben"); return; }
-    /* Pro Label Tool importiert nur Excel/CSV – wie bei den Netzwerk-Etiketten: CSV mit Kopfzeile, eine Spalte */
+    /* Pro Label Tool importiert nur Excel/CSV – wie bei den Netzwerk-Etiketten: CSV mit Kopfzeile „Physikalische Adresse“, eine Spalte */
     const L=knxLinie(KNX_ETI.linie), name=bbFs(`KNX ${L[0]}.${L[1]} ${KNX_ETI.von}-${KNX_ETI.bis}`);
-    closeOverlays(); knxAusgeben([new File([ecCsv([["Adresse"],...A.map(x=>[x])])],name+".csv",{type:"text/csv"})]); return; } },true);
+    closeOverlays(); knxAusgeben([new File([ecCsv([["Physikalische Adresse"],...A.map(x=>[x])])],name+".csv",{type:"text/csv"})]); return; } },true);
