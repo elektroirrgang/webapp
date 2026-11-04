@@ -1825,7 +1825,7 @@ function render(){ profilAnwenden();
     if(!r||r.deleted){ nav={v:"kunden"}; return render(); }
     title=r.name; sub=kind==="kunden"?"Kunde":kind==="standorte"?(kundeOf(r.kundeId)||{}).name:[ (kundeOf((standortOf(r.standortId)||{}).kundeId)||{}).name,(standortOf(r.standortId)||{}).name ].filter(Boolean).join(" › ");
     body=nav.v==="kunde"?kundeView(r):nav.v==="standort"?standortView(r):ladeparkView(r);
-    fab=["newHere","Neue Prüfung","add"]; }
+    fab=nav.v==="kunde"?null:["newHere","Neue Prüfung","add"]; }
   else { const {s,l}=pfad(cur); title=nav.v==="saeule"?sName(cur.s[nav.si],nav.si):(l?l.name:s?s.name:"Prüfung"); sub=nav.v==="saeule"?pfadText(cur):[deDate(cur.p.datum),cur.p.art].filter(Boolean).join(" · ");
     if(nav.v==="projekt") body=projektView();
     else if(nav.v==="saeulen"){ body=saeulenView(); }
@@ -1971,13 +1971,9 @@ function wann(ts){ if(!ts) return ""; const d=new Date(ts), h=new Date(); const 
 /*KUNDE*/
 function kundeView(k){
   const ss=standorteVon(k.id), sid="k:"+k.id, ps=pruefAt(sid,null);
-  let h=`<div class="narrow kd-seite">${kdOben(k,"kunden",ss)}${kontakteView("kunden",k)}`;
   /* ohne eigene Standorte: geprüft wird an der Adresse des Kunden – Verlauf und Geräte direkt hier */
-  if(!ss.length||ps.length) h+=`<div class="sec-lbl">Prüfverlauf${ss.length?" an der Kundenadresse":""}</div>${verlaufKopf(sid,null)}${ps.length?listOf(ps.map(p=>pItem(p,false))):`<p class="meta">Noch keine Prüfung – über „Neue Prüfung“ anlegen.</p>`}`+(ps.length||geraeteOrt(sid,null).length?geraeteSektion(sid,null):"");
-  h+=kdKopf(kdOrteTitel(k),kdDarf(k)&&"newStandort",kdArt(k)==="privat"?"Objekt hinzufügen":"Standort hinzufügen")
-    +(ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager) – sonst wird an der Adresse des Kunden geprüft.</p>`);
-  return h+ablageView("kunden",k)+`</div>`;
-}
+  const block=!ss.length||ps.length?kdKopf(`Prüfverlauf${ss.length?" an der Kundenadresse":""}`,"newHere","Neue Prüfung")+verlaufKopf(sid,null)+(ps.length?listOf(ps.map(p=>pItem(p,false))):`<p class="meta">Noch keine Prüfung.</p>`)+(ps.length||geraeteOrt(sid,null).length?geraeteSektion(sid,null):""):"";
+  return kdSeite(k,"kunden",block); }
 function standortView(s){
   const _ak=geraeteSektion(s.id,null), _fz=verlaufKopf(s.id,null);
   const lps=ladeparksVon(s.id), ps=pruefAt(s.id,null);

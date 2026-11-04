@@ -2044,15 +2044,15 @@ function bezugListen(kind,id,opt){
   return `${bauPlus?bauKopf+(bs.length?listOf(bs.map(bZ)):`<p class="meta">Noch keine Baustelle.</p>`):bs.length?`<div class="sec-lbl">Baustellen</div>${listOf(bs.map(bZ))}`:""}${ps.length?`<div class="sec-lbl">Prüfungen</div>${listOf(ps.slice(0,10).map(pZ))}`:""}`;
 }
 function kundeView(k){
-  const ss=standorteVon(k.id), darf=kdDarf();
-  return `<div class="narrow kd-seite"><div class="kd-oben">${infoKarte(k,"kunden")}${karteView(k,ss)}</div>${kontakteView("kunden",k)}${kdArt(k)!=="privat"||anMaschinen("k:"+k.id).length?anKarteKunde(k):""}
-    ${ablageView("kunden",k)}
-    <div class="sec-row"><div class="sec-lbl">${kdOrteTitel(k)}</div>${darf?`<span class="ab-btns"><button class="ab-ic" data-act="newStandort" aria-label="${kdArt(k)==="privat"?"Objekt":"Standort"} hinzufügen" title="${kdArt(k)==="privat"?"Objekt":"Standort"} hinzufügen">${icon("add")}</button></span>`:""}</div>
-    ${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">${kdKeinOrt(k)||"Noch kein Standort."}</p>`}
-    ${bezugListen("kunden",k.id,{bauPlus:ME.admin})}
-</div>`;
-}
-function standortView(s){ return `<div class="narrow kd-seite"><div class="kd-oben">${infoKarte(s,"standorte")}${karteView(s,[])}</div>${kontakteView("standorte",s)}${anKarte(s.id)}${ablageView("standorte",s)}${bezugListen("standorte",s.id,{bauPlus:ME.admin})}</div>`; }
+  return kdSeite(k,"kunden",(kdArt(k)!=="privat"||anMaschinen("k:"+k.id).length?anKarteKunde(k):"")+bezugListen("kunden",k.id,{bauPlus:ME.admin})+vtUebersicht("kunden",k)); }
+function standortView(s){ return kdSeite(s,"standorte",anKarte(s.id)+bezugListen("standorte",s.id,{bauPlus:ME.admin})+vtUebersicht("standorte",s)); }
+IC.ecMess=IC.ecMess||"M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z";
+/* Verteiler beim Kunden (Daten aus der Gebäudetechnik) – Antippen öffnet die Gebäudetechnik-App */
+function vtUebersicht(kind,r){ if(!DB.gebaeude) return ""; const orte=kind==="kunden"?["k:"+r.id,...standorteVon(r.id).map(s=>s.id)]:[r.id], L=[];
+  live("gebaeude").filter(g=>orte.includes(String(g.ortId))).forEach(g=>(g.verteiler||[]).forEach(v=>L.push({g,v})));
+  if(!L.length) return "";
+  return `<div class="sec-lbl">Verteiler</div>${listOf(L.map(({g,v})=>{ const n=(g.stromkreise||[]).filter(s=>s.vId===v.id).length, von=v.vonVId&&(g.verteiler||[]).find(x=>x.id===v.vonVId);
+    return `<a class="li weiter" href="../echeck/${v.qr?"#qr="+esc(v.qr):""}" style="text-decoration:none;color:inherit"><span class="av">${icon("ecMess")}</span><span class="lt"><span class="h">${esc(v.name||"Verteiler")}</span><span class="s">${esc([von&&"aus "+(von.name||"Verteiler"),n+" Stromkreis"+(n===1?"":"e"),v.stand&&"Stand "+deDate(v.stand)].filter(Boolean).join(" · "))}</span></span>${icon("chev")}</a>`; }))}`; }
 
 /* Baustelle direkt aus der Übersicht anlegen (nur Chef/Admin) – landet in der Baustelle-App */
 let bauForm=null;
