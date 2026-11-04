@@ -16,7 +16,7 @@ let BB_PROT=[], bbGeladen=false;
    Andere Geräte zeigen den Eintrag sofort und holen das PDF beim ersten Öffnen (danach liegt es auch dort im Gerät). */
 const bbSync=()=>typeof DB!=="undefined"&&!!DB.protokolle&&typeof saveRec==="function";
 const bbAppName=a=>a==="baustelle"?"Baustelle":a==="echeck"||a==="legende"?"Gebäudetechnik":"EVSE";
-const BB_FELDER=["app","pruefungId","echeckId","vtId","vtName","kundeId","standortId","ladeparkId","baustelleId","name","titel","datum","art","auftragsnr","pruefer","ergebnis","nr","unterschrift","fassung","size","von","created"];
+const BB_FELDER=["app","pruefungId","echeckId","vtId","vtName","archiv","kundeId","standortId","ladeparkId","baustelleId","name","titel","datum","art","auftragsnr","pruefer","ergebnis","nr","unterschrift","fassung","size","von","created"];
 const bbFs=v=>String(v||"").replace(/[\\/:*?"<>|#%\u0000-\u001f]/g,"-").replace(/\s+/g," ").trim().replace(/[. ]+$/,"").slice(0,80)||"Unbenannt";
 function bbZiel(x){ const k=bbKunde(x.kundeId), nm=(M,id)=>id&&M&&M.get(id)?M.get(id).name:"";
   if(k&&!k.demo) return {bib:"kd",pfad:[KD_WURZEL,kdOrdName(k),...kdOrtProt(x)].join("/")+"/"+bbFs(x.name)+".pdf"}; /* Kundenordner (ablage.js) */
@@ -93,13 +93,13 @@ function bbEintraege(){
   const lokal=new Set([...BB_PROT,...P.filter(r=>!r.deleted)].map(x=>x.pruefungId).filter(Boolean));
   const ortP=x=>({ort:kdOrtProt(x),file:x.pfad?String(x.pfad).split("/").pop():bbFs(x.name)+".pdf",item:x.item||(DB.protokolle&&DB.protokolle.get(x.id)||{}).item||""});
   const protE=(x,ziel,fern)=>({...ortP(x),art:x.app==="baustelle"?"bericht":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
-    info:[bbAppName(x.app),x.art,bbDatum(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`,x.von&&x.von.name,fern&&"auf einem anderen Gerät erstellt"].filter(Boolean).join(" · "),
+    info:[bbAppName(x.app),x.art,x.archiv&&"älterer Stand",bbDatum(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`,x.von&&x.von.name,fern&&"auf einem anderen Gerät erstellt"].filter(Boolean).join(" · "),
     pill:x.ergebnis?pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden"):"",ziel});
   const echt=new Set([...BB_PROT,...P.filter(r=>!r.deleted&&!String(r.id).startsWith("pa-"))].map(x=>x.pruefungId).filter(Boolean)); /* „pa-“ nur, solange es zur Prüfung kein richtiges Protokoll gibt */
   P.filter(r=>!r.deleted&&!hier.has(r.id)&&!(String(r.id).startsWith("pa-")&&echt.has(r.pruefungId))).forEach(r=>L.push(protE(r,`data-act="bbFern" data-id="${esc(r.id)}"`,!r.demo)));
   const demo=typeof demoAn==="function"&&demoAn();
   BB_PROT.filter(x=>(!x.demo||(demo&&DB.protokolle&&DB.protokolle.has(x.id)))&&!weg.has(x.id)).forEach(x=>L.push({...ortP(x),art:x.app==="baustelle"?"bericht":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
-    info:[bbAppName(x.app),x.art,bbDatum(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`,x.von&&x.von.name].filter(Boolean).join(" · "),
+    info:[bbAppName(x.app),x.art,x.archiv&&"älterer Stand",bbDatum(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`,x.von&&x.von.name].filter(Boolean).join(" · "),
     pill:x.ergebnis?pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden"):"",ziel:`data-act="bbOeffnen" data-id="${esc(x.id)}"`}));
   if(DB.pruefungen) [...DB.pruefungen.values()].filter(p=>!p.deleted&&p.pdfAblage&&!lokal.has(p.id)&&(!p.demo||(typeof demoAn==="function"&&demoAn()))).forEach(p=>{
     const s=p.standortId&&DB.standorte?DB.standorte.get(p.standortId):null;

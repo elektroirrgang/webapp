@@ -385,6 +385,10 @@ async function legPdfMachen(){ const L=legAkt(); if(!L) return; if(!legE(L).leng
   const x={id:uid(),app:"legende",vtId,vtName:L.titel||"Verteiler",kundeId:k?k.id:"",standortId:L.standortId||"",name,titel:[k&&k.name,L.titel].filter(Boolean).join(" · ")||L.titel||"Verteiler",datum,art:"Verteilerlegende",created:Date.now(),von:who(),size:blob.size};
   try{ const db=await new Promise((res,rej)=>{ const q=indexedDB.open("evse_protokolle"); q.onupgradeneeded=()=>{ const z=q.result; if(!z.objectStoreNames.contains("meta")) z.createObjectStore("meta",{keyPath:"id"}); if(!z.objectStoreNames.contains("blob")) z.createObjectStore("blob"); }; q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); });
     if(db.objectStoreNames.contains("meta")){ const tx=db.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").put(x); tx.objectStore("blob").put(blob,x.id); await new Promise(ok=>{ tx.oncomplete=ok; tx.onerror=ok; }); } db.close(); }catch(e){}
+  /* Stände von früheren Tagen wandern in „Ältere Stände“ (bleiben erhalten – Aufbewahrung wie Prüfprotokolle) */
+  if(DB.protokolle) [...DB.protokolle.values()].filter(r=>!r.deleted&&r.app==="legende"&&r.vtId===vtId&&r.datum!==datum&&!r.archiv).forEach(r=>{ r.archiv=true; saveRec("protokolle",r); });
+  if(typeof BB_PROT!=="undefined"){ const A=BB_PROT.filter(y=>y.app==="legende"&&y.vtId===vtId&&y.datum!==datum&&!y.archiv); A.forEach(y=>y.archiv=true);
+    if(A.length) try{ const db=await new Promise((res,rej)=>{ const q=indexedDB.open("evse_protokolle"); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); if(db.objectStoreNames.contains("meta")){ const tx=db.transaction("meta","readwrite"); A.forEach(y=>tx.objectStore("meta").put(y)); await new Promise(ok=>{ tx.oncomplete=ok; tx.onerror=ok; }); } db.close(); }catch(e){} }
   if(typeof BB_PROT!=="undefined"){ /* gleicher Verteiler, gleicher Tag: die ältere Fassung ersetzen statt doppelt listen */
     const alt=BB_PROT.filter(y=>y.app==="legende"&&y.vtId===vtId&&y.datum===datum); alt.forEach(y=>{ if(typeof bbProtWeg==="function") bbProtWeg(y.id); });
     BB_PROT=BB_PROT.filter(y=>!alt.includes(y)); BB_PROT.push(x); }
