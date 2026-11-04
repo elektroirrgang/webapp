@@ -55,6 +55,36 @@ ol.st b{color:var(--on-surface)}
 .kh+.tipp{margin-top:22px}
 .adr{margin:24px 4px 0;font-size:14px;color:var(--on-sv)}.adr b{color:var(--on-surface)}
 [hidden]{display:none!important}
+/* ---- Netzwerk: Messung, Neustart, Foto (04.11.2026) ---- */
+.btn2{display:flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 20px;border:0;border-radius:24px;font:700 16px Manrope,system-ui,sans-serif;cursor:pointer;text-decoration:none}
+.btn2 svg{width:20px;height:20px;fill:currentColor}
+.btn2.f{background:var(--primary);color:var(--on-primary)}.btn2.t{background:var(--pc);color:var(--on-pc)}.btn2.g{background:var(--sc-high);color:var(--on-surface)}
+.btn2:disabled{opacity:.6;cursor:default}
+.mess{display:grid;gap:10px}
+.mk{background:var(--sc-high);border-radius:20px;padding:14px}
+.mk-kopf{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.mk-kopf .n{width:28px;height:28px;border-radius:14px;background:var(--pc);color:var(--on-pc);display:grid;place-items:center;font-weight:800;font-size:14px;flex:none}
+.mk-kopf b{flex:1;font-size:16px;line-height:1.3}.mk-kopf small{display:block;font-weight:400;color:var(--on-sv);font-size:13px}
+.werte{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px}
+.wert{background:var(--surface);border-radius:14px;padding:10px 8px;text-align:center}
+.wert small{display:block;font-size:12px;color:var(--on-sv)}.wert b{display:block;font-size:20px;line-height:1.25;font-variant-numeric:tabular-nums}.wert i{font-style:normal;font-size:12px;color:var(--on-sv)}
+.mk .btn2{width:100%}
+.lauf{height:6px;border-radius:3px;background:var(--surface);overflow:hidden;margin:-4px 0 10px}.lauf i{display:block;height:100%;width:0;background:var(--primary);border-radius:3px;transition:width .2s linear}
+.phase{font-size:13px;color:var(--on-sv);margin:-6px 0 8px;min-height:18px}
+.urteil{margin-top:12px;padding:14px;border-radius:18px;background:var(--pc);color:var(--on-pc);font-size:15px;line-height:1.45}.urteil b{display:block;margin-bottom:2px}
+.anb{margin-top:12px;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:18px;background:var(--sc-high);font-size:15px;line-height:1.4;color:var(--on-sv);text-decoration:none}
+.anb b{color:var(--on-surface);display:block}.anb svg{width:22px;height:22px;fill:var(--primary);flex:none}.anb span{flex:1}
+.klein{font-size:13px;line-height:1.45;color:var(--on-sv);margin:12px 4px 0}.klein a{color:var(--primary);font-weight:700;text-decoration:none}
+.mobil{margin:0 0 12px}
+.rst{margin-top:14px;background:var(--sc-high);border-radius:20px;padding:16px;text-align:center}
+.rst p{color:var(--on-surface);font-size:16px;margin:0 0 14px}.rst .btn2{width:100%}.rst .btn2+.btn2{margin-top:8px}
+.uhr{width:132px;height:132px;margin:4px auto 14px;position:relative}.uhr svg{width:132px;height:132px;transform:rotate(-90deg)}
+.uhr circle{fill:none;stroke-width:10}.uhr .bg{stroke:var(--surface)}.uhr .vg{stroke:var(--primary);stroke-linecap:round;transition:stroke-dashoffset 1s linear}
+.uhr b{position:absolute;inset:0;display:grid;place-items:center;font-size:28px;font-variant-numeric:tabular-nums}
+.fv{margin-top:12px;display:none;gap:10px;flex-direction:column}.fv.an{display:flex}
+.fv img{width:100%;max-height:260px;object-fit:cover;border-radius:18px;background:var(--sc-high)}
+.fv .zeile{display:flex;gap:10px}.fv .zeile .btn2{flex:1}
+
 .wechsel{display:block;margin:20px 4px 0;font-size:14px;font-weight:700;color:var(--primary);text-decoration:none;background:none;border:0;padding:0;font-family:inherit;cursor:pointer;text-align:left}
 .ma{display:block;margin:28px 4px 0;font-size:14px;font-weight:700;color:var(--primary);text-decoration:none}
 </style>
@@ -70,7 +100,11 @@ ol.st b{color:var(--on-surface)}
     <div class="kn">
       <a class="btn f" href="tel:+4922914878"><svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>Anrufen · 02291 4878</a>
       <a class="btn t" id="stoer" href="mailto:info@elektro-irrgang.de"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>Störung melden</a>
+      <button type="button" class="btn t" id="fotoBtn" data-art="netz" hidden style="border:0;width:100%;font-family:inherit;cursor:pointer"><svg viewBox="0 0 24 24"><path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4zM9 2 7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg>Foto vom Router senden</button>
+      <input type="file" id="fotoIn" accept="image/*" capture="environment" hidden>
     </div>
+    <div class="fv" id="fv"><img id="fvImg" alt="Ihr Foto"><div class="zeile"><button type="button" class="btn2 g" id="fvNeu">Anderes Foto</button><button type="button" class="btn2 f" id="fvLos">Senden</button></div>
+      <p class="klein" style="margin:0">Das Foto geht mit der Anlagen-Nr. und Ihren Messwerten an uns – per Mail, WhatsApp oder einer anderen App Ihrer Wahl.</p></div>
   </div>
   <section class="blk" data-art="strom">
     <h2>Stromausfall: Was Sie selbst prüfen können</h2>
@@ -85,6 +119,24 @@ ol.st b{color:var(--on-surface)}
     <div class="warn" data-art="zs" hidden><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg><span><b>Zähler und Plomben nicht öffnen.</b>Der Zählerplatz und verplombte Bereiche gehören dem Netzbetreiber. Arbeiten daran dürfen nur der Netzbetreiber oder ein eingetragener Fachbetrieb ausführen.</span></div>
   </section>
   <section class="blk" data-art="netz" hidden>
+    <h2>Internet-Geschwindigkeit messen</h2>
+    <p class="u">Messen Sie am besten zweimal: direkt am Router und dort, wo es hakt. So sehen wir, ob es am WLAN oder am Anschluss liegt.</p>
+    <div class="warn mobil" id="mobil" hidden><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><span><b>Sie sind über Mobilfunk verbunden.</b>Bitte schalten Sie die mobilen Daten aus und verbinden Sie sich mit Ihrem WLAN – sonst messen Sie Ihr Handynetz.</span></div>
+    <div class="mess">
+      <div class="mk" id="m_router"><div class="mk-kopf"><span class="n">1</span><b>Am Router<small>direkt daneben, höchstens 2 m entfernt</small></b></div>
+        <div class="werte"><div class="wert"><small>Download</small><b data-w="down">–</b><i>Mbit/s</i></div><div class="wert"><small>Upload</small><b data-w="up">–</b><i>Mbit/s</i></div><div class="wert"><small>Ping</small><b data-w="ping">–</b><i>ms</i></div></div>
+        <div class="lauf" hidden><i></i></div><p class="phase" hidden></p>
+        <button type="button" class="btn2 f" data-mess="router">Hier messen</button></div>
+      <div class="mk" id="m_raum"><div class="mk-kopf"><span class="n">2</span><b>Im Raum mit dem Problem<small>dort, wo das Internet hakt</small></b></div>
+        <div class="werte"><div class="wert"><small>Download</small><b data-w="down">–</b><i>Mbit/s</i></div><div class="wert"><small>Upload</small><b data-w="up">–</b><i>Mbit/s</i></div><div class="wert"><small>Ping</small><b data-w="ping">–</b><i>ms</i></div></div>
+        <div class="lauf" hidden><i></i></div><p class="phase" hidden></p>
+        <button type="button" class="btn2 f" data-mess="raum">Hier messen</button></div>
+    </div>
+    <div class="urteil" id="urteil" hidden></div>
+    <a class="anb" id="anb" hidden target="_blank" rel="noopener"></a>
+    <p class="klein">Eine Messung dauert etwa 20 Sekunden und verbraucht bis zu 60 MB. Sie läuft über einen Messserver von Cloudflare, dabei wird Ihre IP-Adresse übertragen. An uns geht nichts, solange Sie uns nichts schicken.<br>Für eine Beschwerde bei Ihrem Anbieter zählt nur die offizielle Messung der Bundesnetzagentur: <a href="https://breitbandmessung.de" target="_blank" rel="noopener">breitbandmessung.de</a></p>
+  </section>
+  <section class="blk" data-art="netz" hidden>
     <h2>Kein Internet oder Netzwerk: Was Sie selbst prüfen können</h2>
     <p class="u">Oft reicht ein Neustart oder ein lockeres Kabel.</p>
     <ol class="st">
@@ -93,6 +145,8 @@ ol.st b{color:var(--on-surface)}
       <li><span><b>Netzwerk geht, Internet nicht:</b> Trennen Sie Router bzw. Glasfaser-Modem für etwa 30 Sekunden vom Strom und schalten Sie ihn wieder ein. Der Start dauert einige Minuten.</span></li>
       <li><span><b>Weiterhin keine Verbindung:</b> Prüfen Sie auf der Störungsseite Ihres Internetanbieters, ob dort eine Störung gemeldet ist. Andernfalls rufen Sie uns an.</span></li>
     </ol>
+    <div class="kn"><button type="button" class="btn2 t" id="rstStart"><svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>Router neu starten – geführt</button></div>
+    <div class="rst" id="rst" hidden></div>
     <div class="warn"><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><span><b>Bitte keine Kabel im Schrank umstecken.</b>Die Belegung der Patchfelder ist dokumentiert. Umgesteckte Kabel führen oft zu neuen Störungen, die sich nur schwer finden lassen.</span></div>
   </section>
   <section class="blk">
@@ -102,6 +156,8 @@ ol.st b{color:var(--on-surface)}
     <p class="kh" data-art="strom">Sie werden zweimal im Jahr erinnert, jeweils am letzten Samstag im März und im Oktober, passend zur Zeitumstellung.</p>
     <div class="tipp"><i><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></i><span><b>Dokumentation für Vermieter, Hausverwaltungen und Fachbetriebe</b><span id="doku">Stromkreisliste und Prüfprotokolle dieser Anlage liegen uns vor.</span> Bitte geben Sie bei Ihrer Anfrage die Anlagen-Nr. an.</span></div>
     <div class="kn"><a class="btn t" id="mail" href="mailto:info@elektro-irrgang.de"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>Dokumentation anfragen</a></div>
+    <div class="tipp" data-art="netz" hidden style="margin-top:22px"><i><svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg></i><span><b>Für IT-Dienstleister und Fachfirmen</b>Sie haben im Schrank etwas umgesteckt, getauscht oder ergänzt? Bitte melden Sie es uns kurz – so bleibt die Dokumentation für alle aktuell.</span></div>
+    <div class="kn" data-art="netz" hidden><a class="btn t" id="aend" href="mailto:info@elektro-irrgang.de"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>Änderung melden</a></div>
   </section>
   <button type="button" class="wechsel" id="wechsel" hidden></button>
   <p class="adr"><b>Elektro Irrgang</b><br>Hahner Weg 2 · 51545 Waldbröl<br>info@elektro-irrgang.de · <a href="https://www.elektro-irrgang.de" rel="noopener" style="color:inherit">elektro-irrgang.de</a></p>
@@ -122,10 +178,99 @@ ol.st b{color:var(--on-surface)}
   if(c){ document.getElementById("nrT").textContent=z; } else document.getElementById("nr").style.display="none";
   function mails(was){ var b="Sehr geehrte Damen und Herren,\n\nhiermit bitte ich um die Dokumentation zur Anlage"+(c?" mit der Anlagen-Nr. "+z:"")+".\n\nName:\nFirma:\nTelefon:\nAnschrift der Anlage:\nGrund der Anfrage:\n\nMit freundlichen Grüßen";
   document.getElementById("mail").href="mailto:info@elektro-irrgang.de?subject="+encodeURIComponent("Dokumentation Anlage"+(c?" "+z:""))+"&body="+encodeURIComponent(b);
-  var s="Sehr geehrte Damen und Herren,\n\nhiermit melde ich eine Störung "+was+(c?" mit der Anlagen-Nr. "+z:"")+".\n\nWas ist passiert:\nSeit wann:\nBetroffene Räume oder Geräte:\n\nName:\nTelefon für Rückruf:\nAnschrift der Anlage:\n\nMit freundlichen Grüßen";
+  var s="Sehr geehrte Damen und Herren,\n\nhiermit melde ich eine Störung "+was+(c?" mit der Anlagen-Nr. "+z:"")+"."+(was==="am Netzwerk"&&window.MESS_TXT?"\n\n"+window.MESS_TXT():"")+"\n\nWas ist passiert:\nSeit wann:\nBetroffene Räume oder Geräte:\n\nName:\nTelefon für Rückruf:\nAnschrift der Anlage:\n\nMit freundlichen Grüßen";
   document.getElementById("stoer").href="mailto:info@elektro-irrgang.de?subject="+encodeURIComponent("Störung Anlage"+(c?" "+z:""))+"&body="+encodeURIComponent(s); }
-  zeig(window.QR_ART||"");
+  window.MAILS=function(){ mails(T[AKT].was); };
+  var AKT=window.QR_ART||""; var zeig0=zeig; zeig=function(a){ AKT=a; zeig0(a); }; zeig(AKT);
+  var aend=document.getElementById("aend"); if(aend) aend.href="mailto:info@elektro-irrgang.de?subject="+encodeURIComponent("Änderung Netzwerkschrank"+(c?" "+z:""))+"&body="+encodeURIComponent("Sehr geehrte Damen und Herren,\n\nwir haben am Netzwerkschrank"+(c?" mit der Anlagen-Nr. "+z:"")+" etwas geändert.\n\nFirma:\nName und Telefon:\nDatum:\n\nWas wurde geändert (z. B. Kabel umgesteckt, Gerät getauscht, neues Gerät, Dose neu aufgelegt):\n\nPatchfeld / Port:\nSwitch / Port:\nGerät (Hersteller, Modell):\nBemerkung:\n\nMit freundlichen Grüßen");
   if(c) document.getElementById("ma").href="../echeck/#qr="+c; })();
+</script>
+<script>
+/* ===== Netzwerk: Geschwindigkeit messen, geführter Neustart, Foto senden (04.11.2026) =====
+   Messserver: speed.cloudflare.com (__down / __up, CORS offen). GitHub Pages kann keinen Upload annehmen, deshalb extern.
+   Ergebnis bleibt im Browser; erst „Störung melden“ oder „Foto senden“ schickt es – vom Kunden selbst ausgelöst. */
+(function(){
+  var CF="https://speed.cloudflare.com", c=window.QR_NR||"", z=c?c.slice(0,3)+" "+c.slice(3):"";
+  var ERG={router:null,raum:null}, ASN="", LAEUFT=false;
+  /* Anbieter nach AS-Nummer; Link: offizielle Störungsseite, sonst eine Übersicht mit Nutzer-Meldungen */
+  var ANB={"3320":["Telekom","https://www.telekom.de/hilfe/hilfe-bei-stoerungen/v2021/layer"],"3209":["Vodafone","https://www.dslweb.de/vodafone-stoerung.php"],"31334":["Vodafone (Kabel)","https://www.dslweb.de/vodafone-stoerung.php"],"6830":["Vodafone (Kabel)","https://www.dslweb.de/vodafone-stoerung.php"],
+    "6805":["o2","https://www.o2online.de/service/netz-verfuegbarkeit/dsl-stoerung/"],"8881":["1&1","https://www.dslweb.de/1und1-stoerung.php"],"60294":["Deutsche Glasfaser","https://www.netzwelt.de/ist-down/612-deutsche-glasfaser.html"]};
+  var f1=function(n){ return n==null?"–":n.toLocaleString("de-DE",{maximumFractionDigits:n<10?1:0}); };
+  var jetzt=function(){ return performance.now(); };
+  function mobil(){ var k=navigator.connection; return !!(k&&k.type==="cellular"); }
+  async function ping(){ var L=[]; for(var i=0;i<6;i++){ var t=jetzt(); var r=await fetch(CF+"/__down?bytes=0&r="+Math.random(),{cache:"no-store"}); if(!ASN) ASN=r.headers.get("cf-meta-asn")||""; await r.arrayBuffer(); if(i) L.push(jetzt()-t); }
+    L.sort(function(a,b){ return a-b; }); return L[Math.floor(L.length/2)]; }
+  /* Download: 4 Ströme gleichzeitig, Blöcke werden größer, max. 8 s bzw. 45 MB; gezählt wird ab der 1. Sekunde */
+  async function runter(live){ var T0=jetzt(), DAUER=8000, MAX=45e6, b=0, b1=null, t1=0, aus=false, ctl=[];
+    async function strom(){ var gr=250e3; while(!aus){ var ac=new AbortController(); ctl.push(ac); var ts=jetzt();
+        try{ var r=await fetch(CF+"/__down?bytes="+gr+"&r="+Math.random(),{cache:"no-store",signal:ac.signal}), rd=r.body.getReader();
+          for(;;){ var x=await rd.read(); if(x.done) break; b+=x.value.length; var t=jetzt()-T0; if(b1==null&&t>1000){ b1=b; t1=t; } live(b,t); if(t>DAUER||b>MAX){ aus=true; ctl.forEach(function(a){ try{ a.abort(); }catch(e){} }); break; } } }catch(e){ if(!aus) throw e; }
+        if(jetzt()-ts<1000) gr=Math.min(gr*2,10e6); } }
+    await Promise.all([strom(),strom(),strom(),strom()]); var te=jetzt()-T0;
+    return b1!=null&&te-t1>500?(b-b1)*8/((te-t1)/1000)/1e6:b*8/(te/1000)/1e6; }
+  /* Upload über XHR (Fortschritt pro Byte), 3 Ströme, max. 8 s bzw. 20 MB */
+  var DATEN=null; function daten(n){ if(!DATEN){ DATEN=new Uint8Array(4e6); for(var i=0;i<DATEN.length;i+=65536) crypto.getRandomValues(DATEN.subarray(i,Math.min(i+65536,DATEN.length))); } return new Blob([DATEN.subarray(0,n)]); }
+  function rauf(live){ return new Promise(function(fertig,fehl){ var T0=jetzt(), DAUER=8000, MAX=20e6, ges=0, b1=null, t1=0, aus=false, X=[], offen=0;
+    function ende(){ if(aus) return; aus=true; X.forEach(function(x){ try{ x.abort(); }catch(e){} }); var te=jetzt()-T0; fertig(b1!=null&&te-t1>500?(ges-b1)*8/((te-t1)/1000)/1e6:ges*8/(te/1000)/1e6); }
+    function strom(gr){ if(aus) return; var x=new XMLHttpRequest(), alt=0, ts=jetzt(); X.push(x); offen++;
+      x.upload.onprogress=function(e){ ges+=e.loaded-alt; alt=e.loaded; var t=jetzt()-T0; if(b1==null&&t>1000){ b1=ges; t1=t; } live(ges,t); if(t>DAUER||ges>MAX) ende(); };
+      x.onloadend=function(){ offen--; if(x.status===0&&!aus&&!alt){ ende(); return; } if(!aus) strom(jetzt()-ts<1000?Math.min(gr*2,4e6):gr); };
+      x.open("POST",CF+"/__up?r="+Math.random()); x.send(daten(gr)); }
+    strom(250e3); strom(250e3); strom(250e3); setTimeout(ende,DAUER+3000); }); }
+  function karte(w){ return document.getElementById("m_"+w); }
+  function setz(w,k,v){ karte(w).querySelector('[data-w="'+k+'"]').textContent=v; }
+  async function messen(w){ if(LAEUFT) return; LAEUFT=true; var K=karte(w), kn=K.querySelector("[data-mess]"), lauf=K.querySelector(".lauf"), bal=lauf.firstElementChild, ph=K.querySelector(".phase");
+    document.querySelectorAll("[data-mess]").forEach(function(x){ x.disabled=true; }); kn.hidden=true; lauf.hidden=false; ph.hidden=false; ["down","up","ping"].forEach(function(k){ setz(w,k,"…"); });
+    var anteil=function(p){ bal.style.width=Math.round(p*100)+"%"; }; var wl=null; try{ wl=navigator.wakeLock&&await navigator.wakeLock.request("screen"); }catch(e){}
+    try{ ph.textContent="Reaktionszeit wird gemessen …"; anteil(.03); var p=await ping(); setz(w,"ping",f1(Math.round(p)));
+      ph.textContent="Download wird gemessen …"; var d=await runter(function(b,t){ anteil(.08+Math.min(1,t/8000)*.46); setz(w,"down",f1(b*8/(t/1000)/1e6)); }); setz(w,"down",f1(d));
+      ph.textContent="Upload wird gemessen …"; var u=await rauf(function(b,t){ anteil(.56+Math.min(1,t/8000)*.44); setz(w,"up",f1(b*8/(t/1000)/1e6)); }); setz(w,"up",f1(u));
+      ERG[w]={down:d,up:u,ping:p,t:new Date()}; anteil(1); ph.hidden=true; kn.textContent="Nochmal messen"; }
+    catch(e){ ph.textContent="Messung nicht möglich – keine Verbindung zum Messserver. Besteht überhaupt eine Internetverbindung?"; ["down","up","ping"].forEach(function(k){ setz(w,k,"–"); }); kn.textContent="Erneut versuchen"; }
+    try{ wl&&wl.release(); }catch(e){} lauf.hidden=true; kn.hidden=false; document.querySelectorAll("[data-mess]").forEach(function(x){ x.disabled=false; }); LAEUFT=false; urteil(); anbieter(); if(window.MAILS) window.MAILS(); }
+  function urteil(){ var U=document.getElementById("urteil"), r=ERG.router, m=ERG.raum; if(!r||!m){ U.hidden=true; return; }
+    var q=r.down>0?m.down/r.down:1, pz=Math.round(q*100), t;
+    if(q>=0.75) t="<b>Das WLAN ist hier vermutlich nicht das Problem.</b>Im Raum kommt fast so viel an wie am Router ("+pz+" %)."+(r.down<16?" Am Router selbst sind es aber nur "+f1(r.down)+" Mbit/s – das spricht für ein Problem am Anschluss oder einen kleinen Tarif. Prüfen Sie zuerst die Störungsseite Ihres Anbieters.":" Hakt es trotzdem, rufen Sie uns gern an.");
+    else if(q<0.4) t="<b>Das spricht für schwaches WLAN in diesem Raum.</b>Hier kommt nur "+pz+" % von dem an, was am Router ankommt. Das lässt sich verbessern, z. B. mit einem zusätzlichen Access Point – rufen Sie uns gern an.";
+    else t="<b>Im Raum etwas langsamer als am Router ("+pz+" %).</b>Durch Wände und Abstand ist das normal. Hakt es trotzdem, melden Sie sich bei uns.";
+    if(m.ping>100&&r.ping<50) t+=" Die Reaktionszeit im Raum ist hoch ("+Math.round(m.ping)+" ms) – auch das ist typisch für schwaches WLAN.";
+    U.innerHTML=t; U.hidden=false; }
+  function anbieter(){ var A=document.getElementById("anb"), a=ANB[ASN]; if(!a){ A.hidden=true; return; }
+    A.href=a[1]; A.innerHTML='<svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><span><b>Ihr Anbieter: '+a[0].replace(/&/g,"&amp;")+'</b>Gibt es dort gerade eine Störung? Hier prüfen ›</span>'; A.hidden=false; }
+  window.MESS_TXT=function(){ var L=[], n=ANB[ASN]?ANB[ASN][0]:"";
+    [["router","Am Router"],["raum","Im Raum mit dem Problem"]].forEach(function(x){ var e=ERG[x[0]]; if(e) L.push(x[1]+": Download "+f1(e.down)+" Mbit/s, Upload "+f1(e.up)+" Mbit/s, Ping "+Math.round(e.ping)+" ms ("+e.t.toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+")"); });
+    return L.length?"Messwerte"+(n?" (Anbieter "+n+")":"")+":\n"+L.join("\n"):""; };
+  document.querySelectorAll("[data-mess]").forEach(function(b){ b.addEventListener("click",function(){ document.getElementById("mobil").hidden=!mobil(); messen(b.getAttribute("data-mess")); }); });
+  if(mobil()) document.getElementById("mobil").hidden=false;
+
+  /* ---- Geführter Neustart ---- */
+  var R=document.getElementById("rst"), RT=null;
+  var UHR=function(sek,txt,weiter,skip){ var U=2*Math.PI*56, ende=Date.now()+sek*1000;
+    R.innerHTML='<p>'+txt+'</p><div class="uhr"><svg viewBox="0 0 132 132"><circle class="bg" cx="66" cy="66" r="56"/><circle class="vg" cx="66" cy="66" r="56" stroke-dasharray="'+U+'" stroke-dashoffset="0"/></svg><b id="uhrT"></b></div>'+(skip?'<button type="button" class="btn2 g" id="rstSkip">'+skip+'</button>':'');
+    var vg=R.querySelector(".vg"), tt=R.querySelector("#uhrT");
+    var tick=function(){ var rest=Math.max(0,Math.ceil((ende-Date.now())/1000)); tt.textContent=rest>=60?Math.floor(rest/60)+":"+String(rest%60).padStart(2,"0"):rest+" s"; vg.style.strokeDashoffset=String(U*(1-rest/sek)); if(rest<=0){ clearInterval(RT); weiter(); } };
+    clearInterval(RT); tick(); RT=setInterval(tick,250); var sk=R.querySelector("#rstSkip"); if(sk) sk.onclick=function(){ clearInterval(RT); weiter(); }; };
+  var SCHRITT=function(txt,knopf,weiter,zweit,zweitFn){ clearInterval(RT); R.innerHTML='<p>'+txt+'</p><button type="button" class="btn2 f" id="rstOk">'+knopf+'</button>'+(zweit?'<button type="button" class="btn2 g" id="rstZw">'+zweit+'</button>':''); R.querySelector("#rstOk").onclick=weiter; if(zweit) R.querySelector("#rstZw").onclick=zweitFn; };
+  var WL=null; async function wach(an){ try{ if(an&&navigator.wakeLock&&!WL) WL=await navigator.wakeLock.request("screen"); if(!an&&WL){ WL.release(); WL=null; } }catch(e){} }
+  function rst1(){ wach(true); SCHRITT("<b>Schritt 1 von 3:</b> Ziehen Sie den Stromstecker des Routers. Haben Sie zusätzlich ein Glasfaser-Modem (kleines Kästchen, meist an der Wand), ziehen Sie auch dessen Stecker.","Ist ausgesteckt",rst2,"Abbrechen",rstAus); }
+  function rst2(){ UHR(30,"<b>Schritt 2 von 3:</b> Bitte 30 Sekunden warten – so startet der Router wirklich neu.",rst3); }
+  function rst3(){ SCHRITT("<b>Schritt 3 von 3:</b> Stecken Sie zuerst das Glasfaser-Modem (falls vorhanden) und dann den Router wieder ein.","Ist eingesteckt",rst4); }
+  function rst4(){ UHR(180,"Der Router startet. Das dauert einige Minuten, die Lampen blinken dabei. Bitte nichts drücken.",rst5,"Lampen leuchten wieder ruhig"); }
+  function rst5(){ wach(false); SCHRITT("<b>Fertig.</b> Prüfen Sie jetzt, ob das Internet wieder geht – am besten mit einer Messung direkt am Router.","Jetzt am Router messen",function(){ rstAus(); var k=karte("router"); k.scrollIntoView({behavior:"smooth",block:"center"}); setTimeout(function(){ messen("router"); },500); }); }
+  function rstAus(){ clearInterval(RT); wach(false); R.hidden=true; R.innerHTML=""; document.getElementById("rstStart").hidden=false; }
+  document.getElementById("rstStart").addEventListener("click",function(){ this.hidden=true; R.hidden=false; rst1(); R.scrollIntoView({behavior:"smooth",block:"center"}); });
+
+  /* ---- Foto senden (Teilen-Menü des Handys; ohne Teilen: Mail mit Hinweis) ---- */
+  var FI=document.getElementById("fotoIn"), FV=document.getElementById("fv"), DATEI=null;
+  document.getElementById("fotoBtn").addEventListener("click",function(){ FI.value=""; FI.click(); });
+  document.getElementById("fvNeu").addEventListener("click",function(){ FI.value=""; FI.click(); });
+  FI.addEventListener("change",function(){ var d=FI.files&&FI.files[0]; if(!d) return; DATEI=d; var img=document.getElementById("fvImg"); try{ URL.revokeObjectURL(img.src); }catch(e){} img.src=URL.createObjectURL(d); FV.classList.add("an"); FV.scrollIntoView({behavior:"smooth",block:"center"}); });
+  document.getElementById("fvLos").addEventListener("click",async function(){ if(!DATEI) return;
+    var txt="Störung Netzwerk"+(c?" · Anlagen-Nr. "+z:"")+"\n\n"+(window.MESS_TXT()||"(noch keine Messung)")+"\n\nName:\nTelefon für Rückruf:\nAnschrift:";
+    var datei=new File([DATEI],"Netzwerk "+(z||"Foto")+(/\.\w+$/.exec(DATEI.name)||[".jpg"])[0],{type:DATEI.type||"image/jpeg"});
+    if(navigator.canShare&&navigator.canShare({files:[datei]})){ try{ await navigator.share({files:[datei],title:"Störung Netzwerk "+z,text:txt}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
+    location.href="mailto:info@elektro-irrgang.de?subject="+encodeURIComponent("Störung Netzwerk"+(c?" "+z:""))+"&body="+encodeURIComponent(txt+"\n\n(Bitte das Foto an diese Mail anhängen.)"); });
+})();
 </script>
 </body>
 </html>
