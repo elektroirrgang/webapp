@@ -87,7 +87,7 @@ function kxUebView(g){ const G=g.knx.geraete, bus=G.filter(d=>kxTyp(d.typ).bus),
 function kxRaeumeView(g){ const R=kxRaeume(g); if(!R.length) return `<div class="narrow"><div class="empty">${icon("kxRaum")}<h2>Noch keine Räume</h2><p>Unten rechts „Räume“: Bauteil, Etage und Raumnummern als Bereich, z. B. 403–407 – in der Reihenfolge, in der du durchgehst.</p></div></div>`;
   const grp=new Map(); R.forEach(x=>{ const k=kxGruppe(x); if(!grp.has(k)) grp.set(k,[]); grp.get(k).push(x); });
   return `<div class="narrow">${[...grp].map(([k,L])=>`<div class="sec-lbl">${esc(k||"Ohne Etage")}</div>${ecListe(L.map(({r})=>{ const D=kxGeraete(g,r.id), l=kxLinieVonRaum(g,r.id), off=D.filter(d=>!kxFertig(d)).length, p=D.filter(d=>d.problem).length;
-      return ecLi({lead:icon("kxRaum"),ton:p?"bad":D.length&&!off?"ok":"",kopf:esc(r.name),text:esc([D.length?`${D.length} Geräte`:"noch nichts erfasst",D.length?(off?`${off} offen`:"alles fertig"):"",p?`${p} mit Problem`:"",l?`Linie ${l.bereich}.${l.linie}`:""].filter(Boolean).join(" · ")),act:"kxRaumAuf",id:r.id}); }))}`).join("")}</div>`; }
+      return ecLi({lead:typeof raIcon==="function"?raIcon(raVon(g,r,kxRaumInfo(g,r.id).e)):icon("kxRaum"),ton:p?"bad":D.length&&!off?"ok":"",kopf:esc(r.name),text:esc([D.length?`${D.length} Geräte`:"noch nichts erfasst",D.length?(off?`${off} offen`:"alles fertig"):"",p?`${p} mit Problem`:"",l?`Linie ${l.bereich}.${l.linie}`:""].filter(Boolean).join(" · ")),act:"kxRaumAuf",id:r.id}); }))}`).join("")}</div>`; }
 let KX_ZUSTAND="neu";
 function kxRaumView(g,rid){ const D=kxGeraete(g,rid), T=kxTypen();
   const zaehl=T.map(t=>{ const n=D.filter(d=>d.typ===t.id).length;
