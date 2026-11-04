@@ -356,7 +356,7 @@ async function legPdf(L){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",f
   const S=pdfStil(d,{titel:"Verteilerlegende",unter:`Stromkreisübersicht | ${L.titel||"Verteiler"}`,ehw:true,fuss:[L.kunde,L.titel,L.stand&&"Stand "+ecDatum(L.stand)].filter(Boolean).join(" | ")});
   const M=S.M, CW=S.CW, sp=[32,116,34];
   S.kopf(); S.abschnitt("Anlage");
-  S.werte([["Kunde",L.kunde],["Verteiler",L.titel],["Anschrift",L.anschrift],["Stand",ecDatum(L.stand)],["Erstellt von",L.ersteller],...(L.netz?[["Netzform",L.netz]]:[])]);
+  S.werte([["Kunde",L.kunde],["Verteiler",L.titel],["Anschrift",L.anschrift],["Stand",ecDatum(L.stand)],...(L.netz?[["Netzform",L.netz]]:[])]);   /* „Erstellt von“ bleibt intern in der App, gehört nicht auf den Aushang beim Kunden */
   S.abschnitt("Hinweis für den Betreiber");
   S.text("Fehlerstromschutzschalter (RCD) alle 6 Monate über die Prüftaste „T“ auslösen. Schaltet der RCD dabei nicht ab, könnte er defekt sein. In diesem Fall bitte Elektro Irrgang informieren.");
   /* Kontakt groß wie im alten Verteilerplan */
