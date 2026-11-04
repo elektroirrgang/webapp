@@ -29,6 +29,7 @@ function kdDateiName(d){ const n=String(d.name||"Datei"), m=/(\.[a-z0-9]{1,5})$/
 const kdVtName=x=>{ if(DB.gebaeude&&x.vtId) for(const g of DB.gebaeude.values()){ if(g.deleted) continue; const v=(g.verteiler||[]).find(y=>y.id===x.vtId); if(v) return v.name||"Verteiler"; } return x.vtName||"Verteiler"; };
 function kdOrtProt(x){ const nm=(k,id)=>id&&DB[k]&&DB[k].get(id)?DB[k].get(id).name:"";
   if(x.app==="legende") return [kdKat("plaene"),nm("standorte",x.standortId),kdVtName(x),x.archiv?"Ältere Stände":""].filter(Boolean).map(bbFs);   /* Verteilerlegende → Pläne und Schaltpläne › <Verteiler> (Entscheidung Max 04.11.2026: je Verteiler ein Ordner) */
+  if(x.app==="anlagenpass") return [kdKat("plaene"),nm("standorte",x.standortId),"Anlagenpass",x.archiv?"Ältere Stände":""].filter(Boolean).map(bbFs);   /* Anlagenpass → Pläne und Schaltpläne › Anlagenpass */
   if(x.app==="baustelle") return [kdKat("berichte"),nm("baustellen",x.baustelleId)||String(x.titel||"").split(" · ").pop()||"Baustelle"].map(bbFs);
   return [kdKat("prot"),nm("standorte",x.standortId),nm("ladeparks",x.ladeparkId)].filter(Boolean).map(bbFs); }
 function kdDateiKunde(d){ if(!d) return ""; if(d.bezugKind==="kunden") return d.bezugId||"";
