@@ -6,6 +6,7 @@
 - Schon angeschlossen: Liste einfügen › Foto (Verteiler ablesen), Diktieren (KI statt Regeln, Regeln als Rückfall), Baustelle › Übergabe › Erzählen.
 - Ideen für später: Mängeltext aus Stichworten ausformulieren, Prüfbericht-Zusammenfassung für den Kunden, Material aus Foto der Lieferscheine, Anlagenpass mit Kurzfazit.
 - Vor dem Einschalten: Datenschutz (Anbieter, EU-Region, Auftragsverarbeitung) mit dem Chef klären.
+- Mit Achenbach besprechen (Wunsch Max, 04.11.2026): Bilderkennung muss dabei sein – das Modell braucht Bildverständnis (z. B. gpt-4o), sonst geht „Foto → Liste“ nicht.
 
 ## QR-Aufkleber: öffentliche Seite für Fremde (Entscheidung Max, 03.11.2026: über Microsoft) – wartet auf Achenbach
 

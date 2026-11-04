@@ -2289,6 +2289,7 @@ function baustelleView(b){
   h+=vgBauAbschnitt(b);
   h+=`<div class="sec-row"><div class="sec-lbl">Übergaben</div><button class="plus-k" data-act="neuerEintrag" aria-label="Übergabe schreiben" title="Übergabe schreiben">${icon("add")}</button></div>`;
   h+=E.length?listOf(E.map((e,i)=>ekZeile(e,i===0))):`<p class="meta">Noch keine Übergabe. Am Ende des Tages kurz festhalten: Stand, was offen ist und welches Material morgen gebraucht wird.</p>`;
+  if(typeof hbLink==="function") h+=E.length?hbLink("hb-bs-ende","Checkliste Baustellenabschluss"):hbLink("hb-bs-start","Checkliste Baustellenstart");
   return h+`</div>`;
 }
 let entw=null, entwZurueck=null;
