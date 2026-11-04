@@ -45,7 +45,9 @@
 - Status je Gerät als Checkliste zum Durcharbeiten: z. B. vorprogrammiert, eingebaut, konfiguriert (genaue Liste mit Max klären; nicht zwingend der Reihe nach).
 - Beschriftung Brother: nur die physikalische Adresse (z. B. 3.1.36), 6-mm-Band, ca. 23 mm lang; einzelne Geräte doppelt (z. B. Raumthermostat Ober-/Unterteil). Muster-Datei aus Pro Label Tool fehlt noch.
 - Programmier-Modus zu zweit (nur Kommunikation): Laptop fordert „3.1.36 im Raum X – Programmiertaste drücken“ an, Partner bekommt Pop-up, bestätigt „gedrückt“, Laptop programmiert in der ETS, „fertig“ → nächstes Gerät. Braucht schnellen Abgleich (alle 2–3 s) über Microsoft – testen.
-- Offene Fragen: siehe Gespräch 04.11. (Statusliste, Nummern pro Raum oder pro Art, Kanäle vs. Geräte, ETS-Export).
+- Status „Defekt/Problem“ mit Farben: z. B. markiert der Chef „Raum 403, 2 Stellantriebe funktionieren nicht“ (mit Notiz) – Max bekommt eine Zusammenfassung „folgende Geräte funktionieren nicht“, statt selbst suchen zu müssen. Auch Geräte ohne eigene Adresse (Stellantriebe, Motoren) müssen sich so markieren lassen.
+- Nummerierung (Max): Linie gilt für eine Gruppe von Räumen (z. B. links der Doppeltür Raum 403–407 = Linie 6.1). Nummern laufen Raum für Raum durch (erster Raum mit 5 Geräten: 6.1.1–6.1.5, nächster Raum ab 6.1.6). Reihenfolge der Gerätearten im Raum individuell festlegbar (z. B. Jalousie zuerst).
+- Noch offen: Statusliste bestätigen, Platz in der App (eigener Reiter oder mit Netzwerk), ETS-Export ja/nein.
 
 ## Kurz-Einführungen beim ersten Mal (Wunsch Max, 04.11.2026) – noch nicht gebaut
 - Allgemein für alle Apps: neue oder seltene Funktionen beim ersten Benutzen kurz vorstellen (2–4 Bilder/Schritte, „Verstanden“), danach nie wieder von selbst – aber jederzeit wieder aufrufbar (z. B. Einstellungen › Hilfe).
