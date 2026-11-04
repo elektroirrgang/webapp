@@ -200,20 +200,30 @@ function vtImpDlg(kind,id,vorwahl){ const s=kind==="standorte"&&standortOf(id), 
       </section>
       <section class="vti-s" data-s="2" hidden>
         <div class="vti-wege">${vtiSR()?`<button type="button" class="vti-weg vti-mic" data-act="vtiDiktat">${icon("mic")}<span>Diktieren</span></button>`:""}<button type="button" class="vti-weg" data-act="vtImpDatei">${icon("ecImport")}<span>Datei laden</span></button></div>
-        <div class="vti-diktat" id="vtiDiktat" hidden><span class="vti-punkt"></span><span id="vtiHoer">Ich höre zu …</span><div class="vti-letzte" id="vtiLetzte"></div><small>Gerät für Gerät, kurze Pause dazwischen – z. B. „FI eins“ · „B16 Küche“ · „Herd dreipolig“ · „Reserve“ · „neue Reihe“</small></div>
+        <div class="vti-rec" id="vtiRec" hidden>
+          <div class="vti-rec-kreis" id="vtiRecKreis"><span class="w1"></span><span class="w2"></span><span class="kern">${icon("mic")}</span></div>
+          <div class="vti-rec-zeit" id="vtiRecZeit">0:00</div><div class="vti-rec-txt" id="vtiRecTxt">Ich höre zu</div>
+          <p class="vti-rec-tipp">Sprich die Stromkreise einfach der Reihe nach – Pausen zum Überlegen sind kein Problem. Zum Schluss auf „Fertig“, dann zeigt die App die Liste zum Prüfen.</p>
+          <p class="vti-rec-bsp">„FI eins · F1 B16 Küche · Herd dreipolig · Reserve · neue Reihe“<br>„löschen“ nimmt das letzte Gerät wieder raus</p>
+          <div class="vti-rec-k"><button type="button" class="btn-text" data-act="vtiRecAbbr">Verwerfen</button><button type="button" class="btn-filled vti-rec-ok" data-act="vtiRecOk">Fertig</button></div>
+        </div>
         <div class="tf vti-text"><textarea id="vtiText" spellcheck="false" placeholder="${esc(VTI_BSP)}" aria-label="Liste, eine Zeile pro Gerät"></textarea></div>
         <p class="vti-tipp">Eine Zeile pro Gerät. Spalten mit ; oder Tab – direkt aus Excel kopierbar. <code>---</code> = neue Reihe, „# Text“ = Überschrift.</p>
       </section>
-      <section class="vti-s" data-s="3" hidden><div id="vtiVorschau" class="vti-vor"></div></section>
+      <section class="vti-s" data-s="3" hidden>
+        <div class="vti-nach" id="vtiNach" hidden><button type="button" class="vti-weg" data-act="vtiDiktat">${icon("mic")}<span>Weiter diktieren</span></button><button type="button" class="vti-weg" data-act="vtiSchritt" data-s="2">${icon("edit")}<span>Text ändern</span></button></div>
+        <div id="vtiVorschau" class="vti-vor"></div>
+        <details class="vti-gehoert" id="vtiGehoert" hidden><summary>Was die App gehört hat</summary><p></p></details>
+      </section>
     </div>`,
     `<button class="btn-text vti-f" data-f="1" data-act="cancel">Abbrechen</button><button class="btn-text vti-f" data-f="23" data-act="vtiZurueck">Zurück</button><span style="flex:1"></span><button class="btn-filled vti-f" data-f="12" data-act="vtiWeiter">Weiter</button><button class="btn-filled vti-f" data-f="3" data-act="vtImpOk">Übernehmen</button>`,{breit:true});
-  vtiZeig(ziel?2:1); }
+  VTI_GEHOERT=""; vtiZeig(ziel?2:1); }
 function vtiZeig(n){ if(n!==2&&VTI_SR) vtiDiktatStop(); vtiSchritt=n;
   document.querySelectorAll("#dlg .vti-s").forEach(x=>x.hidden=+x.dataset.s!==n);
   document.querySelectorAll("#dlg .vti-st").forEach(x=>{ const s=+x.dataset.s; x.classList.toggle("an",s===n); x.classList.toggle("fertig",s<n); });
   document.querySelectorAll("#dlg .vti-f").forEach(x=>x.hidden=!x.dataset.f.includes(String(n)));
   const neu=document.querySelector("#dlg .vti-neu"); if(neu) neu.hidden=!!vtImpAktZiel();
-  if(n===3) vtImpVorschau();
+  if(n===3){ vtImpVorschau(); const g=document.getElementById("vtiGehoert"), nb=document.getElementById("vtiNach"); if(g){ g.hidden=!VTI_GEHOERT; g.querySelector("p").textContent=VTI_GEHOERT; } if(nb) nb.hidden=!VTI_GEHOERT||!vtiSR(); }
   const sc=document.querySelector("#dlg .dlg-body")||document.querySelector("#dlg"); if(sc) sc.scrollTop=0;
   if(n===2){ const ta=document.getElementById("vtiText"); if(ta&&!ta.value&&!matchMedia("(pointer:coarse)").matches) ta.focus(); } }
 function vtiPruefSchritt(n){ /* darf man von vtiSchritt nach n? */
@@ -285,30 +295,105 @@ function vtiSprache(roh){ const Z=[];
     z=z.replace(/^(\d+x\s+)?(.)/,(m,a,c)=>(a||"")+c.toUpperCase());
     Z.push(z); });
   return Z; }
+
+/* ===== Diktat als Ganzes verstehen (04.11.2026, 2. Fassung) =====
+   Nicht mehr „jede Pause = neue Zeile“: alles Gesprochene wird gesammelt und als Folge von Bausteinen gelesen.
+   Ein neues Gerät beginnt bei Kennzeichnung (F3), FI, Reserve/leer, „neue Reihe“, „nächster/weiter/Komma“ –
+   oder wenn ein Gerät schon Name und Absicherung hat und wieder ein Name bzw. eine zweite Absicherung kommt.
+   Eine Atempause trennt nur, wenn das Gerät davor schon einen Namen hat (und der nicht auf „und/mit …“ endet).
+   „löschen“ / „streichen“ / „falsch“ nimmt das letzte Gerät wieder raus. */
+const VTI_NR={eins:1,ein:1,zwei:2,zwo:2,drei:3,vier:4,fünf:5,sechs:6,sieben:7,acht:8,neun:9,zehn:10,elf:11,zwölf:12,dreizehn:13,vierzehn:14,fünfzehn:15,sechzehn:16,siebzehn:17,achtzehn:18,zwanzig:20,fünfundzwanzig:25,zweiunddreißig:32,vierzig:40,fünfzig:50,sechzig:60,dreiundsechzig:63};
+const VTI_VERHOERT=[[/^(kehrt|kert|hert|herz|heard|hört)$/i,"Herd"]];
+function vtiDiktatLesen(seg){
+  let t=" "+seg.map(x=>String(x||"").trim()).filter(Boolean).join(" | ")+" ";
+  t=t.replace(/\b(neue|nächste)\s*\|?\s*reihe\b/gi," ⏎ ").replace(/\s*[,;]\s*|\b(nächster|nächste|nächstes|weiter|komma)\b/gi," , ");
+  t=t.replace(/\b(eins|zwei|zwo|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|sechzehn|siebzehn|achtzehn|zwanzig|fünfundzwanzig|zweiunddreißig|vierzig|fünfzig|sechzig|dreiundsechzig)\b/gi,w=>VTI_NR[w.toLowerCase()]);
+  t=t.replace(/\b(drei|vier|ein)(polig|phasig|mal)\b/gi,(m,n,w)=>VTI_NR[n.toLowerCase()]+" "+w);
+  t=t.replace(/(\d)\s*\|\s*(?=-?\s*(polig|phasig|pol|mal|x)\b)/gi,"$1 ").replace(/\b([bcdk]|be|bee|zeh|ce|tse|f|ef|eff)\s*\|\s*(?=\d)/gi,"$1 ");
+  const T=[]; let r=t.trim(), m;
+  const RE=[["sep",/^,/],["pause",/^\|/],["reihe",/^⏎/],["weg",/^(löschen|lösch|streichen|streich|falsch)\b/i],
+    ["fi",/^(fehlerstrom[\s-]?schutz[\s-]?schalter|fehlerstromschutz|fi[\s-]?schalter|fi|rcd|f\s?i)\b(?:\s*(\d{1,2})\b(?!\s*(?:a|ampere)\b))?/i],
+    ["kz",/^-?(?:f|ef|eff)\s*-?\s*(\d{1,2})(?:\s*(?:\.|punkt)\s*(\d{1,2}))?\b/i],
+    ["ls",/^(b|c|d|k|be|bee|zeh|ce|tse)\s*-?\s*(\d{1,2})\s*(?:a|ampere)?\b/i],
+    ["pol",/^(\d)\s*-?\s*(polig|phasig|pol)\b/i],["pol3",/^(drehstrom|dreipolig|dreiphasig|400\s?volt)\b/i],["pol1",/^(einpolig|1\s*-?\s*polig)\b/i],
+    ["mal",/^(\d{1,2})\s*(mal|x)\b/i],["res",/^(reserve|reserven)\b/i],["leer",/^(leerplatz|leer|frei)\b/i],["wort",/^[^\s|,⏎]+/]];
+  while(r){ r=r.replace(/^\s+/,""); if(!r) break; let ok=false;
+    for(const [k,re] of RE){ if((m=r.match(re))){ T.push([k,m]); r=r.slice(m[0].length); ok=true; break; } }
+    if(!ok) r=r.slice(1); }
+  /* Reihenfolge erkennen: sagt er „Küche B16“ (Name zuerst) oder „B16 Küche“? Zählt, was im ganzen Diktat häufiger vorkommt */
+  let wl=0, lw=0; { const Q=T.filter(([k])=>k!=="pause"); for(let i=1;i<Q.length;i++){ if(Q[i-1][0]==="wort"&&Q[i][0]==="ls") wl++; if(Q[i-1][0]==="ls"&&Q[i][0]==="wort"&&!(i>1&&Q[i-2][0]==="kz")) lw++; } }
+  const nameZuerst=wl>lw;
+  const G=[]; let cur=null, vor="", weich=false;
+  const neu=o=>{ cur={name:[],...o}; G.push(cur); weich=false; return cur; };
+  const offen=()=>cur&&!cur.art&&!weich;
+  T.forEach(([k,m])=>{
+    if(k==="sep"){ cur=null; }
+    else if(k==="pause"){ if(cur&&cur.name.length&&!/^(und|mit|für|im|in|am|an|vom|zum|zur|der|die|das|und\/oder)$/i.test(cur.name[cur.name.length-1])) weich=true; return; }
+    else if(k==="reihe"){ G.push({art:"reihe"}); cur=null; }
+    else if(k==="weg"){ const i=G.map(x=>x.art!=="reihe").lastIndexOf(true); if(i>=0) G.splice(i,1); cur=null; }
+    else if(k==="fi"){ G.push({art:"fi",n:m[2]||""}); cur=null; }
+    else if(k==="kz") neu({kz:"F"+m[1]+(m[2]?"."+m[2]:"")});
+    else if(k==="ls"){ const ls={b:"B",be:"B",bee:"B",c:"C",zeh:"C",ce:"C",tse:"C",d:"D",k:"K"}[m[1].toLowerCase()]+m[2];
+      if(nameZuerst&&cur&&!cur.art&&!cur.ls&&!cur.res&&cur.name.length) cur.ls=ls;   /* „Küche … B16“: gehört zum Namen davor, auch nach einer Pause */
+      else if(offen()&&!cur.ls&&!cur.res&&(nameZuerst||!cur.name.length)) cur.ls=ls; else neu({ls}); }
+    else if(k==="pol"||k==="pol3"||k==="pol1"){ const z=G.filter(x=>!x.art).pop(); if(z) z.pol=k==="pol1"?1:k==="pol3"?3:+m[1]; }
+    else if(k==="mal"){ const z=G.filter(x=>!x.art).pop(); if(z) z.mal=+m[1]; }
+    else if(k==="res"){ if(offen()&&!cur.name.length&&!cur.res) cur.res=true; else neu({res:true}); }
+    else if(k==="leer"){ G.push({art:"leer"}); cur=null; }
+    else { const w=m[0], dran=offen()&&!cur.res&&(cur.name.length?vor==="wort":!(nameZuerst&&cur.ls&&!cur.kz)); if(dran) cur.name.push(w); else neu({}).name.push(w); }
+    vor=k; });
+  /* Zeilen im Importformat */
+  const Z=[], K=[];
+  G.forEach(g=>{
+    if(g.art==="reihe"){ Z.push("---"); K.push("neue Reihe"); return; }
+    if(g.art==="fi"){ Z.push(g.n?`FI ${g.n}`:"FI"); K.push(g.n?`FI ${g.n}`:"FI"); return; }
+    if(g.art==="leer"){ Z.push("leer"); K.push("Leerplatz"); return; }
+    let nm=g.res?"Reserve":g.name.join(" ").replace(/^\S+/,w=>{ const v=VTI_VERHOERT.find(([re])=>re.test(w)); return v?v[1]:w; });
+    nm=nm.charAt(0).toUpperCase()+nm.slice(1);
+    const pol=g.pol===3||g.pol===4?" 3-polig":"";
+    const z=[g.kz,g.ls,(nm+pol).trim()].filter(Boolean).join("; ");
+    if(g.mal===3&&!pol&&!g.ls&&!g.kz){ Z.push(nm,nm,nm); K.push(`${nm} · 3-polig`); return; }
+    Z.push(g.mal>1?`${g.mal}x ${z}`:z); K.push([g.kz,nm,g.ls,pol.trim(),g.mal>1?`${g.mal}×`:""].filter(Boolean).join(" · ")); });
+  return {Z,K}; }
 let VTI_SR=null;
-function vtiDiktatStop(){ const r=VTI_SR; VTI_SR=null; if(r){ r._aus=true; if(r._fertig) r._fertig(); try{ r.stop(); }catch(e){} }
-  const b=document.querySelector(".vti-mic"), d=document.getElementById("vtiDiktat"); if(b){ b.classList.remove("an"); b.querySelector("span").textContent="Diktieren"; } if(d) d.hidden=true; }
+/* Aufnahme: erst nur zuhören (Animation, Zeit, Wortzahl), bei „Fertig“ alles zusammen auswerten und in „Prüfen“ zeigen */
+let VTI_REC=null, VTI_GEHOERT="";
+function vtiRecUi(an){ const dlg=document.getElementById("dlg"); if(dlg) dlg.classList.toggle("vti-rec-an",!!an);
+  const r=document.getElementById("vtiRec"); if(r) r.hidden=!an; }
+function vtiDiktatStop(verwerfen){ const r=VTI_SR; VTI_SR=null; if(r){ r._aus=true; if(r._fertig) r._fertig(); try{ r.stop(); }catch(e){} }
+  const R=VTI_REC; if(R&&R.uhr) clearInterval(R.uhr); if(verwerfen!==false){ VTI_REC=null; vtiRecUi(false); } return R; }
 function vtiDiktatStart(){ const SR=vtiSR(); if(!SR){ toast("Diktieren geht in diesem Browser nicht"); return; } vtiDiktatStop();
-  const b=document.querySelector(".vti-mic"), d=document.getElementById("vtiDiktat"); if(b){ b.classList.add("an"); b.querySelector("span").textContent="Stopp"; } if(d) d.hidden=false;
-  const H=[];   /* zuletzt erkannt: [gehört, eingetragen] */
-  const zeig=zw=>{ const h=document.getElementById("vtiHoer"), l=document.getElementById("vtiLetzte"); if(h) h.textContent=zw?`„${zw}“`:"Ich höre zu …"; h&&h.classList.toggle("zw",!!zw);
-    if(l) l.innerHTML=H.slice(-2).reverse().map(([roh,L])=>`<span><i>${esc(roh)}</i><b>${L.length?esc(L.map(x=>x==="---"?"neue Reihe":x).join(" · ")):"nicht verstanden"}</b></span>`).join(""); };
-  const rein=roh=>{ roh=String(roh||"").trim(); if(!roh) return; const L=vtiSprache(roh); H.push([roh,L]);
-    if(L.length){ const ta=document.getElementById("vtiText"); if(ta){ ta.value=(ta.value.replace(/\s+$/,"")+(ta.value.trim()?"\n":"")+L.join("\n")); ta.scrollTop=ta.scrollHeight; vtImpVorschau(); } } zeig(""); };
+  if(vtiSchritt!==2) vtiZeig(2);
+  const ta=document.getElementById("vtiText"), R=VTI_REC={seg:[],zw:"",basis:ta?ta.value.replace(/\s+$/,""):"",t0:Date.now()};
+  const kreis=document.getElementById("vtiRecKreis"), txt=document.getElementById("vtiRecTxt"), zeit=document.getElementById("vtiRecZeit");
+  if(kreis) kreis.className="vti-rec-kreis"; vtiRecUi(true);
+  const zeig=()=>{ const n=(R.seg.join(" ")+" "+R.zw).trim().split(/\s+/).filter(Boolean).length; if(txt) txt.textContent=n?`Ich höre zu · ${n} ${n===1?"Wort":"Wörter"}`:"Ich höre zu"; };
+  R.uhr=setInterval(()=>{ const s=Math.floor((Date.now()-R.t0)/1000); if(zeit) zeit.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; },500);
+  const puls=()=>{ if(!kreis) return; kreis.classList.remove("hoert"); void kreis.offsetWidth; kreis.classList.add("hoert"); };
   const sitzung=()=>{ const r=new SR(); r.lang="de-DE"; r.continuous=true; r.interimResults=true; r.maxAlternatives=1; VTI_SR=r;
-    let n=0, letzte="", zw="";
+    let n=0, letzte="";
     r.onresult=e=>{ let z="";
       for(let i=n;i<e.results.length;i++){ const x=e.results[i], t=String(x[0].transcript||"").trim();
-        if(x.isFinal){ n=i+1; zw="";
+        if(x.isFinal){ n=i+1;
           /* Chrome auf Android liefert manchmal den ganzen bisherigen Satz noch einmal – dann nur das Neue nehmen */
-          const neu=letzte&&t.length>letzte.length&&t.toLowerCase().startsWith(letzte.toLowerCase()+" ")?t.slice(letzte.length):t; letzte=t; rein(neu); }
+          const neu=letzte&&t.length>letzte.length&&t.toLowerCase().startsWith(letzte.toLowerCase()+" ")?t.slice(letzte.length).trim():t; letzte=t; if(neu) R.seg.push(neu); }
         else z+=(z?" ":"")+t; }
-      zw=z; zeig(z); };
+      R.zw=z; zeig(); puls(); };
     r.onerror=e=>{ if(e.error==="not-allowed"||e.error==="service-not-allowed"){ toast("Mikrofon nicht erlaubt – in den Browser-Einstellungen freigeben"); vtiDiktatStop(); } else if(e.error==="network"){ toast("Diktieren braucht Internet"); vtiDiktatStop(); } };
-    /* Chrome hört nach Stille auf: was noch nicht bestätigt war, trotzdem übernehmen – dann weiterhören, bis Stopp */
-    r.onend=()=>{ if(zw){ rein(zw); zw=""; } if(VTI_SR===r&&!r._aus&&document.getElementById("vtiText")) sitzung(); else if(VTI_SR===r) vtiDiktatStop(); };
-    r._fertig=()=>{ if(zw){ rein(zw); zw=""; } };
+    /* Chrome hört nach Stille auf: was noch nicht bestätigt war, trotzdem behalten – dann weiterhören, bis „Fertig“ */
+    r.onend=()=>{ if(R.zw){ R.seg.push(R.zw); R.zw=""; } if(VTI_SR===r&&!r._aus&&VTI_REC===R) sitzung(); };
+    r._fertig=()=>{ if(R.zw){ R.seg.push(R.zw); R.zw=""; } };
     try{ r.start(); }catch(e){ toast("Diktieren konnte nicht starten"); vtiDiktatStop(); } };
-  sitzung(); zeig(""); }
+  sitzung(); zeig(); }
+function vtiDiktatFertig(){ const R=vtiDiktatStop(false); if(!R) return; const kreis=document.getElementById("vtiRecKreis"), txt=document.getElementById("vtiRecTxt");
+  if(kreis) kreis.className="vti-rec-kreis denkt"; if(txt) txt.textContent="Wird ausgewertet …";
+  setTimeout(()=>{ if(VTI_REC!==R) return; VTI_REC=null; vtiRecUi(false);
+    const {Z}=vtiDiktatLesen(R.seg), ta=document.getElementById("vtiText");
+    if(!Z.length){ toast(R.seg.length?"Nichts Brauchbares verstanden – bitte nochmal":"Nichts gehört – Mikrofon prüfen und nochmal"); return; }
+    if(ta) ta.value=R.basis+(R.basis?"\n":"")+Z.join("\n");
+    VTI_GEHOERT=[VTI_GEHOERT,R.seg.join(" … ")].filter(Boolean).join(" … ");
+    vtiZeig(3); },900); }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="vtiDiktat"]'); if(b){ e.stopPropagation(); if(VTI_SR) vtiDiktatStop(); else vtiDiktatStart(); return; }
+  if(b===null&&e.target.closest&&e.target.closest('#dlg [data-act="vtiRecOk"]')){ e.stopPropagation(); vtiDiktatFertig(); return; }
+  if(e.target.closest&&e.target.closest('#dlg [data-act="vtiRecAbbr"]')){ e.stopPropagation(); vtiDiktatStop(); return; }
   if(VTI_SR&&e.target.closest&&e.target.closest('#dlg [data-act="cancel"],#dlg [data-act="vtImpOk"],#scrim')) vtiDiktatStop(); },true);
