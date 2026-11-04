@@ -27,6 +27,7 @@
 - 10-Jahres-Frist (Prüfprotokolle, Verteilerlegenden inkl. „Ältere Stände“) steht bisher nur im Datenschutzhinweis – es gibt noch keine automatische Löschung/Erinnerung nach Ablauf. Bei Bedarf: Liste „Frist abgelaufen“ für den Chef statt stillem Löschen.
 - EVSE Standortseite / „Ladeparks“ später klarer trennen (Max 04.11.2026): Standort = eigene Adresse (z. B. Werk Rommelsdorf, Werk Elfenroth). Mehrere Ladestellen an DERSELBEN Adresse sind kein weiterer Standort – Begriff und Darstellung für die Ebene darunter (heute „Ladepark“) überarbeiten, z. B. „Ladebereich“ (Parkplatz Nord, Tiefgarage). Standortseite danach auf den gemeinsamen Aufbau (kdSeite) bringen.
 - Kopfzeile oben rechts in allen Apps vereinheitlichen (heute: Übersicht/Baustelle Glocke, EVSE ⋮-Menü, Gebäudetechnik nur Profilbild).
+- Feature-Ideen (04.11.2026, Max will alle): (1) Beschriftungsstreifen für die Automaten-Reihen auf dem Brother P-touch drucken – je Gerät 17,5 mm × TE, BMK + Bezeichnung; (2) Stromkreis-Rechner: Länge + Querschnitt → Spannungsfall %, Zs/Abschaltbedingung, Vergleich mit Messwerten; (3) Legende diktieren (in Arbeit); (4) Prüftasten-Erinnerung für Kunden über die QR-Seite (Kalendereintrag alle 6 Monate).
 - Bibliothek: eigene Kategorie „Pläne“ neben Prüfprotokollen/Berichten (Legende erscheint im Filter noch unter „Prüfprotokolle“).
 
 ## Bearbeitungssperre bei gleichzeitigem Arbeiten (erst nach funktionierender Microsoft-Anbindung)
