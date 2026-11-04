@@ -29,9 +29,6 @@ function knxLbxs(name,A){ const lbx=ecZip([{name:"label.xml",daten:knxLbx(name,A
   return ecZip([{name:"config.json",daten:JSON.stringify({Version:"1.0",CurrentLbx:name+".lbx",CurrentCsv:name+".csv"})},{name:name+".lbx",daten:lbx instanceof Uint8Array?lbx:new Uint8Array(lbx)},{name:name+".csv",daten:knxCsv(A)}]); }
 
 /* ---- Reiter „KNX“ (Anfang: Beschriftung; Geräteliste, Begehung, Status und Programmier-Modus folgen) ---- */
-function knxView(){ return `<div class="narrow"><div class="sec-lbl">Beschriftung</div>${listOf([`<div class="li" role="button" tabindex="0" data-act="knxEti"><span class="av">${icon("tag")}</span><span class="lt"><span class="h">Etiketten drucken</span><span class="s">Physikalische Adressen einer Linie für den Brother · 6 mm, 23 mm lang</span></span>${icon("chev")}</div>`])}
-  <div class="empty" style="margin-top:28px">${icon("knx")}<h2>Geräteliste kommt als Nächstes</h2><p>Gebäude und Räume, Begehung vorab, Adressen nach deinem Schema, Status je Gerät und der Programmier-Modus zu zweit.</p></div></div>`; }
-
 /* ---- Dialog ---- */
 function knxEtiInhalt(){ const L=knxLinie(KNX_ETI.linie), A=knxListe(), von=+KNX_ETI.von||0, bis=+KNX_ETI.bis||0, d=KNX_ETI.doppelt.filter(n=>n>=von&&n<=bis).length;
   const nummern=L&&bis>=von&&bis-von<=255?Array.from({length:bis-von+1},(_,i)=>von+i).map(n=>`<button type="button" class="knx-n" data-act="knxDoppelt" data-n="${n}" aria-pressed="${KNX_ETI.doppelt.includes(n)}"><b>${esc(knxAdr(L,n))}</b>${KNX_ETI.doppelt.includes(n)?"<small>2×</small>":""}</button>`).join(""):"";
@@ -56,8 +53,8 @@ function knxLaden(f){ const a=document.createElement("a"); a.href=URL.createObje
    In der Pro-Label-App: Datenbank verbinden › Durchsuchen › OneDrive › … › Etiketten › KNX-Etiketten.csv – kein Laden/Sichern auf dem Gerät.
    Klappt das nicht (offline, nicht angemeldet), wie bisher laden bzw. teilen. */
 const KNX_CLOUD_NAME="KNX-Etiketten.csv";
-async function knxCloud(f){ if(typeof SYNC_ON==="undefined"||!SYNC_ON||typeof bbHoch!=="function"||typeof ME==="undefined"||!ME.signedIn) return false;
-  try{ if(typeof syncRoot==="function") await syncRoot(); await bbHoch(typeof BIB!=="undefined"&&BIB.kunden||"Kundendaten","Etiketten/"+KNX_CLOUD_NAME,f); return true; }catch(e){ console.warn("Etiketten in die Cloud:",e); return false; } }
+async function knxCloud(f,name){ if(typeof SYNC_ON==="undefined"||!SYNC_ON||typeof bbHoch!=="function"||typeof ME==="undefined"||!ME.signedIn) return false;
+  try{ if(typeof syncRoot==="function") await syncRoot(); await bbHoch(typeof BIB!=="undefined"&&BIB.kunden||"Kundendaten","Etiketten/"+(name||KNX_CLOUD_NAME),f); return true; }catch(e){ console.warn("Etiketten in die Cloud:",e); return false; } }
 async function knxAusgeben(F){ if(F.length===1&&/\.csv$/i.test(F[0].name)){ toast("Etiketten-Liste wird abgelegt …"); if(await knxCloud(F[0])){ toast(`Liegt in OneDrive › Kundendaten › Etiketten › ${KNX_CLOUD_NAME} – in Pro Label als Datenbank wählen`); return; } } if(KNX_ANDR){ F.forEach((f,i)=>setTimeout(()=>knxLaden(f),i*400)); toast(`CSV in „Downloads“ – in der Pro-Label-App als Datenbank verbinden`,"App öffnen",knxAppAuf); return; }
   /* iPhone/iPad im Browser: direkt laden (Safari fragt einmal „Laden?“, Datei liegt dann in Dateien › Downloads) – spart „In Dateien sichern“.
      Als Home-Bildschirm-App lädt iOS nicht zuverlässig, dort bleibt das Teilen-Menü. */
