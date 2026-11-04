@@ -636,20 +636,6 @@ html,body{overscroll-behavior-y:none}
 .bib-dlg p{margin:0 0 6px;font-size:14px}
 .bib-dlg .sup{color:var(--on-sv)}
 
-.pv{position:fixed;inset:0;z-index:80;background:var(--sc-low);display:flex;flex-direction:column}
-.pv-kopf{display:flex;align-items:center;gap:8px;min-height:56px;padding:env(safe-area-inset-top,0px) max(8px,env(safe-area-inset-right,0px)) 0 max(8px,env(safe-area-inset-left,0px));background:var(--surface);flex:none}
-.pv-t{flex:1;min-width:0;text-align:center;display:flex;flex-direction:column}
-.pv-t b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pv-t span{font-size:12px;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pv-kopf .btn-text{min-width:96px;justify-content:flex-start}
-.pv-kopf .icon-btn{margin-left:48px}
-.pv-seiten{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;overscroll-behavior:contain;display:flex;flex-direction:column;align-items:flex-start;gap:16px;padding:16px 16px calc(32px + env(safe-area-inset-bottom,0px))}
-.pv-seite{display:block;margin:0 auto;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);border-radius:2px;flex:none}
-.pv-lade{margin:48px auto;max-width:420px;text-align:center;color:var(--on-sv);font-size:14px;line-height:1.5}
-.pv-zahl{position:absolute;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--sc-highest);color:var(--on-surface);font-size:12px;font-weight:700;padding:4px 10px;border-radius:12px;pointer-events:none;opacity:0;transition:opacity .3s}
-.pv-zahl.an{opacity:.92}
-@media (max-width:599px){.pv-kopf .icon-btn{margin-left:0}.pv-kopf .btn-text{min-width:0}}
-body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dlg{z-index:93}body.pv-offen .snackbar{z-index:94}
 
 /* Feinschliff: weichere Ecken */
 .menu{border-radius:16px;padding:6px;background:var(--sc-high);box-shadow:0 12px 32px rgba(0,0,0,.24),0 2px 6px rgba(0,0,0,.12);transform-origin:top right;animation:menuAuf .16s cubic-bezier(.2,.8,.2,1)}
@@ -663,44 +649,9 @@ body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dl
 .calc{border-radius:10px}
 .dlg{border-radius:24px}
 
-.pv-blatt{display:flex;flex:none;width:max-content;min-width:100%}
-.pv-seite{margin:auto!important;border-radius:4px}
-.pv.m-seiten .pv-seiten{flex-direction:row;gap:0;padding:0;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none}
-.pv.m-seiten .pv-seiten::-webkit-scrollbar{display:none}
-.pv.m-seiten .pv-blatt{width:100%;min-width:100%;height:100%;overflow:auto;scroll-snap-align:start;scroll-snap-stop:always;padding:16px 16px calc(48px + env(safe-area-inset-bottom,0px));overscroll-behavior:contain}
-.pv.m-seiten .pv-zahl{opacity:.92}
-.pv-pfeil{position:absolute;top:50%;width:44px;height:44px;margin-top:-22px;border:0;border-radius:50%;background:var(--sc-highest);color:var(--on-surface);display:none;place-items:center;box-shadow:0 2px 8px rgba(0,0,0,.2);opacity:.85}
-.pv-pfeil:hover{opacity:1}.pv-pfeil[disabled]{opacity:.25}
-.pv-pfeil.l{left:16px}.pv-pfeil.l .ic{transform:rotate(180deg)}.pv-pfeil.r{right:16px}
-@media (hover:hover) and (pointer:fine){.pv.m-seiten .pv-pfeil{display:grid}}
-.pv{isolation:isolate}.pv-seiten{position:relative}
 
-.pv-seiten{padding:12px 12px calc(24px + env(safe-area-inset-bottom,0px));gap:12px}
-.pv-zahl{left:max(16px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 68px);bottom:auto;transform:none;background:rgba(40,40,42,.88);color:#fff;font-size:14px;font-weight:700;padding:6px 14px;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.25);transition:opacity .35s}
-.pv.m-seiten .pv-zahl{opacity:0}.pv.m-seiten .pv-zahl.an{opacity:.95}
-.pv.m-seiten .pv-blatt{padding:12px 12px calc(24px + env(safe-area-inset-bottom,0px))}
-.pv.m-seiten .pv-seite{margin:0 auto!important}
 
 /* Vorschau: Apple-Kopf, schrumpft beim Scrollen */
-.pv-kopf{position:absolute;top:0;left:0;right:0;z-index:3;min-height:0;height:calc(64px + env(safe-area-inset-top,0px));gap:8px;padding:env(safe-area-inset-top,0px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));transition:height .28s cubic-bezier(.3,.7,.2,1)}
-.pv-l,.pv-r{flex:none;width:88px;display:flex;align-items:center;gap:8px;transition:opacity .2s,transform .28s cubic-bezier(.3,.7,.2,1)}
-.pv-r{justify-content:flex-end}
-.pv-rund{width:40px;height:40px;border-radius:50%;border:0;background:var(--sc-high);color:var(--on-surface);display:grid;place-items:center;flex:none;-webkit-tap-highlight-color:transparent;transition:background .15s,transform .15s}
-.pv-rund:active{transform:scale(.92);background:var(--sc-highest)}
-.pv-rund .ic{width:22px;height:22px}
-.pv-t{cursor:default;transition:transform .28s cubic-bezier(.3,.7,.2,1)}
-.pv-t b{transition:font-size .28s cubic-bezier(.3,.7,.2,1)}
-.pv-t span{max-height:18px;overflow:hidden;transition:max-height .25s,opacity .2s}
-.pv.kompakt .pv-kopf{height:calc(36px + env(safe-area-inset-top,0px))}
-.pv.kompakt .pv-l,.pv.kompakt .pv-r{opacity:0;pointer-events:none;transform:scale(.8)}
-.pv.kompakt .pv-t{cursor:pointer}
-.pv.kompakt .pv-t b{font-size:13px}
-.pv.kompakt .pv-t span{max-height:0;opacity:0}
-.pv-seiten{padding-top:calc(76px + env(safe-area-inset-top,0px))!important}
-.pv.m-seiten .pv-seiten{padding-top:0!important}
-.pv.m-seiten .pv-blatt{padding-top:calc(76px + env(safe-area-inset-top,0px))!important}
-.pv-zahl{top:calc(env(safe-area-inset-top,0px) + 76px)!important;transition:opacity .35s,top .28s cubic-bezier(.3,.7,.2,1)!important}
-.pv.kompakt .pv-zahl{top:calc(env(safe-area-inset-top,0px) + 48px)!important}
 
 @media (min-width:744px){.sk{align-items:flex-start}.sk h1{line-height:40px}.sk p{margin-top:0}}
 
@@ -1673,79 +1624,7 @@ async function bibPdf(id,teilen){ const x=PROT.find(y=>y.id===id); if(!x) return
   saveFile(blob,x.name+".pdf"); }
 
 const PV_EXTRA=x=>[];
-let pdfjsP=null, PV=null;
-function pdfjsLaden(){ if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
-  if(!pdfjsP) pdfjsP=new Promise((res,rej)=>{ const s=document.createElement("script"); s.src="pdfjs/pdf.min.js";
-    s.onload=()=>{ try{ pdfjsLib.GlobalWorkerOptions.workerSrc="pdfjs/pdf.worker.min.js"; res(pdfjsLib); }catch(e){ rej(e); } }; s.onerror=()=>{ pdfjsP=null; rej(new Error("pdfjs")); }; document.head.appendChild(s); });
-  return pdfjsP; }
-async function pvOeffnen(id){
-  const x=PROT.find(y=>y.id===id); if(!x) return; closeOverlays(); $("#pv")?.remove();
-  document.body.insertAdjacentHTML("beforeend",`<div class="pv${PV_MODUS==="seiten"?" m-seiten":""}" id="pv" role="dialog" aria-modal="true" aria-label="Vorschau"><div class="pv-kopf"><div class="pv-l"><button class="pv-rund" data-act="pvZu" aria-label="Schließen">${icon("close")}</button></div><div class="pv-t" data-act="pvKopfAuf"><b>${esc(x.titel)}</b><span>${esc([deDate(x.datum),x.art,x.fassung>1?`Fassung ${x.fassung}`:""].filter(Boolean).join(" · "))}</span></div><div class="pv-r"><button class="pv-rund" data-act="pvTeilen" aria-label="Teilen">${icon("share")}</button><button class="pv-rund" data-act="pvMenu" aria-label="Weitere Aktionen" aria-haspopup="menu">${icon("moreH")}</button></div></div><div class="pv-seiten" id="pvSeiten"><p class="pv-lade">PDF wird geladen …</p></div><span class="pv-zahl" id="pvZahl"></span><button class="pv-pfeil l" data-act="pvZurueck" aria-label="Vorherige Seite">${icon("chev")}</button><button class="pv-pfeil r" data-act="pvWeiter" aria-label="Nächste Seite">${icon("chev")}</button></div>`);
-  document.body.classList.add("pv-offen"); PV={id,z:1,doc:null}; const P=PV; pvGesten();
-  try{ const [lib,blob]=await Promise.all([pdfjsLaden(),protBlob(id)]); if(PV!==P) return; if(!blob) throw new Error("blob");
-    P.blob=blob; P.doc=await lib.getDocument({data:new Uint8Array(await blob.arrayBuffer())}).promise; if(PV!==P) return; $("#pvSeiten").innerHTML=""; await pvZeichnen(); }
-  catch(e){ const s=$("#pvSeiten"); if(s&&PV===P) s.innerHTML=`<p class="pv-lade">Vorschau nicht möglich${navigator.onLine?"":" – beim allerersten Öffnen wird einmal Internet gebraucht"}.<br>Über ⋯ oben rechts lässt sich das PDF trotzdem speichern oder teilen.</p>`; }
-}
-const PV_KEY="pv_modus"; let PV_MODUS=(()=>{ try{ return localStorage.getItem(PV_KEY)==="seiten"?"seiten":"scroll"; }catch(e){ return "scroll"; } })();
-function pvSeite(){ const box=$("#pvSeiten"); if(!box) return 1; const bl=[...box.querySelectorAll(".pv-blatt")]; if(!bl.length) return 1;
-  if(PV_MODUS==="seiten") return Math.min(bl.length,Math.round(box.scrollLeft/Math.max(1,box.clientWidth))+1);
-  const r=box.getBoundingClientRect(); let n=1; bl.forEach((b,i)=>{ if(b.getBoundingClientRect().top<r.top+r.height/2) n=i+1; }); return n; }
-function pvGehe(n,glatt){ const box=$("#pvSeiten"); if(!box||!PV||!PV.doc) return; n=Math.max(1,Math.min(PV.doc.numPages,n)); const bl=box.querySelector(`.pv-blatt[data-s="${n}"]`); if(!bl) return;
-  if(PV_MODUS==="seiten") box.scrollTo({left:(n-1)*box.clientWidth,behavior:glatt?"smooth":"auto"}); else box.scrollTo({top:bl.offsetTop-16,behavior:glatt?"smooth":"auto"}); }
-function pvZahl(fest){ const P=PV, z=$("#pvZahl"); if(!P||!P.doc||!z) return; const n=pvSeite(); z.textContent=`${n} von ${P.doc.numPages}`;
-  const l=$("#pv .pv-pfeil.l"), r=$("#pv .pv-pfeil.r"); if(l) l.disabled=n<=1; if(r) r.disabled=n>=P.doc.numPages;
-  z.classList.add("an"); clearTimeout(P.st); P.st=setTimeout(()=>z.classList.remove("an"),1500); }
-async function pvZeichnen(){ const P=PV, box=$("#pvSeiten"); if(!P||!P.doc||!box) return; const tok=P.tok=(P.tok||0)+1;
-  const seiten=PV_MODUS==="seiten", bw=box.clientWidth, bh=box.clientHeight, dpr=Math.min(window.devicePixelRatio||1,2.5);
-  for(let i=1;i<=P.doc.numPages;i++){ if(P.tok!==tok||PV!==P) return;
-    const pg=await P.doc.getPage(i), v1=pg.getViewport({scale:1});
-    const breite=Math.min(bw-24,1200)*P.z, hoehe=breite*v1.height/v1.width;
-    let bl=box.querySelector(`.pv-blatt[data-s="${i}"]`); if(!bl){ bl=document.createElement("div"); bl.className="pv-blatt"; bl.dataset.s=i; bl.innerHTML=`<canvas class="pv-seite"></canvas>`; box.appendChild(bl); }
-    const c=bl.firstChild; c.style.width=Math.floor(breite)+"px"; c.style.height=Math.floor(hoehe)+"px";
-    const vp=pg.getViewport({scale:breite/v1.width*dpr}), off=document.createElement("canvas"); off.width=Math.floor(vp.width); off.height=Math.floor(vp.height);
-    await pg.render({canvasContext:off.getContext("2d"),viewport:vp}).promise; if(P.tok!==tok||PV!==P) return;
-    c.width=off.width; c.height=off.height; c.getContext("2d").drawImage(off,0,0); if(i===1) pvZahl(); }
-}
-function pvNeuAufbau(){ if(!PV) return; const n=pvSeite(), box=$("#pvSeiten"); if(!box) return; box.querySelectorAll(".pv-blatt").forEach(b=>b.remove()); PV.z=1;
-  pvZeichnen().then(()=>{}); requestAnimationFrame(()=>requestAnimationFrame(()=>{ pvGehe(n); pvZahl(); })); }
-function pvModus(m){ PV_MODUS=m; try{ localStorage.setItem(PV_KEY,m); }catch(e){} const pv=$("#pv"); if(!pv) return; pv.classList.toggle("m-seiten",m==="seiten"); pvNeuAufbau(); }
-function pvZoom(z,cx,cy){ const P=PV, box=$("#pvSeiten"); if(!P||!box) return; z=Math.max(.5,Math.min(4,z)); const f=z/P.z; if(Math.abs(f-1)<.01) return;
-  const el=PV_MODUS==="seiten"?box.querySelector(`.pv-blatt[data-s="${pvSeite()}"]`)||box:box;
-  const r=el.getBoundingClientRect(), x=cx-r.left, y=cy-r.top, sl=el.scrollLeft, st=el.scrollTop;
-  box.querySelectorAll(".pv-seite").forEach(c=>{ c.style.width=parseFloat(c.style.width)*f+"px"; c.style.height=parseFloat(c.style.height)*f+"px"; });
-  P.z=z; P.zoomBis=Date.now()+200; el.scrollLeft=(sl+x)*f-x; el.scrollTop=(st+y)*f-y; }
-function pvGesten(){ const box=$("#pvSeiten"); let pinch=null, tap=0, letzte=1, raf=0, ziel=null;
-  const d=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
-  box.addEventListener("touchstart",e=>{ if(e.touches.length===2&&PV){ pinch={d:d(e.touches),z:PV.z}; PV.pinch=true; e.preventDefault(); }
-    else if(e.touches.length===1){ const n=Date.now(); if(n-tap<300&&PV){ pvZoom(Math.abs(PV.z-1)>.05?1:2,e.touches[0].clientX,e.touches[0].clientY); pvScharf(); tap=0; e.preventDefault(); } else tap=n; } },{passive:false});
-  box.addEventListener("touchmove",e=>{ if(pinch&&e.touches.length===2){ e.preventDefault();
-    ziel=[pinch.z*d(e.touches)/pinch.d,(e.touches[0].clientX+e.touches[1].clientX)/2,(e.touches[0].clientY+e.touches[1].clientY)/2];
-    if(!raf) raf=requestAnimationFrame(()=>{ raf=0; if(ziel) pvZoom(...ziel); }); } },{passive:false});
-  const ende=e=>{ if(pinch&&e.touches.length<2){ pinch=null; if(PV){ PV.pinch=false; if(PV.z<1&&PV.z>.92) pvZoom(1,innerWidth/2,innerHeight/2); pvScharf(); } } };
-  box.addEventListener("touchend",ende); box.addEventListener("touchcancel",ende);
-  box.addEventListener("dblclick",e=>{ if(PV){ pvZoom(Math.abs(PV.z-1)>.05?1:2,e.clientX,e.clientY); pvScharf(); } });
-  box.addEventListener("wheel",e=>{ if(e.ctrlKey&&PV){ e.preventDefault(); pvZoom(PV.z*(e.deltaY<0?1.1:1/1.1),e.clientX,e.clientY); pvScharf(); } },{passive:false});
-  box.addEventListener("scroll",e=>{ if(!PV) return; const el=e.target; if(el===box){ pvZahl(); const n=pvSeite(); if(PV_MODUS==="seiten"&&n!==letzte){ letzte=n; if(PV.z>1){ PV.z=1; pvScharf(); } } }
-    if(PV_MODUS==="seiten"&&el===box) return; if(!(el instanceof Element)) return;
-    const t=el.scrollTop, alt=el._lt||0; el._lt=t; if(PV.pinch||Date.now()<(PV.zoomBis||0)) return; const pv=$("#pv"); if(!pv) return;
-    if(t<24) pv.classList.remove("kompakt"); else if(t-alt>6) pv.classList.add("kompakt"); else if(alt-t>10) pv.classList.remove("kompakt"); },{passive:true,capture:true});
-}
-function pvScharf(){ if(!PV) return; clearTimeout(PV.zt); PV.zt=setTimeout(pvZeichnen,PV.pinch?400:120); }
-function pvZu(){ PV=null; $("#pv")?.remove(); document.body.classList.remove("pv-offen"); closeOverlays(); }
-function pvMenu(){ const x=PV&&PROT.find(y=>y.id===PV.id); if(!x) return;
-  const it=[PV_MODUS==="seiten"?["pvModus","Durchgehend scrollen","swapV"]:["pvModus","Seitenweise blättern","swapH"],"-",["pvMail","Per Mail senden","mail"],["pvSpeichern","Auf dem Gerät speichern","pdf"]].concat(PV_EXTRA(x));
-  $("#menu").innerHTML=it.map(m=>m==="-"?"<hr>":`<button class="mi ${m[3]||""}" role="menuitem" data-act="${m[0]}">${icon(m[2])}<span>${m[1]}</span></button>`).join("");
-  $("#menu").hidden=false; $("#scrim").hidden=false; }
-async function pvAktion(a){ const x=PV&&PROT.find(y=>y.id===PV.id); if(!x) return; const blob=PV.blob||await protBlob(x.id); if(!blob){ toast("PDF nicht gefunden"); return; }
-  const f=new File([blob],x.name+".pdf",{type:"application/pdf"});
-  if(a==="pvSpeichern"){ saveFile(blob,x.name+".pdf"); return; }
-  if(a==="pvTeilen"){ if(navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f],title:x.name}); }catch(e){} } else saveFile(blob,x.name+".pdf"); return; }
-  const an=mailAn(); try{ navigator.clipboard&&navigator.clipboard.writeText(an); }catch(e){}
-  const text=`Hallo,\n\nanbei das Prüfprotokoll ${x.titel}${x.auftragsnr?`, Auftrag ${x.auftragsnr}`:""} vom ${deDate(x.datum)}.\n\nViele Grüße\n${who().name||x.pruefer||""}${who().mail?"\n"+who().mail:""}`;
-  if(navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f],title:`Prüfprotokoll ${x.name}`,text}); toast(`Adresse ${an} liegt in der Zwischenablage`); }catch(e){} return; }
-  saveFile(blob,x.name+".pdf"); location.href=`mailto:${an}?subject=${encodeURIComponent("Prüfprotokoll "+x.name)}&body=${encodeURIComponent(text+"\n\n(PDF bitte anhängen)")}`; toast("PDF gespeichert – bitte in der Mail anhängen"); }
-addEventListener("keydown",e=>{ if(!PV||!$("#menu").hidden||!$("#dlg").hidden) return; if(e.key==="Escape") pvZu(); else if(e.key==="ArrowRight"||e.key==="PageDown"){ e.preventDefault(); pvGehe(pvSeite()+1,true); } else if(e.key==="ArrowLeft"||e.key==="PageUp"){ e.preventDefault(); pvGehe(pvSeite()-1,true); } });
-addEventListener("resize",()=>{ if(PV){ clearTimeout(PV.rt); PV.rt=setTimeout(pvNeuAufbau,200); } });
+/*PDFANSICHT*/
 (()=>{ let w=null; const app=()=>$("#app");
   const darf=e=>WIDE.matches&&typeof pfadTeile==="function"&&pfadTeile().length&&$("#dlg").hidden&&$("#menu").hidden&&!$("#pv")&&!e.target.closest("canvas,.sigfull,input,textarea,select");
   document.addEventListener("touchstart",e=>{ if(e.touches.length!==1) return; const t=e.touches[0]; if(t.clientX>22||!darf(e)) return; w={x:t.clientX,y:t.clientY,dx:0,an:false}; },{passive:true});
