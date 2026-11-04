@@ -27,6 +27,7 @@ function kdDateiName(d){ const n=String(d.name||"Datei"), m=/(\.[a-z0-9]{1,5})$/
   return bbFs((m?n.slice(0,-m[1].length):n).slice(0,70))+ext; }
 /* Wohin gehört was (Ordner unterhalb des Kundenordners) */
 function kdOrtProt(x){ const nm=(k,id)=>id&&DB[k]&&DB[k].get(id)?DB[k].get(id).name:"";
+  if(x.app==="legende") return [kdKat("plaene"),nm("standorte",x.standortId)].filter(Boolean).map(bbFs);   /* Verteilerlegende → Pläne und Schaltpläne */
   if(x.app==="baustelle") return [kdKat("berichte"),nm("baustellen",x.baustelleId)||String(x.titel||"").split(" · ").pop()||"Baustelle"].map(bbFs);
   return [kdKat("prot"),nm("standorte",x.standortId),nm("ladeparks",x.ladeparkId)].filter(Boolean).map(bbFs); }
 function kdDateiKunde(d){ if(!d) return ""; if(d.bezugKind==="kunden") return d.bezugId||"";
