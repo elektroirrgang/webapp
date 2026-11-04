@@ -381,8 +381,8 @@ async function legPdf(L){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",f
 async function legPdfMachen(){ const L=legAkt(); if(!L) return; if(!legE(L).length){ toast("Erst Stromkreise anlegen"); return; }
   toast("PDF wird erstellt …"); let blob; try{ blob=await legPdf(L); }catch(e){ console.error(e); toast("PDF konnte nicht erstellt werden – Internet für die PDF-Bibliothek nötig"); return; }
   /* wie das Prüfprotokoll: lokal ablegen und in den Kundenordner (Pläne und Schaltpläne) hochladen – „Öffnen“ zeigt die abgelegte Datei */
-  const k=kundeOf(L.kundeId), datum=ecHeute(), name=bbFs(`${datum} Verteilerlegende ${L.titel||""}${k?" "+k.name:""}`), vtId=L._v||L.id;
-  const x={id:uid(),app:"legende",vtId,kundeId:k?k.id:"",standortId:L.standortId||"",name,titel:[k&&k.name,L.titel].filter(Boolean).join(" · ")||L.titel||"Verteiler",datum,art:"Verteilerlegende",created:Date.now(),von:who(),size:blob.size};
+  const k=kundeOf(L.kundeId), datum=ecHeute(), name=bbFs(`${datum} Legende ${L.titel||""}`), vtId=L._v||L.id;
+  const x={id:uid(),app:"legende",vtId,vtName:L.titel||"Verteiler",kundeId:k?k.id:"",standortId:L.standortId||"",name,titel:[k&&k.name,L.titel].filter(Boolean).join(" · ")||L.titel||"Verteiler",datum,art:"Verteilerlegende",created:Date.now(),von:who(),size:blob.size};
   try{ const db=await new Promise((res,rej)=>{ const q=indexedDB.open("evse_protokolle"); q.onupgradeneeded=()=>{ const z=q.result; if(!z.objectStoreNames.contains("meta")) z.createObjectStore("meta",{keyPath:"id"}); if(!z.objectStoreNames.contains("blob")) z.createObjectStore("blob"); }; q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); });
     if(db.objectStoreNames.contains("meta")){ const tx=db.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").put(x); tx.objectStore("blob").put(blob,x.id); await new Promise(ok=>{ tx.oncomplete=ok; tx.onerror=ok; }); } db.close(); }catch(e){}
   if(typeof BB_PROT!=="undefined"){ /* gleicher Verteiler, gleicher Tag: die ältere Fassung ersetzen statt doppelt listen */

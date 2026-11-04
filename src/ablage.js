@@ -26,8 +26,9 @@ const kdFehler=x=>Object.assign(new Error(`Microsoft meldet Fehler ${x.status}`)
 function kdDateiName(d){ const n=String(d.name||"Datei"), m=/(\.[a-z0-9]{1,5})$/i.exec(n), ext=m?m[1].toLowerCase():(/^image\//.test(d.typ||"")?".jpg":"");
   return bbFs((m?n.slice(0,-m[1].length):n).slice(0,70))+ext; }
 /* Wohin gehört was (Ordner unterhalb des Kundenordners) */
+const kdVtName=x=>{ if(DB.gebaeude&&x.vtId) for(const g of DB.gebaeude.values()){ if(g.deleted) continue; const v=(g.verteiler||[]).find(y=>y.id===x.vtId); if(v) return v.name||"Verteiler"; } return x.vtName||"Verteiler"; };
 function kdOrtProt(x){ const nm=(k,id)=>id&&DB[k]&&DB[k].get(id)?DB[k].get(id).name:"";
-  if(x.app==="legende") return [kdKat("plaene"),nm("standorte",x.standortId)].filter(Boolean).map(bbFs);   /* Verteilerlegende → Pläne und Schaltpläne */
+  if(x.app==="legende") return [kdKat("plaene"),nm("standorte",x.standortId),kdVtName(x)].filter(Boolean).map(bbFs);   /* Verteilerlegende → Pläne und Schaltpläne › <Verteiler> (Entscheidung Max 04.11.2026: je Verteiler ein Ordner) */
   if(x.app==="baustelle") return [kdKat("berichte"),nm("baustellen",x.baustelleId)||String(x.titel||"").split(" · ").pop()||"Baustelle"].map(bbFs);
   return [kdKat("prot"),nm("standorte",x.standortId),nm("ladeparks",x.ladeparkId)].filter(Boolean).map(bbFs); }
 function kdDateiKunde(d){ if(!d) return ""; if(d.bezugKind==="kunden") return d.bezugId||"";
@@ -131,6 +132,10 @@ async function kdProtUmziehen(r){
   if(!it) return;
   if(q&&q.id!==it.id) await kdWeg(q);
   Object.assign(r,{umzugVon:alt,bib:"kd",pfad:[KD_WURZEL,kdOrdName(k),...rest].join("/"),item:it.id}); saveRec("protokolle",r); }
+async function kdLegUmhaengen(r,soll){ const it=await kdItem(r.kundeId,kdRest(r.pfad),r.item); if(!it){ KD_FEHLT.add("p"+r.id); return; }
+  const z=await kdUnter(r.kundeId,soll.slice(0,-1)); if(!z) return;
+  const x=await g(`/drives/${z.drive}/items/${it.id}?@microsoft.graph.conflictBehavior=replace`,{method:"PATCH",headers:KD_JSON,body:JSON.stringify({parentReference:{id:z.item},name:soll[soll.length-1]})});
+  if(!x.ok) throw kdFehler(x); const k=bbKunde(r.kundeId); Object.assign(r,{pfad:[KD_WURZEL,kdOrdName(k),...soll].join("/"),item:(await x.json()).id}); saveRec("protokolle",r); }
 async function kdDateiUmziehen(d,kid,soll){
   const name=kdDateiName(d), z=await kdUnter(kid,soll), drive=kdDrive(); if(!z) return;
   const haengen=async id=>{ const x=await g(`/drives/${drive}/items/${id}?@microsoft.graph.conflictBehavior=rename`,{method:"PATCH",headers:KD_JSON,body:JSON.stringify({parentReference:{id:z.item},name})});
@@ -149,6 +154,8 @@ async function kdPflege(){
     for(const k of [...DB.kunden.values()]){ if(k.deleted||k.demo||KD_FEHLT.has("k"+k.id)) continue; const r=kdoRec(k.id); if(r&&r.item&&r.soll===kdOrdName(k)) continue;
       if(!await schritt("k"+k.id,()=>kdOrdner(k.id))) return; }
     for(const r of [...DB.protokolle.values()]){ if(r.deleted||r.demo||KD_FEHLT.has("p"+r.id)||wartet("protQueue",r.id)||!bbKunde(r.kundeId)) continue;
+      if(r.bib==="kd"&&r.app==="legende"&&DB.gebaeude){   /* nur Apps, die die Verteiler kennen – sonst würde ein alter Name zurückverschieben */
+        const soll=[...kdOrtProt(r),String(r.pfad||"").split("/").pop()]; if(kdRest(r.pfad).join("/")!==soll.join("/")){ if(!await schritt("p"+r.id,()=>kdLegUmhaengen(r,soll))) return; continue; } }
       if(r.bib==="kd"){ if(r.item) continue;
         if(!await schritt("p"+r.id,async()=>{ const it=await kdItem(r.kundeId,kdRest(r.pfad)); if(it){ r.item=it.id; saveRec("protokolle",r); } else KD_FEHLT.add("p"+r.id); })) return; continue; }
       if(!await schritt("p"+r.id,()=>kdProtUmziehen(r))) return; }

@@ -24,7 +24,6 @@
 - Mehrere Telefonnummern auch bei Ansprechpartnern.
 - TAB NS der GWN (Gemeindewerke Nümbrecht) besorgen → genaue Pflichtpunkte der Bestückung eintragen; prüfen, ob ganz 51588 GWN-Netz ist.
 - „Aufbau ändern“: Hersteller-Modell (z. B. ZB53S + ZK5EH24 + ZU59VT7APZ2) auch nachträglich wählbar machen, damit es in der Materialliste steht.
-- Ordnersystem für Verteiler-Dokumente im Kundenordner festlegen (04.11.2026: Legende liegt vorerst direkt unter „Pläne und Schaltpläne“). Ideen: Unterordner „Verteilerlegenden“ – oder je Verteiler ein Ordner (z. B. „Pläne und Schaltpläne/HV Keller/“) mit Legende, später Schaltplan, Fotos, Datenblätter; passt auch zur öffentlichen QR-Seite.
 - Bibliothek: eigene Kategorie „Pläne“ neben Prüfprotokollen/Berichten (Legende erscheint im Filter noch unter „Prüfprotokolle“).
 
 ## Bearbeitungssperre bei gleichzeitigem Arbeiten (erst nach funktionierender Microsoft-Anbindung)
