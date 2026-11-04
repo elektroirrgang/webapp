@@ -272,7 +272,7 @@ ol.st b{color:var(--on-surface)}
   function vergleich(){ var V=document.getElementById("vgl"), r=ERG.router, m=ERG.raum; if(!r||!m){ V.hidden=true; return; }
     var q=r.down>0?m.down/r.down:1, pz=Math.round(q*100), mx=Math.max(r.down,m.down)||1, k, t;
     if(q>=0.75){ k="gut"; t="<b>Das WLAN ist hier vermutlich nicht das Problem.</b>"+(q>=0.9?"Im Raum kommt genauso viel an wie am Router.":"Im Raum kommt fast so viel an wie am Router ("+pz+" %).")+(r.down<16?" Am Router selbst sind es aber nur "+f1(r.down)+" Mbit/s – das spricht für ein Problem am Anschluss oder einen kleinen Tarif. Prüfen Sie zuerst die Störungsseite Ihres Anbieters.":" Hakt es trotzdem, rufen Sie uns gern an."); }
-    else if(q<0.4){ k="schwach"; t="<b>Das spricht für schwaches WLAN in diesem Raum.</b>Hier kommt nur "+pz+" % von dem an, was am Router ankommt. Ein neuer Router hilft dabei meist nicht – besser ist ein zusätzlicher Access Point in der Nähe. Rufen Sie uns gern an."; }
+    else if(q<0.4){ k="schwach"; t="<b>Das spricht für schwaches WLAN in diesem Raum.</b>Hier kommt nur "+pz+" % von dem an, was am Router ankommt. Das lässt sich oft verbessern, ohne gleich etwas Neues zu kaufen. Rufen Sie uns gern an, dann schauen wir gemeinsam nach der Ursache."; }
     else { k="mittel"; t="<b>Im Raum etwas langsamer als am Router ("+pz+" %).</b>Durch Wände und Abstand ist das normal. Hakt es trotzdem, melden Sie sich bei uns."; }
     if(m.ping>100&&r.ping<50) t+=" Die Reaktionszeit im Raum ist hoch ("+Math.round(m.ping)+" ms) – auch das ist typisch für schwaches WLAN.";
     var zl=function(n,e){ return '<div class="vgl-z"><span>'+n+'</span><div class="bal"><i style="width:'+Math.max(3,Math.round(e.down/mx*100))+'%"></i></div><b>'+f1(e.down)+'</b></div>'; };
