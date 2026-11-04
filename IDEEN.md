@@ -38,6 +38,11 @@
 - QR-Pflicht (1.7.77): Prüfung abschließen und Legende erstellen nur mit QR-Aufkleber, kein Überspringen; QR auf der Legende; Liste „ohne QR-Aufkleber“ in Installation/Netzwerk. Offen: Bögen ja/nein (Max klärt mit Chef), QR auf Netzwerk-Belegungsplan.
 - KNX in Gebäudetechnik einbauen (Max 04.11.2026) – kommt nach dem Scanner, noch nicht anfangen.
 
+## Kurz-Einführungen beim ersten Mal (Wunsch Max, 04.11.2026) – noch nicht gebaut
+- Allgemein für alle Apps: neue oder seltene Funktionen beim ersten Benutzen kurz vorstellen (2–4 Bilder/Schritte, „Verstanden“), danach nie wieder von selbst – aber jederzeit wieder aufrufbar (z. B. Einstellungen › Hilfe).
+- Merken pro Person (nicht pro Gerät), damit es auf Handy und iPad nicht doppelt kommt.
+- Erste Einführung: QR-Aufkleber drucken mit dem Brother (einmal verbinden, Teilen-Menü, Pro Label Tool). Dafür braucht es Bildschirmfotos aus der Pro-Label-App (Max).
+
 ## QR-Aufkleber drucken – mit dem Chef besprechen (04.11.2026)
 Problem: Den Kollegen ist der Druckweg zu umständlich (in der App „Drucken“ → Teilen-Menü → Pro Label Tool → Drucken). Direkt aus der Web-App per Bluetooth drucken geht nicht: Browser auf iPhone/iPad dürfen kein Bluetooth, Chrome auf Android nur Bluetooth LE (PT-E560BT funkt vermutlich klassisch – nicht geprüft).
 Zu entscheiden:
