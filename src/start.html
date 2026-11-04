@@ -1390,7 +1390,7 @@ function sf(path,label,val,opts,o={}){
 const datalist=(id,vals)=>`<datalist id="${id}">${[...new Set(vals.map(v=>String(v||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"de",{numeric:true})).map(v=>`<option value="${esc(v)}">`).join("")}</datalist>`;
 const seg=(act,cur,opts,cls="")=>`<div class="seg ${cls}" role="group">${opts.map(([v,t])=>`<button type="button" data-act="${act}" data-v="${v}" aria-pressed="${String(cur)===String(v)}">${icon("check")}${esc(t)}</button>`).join("")}</div>`;
 const listOf=items=>items.length?`<div class="list">${items.join("")}</div>`:"";
-const searchBar=(ph,f)=>`<div class="search${f?" mit-f":""}">${icon("search")}<input id="q" type="search" placeholder="${esc(ph)}" value="${esc(query)}" autocomplete="off" aria-label="Suchen">${f?`<button type="button" class="such-f${f.aktiv?" an":""}" data-act="${f.act}" data-n="${f.n||""}" aria-label="Filtern und sortieren">${icon("filt")}</button>`:""}</div>`;
+const searchBar=(ph,f)=>{ if(typeof suQView==="function") suQView(); return `<div class="search${f?" mit-f":""}">${icon("search")}<input id="q" type="search" placeholder="${esc(ph)}" value="${esc(query)}" autocomplete="off" aria-label="Suchen">${f?`<button type="button" class="such-f${f.aktiv?" an":""}" data-act="${f.act}" data-n="${f.n||""}" aria-label="Filtern und sortieren">${icon("filt")}</button>`:""}</div>` };
 const FREEMAIL=/^(gmail|googlemail|web|gmx|t-online|outlook|hotmail|live|icloud|me|mac|yahoo|aol|freenet|arcor|posteo|mailbox|online|vodafone|1und1|ionos)\./i;
 const webHref=w=>!w?"":/^https?:\/\//i.test(w)?w:"https://"+w;
 const webText=w=>String(w||"").replace(/^https?:\/\//i,"").replace(/\/$/,"");
@@ -1769,7 +1769,7 @@ function render(){ profilAnwenden(); setTimeout(()=>{ if(typeof kalPaneKlasse===
   else if(nav.v==="mldg"){ title="Meldungen"; body=mlUebersicht(); }
   else if(nav.v==="anl"){ title="Anlagen"; sub=anOrtInfo(nav.id).titel; body=anSeite(nav.id); fab=(META.anTab||"masch")==="masch"?["anMNeu","Maschine","add"]:null; }
   else if(nav.v==="masch"){ const m=DB.anlagen.get(nav.id); if(!m||m.deleted){ nav={v:"kunden"}; return render(); } title=anMName(m); sub=anOrtInfo(m.ortId).titel; body=anMSeite(m); }
-  else if(nav.v==="materialanf"){ title="Materialanforderungen"; body=`<div class="narrow">${anfListeView()}</div>`; fab=["afNeu","Anfordern","add"]; }
+  else if(nav.v==="materialanf"){ title="Materialanforderungen"; body=`<div class="narrow">${searchBar("Teil, Baustelle, Person")}<div id="res">${anfListeView()}</div></div>`; fab=["afNeu","Anfordern","add"]; }
   else if(nav.v==="mehr"){ title="Einstellungen"; body=mehrView(); }
   else if(nav.v==="ma"){ if(!ME.admin){ nav={v:"mehr"}; return render(); } const m=nav.id?teamAlle().find(x=>x.mail===nav.id):null; title=m?m.name:"Mitarbeiter hinzufügen"; body=maView(m); }
   else if(KONTO_SEITEN[nav.v]){ title=KONTO_SEITEN[nav.v][0]; body=KONTO_SEITEN[nav.v][1](); }
@@ -2155,10 +2155,17 @@ function geraeteView(){
   const z=g=>{ const k=gerKal(g), wer=g.bei?(team().find(m=>m.mail===g.bei)||{name:g.bei}).name:"";
     return `<div class="li" role="button" tabindex="0" data-act="gerEdit" data-id="${esc(g.id)}">${gerAv(g)}<span class="lt"><span class="h">${esc(gerLabel(g))}</span>
       <span class="s">${esc([g.sn?`SN ${g.sn}`:"Seriennummer fehlt",wer&&`bei ${wer}`,g.notiz].filter(Boolean).join(" · "))}</span>${k?`<span class="st">${pill(k.s==="ok"?"ok":k.s==="bald"?"wip":"bad",k.t)}</span>`:""}</span></div>`; };
-  return `<div class="narrow">${GER_GRUPPEN.map(([v,t])=>{ const g=L.filter(x=>gerGruppe(x)===v); return g.length?`<div class="sec-lbl">${t} · ${g.length}</div>${listOf(g.map(z))}`:""; }).join("")}
-    ${A.length?`<div class="sec-lbl">Ausgemustert · ${A.length}</div>${listOf(A.map(z))}`:""}
-</div>`;
+  return `<div class="narrow">${searchBar("Gerät, SN, Person")}<div id="res">${gerListe()}</div></div>`;
 }
+function gerListe(){ const q=String(query||"").trim(), wer=g=>g.bei?(team().find(m=>m.mail===g.bei)||{name:g.bei}).name:"", pass=g=>!q||suPasst(q,gerLabel(g),gerName(g),g.sn,g.notiz,wer(g));
+  const L=live("geraete").filter(g=>!g.aus&&pass(g)).sort((a,b)=>gerName(a).localeCompare(gerName(b),"de")), A=live("geraete").filter(g=>g.aus&&pass(g));
+  if(q&&!L.length&&!A.length) return `<p class="meta">Nichts gefunden für „${esc(q)}“.</p>`;
+  const z=g=>{ const k=gerKal(g), w=wer(g);
+    return `<div class="li" role="button" tabindex="0" data-act="gerEdit" data-id="${esc(g.id)}">${gerAv(g)}<span class="lt"><span class="h">${esc(gerLabel(g))}</span>
+      <span class="s">${esc([g.sn?`SN ${g.sn}`:"Seriennummer fehlt",w&&`bei ${w}`,g.notiz].filter(Boolean).join(" · "))}</span>${k?`<span class="st">${pill(k.s==="ok"?"ok":k.s==="bald"?"wip":"bad",k.t)}</span>`:""}</span></div>`; };
+  return `${GER_GRUPPEN.map(([v,t])=>{ const g=L.filter(x=>gerGruppe(x)===v); return g.length?`<div class="sec-lbl">${t} · ${g.length}</div>${listOf(g.map(z))}`:""; }).join("")}
+    ${A.length?`<div class="sec-lbl">Ausgemustert · ${A.length}</div>${listOf(A.map(z))}`:""}`; }
+SU_LISTE.geraete=gerListe;
 let gerForm=null;
 function gerFotoHtml(r){ const x=Object.assign({},r,{bild:gerForm&&gerForm.bild}); return `${gerAv(x)}<div class="ger-foto-k"><button type="button" class="btn-tonal" data-act="gerFoto">${icon("cam")}${x.bild?"Anderes Foto":"Eigenes Foto"}</button>${x.bild?`<button type="button" class="btn-text" data-act="gerFotoWeg">Foto entfernen</button>`:""}</div>`; }
 async function gerFotoLaden(f){
@@ -2329,7 +2336,7 @@ function zurueck(){
   go({v:"start"});
 }
 
-document.addEventListener("input",ev=>{ if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():nav.v==="auftraege"?vgListe():kundenListe(); } });
+document.addEventListener("input",ev=>{ if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=SU_LISTE[nav.v]?SU_LISTE[nav.v]():nav.v==="bibliothek"?bibListe():nav.v==="auftraege"?vgListe():kundenListe(); } });
 document.addEventListener("change",ev=>{
   if(ev.target&&ev.target.id==="gerDatei"){ if(ev.target.files[0]&&gerForm) gerFotoLaden(ev.target.files[0]); return; }
   const el=ev.target;

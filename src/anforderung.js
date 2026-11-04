@@ -43,9 +43,11 @@ function anfZeile(a,knapp){
     ${knapp?"":a.notiz?`<span class="s">${esc(a.notiz)}</span>`:""}<span class="st">${anfPill(a)}<span class="af-m">${esc([wer,t&&wann(t)].filter(Boolean).join(" · "))}</span></span></span>${knopf}</div>`;
 }
 function anfListeView(){
-  const A=anfAlle().sort((x,y)=>(y.statusAm||y.created||0)-(x.statusAm||x.created||0)), zwei=Date.now()-14*864e5;
+  const q=typeof nav!=="undefined"&&nav.v==="materialanf"&&typeof query!=="undefined"?String(query).trim():"";
+  const A=anfAlle().filter(a=>!q||suPasst(q,anfPosText(a),anfOrt(a),a.notiz,(a.von||a.createdBy||{}).name)).sort((x,y)=>(y.statusAm||y.created||0)-(x.statusAm||x.created||0)), zwei=Date.now()-14*864e5;
   const g=st=>A.filter(a=>a.status===st&&(st!=="da"||(a.statusAm||0)>=zwei));
   const teil=(st,t)=>{ const L=g(st); return L.length?`<div class="sec-lbl">${t} · ${L.length}</div>${listOf(L.map(a=>anfZeile(a)))}`:""; };
+  if(q&&!A.length) return `<p class="meta">Nichts gefunden für „${esc(q)}“.</p>`;
   return `<div class="af-liste">${A.length?"":`<p class="meta">Keine Anforderungen. Material aus den Übergaben landet automatisch hier, Allgemeines (z. B. fürs Lager) über „Anfordern“.</p>`}
     ${teil("angefordert","Angefordert")}${teil("bestellt","Bestellt")}${teil("da","Da (letzte 14 Tage)")}</div>`;
 }
@@ -382,3 +384,5 @@ function simZeile(){ if(!DB.vorgaenge) return ""; const S=simLesen();
       ?esc(`Schritt ${Math.min(S.schritt+1,8)} von 8: ${SIM_TXT[Math.min(S.schritt,8)]} – antippen beendet und entfernt die Beispiel-Aufträge`)
       :"Anfrage, Bestätigung, Zuweisung, Ablehnung, Termin, ausgeführt und Notiz – mit echten Benachrichtigungen, nur auf diesem Gerät"}</span></span>${icon("chev")}</div>`; }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="simUm"]'); if(!b) return; e.stopPropagation(); e.preventDefault(); if(simLesen()) simEnde(); else simStart(); },true);
+
+(window.SU_LISTE=window.SU_LISTE||{}).materialanf=anfListeView;

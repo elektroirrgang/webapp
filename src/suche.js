@@ -14,10 +14,21 @@ const suWorte=q=>suNorm(q).split(/[\s,;]+/).map(w=>w.trim()).filter(Boolean).map
 function suEinFehler(a,b){ if(a===b) return true; const la=a.length, lb=b.length; if(Math.abs(la-lb)>1) return false; let i=0,j=0,f=0;
   while(i<la&&j<lb){ if(a[i]===b[j]){ i++; j++; continue; } if(++f>1) return false; if(la===lb&&a[i]===b[j+1]&&a[i+1]===b[j]){ i+=2; j+=2; continue; } if(la>lb) i++; else if(lb>la) j++; else{ i++; j++; } }
   return f+(la-i)+(lb-j)<=1; }
+/* wie es klingt: „Elektrik“ findet „Electric“, „Filips“ findet „Philips“, „Maier“ findet „Meyer“ (Spracheingabe schreibt nach Gehör) */
+const suLaut=s=>s.replace(/ph/g,"f").replace(/th/g,"t").replace(/ck/g,"k").replace(/c(?=[eiy])/g,"z").replace(/c/g,"k").replace(/qu/g,"kw").replace(/y/g,"i").replace(/ey|ay|ai/g,"ei").replace(/dt/g,"t").replace(/v(?=[aeiou])/g,"w").replace(/([a-z])\1+/g,"$1");
 function suPasst(q,...felder){ const W=suWorte(q); if(!W.length) return true;
   const t=suNorm(felder.flat(Infinity).filter(x=>x!=null&&x!=="").join(" ")), k=t.replace(/[^a-z0-9]/g,""), tok=t.split(/[^a-z0-9]+/).filter(Boolean);
+  let tl=null, kl, tokl;
   return W.every(w=>{ const wk=w.replace(/[^a-z0-9]/g,""); if(!wk) return true; if(t.includes(w)||k.includes(wk)) return true;
-    if(wk.length<5) return false; return tok.some(x=>[wk.length-1,wk.length,wk.length+1].some(L=>L>0&&L<=x.length&&suEinFehler(wk,x.slice(0,L)))); }); }
+    if(wk.length<3) return false;
+    if(tl===null){ tl=suLaut(t); kl=tl.replace(/[^a-z0-9]/g,""); tokl=tl.split(/[^a-z0-9]+/).filter(Boolean); }
+    const wl=suLaut(wk); if(kl.includes(wl)) return true;
+    if(wl.length<5) return false; return tokl.some(x=>[wl.length-1,wl.length,wl.length+1].some(L=>L>0&&L<=x.length&&suEinFehler(wl,x.slice(0,L)))); }); }
+/* Listen, die beim Tippen neu gefiltert werden (Ansicht → Funktion, die nur den Inhalt unter der Suchleiste liefert) */
+const SU_LISTE=window.SU_LISTE=window.SU_LISTE||{};   /* über window, weil manche Module vor dieser Datei eingebunden sind */
+/* Suchbegriff gehört zur Liste: in eine andere Liste wechseln leert ihn, zurück aus der Detailansicht behält ihn */
+let SU_QV=null;
+function suQView(){ if(typeof nav==="undefined") return; if(SU_QV!==nav.v){ SU_QV=nav.v; try{ query=""; }catch(e){} } }
 const SU_SR=()=>window.SpeechRecognition||window.webkitSpeechRecognition;
 if(typeof IC!=="undefined"&&!IC.mic) IC.mic="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z";
 let SU_LAEUFT=null;   /* {id, r} */

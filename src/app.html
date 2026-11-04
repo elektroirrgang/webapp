@@ -1886,7 +1886,7 @@ function locItem(kind,r){
     <span class="lt"><span class="h">${esc(r.name)}</span><span class="s">${esc([sub,last&&`zuletzt ${deDate(last.p.datum)}`].filter(Boolean).join(" · ")||"noch keine Prüfung")}</span>${last?`<span class="st">${pill(protoState(last))}</span>`:""}</span>
     <button class="pin" data-act="pinLoc" data-kind="${kind}" data-id="${esc(r.id)}" aria-pressed="${pins}" aria-label="${pins?"Nicht mehr anpinnen":"Anpinnen"}">${icon(pins?"pin":"pinOff")}</button></div></div>`;
 }
-const searchBar=(ph,f)=>`<div class="search${f?" mit-f":""}">${icon("search")}<input id="q" type="search" placeholder="${esc(ph)}" value="${esc(query)}" autocomplete="off" aria-label="Suchen">${f?`<button type="button" class="such-f${f.aktiv?" an":""}" data-act="${f.act}" data-n="${f.n||""}" aria-label="Filtern und sortieren">${icon("filt")}</button>`:""}</div>`;
+const searchBar=(ph,f)=>{ if(typeof suQView==="function") suQView(); return `<div class="search${f?" mit-f":""}">${icon("search")}<input id="q" type="search" placeholder="${esc(ph)}" value="${esc(query)}" autocomplete="off" aria-label="Suchen">${f?`<button type="button" class="such-f${f.aktiv?" an":""}" data-act="${f.act}" data-n="${f.n||""}" aria-label="Filtern und sortieren">${icon("filt")}</button>`:""}</div>` };
 const listOf=items=>items.length?`<div class="list">${items.join("")}</div>`:"";
 const isDemo=r=>!!r.demo;
 
@@ -2024,12 +2024,20 @@ function faelligView(){
     const kd=!l&&!s&&kundeOf(p.kundeId);
     return `<div class="li" role="button" tabindex="0" data-act="nav" data-v="${l?"ladepark":s?"standort":"kunde"}" data-id="${esc(l?l.id:s?s.id:p.kundeId)}"><span class="av">${icon(l?"ev":"ort")}</span>
       <span class="lt"><span class="h">${esc((l||s||kd||{}).name||pfadText(p))}</span><span class="s">${esc([(kundeOf(p.kundeId)||{}).name,l&&s&&s.name].filter(Boolean).join(" › "))}</span><span class="s">Fällig ${esc(deDate(p.a.naechste))} · letzte Prüfung ${esc(deDate(p.p.datum))}</span><span class="st">${pill(kl,txt)}</span></span>${icon("chev")}</div>`; };
+  return `<div class="narrow">${searchBar("Kunde, Ort, Ladepark")}<div id="res">${faelligInhalt()}</div>
+    <p class="hint">Antippen öffnet den Ort – dort mit „Neue Prüfung“ die Wiederholungsprüfung anlegen.</p></div>`; }
+function faelligInhalt(){ const t=today(), bald=new Date(Date.now()+90*864e5).toISOString().slice(0,10), q=query.trim();
+  const L=faelligListe().filter(p=>!q||suPasst(q,pfadText(p),(kundeOf(p.kundeId)||{}).name,p.p.auftragsnr,deDate(p.a.naechste)));
+  if(!L.length) return `<p class="meta">Nichts gefunden für „${esc(q)}“.</p>`;
+  const item=(p,kl,txt)=>{ const {s,l}=pfad(p);
+    const kd=!l&&!s&&kundeOf(p.kundeId);
+    return `<div class="li" role="button" tabindex="0" data-act="nav" data-v="${l?"ladepark":s?"standort":"kunde"}" data-id="${esc(l?l.id:s?s.id:p.kundeId)}"><span class="av">${icon(l?"ev":"ort")}</span>
+      <span class="lt"><span class="h">${esc((l||s||kd||{}).name||pfadText(p))}</span><span class="s">${esc([(kundeOf(p.kundeId)||{}).name,l&&s&&s.name].filter(Boolean).join(" › "))}</span><span class="s">Fällig ${esc(deDate(p.a.naechste))} · letzte Prüfung ${esc(deDate(p.p.datum))}</span><span class="st">${pill(kl,txt)}</span></span>${icon("chev")}</div>`; };
   const g1=L.filter(p=>p.a.naechste<t), g2=L.filter(p=>p.a.naechste>=t&&p.a.naechste<=bald), g3=L.filter(p=>p.a.naechste>bald);
-  return `<div class="narrow">${g1.length?`<div class="sec-lbl">Überfällig</div>${listOf(g1.map(p=>item(p,"bad","überfällig")))}`:""}
+  return `${g1.length?`<div class="sec-lbl">Überfällig</div>${listOf(g1.map(p=>item(p,"bad","überfällig")))}`:""}
     ${g2.length?`<div class="sec-lbl">In den nächsten 3 Monaten</div>${listOf(g2.map(p=>item(p,"wip","bald fällig")))}`:""}
-    ${g3.length?`<div class="sec-lbl">Später</div>${listOf(g3.map(p=>item(p,"open","geplant")))}`:""}
-    <p class="hint">Antippen öffnet den Ort – dort mit „Neue Prüfung“ die Wiederholungsprüfung anlegen.</p></div>`;
-}
+    ${g3.length?`<div class="sec-lbl">Später</div>${listOf(g3.map(p=>item(p,"open","geplant")))}`:""}`; }
+SU_LISTE.faellig=faelligInhalt;
 function mehrView(){
   const row=(act,ic,t,sub)=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(ic)}</span><span class="lt"><span class="h">${t}</span>${sub?`<span class="s">${sub}</span>`:""}</span>${icon("chev")}</div>`;
   const link=(href,ic,t,s)=>`<a class="li" href="${href}" style="text-decoration:none;color:inherit"><span class="av">${icon(ic)}</span><span class="lt"><span class="h">${t}</span><span class="s">${s}</span></span>${icon("chev")}</a>`;
@@ -2851,7 +2859,7 @@ function loeschePruefung(p){
 const getPath=p=>p.split(".").reduce((o,k)=>o==null?o:o[k],cur);
 function setPath(p,v){ const ks=p.split("."); let o=cur; for(let i=0;i<ks.length-1;i++) o=o[ks[i]]??(o[ks[i]]={}); o[ks[ks.length-1]]=v; }
 document.addEventListener("input",ev=>{ if(ev.target.id==="kpQ"){ const l=$("#kpL"), w=$("#katWahl"); if(l) l.innerHTML=kpListe(ev.target.value,w&&w.value); return; }
-  if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():nav.v==="katalog"?katalogListe():nav.v==="kunden"?kundenListe():nav.v==="pruefungen"?pruefungenListe():(query?suche(query):startListen()); return; }
+  if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=SU_LISTE[nav.v]?SU_LISTE[nav.v]():nav.v==="bibliothek"?bibListe():nav.v==="katalog"?katalogListe():nav.v==="kunden"?kundenListe():nav.v==="pruefungen"?pruefungenListe():(query?suche(query):startListen()); return; }
   const el=ev.target.closest("[data-bind]"); if(!el||!cur) return;
   const path=el.dataset.bind, alt=path==="p.adapter"?cur.p.adapter:null; setPath(path,el.value); scheduleSave();
   if(path==="p.art"){ const dg=cur.p.normen.includes("DGUV V3"); cur.p.normen=[el.value==="Wiederholungsprüfung"?"DIN VDE 0105-100":"DIN VDE 0100-600","DIN VDE 0100-722",...(dg?["DGUV V3"]:[])]; document.querySelectorAll('[data-act="norm"]').forEach(x=>x.setAttribute("aria-pressed",cur.p.normen.includes(x.dataset.n))); }

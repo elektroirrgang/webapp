@@ -1784,7 +1784,7 @@ function sf(path,label,val,opts,o={}){
 const datalist=(id,vals)=>`<datalist id="${id}">${[...new Set(vals.map(v=>String(v||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"de",{numeric:true})).map(v=>`<option value="${esc(v)}">`).join("")}</datalist>`;
 const seg=(act,cur,opts,cls="")=>`<div class="seg ${cls}" role="group">${opts.map(([v,t])=>`<button type="button" data-act="${act}" data-v="${v}" aria-pressed="${String(cur)===String(v)}">${icon("check")}${esc(t)}</button>`).join("")}</div>`;
 const listOf=items=>items.length?`<div class="list">${items.join("")}</div>`:"";
-const searchBar=(ph,f)=>`<div class="search${f?" mit-f":""}">${icon("search")}<input id="q" type="search" placeholder="${esc(ph)}" value="${esc(query)}" autocomplete="off" aria-label="Suchen">${f?`<button type="button" class="such-f${f.aktiv?" an":""}" data-act="${f.act}" data-n="${f.n||""}" aria-label="Filtern und sortieren">${icon("filt")}</button>`:""}</div>`;
+const searchBar=(ph,f)=>{ if(typeof suQView==="function") suQView(); return `<div class="search${f?" mit-f":""}">${icon("search")}<input id="q" type="search" placeholder="${esc(ph)}" value="${esc(query)}" autocomplete="off" aria-label="Suchen">${f?`<button type="button" class="such-f${f.aktiv?" an":""}" data-act="${f.act}" data-n="${f.n||""}" aria-label="Filtern und sortieren">${icon("filt")}</button>`:""}</div>` };
 const FREEMAIL=/^(gmail|googlemail|web|gmx|t-online|outlook|hotmail|live|icloud|me|mac|yahoo|aol|freenet|arcor|posteo|mailbox|online|vodafone|1und1|ionos)\./i;
 const webHref=w=>!w?"":/^https?:\/\//i.test(w)?w:"https://"+w;
 const webText=w=>String(w||"").replace(/^https?:\/\//i,"").replace(/\/$/,"");
@@ -2864,7 +2864,7 @@ async function importBackup(el){
 }
 
 document.addEventListener("input",ev=>{
-  if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=nav.v==="bibliothek"?bibListe():nav.v==="auftraege"?vgListe():nav.v==="kunden"?kundenListe():nav.v==="notizen"?notizenListe():nav.v==="material"?materialListe():baustellenListe(); return; }
+  if(ev.target.id==="q"){ query=ev.target.value; const r=$("#res"); if(r) r.innerHTML=SU_LISTE[nav.v]?SU_LISTE[nav.v]():nav.v==="bibliothek"?bibListe():nav.v==="auftraege"?vgListe():nav.v==="kunden"?kundenListe():nav.v==="notizen"?notizenListe():nav.v==="material"?materialListe():baustellenListe(); return; }
   if(nav.v==="notiz"&&notizEingabe(ev.target)) return;
   if(nav.v==="eintrag"&&entw&&ev.target.closest&&ev.target.closest("#app")&&ev.target.id!=="matNeu") eAuto();
 });
