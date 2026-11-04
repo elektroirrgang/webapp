@@ -1797,7 +1797,7 @@ function render(){ profilAnwenden();
   document.body.classList.toggle("is-login",login);
   document.body.classList.toggle("has-nav",!login);
   document.body.classList.toggle("ro",E&&!canEdit(cur));
-  $("#backBtn").hidden=(top&&!(nav.v==="katalog"&&!WIDE.matches))||login; $("#navbar").hidden=login; $("#tabs").hidden=nav.v!=="saeule"||WIDE.matches; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]); $("#menuBtn").hidden=top||nav.v==="mehr"||!!MEHR_SUB[nav.v]||login||nav.v==="geraet";
+  $("#backBtn").hidden=(top&&!(nav.v==="katalog"&&!WIDE.matches))||login; $("#navbar").hidden=login; $("#tabs").hidden=nav.v!=="saeule"||WIDE.matches; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]); $("#menuBtn").hidden=login||!(EDITOR.includes(nav.v)||nav.v==="katmodell");   /* ⋮ nur, wo man arbeitet (Prüfung, Katalogmodell) – sonst Kopf wie in allen Apps: Glocke/Profil */
   const wide=WIDE.matches, katV=nav.v==="katalog"||nav.v==="katmodell";
   const dests=E?DEST:TOPDEST.filter(d=>d[0]!=="katalog"||wide), active=E?(nav.v==="saeule"?"saeulen":nav.v):katV?(wide?"katalog":"mehr"):(top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":"kunden");
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
