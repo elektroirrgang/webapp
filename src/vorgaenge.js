@@ -129,8 +129,8 @@ function vgMein(v){ const m=String(ME.mail||"").toLowerCase(), n=String(ME.name|
   return vgZustIch(v)||Object.values(v.s||{}).some(x=>x&&x.wer&&((m&&String(x.wer.mail||"").toLowerCase()===m)||(n&&x.wer.name===n)))||(v.createdBy&&String(v.createdBy.mail||"").toLowerCase()===m)
     ||mitIch(v.s&&v.s.termin); }
 /* Suche + Filter (Person, dringend) + Sortierung – gilt für Tafel und Liste */
-function vgGefiltert(L){ const q=String(query||"").trim().toLowerCase(), H=x=>String(x||"").toLowerCase().includes(q);
-  if(q) L=L.filter(v=>H(vgKunde(v))||H(v.anliegen)||H(v.tel)||H(v.s&&v.s.auftrag&&v.s.auftrag.nr)||H(v.s&&v.s.termin&&v.s.termin.mit)||vgZustNamen(v).some(H));
+function vgGefiltert(L){ const q=String(query||"").trim().toLowerCase(), H=x=>suPasst(q,x);
+  if(q) L=L.filter(v=>suPasst(q,vgKunde(v),v.anliegen,v.tel,v.s&&v.s.auftrag&&v.s.auftrag.nr,v.s&&v.s.termin&&v.s.termin.mit,vgZustNamen(v)));
   if(fW("vg","dr")==="ja") L=L.filter(v=>v.dringend);
   const w=fW("vg","wer"); if(w==="mein") L=L.filter(vgMein); else if(w==="zust"){ const ich=new Set(vgMeine().map(v=>v.id)); L=L.filter(v=>vgZustIch(v)||ich.has(v.id)); }
   const so=fW("vg","sort"), td=v=>(v.s&&v.s.termin&&v.s.termin.datum)||"9999";
@@ -167,7 +167,7 @@ function vorgaengeView(){ vgAbgleich();
   const ans=vgAnsicht(), tafel=ans!=="liste", f=META.vgF||"offen", n=x=>vgFilter(x).length, w=fW("vg","wer"), kAkt=vgKAkt();
   const chips=tafel?`<div class="chips vg-chips"><button class="chip" data-act="vgWer" data-v="alle" aria-pressed="${w==="alle"}">Alle</button><button class="chip" data-act="vgWer" data-v="mein" aria-pressed="${w==="mein"}">Meine</button><button class="chip" data-act="vgWer" data-v="zust" aria-pressed="${w==="zust"}">Mir zugewiesen</button><button class="chip" data-act="vgDr" aria-pressed="${fW("vg","dr")==="ja"}">Nur dringende</button>${ans==="tabelle"?`<span class="vg-chsp"></span><button class="chip" data-act="vgK" data-v="erledigt" aria-pressed="${kAkt==="erledigt"}">Erledigt</button><button class="chip" data-act="vgK" data-v="abgelehnt" aria-pressed="${kAkt==="abgelehnt"}">Abgelehnt</button>`:""}</div>`
     :`<div class="chips vg-chips">${VG_F.map(([k,t])=>`<button class="chip" data-act="vgFilter" data-v="${k}" aria-pressed="${f===k}">${esc(t)}${k==="erledigt"||k==="abgelehnt"?"":`<span class="chip-n">${n(k)}</span>`}</button>`).join("")}</div>`;
-  const kopf=`<div class="bib-kopf">${searchBar(typeof WIDE!=="undefined"&&!WIDE.matches?"Kunde, Anliegen, Nr.":"Kunde, Anliegen, SCC-Nr., Person",fKnopf("vg")).replace(/<\/div>$/,`<button type="button" class="such-f such-ans" data-act="ansMenue" aria-label="Ansicht wechseln" title="Ansicht">${icon(ans==="tafel"?"vgTafel":ans==="tabelle"?"vgTabelle":"vgListe")}</button></div>`)}<div class="seg ans-seg" role="group" aria-label="Ansicht">${VG_PC.matches?`<button data-act="vgAnsicht" data-v="tabelle" aria-pressed="${ans==="tabelle"}" title="Tabelle">${icon("vgTabelle")}</button>`:""}<button data-act="vgAnsicht" data-v="tafel" aria-pressed="${ans==="tafel"}" title="Tafel">${icon("vgTafel")}</button><button data-act="vgAnsicht" data-v="liste" aria-pressed="${ans==="liste"}" title="Liste">${icon("vgListe")}</button></div></div>`;
+  const kopf=`<div class="bib-kopf">${searchBar(typeof WIDE!=="undefined"&&!WIDE.matches?"Kunde, Anliegen":"Kunde, Anliegen, SCC-Nr., Person",fKnopf("vg")).replace(/<\/div>$/,`<button type="button" class="such-f such-ans" data-act="ansMenue" aria-label="Ansicht wechseln" title="Ansicht">${icon(ans==="tafel"?"vgTafel":ans==="tabelle"?"vgTabelle":"vgListe")}</button></div>`)}<div class="seg ans-seg" role="group" aria-label="Ansicht">${VG_PC.matches?`<button data-act="vgAnsicht" data-v="tabelle" aria-pressed="${ans==="tabelle"}" title="Tabelle">${icon("vgTabelle")}</button>`:""}<button data-act="vgAnsicht" data-v="tafel" aria-pressed="${ans==="tafel"}" title="Tafel">${icon("vgTafel")}</button><button data-act="vgAnsicht" data-v="liste" aria-pressed="${ans==="liste"}" title="Liste">${icon("vgListe")}</button></div></div>`;
   const mlN=vgAlle().some(x=>x.rahmen)?mlAlleOffen().length:-1;
   const mlChip=mlN>=0?`<button class="chip ml-chip" data-act="vgMlZuSeite">Meldungen<span class="chip-n">${mlN}</span></button>`:"";
   const v=VG_SEL&&DB.vorgaenge.get(VG_SEL); if(VG_SEL&&(!v||v.deleted)) VG_SEL=null;
@@ -339,8 +339,8 @@ let vgkHl=-1;
 const vgkExakt=q=>live("kunden").find(k=>!k.mergedInto&&k.name.toLowerCase()===String(q||"").trim().toLowerCase());
 function vgkTreffer(q){ q=String(q||"").trim().toLowerCase(); const K=live("kunden").filter(k=>!k.mergedInto);
   if(!q) return K.sort((a,b)=>(b.updated||b.created||0)-(a.updated||a.created||0)).slice(0,5);
-  const H=x=>String(x||"").toLowerCase().includes(q);
-  return K.filter(k=>H(k.name)||H(k.ort)||H(k.kdnr)||H(k.ansprech)).sort((a,b)=>(a.name.toLowerCase().startsWith(q)?0:1)-(b.name.toLowerCase().startsWith(q)?0:1)||a.name.localeCompare(b.name,"de")).slice(0,6); }
+  const H=x=>suPasst(q,x);
+  return K.filter(k=>suPasst(q,k.name,k.ort,k.kdnr,k.ansprech)).sort((a,b)=>(a.name.toLowerCase().startsWith(q)?0:1)-(b.name.toLowerCase().startsWith(q)?0:1)||a.name.localeCompare(b.name,"de")).slice(0,6); }
 function vgkMalen(offen){ const i=document.getElementById("f_vgKunde"), w=document.getElementById("vgkVl"), h=document.getElementById("vgkHin"); if(!i||!w) return;
   const q=i.value.trim(), ex=vgkExakt(q), L=offen&&!ex?vgkTreffer(q):[];
   const mark=t=>{ const p=q?t.toLowerCase().indexOf(q.toLowerCase()):-1; return p<0?esc(t):esc(t.slice(0,p))+"<b>"+esc(t.slice(p,p+q.length))+"</b>"+esc(t.slice(p+q.length)); };

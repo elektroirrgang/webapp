@@ -108,7 +108,7 @@ function awGeraetStart(){ const L=legAkt(); if(!L||L.fertig) return; const E=leg
   awKatalog(); }
 function awKatalog(){ const L=legAkt(); if(!L){ awZu(); return; } AW.m=null;
   $("#dlg").classList.add("aw");
-  awRahmen({titel:L.titel||"Verteiler",unter:awBelegText(L),inhalt:`<div class="aw-such"><span class="aw-lupe">${icon("search")}</span><input id="awSuch" type="search" placeholder="Suchen: B16, RCD, Typ A …" value="${esc(AW.such)}" autocomplete="off"></div>
+  awRahmen({titel:L.titel||"Verteiler",unter:awBelegText(L),inhalt:`<div class="aw-such"><span class="aw-lupe">${icon("search")}</span><input id="awSuch" type="search" placeholder="B16, RCD, Typ A …" value="${esc(AW.such)}" autocomplete="off"></div>
       <div class="aw-tabs" role="group">${[["reihe","Reihen"],["ls","Automaten"],["rcd","RCD"],["rcbo","FI/LS"],["sonst","Sonstiges"]].map(([k,t])=>`<button type="button" data-act="awTab" data-v="${k}" aria-pressed="${AW.tab===k}">${t}</button>`).join("")}</div>
       <div id="awSerie">${awSerieChips()}</div><div id="awGrid">${awGrid()}</div>`,
     fuss:`<button type="button" class="aw-fragen" data-act="awFragen" aria-pressed="${awFragen()}">Wofür gleich fragen</button><span class="aw-fuss-info">${esc(AW.zuletzt||(legE(L).length?`${legE(L).filter(e=>e.art!=="gr").length} Geräte im Verteiler`:""))}</span><button type="button" class="btn-tonal" data-act="awZu">${legE(L).length?"Fertig":"Später bestücken"}</button>`});

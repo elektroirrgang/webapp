@@ -454,7 +454,7 @@ button.vg-z{cursor:pointer;-webkit-tap-highlight-color:transparent} button.vg-z:
 .such-f .ic{width:22px;height:22px}
 .such-ans{display:none!important}
 /* Übersicht am Handy: Suchfeld volle Breite, Ansicht-Umschalter als Knopf im Suchfeld */
-@media (max-width:743px){body.hn .such-ans{display:grid!important}body.hn .bib-kopf .ans-seg{display:none!important}body.hn .search.mit-f{padding-right:4px}body.hn .search .such-f{width:40px;height:40px}}
+@media (max-width:743px){.such-ans{display:grid!important}.bib-kopf .ans-seg{display:none!important}.search.mit-f{padding-right:4px}.search .such-f{width:40px;height:40px}}
 .mi.an{background:var(--sec-c);color:var(--on-sec-c)}.mi.an .ic,.mi.an svg{color:var(--on-sec-c);fill:currentColor}
 #fpopBg{position:fixed;inset:0;z-index:95}
 .fpop{position:fixed;z-index:96;background:var(--sc-high);border-radius:24px;padding:12px;box-shadow:0 12px 32px rgba(0,0,0,.24),0 2px 6px rgba(0,0,0,.12);overflow:auto;overscroll-behavior:contain;animation:menuAuf .16s cubic-bezier(.2,.8,.2,1);transform-origin:top right}
@@ -1549,3 +1549,18 @@ body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dl
 .wu-gross img{max-width:100%;max-height:100%;border-radius:12px}
 .wu-gross button{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;width:44px;height:44px;border:0;border-radius:22px;background:rgba(255,255,255,.15);display:grid;place-items:center}.wu-gross button .ic{color:#fff;width:24px;height:24px}
 .wu-stw{margin:0 0 12px}
+
+/* Suchleisten einheitlich (04.11.2026): Lupe · Feld · [Leeren] [Mikrofon] [Filter] [Ansicht] – alle Knöpfe 40 px, rechts bündig */
+.search.su{gap:8px;padding-right:6px}
+.search input,.aw-such input{text-overflow:ellipsis;white-space:nowrap}
+.search input::placeholder{color:var(--on-sv);opacity:.85;text-overflow:ellipsis}
+.search input::-webkit-search-cancel-button,.aw-such input::-webkit-search-cancel-button{-webkit-appearance:none;display:none}
+.su-x,.su-mic{flex:none;width:40px;height:40px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--on-sv);display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.su-x[hidden]{display:none}
+.su-x .ic,.su-mic .ic{width:22px;height:22px}
+.su-x:active,.su-mic:active{background:color-mix(in srgb,var(--on-surface) 10%,transparent)}
+.su-hoert .su-mic{background:var(--err);color:#fff;animation:suPuls 1.1s ease-in-out infinite}.su-hoert .su-mic .ic{color:#fff}
+.search.su-hoert{background:color-mix(in srgb,var(--err) 12%,var(--sc-high))}
+@keyframes suPuls{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.search .such-f{width:40px;height:40px}
+.aw-such.su{display:flex;align-items:center;gap:6px}

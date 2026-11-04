@@ -199,7 +199,7 @@ function materialView(){ matStammSeed();
   const AO=typeof anfOffen==="function"?anfOffen():[], an=AO.filter(a=>a.status==="angefordert").length, be=AO.filter(a=>a.status==="bestellt").length;
   return `<div class="narrow mat-st"><button class="vg-start af-start" data-act="nav" data-v="materialanf"><span class="vg-si">${icon("lager")}</span><span class="vg-st"><b>Materialanforderungen</b>
     <span>${AO.length?[an&&`${an} angefordert`,be&&`${be} bestellt`].filter(Boolean).join(" · "):"Material anfordern oder Stand ansehen"}</span></span>${icon("chev")}</button>
-    ${searchBar("Teil oder Nummer suchen")}
+    ${searchBar("Teil oder Nummer")}
     <div class="chips filt mat-chips">${chips}</div>
     <div class="mat-opt"><div class="mat-sortw">${f==="haeufig"?"":seg("matSort",MAT_SORT(),[["kat","Kategorie"],["az","A–Z"],["haeufig","Häufig"]])}</div><div class="seg mat-ans" role="group">${[["liste","ansListe","Liste"],["kacheln","ansKachel","Kacheln"]].map(([v,ic,l])=>`<button type="button" data-act="matAns" data-v="${v}" aria-pressed="${MAT_ANS()===v}" aria-label="${l}" title="${l}">${icon(ic)}</button>`).join("")}</div></div>
     <div id="res">${materialListe()}</div>

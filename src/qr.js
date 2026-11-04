@@ -31,7 +31,7 @@ addEventListener("hashchange",qrStart);
 
 /* ---- Unbekannter Aufkleber: einem Verteiler zuordnen ---- */
 let qrZu={c:"",such:""};
-function qrZuListe(){ const q=qrZu.such.trim().toLowerCase(), A=vtListenEintraege().filter(e=>!q||e.such.toLowerCase().includes(q)).sort((a,b)=>(b.updated||0)-(a.updated||0)).slice(0,q?40:8);
+function qrZuListe(){ const q=qrZu.such.trim().toLowerCase(), A=vtListenEintraege().filter(e=>!q||suPasst(q,e.such)).sort((a,b)=>(b.updated||0)-(a.updated||0)).slice(0,q?40:8);
   return A.length?listOf(A.map(({vt:{g,v}})=>{ const o=ecOrt(g.ortId); return `<div class="li" role="button" tabindex="0" data-act="qrZuOk" data-g="${esc(g.id)}" data-id="${esc(v.id)}"><span class="av">${icon("ecMess")}</span><span class="lt"><span class="h">${esc(v.name||"Verteiler")}</span><span class="s">${esc([o.titel,v.qr&&"hat schon "+qrZeig(v.qr)].filter(Boolean).join(" · "))}</span></span>${icon("chev")}</div>`; }))
     :`<p class="meta">${q?"Kein Verteiler gefunden.":"Noch keine Verteiler angelegt."}</p>`; }
 function qrZuDlg(c){ qrZu={c,such:""};
