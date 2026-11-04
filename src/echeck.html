@@ -2145,7 +2145,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
       const P=nav.v==="ec"&&DB.echecks.get(nav.id); if(P&&!P.deleted){ const T=ecSchritte(P), a=ecTab(P); /* in der Prüfung: Schritte wie in EVSE */
         return T.map(([k,t,i,gesperrt])=>`<button class="nav-item${gesperrt?" gesperrt":""}" data-act="ecTab" data-v="${k}" ${k===a?'aria-current="page"':""} ${gesperrt?'aria-disabled="true"':""}><span class="ind">${icon(gesperrt?"lock":i)}</span><span>${t}</span></button>`
 ).join(""); }
-      return TOPDEST.map(([k,t,i])=>`<button class="nav-item${k==="mehr"?" nav-end":""}" data-act="nav" data-v="${k}" ${k===active?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join(""); })();
+      return kbLeiste(TOPDEST).map(([k,t,i,id])=>`<button class="nav-item${k==="mehr"?" nav-end":""}" data-act="nav" data-v="${k}" ${(id||k)===kbAktiv(active)?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join(""); })();
   let title="", sub="", fab=null, body="";
   if(login) body=loginSeite("Gebäudetechnik",loginView());
   else if(nav.v==="anlagen"){ title="Installation"; body=ecListeView("anlage"); fab=typeof ecInstVt==="function"&&ecInstVt()?["legNeu","Verteiler","add"]:["ecNeuA","Prüfung","add"]; }
@@ -2159,8 +2159,8 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   else if(nav.v==="netzkatmodell"){ const K=ecRkKat(nav.id); if(!K){ nav={v:"netzkatalog"}; return render(); } title=K.kurz||K.modell; sub=K.hersteller; body=ecKatModellView(K); }
   else if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); if(!p||p.deleted){ nav={v:"anlagen"}; return render(); }
     title=ecOrt(p.ortId).titel; sub=`${EC_ART[p.art||"anlage"]} · ${ecDatum(p.datum)}`; if(rkS){ sub=`Netzwerkschrank · ${title}`; title=rkS.name; } body=ecView(p); }
-  else if(nav.v==="kunden"){ title="Kunden"; body=kundenView(); fab=["newKunde","Kunde","add"]; }
-  else if(nav.v==="bibliothek"){ title="Bibliothek"; body=bibliothekView(); }
+  else if(nav.v==="kunden"){ title="Kunden"; body=kbSeg("kunden")+kundenView(); fab=["newKunde","Kunde","add"]; }
+  else if(nav.v==="bibliothek"){ title=kbHandy()?"Kunden":"Bibliothek"; body=kbSeg("bibliothek")+bibliothekView(); }
   else if(nav.v==="mehr"){ title="Einstellungen"; body=mehrView(); }
   else if(KONTO_SEITEN[nav.v]){ title=KONTO_SEITEN[nav.v][0]; body=KONTO_SEITEN[nav.v][1](); }
   else if(nav.v==="team"){ title="Mitarbeiter"; body=teamView(); }

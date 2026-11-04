@@ -341,3 +341,14 @@ function adrNehmen(d,x){ if(!d||!x) return; const setz=(f,v)=>{ const i=d.queryS
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="ktAnruf"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
   const r=DB[b.dataset.kind]&&DB[b.dataset.kind].get(b.dataset.r), x=r&&(r.kontakte||[]).find(y=>y.id===b.dataset.k); if(!x) return;
   dialog(x.name||"Anrufen",listOf(telefoneVon(x).map(t=>`<a class="li" href="tel:${esc(t.nr.replace(/[^\d+]/g,""))}" style="text-decoration:none;color:inherit"><span class="av">${icon("phone")}</span><span class="lt"><span class="h">${esc(t.nr)}</span><span class="s">${esc(t.art)}</span></span>${icon("chev")}</a>`)),`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`); },true);
+
+/* ===== Handy: höchstens 5 Reiter (04.11.2026) =====
+   Wo Kunden UND Bibliothek Reiter sind und die Leiste sonst zu voll wird (Gebäudetechnik, Baustelle), gibt es auf dem Handy
+   nur „Kunden“ – oben umschalten zwischen Kunden und Bibliothek. iPad und PC behalten beide Reiter. Die App merkt sich die letzte Wahl. */
+const kbHandy=()=>typeof WIDE!=="undefined"&&!WIDE.matches;
+function kbLetzt(v){ try{ if(v) localStorage.setItem("irrgang_kb",v); return localStorage.getItem("irrgang_kb")||"kunden"; }catch(e){ return "kunden"; } }
+function kbSeg(v){ if(!kbHandy()) return ""; kbLetzt(v);
+  return `<div class="kb-seg" role="group" aria-label="Anzeigen">${[["kunden","Kunden"],["bibliothek","Bibliothek"]].map(([k,t])=>`<button type="button" data-act="nav" data-v="${k}" aria-pressed="${k===v}">${t}</button>`).join("")}</div>`; }
+/* Leiste: Bibliothek raus, „Kunden“ führt dorthin, wo man zuletzt war, und bleibt markiert */
+const kbLeiste=L=>kbHandy()?L.filter(d=>d[0]!=="bibliothek").map(d=>d[0]==="kunden"?[kbLetzt()==="bibliothek"?"bibliothek":"kunden",d[1],d[2],"kunden"]:d):L;
+const kbAktiv=a=>kbHandy()&&a==="bibliothek"?"kunden":a;
