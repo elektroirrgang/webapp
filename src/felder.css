@@ -1828,3 +1828,4 @@ html body.sc-eng .navbar,html body.sc-eng.rail-open .navbar{transform:translateX
 .gv-bt-titel{margin:22px 4px 0;font-size:22px;line-height:28px;font-weight:700;color:var(--on-surface)}
 .gv-zu{margin:12px 0 4px}.gv-zu b{font-size:15px}
 .gv-bts{grid-template-columns:repeat(auto-fill,minmax(124px,1fr))}.gv-bt small{white-space:nowrap}
+.gv-av{font-size:12px;font-weight:700;line-height:14px;text-align:center;padding:0 2px;letter-spacing:-.2px}

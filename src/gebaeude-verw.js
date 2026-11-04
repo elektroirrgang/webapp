@@ -5,7 +5,8 @@ Object.assign(IC,{gvGeb:"M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H
   gvEdit:"M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"});
 const GV={ort:"",et:"",raum:"",bt:"",gsHand:false,loesch:false,sel:null,selOrt:""};
 /* Bauteil = eigenes Gebäude mit eigenen Etagen: etagen[].bauteilId. Ältere Etagen ohne Bauteil, deren Räume alle in einem Bauteil liegen, gehören zu diesem. */
-function gvNorm(g){ g.bauteile=g.bauteile||[]; g.etagen.forEach(e=>{ if(e.bauteilId&&!g.bauteile.some(b=>b.id===e.bauteilId)) delete e.bauteilId;
+const gvAbc=(a,b)=>String(a.name||"").localeCompare(String(b.name||""),"de",{numeric:true,sensitivity:"base"});
+function gvNorm(g){ g.bauteile=g.bauteile||[]; if(g.bauteile.length>1) g.bauteile.sort(gvAbc);   /* Bauteile immer A–Z */ g.etagen.forEach(e=>{ if(e.bauteilId&&!g.bauteile.some(b=>b.id===e.bauteilId)) delete e.bauteilId;
     if(!e.bauteilId&&e.raeume&&e.raeume.length){ const S=new Set(e.raeume.map(r=>r.bauteilId||"")); if(S.size===1){ const v=[...S][0]; if(v&&g.bauteile.some(b=>b.id===v)) e.bauteilId=v; } } }); return g; }
 const gvGeb=ort=>gvNorm(ecGeb(ort));
 const gvEtBt=(g,e)=>e&&e.bauteilId&&g.bauteile.find(b=>b.id===e.bauteilId);
@@ -33,14 +34,22 @@ function gvView(){ const g=gvGeb(nav.ort), B=g.bauteile, sel=gvSel(g), ohneE=g.e
   const kopf=`<div class="sec-row"><div class="sec-lbl">Bauteile · ${B.length}</div><span class="ab-btns">${selB?`<button class="ab-ic" data-act="gvBt" data-id="${esc(selB.id)}" aria-label="Bauteil ${esc(selB.name)} bearbeiten" title="${esc(selB.name)} bearbeiten">${icon("gvEdit")}</button>`:""}<button class="ab-ic" data-act="gvBtNeu" aria-label="Bauteil hinzufügen" title="Bauteil hinzufügen">${icon("add")}</button></span></div>
     ${B.length?`<div class="gv-bts">${B.map(b=>`<button type="button" class="gv-bt" data-act="gvBtSel" data-v="${esc(b.id)}" aria-pressed="${sel===b.id}"><b>${esc(b.name)}</b><small>${(n=>`${n} Etage${n===1?"":"n"}`)(gvEtVon(g,b.id).length)} · ${(n=>`${n} ${n===1?"Raum":"Räume"}`)(nR(b.id))}</small></button>`).join("")}${ohneE.length?`<button type="button" class="gv-bt" data-act="gvBtSel" data-v="" aria-pressed="${sel===""}"><b>Ohne Bauteil</b><small>${ohneE.length} Etage${ohneE.length===1?"":"n"}</small></button>`:""}</div>`
       :`<p class="meta">Nur nötig, wenn der Kunde mehrere Gebäude oder Gebäudeteile hat (z. B. Bauteil A bis H). Jedes Bauteil hat dann seine eigenen Etagen.</p>`}`;
+  if(nav.et){ const e=g.etagen.find(x=>x.id===nav.et); if(e) return gvEtSeite(g,e); nav.et=null; }
   const E=B.length?gvEtVon(g,sel):ecEtagen(g);
-  const zuordnen=B.length&&sel===""&&ohneE.length?`<section class="card gv-zu"><b>Diese Etagen gehören noch zu keinem Bauteil.</b><div class="kx-knoepfe">${B.map(b=>`<button type="button" class="btn-tonal" data-act="gvEtZu" data-v="${esc(b.id)}">Alle zu ${esc(b.name)}</button>`).join("")}</div><p class="meta" style="margin:8px 0 0">Oder einzeln über den Stift an der Etage.</p></section>`:"";
-  const etagen=E.length?E.map(e=>{ const gs=gvGs(e), gsT=gs!=null?ecGeschossName(gs):"", R=e.raeume||[];
-    return `<div class="sec-row"><div class="sec-lbl">${esc(e.name)}${gsT&&gsT!==e.name?` <span class="gv-gs">${esc(gsT)}</span>`:""}</div><span class="ab-btns"><button class="ab-ic" data-act="gvEt" data-id="${esc(e.id)}" aria-label="Etage bearbeiten" title="Etage bearbeiten">${icon("gvEdit")}</button><button class="ab-ic" data-act="gvRaumNeu" data-id="${esc(e.id)}" aria-label="Räume hinzufügen" title="Räume hinzufügen">${icon("add")}</button></span></div>
-      ${R.length?`<div class="gv-rs">${R.map(x=>`<button type="button" class="gv-r" data-act="gvRaum" data-id="${esc(x.id)}"><b>${esc(x.name)}</b></button>`).join("")}</div>`:`<p class="meta">Noch keine Räume.</p>`}`; }).join("")
-    :`<p class="meta" style="margin:16px 4px">${selB?`${esc(selB.name)} hat noch keine Etagen.`:"Noch keine Etagen."}</p>`;
-  return `<div class="narrow gv-seite">${kopf}${zuordnen}${selB?`<div class="gv-bt-titel">${esc(selB.name)}</div>`:""}${etagen}<div class="gv-unten"><button type="button" class="btn-tonal" data-act="gvEtNeu">${icon("add")}${selB?`Etage in ${esc(selB.name)}`:"Etage hinzufügen"}</button></div>
-    <p class="meta" style="margin:16px 4px 0">Dieselben Bauteile, Etagen und Räume nutzen Prüfung, Verteiler und KNX. Räume stehen in der Reihenfolge, in der du sie anlegst – so laufen später auch die KNX-Adressen.</p></div>`; }
+  const zuordnen=B.length&&sel===""&&ohneE.length?`<section class="card gv-zu"><b>Diese Etagen gehören noch zu keinem Bauteil.</b><div class="kx-knoepfe">${B.map(b=>`<button type="button" class="btn-tonal" data-act="gvEtZu" data-v="${esc(b.id)}">Alle zu ${esc(b.name)}</button>`).join("")}</div><p class="meta" style="margin:8px 0 0">Oder einzeln: Etage öffnen › Stift.</p></section>`:"";
+  const zeile=e=>{ const gs=gvGs(e), gsT=gs!=null?ecGeschossName(gs):"", R=e.raeume||[], vorschau=R.length>4?`${R.slice(0,3).map(r=>r.name).join(", ")} … ${R[R.length-1].name}`:R.map(r=>r.name).join(", ");
+    return `<div class="li" role="button" tabindex="0" data-act="gvEtAuf" data-id="${esc(e.id)}"><span class="av gv-av">${esc(gsT&&gsT!==e.name?gsT.replace(/\.\s*OG$/,". OG"):"")||icon("gvGeb")}</span><span class="lt"><span class="h">${esc(e.name)}</span><span class="s">${R.length?`${R.length} ${R.length===1?"Raum":"Räume"} · ${esc(vorschau)}`:"Noch keine Räume"}</span></span>${icon("chev")}</div>`; };
+  const etagen=`<div class="sec-row"><div class="sec-lbl">${selB?`Etagen in ${esc(selB.name)}`:"Etagen"} · ${E.length}</div><span class="ab-btns"><button class="ab-ic" data-act="gvEtNeu" aria-label="Etage hinzufügen" title="Etage hinzufügen">${icon("add")}</button></span></div>`
+    +(E.length?listOf(E.map(zeile)):`<p class="meta">${selB?`${esc(selB.name)} hat noch keine Etagen – mit „+“ anlegen, auch mehrere auf einmal („Level 1-5“).`:"Noch keine Etagen."}</p>`);
+  return `<div class="narrow gv-seite">${kopf}${zuordnen}${etagen}
+    <p class="meta" style="margin:20px 4px 0">Dieselben Bauteile, Etagen und Räume nutzen Prüfung, Verteiler und KNX.</p></div>`; }
+/* eigene Seite einer Etage mit ihren Räumen */
+function gvEtSeite(g,e){ const R=e.raeume||[];
+  return `<div class="narrow gv-seite"><div class="sec-row"><div class="sec-lbl">Räume · ${R.length}</div><span class="ab-btns"><button class="ab-ic" data-act="gvEt" data-id="${esc(e.id)}" aria-label="Etage bearbeiten" title="Etage bearbeiten">${icon("gvEdit")}</button><button class="ab-ic" data-act="gvRaumNeu" data-id="${esc(e.id)}" aria-label="Räume hinzufügen" title="Räume hinzufügen">${icon("add")}</button></span></div>
+    ${R.length?`<div class="gv-rs">${R.map(x=>`<button type="button" class="gv-r" data-act="gvRaum" data-id="${esc(x.id)}"><b>${esc(x.name)}</b></button>`).join("")}</div>`:`<p class="meta">Noch keine Räume – mit „+“ oder unten rechts anlegen, z. B. „403-407“.</p>`}
+    <p class="meta" style="margin:20px 4px 0">Reihenfolge = Reihenfolge beim Durchgehen (und der KNX-Adressen). Raum antippen zum Umbenennen, Verschieben oder Löschen.</p></div>`; }
+function gvTitel(){ const g=gvGeb(nav.ort), e=nav.et&&g.etagen.find(x=>x.id===nav.et); if(!e) return {title:ecOrt(nav.ort).titel,sub:"Gebäude"};
+  const b=gvEtBt(g,e), gs=gvGs(e), gsT=gs!=null?ecGeschossName(gs):""; return {title:e.name,sub:[b&&b.name,gsT&&gsT!==e.name?gsT:""].filter(Boolean).join(" · ")||"Etage"}; }
 const gvAkt=()=>{ const g=nav.v==="geb"?gvGeb(nav.ort):nav.v==="kx"&&typeof kxGebAkt==="function"?kxGebAkt():null; return g?gvNorm(g):null; };
 const gvSpeichern=g=>{ if(g.knx) g.knx.updated=Date.now(); ecGebSpeichern(g); };
 
@@ -125,14 +134,15 @@ function gvRaumSp(){ const g=gvAkt(), f=g&&gvRaumFinden(g,GV.raum); if(!f) retur
 /* ===== Klicks ===== */
 document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act^="gv"]'); if(!b) return; const a=b.dataset.act; ev.stopPropagation();
   if(a==="gvAuf"){ closeOverlays(); go({v:"geb",ort:b.dataset.v,...(nav.v==="kunde"||nav.v==="standort"?{von:{v:nav.v,id:nav.id}}:{})}); return; }
-  if(a==="gvRaumNeu"){ gvRaumNeuDlg(gvAkt(),b.dataset.id); return; }
+  if(a==="gvRaumNeu"){ gvRaumNeuDlg(gvAkt(),b.dataset.id||(nav.v==="geb"&&nav.et)||""); return; }
+  if(a==="gvEtAuf"){ nav.et=b.dataset.id; render(); scrollTo(0,0); return; }
   if(a==="gvRaumOk"){ gvRaumOk(); return; }
   if(a==="gvEtNeu"){ gvEtDlg(); return; }
   if(a==="gvEt"){ gvEtDlg(b.dataset.id); return; }
   if(a==="gvEtVorschl"){ const x=document.getElementById("f_gvEn"); if(x){ x.value=b.dataset.v; x.dispatchEvent(new Event("input",{bubbles:true})); if(x.parentElement) x.parentElement.classList.add("fl"); } return; }
   if(a==="gvEtOk"){ gvEtOk(); return; }
   if(a==="gvEtWeg"){ const g=gvAkt(), e=g&&g.etagen.find(x=>x.id===GV.et); if(!e) return; if(g.etagen.length<2){ toast("Mindestens eine Etage bleibt"); return; } if(e.raeume.length){ toast("Erst die Räume dieser Etage löschen oder verschieben"); return; }
-    g.etagen=g.etagen.filter(x=>x!==e); gvSpeichern(g); closeOverlays(); render(); return; }
+    g.etagen=g.etagen.filter(x=>x!==e); if(nav.et===e.id) nav.et=null; gvSpeichern(g); closeOverlays(); render(); return; }
   if(a==="gvBtNeu"){ gvBtDlg(); return; }
   if(a==="gvBt"){ gvBtDlg(b.dataset.id); return; }
   if(a==="gvBtSel"){ GV.sel=b.dataset.v; render(); return; }
