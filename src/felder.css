@@ -1386,3 +1386,9 @@ body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dl
 .glocke .ic{width:24px;height:24px}
 .glocke .gl-n{position:absolute;top:4px;right:2px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--fab);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;box-sizing:border-box}
 .li.ml-neu{background:color-mix(in srgb,var(--fab) 9%,var(--sc-low,var(--sc)))}
+/* Diktieren im Dialog „Liste einfügen“ */
+.vti-mic.an{background:var(--err);color:#fff}.vti-mic.an .ic{color:#fff}
+.vti-diktat{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:center;margin-top:10px;padding:12px 14px;border-radius:14px;background:var(--pc);color:var(--on-pc);font-size:14px}
+.vti-diktat[hidden]{display:none}.vti-diktat small{grid-column:2;font-size:12px;opacity:.85}
+.vti-punkt{width:12px;height:12px;border-radius:50%;background:var(--err);animation:vtiPuls 1.2s ease-in-out infinite}
+@keyframes vtiPuls{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.5}}
