@@ -41,12 +41,9 @@ function knxEtiInhalt(){ const L=knxLinie(KNX_ETI.linie), A=knxListe(), von=+KNX
 function knxEtiDlg(){ dialog("KNX-Etiketten",`<div class="knx-felder">${tf("knxLinie","Linie","" + (KNX_ETI.linie||""),{form:true,ph:"z. B. 6.1",im:"decimal"})}${tf("knxVon","Von",String(KNX_ETI.von),{form:true,im:"numeric"})}${tf("knxBis","Bis",String(KNX_ETI.bis),{form:true,im:"numeric"})}</div>
     <div class="lbl" style="margin-top:10px">Gerätenummer</div><div class="knx-seg">${[[true,"zweistellig · 6.1.01"],[false,"einstellig · 6.1.1"]].map(([v,t])=>`<button type="button" data-act="knxNull" data-v="${v?1:0}" aria-pressed="${KNX_ETI.null===v}">${t}</button>`).join("")}</div>
     <div id="knxInh">${knxEtiInhalt()}</div>
-    <div class="lbl" style="margin-top:12px">Datei</div><div class="knx-seg">${[["lbxs",".lbxs"],["lbx",".lbx + CSV"],["csv","nur CSV"]].map(([v,t])=>`<button type="button" data-act="knxFmt" data-v="${v}" aria-pressed="${KNX_ETI.fmt===v}">${t}</button>`).join("")}</div>
-    <details class="ec-eti-hilfe"><summary>So druckst du in der Pro-Label-App</summary><ol>${KNX_ANDR
-      ?`<li>„Brother-Datei“ tippen – sie landet in „Downloads“.</li><li>„App öffnen“ im Hinweis unten tippen (startet die Pro-Label-App).</li><li>In der App „Öffnen“ bzw. „Importieren“ → „Downloads“ → die Datei wählen.</li>`
-      :`<li>„Brother-Datei“ tippen und im Teilen-Menü „Pro Label Tool“ wählen – oder „In Dateien sichern“ und in der App über „Öffnen“ laden.</li>`}
-      <li>Alle Datensätze drucken, Schnitt nach jedem Etikett – jede Adresse wird ein eigenes Etikett.</li><li>Klappt das nicht: „Nur CSV“ und in deiner eigenen Vorlage als Datenbank verbinden.</li></ol></details>`,
-    `${KNX_ANDR?`<button class="btn-text" data-act="knxApp">App öffnen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="knxDruck">Datei erstellen</button>`);
+
+`,
+    `<span style="flex:1"></span><button class="btn-text" data-act="knxDruck">Drucken</button>`);
   const neu=()=>{ const g=id=>document.getElementById(id); if(!g("f_knxLinie")) return; KNX_ETI.linie=g("f_knxLinie").value.trim(); KNX_ETI.von=+g("f_knxVon").value||0; KNX_ETI.bis=+g("f_knxBis").value||0; knxEtiMerken(); g("knxInh").innerHTML=knxEtiInhalt(); };
   ["f_knxLinie","f_knxVon","f_knxBis"].forEach(id=>{ const e=document.getElementById(id); if(e) e.addEventListener("input",neu); });
   setTimeout(()=>{ const e=document.getElementById("f_knxLinie"); if(e&&!e.value) e.focus(); },60); }
@@ -66,7 +63,7 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
   if(a==="knxNull"){ ev.stopPropagation(); KNX_ETI.null=b.dataset.v==="1"; knxEtiMerken(); b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); const h=document.getElementById("knxInh"); if(h) h.innerHTML=knxEtiInhalt(); return; }
   if(a==="knxDoppelt"){ ev.stopPropagation(); const n=+b.dataset.n, i=KNX_ETI.doppelt.indexOf(n); if(i<0) KNX_ETI.doppelt.push(n); else KNX_ETI.doppelt.splice(i,1); const h=document.getElementById("knxInh"), y=h&&h.querySelector(".knx-gitter")?.scrollTop; if(h){ h.innerHTML=knxEtiInhalt(); const gi=h.querySelector(".knx-gitter"); if(gi&&y) gi.scrollTop=y; } return; }
   if(a==="knxDruck"){ ev.stopPropagation(); const A=knxListe(); if(!A.length){ toast("Erst Linie und Bereich eingeben"); return; }
-    const L=knxLinie(KNX_ETI.linie), name=bbFs(`KNX ${L[0]}.${L[1]} ${KNX_ETI.von}-${KNX_ETI.bis}`), fmt=KNX_ETI.fmt, F=[];
+    const L=knxLinie(KNX_ETI.linie), name=bbFs(`KNX ${L[0]}.${L[1]} ${KNX_ETI.von}-${KNX_ETI.bis}`), fmt="lbxs", F=[];
     if(fmt!=="csv") F.push(new File([fmt==="lbx"?ecZip([{name:"label.xml",daten:knxLbx(name,A[0])},{name:"prop.xml",daten:knxLbxProp(name)}]):knxLbxs(name,A)],name+"."+fmt,{type:"application/octet-stream"}));
     if(fmt!=="lbxs") F.push(new File([knxCsv(A)],name+".csv",{type:"text/csv"}));
     closeOverlays(); knxAusgeben(F); return; } },true);
