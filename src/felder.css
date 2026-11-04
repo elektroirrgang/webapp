@@ -1487,3 +1487,15 @@ body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dl
 .fr-b.haupt{background:var(--pc);color:var(--on-pc)}.fr-b.haupt .ic{color:var(--on-pc)}
 .fr-b.aus{color:var(--on-sv);font-weight:600}.fr-b.aus .ic{color:var(--on-sv)}
 .ap-liste{margin-top:8px}
+/* KI */
+.ki-einst .card-kopf{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ki-einst .fg1{margin-top:12px}
+.ki-knoepfe{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.ki-auf{position:fixed;inset:0;z-index:300;display:grid;place-items:end center;background:rgba(0,0,0,.45)}
+.ki-auf-blatt{width:min(560px,100%);max-height:100%;overflow:auto;padding:24px 24px calc(20px + env(safe-area-inset-bottom,0px));border-radius:28px 28px 0 0;background:var(--dlg-bg,var(--surface));color:var(--on-surface)}
+@media (min-width:600px){.ki-auf{place-items:center}.ki-auf-blatt{border-radius:28px}}
+.ki-auf-blatt h2{margin:0 0 4px;font-size:24px;font-weight:800}
+.ki-knopf{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border:0;border-radius:20px;background:var(--pc);color:var(--on-pc);font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.ki-knopf .ic{width:20px;height:20px;color:var(--on-pc)}
+#dlg.vti-ki-an .vti-rec-k,#dlg.vti-ki-an .vti-rec-tipp,#dlg.vti-ki-an .vti-rec-bsp{display:none}
+.vti-wege:has(.vti-ki) .vti-weg{flex-direction:column;height:76px;gap:4px;font-size:14px}
