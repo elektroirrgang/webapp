@@ -296,10 +296,13 @@ function bibListe(){
   if(nurOrdner) return bbOrdner(bbAuftraege().filter(x=>ku==="alle"||x.kundeId===ku),bbZeile);
   if(!A.length) return `<div class="empty bib-leer">${icon("folder")}<h2>Noch nichts in der Bibliothek</h2><p>Hier landen fertige Prüfprotokolle aus EVSE, Berichte aus Baustelle sowie Dokumente und Fotos aus den Kundenablagen.</p></div>`;
   const chips=`<div class="chips bib-chips">${BB_ART.filter(([a])=>a==="alle"||zahl(a)).map(([a,t])=>`<button class="chip" data-act="bbArt" data-v="${a}" aria-pressed="${art===a}">${esc(t)}<span class="chip-n">${zahl(a)}</span></button>`).join("")}</div>`;
-  const L=A.filter(x=>(art==="alle"||x.art===art)&&(ku==="alle"||x.kundeId===ku)&&(!q||suPasst(q,x.titel,x.kunde,x.info,(bbKunde(x.kundeId)||{}).kdnr)));
+  const L=A.filter(x=>(art==="alle"||x.art===art)&&(ku==="alle"||x.kundeId===ku)&&(!q||suPasst(q,x.titel,x.kunde,x.info,(bbKunde(x.kundeId)||{}).name,(bbKunde(x.kundeId)||{}).kdnr)));
   L.sort(so==="alt"?(a,b)=>a.t-b.t:so==="name"?(a,b)=>String(a.titel).localeCompare(String(b.titel),"de",{numeric:true}):so==="kunde"?(a,b)=>String(a.kunde||"~").localeCompare(String(b.kunde||"~"),"de")||b.t-a.t:(a,b)=>b.t-a.t);
   const info=bbAktiv()?`<p class="meta f-info">${L.length} ${L.length===1?"Eintrag":"Einträge"}${ku!=="alle"?` · ${esc((bbKunde(ku)||{}).name||"")}`:""} <button class="btn-text inl" data-act="bbReset">Filter aufheben</button></p>`:"";
-  if(!L.length) return chips+info+`<div class="empty bib-leer klein">${icon("search")}<h2>Nichts gefunden</h2><p>Andere Suche oder anderen Filter versuchen.</p></div>`;
+  /* Suche findet auch Kundenordner (Kunde ohne passende Datei hat trotzdem seinen Ordner) */
+  const KO=q&&DB.kunden?[...DB.kunden.values()].filter(k=>!k.deleted&&(ku==="alle"||k.id===ku)&&suPasst(q,k.name,k.kdnr,k.ort,k.strasse,(typeof standorteVon==="function"?standorteVon(k.id):[]).map(s=>[s.name,s.ort]))).sort((a,b)=>String(a.name).localeCompare(String(b.name),"de")).slice(0,12):[];
+  const ko=KO.length?`<div class="sec-lbl">Kundenordner</div>${listOf(KO.map(k=>`<div class="li" role="button" tabindex="0" data-act="bbKdOrdner" data-k="${esc(k.id)}"><span class="av">${icon("folder")}</span><span class="lt"><span class="h">${esc(k.name)}</span><span class="s">${esc([k.kdnr,k.ort].filter(Boolean).join(" · ")||"Kundenordner")}</span></span>${icon("chev")}</div>`))}${L.length?`<div class="sec-lbl">Dateien</div>`:""}`:"";
+  if(!L.length) return chips+info+(ko||`<div class="empty bib-leer klein">${icon("search")}<h2>Nichts gefunden</h2><p>Andere Suche oder anderen Filter versuchen.</p></div>`);
   const tag=x=>x.ziel.startsWith("data-href")?"a":"div", attr=x=>x.ziel.startsWith("data-href")?`href="${x.ziel.slice(11,-1)}" style="text-decoration:none;color:inherit"`:`role="button" tabindex="0" ${x.ziel}`;
   const zeile=x=>`<${tag(x)} class="li" ${attr(x)}>${x.bild?`<span class="av bib-thumb"><img data-datei="${esc(x.bild)}" alt=""></span>`:`<span class="av">${x.sym?bbSymIc(x.sym):icon(BB_IC[x.art])}</span>`}
     <span class="lt"><span class="h">${esc(x.titel)}</span><span class="s">${esc(x.info)}</span>${x.pill?`<span class="st">${x.pill}</span>`:""}</span>${icon("chev")}</${tag(x)}>`;
@@ -310,7 +313,7 @@ function bibListe(){
   if(bbAnsicht()==="ordner"&&!q) return chips+info+bbOrdner(art==="alle"?[...L,...bbAuftraege().filter(x=>ku==="alle"||x.kundeId===ku)]:L,zeile);
   const inhalt=bbAnsicht()==="kacheln"?`<div class="bib-raster">${L.map(kachel).join("")}</div>`
     :so==="name"?bbGruppe(L,x=>x.titel,zeile):so==="kunde"?bbGruppe(L,x=>x.kunde||"#",zeile):bbMonate(L,zeile);
-  return chips+info+inhalt;
+  return chips+info+ko+inhalt;
 }
 function bibliothekView(){
   const an=bbAnsicht(), k=an==="kacheln"; if(bbGeladen) setTimeout(bbLaden,0); /* neu abgelegte PDFs sofort zeigen */
@@ -379,6 +382,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="bbAnsicht"){ if(bbAnsicht()!==b.dataset.v){ META.bibAnsicht=b.dataset.v; metaSave(); render(); } }
   else if(a==="bbFilter") bbFilterFenster(b);
   else if(a==="bbReset"){ bbSet("sort","neu"); bbSet("kunde","alle"); }
+  else if(a==="bbKdOrdner"){ query=""; META.bibAnsicht="ordner"; metaSave(); BB_ORT={k:b.dataset.k,p:[]}; render(); scrollTo(0,0); }
   else if(a==="bbOrdner"){ BB_ORT={k:b.dataset.k||null,p:bbPDec(b.dataset.p)}; const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); scrollTo(0,0); }
   else if(a==="bbSp") bbSpOeffnen(b.dataset.id);
   else if(a==="bbAuf") bbAufOeffnen(b.dataset.k,b.dataset.id);

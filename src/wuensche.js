@@ -84,6 +84,11 @@ async function wuKiSuchen(){ if(WU_KI.laeuft) return; WU_KI.laeuft=true; wuKiSta
 let WU_E=null;
 
 /* ---- Seite ---- */
+function wuKarten(){ const f=META.wuF||"offen", q=typeof query!=="undefined"?String(query).trim():"";
+  const L=wuAlle().filter(w=>(f==="alle"?true:f==="offen"?!["fertig","nein"].includes(w.status||"neu"):(w.status||"neu")===f)&&(!q||suPasst(q,w.titel,w.text,wuName(w.von),w.antwort,(w.zusammen||[]).map(z=>[z.titel,z.text]))))
+    .sort((a,b)=>(f==="offen"?wuStimmen(b)-wuStimmen(a):0)||(b.created||0)-(a.created||0));
+  return L.length?L.map(wuKarte).join(""):`<p class="meta" style="margin:16px 4px">${q?`Nichts gefunden für „${esc(q)}“.`:f==="offen"?"Aktuell keine offenen Einträge.":"Hier ist noch nichts."}</p>`; }
+(window.SU_LISTE=window.SU_LISTE||{}).wuensche=wuKarten;
 function wuenscheView(){ const f=META.wuF||"offen", L0=wuAlle(), dev=wuDev();
   const L=L0.filter(w=>f==="alle"?true:f==="offen"?!["fertig","nein"].includes(w.status||"neu"):(w.status||"neu")===f)
     .sort((a,b)=>(f==="offen"?wuStimmen(b)-wuStimmen(a):0)||(b.created||0)-(a.created||0));
@@ -95,8 +100,8 @@ function wuenscheView(){ const f=META.wuF||"offen", L0=wuAlle(), dev=wuDev();
       <div class="wu-dp-f"><button class="btn-text" data-act="wuNichtDp" data-a="${esc(a.id)}" data-b="${esc(b.id)}">Nicht doppelt</button><button class="btn-tonal" data-act="wuMerge" data-a="${esc(a.id)}" data-b="${esc(b.id)}">Zusammenfassen</button></div></div>`).join("")}`:"");
   return `<div class="narrow wu-seite">
     <div class="wu-kopf"><p>Was fehlt, was nervt, was ist gut? Alle sehen alle Einträge – mit Namen. Gibt es deinen Wunsch schon, sag einfach „Ich auch“.</p><button class="btn-filled" data-act="wuNeu">${icon("add")}Eintragen</button></div>
-    ${doppelt}${chips}
-    ${L.length?L.map(wuKarte).join(""):`<p class="meta" style="margin:16px 4px">${f==="offen"?"Aktuell keine offenen Einträge.":"Hier ist noch nichts."}</p>`}</div>`; }
+    ${doppelt}${typeof searchBar==="function"?searchBar("Wunsch, Fehler, Name"):""}${chips}
+    <div id="res">${wuKarten()}</div></div>`; }
 function wuKarte(w){ const st=w.status||"neu", ich=(w.stimmen||[]).some(wuIch)||wuIch(w.von), Z=w.zusammen||[];
   return `<div class="wu-k" role="button" tabindex="0" data-act="wuAuf" data-id="${esc(w.id)}">
     <div class="wu-kk"><span class="wu-art ${esc(w.art||"wunsch")}">${esc((WU_ART.find(x=>x[0]===w.art)||WU_ART[0])[1])}</span><b>${esc(w.titel||"Ohne Titel")}</b>${pill(WU_ST_PILL[st]||"open",(WU_ST.find(x=>x[0]===st)||WU_ST[0])[1])}</div>

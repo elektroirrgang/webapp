@@ -31,11 +31,20 @@ let FR_FILTER="3";
 function frGefiltert(){ const t=today(), bis=FR_FILTER==="alle"?"9999":frPlus(t,+FR_FILTER); return frListe().filter(x=>x.nie||!x.faellig||x.faellig<=bis); }
 /* Zahlen für die Kachel auf der Startseite */
 function frZahlen(){ const L=frListe(), t=today(), b=frPlus(t,3); return {ueber:L.filter(x=>x.nie||x.faellig<t).length,bald:L.filter(x=>!x.nie&&x.faellig>=t&&x.faellig<=b).length,L}; }
-function fristenView(){ const L=frGefiltert(), G=new Map();
-  L.forEach(x=>{ if(!G.has(x.kundeId)) G.set(x.kundeId,[]); G.get(x.kundeId).push(x); });
-  const t=today(), z=frZahlen();
+function frKarten(){ const q=String(query||"").trim(), G=new Map();
+  frGefiltert().filter(x=>{ if(!q) return true; const k=kundeOf(x.kundeId)||{}; return suPasst(q,k.name,adrText(k),x.ort,(FR_ART[x.art]||[""])[0],deDate(x.faellig)); })
+    .forEach(x=>{ if(!G.has(x.kundeId)) G.set(x.kundeId,[]); G.get(x.kundeId).push(x); });
+  return G.size?[...G.entries()].map(frKarte).join(""):`<p class="meta" style="margin:16px 4px">${q?`Nichts gefunden für „${esc(q)}“.`:FR_FILTER==="alle"?"Noch keine wiederkehrenden Prüfungen erfasst.":"In diesem Zeitraum ist nichts fällig."}</p>`; }
+SU_LISTE.fristen=frKarten;
+function fristenView(){ const z=frZahlen();
   const chip=(v,txt)=>`<button type="button" class="chip" data-act="frFilter" data-v="${v}" aria-pressed="${FR_FILTER===v}">${txt}</button>`;
-  const karte=([kid,X])=>{ const k=kundeOf(kid), tel=(typeof telefoneVon==="function"?telefoneVon(k)[0]||{}:{}).nr||k.tel||"", fk=k.fristKontakt, schlimm=X.some(x=>frStand(x)[0]==="bad");
+  return `<div class="narrow fr">
+    <div class="fr-kpis"><div class="fr-kpi${z.ueber?" bad":""}"><b>${z.ueber}</b><span>überfällig</span></div><div class="fr-kpi"><b>${z.bald}</b><span>in 3 Monaten</span></div><div class="fr-kpi"><b>${new Set(z.L.map(x=>x.kundeId)).size}</b><span>Kunden mit Frist</span></div></div>
+    ${searchBar("Kunde, Ort, Prüfung")}
+    <div class="chips ec-wahl fr-filter">${chip("3","Nächste 3 Monate")}${chip("6","6 Monate")}${chip("12","12 Monate")}${chip("alle","Alle")}</div>
+    <div id="res">${frKarten()}</div>
+    <p class="hint">Fristen aus EVSE („Nächste Prüfung“), Gebäudetechnik (Installation 4 Jahre, Geräte 1 Jahr oder die Frist der Prüfung) und den Maschinen. „Anschreiben“ öffnet dein Mailprogramm mit einem fertigen Text – gesendet wird erst, wenn du auf Senden tippst.</p></div>`; }
+function frKarte([kid,X]){ const k=kundeOf(kid), tel=(typeof telefoneVon==="function"?telefoneVon(k)[0]||{}:{}).nr||k.tel||"", fk=k.fristKontakt, schlimm=X.some(x=>frStand(x)[0]==="bad");
     return `<section class="fr-k${schlimm?" bad":""}">
       <button type="button" class="fr-kopf" data-act="nav" data-v="kunde" data-id="${esc(kid)}"><span class="lt"><b>${esc(k.name)}</b><span>${esc(adrText(k)||"")}</span></span>${icon("chev")}</button>
       <div class="fr-zeilen">${X.map(x=>{ const [kl,txt]=frStand(x), a=FR_ART[x.art]||["Prüfung","doc"];
@@ -44,12 +53,7 @@ function fristenView(){ const L=frGefiltert(), G=new Map();
           <span class="fr-d"><b>${x.nie||!x.faellig?"–":esc(deDate(x.faellig))}</b>${pill(kl,txt)}</span></div>`; }).join("")}</div>
       ${fk&&fk.datum?`<p class="fr-info">${icon("mail")}Angeschrieben am ${esc(deDate(fk.datum))}${fk.wer?` von ${esc(fk.wer)}`:""}</p>`:""}
       <div class="fr-knoepfe">${tel?`<a class="fr-b" href="tel:${esc(tel.replace(/[^\d+]/g,""))}">${icon("phone")}<span>Anrufen</span></a>`:`<span class="fr-b aus">${icon("phone")}<span>Keine Nummer</span></span>`}
-        ${k.mail?`<button type="button" class="fr-b haupt" data-act="frMail" data-id="${esc(kid)}">${icon("mail")}<span>${fk&&fk.datum?"Erneut anschreiben":"Anschreiben"}</span></button>`:`<button type="button" class="fr-b aus" data-act="nav" data-v="kunde" data-id="${esc(kid)}">${icon("mail")}<span>Keine E-Mail</span></button>`}</div></section>`; };
-  return `<div class="narrow fr">
-    <div class="fr-kpis"><div class="fr-kpi${z.ueber?" bad":""}"><b>${z.ueber}</b><span>überfällig</span></div><div class="fr-kpi"><b>${z.bald}</b><span>in 3 Monaten</span></div><div class="fr-kpi"><b>${new Set(z.L.map(x=>x.kundeId)).size}</b><span>Kunden mit Frist</span></div></div>
-    <div class="chips ec-wahl fr-filter">${chip("3","Nächste 3 Monate")}${chip("6","6 Monate")}${chip("12","12 Monate")}${chip("alle","Alle")}</div>
-    ${G.size?[...G.entries()].map(karte).join(""):`<p class="meta" style="margin:16px 4px">${FR_FILTER==="alle"?"Noch keine wiederkehrenden Prüfungen erfasst.":"In diesem Zeitraum ist nichts fällig."}</p>`}
-    <p class="hint">Fristen aus EVSE („Nächste Prüfung“), Gebäudetechnik (Installation 4 Jahre, Geräte 1 Jahr oder die Frist der Prüfung) und den Maschinen. „Anschreiben“ öffnet dein Mailprogramm mit einem fertigen Text – gesendet wird erst, wenn du auf Senden tippst.</p></div>`; }
+        ${k.mail?`<button type="button" class="fr-b haupt" data-act="frMail" data-id="${esc(kid)}">${icon("mail")}<span>${fk&&fk.datum?"Erneut anschreiben":"Anschreiben"}</span></button>`:`<button type="button" class="fr-b aus" data-act="nav" data-v="kunde" data-id="${esc(kid)}">${icon("mail")}<span>Keine E-Mail</span></button>`}</div></section>`; }
 /* Anschreiben: förmlich, je nach Kundenart mit oder ohne Hinweis auf Betreiberpflichten */
 function frMailText(k,X){ const priv=typeof kdArt==="function"?kdArt(k)==="privat":true, an=typeof kdAnrede==="function"?kdAnrede(k):"";
   const anrede=priv&&an&&k.nachname?`Sehr geehrte${an==="Herr"?"r":""} ${an} ${k.nachname},`:"Sehr geehrte Damen und Herren,";
