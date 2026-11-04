@@ -53,6 +53,10 @@ const KNX_ANDR=/android/i.test(navigator.userAgent);
 const knxAppAuf=()=>{ location.href="intent://#Intent;package=com.brother.ptouch.mobilecablelabeltool2;end"; };
 function knxLaden(f){ const a=document.createElement("a"); a.href=URL.createObjectURL(f); a.download=f.name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500); }
 async function knxAusgeben(F){ if(KNX_ANDR){ F.forEach((f,i)=>setTimeout(()=>knxLaden(f),i*400)); toast(`CSV in „Downloads“ – in der Pro-Label-App als Datenbank verbinden`,"App öffnen",knxAppAuf); return; }
+  /* iPhone/iPad im Browser: direkt laden (Safari fragt einmal „Laden?“, Datei liegt dann in Dateien › Downloads) – spart „In Dateien sichern“.
+     Als Home-Bildschirm-App lädt iOS nicht zuverlässig, dort bleibt das Teilen-Menü. */
+  const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1), heimApp=navigator.standalone===true||matchMedia("(display-mode: standalone)").matches;
+  if(ios&&!heimApp){ F.forEach((f,i)=>setTimeout(()=>knxLaden(f),i*400)); toast("CSV liegt in Dateien › Downloads – in der Pro-Label-App importieren"); return; }
   if(navigator.canShare&&navigator.canShare({files:F})){ try{ await navigator.share({files:F,title:F[0].name}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
   F.forEach((f,i)=>setTimeout(()=>knxLaden(f),i*400)); toast("CSV gespeichert – in der Pro-Label-App als Datenbank verbinden"); }
 const knxTeilen=f=>knxAusgeben([f]);
