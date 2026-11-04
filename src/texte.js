@@ -18,11 +18,11 @@ const txOrt=b=>{ const k=kundeOf(b.kundeId), s=ortVon(b); return {k,s,kn:k?k.nam
 const txLeute=e=>ekLeute(e).map(x=>{ const p=typeof profilVon==="function"&&x.mail&&profilVon(x.mail); return {mail:x.mail,name:(p&&[p.vorname,p.nachname].filter(Boolean).join(" "))||x.name}; });
 function txStunden(e,b){ const P=txPunkte(e.stand).map(p=>p.replace(/\bgesetzt\b/g,"montiert")), M=txMat(e);
   if(!P.length) return "";
-  return `Ausgeführte Arbeiten am ${deDate(e.datum)}:\n${P.map(p=>"- "+p).join("\n")}${M.length?`\n\nMaterial:\n${M.map(z=>"- "+z).join("\n")}`:""}`; }
+  return `${P.map(p=>"- "+p).join("\n")}${M.length?`\n\nMaterial:\n${M.map(z=>"- "+z).join("\n")}`:""}`; }
 function txBericht(e,b){ const P=txPunkte(e.stand), O=txPunkte(e.offen), {kn,ort}=txOrt(b), ich=String(ME.mail||"").toLowerCase(), mit=txLeute(e).filter(x=>x.mail!==ich).map(x=>x.name), M=txMat(e);
   if(!P.length) return "";
   const wo=[b.name,kn&&`bei ${kn}`,ort&&`in ${ort}`].filter(Boolean).join(" ");
-  return `${deDate(e.datum)} – Baustelle ${wo}${mit.length?`, zusammen mit ${mit.join(", ")}`:""}.\n\nTätigkeiten:\n${P.map(p=>"- "+p).join("\n")}${M.length?`\n\nVerwendetes Material:\n${M.map(z=>"- "+z).join("\n")}`:""}${O.length?`\n\nNächste Schritte auf der Baustelle:\n${O.map(p=>"- "+p).join("\n")}`:""}`; }
+  return `Baustelle ${wo}${mit.length?`, zusammen mit ${mit.join(", ")}`:""}.\n\nTätigkeiten:\n${P.map(p=>"- "+p).join("\n")}${M.length?`\n\nVerwendetes Material:\n${M.map(z=>"- "+z).join("\n")}`:""}${O.length?`\n\nNächste Schritte auf der Baustelle:\n${O.map(p=>"- "+p).join("\n")}`:""}`; }
 /* Bin ich Azubi? (Stufe aus der Mitarbeiterliste, profil.js) */
 const txIchAzubi=()=>{ const ich=String(ME.mail||"").toLowerCase(), m=(typeof teamAlle==="function"?teamAlle():team()).find(x=>String(x.mail||"").toLowerCase()===ich); return !!(m&&typeof maStufe==="function"&&maStufe(m).k==="azubi"); };
 const txBeteiligt=e=>{ const ich=String(ME.mail||"").toLowerCase(); return !!ich&&ekLeute(e).some(x=>x.mail===ich); };
