@@ -2,8 +2,10 @@
    Zeigt alles Abgelegte: Prüfprotokolle und Baustellenberichte (PDFs im Gerätespeicher „evse_protokolle“, den alle Apps teilen),
    fertige Prüfungen aus der Share (wo die App Prüfungen kennt) und Dokumente/Fotos aus den Kundenablagen (Übersicht).
    Suche, Art-Chips, Filter-Fenster (Sortierung, Kunde), Kacheln/Liste als Schieberegler. Zustand je Gerät in META. */
-const BB_ART=[["alle","Alle"],["prot","Prüfprotokolle"],["bericht","Baustellenberichte"],["dok","Dokumente"],["foto","Fotos"]];
-const BB_IC={prot:"ev",bericht:"baustelle",dok:"doc",foto:"cam"};
+const BB_ART=[["alle","Alle"],["prot","Prüfprotokolle"],["plan","Pläne"],["bericht","Baustellenberichte"],["dok","Dokumente"],["foto","Fotos"]];
+const BB_IC={prot:"ev",plan:"bbPlan",bericht:"baustelle",dok:"doc",foto:"cam"};
+IC.bbPlan=IC.bbPlan||"M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z";
+const bbPlanApp=a=>a==="legende"||a==="anlagenpass";
 const BB_SORT=[["neu","Neueste zuerst"],["alt","Älteste zuerst"],["name","Name A–Z"],["kunde","Kunde A–Z"]];
 const BB_P={liste:"M19 13H5c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2zm0 6H5v-4h14v4zm0-16H5c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 6H5V5h14v4z",
   ordner:"M9.17 6l2 2H20v10H4V6h5.17M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z",
@@ -92,13 +94,13 @@ function bbEintraege(){
   const L=[], kn=id=>(bbKunde(id)||{}).name||"", P=bbSync()?[...DB.protokolle.values()]:[], weg=new Set(P.filter(r=>r.deleted).map(r=>r.id)), hier=new Set(BB_PROT.map(x=>x.id));
   const lokal=new Set([...BB_PROT,...P.filter(r=>!r.deleted)].map(x=>x.pruefungId).filter(Boolean));
   const ortP=x=>({ort:kdOrtProt(x),file:x.pfad?String(x.pfad).split("/").pop():bbFs(x.name)+".pdf",item:x.item||(DB.protokolle&&DB.protokolle.get(x.id)||{}).item||""});
-  const protE=(x,ziel,fern)=>({...ortP(x),art:x.app==="baustelle"?"bericht":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
+  const protE=(x,ziel,fern)=>({...ortP(x),art:x.app==="baustelle"?"bericht":bbPlanApp(x.app)?"plan":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
     info:[bbAppName(x.app),x.art,x.archiv&&"älterer Stand",bbDatum(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`,x.von&&x.von.name,fern&&"auf einem anderen Gerät erstellt"].filter(Boolean).join(" · "),
     pill:x.ergebnis?pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden"):"",ziel});
   const echt=new Set([...BB_PROT,...P.filter(r=>!r.deleted&&!String(r.id).startsWith("pa-"))].map(x=>x.pruefungId).filter(Boolean)); /* „pa-“ nur, solange es zur Prüfung kein richtiges Protokoll gibt */
   P.filter(r=>!r.deleted&&!hier.has(r.id)&&!(String(r.id).startsWith("pa-")&&echt.has(r.pruefungId))).forEach(r=>L.push(protE(r,`data-act="bbFern" data-id="${esc(r.id)}"`,!r.demo)));
   const demo=typeof demoAn==="function"&&demoAn();
-  BB_PROT.filter(x=>(!x.demo||(demo&&DB.protokolle&&DB.protokolle.has(x.id)))&&!weg.has(x.id)).forEach(x=>L.push({...ortP(x),art:x.app==="baustelle"?"bericht":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
+  BB_PROT.filter(x=>(!x.demo||(demo&&DB.protokolle&&DB.protokolle.has(x.id)))&&!weg.has(x.id)).forEach(x=>L.push({...ortP(x),art:x.app==="baustelle"?"bericht":bbPlanApp(x.app)?"plan":"prot",titel:x.titel||x.name,kundeId:x.kundeId||"",kunde:kn(x.kundeId),t:x.created||0,st:x.standortId||"",bs:x.baustelleId||"",bsName:x.baustelleId?String(x.titel||"").split(" · ").pop():"",
     info:[bbAppName(x.app),x.art,x.archiv&&"älterer Stand",bbDatum(x.datum),x.auftragsnr&&`Auftrag ${x.auftragsnr}`,x.von&&x.von.name].filter(Boolean).join(" · "),
     pill:x.ergebnis?pill(x.ergebnis,x.ergebnis==="bad"?"nicht bestanden":"bestanden"):"",ziel:`data-act="bbOeffnen" data-id="${esc(x.id)}"`}));
   if(DB.pruefungen) [...DB.pruefungen.values()].filter(p=>!p.deleted&&p.pdfAblage&&!lokal.has(p.id)&&(!p.demo||(typeof demoAn==="function"&&demoAn()))).forEach(p=>{
@@ -107,7 +109,7 @@ function bbEintraege(){
       info:["EVSE",p.p&&p.p.art,p.p&&bbDatum(p.p.datum),"PDF in der Share"].filter(Boolean).join(" · "),pill:"",
       ziel:`data-act="bbShare" data-id="${esc(p.id)}"`}); });
   if(DB.dateien) [...DB.dateien.values()].filter(d=>!d.deleted).forEach(d=>{ const st=d.bezugKind==="standorte"&&DB.standorte?DB.standorte.get(d.bezugId):null, vg=d.bezugKind==="vorgaenge"&&DB.vorgaenge?DB.vorgaenge.get(d.bezugId):null, an=d.bezugKind==="anlagen"&&DB.anlagen?DB.anlagen.get(d.bezugId):null, k=bbKunde(d.bezugKind==="kunden"?d.bezugId:st?st.kundeId:vg?vg.kundeId:an&&an.kundeId), bild=/^image\//.test(d.typ||"");
-    L.push({ort:kdOrtDatei(d),file:d.ablage||kdDateiName(d),item:d.item||"",art:bild?"foto":"dok",titel:d.name||"Datei",kundeId:k?k.id:"",kunde:k?k.name:"",t:d.created||0,bild:bild?d.id:"",st:st?st.id:"",
+    L.push({ort:kdOrtDatei(d),file:d.ablage||kdDateiName(d),item:d.item||"",art:bild?"foto":d.ordner==="plaene"?"plan":"dok",titel:d.name||"Datei",kundeId:k?k.id:"",kunde:k?k.name:"",t:d.created||0,bild:bild?d.id:"",st:st?st.id:"",
       info:[k&&k.name,st&&st.name,d.created&&new Date(d.created).toLocaleDateString("de-DE")].filter(Boolean).join(" · "),pill:"",ziel:`data-act="dateiOeffnen" data-id="${esc(d.id)}"`}); });
   return L;
 }
@@ -174,7 +176,7 @@ function bbOrdnerMenue(el,x,y){
 const bbOrdSym=(p,name)=>!p.length?KD_SYM[kdKatVon(name)]||"":p[0]===kdKat("berichte")?"baustelle":p[0]===kdKat("prot")||p[0]===kdKat("fotos")?"ort":"";
 function bbEigenschaften(k,p){
   const kd=k&&k!==BB_OHNE?bbKunde(k):null, unter=x=>p.every((s,i)=>x.ort[i]===s);
-  const A=bbEintraege().filter(x=>(x.kundeId||BB_OHNE)===k&&unter(x)), EINZ={prot:"Prüfprotokoll",bericht:"Baustellenbericht",dok:"Dokument",foto:"Foto"}, arten=BB_ART.filter(([a])=>a!=="alle").map(([a,t])=>{ const n=A.filter(x=>x.art===a).length; return [n===1?EINZ[a]:t,n]; }).filter(x=>x[1]);
+  const A=bbEintraege().filter(x=>(x.kundeId||BB_OHNE)===k&&unter(x)), EINZ={prot:"Prüfprotokoll",plan:"Plan",bericht:"Baustellenbericht",dok:"Dokument",foto:"Foto"}, arten=BB_ART.filter(([a])=>a!=="alle").map(([a,t])=>{ const n=A.filter(x=>x.art===a).length; return [n===1?EINZ[a]:t,n]; }).filter(x=>x[1]);
   const U=new Set(A.filter(x=>x.ort.length>p.length).map(x=>x.ort[p.length]));
   const t=A.length?Math.max(...A.map(x=>x.t||0)):0, tag=v=>v?new Date(v).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"}):"";
   const name=p.length?p[p.length-1]:kd?kd.name:"Ohne Kunde", r=kd&&kdoRec(k);

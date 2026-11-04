@@ -1653,3 +1653,5 @@ body.fm-offen{overflow:hidden}
 .tx-b .ic{width:18px;height:18px}
 .tx-t{white-space:pre-wrap;font:inherit;font-size:14.5px;line-height:1.5;margin:10px 2px 8px;color:var(--on-surface);user-select:text;-webkit-user-select:text}
 .tx-hin{margin:8px 4px 0}
+.ev-akt{margin-top:20px}.ev-akt-f{display:flex;margin:12px 0 0}.ev-akt .btn-tonal{display:inline-flex;align-items:center;gap:8px}
+button.kt-b{border:0;padding:0;cursor:pointer;font:inherit}button.kt-b:focus-visible{outline:none;background:var(--sc-high)}

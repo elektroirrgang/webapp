@@ -31,10 +31,11 @@ async function dateiAufnehmen(el){
   if(ablageVorgabe===null&&fs.some(f=>!/^image\//.test(f.type||""))&&typeof kdVorschlag==="function"){ ablageWarte={fs,ziel:ablageZiel}; ablageOrdnerDlg(kdVorschlag((fs.find(f=>!/^image\//.test(f.type||""))||{}).name,ablageZiel.kind),"ablOk"); return; }
   await ablageSpeichern(fs,ablageZiel,ablageVorgabe); ablageVorgabe=null;
 }
-async function ablageSpeichern(fs,ziel,ordner){ let n=0;
+async function ablageSpeichern(fs,ziel,ordner){ let n=0, letzte=null;
   const r=DB[ziel.kind]&&DB[ziel.kind].get(ziel.id), dm=r&&r.demo?{demo:true}:{};
-  for(const f of fs){ const extra=Object.assign({},dm); if(ordner!==null&&ordner!==undefined&&!/^image\//.test(f.type||"")) extra.ordner=ordner; if(await dateiNeu(ziel.kind,ziel.id,f,extra)) n++; }
-  if(n){ render(); toast(n===1?"Abgelegt":`${n} Dateien abgelegt`); } }
+  for(const f of fs){ const extra=Object.assign({},dm); if(ordner!==null&&ordner!==undefined&&!/^image\//.test(f.type||"")) extra.ordner=ordner; const d=await dateiNeu(ziel.kind,ziel.id,f,extra); if(d){ n++; letzte=d; } }
+  if(n){ render(); if(n===1&&letzte&&istBild(letzte)&&typeof fmOeffnen==="function") toast("Foto abgelegt","Markieren",()=>fmOeffnen(()=>dateiUrl(letzte.id),data=>dateiMarkiertSichern(letzte,data,false)));
+    else toast(n===1?"Abgelegt":`${n} Dateien abgelegt`); } }
 /* Ablegen von außen anstoßen (Bibliothek: „Hier ablegen“ im Kundenordner) */
 function ablageStart(kind,id,foto,vorgabe){ ablageZiel={kind,id}; ablageVorgabe=foto?null:(vorgabe===undefined?null:vorgabe); const f=ablageInput();
   f.accept=foto?"image/*":"application/pdf,image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.dwg,.dxf,.msg,.eml"; if(foto) f.setAttribute("capture","environment"); else f.removeAttribute("capture"); f.multiple=!foto; f.click(); }
@@ -74,10 +75,12 @@ async function dateiOeffnen(id){
   const u=await dateiUrl(id), darf=canEdit(d)||ME.admin;
   const ort=ablageOrt(d), kopf=`<p class="sup" style="margin:0 0 12px">${esc([groesse(d.groesse||b.size),vonText(d),wann(d.created)].filter(Boolean).join(" · "))}${ort?`<br>${esc(ort)}`:""}</p>`;
   dialog(d.name,kopf+(istBild(d)?`<img class="dimg" src="${u}" alt="">`:`<div class="ab-dok">${icon("doc")}<span>${esc(d.name)}</span></div>`),
-    `${darf?`<button class="btn-text danger" data-act="dateiDelAsk" data-id="${id}">Löschen</button>`:""}<span style="flex:1"></span>${darf&&ort&&!istBild(d)?`<button class="btn-text" data-act="ablUmAsk" data-id="${id}">Ordner</button>`:""}${istBild(d)&&typeof fmKnopf==="function"?fmKnopf(()=>dateiUrl(id),async data=>{ const nm=String(d.name||"Foto").replace(/\.[^.]+$/,"").replace(/ markiert$/,"")+" markiert.jpg", f=new File([dataUrlToBlob(data)],nm,{type:"image/jpeg"});
-      const x=await dateiNeu(d.bezugKind,d.bezugId,f,Object.assign({},d.demo?{demo:true}:{},"ordner" in d?{ordner:d.ordner}:{})); render(); if(x) setTimeout(()=>dateiOeffnen(x.id),50); }):""}<button class="btn-text" data-act="dateiSpeichern" data-id="${id}">${istBild(d)?"Speichern":"Öffnen"}</button><button class="btn-text" data-act="cancel">Schließen</button>`);
+    `${darf?`<button class="btn-text danger" data-act="dateiDelAsk" data-id="${id}">Löschen</button>`:""}<span style="flex:1"></span>${darf&&ort&&!istBild(d)?`<button class="btn-text" data-act="ablUmAsk" data-id="${id}">Ordner</button>`:""}${istBild(d)&&typeof fmKnopf==="function"?fmKnopf(()=>dateiUrl(id),data=>dateiMarkiertSichern(d,data,true)):""}<button class="btn-text" data-act="dateiSpeichern" data-id="${id}">${istBild(d)?"Speichern":"Öffnen"}</button><button class="btn-text" data-act="cancel">Schließen</button>`);
 }
 
+/* markierte Fassung als Kopie neben dem Original („… markiert.jpg“) */
+async function dateiMarkiertSichern(d,data,zeigen){ const nm=String(d.name||"Foto").replace(/\.[^.]+$/,"").replace(/ markiert$/,"")+" markiert.jpg", f=new File([dataUrlToBlob(data)],nm,{type:"image/jpeg"});
+  const x=await dateiNeu(d.bezugKind,d.bezugId,f,Object.assign({},d.demo?{demo:true}:{},"ordner" in d?{ordner:d.ordner}:{})); render(); if(x&&zeigen) setTimeout(()=>dateiOeffnen(x.id),50); return x; }
 function ablageView(kind,r){
   const L=dateienVon(kind,r.id), bilder=L.filter(istBild), doks=L.filter(d=>!istBild(d));
   return `<div class="sec-row"><div class="sec-lbl">Dokumente und Fotos</div><span class="ab-btns">${kind==="kunden"&&typeof bibliothekView==="function"?`<button class="ab-ic" data-act="ablageOrdner" data-id="${esc(r.id)}" aria-label="Kundenordner öffnen" title="Kundenordner in der Bibliothek">${icon("folder")}</button>`:""}<button class="ab-ic" data-act="ablageFoto" data-kind="${kind}" data-id="${esc(r.id)}" aria-label="Foto aufnehmen" title="Foto aufnehmen">${icon("cam")}</button><button class="ab-ic" data-act="ablageDatei" data-kind="${kind}" data-id="${esc(r.id)}" aria-label="Datei anhängen" title="Datei anhängen">${icon("attach")}</button></span></div>
