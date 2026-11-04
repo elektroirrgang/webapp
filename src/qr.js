@@ -9,7 +9,17 @@ const qrZeig=c=>String(c||"").replace(/^(.{3})(.+)$/,"$1 $2");
 /* Nummer aus gescanntem Text oder Eingabe: ganze URL, „#qr=…“ oder nur die Nummer */
 function qrNorm(t){ t=String(t||"").trim(); const m=t.match(/\/q\/?[#?]([0-9A-Za-z]{6})\b/)||t.match(/qr=([0-9A-Za-z]{6})\b/i); const c=(m?m[1]:t).toUpperCase().replace(/[\s-]/g,"");
   return /^[0-9A-Z]{6}$/.test(c)&&[...c].every(z=>QR_ZEICHEN.includes(z))?c:""; }
-function qrAlle(){ const S=new Map(); for(const g0 of live("gebaeude")){ const g=ecGebNorm(g0); g.verteiler.forEach(v=>{ if(v.qr) S.set(v.qr,{g,v}); }); } return S; }
+/* Aufkleber → Verteiler (art "vt") oder Netzwerkschrank (art "schrank"); x ist das Objekt (Verteiler bzw. Schrank) */
+function qrAlle(){ const S=new Map(); for(const g0 of live("gebaeude")){ const g=ecGebNorm(g0); g.verteiler.forEach(v=>{ if(v.qr) S.set(v.qr,{g,v,x:v,art:"vt"}); }); (g.schraenke||[]).forEach(x=>{ if(x.qr) S.set(x.qr,{g,x,art:"schrank"}); }); } return S; }
+const qrArtName=t=>t.art==="schrank"?"Netzwerkschrank":"Verteiler";
+/* für den Scanner (scanner.js): was steckt hinter der Nummer? */
+function qrTreffer(c){ const t=qrAlle().get(c);
+  if(!t) return {titel:"Neuer Aufkleber",sub:"Noch keinem Verteiler oder Netzwerkschrank zugeordnet",ic:"neu",knopf:"Zuordnen"};
+  const o=ecOrt(t.g.ortId); return {titel:t.x.name||qrArtName(t),sub:[qrArtName(t),o.titel].filter(Boolean).join(" · "),ic:t.art==="schrank"?"schrank":"vt",knopf:"Öffnen"}; }
+/* Netzwerkschrank öffnen: in der neuesten Netzwerkprüfung des Objekts, Bereich „Infrastruktur“ */
+function qrSchrankOeffnen(g,x){ const P=live("echecks").filter(p=>p.ortId===g.ortId&&p.art==="netz").sort((a,b)=>String(b.datum||"").localeCompare(String(a.datum||"")));
+  if(P.length){ if(typeof ecRkTab!=="undefined") ecRkTab="ansicht"; go({v:"ec",id:P[0].id,tab:"infra",schr:x.id}); return; }
+  toast(`Für „${x.name||"Netzwerkschrank"}“ gibt es noch keine Netzwerkprüfung`); }
 function qrNeu(belegt){ const S=belegt||qrAlle(); let c=""; const r=new Uint32Array(6);
   do{ crypto.getRandomValues(r); c=[...r].map(x=>QR_ZEICHEN[x%QR_ZEICHEN.length]).join(""); }while(S.has(c)); S.set(c,1); return c; }
 /* QR als Matrix (qrcode-generator) – als SVG für die App, als Rechtecke fürs PDF */
@@ -20,29 +30,36 @@ function qrSvg(c,px){ const M=qrMatrix(c), n=M.length, r=n+8; let d=""; M.forEac
 /* ---- Öffnen nach Scan ---- */
 let QR_WARTET="";
 function qrOeffnen(c,nochmal){ c=qrNorm(c); if(!c){ toast("Kein Irrgang-Aufkleber erkannt"); return; }
-  const t=qrAlle().get(c); if(t){ QR_WARTET=""; go({v:"vt",g:t.g.id,id:t.v.id,tab:"info"}); return; }
+  const t=qrAlle().get(c); if(t){ QR_WARTET=""; if(typeof SC_ART!=="undefined") SC_ART="vt"; if(t.art==="schrank") qrSchrankOeffnen(t.g,t.x); else go({v:"vt",g:t.g.id,id:t.v.id,tab:"info"}); return; }
   if(!nochmal&&SYNC_ON&&ME.signedIn&&typeof syncNow==="function"){ toast("Aufkleber wird gesucht …"); Promise.resolve(syncNow()).catch(()=>{}).then(()=>qrOeffnen(c,true)); return; }
   qrZuDlg(c); }
 /* Aufruf über die Info-Seite: …/echeck/#qr=NUMMER – nach der Anmeldung weiter */
-function qrStart(){ const m=location.hash.match(/qr=([0-9A-Za-z]{6})/); if(!m) return; QR_WARTET=m[1].toUpperCase();
+function qrStart(){ const m=location.hash.match(/qr=([0-9A-Za-z]{6})/); if(!m) return; QR_WARTET=m[1].toUpperCase(); if(/art=schrank/.test(location.hash)&&typeof SC_ART!=="undefined") SC_ART="schrank";
   try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){} qrNachLogin(); }
 function qrNachLogin(){ if(!QR_WARTET||nav.v==="login") return; const c=QR_WARTET; QR_WARTET=""; setTimeout(()=>qrOeffnen(c),0); }
 addEventListener("hashchange",qrStart);
 
 /* ---- Unbekannter Aufkleber: einem Verteiler zuordnen ---- */
-let qrZu={c:"",such:""};
-function qrZuListe(){ const q=qrZu.such.trim().toLowerCase(), A=vtListenEintraege().filter(e=>!q||suPasst(q,e.such)).sort((a,b)=>(b.updated||0)-(a.updated||0)).slice(0,q?40:8);
+let qrZu={c:"",such:"",art:"vt"};
+function qrSchrEintraege(){ const L=[]; for(const g0 of live("gebaeude")){ const g=ecGebNorm(g0), o=ecOrt(g.ortId); (g.schraenke||[]).forEach(x=>L.push({g,x,o,updated:g.updated||0,such:[x.name,o.titel,x.qr].filter(Boolean).join(" ")})); } return L; }
+function qrZuListe(){ if(qrZu.art==="schrank"){ const q=qrZu.such.trim().toLowerCase(), A=qrSchrEintraege().filter(e=>!q||suPasst(q,e.such)).sort((a,b)=>b.updated-a.updated).slice(0,q?40:8);
+    return A.length?listOf(A.map(({g,x,o})=>`<div class="li" role="button" tabindex="0" data-act="qrZuOk" data-art="schrank" data-g="${esc(g.id)}" data-id="${esc(x.id)}"><span class="av">${icon("ecNetz")}</span><span class="lt"><span class="h">${esc(x.name||"Netzwerkschrank")}</span><span class="s">${esc([o.titel,x.qr&&`hat schon ${qrZeig(x.qr)}`].filter(Boolean).join(" · "))}</span></span>${icon("chev")}</div>`)):`<p class="meta">${q?"Kein Netzwerkschrank gefunden.":"Noch keine Netzwerkschränke angelegt."}</p>`; }
+  const q=qrZu.such.trim().toLowerCase(), A=vtListenEintraege().filter(e=>!q||suPasst(q,e.such)).sort((a,b)=>(b.updated||0)-(a.updated||0)).slice(0,q?40:8);
   return A.length?listOf(A.map(({vt:{g,v}})=>{ const o=ecOrt(g.ortId); return `<div class="li" role="button" tabindex="0" data-act="qrZuOk" data-g="${esc(g.id)}" data-id="${esc(v.id)}"><span class="av">${icon("ecMess")}</span><span class="lt"><span class="h">${esc(v.name||"Verteiler")}</span><span class="s">${esc([o.titel,v.qr&&"hat schon "+qrZeig(v.qr)].filter(Boolean).join(" · "))}</span></span>${icon("chev")}</div>`; }))
     :`<p class="meta">${q?"Kein Verteiler gefunden.":"Noch keine Verteiler angelegt."}</p>`; }
-function qrZuDlg(c){ qrZu={c,such:""};
-  dialog("Neuer Aufkleber",`<div class="qr-neu">${qrSvg(c,72)}<div><b class="qr-nr">${esc(qrZeig(c))}</b><p class="meta">Dieser Aufkleber ist noch keinem Verteiler zugeordnet. Verteiler wählen, an dem er klebt.</p></div></div>
-    <div class="fg1">${tf("qrSuch","Kunde oder Verteiler suchen","",{form:true,ph:"Name, Ort, Verteiler"})}</div><div id="qrZuL">${qrZuListe()}</div>
-    <p class="hint">Fehlt der Verteiler? Erst beim Kunden anlegen, dann den Aufkleber noch einmal scannen.</p>`,
+function qrZuDlg(c){ qrZu={c,such:"",art:typeof SC_ART!=="undefined"&&SC_ART==="schrank"?"schrank":"vt"}; if(typeof SC_ART!=="undefined") SC_ART="vt";
+  dialog("Neuer Aufkleber",`<div class="qr-neu">${qrSvg(c,72)}<div><b class="qr-nr">${esc(qrZeig(c))}</b><p class="meta">Dieser Aufkleber ist noch nicht zugeordnet. Wählen, wo er klebt.</p></div></div>
+    <div class="seg qr-art" role="group">${[["vt","Verteiler"],["schrank","Netzwerkschrank"]].map(([v,t])=>`<button type="button" data-act="qrZuArt" data-v="${v}" aria-pressed="${v===qrZu.art}">${t}</button>`).join("")}</div>
+    <div class="fg1">${tf("qrSuch","Kunde, Verteiler oder Schrank suchen","",{form:true,ph:"Name, Ort"})}</div><div id="qrZuL">${qrZuListe()}</div>
+    <p class="hint">Fehlt er? Erst beim Kunden anlegen (Verteiler unter Installation, Schrank in der Netzwerkprüfung), dann den Aufkleber noch einmal scannen.</p>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button>`,{breit:true}); }
 document.addEventListener("input",e=>{ if(e.target&&e.target.id==="f_qrSuch"){ qrZu.such=e.target.value; const l=document.getElementById("qrZuL"); if(l) l.innerHTML=qrZuListe(); } });
-function qrSetzen(gid,vId,c){ const g=vtGeb(gid), v=g&&g.verteiler.find(x=>x.id===vId); if(!v) return false;
-  const alt=qrAlle().get(c); if(alt&&alt.v.id!==vId){ delete alt.v.qr; alt.v.updated=Date.now(); ecGebSpeichern(alt.g); }
+function qrSetzen(gid,vId,c,art){ const g=vtGeb(gid), v=g&&(art==="schrank"?(g.schraenke||[]):g.verteiler).find(x=>x.id===vId); if(!v) return false;
+  const alt=qrAlle().get(c); if(alt&&alt.x.id!==vId){ delete alt.x.qr; alt.x.updated=Date.now(); ecGebSpeichern(alt.g); }
   v.qr=c; v.updated=Date.now(); ecGebSpeichern(g); return true; }
+/* Ziel der Aufkleber-Knöpfe auf der aktuellen Seite: Verteiler oder Netzwerkschrank */
+function qrZielHier(){ if(nav.v==="vt"){ const g=vtGeb(nav.g), x=g&&g.verteiler.find(v=>v.id===nav.id); return x?{g:nav.g,id:nav.id,art:"vt",x}:null; }
+  if(nav.v==="ec"&&nav.schr){ const p=DB.echecks.get(nav.id); if(!p) return null; const g=ecGeb(p.ortId), x=g&&(g.schraenke||[]).find(s=>s.id===nav.schr); return x?{g:g.id,id:x.id,art:"schrank",x}:null; } return null; }
 
 /* ---- Karte auf der Verteiler-Seite ---- */
 function qrKarte(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(!v) return "";
@@ -52,6 +69,12 @@ function qrKarte(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v
     :`<p class="meta">Noch kein Aufkleber. Einen vom Bogen aufkleben und scannen – oder direkt einen neuen drucken (Brother 24 mm oder PDF).</p>
       <div class="qr-knoepfe zwei">${kn("qrScanZu","qr",DESK.matches?"Nummer eingeben":"Aufkleber scannen")}${kn("qrNeu1","tag","Neuen drucken")}</div>`}</section>`; }
 
+function qrKarteSchrank(g,x,zu){ const kn=(act,ic,t,kl)=>`<button type="button" class="qr-k${kl?" "+kl:""}" data-act="${act}">${icon(ic)}<span>${t}</span></button>`;
+  return `<section class="card qr-karte" style="margin-top:12px"><h3>QR-Aufkleber</h3>${x.qr?`<div class="qr-zeile">${qrSvg(x.qr,112)}<div class="qr-txt"><small>Anlagen-Nr.</small><b class="qr-nr">${esc(qrZeig(x.qr))}</b><span class="meta">Scannen öffnet diesen Netzwerkschrank.</span></div></div>
+      ${zu?"":`<div class="qr-knoepfe">${kn("qrDruck1","tag","Drucken")}${kn("qrScanZu","qr","Ersetzen")}${kn("qrWegAsk","del","Entfernen","weg")}</div>`}`
+    :`<p class="meta">Noch kein Aufkleber. Einen vom Bogen aufkleben und scannen – oder direkt einen neuen drucken.</p>
+      ${zu?"":`<div class="qr-knoepfe zwei">${kn("qrScanZu","qr",DESK.matches?"Nummer eingeben":"Aufkleber scannen")}${kn("qrNeu1","tag","Neuen drucken")}</div>`}`}</section>`; }
+
 /* ---- Scanner (Kamera) ---- */
 let QR_CAM=null;
 function qrJsqr(){ if(window.jsQR) return Promise.resolve(window.jsQR); return new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="../vendor/jsqr.min.js"; s.onload=()=>ok(window.jsQR); s.onerror=()=>no(new Error("Scanner nicht erreichbar")); document.head.appendChild(s); }); }
@@ -60,7 +83,11 @@ function qrStop(){ if(!QR_CAM) return; QR_CAM.aus=true; try{ QR_CAM.st&&QR_CAM.s
 function qrNrDlg(ziel){ qrStop(); QR_CAM={ziel:ziel||null,aus:true};
   dialog(ziel?"Aufkleber zuordnen":"Aufkleber öffnen",`<div class="fg1">${tf("qrNr","Nummer vom Aufkleber","",{form:true,ph:"z. B. 4K7 P2M"})}</div><p class="hint">Steht groß auf dem Aufkleber, 6 Zeichen.</p>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="qrNrOk">${ziel?"Zuordnen":"Öffnen"}</button>`); }
-function qrScan(ziel){ if(DESK.matches){ qrNrDlg(ziel); return; } qrStop();
+function qrScan(ziel){ if(typeof scOeffnen==="function"){ qrStop();
+    if(!ziel){ scOeffnen(); return; }
+    const t=ziel.art==="schrank"?"Netzwerkschrank":"Verteiler", nm=(ziel.x&&ziel.x.name)||t;
+    scOeffnen({titel:"Aufkleber zuordnen",treffer:c=>{ const alt=qrAlle().get(c); return {titel:nm,sub:alt&&alt.x.id===ziel.id?"hat diesen Aufkleber schon":alt?`Aufkleber hängt noch an „${alt.x.name||qrArtName(alt)}“ – wird umgehängt`:`Aufkleber ${qrZeig(c)} diesem ${t} zuordnen`,ic:ziel.art==="schrank"?"schrank":"vt",knopf:"Zuordnen"}; },aktion:c=>qrZuweisen(ziel,c)}); return; }
+  if(DESK.matches){ qrNrDlg(ziel); return; } qrStop();
   dialog("Aufkleber scannen",`<div class="qr-cam"><video id="qrVid" playsinline muted autoplay></video><span class="qr-rahmen"></span><p class="qr-cam-msg" id="qrMsg">Kamera wird gestartet …</p></div>
     <div class="fg1" style="margin-top:14px">${tf("qrNr","Oder Nummer eintippen","",{form:true,ph:"z. B. 4K7 P2M"})}</div>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="qrNrOk">Öffnen</button>`,{breit:true});
@@ -82,8 +109,8 @@ function qrScan(ziel){ if(DESK.matches){ qrNrDlg(ziel); return; } qrStop();
     runde();
   }).catch(e=>{ msg(/NotAllowed|Permission/i.test(e&&e.name||"")?"Kamera nicht erlaubt – in den Einstellungen freigeben oder Nummer eintippen.":"Kamera nicht verfügbar – Nummer unten eintippen."); }); }
 function qrZuweisen(z,c){ const alt=qrAlle().get(c);
-  if(alt&&alt.v.id===z.id){ toast("Aufkleber ist schon diesem Verteiler zugeordnet"); return; }
-  qrSetzen(z.g,z.id,c); render(); toast(alt?`Aufkleber ${qrZeig(c)} umgehängt von „${alt.v.name||"Verteiler"}“`:`Aufkleber ${qrZeig(c)} zugeordnet`); }
+  if(alt&&alt.x.id===z.id){ toast(`Aufkleber ist schon diesem ${z.art==="schrank"?"Netzwerkschrank":"Verteiler"} zugeordnet`); return; }
+  qrSetzen(z.g,z.id,c,z.art); render(); toast(alt?`Aufkleber ${qrZeig(c)} umgehängt von „${alt.x.name||qrArtName(alt)}“`:`Aufkleber ${qrZeig(c)} zugeordnet`); }
 
 /* ---- PDF: einzelner Aufkleber (70 × 36 mm) oder A4-Bogen 3 × 8 ---- */
 let QR_LOGO=null;   /* Logo für die Aufkleber verkleinert (das Original wäre je PDF rund 1 MB) */
@@ -143,15 +170,17 @@ function qrBogenDlg(){ dialog("QR-Aufkleber drucken",`<p>Jeder Aufkleber bekommt
 
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="qr"]'); if(!b||b.disabled) return; e.stopPropagation(); const a=b.dataset.act;
   if(a==="qrScan"){ qrScan(); return; }
-  if(a==="qrScanZu"){ if(nav.v!=="vt") return; qrScan({g:nav.g,id:nav.id}); return; }
+  if(a==="qrScanZu"){ const z=qrZielHier(); if(z) qrScan(z); return; }
+  if(a==="qrZuArt"){ qrZu.art=b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); const l=document.getElementById("qrZuL"); if(l) l.innerHTML=qrZuListe(); return; }
   if(a==="qrNrOk"){ const c=qrNorm((document.getElementById("f_qrNr")||{}).value); if(!c){ toast("Nummer hat 6 Zeichen, z. B. 4K7 P2M"); return; } const z=QR_CAM&&QR_CAM.ziel; QR_CAM=QR_CAM&&QR_CAM.aus?null:QR_CAM; qrStop(); closeOverlays(); z?qrZuweisen(z,c):qrOeffnen(c); return; }
-  if(a==="qrZuOk"){ const c=qrZu.c; if(!c) return; qrSetzen(b.dataset.g,b.dataset.id,c); closeOverlays(); go({v:"vt",g:b.dataset.g,id:b.dataset.id}); toast(`Aufkleber ${qrZeig(c)} zugeordnet`); return; }
-  if(a==="qrNeu1"){ if(nav.v!=="vt") return; const c=qrNeu(); qrSetzen(nav.g,nav.id,c); render(); const v=(vtGeb(nav.g)||{verteiler:[]}).verteiler.find(x=>x.id===nav.id); qrDruckDlg(c,`QR ${v&&v.name||""} ${c}`.replace(/\s+/g," ")); return; }
-  if(a==="qrDruck1"){ const v=nav.v==="vt"&&(vtGeb(nav.g)||{verteiler:[]}).verteiler.find(x=>x.id===nav.id); if(v&&v.qr) qrDruckDlg(v.qr,`QR ${v.name||""} ${v.qr}`.replace(/\s+/g," ")); return; }
+  if(a==="qrZuOk"){ const c=qrZu.c; if(!c) return; const art=b.dataset.art==="schrank"?"schrank":"vt"; qrSetzen(b.dataset.g,b.dataset.id,c,art); closeOverlays();
+    if(art==="schrank"){ const g=vtGeb(b.dataset.g), x=g&&(g.schraenke||[]).find(s=>s.id===b.dataset.id); if(g&&x) qrSchrankOeffnen(g,x); } else go({v:"vt",g:b.dataset.g,id:b.dataset.id}); toast(`Aufkleber ${qrZeig(c)} zugeordnet`); return; }
+  if(a==="qrNeu1"){ const z=qrZielHier(); if(!z) return; const c=qrNeu(); qrSetzen(z.g,z.id,c,z.art); render(); qrDruckDlg(c,`QR ${z.x.name||""} ${c}`.replace(/\s+/g," ")); return; }
+  if(a==="qrDruck1"){ const z=qrZielHier(); if(z&&z.x.qr) qrDruckDlg(z.x.qr,`QR ${z.x.name||""} ${z.x.qr}`.replace(/\s+/g," ")); return; }
   if(a==="qrBrother"){ qrBrother(); return; }
   if(a==="qrPdf1"){ const c=qrDruckC; closeOverlays(); if(c) qrPdfZeigen([c],true,qrDruckName||`QR ${c}`); return; }
-  if(a==="qrWegAsk"){ confirmDlg("Aufkleber entfernen?","Die Nummer gehört dann zu keinem Verteiler mehr. Scannt jemand den alten Aufkleber, fragt die App, wohin er gehört.","Entfernen","qrWegOk"); return; }
-  if(a==="qrWegOk"){ const g=vtGeb(nav.g), v=g&&g.verteiler.find(x=>x.id===nav.id); if(v){ delete v.qr; v.updated=Date.now(); ecGebSpeichern(g); } closeOverlays(); render(); return; }
+  if(a==="qrWegAsk"){ const z=qrZielHier(); confirmDlg("Aufkleber entfernen?",`Die Nummer gehört dann zu keinem ${z&&z.art==="schrank"?"Netzwerkschrank":"Verteiler"} mehr. Scannt jemand den alten Aufkleber, fragt die App, wohin er gehört.`,"Entfernen","qrWegOk"); return; }
+  if(a==="qrWegOk"){ const z=qrZielHier(); if(z){ delete z.x.qr; z.x.updated=Date.now(); ecGebSpeichern(vtGeb(z.g)); } closeOverlays(); render(); return; }
   if(a==="qrBogen"){ qrBogenDlg(); return; }
   if(a==="qrBogenOk"){ const n=+b.dataset.n||1, S=qrAlle(), C=[]; for(let i=0;i<n*24;i++) C.push(qrNeu(S)); closeOverlays(); qrPdfZeigen(C,false,`QR-Aufkleber ${ecHeute()} (${C.length} Stück)`); return; }
 },true);

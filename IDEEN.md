@@ -33,7 +33,7 @@
 
 - Erledigt 04.11.2026 (1.7.69/1.7.70): Kopfzeile einheitlich (EVSE ohne ⋮), Bibliothek-Kategorie „Pläne“, mehrere Nummern bei Ansprechpartnern, Einbauplatz im Legenden-PDF, Aufbewahrung (Übersicht › Einstellungen › Verwaltung), Stromkreis-Rechner auch frei (EVSE Zuleitung, Einstellungen in EVSE/Gebäudetechnik). Beschriftungsstreifen und Rechner je Stromkreis gab es schon in der Legende.
 - Prüftasten-Erinnerung für Kunden über die QR-Seite: wartet auf die öffentliche QR-Seite (Achenbach).
-- QR-Scanner in allen Apps, neue Kamera-Ansicht, Aufkleber auch für Netzwerkschränke (Max 04.11.2026) – Entwürfe zeigen, dann bauen.
+- QR-Scanner in allen Apps (Entwurf C: Blatt von unten, zuletzt gescannt, Filter Verteiler/Netzwerkschrank), Aufkleber auch für Netzwerkschränke – gebaut 04.11.2026 (1.7.71). Offen: in Baustelle/EVSE/Übersicht kennt der Scanner die Namen nur, wenn das Gerät den Aufkleber schon einmal gescannt hat.
 
 ## Lager (Gespräch 04.11.2026) – offen, Max ist unsicher, erst mit dem Chef klären
 - Ablauf heute: 7:30 Start, 15–30 min packen, Chef sagt mündlich, was ansteht; gepackt wird nach Gefühl (meist zu viel, nach Chef-Mengen oft zu wenig). Sondermaterial wird bestellt.
