@@ -132,7 +132,7 @@ function uvMasse(L){ const n=Math.max(1,Math.min(9,+L.reihen||3)), up=L.montage!
   const tab=UVZ_H[up?"up":"ap"], H=n<=5?tab[n-1]:tab[4]+125*(n-5), W=(up?348:305)+ext;
   const modell=te===12&&n<=5?`${up?"VU":"VA"}${n*12}${up?"NC":"CN"}`:"";
   return {n,up,te,ext,H,W,modell}; }
-const uvModellText=L=>{ const M=uvMasse(L); return M.modell?`Hager volta ${M.modell}`:`${M.n}-reihig · ${M.te} TE je Reihe`; };
+const uvModellText=L=>{ const M=uvMasse(L); return M.modell&&!L.typFrei?`Hager volta ${M.modell}`:`${M.n}-reihig · ${M.te} TE je Reihe`; };
 function uvZeichnung(L){ const M=uvMasse(L), s=250/400 /* mm je Pixel im Feldbild */, k1=v=>(+v).toFixed(1), B="../bilder/zs/", C=ZSZ_F;
   /* Feldstücke (Pixel im Feldbild): Kopf mit Klemmleiste und 1. Schiene, je weitere Reihe ein Stück mit Schiene, Fuß mit Eckhaltern */
   const KOPF=[0,297], REIHE=[297,497], FUSS=[1597,1682];
