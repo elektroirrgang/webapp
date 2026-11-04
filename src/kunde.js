@@ -27,10 +27,10 @@ function kontakteVon(r){ const L=(r.kontakte||[]).filter(x=>x&&(x.name||x.tel||x
 function kontakteView(kind,r){
   const L=kontakteVon(r), darf=kdDarf(r);
   if(!L.length&&!darf) return "";
-  const zeile=x=>{ const tel=x.tel&&x.tel.replace(/[^\d+]/g,"");
+  const zeile=x=>{ const T=telefoneVon(x), tel=T.length&&T[0].nr.replace(/[^\d+]/g,"");
     return `<div class="kt-z"><button class="kt-haupt" ${darf?`data-act="ktEdit" data-kind="${kind}" data-k="${esc(x.id)}"`:"disabled"}><span class="kt-av">${esc(initials(x.name||x.rolle||"?"))}</span>
-      <span class="kt-t"><b>${esc(x.name||"Ohne Namen")}</b><small>${esc([x.rolle,x.tel,x.mail].filter(Boolean).join(" · "))}</small></span></button>
-      ${tel?`<a class="kt-b" href="tel:${tel}" aria-label="${esc(x.name||"")} anrufen" title="Anrufen">${icon("phone")}</a>`:""}${x.mail?`<a class="kt-b" href="mailto:${esc(x.mail)}" aria-label="E-Mail an ${esc(x.name||"")}" title="E-Mail">${icon("mail")}</a>`:""}</div>`; };
+      <span class="kt-t"><b>${esc(x.name||"Ohne Namen")}</b><small>${esc([x.rolle,...T.map(t=>T.length>1?`${t.art} ${t.nr}`:t.nr),x.mail].filter(Boolean).join(" · "))}</small></span></button>
+      ${T.length>1?`<button class="kt-b" data-act="ktAnruf" data-kind="${kind}" data-r="${esc(r.id)}" data-k="${esc(x.id)}" aria-label="${esc(x.name||"")} anrufen" title="Anrufen">${icon("phone")}</button>`:tel?`<a class="kt-b" href="tel:${tel}" aria-label="${esc(x.name||"")} anrufen" title="Anrufen">${icon("phone")}</a>`:""}${x.mail?`<a class="kt-b" href="mailto:${esc(x.mail)}" aria-label="E-Mail an ${esc(x.name||"")}" title="E-Mail">${icon("mail")}</a>`:""}</div>`; };
   return `<div class="kt-box"><div class="sec-row"><div class="sec-lbl">Ansprechpartner</div>${darf?`<span class="ab-btns"><button class="ab-ic" data-act="ktNeu" data-kind="${kind}" aria-label="Ansprechpartner hinzufügen" title="Ansprechpartner hinzufügen">${icon("add")}</button></span>`:""}</div>
     ${L.length?`<div class="kt-liste">${L.map(zeile).join("")}</div>`:`<p class="meta">Noch keine Ansprechpartner.</p>`}</div>`;
 }
@@ -44,13 +44,15 @@ function ktDialog(kind,r,x){
     <div class="reihe2">${tf("ktTel","Telefon",v.tel,{form:true,type:"tel"})}${tf("ktMail","E-Mail",v.mail,{form:true,type:"email"})}</div>
     ${tf("ktNotiz","Notiz",v.notiz,{form:true,ph:"z. B. erreichbar Mo–Fr vormittags"})}</div>`,
     `${x?`<button class="btn-text danger" data-act="ktDel">Entfernen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ktSave">Speichern</button>`,{breit:true});
+  telFelder(document.getElementById("dlg"),v,"ktTel","ktTelefone");
 }
 function ktSpeichern(del){
   const P=ktForm; if(!P) return; const r=DB[P.kind].get(P.rid); if(!r) return;
   let L=(r.kontakte||[]).slice(); if(!L.length&&r.ansprech) L=[{id:uid(),rolle:"Ansprechpartner",name:r.ansprech}];
   const id=P.id==="alt"?(L[0]&&L[0].id):P.id;
   if(del) L=L.filter(x=>x.id!==id);
-  else { const F=formVals(), x={id:id||uid(),name:F.ktName,rolle:F.ktRolle,tel:F.ktTel,mail:F.ktMail,notiz:F.ktNotiz};
+  else { telSammeln(document.getElementById("dlg")); const F=formVals(); let T=[]; try{ T=F.ktTelefone?JSON.parse(F.ktTelefone):[]; }catch(e){}
+    const x={id:id||uid(),name:F.ktName,rolle:F.ktRolle,tel:F.ktTel,telefone:T,mail:F.ktMail,notiz:F.ktNotiz};
     if(!x.name&&!x.tel&&!x.mail){ toast("Bitte mindestens Name, Telefon oder E-Mail eintragen"); return; }
     const i=L.findIndex(y=>y.id===x.id); if(i>=0) L[i]=x; else L.push(x); }
   r.kontakte=L; const h=L.find(x=>/ansprech/i.test(x.rolle||""))||L[0]; r.ansprech=h?h.name||"":"";
@@ -269,18 +271,19 @@ let telN=0;
 const telZeile=x=>{ const i=++telN; return `<div class="kd-tel"><div class="tf fl kd-tel-art"><select id="telA${i}" data-tel="art">${TEL_ARTEN.map(a=>`<option${a===x.art?" selected":""}>${a}</option>`).join("")}</select><label for="telA${i}">Art</label><span class="arr">${icon("drop")}</span></div>
   <div class="tf"><input id="telN${i}" data-tel="nr" type="tel" inputmode="tel" autocomplete="off" placeholder=" " value="${esc(x.nr||"")}"><label for="telN${i}">Nummer</label></div>
   <button type="button" class="kd-tel-weg" data-act="telWeg" aria-label="Nummer entfernen" title="Nummer entfernen">${icon("close")}</button></div>`; };
-function telFelder(d,r){ const tin=d.querySelector('[data-f="tel"]'); if(!tin||d.querySelector(".kd-tels")) return;
+function telFelder(d,r,feld="tel",feldL="telefone"){ const tin=d.querySelector(`[data-f="${feld}"]`); if(!tin||d.querySelector(".kd-tels")) return;
   const tfT=tin.closest(".tf"), reihe=tfT.parentElement; const L=telefoneVon(r);
-  const block=document.createElement("div"); block.className="kd-tels";
-  block.innerHTML=`<input type="hidden" data-f="tel" value=""><input type="hidden" data-f="telefone" value=""><div class="kd-tel-liste">${(L.length?L:[{art:"Mobil",nr:""}]).map(telZeile).join("")}</div>
+  const block=document.createElement("div"); block.className="kd-tels"; block.dataset.telf=feld; block.dataset.telfl=feldL;
+  block.innerHTML=`<input type="hidden" data-f="${feld}" value=""><input type="hidden" data-f="${feldL}" value=""><div class="kd-tel-liste">${(L.length?L:[{art:"Mobil",nr:""}]).map(telZeile).join("")}</div>
     <button type="button" class="kd-tel-neu" data-act="telNeu">${icon("add")}<span>Weitere Nummer</span></button>`;
   if(reihe.classList.contains("fg1")) tfT.replaceWith(block);
   else { tfT.remove(); if(reihe.classList.contains("reihe3")){ reihe.classList.remove("reihe3"); reihe.classList.add("reihe2"); } reihe.before(block); } }
 function telSammeln(d){ const b=d&&d.querySelector(".kd-tels"); if(!b) return;
   const L=[...b.querySelectorAll(".kd-tel")].map(z=>({art:z.querySelector('[data-tel="art"]').value,nr:z.querySelector('[data-tel="nr"]').value.replace(/\s+/g," ").trim()})).filter(x=>x.nr);
-  b.querySelector('[data-f="tel"]').value=L.length?L[0].nr:""; b.querySelector('[data-f="telefone"]').value=L.length?JSON.stringify(L):""; }
-document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('#dlg [data-act="telNeu"],#dlg [data-act="telWeg"],#dlg [data-act="saveLoc"]'); if(!b) return; const d=document.getElementById("dlg");
+  b.querySelector(`[data-f="${b.dataset.telf||"tel"}"]`).value=L.length?L[0].nr:""; b.querySelector(`[data-f="${b.dataset.telfl||"telefone"}"]`).value=L.length?JSON.stringify(L):""; }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('#dlg [data-act="telNeu"],#dlg [data-act="telWeg"],#dlg [data-act="saveLoc"],#dlg [data-act="ktSave"]'); if(!b) return; const d=document.getElementById("dlg");
   if(b.dataset.act==="saveLoc"){ telSammeln(d); adrFertig(d); return; } /* weiter zum Speichern der App */
+  if(b.dataset.act==="ktSave"){ telSammeln(d); return; } /* Ansprechpartner: Nummern einsammeln, dann speichert ktSpeichern */
   e.stopPropagation(); e.preventDefault(); const liste=d.querySelector(".kd-tel-liste");
   if(b.dataset.act==="telNeu"){ const da=[...liste.querySelectorAll('[data-tel="art"]')].map(x=>x.value); liste.insertAdjacentHTML("beforeend",telZeile({art:TEL_ARTEN.find(a=>!da.includes(a))||"Sonstige",nr:""})); liste.lastElementChild.querySelector("input").focus(); }
   else { const z=b.closest(".kd-tel"); if(liste.children.length>1) z.remove(); else { const i=z.querySelector("input"); i.value=""; i.focus(); } } },true);
@@ -333,3 +336,8 @@ function adrMalen(box){ box.innerHTML=ADR.L.map((x,i)=>`<button type="button" cl
 function adrNehmen(d,x){ if(!d||!x) return; const setz=(f,v)=>{ const i=d.querySelector(`[data-f="${f}"]`); if(i&&v){ i.value=v; i.dispatchEvent(new Event("input",{bubbles:true})); } };
   setz("strasse",x.strasse); setz("plz",x.plz); setz("ort",x.ort); clearTimeout(ADR.t);
   const s=d.querySelector('[data-f="strasse"]'); if(s&&!/\d/.test(x.strasse)){ s.focus(); s.setSelectionRange(s.value.length,s.value.length); } }
+
+/* Ansprechpartner mit mehreren Nummern: Antippen des Hörers fragt, welche */
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="ktAnruf"]'); if(!b) return; e.stopPropagation(); e.preventDefault();
+  const r=DB[b.dataset.kind]&&DB[b.dataset.kind].get(b.dataset.r), x=r&&(r.kontakte||[]).find(y=>y.id===b.dataset.k); if(!x) return;
+  dialog(x.name||"Anrufen",listOf(telefoneVon(x).map(t=>`<a class="li" href="tel:${esc(t.nr.replace(/[^\d+]/g,""))}" style="text-decoration:none;color:inherit"><span class="av">${icon("phone")}</span><span class="lt"><span class="h">${esc(t.nr)}</span><span class="s">${esc(t.art)}</span></span>${icon("chev")}</a>`)),`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`); },true);

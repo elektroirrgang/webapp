@@ -2378,6 +2378,7 @@ async function entwFotoAufnehmen(el){
   const f=el.files[0]; el.value=""; if(!f||!entw) return;
   let data; try{ data=await fotoVerkleinern(f); }catch(e){ toast("Das Bild konnte nicht gelesen werden"); return; }
   entwLesen(); const id=uid(), ok=await fotoPut(id,data); entw.fotos.push(id); entw._neueFotos.push(id); render(); eAuto();
+  if(ok&&typeof fmOeffnen==="function") toast("Foto hinzugefügt","Markieren",()=>fmOeffnen(data,async d2=>{ if(!entw) return; const i=entw.fotos.indexOf(id); if(i<0) return; const neu=uid(); await fotoPut(neu,d2); entw.fotos[i]=neu; entw._neueFotos.push(neu); render(); eAuto(); }));
   if(!ok) toast("Foto nur bis zum Schließen der App gespeichert – Speicher nicht verfügbar");
 }
 function teilenText(e){
@@ -2688,7 +2689,8 @@ function nSichtOk(){
 async function notizFotoAufnehmen(el){
   const f=el.files[0]; el.value=""; if(!f||!nEntw) return;
   let data; try{ data=await fotoVerkleinern(f); }catch(e){ toast("Das Bild konnte nicht gelesen werden"); return; }
-  const id=uid(); await fotoPut(id,data); nEntw.bloecke.push({id:uid(),typ:"foto",foto:id}); nAuto(); nRender();
+  const id=uid(), bid=uid(); await fotoPut(id,data); nEntw.bloecke.push({id:bid,typ:"foto",foto:id}); nAuto(); nRender();
+  if(typeof fmOeffnen==="function") toast("Foto eingefügt","Markieren",()=>fmOeffnen(data,async d2=>{ const x=nBlock(bid); if(!x) return; x.foto=await fmFotoNeu(d2); nAuto(); nRender(); }));
 }
 
 /*ZEICHNEN*/

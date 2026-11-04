@@ -1803,7 +1803,7 @@ function render(){ profilAnwenden();
   document.body.classList.toggle("is-login",login);
   document.body.classList.toggle("has-nav",!login);
   document.body.classList.toggle("ro",E&&!canEdit(cur));
-  $("#backBtn").hidden=(top&&!(nav.v==="katalog"&&!WIDE.matches))||login; $("#navbar").hidden=login; $("#tabs").hidden=nav.v!=="saeule"||WIDE.matches; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]); $("#menuBtn").hidden=login||!(EDITOR.includes(nav.v)||nav.v==="katmodell");   /* ⋮ nur, wo man arbeitet (Prüfung, Katalogmodell) – sonst Kopf wie in allen Apps: Glocke/Profil */
+  $("#backBtn").hidden=(top&&!(nav.v==="katalog"&&!WIDE.matches))||login; $("#navbar").hidden=login; $("#tabs").hidden=nav.v!=="saeule"||WIDE.matches; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]); $("#menuBtn").hidden=true; /* kein ⋮-Menü mehr (wie in den anderen Apps): Aktionen stehen auf der Seite */   /* ⋮ nur, wo man arbeitet (Prüfung, Katalogmodell) – sonst Kopf wie in allen Apps: Glocke/Profil */
   const wide=WIDE.matches, katV=nav.v==="katalog"||nav.v==="katmodell";
   const dests=E?DEST:TOPDEST.filter(d=>d[0]!=="katalog"||wide), active=E?(nav.v==="saeule"?"saeulen":nav.v):katV?(wide?"katalog":"mehr"):(top?nav.v:(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":"kunden");
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
@@ -1833,9 +1833,9 @@ function render(){ profilAnwenden();
     body=nav.v==="kunde"?kundeView(r):nav.v==="standort"?standortView(r):ladeparkView(r);
     fab=nav.v==="kunde"?null:["newHere","Neue Prüfung","add"]; }
   else { const {s,l}=pfad(cur); title=nav.v==="saeule"?sName(cur.s[nav.si],nav.si):(l?l.name:s?s.name:"Prüfung"); sub=nav.v==="saeule"?pfadText(cur):[deDate(cur.p.datum),cur.p.art].filter(Boolean).join(" · ");
-    if(nav.v==="projekt") body=projektView()+(typeof hbLink==="function"?`<div class="narrow">${hbLink("hb-evse","Ladeeinrichtungen prüfen")}</div>`:"");
+    if(nav.v==="projekt") body=projektView()+evAktionen()+(typeof hbLink==="function"?`<div class="narrow">${hbLink("hb-evse","Ladeeinrichtungen prüfen")}</div>`:"");
     else if(nav.v==="saeulen"){ body=saeulenView(); }
-    else if(nav.v==="saeule"){ $("#tabs").innerHTML=saeuleTabs(cur.s[nav.si]); body=saeuleView(); }
+    else if(nav.v==="saeule"){ $("#tabs").innerHTML=saeuleTabs(cur.s[nav.si]); body=saeuleView()+(canEdit(cur)&&cur.s.length>1?`<div class="narrow ev-akt"><button class="btn-tonal" data-act="uebertragAsk">${icon("copy")}Auf andere Stationen übertragen</button></div>`:""); }
     else if(nav.v==="abschluss"){ body=abschlussView(); fab=["pdf","PDF erstellen","pdf"]; }
     if(!canEdit(cur)) body=`<div class="robanner">${icon("lock")}<span>Nur lesen – erstellt von ${esc(vonText(cur)||"jemand anderem")}. Bearbeiten darf nur der Ersteller oder ein Admin.</span></div>`+body;
   }
@@ -2396,6 +2396,11 @@ async function katImport(el){
   }catch(e){ toast("Die Datei ist keine Katalog-Datei"); }
 }
 const DC6_TXT={ja:"integriert (RDC-DD) – RCD Typ A zulässig",nein:"nicht integriert – Schutz Typ B nötig (ggf. in der Station verbaut, siehe Notiz)"};
+/* Aktionen der Prüfung – früher im ⋮-Menü, jetzt unten im Reiter „Auftrag“ (wie „Prüfung löschen“ in Gebäudetechnik) */
+function evAktionen(){ const ok=canEdit(cur), arch=META.archiv.includes(cur.id);
+  const z=(act,ic,t,s)=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(ic)}</span><span class="lt"><span class="h">${t}</span>${s?`<span class="s">${s}</span>`:""}</span>${icon("chev")}</div>`;
+  return `<div class="narrow ev-akt"><div class="sec-lbl">Prüfung</div>${listOf([z("pdf","pdf","PDF erstellen"),z("newSame","copy","Neue Prüfung am selben Ort","z. B. für die Wiederholungsprüfung"),ok?z("move","move","Kunde oder Standort ändern"):"",z("archCur",arch?"unarchive":"archive",arch?"Aus dem Archiv holen":"Archivieren","bleibt beim Kunden sichtbar")].filter(Boolean))}
+    ${ok?`<div class="ev-akt-f"><button class="btn-text danger" data-act="delask">Prüfung löschen</button></div>`:""}</div>`; }
 function katModellView(r){
   const z=(l,v)=>v?`<div class="iz"><span>${l}</span><b>${esc(v)}</b></div>`:"";
   const stb=[z("Hersteller",r.hersteller),z("Modell",r.modell),z("Version",r.version),z("Bauart",r.art),z("Ladeleistung",r.leistung&&`${r.leistung} kW`),
@@ -2426,6 +2431,7 @@ function katModellView(r){
     :`<p class="meta">Noch keine Hinweise. Zum Beispiel: Wo wird der PE angeschlossen, wie kommt man an die Klemmen, was muss eingerichtet werden?</p>`;
   const ps=katVerbaut(r);
   if(ps.length) h+=`<details class="kat-gepr"><summary>${icon("doc")}<span>Bei uns geprüft: ${ps.length}× · zuletzt ${esc(deDate(ps[0].p.datum))}</span>${icon("drop")}</summary>${listOf(ps.slice(0,30).map(p=>pItem(p,true)))}${ps.length>30?`<p class="meta">… und ${ps.length-30} weitere</p>`:""}</details>`;
+  if(canEdit(r)) h+=`<div class="ev-akt-f" style="margin-top:24px"><button class="btn-text danger" data-act="katDelAsk">Modell löschen</button></div>`;
   return h+`</div>`;
 }
 let anhDB=null; const ANH_DA=new Set();
@@ -3132,6 +3138,7 @@ async function fotoAufnehmen(el){
   const id=uid(), ok=await fotoPut(id,data); s.fotos[t.k]=id; fotoQueue(id); commit();
   if(nav.v==="saeule"&&nav.si===t.si){ const y=scrollY; render(); scrollTo(0,y); }
   if(!ok) toast("Foto nur bis zum Schließen der App gespeichert – Speicher nicht verfügbar");
+  else if(typeof fmOeffnen==="function"){ const pid=cur.id, si=t.si, k=t.k; toast("Foto gespeichert","Markieren",()=>fmOeffnen(data,async d2=>{ if(!cur||cur.id!==pid) return; const s2=cur.s[si]; if(!s2||!s2.fotos||s2.fotos[k]!==id) return; s2.fotos[k]=await fmFotoNeu(d2); fotoDel([id]); commit(); if(nav.v==="saeule"&&nav.si===si){ const y=scrollY; render(); scrollTo(0,y); } })); }
 }
 /* Backup-Seite (profil.js): Anhänge aus dem Wallbox-Katalog gehören mit in die Sicherung */
 async function backupExtra(){ const dateien={}; for(const d of live("katalog").flatMap(r=>r.anhaenge||[])){ const o=await anhGet(d.id); if(o&&o.blob) dateien[d.id]={name:o.name,type:o.type,data:await blobToDataUrl(o.blob)}; } return {dateien}; }

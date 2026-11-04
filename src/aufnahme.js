@@ -158,7 +158,8 @@ document.addEventListener("change",async e=>{ if(e.target.id!=="afFotoIn") retur
   let data; try{ data=await fotoVerkleinern(f); }catch(x){ toast("Das Bild konnte nicht gelesen werden"); return; }
   const a=afDaten(b), id=uid(), ok=await fotoPut(id,data); a.fotos[afFotoZiel]=[...(a.fotos[afFotoZiel]||[]),id].slice(0,AF_FOTO_MAX); fotoQueue(id);
   const sec=AUFN.find(s=>s.fotos); if(sec&&!a.v[afFotoZiel]) a.v[afFotoZiel]="Ja";
-  afSpeichern(b,true); const y=scrollY; render(); scrollTo(0,y); if(!ok) toast("Foto nur bis zum Schließen der App gespeichert – Speicher nicht verfügbar"); });
+  afSpeichern(b,true); const y=scrollY; render(); scrollTo(0,y); if(!ok){ toast("Foto nur bis zum Schließen der App gespeichert – Speicher nicht verfügbar"); return; }
+  const k=afFotoZiel; if(typeof fmOeffnen==="function") toast("Foto gespeichert","Markieren",()=>fmOeffnen(data,async d2=>{ const a2=afDaten(b), L=(a2.fotos[k]||[]).slice(), i=L.indexOf(id); if(i<0) return; L[i]=await fmFotoNeu(d2); a2.fotos[k]=L; fotoDel([id]); afSpeichern(b,true); const y2=scrollY; render(); scrollTo(0,y2); })); });
 
 /* Unterschrift */
 function afUnterschrift(b){
