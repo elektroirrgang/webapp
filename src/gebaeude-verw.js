@@ -3,7 +3,7 @@
    Gespeichert wird sofort bei jeder Änderung (ecGebSpeichern) – ohne Änderung entsteht kein Datensatz. */
 Object.assign(IC,{gvGeb:"M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 12h-2v-2h2v2zm0-4h-2v-2h2v2z",
   gvEdit:"M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"});
-const GV={ort:"",et:"",raum:"",bt:"",gsHand:false,loesch:false,sel:null,selOrt:""};
+const GV={ort:"",et:"",raum:"",bt:"",gsHand:false,loesch:false,sel:null,selOrt:"",teil:"",ber:"",berDlg:""};
 /* Bauteil = eigenes Gebäude mit eigenen Etagen: etagen[].bauteilId. Ältere Etagen ohne Bauteil, deren Räume alle in einem Bauteil liegen, gehören zu diesem. */
 const gvAbc=(a,b)=>String(a.name||"").localeCompare(String(b.name||""),"de",{numeric:true,sensitivity:"base"});
 function gvNorm(g){ g.bauteile=g.bauteile||[]; (g.bauteile||[]).forEach(b=>{ const v=b.raumVor&&gvVorText(b); if(!v) return; g.etagen.forEach(e=>{ if((e.bauteilId||"")!==b.id) return; e.raeume.forEach(r=>{ if(new RegExp("^"+v.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\d","i").test(r.name)) r.name=`${v} ${r.name.slice(v.length)}`; }); }); }); if(g.bauteile.length>1) g.bauteile.sort(gvAbc);   /* Bauteile immer A–Z */ g.etagen.forEach(e=>{ if(e.bauteilId&&!g.bauteile.some(b=>b.id===e.bauteilId)) delete e.bauteilId;
@@ -44,10 +44,29 @@ function gvView(){ const g=gvGeb(nav.ort), B=g.bauteile, sel=gvSel(g), ohneE=g.e
   return `<div class="narrow gv-seite">${kopf}${zuordnen}${etagen}
     <p class="meta" style="margin:20px 4px 0">Dieselben Bauteile, Etagen und Räume nutzen Prüfung, Verteiler und KNX.</p></div>`; }
 /* eigene Seite einer Etage mit ihren Räumen */
-function gvEtSeite(g,e){ const R=e.raeume||[];
-  return `<div class="narrow gv-seite"><div class="sec-row"><div class="sec-lbl">Räume · ${R.length}</div><span class="ab-btns"><button class="ab-ic" data-act="gvEt" data-id="${esc(e.id)}" aria-label="Etage bearbeiten" title="Etage bearbeiten">${icon("gvEdit")}</button><button class="ab-ic" data-act="gvRaumNeu" data-id="${esc(e.id)}" aria-label="Räume hinzufügen" title="Räume hinzufügen">${icon("add")}</button></span></div>
-    ${R.length?`<div class="gv-rs">${R.map(x=>`<button type="button" class="gv-r" data-act="gvRaum" data-id="${esc(x.id)}"><b>${esc(x.name)}</b></button>`).join("")}</div>`:`<p class="meta">Noch keine Räume – mit „+“ oder unten rechts anlegen, z. B. „403-407“.</p>`}
+/* Raumname in Nummer und Bezeichnung zerlegen: „B 409 Herren WC“ → B 409 | Herren WC */
+function gvNr(n){ n=String(n||"").trim(); const m=n.match(/^((?:[A-Za-zÄÖÜäöü]{1,3}[ .-]?)?\d[\w./-]*)\s+(.+)$/); return m?{nr:m[1],txt:m[2]}:/\d/.test(n)&&n.length<=12?{nr:n,txt:""}:{nr:"",txt:n}; }
+const gvBer=e=>(e.bereiche=e.bereiche||[]);
+/* eigene Seite einer Etage: Räume als Liste, nach Bereichen gruppiert; Einteil-Modus zum Zuordnen */
+function gvRaumZeile(x,rechts,act){ const z=gvNr(x.name);
+  return `<button type="button" class="gv-rz${act==="gvTeilR"&&x._an?" an":""}" data-act="${act||"gvRaum"}" data-id="${esc(x.id)}"><span class="gv-nr${z.nr?"":" leer"}">${esc(z.nr||"–")}</span><span class="gv-rt">${esc(z.txt||(z.nr?"":x.name))}</span>${rechts||""}</button>`; }
+function gvEtSeite(g,e){ const R=e.raeume||[], B=gvBer(e), knoepfe=`<span class="ab-btns"><button class="ab-ic" data-act="gvEt" data-id="${esc(e.id)}" aria-label="Etage bearbeiten" title="Etage bearbeiten">${icon("gvEdit")}</button><button class="ab-ic" data-act="gvRaumNeu" data-id="${esc(e.id)}" aria-label="Räume hinzufügen" title="Räume hinzufügen">${icon("add")}</button></span>`;
+  if(!R.length) return `<div class="narrow gv-seite"><div class="sec-row"><div class="sec-lbl">Räume · 0</div>${knoepfe}</div><p class="meta">Noch keine Räume – mit „+“ oder unten rechts anlegen, z. B. „403-407, 409-411“.</p></div>`;
+  if(GV.teil===e.id){ const akt=B.find(x=>x.id===GV.ber);
+    const chips=`<div class="gv-ber">${B.map(x=>`<button type="button" class="gv-berk" data-act="gvBerW" data-v="${esc(x.id)}" aria-pressed="${GV.ber===x.id}"><b>${esc(x.name)}</b><small>${R.filter(r=>r.bereichId===x.id).length}</small></button>`).join("")}<button type="button" class="gv-berk neu" data-act="gvBerNeu">${icon("add")}<b>Bereich</b></button></div>`;
+    return `<div class="narrow gv-seite"><section class="card gv-teil"><div class="gv-teil-kopf"><b>Bereiche einteilen</b><button type="button" class="btn-filled sm" data-act="gvTeilAus">Fertig</button></div>
+      <p class="meta" style="margin:4px 0 10px">${B.length?(akt?`Räume antippen, die zu „${esc(akt.name)}“ gehören. Nochmal antippen nimmt sie wieder raus.`:"Oben einen Bereich wählen, dann die Räume antippen."):"Lege zuerst einen Bereich an, z. B. „Links“, „Mitte/WCs“, „Rechts“, „Flur“."}</p>${chips}
+      ${akt?`<div class="gv-berknopf"><button type="button" class="btn-text" data-act="gvBerEd" data-v="${esc(akt.id)}">„${esc(akt.name)}“ umbenennen oder löschen</button></div>`:""}</section>
+      <div class="gv-rl">${R.map(x=>{ const z=B.find(b=>b.id===x.bereichId); x._an=!!(akt&&x.bereichId===akt.id); const h=gvRaumZeile(x,`<span class="gv-rb${z?"":" leer"}">${esc(z?z.name:"–")}</span>`,"gvTeilR"); delete x._an; return h; }).join("")}</div></div>`; }
+  const grp=[...B.map(b=>({b,L:R.filter(r=>r.bereichId===b.id)})),{b:null,L:R.filter(r=>!r.bereichId||!B.some(b=>b.id===r.bereichId))}].filter(x=>x.L.length);
+  return `<div class="narrow gv-seite"><div class="sec-row"><div class="sec-lbl">Räume · ${R.length}</div>${knoepfe}</div>
+    <button type="button" class="btn-tonal gv-teilknopf" data-act="gvTeilAn" data-id="${esc(e.id)}">${icon("kxUeb")}${B.length?"Bereiche ändern":"In Bereiche einteilen"}</button>
+    ${grp.map(({b,L})=>`${B.length?`<div class="gv-grp">${esc(b?b.name:"Ohne Bereich")} · ${L.length}</div>`:""}<div class="gv-rl">${L.map(x=>gvRaumZeile(x)).join("")}</div>`).join("")}
     <p class="meta" style="margin:20px 4px 0">Reihenfolge = Reihenfolge beim Durchgehen (und der KNX-Adressen). Raum antippen zum Umbenennen, Verschieben oder Löschen.</p></div>`; }
+function gvBerDlg(id){ const g=gvAkt(), e=g&&g.etagen.find(x=>x.id===nav.et); if(!e) return; const b=id&&gvBer(e).find(x=>x.id===id); GV.berDlg=b?b.id:""; GV.loesch=false;
+  dialog(b?"Bereich bearbeiten":"Neuer Bereich",`<div class="fg1">${tf("gvBen","Bezeichnung",b?b.name:"",{form:true,ph:"z. B. Links, Mitte/WCs, Rechts, Flur"})}</div>${b?"":`<p class="meta" style="margin-top:8px">Mehrere auf einmal mit Komma: „Links, Mitte, Rechts, Flur“.</p>`}`,
+    `${b?`<button class="btn-text danger" data-act="gvBerWeg">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gvBerOk">${b?"Speichern":"Anlegen"}</button>`,{breit:true});
+  setTimeout(()=>{ const x=document.getElementById("f_gvBen"); if(x) x.focus(); },60); }
 function gvTitel(){ const g=gvGeb(nav.ort), e=nav.et&&g.etagen.find(x=>x.id===nav.et); if(!e) return {title:ecOrt(nav.ort).titel,sub:"Gebäude"};
   const b=gvEtBt(g,e), gs=gvGs(e), gsT=gs!=null?ecGeschossName(gs):""; return {title:e.name,sub:[b&&b.name,gsT&&gsT!==e.name?gsT:""].filter(Boolean).join(" · ")||"Etage"}; }
 const gvAkt=()=>{ const g=nav.v==="geb"?gvGeb(nav.ort):nav.v==="kx"&&typeof kxGebAkt==="function"?kxGebAkt():null; return g?gvNorm(g):null; };
@@ -138,18 +157,32 @@ const gvRaumBezug=(g,id)=>(g.stellen||[]).filter(s=>s.raumId===id).length+(g.dos
 function gvRaumDlg(id){ const g=gvAkt(), f=g&&gvRaumFinden(g,id); if(!f) return; GV.raum=id; GV.loesch=false; const E=ecEtagen(g);
   dialog("Raum bearbeiten",`<div class="fg1">${tf("gvRn","Bezeichnung",f.r.name,{form:true})}</div>
     <div class="fg1" style="margin-top:12px">${sf("gvRe",g.bauteile.length?"Bauteil und Etage":"Etage",f.e.id,E.map(e=>[e.id,gvEtName(g,e)]),{form:true})}</div>
+    ${gvBer(f.e).length?`<div class="fg1" style="margin-top:12px">${sf("gvRber","Bereich",f.r.bereichId||"",[["","– ohne –"],...gvBer(f.e).map(b=>[b.id,b.name])],{form:true})}</div>`:""}
     <div class="gv-schieb"><span class="meta">Reihenfolge auf der Etage</span><button type="button" class="kx-tk" data-act="gvRAuf" aria-label="nach vorne">↑</button><button type="button" class="kx-tk" data-act="gvRAb" aria-label="nach hinten">↓</button></div>`,
     `<button class="btn-text danger" data-act="gvRaumWeg">Löschen</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gvRaumSp">Speichern</button>`,{breit:true}); }
 function gvRaumSp(){ const g=gvAkt(), f=g&&gvRaumFinden(g,GV.raum); if(!f) return; const F=formVals(), n=String(F.gvRn||"").trim(); if(!n){ toast("Bitte eine Bezeichnung eingeben"); return; }
-  f.r.name=n;
-  if(F.gvRe&&F.gvRe!==f.e.id){ const z=g.etagen.find(x=>x.id===F.gvRe); if(z){ f.e.raeume=f.e.raeume.filter(x=>x!==f.r); z.raeume.push(f.r); if(z.bauteilId) f.r.bauteilId=z.bauteilId; else delete f.r.bauteilId; } }
+  f.r.name=n; if(F.gvRber!==undefined){ if(F.gvRber) f.r.bereichId=F.gvRber; else delete f.r.bereichId; }
+  if(F.gvRe&&F.gvRe!==f.e.id){ const z=g.etagen.find(x=>x.id===F.gvRe); if(z){ f.e.raeume=f.e.raeume.filter(x=>x!==f.r); z.raeume.push(f.r); delete f.r.bereichId; if(z.bauteilId) f.r.bauteilId=z.bauteilId; else delete f.r.bauteilId; } }
   gvSpeichern(g); closeOverlays(); render(); }
 
 /* ===== Klicks ===== */
 document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act^="gv"]'); if(!b) return; const a=b.dataset.act; ev.stopPropagation();
   if(a==="gvAuf"){ closeOverlays(); go({v:"geb",ort:b.dataset.v,...(nav.v==="kunde"||nav.v==="standort"?{von:{v:nav.v,id:nav.id}}:{})}); return; }
   if(a==="gvRaumNeu"){ gvRaumNeuDlg(gvAkt(),b.dataset.id||(nav.v==="geb"&&nav.et)||""); return; }
-  if(a==="gvEtAuf"){ nav.et=b.dataset.id; render(); scrollTo(0,0); return; }
+  if(a==="gvEtAuf"){ nav.et=b.dataset.id; GV.teil=""; render(); scrollTo(0,0); return; }
+  if(a==="gvTeilAn"){ GV.teil=b.dataset.id; const g=gvAkt(), e=g&&g.etagen.find(x=>x.id===GV.teil); GV.ber=e&&gvBer(e)[0]?gvBer(e)[0].id:""; render(); scrollTo(0,0); if(e&&!gvBer(e).length) gvBerDlg(); return; }
+  if(a==="gvTeilAus"){ GV.teil=""; render(); return; }
+  if(a==="gvBerW"){ GV.ber=b.dataset.v; const y=scrollY; render(); scrollTo(0,y); return; }
+  if(a==="gvBerNeu"){ gvBerDlg(); return; }
+  if(a==="gvBerEd"){ gvBerDlg(b.dataset.v); return; }
+  if(a==="gvBerOk"){ const g=gvAkt(), e=g&&g.etagen.find(x=>x.id===nav.et); if(!e) return; const n=String(formVals().gvBen||"").trim(); if(!n){ toast("Bitte eine Bezeichnung eingeben"); return; }
+    if(GV.berDlg){ const x=gvBer(e).find(z=>z.id===GV.berDlg); if(x) x.name=n; }
+    else { let erst=""; n.split(/\s*,\s*/).filter(Boolean).forEach(t=>{ if(gvBer(e).some(z=>z.name.toLowerCase()===t.toLowerCase())) return; const z={id:"z-"+uid(),name:t}; gvBer(e).push(z); if(!erst) erst=z.id; }); if(erst) GV.ber=erst; }
+    gvSpeichern(g); closeOverlays(); render(); return; }
+  if(a==="gvBerWeg"){ const g=gvAkt(), e=g&&g.etagen.find(x=>x.id===nav.et); if(!e) return; const id=GV.berDlg; e.bereiche=gvBer(e).filter(z=>z.id!==id); e.raeume.forEach(r=>{ if(r.bereichId===id) delete r.bereichId; }); if(GV.ber===id) GV.ber=e.bereiche[0]?e.bereiche[0].id:"";
+    gvSpeichern(g); closeOverlays(); render(); return; }
+  if(a==="gvTeilR"){ const g=gvAkt(), f=g&&gvRaumFinden(g,b.dataset.id); if(!f) return; if(!GV.ber){ toast("Erst oben einen Bereich wählen"); return; }
+    if(f.r.bereichId===GV.ber) delete f.r.bereichId; else f.r.bereichId=GV.ber; const y=scrollY; gvSpeichern(g); render(); scrollTo(0,y); return; }
   if(a==="gvRaumOk"){ gvRaumOk(); return; }
   if(a==="gvEtNeu"){ gvEtDlg(); return; }
   if(a==="gvEt"){ gvEtDlg(b.dataset.id); return; }

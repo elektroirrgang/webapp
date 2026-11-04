@@ -23,7 +23,7 @@ function kxRaeume(g){ const B=g.bauteile||[], out=[];
   ecEtagen(g).forEach(e=>e.raeume.forEach((r,i)=>out.push({r,e,b:(r.bauteilId||e.bauteilId)&&B.find(x=>x.id===(r.bauteilId||e.bauteilId)),i})));
   return out.sort((x,y)=>{ const bx=x.b?B.indexOf(x.b):-1, by=y.b?B.indexOf(y.b):-1; return bx-by; }); }
 const kxRaumInfo=(g,rid)=>kxRaeume(g).find(x=>x.r.id===rid);
-const kxGruppe=x=>[x.b&&(/^bauteil/i.test(x.b.name)?x.b.name:`Bauteil ${x.b.name}`),x.e.name].filter(Boolean).join(" · ");
+const kxGruppe=x=>{ const z=x.r.bereichId&&(x.e.bereiche||[]).find(b=>b.id===x.r.bereichId); return [x.b&&(/^bauteil/i.test(x.b.name)?x.b.name:`Bauteil ${x.b.name}`),x.e.name,z&&z.name].filter(Boolean).join(" · "); };
 const kxRaumTitel=(g,rid)=>{ const x=kxRaumInfo(g,rid); return x?`${x.r.name}`:"Raum"; };
 const kxLinie=(g,id)=>kxNorm(g).linien.find(l=>l.id===id);
 const kxLinieVonRaum=(g,rid)=>kxNorm(g).linien.find(l=>(l.raeume||[]).includes(rid));
@@ -116,7 +116,9 @@ function kxLinieDlg(id){ const g=kxGebAkt(); if(!g) return; const l=id&&kxLinie(
   KX_LDLG={id:l?l.id:"",raeume:new Set(l?l.raeume:[])};
   const andere=rid=>{ const x=kxLinieVonRaum(g,rid); return x&&(!l||x.id!==l.id)?x:null; };
   dialog(l?`Linie ${l.bereich}.${l.linie}`:"Neue Linie",`<div class="knx-felder" style="grid-template-columns:1fr 1fr">${tf("kxLn","Linie",l?`${l.bereich}.${l.linie}`:"",{form:true,ph:"z. B. 6.1",im:"decimal"})}${tf("kxLs","Erste Gerätenummer",String(l&&l.start||1),{form:true,im:"numeric"})}</div>
-    <div class="lbl" style="margin-top:12px">Räume dieser Linie</div>${R.length?`<div class="kx-rwahl">${R.map(x=>{ const a=andere(x.r.id); return `<button type="button" class="kx-rw${a?" fremd":""}" data-act="kxLRaum" data-v="${esc(x.r.id)}" aria-pressed="${KX_LDLG.raeume.has(x.r.id)}"><b>${esc(x.r.name)}</b>${a?`<small>${esc(a.bereich+"."+a.linie)}</small>`:""}</button>`; }).join("")}</div>`:`<p class="meta">Erst Räume anlegen.</p>`}
+    ${(()=>{ const Z=[], mehrB=(g.bauteile||[]).length>1; ecEtagen(g).forEach(e=>(e.bereiche||[]).forEach(z=>{ const ids=e.raeume.filter(r=>r.bereichId===z.id).map(r=>r.id); if(!ids.length) return; const b=mehrB&&e.bauteilId&&g.bauteile.find(x=>x.id===e.bauteilId); Z.push({z,e,ids,t:[b&&(b.kurz||String(b.name).replace(/^bauteil\s*/i,"")),e.name,z.name].filter(Boolean).join(" · ")}); }));
+      return Z.length?`<div class="lbl" style="margin-top:12px">Bereich übernehmen</div><div class="kx-zonen">${Z.map(x=>`<button type="button" class="kx-zon" data-act="kxLZone" data-v="${esc(x.ids.join(","))}" aria-pressed="${x.ids.every(i=>KX_LDLG.raeume.has(i))}"><b>${esc(x.t)}</b><small>${x.ids.length} Räume</small></button>`).join("")}</div>`:""; })()}
+    <div class="lbl" style="margin-top:12px">Räume dieser Linie</div>${R.length?`<div class="kx-rwahl">${R.map(x=>{ const a=andere(x.r.id), z=typeof gvNr==="function"?gvNr(x.r.name):{nr:x.r.name,txt:""}; return `<button type="button" class="kx-rw${a?" fremd":""}" data-act="kxLRaum" data-v="${esc(x.r.id)}" aria-pressed="${KX_LDLG.raeume.has(x.r.id)}" title="${esc(x.r.name)}"><b>${esc(z.nr||z.txt)}</b>${a?`<small>${esc(a.bereich+"."+a.linie)}</small>`:z.nr&&z.txt?`<small>${esc(z.txt)}</small>`:""}</button>`; }).join("")}</div>`:`<p class="meta">Erst Räume anlegen.</p>`}
     <p class="meta" style="margin:8px 4px 0">Reihenfolge der Adressen = Reihenfolge der Räume (wie unter „Räume“).</p>`,
     `${l?`<button class="btn-text" data-act="kxLinieWeg" data-id="${esc(l.id)}" style="color:var(--err)">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="kxLinieOk">Speichern</button>`,{breit:true}); }
 function kxLinieOk(){ const g=kxGebAkt(); if(!g||!KX_LDLG) return; const F=formVals(), m=String(F.kxLn||"").trim().replace(/\.$/,"").match(/^(\d{1,2})\.(\d{1,2})$/);
@@ -229,7 +231,11 @@ document.addEventListener("click",async ev=>{ const b=ev.target.closest&&ev.targ
   if(a==="kxRaumNeu"){ gvRaumNeuDlg(kxGebAkt()); return; }
   if(a==="kxLinieNeu"){ kxLinieDlg(); return; }
   if(a==="kxLinie"){ kxLinieDlg(b.dataset.id); return; }
-  if(a==="kxLRaum"){ const v=b.dataset.v; if(KX_LDLG.raeume.has(v)) KX_LDLG.raeume.delete(v); else KX_LDLG.raeume.add(v); b.setAttribute("aria-pressed",String(KX_LDLG.raeume.has(v))); return; }
+  if(a==="kxLRaum"){ const v=b.dataset.v; if(KX_LDLG.raeume.has(v)) KX_LDLG.raeume.delete(v); else KX_LDLG.raeume.add(v); b.setAttribute("aria-pressed",String(KX_LDLG.raeume.has(v)));
+    document.querySelectorAll('#dlg [data-act="kxLZone"]').forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v.split(",").every(i=>KX_LDLG.raeume.has(i))))); return; }
+  if(a==="kxLZone"){ const ids=b.dataset.v.split(","), alle=ids.every(i=>KX_LDLG.raeume.has(i)); ids.forEach(i=>{ if(alle) KX_LDLG.raeume.delete(i); else KX_LDLG.raeume.add(i); });
+    document.querySelectorAll('#dlg [data-act="kxLRaum"]').forEach(x=>x.setAttribute("aria-pressed",String(KX_LDLG.raeume.has(x.dataset.v))));
+    document.querySelectorAll('#dlg [data-act="kxLZone"]').forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v.split(",").every(i=>KX_LDLG.raeume.has(i))))); return; }
   if(a==="kxLinieOk"){ kxLinieOk(); return; }
   if(a==="kxLinieWeg"){ const g=kxGebAkt(); if(!g) return; g.knx.linien=g.knx.linien.filter(l=>l.id!==b.dataset.id); kxSpeichern(g); closeOverlays(); render(); return; }
   if(a==="kxAdr"){ kxAdrDlg(b.dataset.id); return; }
