@@ -2158,7 +2158,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   else if(nav.v==="about"){ title="Über die App"; body=aboutView(); }
   else if(VIEW_KIND[nav.v]){ const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id); if(!r||r.deleted){ nav={v:"kunden"}; return render(); }
     title=r.name; sub=kind==="kunden"?"Kunde":(kundeOf(r.kundeId)||{}).name||""; body=kind==="kunden"?kundeView(r):standortView(r);
-    fab=kind==="kunden"?["newStandort","Standort","add"]:null; }
+    fab=null; }
   if(SY.state==="anmelden"&&!login) body=`<div class="robanner warn">${icon("sync")}<span>Anmeldung abgelaufen – Änderungen werden nur auf dem Gerät gespeichert.</span><button class="btn-text" data-act="relogin">Anmelden</button></div>`+body;
   app.innerHTML=(WIDE.matches&&!login?seitenKopf(title,sub,fab):"")+body; backSetzen(); navIndSetzen(); segInd(); kopfEinhaengen();
   $("#topTitle").innerHTML=title?`<span>${esc(title)}</span>${sub?`<small>${esc(String(sub).split(/\s*›\s*/).pop())}</small>`:""}`:"";
@@ -2238,13 +2238,8 @@ function kundenView(){
   if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden und Standorte sind dieselben wie in der Übersicht und den Apps EVSE und Baustelle.</p></div><div class="narrow">${legOhneEintrag(false)}</div>`;
   return `<div class="narrow">${searchBar("Kunde, Ort, Ansprechpartner suchen",fKnopf("kunden"))}${query?"":kDoppeltKarte()}<div id="res">${kundenListe()}</div></div>`;
 }
-function kundeView(k){ const ss=standorteVon(k.id);
-  return `<div class="narrow kd-seite">${kdOben(k,"kunden",ss)}${kontakteView("kunden",k)}
-    ${ablageView("kunden",k)}
-    ${kdKopf(kdOrteTitel(k),kdDarf(k)&&"newStandort",kdArt(k)==="privat"?"Objekt hinzufügen":"Standort hinzufügen")}${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">${kdKeinOrt(k)?esc(kdKeinOrt(k)):"Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager)."}</p>`}
-    ${ecBeiKunde("kunden",k)}${vtBeiKunde("kunden",k)}
-</div>`; }
-function standortView(s){ return `<div class="narrow kd-seite">${kdOben(s,"standorte")}${kontakteView("standorte",s)}${ablageView("standorte",s)}${ecBeiKunde("standorte",s)}${vtBeiKunde("standorte",s)}</div>`; }
+function kundeView(k){ return kdSeite(k,"kunden",ecBeiKunde("kunden",k)+vtBeiKunde("kunden",k)); }
+function standortView(s){ return kdSeite(s,"standorte",ecBeiKunde("standorte",s)+vtBeiKunde("standorte",s)); }
 let locForm=null;
 function locDialog(kind,rec,parentId){
   locForm={kind,id:rec&&rec.id,parentId}; const r=rec||{}; if(rec) adrSplit(r);

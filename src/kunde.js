@@ -218,6 +218,14 @@ const kdArt=k=>k&&KD_ARTEN.some(x=>x[0]===k.art)?k.art:(KD_FIRMA_RE.test(String(
 const kdListe=t=>Array.isArray(t)?t:String(t||"").split(/\s*[,;\n]\s*/).map(x=>x.trim()).filter(Boolean);
 const kdOrteTitel=k=>kdArt(k)==="privat"?"Weitere Objekte":"Standorte";
 const kdKeinOrt=k=>kdArt(k)==="privat"?"Das Objekt ist die Adresse des Kunden. Ein weiteres nur, wenn er z. B. ein zweites Haus hat.":"";
+/* ===== Kundenseite – EIN Aufbau für alle Apps (Entscheidung Max 04.11.2026) =====
+   Kopf + Karte · Ansprechpartner · [Block der App] · Weitere Objekte/Standorte · Dokumente und Fotos.
+   Der Block zeigt nur, was die App kann (EVSE: Prüfverlauf, Baustelle: Baustellen, Gebäudetechnik: Prüfungen + Verteiler);
+   die Übersicht zeigt alle Blöcke. Kein schwebender Knopf – Neues über das Plus im jeweiligen Abschnitt. */
+function kdOrteBlock(k,ss){ return kdKopf(kdOrteTitel(k),kdDarf(k)&&"newStandort",kdArt(k)==="privat"?"Objekt hinzufügen":"Standort hinzufügen")
+  +(ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">${esc(kdKeinOrt(k)||"Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager).")}</p>`); }
+function kdSeite(r,kind,block){ const ss=kind==="kunden"?standorteVon(r.id):[];
+  return `<div class="narrow kd-seite">${kdOben(r,kind,ss)}${kontakteView(kind,r)}${block||""}${kind==="kunden"?kdOrteBlock(r,ss):""}${ablageView(kind,r)}</div>`; }
 const KD_ANREDE=[["herr","Herr"],["frau","Frau"],["","Ohne"]];
 const kdAnrede=k=>({herr:"Herr",frau:"Frau"})[k&&k.anrede]||"";
 /* Bearbeiten-Fenster (in allen Apps) nach dem Öffnen ergänzen: Kundenart, Privat-Felder, Bauteile/Ebenen */

@@ -2394,19 +2394,10 @@ function kundenView(){
   if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden und Standorte sind dieselben wie in EVSE – was dort angelegt ist, erscheint hier automatisch.</p></div>`;
   return `<div class="narrow">${searchBar("Kunde, Kundennr. oder Ort suchen")}<div id="res">${kundenListe()}</div></div>`;
 }
-function kundeView(k){
-  const ss=standorteVon(k.id), bs=live("baustellen").filter(b=>b.kundeId===k.id).sort((a,b)=>aktiv(b)-aktiv(a));
-  return `<div class="narrow kd-seite">${kdOben(k,"kunden",ss)}${kontakteView("kunden",k)}
-    ${kdKopf("Baustellen","neueBaustelleKunde","Baustelle anlegen")}${bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle bei diesem Kunden.</p>`}
-    ${kdKopf(kdOrteTitel(k),kdDarf(k)&&"newStandort",kdArt(k)==="privat"?"Objekt hinzufügen":"Standort hinzufügen")}${ss.length?listOf(ss.map(s=>locItem("standorte",s))):`<p class="meta">${kdKeinOrt(k)?esc(kdKeinOrt(k)):"Nur nötig, wenn der Kunde mehrere Adressen hat (z. B. Werk und Lager) – sonst gilt die Adresse des Kunden."}</p>`}
-    ${ablageView("kunden",k)}</div>`;
-}
-function standortView(s){
-  const bs=live("baustellen").filter(b=>b.standortId===s.id).sort((a,b)=>aktiv(b)-aktiv(a));
-  return `<div class="narrow kd-seite">${kdOben(s,"standorte")}${kontakteView("standorte",s)}
-    ${kdKopf("Baustellen","neueBaustelleHier","Baustelle anlegen")}${bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle an diesem Standort.</p>`}
-    ${ablageView("standorte",s)}</div>`;
-}
+function kundeView(k){ const bs=live("baustellen").filter(b=>b.kundeId===k.id).sort((a,b)=>aktiv(b)-aktiv(a));
+  return kdSeite(k,"kunden",kdKopf("Baustellen","neueBaustelleKunde","Baustelle anlegen")+(bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle bei diesem Kunden.</p>`)); }
+function standortView(s){ const bs=live("baustellen").filter(b=>b.standortId===s.id).sort((a,b)=>aktiv(b)-aktiv(a));
+  return kdSeite(s,"standorte",kdKopf("Baustellen","neueBaustelleHier","Baustelle anlegen")+(bs.length?listOf(bs.map(bItem)):`<p class="meta">Noch keine Baustelle an diesem Standort.</p>`)); }
 let locForm=null;
 function locDialog(kind,rec,parentId){
   locForm={kind,id:rec&&rec.id,parentId}; const r=rec||{}; if(rec) adrSplit(r);
