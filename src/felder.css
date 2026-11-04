@@ -1889,3 +1889,19 @@ html body.sc-eng .navbar,html body.sc-eng.rail-open .navbar{transform:translateX
 .gv-rz .gv-rt span{color:var(--on-sv)}
 .gv-rz.an .gv-rt span{color:inherit}
 .gv-teil .gv-rz .gv-nr{background:none}
+/* Auswählen und einteilen */
+.gv-wahlkopf{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 10px}
+.gv-wahlkopf span{display:flex;flex-direction:column;min-width:0}.gv-wahlkopf b{font-size:20px;line-height:26px}.gv-wahlkopf small{font-size:13px;color:var(--on-sv)}
+.gv-schnell{margin-bottom:6px}
+.gv-wahl .gv-rz.an{background:var(--pc);color:var(--on-pc)}.gv-wahl .gv-rz.an .gv-rt span{color:var(--on-pc)}
+.gv-aktbar{position:fixed;z-index:25;left:16px;right:16px;bottom:calc(96px + env(safe-area-inset-bottom,0px));display:flex;gap:6px;padding:6px;border-radius:24px;background:var(--sc-highest);box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.gv-aktbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;border-radius:18px;background:var(--pc);color:var(--on-pc);padding:8px 4px;font:600 13px var(--font);cursor:pointer}
+.gv-aktbar button .ic{width:22px;height:22px;fill:currentColor}
+.gv-aktbar.aus button{background:transparent;color:var(--on-sv);opacity:.6;cursor:default}
+@media (min-width:744px){.gv-aktbar{left:auto;right:24px;bottom:24px;width:360px}}
+body:has(.gv-aktbar) #app{padding-bottom:190px}
+.gv-wahlliste{display:flex;flex-direction:column;gap:6px}
+.gv-wz{display:flex;align-items:center;gap:4px}
+.gv-wzk{flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);padding:8px 16px;font:inherit;text-align:left;cursor:pointer}
+.gv-wzk b{font-size:16px}.gv-wzk small{font-size:13px;color:var(--on-sv)}.gv-wzk.leer{background:transparent;color:var(--on-sv)}.gv-wzk:active{background:var(--sc-highest)}
+#dlg .gv-artwahl{max-height:60vh}
