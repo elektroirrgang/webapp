@@ -6,7 +6,7 @@ Object.assign(IC,{gvGeb:"M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H
 const GV={ort:"",et:"",raum:"",bt:"",gsHand:false,loesch:false,sel:null,selOrt:""};
 /* Bauteil = eigenes Gebäude mit eigenen Etagen: etagen[].bauteilId. Ältere Etagen ohne Bauteil, deren Räume alle in einem Bauteil liegen, gehören zu diesem. */
 const gvAbc=(a,b)=>String(a.name||"").localeCompare(String(b.name||""),"de",{numeric:true,sensitivity:"base"});
-function gvNorm(g){ g.bauteile=g.bauteile||[]; if(g.bauteile.length>1) g.bauteile.sort(gvAbc);   /* Bauteile immer A–Z */ g.etagen.forEach(e=>{ if(e.bauteilId&&!g.bauteile.some(b=>b.id===e.bauteilId)) delete e.bauteilId;
+function gvNorm(g){ g.bauteile=g.bauteile||[]; (g.bauteile||[]).forEach(b=>{ const v=b.raumVor&&gvVorText(b); if(!v) return; g.etagen.forEach(e=>{ if((e.bauteilId||"")!==b.id) return; e.raeume.forEach(r=>{ if(new RegExp("^"+v.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\d","i").test(r.name)) r.name=`${v} ${r.name.slice(v.length)}`; }); }); }); if(g.bauteile.length>1) g.bauteile.sort(gvAbc);   /* Bauteile immer A–Z */ g.etagen.forEach(e=>{ if(e.bauteilId&&!g.bauteile.some(b=>b.id===e.bauteilId)) delete e.bauteilId;
     if(!e.bauteilId&&e.raeume&&e.raeume.length){ const S=new Set(e.raeume.map(r=>r.bauteilId||"")); if(S.size===1){ const v=[...S][0]; if(v&&g.bauteile.some(b=>b.id===v)) e.bauteilId=v; } } }); return g; }
 const gvGeb=ort=>gvNorm(ecGeb(ort));
 const gvEtBt=(g,e)=>e&&e.bauteilId&&g.bauteile.find(b=>b.id===e.bauteilId);
@@ -62,7 +62,7 @@ function gvRaumNeuDlg(g,etId){ if(!g) return; gvNorm(g); const B=g.bauteile, E=e
     <div class="fg1" style="margin-top:12px">${sf("kxGs","Geschoss",et0&&gvGs(et0)!=null?String(gvGs(et0)):"",gvGsOpts(),{form:true})}</div>
     <p class="meta" style="margin:6px 4px 0">Heißt die Etage beim Kunden anders (z. B. „Level 4“), hier das echte Geschoss wählen. Gilt für die Etage überall, auch in der Prüfung.</p>
     <div class="fg1" style="margin-top:12px">${tf("kxRn","Räume","",{form:true,ph:"z. B. 403-407, 410, Flur"})}</div>
-    <p class="meta" style="margin:8px 4px 0">In der Reihenfolge eintragen, in der du durchgehst – daraus folgen später die KNX-Adressen. Bereiche mit Bindestrich.${B.some(gvVor)?" Ist beim Bauteil „mit Bauteil davor“ eingestellt, kommt der Zusatz automatisch (403 → B403).":""}</p>`,
+    <p class="meta" style="margin:8px 4px 0">In der Reihenfolge eintragen, in der du durchgehst – daraus folgen später die KNX-Adressen. Bereiche mit Bindestrich.${B.some(gvVor)?" Ist beim Bauteil „mit Bauteil davor“ eingestellt, kommt der Zusatz automatisch (403 → B 403).":""}</p>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gvRaumOk">Anlegen</button>`,{breit:true});
   setTimeout(()=>{ const e=document.getElementById("f_kxRn"); if(e) e.focus(); },60); }
 function gvRaumNamen(t){ const out=[]; String(t||"").split(/[,;\n]+/).map(s=>s.trim()).filter(Boolean).forEach(s=>{ const m=s.match(/^(\D*?)(\d+)\s*[-–]\s*\1?(\d+)$/);
@@ -112,8 +112,9 @@ function gvEtOk(){ const g=gvAkt(); if(!g) return; const F=formVals(), n=String(
 /* Raumnummern mit Bauteil davor (z. B. Bauteil B: 403 → B403) – Zusatz = Kürzel, sonst Name ohne „Bauteil“ */
 const gvVorText=b=>String(b&&(b.kurz||String(b.name||"").replace(/^bauteil\s*/i,""))||"").trim();
 const gvVor=b=>b&&b.raumVor?gvVorText(b):"";
-const gvMitVor=(b,n)=>{ const v=gvVor(b); return v&&!n.toLowerCase().startsWith(v.toLowerCase())?v+n:n; };
+/* mit Leerzeichen dazwischen: „B 403“ */
 const gvOhneVor=(v,n)=>v&&n.toLowerCase().startsWith(v.toLowerCase())&&/^\s*\d/.test(n.slice(v.length))?n.slice(v.length).trim():n;
+const gvMitVor=(b,n)=>{ const v=gvVor(b); if(!v) return n; const o=gvOhneVor(v,n); return o!==n||!n.toLowerCase().startsWith(v.toLowerCase())?`${v} ${o}`:n; };
 let GV_VOR=false;
 function gvBtDlg(id){ const g=gvAkt(); if(!g) return; const b=id&&g.bauteile.find(x=>x.id===id); GV.bt=b?b.id:""; GV.loesch=false; GV_VOR=!!(b&&b.raumVor);
   dialog(b?"Bauteil bearbeiten":"Bauteil hinzufügen",`<div class="fg">${tf("gvBn","Bezeichnung",b?b.name:"",{form:true,ph:"z. B. Bauteil B oder Halle 3"})}${tf("gvBk","Kürzel (optional)",b&&b.kurz||"",{form:true,ph:"z. B. B"})}</div>
@@ -123,7 +124,7 @@ function gvBtDlg(id){ const g=gvAkt(); if(!g) return; const b=id&&g.bauteile.fin
     `${b?`<button class="btn-text danger" data-act="gvBtWeg">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gvBtOk">${b?"Speichern":"Hinzufügen"}</button>`,{breit:true});
   if(!b) setTimeout(()=>{ const x=document.getElementById("f_gvBn"); if(x) x.focus(); },60); }
 function gvVorBsp(){ const n=((document.getElementById("f_gvBn")||{}).value||"").split(",")[0].trim(), k=((document.getElementById("f_gvBk")||{}).value||"").trim();
-  const v=gvVorText({name:n,kurz:k})||"B"; return GV_VOR?`Du tippst „403-407“, angelegt wird ${esc(v)}403 bis ${esc(v)}407. Vorhandene Räume dieses Bauteils bekommen den Zusatz beim Speichern auch. Davor steht das Kürzel, sonst die Bezeichnung ohne „Bauteil“.`:"Räume heißen so, wie du sie eintippst (z. B. 403)."; }
+  const v=gvVorText({name:n,kurz:k})||"B"; return GV_VOR?`Du tippst „403-407“, angelegt wird ${esc(v)} 403 bis ${esc(v)} 407. Vorhandene Räume dieses Bauteils bekommen den Zusatz beim Speichern auch. Davor steht das Kürzel, sonst die Bezeichnung ohne „Bauteil“.`:"Räume heißen so, wie du sie eintippst (z. B. 403)."; }
 document.addEventListener("input",ev=>{ if((ev.target.id==="f_gvBn"||ev.target.id==="f_gvBk")&&document.getElementById("gvVorBsp")) document.getElementById("gvVorBsp").innerHTML=gvVorBsp(); });
 function gvBtOk(){ const g=gvAkt(); if(!g) return; const F=formVals(), n=String(F.gvBn||"").trim(); if(!n){ toast("Bitte eine Bezeichnung eingeben"); return; }
   let geaendert=0;
