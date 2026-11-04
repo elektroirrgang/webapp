@@ -1855,3 +1855,31 @@ html body.sc-eng .navbar,html body.sc-eng.rail-open .navbar{transform:translateX
 .kx-zonen{display:flex;flex-wrap:wrap;gap:6px}
 .kx-zon{display:flex;flex-direction:column;align-items:flex-start;border:0;border-radius:14px;background:var(--sec-c);color:var(--on-sec-c);padding:8px 14px;font:inherit;cursor:pointer}
 .kx-zon b{font-size:14px}.kx-zon small{font-size:12px;opacity:.8}.kx-zon[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
+/* Raumarten: Farbe je Gruppe (hell/dunkel) */
+.ra{flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:18px;background:var(--ra-bg);color:var(--ra-fg)}.ra .ic{width:20px;height:20px;fill:currentColor}
+.ra.klein{width:28px;height:28px;border-radius:14px}.ra.klein .ic{width:17px;height:17px}
+.ra-arbeit{--ra-bg:#D6E3FF;--ra-fg:#0B4A8F}.ra-sanitaer{--ra-bg:#CDEFF2;--ra-fg:#00585F}.ra-kueche{--ra-bg:#FFDDB8;--ra-fg:#6B3A00}.ra-verkehr{--ra-bg:#E3E3E8;--ra-fg:#45464C}
+.ra-technik{--ra-bg:#FBE7A6;--ra-fg:#5C4300}.ra-elektro{--ra-bg:#FFDAD8;--ra-fg:#930019}.ra-wohnen{--ra-bg:#CDEDCB;--ra-fg:#1E5B25}.ra-lager{--ra-bg:#EADFD5;--ra-fg:#5B4636}
+.ra-halle{--ra-bg:#E9DDFF;--ra-fg:#4F378B}.ra-aussen{--ra-bg:#E2EBC3;--ra-fg:#45531A}.ra-sonst{--ra-bg:#E3E3E8;--ra-fg:#45464C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .ra-arbeit{--ra-bg:#1F3A5C;--ra-fg:#A8C7FA}:root:not([data-theme="light"]) .ra-sanitaer{--ra-bg:#003A40;--ra-fg:#80D5DE}:root:not([data-theme="light"]) .ra-kueche{--ra-bg:#4A2800;--ra-fg:#FFB870}:root:not([data-theme="light"]) .ra-verkehr,:root:not([data-theme="light"]) .ra-sonst{--ra-bg:#3A3A3C;--ra-fg:#C8C8CC}:root:not([data-theme="light"]) .ra-technik{--ra-bg:#4A3B00;--ra-fg:#F5CD47}:root:not([data-theme="light"]) .ra-elektro{--ra-bg:#5C1018;--ra-fg:#FFB3AE}:root:not([data-theme="light"]) .ra-wohnen{--ra-bg:#1B3B1E;--ra-fg:#9DD69A}:root:not([data-theme="light"]) .ra-lager{--ra-bg:#3D3129;--ra-fg:#D9C3AF}:root:not([data-theme="light"]) .ra-halle{--ra-bg:#3B2A55;--ra-fg:#D3BBFF}:root:not([data-theme="light"]) .ra-aussen{--ra-bg:#2F3818;--ra-fg:#C4D48E}}
+:root[data-theme="dark"] .ra-arbeit{--ra-bg:#1F3A5C;--ra-fg:#A8C7FA}:root[data-theme="dark"] .ra-sanitaer{--ra-bg:#003A40;--ra-fg:#80D5DE}:root[data-theme="dark"] .ra-kueche{--ra-bg:#4A2800;--ra-fg:#FFB870}:root[data-theme="dark"] .ra-verkehr,:root[data-theme="dark"] .ra-sonst{--ra-bg:#3A3A3C;--ra-fg:#C8C8CC}:root[data-theme="dark"] .ra-technik{--ra-bg:#4A3B00;--ra-fg:#F5CD47}:root[data-theme="dark"] .ra-elektro{--ra-bg:#5C1018;--ra-fg:#FFB3AE}:root[data-theme="dark"] .ra-wohnen{--ra-bg:#1B3B1E;--ra-fg:#9DD69A}:root[data-theme="dark"] .ra-lager{--ra-bg:#3D3129;--ra-fg:#D9C3AF}:root[data-theme="dark"] .ra-halle{--ra-bg:#3B2A55;--ra-fg:#D3BBFF}:root[data-theme="dark"] .ra-aussen{--ra-bg:#2F3818;--ra-fg:#C4D48E}
+/* Gebäude: Suche, Raumarten, Kacheln */
+.gv-such{display:flex;align-items:center;gap:8px;margin:4px 0 10px}.gv-such .search{flex:1;margin:0}.gv-ans{flex:none;background:var(--sc-high)!important;color:var(--on-surface)!important}
+.gv-arten{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:10px -2px 4px;padding:0 2px}.gv-arten::-webkit-scrollbar{display:none}
+.gv-ak{flex:none;display:inline-flex;align-items:center;gap:6px;border:0;border-radius:16px;background:var(--ra-bg);color:var(--ra-fg);padding:6px 12px 6px 8px;font:600 13px var(--font);cursor:pointer;white-space:nowrap}
+.gv-ak .ic{width:18px;height:18px;fill:currentColor}.gv-ak[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--ra-fg)}
+.gv-artwahl{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto}
+.gv-artgrp small{display:block;font-size:12px;font-weight:700;color:var(--on-sv);margin:2px 2px 4px}.gv-artgrp>div{display:flex;flex-wrap:wrap;gap:6px}
+.gv-teilseg{margin-top:10px}
+.gv-rz .ra{margin-left:2px}.gv-rz{padding-left:6px;gap:10px}
+.gv-rt{display:flex;flex-direction:column}.gv-rt span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gv-rt small{font-size:12px;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gv-rb i{font-style:normal;font-weight:500;opacity:.7;font-size:11px}
+.gv-vt{flex:none;display:inline-flex;align-items:center;gap:4px;max-width:42%;padding:4px 8px 4px 6px;border-radius:10px;background:var(--pc);color:var(--on-pc);font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gv-vt .ic{flex:none;width:16px;height:16px;fill:currentColor}
+.gv-kl{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:6px;margin:4px 0 8px}
+.gv-k{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:96px;padding:10px;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);font:inherit;text-align:left;cursor:pointer;min-width:0;-webkit-tap-highlight-color:transparent}
+.gv-k b{font-size:16px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gv-k small{font-size:12px;color:var(--on-sv);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gv-k .gv-vt{position:absolute;top:10px;right:10px;padding:5px;border-radius:12px}
+.gv-k:active{background:var(--sc-highest)}
+.gv-vtw{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.gv-such .search{min-width:0}.gv-such .search input{min-width:0;width:100%}.gv-such{max-width:100%}
