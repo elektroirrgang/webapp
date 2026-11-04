@@ -1828,7 +1828,7 @@ function render(){ profilAnwenden();
     body=nav.v==="kunde"?kundeView(r):nav.v==="standort"?standortView(r):ladeparkView(r);
     fab=nav.v==="kunde"?null:["newHere","Neue Prüfung","add"]; }
   else { const {s,l}=pfad(cur); title=nav.v==="saeule"?sName(cur.s[nav.si],nav.si):(l?l.name:s?s.name:"Prüfung"); sub=nav.v==="saeule"?pfadText(cur):[deDate(cur.p.datum),cur.p.art].filter(Boolean).join(" · ");
-    if(nav.v==="projekt") body=projektView();
+    if(nav.v==="projekt") body=projektView()+(typeof hbLink==="function"?`<div class="narrow">${hbLink("hb-evse","Ladeeinrichtungen prüfen")}</div>`:"");
     else if(nav.v==="saeulen"){ body=saeulenView(); }
     else if(nav.v==="saeule"){ $("#tabs").innerHTML=saeuleTabs(cur.s[nav.si]); body=saeuleView(); }
     else if(nav.v==="abschluss"){ body=abschlussView(); fab=["pdf","PDF erstellen","pdf"]; }
