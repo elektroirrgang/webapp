@@ -38,6 +38,15 @@
 - QR-Pflicht (1.7.77): Prüfung abschließen und Legende erstellen nur mit QR-Aufkleber, kein Überspringen; QR auf der Legende; Liste „ohne QR-Aufkleber“ in Installation/Netzwerk. Offen: Bögen ja/nein (Max klärt mit Chef), QR auf Netzwerk-Belegungsplan.
 - KNX in Gebäudetechnik einbauen (Max 04.11.2026) – kommt nach dem Scanner, noch nicht anfangen.
 
+## KNX in der Gebäudetechnik (Max, 04.11.2026) – Konzept, noch nicht gebaut
+- Eigener Bereich. Gebäude wie gehabt: Bauteil › Etage/Level › Räume in fester Reihenfolge (z. B. Merten Bauteil B, Level 4, links anfangen: 413, 414, 415 …). In den Räumen die KNX-Geräte.
+- Begehung vorab: einmal durch jeden Raum, je Raum zählen, was vorhanden ist, was neu kommt und was ersetzt wird (z. B. Raum 403: 4 Stellantriebe, 2 Jalousien, 1 Raumthermostat, 2 Präsenzmelder) – ohne die Leute dauernd zu stören.
+- Automatische physikalische Adressen nach einem Schema, das Max vorher festlegt (Reihenfolge der Gerätearten, z. B. Jalousien zuerst), Linie und Startnummer wählbar.
+- Status je Gerät als Checkliste zum Durcharbeiten: z. B. vorprogrammiert, eingebaut, konfiguriert (genaue Liste mit Max klären; nicht zwingend der Reihe nach).
+- Beschriftung Brother: nur die physikalische Adresse (z. B. 3.1.36), 6-mm-Band, ca. 23 mm lang; einzelne Geräte doppelt (z. B. Raumthermostat Ober-/Unterteil). Muster-Datei aus Pro Label Tool fehlt noch.
+- Programmier-Modus zu zweit (nur Kommunikation): Laptop fordert „3.1.36 im Raum X – Programmiertaste drücken“ an, Partner bekommt Pop-up, bestätigt „gedrückt“, Laptop programmiert in der ETS, „fertig“ → nächstes Gerät. Braucht schnellen Abgleich (alle 2–3 s) über Microsoft – testen.
+- Offene Fragen: siehe Gespräch 04.11. (Statusliste, Nummern pro Raum oder pro Art, Kanäle vs. Geräte, ETS-Export).
+
 ## Kurz-Einführungen beim ersten Mal (Wunsch Max, 04.11.2026) – noch nicht gebaut
 - Allgemein für alle Apps: neue oder seltene Funktionen beim ersten Benutzen kurz vorstellen (2–4 Bilder/Schritte, „Verstanden“), danach nie wieder von selbst – aber jederzeit wieder aufrufbar (z. B. Einstellungen › Hilfe).
 - Merken pro Person (nicht pro Gerät), damit es auf Handy und iPad nicht doppelt kommt.
