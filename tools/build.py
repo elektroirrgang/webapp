@@ -36,6 +36,7 @@ def baue(quelle, ziel, icon):
     html = html.replace("/*VERTEILER*/", (root / "src/verteiler.js").read_text(encoding="utf-8") + "\n" + (root / "src/material-daten.js").read_text(encoding="utf-8") + "\n" + (root / "src/vt-aufnahme.js").read_text(encoding="utf-8") + "\n" + (root / "src/zaehlerschrank.js").read_text(encoding="utf-8") + "\n" + (root / "src/zs-zeichnung.js").read_text(encoding="utf-8") + "\n" + (root / "src/vt-uebersicht.js").read_text(encoding="utf-8"))
     html = html.replace("/*QR*/", (root / "vendor/qrcode-generator.min.js").read_text(encoding="utf-8") + "\n" + (root / "src/qr.js").read_text(encoding="utf-8"))
     html = html.replace("/*PDFANSICHT*/", (root / "src/pdfansicht.js").read_text(encoding="utf-8"))
+    html = html.replace("/*FRISTEN*/", (root / "src/fristen.js").read_text(encoding="utf-8"))
     html = html.replace("/*DATEIEN*/", (root / "src/dateien.js").read_text(encoding="utf-8"))
     html = html.replace("/*VORGAENGE*/", (root / "src/vorgaenge.js").read_text(encoding="utf-8"))
     html = html.replace("/*ANLAGEN*/", (root / "src/anlagen.js").read_text(encoding="utf-8"))
