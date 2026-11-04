@@ -122,6 +122,7 @@ function legView(L){ const E=legE(L), tab=legTab(L);
       <div class="reihe2"><div class="tf fl"><select id="f_leg_netz" data-leg="netz" ${L.fertig?"disabled":""}>${LEG_NETZ.map(n=>`<option value="${esc(n)}" ${n===(L.netz||"")?"selected":""}>${esc(n||"nicht angeben")}</option>`).join("")}</select><label for="f_leg_netz">Netzform</label><span class="arr">${icon("drop")}</span></div>${legWerSel(L)}</div>
     </div></section>
     ${L._geb&&typeof qrKarte==="function"?qrKarte(L):""}
+    ${legEtiKarte(L)}
         <div class="leg-fuss">${canEdit(L)?`<button type="button" class="btn-tonal leg-del" data-act="legDelAsk">${icon("del")}Löschen</button>`:""}<span style="flex:1"></span>${L.fertig?`<button type="button" class="btn-tonal" data-act="legFertig" data-v="0">${icon("edit")}Bearbeiten</button>`:""}<button type="button" class="btn-tonal leg-pdf" data-act="legPdf">${icon("pdf")}PDF erstellen</button></div>
   </div>`; }
 
@@ -430,6 +431,9 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "legOrd": { if(!L||!legDlg) return; const E=legE(L), i=E.findIndex(x=>x.id===legDlg.id), j=i+(+b.dataset.d); if(i<0||j<0||j>=E.length) return;
       [E[i],E[j]]=[E[j],E[i]]; legSpeichern(L); render(); legSkDlg(legDlg.id); return; }
   case "legPdf": legPdfMachen(); return;
+  case "legEti": legEtiDlg(); return;
+  case "legEtiW": { if(!L) return; LEG_ETI[b.dataset.k]=b.dataset.k==="inh"?b.dataset.v:+b.dataset.v; legEtiMerken(); legEtiDlg(); return; }
+  case "legEtiTeilen": case "legEtiLaden": if(L) legEtiAusgeben(L,a==="legEtiTeilen"); return;
   case "legFertig": { if(!L) return; L.fertig=b.dataset.v==="1"; legSave(L); render(); toast(L.fertig?"Abgeschlossen":"Wieder in Arbeit"); return; }
   case "legTab": nav.tab=b.dataset.v; closeOverlays(); render(); scrollTo(0,0); return;
   case "legDelAsk": confirmDlg(L&&L._geb?"Verteiler löschen?":"Legende löschen?",L&&L._geb?`„${L.titel}“ mit allen RCDs und Stromkreisen löschen? Messwerte früherer Prüfungen zu diesen Stromkreisen werden dann nicht mehr zugeordnet.`:`„${L&&L.titel||"Verteiler"}“ mit allen Zeilen löschen?`,"Löschen","legDelOk"); return;
@@ -474,3 +478,44 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
   if(b.dataset.act==="uvTyp"){ uvTypDlg(); return; } const L=legAkt(); if(!L) return;
   if(b.dataset.frei){ L.typFrei=true; } else { L.typFrei=false; L.reihen=+b.dataset.n; L.montage=b.dataset.up==="1"?"up":"ap"; L.teReihe=12; }
   legSave(L); closeOverlays(); render(); },true);
+
+/* ===== Beschriftungsstreifen für den Brother P-touch: je Reihe ein Streifen, je Gerät ein Block so breit wie das Gerät =====
+   Nutzt die Vorlage „Verteiler“ der Pro Label Tool-App (wie die Patchfeld-Streifen in der Netzwerkprüfung: ecLbxs, ecEtiSvg). */
+const LEG_ETI={inh:"bez",band:9,te:17.5};
+try{ const v=JSON.parse(localStorage.getItem("irrgang_legeti")||"null"); if(v) Object.assign(LEG_ETI,v); }catch(e){}
+const legEtiMerken=()=>{ try{ localStorage.setItem("irrgang_legeti",JSON.stringify(LEG_ETI)); }catch(e){} };
+/* Text eines Geräts auf dem Streifen – ohne Sonderzeichen, die nicht jede Druckerschrift hat */
+function legEtiText(e){ if(e.art==="kl") return ""; if(e.art==="res") return LEG_ETI.inh==="kz"?String(e.kz||"").trim():"Reserve";
+  const kz=String(e.kz||"").trim();
+  const bez=e.art==="rcd"?(e.bez&&!/^fehlerstrom/i.test(e.bez)?e.bez:("FI "+String(e.schutz||"").replace(/\s*Typ.*$/i,"").replace(/\s*\/\s*/," ")).trim())
+    :legOffen(e)?"":String(e.bez||"").trim();
+  const t=LEG_ETI.inh==="kz"?kz:LEG_ETI.inh==="beide"?[kz,bez].filter(Boolean).join(" "):bez;
+  return t.replace(/\s*·\s*/g," ").replace(/[→–]/g,"-").replace(/\s+/g," ").trim(); }
+/* Streifen je Reihe: Blöcke = Geräte (Breite in TE), freie Plätze am Ende als ein leerer Block, damit der Streifen über die ganze Reihe geht */
+function legEtiStreifen(L){ const n=+L.teReihe||12;
+  return legReihen(L).map((r,ri)=>{ const T=[], M=[]; r.g.forEach(([e,,w])=>{ T.push(legEtiText(e)); M.push(w); });
+    let frei=n-r.te; while(frei>0){ const w=Math.min(frei,9); T.push(""); M.push(w); frei-=w; }
+    const p={band:LEG_ETI.band,block:LEG_ETI.te,anzahl:T.length,mult:M,trenn:"LINE",vertikal:false,umkehren:false,drucker:"PT-E560BT"};
+    return {nr:ri+1,te:n,p,T,mm:n*LEG_ETI.te}; }).filter(st=>st.T.length<=50); }
+function legEtiKarte(L){ if(typeof ecLbxs!=="function"||!legE(L).some(e=>e.art!=="gr")) return ""; const ST=legEtiStreifen(L); if(!ST.length) return "";
+  return `<section class="card leg-eti-k"><h3>Beschriftungsstreifen</h3>
+    <div class="leg-eti-v">${ecEtiSvg(ST[0].p,ST[0].T,true)}</div>
+    <p class="meta">${ST.length===1?"Ein Streifen":`${ST.length} Streifen, je Reihe einer`} für den Brother P-touch · jedes Feld so breit wie das Gerät darunter.</p>
+    <button type="button" class="btn-tonal leg-eti-b" data-act="legEti">${icon("tag")}Streifen drucken</button></section>`; }
+function legEtiDlg(){ const L=legAkt(); if(!L) return; const ST=legEtiStreifen(L), chip=(k,v,t)=>`<button type="button" class="chip" data-act="legEtiW" data-k="${k}" data-v="${v}" aria-pressed="${String(LEG_ETI[k])===String(v)}">${t}</button>`;
+  dialog("Beschriftungsstreifen",`<p class="ec-sub">Für die <b>Brother Pro Label Tool</b>-App (P-touch, z. B. PT-E560BT), Vorlage „Verteiler“.</p>
+    <div class="lbl">Text auf dem Streifen</div><div class="chips ec-wahl">${chip("inh","bez","Bezeichnung")}${chip("inh","kz","Kennzeichnung")}${chip("inh","beide","Beides")}</div>
+    <div class="lbl" style="margin-top:12px">Band</div><div class="chips ec-wahl">${chip("band",9,"9 mm")}${chip("band",12,"12 mm")}</div>
+    <div class="lbl" style="margin-top:12px">Breite je TE</div><div class="chips ec-wahl">${chip("te",17.5,"17,5 mm · z. B. Hager")}${chip("te",18,"18 mm · z. B. Siemens")}</div>
+    <div class="lbl" style="margin-top:14px">Vorschau · ${ST.length} Streifen</div>
+    <div class="ec-baender leg-eti-l">${ST.map(st=>`<div class="ec-bd"><div class="ec-bd-k">Reihe ${st.nr} · ${st.te} TE · ${ecEtiMm(st.p,st.mm)} × ${st.p.band} mm</div><div class="leg-eti-v">${ecEtiSvg(st.p,st.T)}</div></div>`).join("")}</div>
+    ${(()=>{ const z=LEG_ETI.band>=12?6.5:9, lang=ST.reduce((a,st)=>a+st.T.filter((t,i)=>t.length>z*st.p.mult[i]*LEG_ETI.te/17.5).length,0);
+      return lang?`<p class="ec-hinweis">${icon("warn")}<span>${lang===1?"Ein Text ist":`${lang} Texte sind`} zu lang für das Feld und ${lang===1?"wird":"werden"} sehr klein gedruckt. Kürzere Bezeichnung wählen oder „Kennzeichnung“ drucken.</span></p>`:""; })()}
+    <p class="meta" style="margin:8px 4px 0">Lange Texte verkleinert die App automatisch. Je Reihe kommt eine Datei.</p>
+    <details class="ec-eti-hilfe"><summary>So druckst du in der App</summary><ol><li>„Teilen“ tippen und „Pro Label Tool“ wählen – oder herunterladen und in der App unter „Öffnen“ laden.</li><li>Blöcke, Breiten und Texte sind schon eingestellt, nur noch drucken.</li><li>Streifen am Anfang der Reihe ansetzen – freie Plätze am Ende bleiben leer.</li></ol></details>`,
+    `${/android/i.test(navigator.userAgent)?`<button class="btn-text" data-act="ecEtiApp">App öffnen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button><button class="btn-text" data-act="legEtiLaden">Herunterladen</button><button class="btn-text" data-act="legEtiTeilen">Teilen</button>`,{breit:true}); }
+async function legEtiAusgeben(L,teilen){ const ST=legEtiStreifen(L); if(!ST.length){ toast("Nichts zu beschriften"); return; }
+  const F=ST.map(st=>{ const name=bbFs(`${L.titel||"Verteiler"} Reihe ${st.nr}`); return new File([ecLbxs(name,st.p,st.T)],name+".lbxs",{type:"application/octet-stream"}); });
+  if(teilen&&navigator.canShare&&navigator.canShare({files:F})){ try{ await navigator.share({files:F,title:F.length===1?F[0].name:`Beschriftung ${L.titel||""}`.trim()}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
+  F.forEach((f,i)=>setTimeout(()=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(f); a.download=f.name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500); },i*400));
+  const was=F.length===1?"Brother-Datei":`${F.length} Brother-Dateien`; toast(teilen?`Teilen geht hier nicht – ${was} heruntergeladen`:`${was} heruntergeladen`); }
