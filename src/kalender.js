@@ -13,7 +13,7 @@ Object.assign(IC,{kal:"M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 
   kalLeute:"M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"});
 const KAL_SCOPES=["Calendars.ReadWrite"], KAL_TZ="Europe/Berlin", KAL_H=56, KAL_VON=0, KAL_BIS=24; /* ganzer Tag – der Chef parkt Platzhalter gern nachts um 2–3 Uhr */
 const KAL_SICHTEN=[["liste","Liste"],["woche","Woche"],["monat","Monat"]];
-const KAL={ab:null,sicht:null,ev:[],geladen:"",lade:false,fehler:"",verbinden:false,demo:[],ebenen:{outlook:true,auftraege:true,firma:true,meine:null}};
+const KAL={ab:null,sicht:null,ev:[],geladen:"",lade:false,fehler:"",verbinden:false,demo:[],ebenen:{outlook:true,auftraege:true,firma:true,fristen:true,meine:null}};
 try{ const e=JSON.parse(localStorage.getItem("irrgang_kal_ebenen")||"null"); if(e) Object.assign(KAL.ebenen,e); }catch(e){}
 function kalEbenenMerken(){ try{ localStorage.setItem("irrgang_kal_ebenen",JSON.stringify(KAL.ebenen)); }catch(e){} }
 const kalSicht=()=>{ let s=KAL.sicht; if(!s){ try{ s=localStorage.getItem("irrgang_kal_sicht"); }catch(e){} } if(!s||!KAL_SICHTEN.some(x=>x[0]===s)) s=istHandy()?"liste":"woche"; if(istHandy()&&s==="woche") s="liste"; return s; };
@@ -140,7 +140,7 @@ function kalEigene(){ if(!DB.termine) return []; const K=new Map(kalKalListe().f
 function kalFirma(){ if(!KAL.ebenen.firma||!DB.termine) return []; return live("termine").filter(t=>!t.deleted&&t.typ!=="kal"&&!t.kal).map(t=>({id:t.id,q:"firma",t:t.t||"Firmentermin",von:kalLokal(t.von),bis:kalLokal(t.bis),ganz:!!t.ganz,ort:t.ort||"",notiz:t.notiz||"",mit:[],eigen:typeof canEdit==="function"&&canEdit(t)&&(typeof istBuero!=="function"||istBuero()),rec:t})).filter(e=>e.von&&e.bis); }
 function kalAlle(von,bis){ const demo=typeof demoAn==="function"&&demoAn();
   const O=!KAL.ebenen.outlook?[]:demo?kalDemo():KAL.ev;
-  return [...O,...kalAuftraege(),...kalFirma(),...kalEigene()].filter(e=>e.von&&e.bis&&e.von<bis&&(e.bis>von||(+e.bis===+e.von&&e.von>=von))).sort((a,b)=>(b.ganz-a.ganz)||a.von-b.von); }
+  return [...O,...kalAuftraege(),...kalFirma(),...kalEigene(),...(KAL.ebenen.fristen!==false&&typeof bfKalender==="function"?bfKalender():[])].filter(e=>e.von&&e.bis&&e.von<bis&&(e.bis>von||(+e.bis===+e.von&&e.von>=von))).sort((a,b)=>(b.ganz-a.ganz)||a.von-b.von); }
 /* Laden: Bereich der aktuellen Ansicht (+ eine Woche Puffer), letzter Stand bleibt fürs Offline-Anschauen */
 try{ const c=JSON.parse(localStorage.getItem("irrgang_kal_cache")||"null"); if(c&&Array.isArray(c.ev)){ KAL.ev=c.ev.map(e=>({...e,von:new Date(e.von),bis:new Date(e.bis)})); KAL.cacheAm=c.am; } }catch(e){}
 /* Laden: Bereich der aktuellen Ansicht (+ eine Woche Puffer). Wichtig: nie aus jedem Neuzeichnen heraus erneut laden –
@@ -162,7 +162,7 @@ async function kalLaden(erzwingen,bereich){ if(typeof demoAn==="function"&&demoA
   /* nur neu zeichnen, wenn sich etwas geändert hat */
   if(JSON.stringify([KAL.fehler,KAL.verbinden,KAL.ev.length,KAL.am])!==vorher&&(nav.v==="kalender"||nav.v==="start")) (typeof softRender==="function"?softRender:render)(); }
 /* --- Darstellung --- */
-const kalFarbe=e=>e.q==="auftrag"?"kal-a":e.q==="firma"?"kal-g":e.q==="eigen"?"kal-c":e.frei?"kal-f":"kal-o";
+const kalFarbe=e=>e.q==="auftrag"?"kal-a":e.q==="firma"?"kal-g":e.q==="eigen"||e.q==="frist"?"kal-c":e.frei?"kal-f":"kal-o";
 const kalCV=e=>e&&e.farbe?`--c:${e.farbe};`:"";
 const kalTxtZeit=e=>e.ganz?"ganztägig":`${kalZeit(e.von)}–${kalZeit(e.bis)}`;
 /* Zeitraum als Seitentitel (oben, die einzige Überschrift) */
@@ -170,7 +170,7 @@ function kalTitel(){ const s=kalSicht(), B=kalBereich(), h=new Date();
   if(s==="woche"){ const e=kalPlus(B.von,6), m=d=>d.toLocaleDateString("de-DE",{month:"short"}).replace(".",""); return `KW ${kalKw(B.von)} · ${B.von.getDate()}.${B.von.getMonth()!==e.getMonth()?" "+m(B.von):""} – ${e.getDate()}. ${m(e)} ${e.getFullYear()}`; }
   if(s==="monat") return B.monat.toLocaleDateString("de-DE",{month:"long",year:"numeric"});
   return kalGleich(B.von,h)?"Termine ab heute":`Termine ab ${B.von.toLocaleDateString("de-DE",{day:"numeric",month:"long"})}`; }
-const kalFilterAktiv=()=>!KAL.ebenen.outlook||!KAL.ebenen.auftraege||!KAL.ebenen.firma||kalKalListe().some(c=>!kalKalAn(c));
+const kalFilterAktiv=()=>!KAL.ebenen.outlook||!KAL.ebenen.auftraege||!KAL.ebenen.firma||KAL.ebenen.fristen===false||kalKalListe().some(c=>!kalKalAn(c));
 /* Kopf: links Zurück/Heute/Weiter in einer Gruppe, rechts Filter und Ansicht als Symbole (wie neben der Suchleiste in den Aufträgen) */
 function kalKopf(){ const s=kalSicht(), sichten=KAL_SICHTEN.filter(x=>!(istHandy()&&x[0]==="woche")), IC_S={liste:"kalListe",woche:"kalWoche",monat:"kalMonat"};
   const stand=KAL.lade?`<span class="kal-stand">lädt …</span>`:KAL.fehler?`<span class="kal-stand warn">${esc(KAL.fehler)}</span>`:"";
@@ -181,7 +181,7 @@ function kalFilterDlg(){ const demo=typeof demoAn==="function"&&demoAn();
   const z=(k,f,t,s2,an,farbe,edit)=>`<div class="li kal-fz" role="button" tabindex="0" data-act="kalEbene" data-v="${k}"><span class="kal-fd ${farbe?"kal-c":f}"${farbe?` style="--c:${farbe}"`:""}></span><span class="lt"><span class="h">${esc(t)}</span><span class="s">${esc(s2)}</span></span>${edit?`<button type="button" class="ib kal-fe" data-act="kalKalEdit" data-id="${esc(edit)}" title="Kalender bearbeiten" aria-label="Kalender bearbeiten">${icon("edit")}</button>`:""}<span class="schalter${an?" an":""}" aria-hidden="true"><i></i></span></div>`;
   const sichtTxt=c=>kalKalMein(c)?(c.sicht==="alle"?"Für alle sichtbar":c.sicht==="personen"?`Sichtbar für ${((c.personen||[]).length)} Kollegen`:c.privat?"Nur für dich · geschützt in deinem OneDrive":kalDemoAn()?"Nur für dich":"Nur für dich · noch nicht geschützt")+"":`Von ${(c.createdBy&&c.createdBy.name)||"Kollege"}`;
   const eigene=kalKalListe();
-  dialog("Kalender",`<div class="list">${z("outlook","kal-o",demo?"Beispieltermine":"Mein Outlook","Deine eigenen Termine aus Outlook",KAL.ebenen.outlook)}${z("auftraege","kal-a","Aufträge","Termine aus dem Schritt „Termin“ der Aufträge",KAL.ebenen.auftraege)}${z("firma","kal-g","Firmentermine","Für alle – z. B. Weihnachtsfeier, Teambesprechung",KAL.ebenen.firma)}</div>
+  dialog("Kalender",`<div class="list">${z("outlook","kal-o",demo?"Beispieltermine":"Mein Outlook","Deine eigenen Termine aus Outlook",KAL.ebenen.outlook)}${z("auftraege","kal-a","Aufträge","Termine aus dem Schritt „Termin“ der Aufträge",KAL.ebenen.auftraege)}${z("firma","kal-g","Firmentermine","Für alle – z. B. Weihnachtsfeier, Teambesprechung",KAL.ebenen.firma)}${typeof bfKalender==="function"?z("fristen","kal-fr","Fristen und Unterweisungen","Betriebs- und Mitarbeiterfristen, Unterweisungen – in Ocker",KAL.ebenen.fristen!==false):""}</div>
     <div class="lbl" style="margin:16px 4px 6px">Eigene Kalender</div><div class="list">${eigene.map(c=>z("k:"+c.id,"",c.name,sichtTxt(c),kalKalAn(c),c.farbe,kalKalMein(c)?c.id:"")).join("")}
       <div class="li kal-fz" role="button" tabindex="0" data-act="kalKalNeu"><span class="kal-fd kal-plus">${icon("add")}</span><span class="lt"><span class="h">Kalender anlegen</span><span class="s">z. B. Urlaub, Schulungen, Berufsschule – auch ohne Outlook</span></span></div></div>
     <div class="list" style="margin-top:12px">${z("meine","","Nur meine Aufträge","Nur Aufträge, bei denen du eingeteilt oder zuständig bist",kalNurMeine())}</div>`,`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Fertig</button>`); }
@@ -196,7 +196,7 @@ function kalKalDlg(c,danach){ const neu=!c, belegt=kalFarbenBelegt(c?c.sicht:"ic
     <div class="lbl" style="margin:16px 4px 8px">Wer sieht den Kalender?</div><div class="kal-segz">${seg("kalKS",kalK.sicht,KAL_SICHT)}</div>
     <div class="kal-kp"${kalK.sicht==="personen"?"":" hidden"}><div class="chips kal-mit">${T.map(m=>`<button type="button" class="chip" data-act="kalKP" data-v="${esc(String(m.mail).toLowerCase())}" aria-pressed="${kalK.personen.has(String(m.mail).toLowerCase())}" title="${esc(persVoll(m.mail,m.name))}">${persAv(m.mail,m.name)}${esc(m.name||m.mail)}</button>`).join("")}</div></div>
     <p class="sup kal-ich-h"${kalK.sicht==="ich"?"":" hidden"} style="margin:12px 4px 0">${kalPAn()?"Liegt geschützt in deinem persönlichen OneDrive – Kollegen und Chef sehen ihn nicht.":"Liegt vorerst auf der Firmen-Website und ist nur in der App ausgeblendet. Sobald die IT die Berechtigung freigibt, zieht er von selbst geschützt in dein OneDrive um."}</p>
-    <p class="sup" style="margin:12px 4px 0">Rot, Blau und Grün sind für Outlook, Aufträge und Firmentermine reserviert. Jede andere Farbe gibt es nur einmal.</p></div>`,
+    <p class="sup" style="margin:12px 4px 0">Rot, Blau, Grün und Ocker sind für Outlook, Aufträge, Firmentermine und Fristen reserviert. Jede andere Farbe gibt es nur einmal.</p></div>`,
     `${!neu?`<button class="btn-text danger" data-act="kalKalDel">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="kalKalOk">Speichern</button>`); }
 function kalPalHtml(){ const belegt=kalFarbenBelegt(kalK.sicht,kalK.id);
   return KAL_PAL.map(([f,t])=>{ const weg=belegt.has(f)&&f!==kalK.farbe; return `<button type="button" class="kal-sw${f===kalK.farbe?" an":""}" style="--c:${f}" data-act="kalKF" data-v="${f}" title="${esc(t)}${weg?" – schon vergeben":""}" aria-label="${esc(t)}" ${weg?"disabled":""}></button>`; }).join(""); }
@@ -235,7 +235,7 @@ function kalPanel(){ const ab=KAL.ab||new Date(), m=KAL.miniMon||new Date(ab.get
   const wann=e=>kalGleich(e.von,h)?(e.ganz?"Heute":`Heute ${kalZeit(e.von)}`):kalGleich(e.von,kalPlus(h,1))?(e.ganz?"Morgen":`Morgen ${kalZeit(e.von)}`):e.von.toLocaleDateString("de-DE",{weekday:"short",day:"numeric",month:"short"})+(e.ganz?"":` · ${kalZeit(e.von)}`);
   return `<aside class="kal-panel"><button class="kp-neu" data-act="kalNeu">${icon("add")}Termin</button><div class="kp-box"><div class="kp-mk"><b>${esc(m.toLocaleDateString("de-DE",{month:"long",year:"numeric"}))}</b><button class="kp-r" data-act="kalMini" data-v="-1" aria-label="Voriger Monat">${icon("back")}</button><button class="kp-r vor" data-act="kalMini" data-v="1" aria-label="Nächster Monat">${icon("back")}</button></div>
     <div class="kp-g">${["M","D","M","D","F","S","S"].map(x=>`<span>${x}</span>`).join("")}${tage}</div></div>
-    <div class="kp-box"><div class="kp-l">Kalender</div>${ebene("outlook","kal-o",demo?"Beispieltermine":"Mein Outlook")}${ebene("auftraege","kal-a","Aufträge")}${ebene("firma","kal-g","Firmentermine")}${ebene("meine","kp-nur","Nur meine Aufträge")}</div>
+    <div class="kp-box"><div class="kp-l">Kalender</div>${ebene("outlook","kal-o",demo?"Beispieltermine":"Mein Outlook")}${ebene("auftraege","kal-a","Aufträge")}${ebene("firma","kal-g","Firmentermine")}${typeof bfKalender==="function"?ebene("fristen","kal-fr","Fristen"):""}${ebene("meine","kp-nur","Nur meine Aufträge")}</div>
     <div class="kp-box"><div class="kp-l">Als Nächstes</div>${N.length?N.map(e=>`<button class="kp-n" ${kalEvAttr(e)}><span class="kp-q ${kalFarbe(e)}"></span><span><b>${esc(e.privat&&!e.eigen?"Privat":e.t)}</b><small>${esc(wann(e))}</small></span></button>`).join(""):`<p class="kp-leer">Keine Termine in den nächsten zwei Wochen.</p>`}</div></aside>`; }
 const kalEvAttr=e=>`data-act="kalAuf" data-id="${esc(e.id)}"`;
 /* Liste (Agenda): je Tag ein Abschnitt wie überall in der App („Heute · Dienstag, 27. Oktober“), darunter die Termine als Zeilen */
@@ -246,7 +246,7 @@ function kalListe(B,E){ let h="";
     if(!T.length&&!heute) continue;
     h+=`<div class="sec-lbl kal-lk${heute?" heute":""}">${esc(kalTagName(d))}</div>${T.length?`<div class="list kal-ll">${T.map(e=>{ const erst=kalGleich(e.von,d);
       const zeit=e.ganz?`<b>Ganztägig</b>`:erst?`<b>${esc(kalZeit(e.von))}</b><small>bis ${esc(kalGleich(e.bis,d)?kalZeit(e.bis):kalPlus(e.bis,0).toLocaleDateString("de-DE",{day:"numeric",month:"numeric"}))}</small>`:`<b>weiter</b><small>bis ${esc(kalZeit(e.bis))}</small>`;
-      const s2=[e.ort,e.mit&&e.mit.length?e.mit.map(m=>m.name||m.mail).join(", "):"",e.q==="auftrag"?"Auftrag":e.q==="firma"?"Firmentermin":e.q==="eigen"?e.kalName:""].filter(Boolean).join(" · ");
+      const s2=[e.ort,e.mit&&e.mit.length?e.mit.map(m=>m.name||m.mail).join(", "):"",e.q==="auftrag"?"Auftrag":e.q==="firma"?"Firmentermin":e.q==="eigen"||e.q==="frist"?e.kalName:""].filter(Boolean).join(" · ");
       return `<div class="li kal-lz2${e.erledigt?" erl":""}" role="button" tabindex="0" ${kalEvAttr(e)}><span class="kal-lzeit">${zeit}</span><span class="kal-lbar ${kalFarbe(e)}" style="${kalCV(e)}"></span><span class="lt"><span class="h">${esc(e.privat&&!e.eigen?"Privat":e.t)}</span>${s2?`<span class="s">${esc(s2)}</span>`:""}</span>${icon("chev")}</div>`; }).join("")}</div>`
       :`<p class="kal-nix">Keine Termine</p>`}`; }
   return `<div class="kal-lscroll">${h||`<p class="meta" style="margin:20px 4px">In den nächsten vier Wochen keine Termine.</p>`}</div>`; }
@@ -336,10 +336,10 @@ async function kalLoeschen(){ const id=kalE&&kalE.id; if(!id) return; const demo
   if(demo){ KAL.demo=kalDemo().filter(x=>x.id!==id); closeOverlays(); render(); return; }
   try{ await kalG(`/me/events/${encodeURIComponent(id)}`,{method:"DELETE"}); KAL.ev=KAL.ev.filter(x=>x.id!==id); closeOverlays(); render(); toast("Termin gelöscht"); }
   catch(err){ toast("Nicht gelöscht: "+(err.message||"Fehler")); } }
-function kalFinde(id){ const demo=typeof demoAn==="function"&&demoAn(); return [...(demo?kalDemo():KAL.ev),...kalAuftraege(),...kalFirma(),...kalEigene()].find(e=>e.id===id); }
+function kalFinde(id){ const demo=typeof demoAn==="function"&&demoAn(); return [...(demo?kalDemo():KAL.ev),...kalAuftraege(),...kalFirma(),...kalEigene(),...(typeof bfKalender==="function"?bfKalender():[])].find(e=>e.id===id); }
 document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act^="kal"]'); if(!b) return; const a=b.dataset.act;
   const seg1=()=>{ b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); if(typeof segInd==="function") segInd(); };
-  if(a==="kalAuf"){ ev.stopPropagation(); const e=kalFinde(b.dataset.id); if(!e) return; if((e.q==="outlook"||e.q==="firma"||e.q==="eigen")&&e.eigen) kalDialog(e); else kalAnsehen(e); }
+  if(a==="kalAuf"){ ev.stopPropagation(); const e=kalFinde(b.dataset.id); if(!e) return; if(e.q==="frist"){ if(typeof bfKalAuf==="function") bfKalAuf(e.bf); return; } if((e.q==="outlook"||e.q==="firma"||e.q==="eigen")&&e.eigen) kalDialog(e); else kalAnsehen(e); }
   else if(a==="kalFrei"){ if(ev.target.closest(".kal-ev")||Date.now()-KZ.weg<500) return; const r=b.getBoundingClientRect(), h=Math.floor((ev.clientY-r.top)/KAL_H*2)/2+(+b.dataset.von||KAL_VON), d=kalLokal(b.dataset.d); d.setHours(Math.floor(h),h%1?30:0,0,0); kalDialog(null,d); }
   else if(a==="kalTagAuf"){ if(Date.now()-KZ.weg<500) return; KAL.ab=kalLokal(b.dataset.d); KAL.sicht=istHandy()?"liste":"woche"; try{ localStorage.setItem("irrgang_kal_sicht",KAL.sicht); }catch(e){} render(); }
   else if(a==="kalNeu"){ ev.stopPropagation(); kalDialog(null); }

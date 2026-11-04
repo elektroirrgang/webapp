@@ -27,7 +27,7 @@ function frListe(){ const L=[];
 const frStand=x=>{ const t=today(); if(x.nie||!x.faellig) return ["bad","noch nie geprüft"]; if(x.faellig<t) return ["bad","überfällig"];
   return x.faellig<=frPlus(t,3)?["wip","bald fällig"]:["ok","später"]; };
 const frMonat=iso=>iso?new Date(iso+"T12:00").toLocaleDateString("de-DE",{month:"long",year:"numeric"}):"";
-let FR_FILTER="3";
+let FR_FILTER="3", FR_TAB="kunden";
 function frGefiltert(){ const t=today(), bis=FR_FILTER==="alle"?"9999":frPlus(t,+FR_FILTER); return frListe().filter(x=>x.nie||!x.faellig||x.faellig<=bis); }
 /* Zahlen für die Kachel auf der Startseite */
 function frZahlen(){ const L=frListe(), t=today(), b=frPlus(t,3); return {ueber:L.filter(x=>x.nie||x.faellig<t).length,bald:L.filter(x=>!x.nie&&x.faellig>=t&&x.faellig<=b).length,L}; }
@@ -35,10 +35,19 @@ function frKarten(){ const q=String(query||"").trim(), G=new Map();
   frGefiltert().filter(x=>{ if(!q) return true; const k=kundeOf(x.kundeId)||{}; return suPasst(q,k.name,adrText(k),x.ort,(FR_ART[x.art]||[""])[0],deDate(x.faellig)); })
     .forEach(x=>{ if(!G.has(x.kundeId)) G.set(x.kundeId,[]); G.get(x.kundeId).push(x); });
   return G.size?[...G.entries()].map(frKarte).join(""):`<p class="meta" style="margin:16px 4px">${q?`Nichts gefunden für „${esc(q)}“.`:FR_FILTER==="alle"?"Noch keine wiederkehrenden Prüfungen erfasst.":"In diesem Zeitraum ist nichts fällig."}</p>`; }
-SU_LISTE.fristen=frKarten;
-function fristenView(){ const z=frZahlen();
+SU_LISTE.fristen=()=>FR_TAB==="betrieb"&&typeof bfBetriebView==="function"?bfBetriebView():FR_TAB==="team"&&typeof bfTeamView==="function"?bfTeamView():frKarten();
+function fristenView(){ const z=frZahlen(), mitB=typeof bfBetriebView==="function";
   const chip=(v,txt)=>`<button type="button" class="chip" data-act="frFilter" data-v="${v}" aria-pressed="${FR_FILTER===v}">${txt}</button>`;
-  return `<div class="narrow fr">
+  const tabs=mitB?`<div class="seg fr-tabs" role="group">${[["kunden","Kunden"],["betrieb","Betrieb"],["team","Mitarbeiter"]].map(([v,t])=>`<button type="button" data-act="frTab" data-v="${v}" aria-pressed="${FR_TAB===v}">${t}</button>`).join("")}</div>`:"";
+  if(mitB&&FR_TAB!=="kunden"){ const bt=FR_TAB==="betrieb", t=today(), b3=frPlus(t,3);
+    const Z=bt?bfBetriebZeilen():[...(bfDarf()?bfPersonZeilen():bfPersonZeilen(bfIch())),...(bfDarf()?[{nie:!bfUFaellig(),faellig:bfUFaellig()}]:[])];
+    const ue=Z.filter(x=>!x.nie&&x.faellig&&x.faellig<t).length, ba=Z.filter(x=>!x.nie&&x.faellig>=t&&x.faellig<=b3).length, offen=bfUnterw().reduce((n,u)=>n+(u.datum<=t?(u.teil||[]).filter(m=>!bfBest(u,m)).length:0),0);
+    return `<div class="narrow fr">${tabs}
+      <div class="fr-kpis"><div class="fr-kpi${ue?" bad":""}"><b>${ue}</b><span>überfällig</span></div><div class="fr-kpi"><b>${ba}</b><span>in 3 Monaten</span></div><div class="fr-kpi${!bt&&offen?" warn":""}"><b>${bt?Z.length:offen}</b><span>${bt?"Fristen gesamt":"Bestätigungen offen"}</span></div></div>
+      ${searchBar(bt?"Frist, Ort, Zuständig":"Name, Frist")}
+      <div id="res">${bt?bfBetriebView():bfTeamView()}</div>
+      <p class="hint">${bt?"Eigene Prüfpflichten der Firma. Messgeräte erscheinen mit ihrer Kalibrierung automatisch. Alles mit Fälligkeit steht im Kalender (Ebene „Fristen“).":"Unterweisung mindestens einmal im Jahr (DGUV Vorschrift 1). Jeder Teilnehmer bestätigt in der App – „Nachweis (PDF)“ ist der Beleg für Berufsgenossenschaft und Versicherung."}</p></div>`; }
+  return `<div class="narrow fr">${tabs}
     <div class="fr-kpis"><div class="fr-kpi${z.ueber?" bad":""}"><b>${z.ueber}</b><span>überfällig</span></div><div class="fr-kpi"><b>${z.bald}</b><span>in 3 Monaten</span></div><div class="fr-kpi"><b>${new Set(z.L.map(x=>x.kundeId)).size}</b><span>Kunden mit Frist</span></div></div>
     ${searchBar("Kunde, Ort, Prüfung")}
     <div class="chips ec-wahl fr-filter">${chip("3","Nächste 3 Monate")}${chip("6","6 Monate")}${chip("12","12 Monate")}${chip("alle","Alle")}</div>
@@ -72,4 +81,6 @@ function frMail(kid){ const k=kundeOf(kid); if(!k||!k.mail) return; const X=frLi
   toast("Als angeschrieben markiert","Rückgängig",()=>{ const k2=kundeOf(kid); if(!k2) return; if(alt) k2.fristKontakt=alt; else delete k2.fristKontakt; saveRec("kunden",k2); render(); }); }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="fr"]'); if(!b||b.disabled) return; const a=b.dataset.act;
   if(a==="frFilter"){ e.stopPropagation(); FR_FILTER=b.dataset.v; render(); return; }
+  if(a==="frTab"){ e.stopPropagation(); if(FR_TAB!==b.dataset.v){ FR_TAB=b.dataset.v; try{ query=""; }catch(_){} render(); } return; }
+  if(a==="frPlus"){ e.stopPropagation(); if(typeof bfPlus==="function") bfPlus(); return; }
   if(a==="frMail"){ e.stopPropagation(); frMail(b.dataset.id); return; } },true);

@@ -1194,7 +1194,7 @@ async function gj(path,opt){ const r=await g(path,opt); if(!r.ok) throw Object.a
    Ist die Adresse ein Freigabe-Link oder fehlt eine Bibliothek, landet alles im freigegebenen Ordner (wie früher). */
 const BIB={kunden:"Kundendaten",standorte:"Kundendaten",profile:"Kundendaten",einstellungen:"Kundendaten",dateien:"Kundendaten",vorgaenge:"Kundendaten",protokolle:"Kundendaten",
   ladeparks:"Prüfprotokolle",pruefungen:"Prüfprotokolle",katalog:"Prüfprotokolle",pdf:"Prüfprotokolle",geraete:"Prüfprotokolle",
-  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Kundendaten",gebaeude:"Prüfprotokolle",echecks:"Prüfprotokolle",handbuch:"Kundendaten",anlagen:"Kundendaten",wuensche:"Kundendaten",termine:"Kundendaten"};
+  baustellen:"Baustellen",eintraege:"Baustellen",anforderungen:"Baustellen",material:"Baustellen",notizen:"Baustellen",fotos:"Kundendaten",gebaeude:"Prüfprotokolle",echecks:"Prüfprotokolle",handbuch:"Kundendaten",bfristen:"Kundendaten",anlagen:"Kundendaten",wuensche:"Kundendaten",termine:"Kundendaten"};
 async function syncRoot(){
   if(SY.drive) return;
   const c=META.sync.root;
@@ -1452,7 +1452,7 @@ const pill=(r,t)=>`<span class="pill ${r}">${esc(t??RES_TXT[r])}</span>`;
 
 const TH_KEY="evse_theme";
 const RES_TXT={ok:"fertig",bad:"Mängel",open:"offen",wip:"in Arbeit"};
-const KINDS=["kunden","standorte","ladeparks","pruefungen","baustellen","eintraege","einstellungen","dateien","vorgaenge","geraete","anforderungen","profile","protokolle","gebaeude","anlagen","wuensche","termine","echecks","handbuch"];
+const KINDS=["kunden","standorte","ladeparks","pruefungen","baustellen","eintraege","einstellungen","dateien","vorgaenge","geraete","anforderungen","profile","protokolle","gebaeude","anlagen","wuensche","termine","echecks","handbuch","bfristen"];
 const EVSE_KINDS=["kunden","standorte","ladeparks","pruefungen"], BAU_KINDS=["baustellen","eintraege","anforderungen"];
 const DB=Object.fromEntries(KINDS.map(k=>[k,new Map()]));
 let META={profil:{name:""},sync:{}};
@@ -1475,7 +1475,7 @@ function dbPut(kind,rec){ DB[kind].set(rec.id,rec); const db=dbOf(kind); if(!db)
   if(kind==="einstellungen") einstSetzen(live("einstellungen")); }
 function metaSave(){ if(aDB) try{ aDB.transaction("meta","readwrite").objectStore("meta").put(META,"meta"); }catch(e){} }
 async function dataLoad(){
-  try{ kDB=await openStores("evse_daten",[...EVSE_KINDS,"katalog"],true); bDB=await openStores("baustelle_daten",BAU_KINDS,true); aDB=await openStores("irrgang_apps",["einstellungen","dateien","vorgaenge","geraete","profile","protokolle","gebaeude","anlagen","wuensche","termine","echecks","handbuch"],true);
+  try{ kDB=await openStores("evse_daten",[...EVSE_KINDS,"katalog"],true); bDB=await openStores("baustelle_daten",BAU_KINDS,true); aDB=await openStores("irrgang_apps",["einstellungen","dateien","vorgaenge","geraete","profile","protokolle","gebaeude","anlagen","wuensche","termine","echecks","handbuch","bfristen"],true);
     for(const k of KINDS){ (await idbReq(dbOf(k).transaction(k).objectStore(k).getAll())).forEach(r=>DB[k].set(r.id,r)); }
     const m=await idbReq(aDB.transaction("meta").objectStore("meta").get("meta")); if(m) META=Object.assign(META,m);
   }catch(e){ kDB=bDB=aDB=null; toast("Gerätespeicher nicht verfügbar – Daten nur bis zum Schließen"); }
@@ -1758,7 +1758,7 @@ function render(){ profilAnwenden(); setTimeout(()=>{ if(typeof kalPaneKlasse===
   let title="", sub="", fab=null, body="";
   if(login) body=loginSeite("Übersicht",loginView());
   else if(nav.v==="start"){ title=startTitel(); sub=startUnter(); body=startView(); }
-  else if(nav.v==="fristen"){ title="Prüffristen"; body=fristenView(); }
+  else if(nav.v==="fristen"){ title="Prüffristen"; body=fristenView(); if(FR_TAB!=="kunden"&&typeof bfDarf==="function"&&bfDarf()) fab=["frPlus",FR_TAB==="betrieb"?"Frist":"Neu","add"]; }
   else if(nav.v==="hb"){ if(nav.id){ const a=hbArt(nav.id); title=a?a.titel:"Handbuch"; sub="Betriebshandbuch"; body=hbArtikel(nav.id); } else { title="Betriebshandbuch"; body=hbUebersicht(); fab=hbDarf()?["hbNeu","Artikel","add"]:null; } }
   else if(nav.v==="uebersicht"){ title="Statistik"; body=uebersichtView()+(SYNC_ON?"":`<p class="hint">Daten auf diesem Gerät – mit der Microsoft-Anbindung kommen die Daten aller Mitarbeiter dazu.</p>`); }
   else if(nav.v==="kalender"){ title=kalTitel(); body=kalenderView(); fab=["kalNeu","Termin","add"]; }
@@ -1798,10 +1798,10 @@ function startView(){
     :`<a class="app-k" href="${a.href}"><img src="${a.ic}" alt=""><span class="app-t"><b>${a.name}</b><span>${a.text}</span></span>${icon("chev")}</a>`).join("");
   /* Begrüßung steht am iPad/PC oben im Kopf; am Handy (kein Seitenkopf) bleibt sie im Inhalt */
   const g=WIDE.matches?"":`<h2 class="gruss">${esc(startTitel())}</h2>`;
-  if(anfVerw()) return `<div class="narrow">${g}${dashboard(kacheln)}</div>`;
+  if(anfVerw()) return `<div class="narrow">${g}${typeof bfStartZeile==="function"?bfStartZeile():""}${dashboard(kacheln)}</div>`;
   const gerZ=istHandy()?(()=>{ const G=live("geraete").filter(x=>!x.aus), f=G.map(gerKal).filter(k=>k&&k.s!=="ok").length;
     return `<div class="sec-lbl">Betrieb</div>${listOf([`<div class="li" role="button" tabindex="0" data-act="nav" data-v="geraete"><span class="av">${icon("geraet")}</span><span class="lt"><span class="h">Messgeräte</span><span class="s">${G.length} ${G.length===1?"Gerät":"Geräte"}${f?` · ${f} ${f===1?"braucht":"brauchen"} Kalibrierung`:""}</span></span>${icon("chev")}</div>`])}`; })():"";
-  let h=`<div class="narrow">${g}${vgStartKarte()}${gerZ}${typeof hbStartZeile==="function"?hbStartZeile():""}<div class="apps app-weiter">${kacheln}</div>`;
+  let h=`<div class="narrow">${g}${typeof bfStartZeile==="function"?bfStartZeile():""}${vgStartKarte()}${gerZ}${typeof hbStartZeile==="function"?hbStartZeile():""}<div class="apps app-weiter">${kacheln}</div>`;
   return h+`<p class="hint app-weiter">Jede App lässt sich einzeln auf den Home-Bildschirm legen: App öffnen, dann „Teilen“ → „Zum Home-Bildschirm“.</p></div>`;
 }
 const startTitel=()=>`${gruss()}${ME.ruf||ME.name?`, ${ME.ruf||ME.name}`:""}`;
@@ -1881,7 +1881,7 @@ function dashboard(kacheln){
   const MO=live("vorgaenge").filter(m=>m.typ==="meldung"&&(m.status||"offen")==="offen"&&!m.deleted).length;
   const inArbeit=echt("pruefungen").filter(p=>["wip","open"].includes(pStand(p))).length;
   /* Inhalt je Kachel: s = nur die wichtigste Zahl, m/l = Liste (2 bzw. 5 Einträge) */
-  const HU=hbUngelesen();
+  const HU=hbUngelesen(), BZ=typeof bfZahlen==="function"?bfZahlen():{ueber:0,bald:0};
   const W={
     handbuch:{ic:"book",v:"hb",sub:HU.length?`${HU.length} Artikel zu lesen`:"Keine neuen Artikel",warn:HU.length>0,
       s:()=>gross(HU.length,"zu lesen",HU.length>0),
@@ -1893,7 +1893,7 @@ function dashboard(kacheln){
     auftraege:{ic:"board",v:"auftraege",sub:V.length?`${V.length} offen${vb?` · ${vb} beim Büro`:""}${MO?` · ${MO} Meldung${MO===1?"":"en"}`:""}`:"Keine offenen Vorgänge",plus:["vgNeu","Vorgang anlegen"],
       s:()=>gross(V.length,vb?`offen · ${vb} beim Büro`:"offen"),
       m:g=>V.length?V.slice(0,anz(g)).map(v=>zeile(vgKunde(v)+(v.rahmen?" · Rahmenauftrag":""),v.rahmen&&typeof mlOffen==="function"?`${mlOffen(v.id).length} Meldung${mlOffen(v.id).length===1?"":"en"} offen`:vgKurz(v.anliegen||"",60))).join(""):leer("Keine offenen Vorgänge.",true)},
-    pruefungen:{ic:"doc",v:"fristen",sub:ueber.length?`${ueber.length} überfällig`:fb.length?`${fb.length} fällig in 3 Monaten`:"Keine Fristen offen",warn:ueber.length>0||G.some(x=>x.k.s==="ab"),
+    pruefungen:{ic:"doc",v:"fristen",sub:(ueber.length?`${ueber.length} überfällig`:fb.length?`${fb.length} fällig in 3 Monaten`:"Keine Fristen offen")+(BZ.ueber?` · Betrieb ${BZ.ueber} überfällig`:""),warn:ueber.length>0||BZ.ueber>0||G.some(x=>x.k.s==="ab"),
       s:()=>gross(ueber.length,"überfällig",ueber.length>0),
       m:g=>`<div class="wg-kpis">${kpi(neu.length,"neue Protokolle")}${kpi(ueber.length,"überfällig",ueber.length?"warn":"")}${kpi(fb.length,"fällig in 3 Mon.")}</div>`
         +(g==="l"?([...G.slice(0,3).map(({g:x,k})=>zeile(gerName(x),k.t)),...ueber.slice(0,3).map(x=>zeile((kundeOf(x.kundeId)||{}).name||"Kunde",`${(FR_ART[x.art]||["Prüfung"])[0]} · ${x.faellig?"fällig seit "+deDate(x.faellig):"noch nie geprüft"}`))].join("")||leer("Keine Fristen in Gefahr.")):"")},
