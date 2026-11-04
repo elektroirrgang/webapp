@@ -1737,3 +1737,13 @@ html body.sc-eng .navbar,html body.sc-eng.rail-open .navbar{transform:translateX
 .qr-pfl .lt{min-width:0}
 .qr-pfl .btn-tonal{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;padding:0 14px;height:40px}.qr-pfl .btn-tonal .ic{width:18px;height:18px}
 .qr-pfl .av{display:none}
+/* KNX-Etiketten (knx.js) */
+.knx-gitter{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px;max-height:280px;overflow:auto;margin:4px 0 8px;padding:2px}
+.knx-n{border:0;border-radius:14px;background:var(--sc-high);color:var(--on-surface);padding:8px 4px;font:600 14px var(--font);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;font-variant-numeric:tabular-nums}
+.knx-n small{font-size:11px;font-weight:800;color:var(--on-pc)}
+.knx-n[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
+.knx-summe{margin:6px 2px 0;color:var(--on-sv);font-size:14px}.knx-summe b{color:var(--on-surface)}
+.knx-null{display:flex;align-items:center;gap:10px;margin:10px 2px 6px;font-size:15px}.knx-null input{width:20px;height:20px;accent-color:var(--primary)}
+.knx-seg{display:flex;gap:4px;background:var(--sc-high);border-radius:22px;padding:4px}.knx-seg button{flex:1;border:0;border-radius:18px;background:none;color:var(--on-surface);font:600 14px var(--font);padding:9px 6px;cursor:pointer}.knx-seg button[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
+.knx-felder{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px}.knx-felder .tf{margin:0}
+.knx-n{position:relative;height:44px;justify-content:center}.knx-n small{position:absolute;top:3px;right:6px;font-size:10px}

@@ -34,7 +34,7 @@ def baue(quelle, ziel, icon):
     html = html.replace("/*ECHECKPRUEF*/", (root / "src/echeck-pruef.js").read_text(encoding="utf-8"))
     html = html.replace("/*LEGENDE*/", (root / "src/legende.js").read_text(encoding="utf-8"))
     html = html.replace("/*VERTEILER*/", (root / "src/verteiler.js").read_text(encoding="utf-8") + "\n" + (root / "src/material-daten.js").read_text(encoding="utf-8") + "\n" + (root / "src/vt-aufnahme.js").read_text(encoding="utf-8") + "\n" + (root / "src/zaehlerschrank.js").read_text(encoding="utf-8") + "\n" + (root / "src/zs-zeichnung.js").read_text(encoding="utf-8") + "\n" + (root / "src/vt-uebersicht.js").read_text(encoding="utf-8") + "\n" + (root / "src/anlagenpass.js").read_text(encoding="utf-8"))
-    html = html.replace("/*QR*/", (root / "vendor/qrcode-generator.min.js").read_text(encoding="utf-8") + "\n" + (root / "src/qr.js").read_text(encoding="utf-8"))
+    html = html.replace("/*QR*/", (root / "vendor/qrcode-generator.min.js").read_text(encoding="utf-8") + "\n" + (root / "src/qr.js").read_text(encoding="utf-8") + "\n" + (root / "src/knx.js").read_text(encoding="utf-8"))
     html = html.replace("/*PDFANSICHT*/", (root / "src/pdfansicht.js").read_text(encoding="utf-8"))
     html = html.replace("/*HANDBUCH*/", (root / "src/handbuch-vorlage.js").read_text(encoding="utf-8") + "\n" + (root / "src/handbuch.js").read_text(encoding="utf-8"))
     html = html.replace("/*FRISTEN*/", (root / "src/fristen.js").read_text(encoding="utf-8") + "\n" + (root / "src/betrieb.js").read_text(encoding="utf-8"))
