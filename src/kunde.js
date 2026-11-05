@@ -173,10 +173,12 @@ async function karteLaden(a){
     KARTE.el=document.createElement("div"); KARTE.el.className="kd-map"; slot.appendChild(KARTE.el); KARTE.stil=stil;
     /* Umschauen erlaubt, aber nur in der Nähe: Zoom 13,5–18,5 und ca. 1,5 km um den Ort. Finger: mit zwei Fingern, PC: Strg/⌘ + Mausrad oder +/− */
     KARTE.map=new maplibregl.Map({container:KARTE.el,style:karteStil(stil),center:c,zoom:15.2,minZoom:13.5,maxZoom:18.5,maxBounds:karteGrenze(c),
-      dragRotate:false,pitchWithRotate:false,touchPitch:false,keyboard:false,cooperativeGestures:true,attributionControl:false,fadeDuration:0,
+      dragRotate:false,pitchWithRotate:false,touchPitch:false,keyboard:false,cooperativeGestures:false,scrollZoom:false,attributionControl:false,fadeDuration:0,
       locale:{"CooperativeGesturesHandler.WindowsHelpText":"Zum Zoomen Strg + Mausrad – oder + und −","CooperativeGesturesHandler.MacHelpText":"Zum Zoomen ⌘ + Mausrad – oder + und −","CooperativeGesturesHandler.MobileHelpText":"Mit zwei Fingern verschieben und zoomen",
         "NavigationControl.ZoomIn":"Vergrößern","NavigationControl.ZoomOut":"Verkleinern"}});
     KARTE.map.touchZoomRotate.disableRotation();
+    /* 05.11.2026 (Max): mit einem Finger verschieben, mit zwei Fingern zoomen. Mausrad scrollt weiter die Seite – zoomen am PC mit Strg/⌘ + Mausrad, Doppelklick oder + und − */
+    KARTE.el.addEventListener("wheel",e=>{ if(!(e.ctrlKey||e.metaKey)||!KARTE.map) return; e.preventDefault(); KARTE.map.easeTo({zoom:KARTE.map.getZoom()-Math.max(-1,Math.min(1,e.deltaY/100))*.6,duration:120,around:KARTE.map.unproject([e.offsetX,e.offsetY])}); },{passive:false});
     KARTE.map.on("styledata",karteVorlagePoiAus);
     KARTE.map.on("zoom",()=>{ const k=document.getElementById("kdKarte"); if(k) k.classList.toggle("fern",KARTE.map.getZoom()<14.6); });
     KARTE.map.addControl(new maplibregl.AttributionControl({compact:true}),"bottom-right");
