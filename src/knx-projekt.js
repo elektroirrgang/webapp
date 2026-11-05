@@ -169,56 +169,207 @@ function kxTypenDlg(){ KX_TDLG=KX_TDLG||kxTypen().map(t=>({...t})); const L=KX_T
     <div class="fg1" style="margin-top:12px">${tf("kxTNeu","Neue Geräteart","",{form:true,ph:"z. B. Wetterstation"})}</div>`,
     `<button class="btn-text" data-act="kxTStd">Standard</button><span style="flex:1"></span><button class="btn-text" data-act="kxTAbbr">Abbrechen</button><button class="btn-text" data-act="kxTOk">Speichern</button>`,{breit:true}); }
 
-/* ===== Programmieren zu zweit ===== */
-const KX_PROG={rolle:"",g:"",sitz:null,timer:null,letzt:"",busy:false,fehler:""};
+/* ===== Programmieren zu zweit (05.11.2026, Version 2) =====
+   Einer an der ETS (iPad/Laptop = Kommandozentrale), ein oder mehrere Helfer vor Ort (Handy), jeder mit eigener Zone (Linie).
+   Koppeln über 4-stelligen Code oder QR (…#kxk=<Projekt>.<Code>). Gerät = eigene Geräte-ID, auch bei gleichem Konto.
+   Dateien in der Firmen-Cloud …/knxsitzung/:
+     <Projekt>.json          – schreibt nur die ETS: Code, Anforderungen je Helfer, Timer, Stand
+     <Projekt>~h~<Gerät>.json – schreibt nur der Helfer: Code, Zone, Antwort (gedrückt/Problem), Lebenszeichen
+   Beide fragen jede Sekunde nach (Lebenszeichen alle 10 s). */
+const KX_PROG={rolle:"",g:"",sitz:null,helfer:{},timer:null,letzt:"",busy:false,fehler:"",lokal:{},join:{code:"",zone:""},ton:null,herz:0,autoT:null,fertigAuto:{}};
+const KX_DEV=(()=>{ try{ let d=localStorage.getItem("kx-geraet"); if(!d){ d=Math.random().toString(36).slice(2,10); localStorage.setItem("kx-geraet",d); } return d; }catch(e){ return "g"+Math.random().toString(36).slice(2,8); } })();
+const kxGeraetName=()=>{ const u=navigator.userAgent; return /iPhone/.test(u)?"iPhone":/iPad/.test(u)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)?"iPad":/Android/.test(u)?"Android":"PC"; };
+const kxIch=()=>(typeof ME!=="undefined"&&(ME.name||ME.mail))||"Ich";
+const kxKurz=n=>String(n||"?").split(/[\s.]+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join("");
+const kxLName=l=>l?`Linie ${l.bereich}.${l.linie}`:"Alle Linien";
 async function kxSitzOrdner(){ if(typeof SYNC_ON==="undefined"||!SYNC_ON||typeof ME==="undefined"||!ME.signedIn) throw new Error("ohne Anmeldung");
   if(!KX_PROG.fid){ if(typeof syncRoot==="function") await syncRoot(); KX_PROG.fid=await folderId(`${CONFIG.dataFolder}/knxsitzung`,BIB.gebaeude); } return KX_PROG.fid; }
-const kxSitzName=gid=>encodeURIComponent(String(gid).replace(/[^\w-]/g,"_")+".json");
+const kxBasis=gid=>String(gid).replace(/[^\w-]/g,"_");
+const kxSitzName=gid=>encodeURIComponent(kxBasis(gid)+".json");
+const kxHelfName=(gid,dev)=>encodeURIComponent(kxBasis(gid)+"~h~"+dev+".json");
 async function kxSitzLesen(gid){ const fid=await kxSitzOrdner(), r=await g(`/drives/${fid}:/${kxSitzName(gid)}?t=${Date.now()}`,{cache:"no-store"}); if(r.status===404) return null; if(!r.ok) throw new Error("Lesen "+r.status);
-  const it=await r.json(); if(KX_PROG.etag&&it.eTag===KX_PROG.etag&&KX_PROG.sitzRoh) return KX_PROG.sitzRoh;   /* unverändert – nicht neu laden */
+  const it=await r.json(); if(KX_PROG.etag&&it.eTag===KX_PROG.etag&&KX_PROG.sitzRoh) return KX_PROG.sitzRoh;
   const c=await readItem(it); try{ const s=JSON.parse(await c.text()); KX_PROG.etag=it.eTag; KX_PROG.sitzRoh=s; return s; }catch(e){ return null; } }
-async function kxSitzSchreiben(gid,s){ s.seq=Date.now(); const fid=await kxSitzOrdner(), r=await g(`/drives/${fid}:/${kxSitzName(gid)}:/content`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(s)}); if(!r.ok) throw new Error("Schreiben "+r.status); KX_PROG.sitz=s; KX_PROG.sitzRoh=s; try{ KX_PROG.etag=(await r.json()).eTag; }catch(e){} return s; }
-/* nächstes Gerät: in Adress-Reihenfolge, Busgerät mit Adresse, noch nicht programmiert, ohne Problem */
-const kxNaechstes=(g,ab)=>{ const D=kxGeraete(g).filter(d=>kxTyp(d.typ).bus&&kxPA(g,d)&&!d.prog&&!d.problem); if(!ab) return D[0]; const i=D.findIndex(d=>d.id===ab); return D[i+1]||D.find(d=>d.id!==ab); };
-function kxProgView(g){ kxPopupZu(); const R=KX_PROG.rolle&&KX_PROG.g===g.id?KX_PROG.rolle:"", s=KX_PROG.sitz&&KX_PROG.sitz.g===g.id?KX_PROG.sitz:null, D=kxGeraete(g).filter(d=>kxTyp(d.typ).bus&&kxPA(g,d)), offen=D.filter(d=>!d.prog);
-  if(!R) return `<div class="narrow ec-spalte"><section class="card"><h3>Programmieren zu zweit</h3><p class="meta" style="margin:0 0 14px">Einer sitzt an der ETS, der andere drückt vor Ort die Programmiertasten. Beide öffnen hier dieses Projekt und wählen ihre Rolle.</p>
-    <div class="kx-rollen"><button type="button" class="kx-rolle" data-act="kxRolle" data-v="ets">${icon("kxProg")}<b>Ich programmiere</b><span>am Laptop mit der ETS</span></button><button type="button" class="kx-rolle" data-act="kxRolle" data-v="taste">${icon("kxTipp")}<b>Ich drücke die Tasten</b><span>vor Ort am Gerät</span></button></div>
-    <p class="meta" style="margin:14px 4px 0">${offen.length} von ${D.length} Geräten mit Adresse sind noch nicht programmiert.${D.length?"":" Erst unter „Übersicht“ Adressen vergeben."}</p></section></div>`;
-  const kopf=`<div class="kx-pkopf"><span>${R==="ets"?"Du programmierst":"Du drückst die Tasten"}${KX_PROG.fehler?` · <b style="color:var(--err)">${esc(KX_PROG.fehler)}</b>`:""}</span><button type="button" class="btn-text" data-act="kxRolleEnde">Beenden</button></div>`;
-  if(R==="taste"){ const d=s&&s.status==="angefordert"&&g.knx.geraete.find(x=>x.id===s.geraet);
-    return `<div class="narrow ec-spalte">${kopf}<section class="card kx-warte">${d?kxTasteKarte(g,d,s):`<div class="kx-puls">${icon("kxTipp")}</div><h3>Warte auf das nächste Gerät …</h3><p class="meta">Sobald dein Kollege ein Gerät anfordert, erscheint es hier – auch wenn du in einem anderen Reiter bist.</p>`}</section></div>`; }
-  /* ETS-Seite */
-  const akt=s&&s.status!=="fertig"&&g.knx.geraete.find(x=>x.id===s.geraet), nx=akt?null:kxNaechstes(g,s&&s.geraet);
-  let karte;
-  if(akt&&s.status==="angefordert") karte=`<div class="kx-puls">${icon("kxTipp")}</div><h3>${esc(kxPA(g,akt))} angefordert</h3><p class="meta">${esc(kxTyp(akt.typ).name)} · ${esc(kxRaumTitel(g,akt.raumId))}<br>Warte, bis dein Kollege die Programmiertaste gedrückt hat …</p><div class="kx-knoepfe"><button type="button" class="btn-tonal" data-act="kxAbbr">Abbrechen</button></div>`;
-  else if(akt&&s.status==="gedrueckt") karte=`<div class="kx-ok">${icon("kxProg")}</div><h3>Taste an ${esc(kxPA(g,akt))} gedrückt</h3><p class="meta">${esc(kxTyp(akt.typ).name)} · ${esc(kxRaumTitel(g,akt.raumId))} – jetzt in der ETS programmieren.</p><div class="kx-knoepfe"><button type="button" class="btn-tonal" data-act="kxProbl">Problem</button><button type="button" class="btn-filled" data-act="kxFertig">Programmiert – weiter</button></div>`;
-  else if(akt&&s.status==="problem") karte=`<div class="kx-puls warn">${icon("warn")}</div><h3>${esc(kxPA(g,akt))}: Problem gemeldet</h3><p class="meta">${esc(s.notiz||"Dein Kollege findet das Gerät nicht oder es reagiert nicht.")}</p><div class="kx-knoepfe"><button type="button" class="btn-tonal" data-act="kxAnf" data-id="${esc(akt.id)}">Nochmal anfordern</button><button type="button" class="btn-filled" data-act="kxUeberspr">Überspringen</button></div>`;
-  else karte=nx?`<h3>Nächstes Gerät</h3><div class="kx-next"><b>${esc(kxPA(g,nx))}</b><span>${esc(kxTyp(nx.typ).name)} · ${esc(kxRaumTitel(g,nx.raumId))}</span></div><div class="kx-knoepfe"><button type="button" class="btn-filled" data-act="kxAnf" data-id="${esc(nx.id)}">${icon("kxTipp")}Anfordern</button></div>`
-    :`<h3>Alles programmiert</h3><p class="meta">${D.length?"Alle Geräte mit Adresse sind programmiert.":"Noch keine Geräte mit Adresse."}</p>`;
-  const rest=offen.filter(d=>!akt||d.id!==akt.id);
-  return `<div class="narrow ec-spalte">${kopf}<section class="card kx-warte">${karte}</section>
-    ${rest.length?`<section class="card"><h3>Noch offen · ${rest.length}</h3>${ecListe(rest.slice(0,40).map(d=>ecLi({lead:`<b>${esc(kxPA(g,d))}</b>`,breit:true,kopf:esc(kxTyp(d.typ).name),text:esc(kxRaumTitel(g,d.raumId)+(d.problem?" · Problem":"")),act:"kxAnf",id:d.id,rechts:`<span class="kx-anf">Anfordern</span>`})))}</section>`:""}</div>`; }
-function kxTasteKarte(g,d,s){ return `<div class="kx-gross"><small>Bitte Programmiertaste drücken</small><b>${esc(kxPA(g,d))}</b><span>${esc(kxTyp(d.typ).name)}</span><span class="kx-raum">${esc(kxRaumTitel(g,d.raumId))}${(()=>{ const x=kxRaumInfo(g,d.raumId); return x?` · ${esc(kxGruppe(x))}`:""; })()}</span></div>
-  <div class="kx-knoepfe"><button type="button" class="btn-tonal" data-act="kxNichtGef">Problem</button><button type="button" class="btn-filled" data-act="kxGedrueckt">Gedrückt</button></div>${s.von?`<p class="meta" style="text-align:center;margin-top:10px">angefordert von ${esc(s.von)}</p>`:""}`; }
-/* Abfrage alle 2 s, solange eine Rolle aktiv ist – auch außerhalb des Reiters (Helfer bekommt dann ein Fenster) */
-function kxProgStart(rolle,gid){ KX_PROG.rolle=rolle; KX_PROG.g=gid; KX_PROG.fehler=""; clearInterval(KX_PROG.timer); KX_PROG.timer=setInterval(kxAbfrage,2000); kxAbfrage(); try{ navigator.wakeLock&&navigator.wakeLock.request("screen").then(w=>KX_PROG.wl=w).catch(()=>{}); }catch(e){} }
-function kxProgEnde(){ clearInterval(KX_PROG.timer); KX_PROG.timer=null; KX_PROG.rolle=""; KX_PROG.sitz=null; try{ KX_PROG.wl&&KX_PROG.wl.release(); }catch(e){} kxPopupZu(); }
+async function kxDateiSchreiben(name,obj){ const fid=await kxSitzOrdner(), r=await g(`/drives/${fid}:/${name}:/content`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(obj)}); if(!r.ok) throw new Error("Schreiben "+r.status); try{ return (await r.json()).eTag; }catch(e){ return ""; } }
+async function kxSitzSchreiben(gid,s){ s.seq=Date.now(); s.ets={dev:KX_DEV,wer:kxIch(),at:Date.now()}; s.stand=kxStand(vtGeb(gid)); const e=await kxDateiSchreiben(kxSitzName(gid),s); KX_PROG.sitz=s; KX_PROG.sitzRoh=s; KX_PROG.etag=e; KX_PROG.herz=Date.now(); return s; }
+async function kxHelfSchreiben(){ const j=KX_PROG.join, h={v:2,g:KX_PROG.g,dev:KX_DEV,wer:kxIch(),geraet:kxGeraetName(),code:j.code,zone:j.zone,at:Date.now(),antwort:KX_PROG.antwort||null};
+  await kxDateiSchreiben(kxHelfName(KX_PROG.g,KX_DEV),h); KX_PROG.herz=Date.now(); }
+/* Helfer-Dateien (nur ETS): Ordner auflisten, nur geänderte nachladen */
+async function kxHelferLesen(gid){ const fid=await kxSitzOrdner(), r=await g(`/drives/${fid}/children?$top=200&t=${Date.now()}`,{cache:"no-store"}); if(!r.ok) throw new Error("Lesen "+r.status);
+  const vor=kxBasis(gid)+"~h~", L=((await r.json()).value||[]).filter(it=>it.name&&it.name.startsWith(vor)), neu={};
+  for(const it of L){ const alt=KX_PROG.helfer[it.name]; if(alt&&alt.etag===it.eTag){ neu[it.name]=alt; continue; }
+    try{ const h=JSON.parse(await (await readItem(it)).text()); neu[it.name]={...h,etag:it.eTag,name:it.name}; }catch(e){} }
+  KX_PROG.helfer=neu; return neu; }
+async function kxDateiWeg(name){ try{ const fid=await kxSitzOrdner(); await g(`/drives/${fid}:/${name}`,{method:"DELETE"}); }catch(e){} }
+/* ---- Zonen, nächstes Gerät, Stand ---- */
+const kxZoneVon=(g,d)=>{ const l=kxLinieVonRaum(g,d.raumId); return l?l.id:""; };
+const kxAktiveIds=()=>{ const A=(KX_PROG.sitz&&KX_PROG.sitz.auf)||{}; return new Set(Object.values(A).filter(a=>a&&(a.status==="angefordert"||a.status==="laeuft")).map(a=>a.geraet)); };
+const kxOffen=g=>kxGeraete(g).filter(d=>kxTyp(d.typ).bus&&kxPA(g,d)&&!d.prog&&!d.problem);
+function kxNaechstesZone(g,zone,ohne){ const bes=kxAktiveIds(); return kxOffen(g).find(d=>!bes.has(d.id)&&d.id!==ohne&&(!zone||kxZoneVon(g,d)===zone)); }
+function kxStand(g){ if(!g) return null; const D=kxGeraete(g).filter(d=>kxTyp(d.typ).bus&&kxPA(g,d)), z={};
+  D.forEach(d=>{ const k=kxZoneVon(g,d)||"-"; z[k]=z[k]||[0,0]; z[k][1]++; if(d.prog) z[k][0]++; }); return {n:D.filter(d=>d.prog).length,m:D.length,zonen:z}; }
+const kxFrisch=at=>at&&Date.now()-at<30000;
+/* Helfer, die mit dem aktuellen Code verbunden sind */
+const kxVerbunden=()=>{ const s=KX_PROG.sitz; if(!s||!s.code) return []; return Object.values(KX_PROG.helfer).filter(h=>h.code===s.code).sort((a,b)=>String(a.wer).localeCompare(String(b.wer))||String(a.dev).localeCompare(String(b.dev))); };
+/* Zustand einer Anforderung aus ETS-Sicht (Antwort des Helfers eingerechnet) */
+function kxZustand(a,h){ if(!a) return "frei"; if(a.status==="laeuft"||a.status==="fertig"||a.status==="abgebrochen") return a.status;
+  const an=h&&h.antwort&&h.antwort.id===a.id?h.antwort.status:""; return an==="gedrueckt"?"gedrueckt":an==="problem"?"problem":"angefordert"; }
+/* ---- Bausteine ---- */
+const kxSvgP=(k,cls)=>`<svg class="${cls||""}" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[k]}"/></svg>`;
+Object.assign(IC,{kxLap:"M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z",kxHand:"M15.5 1h-8C6.12 1 5 2.12 5 3.5v17C5 21.88 6.12 23 7.5 23h8c1.38 0 2.5-1.12 2.5-2.5v-17C18 2.12 16.88 1 15.5 1zm-4 21c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4.5-4H7V4h9v14z"});
+const kxVerb=(an,txt)=>`<span class="kxz-verb${an?" an":""}">${kxSvgP("kxLap")}<span class="kxz-leit"><i></i></span>${kxSvgP("kxHand")}${txt?`<span>${esc(txt)}</span>`:""}</span>`;
+const kxSchritte=n=>`<div class="kxz-schr">${["Angefordert","Taste gedrückt","Programmiert"].map((t,i)=>`<span class="${i<n?"fe":i===n?"an":""}"><i></i>${t}</span>`).join("<em></em>")}</div>`;
+const kxRing=(id,gr,txt)=>{ const r=gr==="k"?31:88, w=gr==="k"?9:14, v=gr==="k"?76:200, u=(2*Math.PI*r).toFixed(1);
+  return `<div class="kxz-ring ${gr==="k"?"k":""}" ${id?`data-kxuhr="${esc(id)}"`:""}><svg viewBox="0 0 ${v} ${v}"><circle cx="${v/2}" cy="${v/2}" r="${r}" fill="none" stroke-width="${w}" class="hg"/><circle cx="${v/2}" cy="${v/2}" r="${r}" fill="none" stroke-width="${w}" stroke-linecap="round" class="vg" stroke-dasharray="${u}" stroke-dashoffset="0"/></svg><div class="z"><b>–</b>${txt?`<small>${esc(txt)}</small>`:""}</div></div>`; };
+const kxMini=(n,m)=>{ const r=31,u=2*Math.PI*r, a=m?n/m:0; return `<div class="kxz-ring k"><svg viewBox="0 0 76 76"><circle cx="38" cy="38" r="${r}" fill="none" stroke-width="9" class="hg"/><circle cx="38" cy="38" r="${r}" fill="none" stroke-width="9" stroke-linecap="round" class="ok" stroke-dasharray="${(u*a).toFixed(1)} ${u.toFixed(1)}"/></svg><div class="z"><b>${n}/${m}</b></div></div>`; };
+const kxPuls=(klein,grau)=>`<div class="kxz-puls${klein?" k":""}${grau?" grau":""}">${icon("kxTipp")}</div>`;
+function kxQrSvg(text){ try{ const q=qrcode(0,"M"); q.addData(text); q.make(); const n=q.getModuleCount(); let d=""; for(let y=0;y<n;y++) for(let x=0;x<n;x++) if(q.isDark(y,x)) d+=`M${x+2} ${y+2}h1v1h-1z`; return `<svg viewBox="0 0 ${n+4} ${n+4}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#111"/></svg>`; }catch(e){ return ""; } }
+const kxLink=(gid,code)=>`${location.origin}${location.pathname}#kxk=${kxBasis(gid)}.${code}`;
+/* ---- Ansicht ---- */
+function kxProgView(g){ kxPopupZu(); const R=KX_PROG.rolle&&KX_PROG.g===g.id?KX_PROG.rolle:"";
+  const D=kxGeraete(g).filter(d=>kxTyp(d.typ).bus&&kxPA(g,d)), offen=D.filter(d=>!d.prog);
+  if(!R) return `<div class="narrow ec-spalte"><section class="card"><h3>Programmieren zu zweit</h3><p class="meta" style="margin:0 0 14px">Einer sitzt an der ETS, die anderen drücken vor Ort die Programmiertasten – jeder in seiner Zone. Das ETS-Gerät zeigt einen Code, die Helfer verbinden sich damit.</p>
+    <div class="kx-rollen"><button type="button" class="kx-rolle" data-act="kxRolle" data-v="ets">${icon("kxProg")}<b>Ich programmiere</b><span>an der ETS – Kommandozentrale</span></button><button type="button" class="kx-rolle" data-act="kxRolle" data-v="taste">${icon("kxTipp")}<b>Ich drücke die Tasten</b><span>vor Ort, mit dem Handy</span></button></div>
+    <p class="meta" style="margin:14px 4px 0">${offen.length} von ${D.length} Geräten mit Adresse sind noch nicht programmiert.${D.length?"":" Erst unter „Übersicht“ Linien anlegen und Adressen vergeben."}</p></section></div>`;
+  return R==="ets"?kxEtsView(g,D):kxHelferView(g); }
+function kxEtsView(g,D){ const s=KX_PROG.sitz, H=kxVerbunden(), fr=H.filter(h=>kxFrisch(h.at)), L=kxNorm(g).linien, st=kxStand(g)||{n:0,m:0,zonen:{}};
+  const kopf=`<div class="kxz-kopf"><div><b>Du programmierst</b><small>${KX_PROG.fehler?`<span style="color:var(--err)">${esc(KX_PROG.fehler)}</span>`:`${fr.length} ${fr.length===1?"Helfer":"Helfer"} verbunden`}</small></div>${kxVerb(fr.length>0,"")}<button type="button" class="btn-text" data-act="kxRolleEnde">Beenden</button></div>`;
+  if(!s) return `<div class="narrow ec-spalte">${kopf}<section class="card kx-warte">${kxPuls(true,true)}<h3>Sitzung wird angelegt …</h3></section></div>`;
+  const code=s.code||"", link=kxLink(g.id,code), viel=!fr.length||KX_PROG.codeAuf;
+  const koppel=viel?`<section class="card kxz-koppel"><div class="kxz-qr">${kxQrSvg(link)}</div><div><h3>Helfer verbinden</h3><p class="meta">Mit dem Scanner der App den QR scannen – oder im Projekt „Ich drücke die Tasten“ und den Code eingeben</p><div class="kxz-ziff">${[...code].map(z=>`<span>${z}</span>`).join("")}</div>${fr.length?`<button type="button" class="btn-text" data-act="kxCodeZu">Ausblenden</button>`:""}</div></section>`
+    :`<button type="button" class="kxz-codezeile" data-act="kxCodeAuf">${icon("scQr")}<span>Code <b>${esc(code)}</b> · weitere Helfer verbinden</span>${icon("chev")}</button>`;
+  const karten=H.map(h=>kxEtsHelferKarte(g,h)).join("");
+  const freieZonen=L.filter(l=>!fr.some(h=>h.zone===l.id)&&!fr.some(h=>!h.zone));
+  const zonenStand=L.map(l=>{ const z=st.zonen[l.id]||[0,0], h=fr.find(x=>x.zone===l.id); return `<div class="kxz-bar"><span>${esc(kxLName(l))}${h?` · ${esc(h.wer)}`:fr.some(x=>!x.zone)?"":" · frei"}</span><i><b style="width:${z[1]?Math.round(z[0]/z[1]*100):0}%"></b></i><em>${z[0]}/${z[1]}</em></div>`; }).join("");
+  const dauer=s.dauer||20;
+  const einst=`<div class="kxz-einst"><span>Timer</span>${[10,20,30,45].map(t=>`<button type="button" class="kxz-chip" data-act="kxDauer" data-v="${t}" aria-pressed="${t===dauer}">${t} s</button>`).join("")}<button type="button" class="kxz-chip" data-act="kxAuto" aria-pressed="${s.auto!==false}">Automatisch weiter</button></div>`;
+  return `<div class="narrow ec-spalte">${kopf}${koppel}${karten||`<section class="card kx-warte">${kxPuls(true,true)}<h3>Noch kein Helfer verbunden</h3><p class="meta">Sobald sich jemand mit dem Code verbindet, erscheint er hier mit seiner Zone.</p></section>`}
+    ${freieZonen.length&&fr.length?`<p class="meta" style="margin:0 6px 12px">Ohne Helfer: ${freieZonen.map(l=>esc(kxLName(l))).join(" · ")}</p>`:""}
+    <section class="card"><div class="kxz-fort">${kxMini(st.n,st.m)}<div><h3>${st.n} von ${st.m} programmiert</h3><p class="meta">${st.m-st.n} offen</p></div></div>${zonenStand?`<div class="kxz-bars">${zonenStand}</div>`:""}${einst}</section>
+    ${(()=>{ const bes=kxAktiveIds(), R=kxOffen(g).filter(d=>!bes.has(d.id)); return R.length?`<section class="card"><h3>Noch offen · ${R.length}</h3>${ecListe(R.slice(0,40).map(d=>{ const l=kxLinieVonRaum(g,d.raumId); return ecLi({lead:`<b>${esc(kxPA(g,d))}</b>`,breit:true,kopf:esc(kxTyp(d.typ).name),text:esc(kxRaumTitel(g,d.raumId)+(l?" · "+kxLName(l):"")),act:"kxAnf",id:d.id,rechts:`<span class="kx-anf">Anfordern</span>`}); }))}</section>`:""; })()}</div>`; }
+function kxEtsHelferKarte(g,h){ const s=KX_PROG.sitz, a=s.auf&&s.auf[h.dev], z=kxZustand(a,h), l=kxNorm(g).linien.find(x=>x.id===h.zone), frisch=kxFrisch(h.at);
+  const kopf=`<div class="kxz-helf"><span class="kxz-av${frisch?" ok":""}">${esc(kxKurz(h.wer))}</span><div><b>${esc(h.wer||"Helfer")}</b><small>${frisch?"verbunden":"keine Verbindung"} · ${esc(h.geraet||"")}</small></div><span class="kxz-zone">${esc(kxLName(l))}</span></div>`;
+  const d=a&&kxNorm(g).geraete.find(x=>x.id===a.geraet), was=a?`${esc(a.typ||"")} · ${esc(a.raum||"")}`:"";
+  let inhalt="";
+  if(z==="angefordert") inhalt=`${kxSchritte(0)}<div class="kxz-mitte">${kxPuls(true)}<h3>${esc(a.pa)} bei ${esc(h.wer)} angefordert</h3><p class="meta">${was}<br>Warte, bis die Programmiertaste gedrückt ist …</p></div><div class="kx-knoepfe"><button type="button" class="btn-tonal" data-act="kxAbbr" data-h="${esc(h.dev)}">Abbrechen</button></div>`;
+  else if(z==="gedrueckt") inhalt=`${kxSchritte(1)}<div class="kxz-mitte"><div class="kxz-ok">${icon("kxTipp")}</div><h3>Taste an ${esc(a.pa)} gedrückt</h3><p class="meta">${was} – ETS jetzt starten</p></div><div class="kx-knoepfe"><button type="button" class="btn-tonal" data-act="kxUeberspr" data-h="${esc(h.dev)}">Problem</button><button type="button" class="btn-filled" data-act="kxStart" data-h="${esc(h.dev)}">Programmierung starten</button></div>`;
+  else if(z==="laeuft") inhalt=`${kxSchritte(2)}<div class="kxz-mitte">${kxRing(h.dev+"|"+a.id,"g",`von 0:${String(a.dauer||20).padStart(2,"0")}`)}<h3>${esc(a.pa)} wird programmiert</h3><p class="meta">${was}</p></div><div class="kx-knoepfe"><button type="button" class="btn-tonal" data-act="kxPlus10" data-h="${esc(h.dev)}">+10 s</button><button type="button" class="btn-tonal" data-act="kxUeberspr" data-h="${esc(h.dev)}">Problem</button><button type="button" class="btn-filled" data-act="kxFertig" data-h="${esc(h.dev)}">Fertig</button></div>`;
+  else if(z==="problem") inhalt=`<div class="kxz-mitte"><div class="kxz-puls k warn">${icon("warn")}</div><h3>${esc(a.pa)}: Problem gemeldet</h3><p class="meta">${esc((h.antwort&&h.antwort.notiz)||"Gerät nicht gefunden oder reagiert nicht")}</p></div><div class="kx-knoepfe"><button type="button" class="btn-tonal" data-act="kxNochmal" data-h="${esc(h.dev)}">Nochmal anfordern</button><button type="button" class="btn-filled" data-act="kxUeberspr" data-h="${esc(h.dev)}">Überspringen</button></div>`;
+  else { const nx=kxNaechstesZone(g,h.zone), fertig=z==="fertig"&&a&&Date.now()-(a.ende||0)<6000;
+    inhalt=`${fertig?`<div class="kxz-erfolg"><span class="pk"></span><span>${esc(a.pa)} programmiert</span><button type="button" class="btn-text" data-act="kxRueck" data-h="${esc(h.dev)}">Rückgängig</button></div>`:""}
+      ${nx?`<div class="kxz-next"><b>${esc(kxPA(g,nx))}</b><span>${esc(kxTyp(nx.typ).name)} · ${esc(kxRaumTitel(g,nx.raumId))}</span></div><div class="kx-knoepfe"><button type="button" class="btn-filled" data-act="kxAnfH" data-h="${esc(h.dev)}" data-id="${esc(nx.id)}">${icon("kxTipp")}Anfordern</button></div>`
+        :`<p class="meta" style="margin:10px 2px 0">In dieser Zone ist nichts mehr offen.</p>`}`; }
+  return `<section class="card kxz-karte${z==="laeuft"?" laeuft":""}">${kopf}${inhalt}</section>`; }
+function kxHelferView(g){ const s=KX_PROG.sitz, j=KX_PROG.join, L=kxNorm(g).linien;
+  const ok=s&&s.code&&j.verbunden&&s.code===j.code&&kxFrisch(s.ets&&s.ets.at);
+  const l=L.find(x=>x.id===j.zone);
+  if(!j.verbunden) return `<div class="narrow ec-spalte"><section class="card"><h3>Mit ETS verbinden</h3><p class="meta" style="margin:0 0 12px">Code vom ETS-Gerät eingeben – oder mit dem Scanner der App den QR-Code scannen</p>
+    <input id="kxCode" class="kxz-codein" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="––––" value="${esc(j.code||"")}">
+    <div class="kx-knoepfe"><button type="button" class="btn-tonal" data-act="kxScan">${icon("scQr")}QR scannen</button></div>
+    <h3 style="margin-top:18px">Deine Zone</h3><p class="meta" style="margin:0 0 10px">Du bekommst nur Geräte aus dieser Zone</p>
+    <div class="kxz-chips">${[...L.map(x=>[x.id,kxLName(x)]),["","Alle"]].map(([id,t])=>`<button type="button" class="kxz-chip gross" data-act="kxZone" data-v="${esc(id)}" aria-pressed="${(j.zone||"")===id}">${esc(t)}</button>`).join("")}</div>
+    ${KX_PROG.fehler?`<p class="meta" style="color:var(--err);margin-top:12px">${esc(KX_PROG.fehler)}</p>`:""}
+    <div class="kx-knoepfe" style="margin-top:16px"><button type="button" class="btn-tonal" data-act="kxRolleEnde">Zurück</button><button type="button" class="btn-filled" data-act="kxVerbinden">Verbinden</button></div></section></div>`;
+  const kopf=`<div class="kxz-kopf"><div><b>${esc(kxLName(l))}</b><small>${ok?`verbunden mit ${esc(s.ets.wer||"ETS")}`:j.code&&s&&s.code&&s.code!==j.code?"Code passt nicht mehr – neu verbinden":"warte auf das ETS-Gerät …"}</small></div>${kxVerb(ok,"")}<button type="button" class="btn-text" data-act="kxRolleEnde">Beenden</button></div>`;
+  return `<div class="narrow ec-spalte">${kopf}${kxHelferInhalt(g,s,ok)}</div>`; }
+function kxHelferInhalt(g,s,ok){ const a=s&&s.auf&&s.auf[KX_DEV], an=KX_PROG.antwort, z=!a?"frei":a.status==="laeuft"||a.status==="fertig"||a.status==="abgebrochen"?a.status:an&&an.id===a.id?(an.status==="problem"?"problem":"gedrueckt"):"angefordert";
+  const zst=s&&s.stand&&s.stand.zonen&&s.stand.zonen[KX_PROG.join.zone||"-"], st=KX_PROG.join.zone?zst:s&&s.stand?[s.stand.n,s.stand.m]:null;
+  const fort=st?`<section class="card"><div class="kxz-fort">${kxMini(st[0],st[1])}<div><h3>${KX_PROG.join.zone?"Deine Zone":"Alle Zonen"}</h3><p class="meta">${st[1]-st[0]} ${st[1]-st[0]===1?"Gerät":"Geräte"} offen</p></div></div></section>`:"";
+  if(ok&&z==="angefordert") return `<section class="card kxz-helfer">${kxSchritte(0)}${kxTasteKarte(g,a)}</section>`;
+  if(ok&&z==="gedrueckt") return `<section class="card kxz-helfer">${kxSchritte(1)}<div class="kxz-mitte"><div class="kxz-ok">${icon("kxTipp")}</div><div class="kxz-pa">${esc(a.pa)}</div><h3>Gemeldet</h3><p class="meta">Warte, bis die ETS startet – nichts anderes drücken</p></div></section>${fort}`;
+  if(ok&&z==="laeuft") return `<section class="card kxz-helfer">${kxSchritte(2)}<div class="kxz-mitte">${kxRing("ich|"+a.id,"g","wird programmiert")}<div class="kxz-pa m">${esc(a.pa)}</div><p class="kxz-typ">${esc(a.typ||"")}</p><p class="meta">${esc(a.raum||"")}</p></div><div class="kxz-hinweis">${icon("warn")}<span>Keine weitere Programmiertaste im Raum drücken, bis der Ring durch ist</span></div></section>`;
+  if(ok&&z==="problem") return `<section class="card kxz-helfer"><div class="kxz-mitte"><div class="kxz-puls k warn">${icon("warn")}</div><h3>Problem gemeldet</h3><p class="meta">${esc(a.pa)} · warte, was die ETS entscheidet</p></div></section>${fort}`;
+  const fertig=ok&&z==="fertig"&&a&&Date.now()-(a.ende||0)<6000, nx=s&&s.vorschau&&s.vorschau[KX_DEV];
+  return `${fertig?`<div class="kxz-erfolg"><span class="pk"></span><span>${esc(a.pa)} fertig</span></div>`:""}<section class="card kx-warte">${kxPuls(false,true)}<h3>${ok?"Warte auf das nächste Gerät …":"Warte auf das ETS-Gerät …"}</h3>
+    <p class="meta">${ok&&nx?`Als Nächstes in deiner Zone:<br><b class="kxz-vor">${esc(nx.pa)} · ${esc(nx.typ)} · ${esc(nx.raum)}</b><br>Du kannst schon hingehen.`:ok?"Sobald ein Gerät angefordert wird, klingelt es – auch in einem anderen Reiter.":"Ist das ETS-Gerät noch in „Programmieren“? Sonst Beenden und neu verbinden."}</p></section>${fort}`; }
+function kxTasteKarte(g,a){ const x=g&&kxRaumInfo(g,(kxNorm(g).geraete.find(d=>d.id===a.geraet)||{}).raumId);
+  return `<div class="kx-gross kxz-rein"><small>Programmiertaste drücken</small>${kxPuls()}<b>${esc(a.pa)}</b><span>${esc(a.typ||"")}</span><span class="kx-raum">${esc(a.raum||"")}${x?` · ${esc(kxGruppe(x))}`:""}</span></div>
+  <div class="kx-knoepfe"><button type="button" class="btn-tonal" data-act="kxNichtGef">Problem</button><button type="button" class="btn-filled" data-act="kxGedrueckt">Gedrückt</button></div>${a.von?`<p class="meta" style="text-align:center;margin-top:10px">angefordert von ${esc(a.von)}</p>`:""}`; }
+/* ---- Uhr: Ringe laufen ohne neu zu zeichnen ---- */
+function kxRest(id){ const s=KX_PROG.sitz; if(!s||!s.auf) return null; const [dev,aid]=id.split("|"), a=dev==="ich"?s.auf[KX_DEV]:s.auf[dev]; if(!a||a.id!==aid||a.status!=="laeuft") return null;
+  let start=a.start; if(KX_PROG.rolle==="taste"){ const k=a.id+"|"+a.start; start=KX_PROG.lokal[k]=KX_PROG.lokal[k]||Date.now(); }
+  const ges=(a.dauer||20)*1000; return {rest:Math.max(0,start+ges-Date.now()),ges,dev:dev==="ich"?KX_DEV:dev}; }
+function kxTick(){ if(!KX_PROG.rolle) return; document.querySelectorAll("[data-kxuhr]").forEach(el=>{ const r=kxRest(el.dataset.kxuhr); if(!r) return; const c=el.querySelector(".vg"), u=+c.getAttribute("stroke-dasharray");
+    c.style.strokeDashoffset=(u*(1-r.rest/r.ges)).toFixed(1); const sek=Math.ceil(r.rest/1000); el.querySelector(".z b").textContent=`0:${String(sek).padStart(2,"0")}`; el.classList.toggle("knapp",sek<=3); });
+  /* ETS: abgelaufen → automatisch fertig */
+  if(KX_PROG.rolle==="ets"&&KX_PROG.sitz&&KX_PROG.sitz.auf) Object.entries(KX_PROG.sitz.auf).forEach(([dev,a])=>{ if(a&&a.status==="laeuft"&&Date.now()>a.start+(a.dauer||20)*1000&&!KX_PROG.fertigAuto[a.id]){ KX_PROG.fertigAuto[a.id]=1; kxFertigMachen(dev); } }); }
+setInterval(kxTick,250);
+/* ---- Ton (Helfer) ---- */
+function kxTonAn(){ try{ if(!KX_PROG.ton){ const A=window.AudioContext||window.webkitAudioContext; if(A) KX_PROG.ton=new A(); } KX_PROG.ton&&KX_PROG.ton.resume&&KX_PROG.ton.resume(); }catch(e){} }
+function kxPiep(){ const c=KX_PROG.ton; if(!c) return; try{ [0,.18].forEach(t=>{ const o=c.createOscillator(), v=c.createGain(); o.frequency.value=t?1320:990; v.gain.setValueAtTime(.0001,c.currentTime+t); v.gain.exponentialRampToValueAtTime(.25,c.currentTime+t+.02); v.gain.exponentialRampToValueAtTime(.0001,c.currentTime+t+.15); o.connect(v).connect(c.destination); o.start(c.currentTime+t); o.stop(c.currentTime+t+.16); }); }catch(e){} }
+function kxRuetteln(m){ try{ if(navigator.vibrate) navigator.vibrate(m||[200,100,200]); else if(typeof navHaptik==="function"){ navHaptik(); setTimeout(navHaptik,180); } }catch(e){} }
+/* ---- Start/Ende ---- */
+async function kxProgStart(rolle,gid){ KX_PROG.rolle=rolle; KX_PROG.g=gid; KX_PROG.fehler=""; KX_PROG.sitz=null; KX_PROG.etag=""; KX_PROG.sitzRoh=null; KX_PROG.helfer={}; KX_PROG.letzt=""; KX_PROG.antwort=null; KX_PROG.codeAuf=false;
+  if(rolle==="taste"){ KX_PROG.join={code:KX_PROG.join.g===gid?KX_PROG.join.code:"",zone:KX_PROG.join.g===gid?KX_PROG.join.zone:"",g:gid,verbunden:false}; }
+  clearInterval(KX_PROG.timer);
+  try{ navigator.wakeLock&&navigator.wakeLock.request("screen").then(w=>KX_PROG.wl=w).catch(()=>{}); }catch(e){}
+  if(rolle==="ets"){ try{ const alt=await kxSitzLesen(gid); const code=String(1000+Math.floor(Math.random()*9000));
+      await kxSitzSchreiben(gid,{v:2,g:gid,code,dauer:(alt&&alt.v===2&&alt.dauer)||20,auto:alt&&alt.v===2?alt.auto!==false:true,auf:{},vorschau:{}}); }
+    catch(e){ KX_PROG.fehler=e.message==="ohne Anmeldung"?"nur mit Anmeldung und Internet":"keine Verbindung"; }
+    KX_PROG.timer=setInterval(kxAbfrage,1000); kxAbfrage(); }
+  kxAnzeigen(true); }
+function kxProgEnde(){ clearInterval(KX_PROG.timer); KX_PROG.timer=null; const r=KX_PROG.rolle, gid=KX_PROG.g;
+  if(r==="taste"&&KX_PROG.join.verbunden) kxDateiWeg(kxHelfName(gid,KX_DEV));
+  if(r==="ets"&&KX_PROG.sitz){ const s={...KX_PROG.sitz,code:"",auf:{}}; kxSitzSchreiben(gid,s).catch(()=>{}); }
+  KX_PROG.rolle=""; KX_PROG.sitz=null; KX_PROG.join.verbunden=false; try{ KX_PROG.wl&&KX_PROG.wl.release(); }catch(e){} kxPopupZu(); }
+async function kxVerbinden(){ const j=KX_PROG.join, c=(document.getElementById("kxCode")||{}).value||j.code; j.code=String(c||"").replace(/\D/g,"").slice(0,4);
+  if(j.code.length!==4){ KX_PROG.fehler="Der Code hat 4 Ziffern"; render(); return; }
+  kxTonAn(); KX_PROG.fehler="";
+  try{ const s=await kxSitzLesen(KX_PROG.g); if(!s||s.v!==2||s.code!==j.code||!kxFrisch(s.ets&&s.ets.at)){ KX_PROG.fehler=!s||!s.code?"Auf dem ETS-Gerät läuft gerade keine Sitzung":"Code passt nicht"; render(); return; }
+    KX_PROG.sitz=s; j.verbunden=true; await kxHelfSchreiben(); }
+  catch(e){ KX_PROG.fehler=e.message==="ohne Anmeldung"?"nur mit Anmeldung und Internet":"keine Verbindung"; render(); return; }
+  clearInterval(KX_PROG.timer); KX_PROG.timer=setInterval(kxAbfrage,1000); toast(`Verbunden mit ${s_wer()}`); kxAnzeigen(true); }
+const s_wer=()=>(KX_PROG.sitz&&KX_PROG.sitz.ets&&KX_PROG.sitz.ets.wer)||"der ETS";
+/* ---- Abfrage jede Sekunde ---- */
 async function kxAbfrage(){ if(!KX_PROG.rolle||KX_PROG.busy) return; KX_PROG.busy=true;
-  try{ const s=await kxSitzLesen(KX_PROG.g); KX_PROG.fehler=""; const sig=s?s.seq+"|"+s.status:"";
-    if(sig!==KX_PROG.letzt){ KX_PROG.letzt=sig; KX_PROG.sitz=s;
-      if(s&&KX_PROG.rolle==="taste"&&s.status==="angefordert"){ if(navigator.vibrate) try{ navigator.vibrate([200,100,200]); }catch(e){} }
-      if(s&&KX_PROG.rolle==="ets"&&s.status==="gedrueckt"){ if(navigator.vibrate) try{ navigator.vibrate(120); }catch(e){} }
-      kxAnzeigen(); } }
-  catch(e){ const f=e.message==="ohne Anmeldung"?"nur mit Anmeldung und Internet":"keine Verbindung"; if(KX_PROG.fehler!==f){ KX_PROG.fehler=f; kxAnzeigen(); } }
+  try{ const gid=KX_PROG.g;
+    if(KX_PROG.rolle==="ets"){ const alt=JSON.stringify(Object.values(KX_PROG.helfer).map(h=>[h.dev,h.code,h.zone,h.antwort,kxFrisch(h.at)]));
+      await kxHelferLesen(gid);
+      const vorher=KX_PROG.sigH; KX_PROG.sigH=JSON.stringify(Object.values(KX_PROG.helfer).map(h=>[h.dev,h.code,h.zone,h.antwort,kxFrisch(h.at)]));
+      /* gedrückt gemeldet → kurz rütteln */
+      const s=KX_PROG.sitz; if(s) kxVerbunden().forEach(h=>{ const a=s.auf&&s.auf[h.dev]; if(a&&h.antwort&&h.antwort.id===a.id&&h.antwort.status==="gedrueckt"&&!KX_PROG.lokal["g"+a.id]){ KX_PROG.lokal["g"+a.id]=1; kxRuetteln(120); } });
+      if(s&&Date.now()-KX_PROG.herz>10000) await kxEtsSchreiben();
+      if(KX_PROG.fehler){ KX_PROG.fehler=""; kxAnzeigen(true); } else if(vorher!==KX_PROG.sigH) kxAnzeigen(); }
+    else { const s=await kxSitzLesen(gid), sig=s?JSON.stringify([s.seq,s.code,kxFrisch(s.ets&&s.ets.at)]):"";
+      if(KX_PROG.join.verbunden&&Date.now()-KX_PROG.herz>10000) await kxHelfSchreiben();
+      if(sig!==KX_PROG.letzt||KX_PROG.fehler){ KX_PROG.letzt=sig; const a0=KX_PROG.sitz&&KX_PROG.sitz.auf&&KX_PROG.sitz.auf[KX_DEV]; KX_PROG.sitz=s; KX_PROG.fehler="";
+        const a=s&&s.auf&&s.auf[KX_DEV];
+        if(a&&a.status==="angefordert"&&(!a0||a0.id!==a.id)){ KX_PROG.antwort=null; kxPiep(); kxRuetteln(); }
+        kxAnzeigen(); }
+      /* außerhalb des Reiters: offene Anforderung immer als Fenster zeigen */
+      else if(!(nav.v==="kx"&&nav.g===KX_PROG.g&&kxTab()==="prog")&&!document.getElementById("kxPop")) kxAnzeigen(); } }
+  catch(e){ const f=e.message==="ohne Anmeldung"?"nur mit Anmeldung und Internet":"keine Verbindung"; if(KX_PROG.fehler!==f){ KX_PROG.fehler=f; kxAnzeigen(true); } }
   KX_PROG.busy=false; }
-function kxAnzeigen(){ if(nav.v==="kx"&&nav.g===KX_PROG.g&&kxTab()==="prog"){ kxPopupZu(); render(); return; }
+function kxAnzeigen(){ if(nav.v==="kx"&&nav.g===KX_PROG.g&&kxTab()==="prog"){ kxPopupZu(); const y=scrollY; render(); scrollTo(0,y); return; }
   /* Helfer außerhalb des Reiters: Fenster über allem */
-  const s=KX_PROG.sitz, g=vtGeb(KX_PROG.g), d=g&&s&&s.status==="angefordert"&&KX_PROG.rolle==="taste"&&(kxNorm(g).geraete.find(x=>x.id===s.geraet));
-  if(d) kxPopup(kxTasteKarte(g,d,s)); else kxPopupZu(); }
+  const s=KX_PROG.sitz, g=vtGeb(KX_PROG.g), a=s&&s.auf&&s.auf[KX_DEV], an=KX_PROG.antwort;
+  if(KX_PROG.rolle==="taste"&&g&&a&&a.status==="angefordert"&&!(an&&an.id===a.id)) kxPopup(kxTasteKarte(g,a)); else kxPopupZu(); }
 function kxPopup(html){ let el=document.getElementById("kxPop"); if(!el){ el=document.createElement("div"); el.id="kxPop"; el.innerHTML=`<div class="kx-pop-in"></div>`; document.body.appendChild(el); } el.querySelector(".kx-pop-in").innerHTML=html; }
 function kxPopupZu(){ const el=document.getElementById("kxPop"); if(el) el.remove(); }
-async function kxSetze(st,extra){ const s={...(KX_PROG.sitz||{}),...extra,status:st,g:KX_PROG.g,wer:(ME&&ME.name)||""}; try{ await kxSitzSchreiben(KX_PROG.g,s); KX_PROG.letzt=s.seq+"|"+s.status; }catch(e){ toast("Keine Verbindung – nochmal versuchen"); return false; } kxAnzeigen(); return true; }
-async function kxAnfordern(g,d){ return kxSetze("angefordert",{geraet:d.id,pa:kxPA(g,d),typ:kxTyp(d.typ).name,raum:kxRaumTitel(g,d.raumId),von:(ME&&ME.name)||"",notiz:""}); }
+/* ---- ETS: schreiben, anfordern, Timer ---- */
+async function kxEtsSchreiben(){ const g=vtGeb(KX_PROG.g), s=KX_PROG.sitz; if(!s) return false;
+  s.vorschau={}; if(g) kxVerbunden().forEach(h=>{ const nx=kxNaechstesZone(g,h.zone,s.auf&&s.auf[h.dev]&&s.auf[h.dev].geraet); if(nx) s.vorschau[h.dev]={pa:kxPA(g,nx),typ:kxTyp(nx.typ).name,raum:kxRaumTitel(g,nx.raumId)}; });
+  try{ await kxSitzSchreiben(KX_PROG.g,s); return true; }catch(e){ toast("Keine Verbindung – nochmal versuchen"); return false; } }
+async function kxAnfordernFuer(dev,g,d){ const s=KX_PROG.sitz; if(!s||!d) return; s.auf=s.auf||{};
+  s.auf[dev]={id:Math.random().toString(36).slice(2,9),geraet:d.id,pa:kxPA(g,d),typ:kxTyp(d.typ).name,raum:kxRaumTitel(g,d.raumId),zone:kxZoneVon(g,d),status:"angefordert",at:Date.now(),von:kxIch()};
+  await kxEtsSchreiben(); kxAnzeigen(); }
+/* Gerät ohne Helferwahl anfordern (Liste): Helfer der Zone, sonst einer mit „Alle“, sonst der erste freie */
+function kxHelferFuer(g,d){ const H=kxVerbunden().filter(h=>kxFrisch(h.at)), z=kxZoneVon(g,d), frei=h=>{ const a=KX_PROG.sitz.auf&&KX_PROG.sitz.auf[h.dev]; const st=kxZustand(a,h); return st==="frei"||st==="fertig"||st==="abgebrochen"; };
+  return H.find(h=>h.zone===z&&frei(h))||H.find(h=>!h.zone&&frei(h))||H.find(frei)||null; }
+async function kxFertigMachen(dev){ const s=KX_PROG.sitz, a=s&&s.auf&&s.auf[dev], g=vtGeb(KX_PROG.g); if(!a||!g) return;
+  const d=kxNorm(g).geraete.find(x=>x.id===a.geraet); if(d&&!d.prog){ d.prog=kxWer(); kxSpeichern(g); }
+  a.status="fertig"; a.ende=Date.now(); await kxEtsSchreiben(); kxAnzeigen(); kxWeiter(dev,a.id); }
+function kxWeiter(dev,aid){ const s=KX_PROG.sitz; if(!s||s.auto===false) return; setTimeout(async()=>{ const s2=KX_PROG.sitz, a=s2&&s2.auf&&s2.auf[dev], g=vtGeb(KX_PROG.g);
+    if(!a||a.id!==aid||a.status!=="fertig"||!g||KX_PROG.rolle!=="ets") return; const h=kxVerbunden().find(x=>x.dev===dev); if(!h||!kxFrisch(h.at)) return;
+    const nx=kxNaechstesZone(g,h.zone,a.geraet); if(nx) await kxAnfordernFuer(dev,g,nx); },1800); }
+/* QR-Link „…#kxk=<Projekt>.<Code>“ (vom Scanner oder beim Öffnen): Projekt öffnen, als Helfer mit Code */
+function kxLinkPruefen(n){ const m=/[#&]kxk=([\w-]+)\.(\d{4})/.exec(location.hash||""); if(!m) return false;
+  const g=(typeof vtGeb==="function"&&DB.gebaeude&&live("gebaeude").find(x=>kxBasis(x.id)===m[1]));
+  if(!g){ if((n||0)<20) setTimeout(()=>kxLinkPruefen((n||0)+1),500); return true; }
+  try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){}
+  KX_PROG.join={code:m[2],zone:"",g:g.id,verbunden:false}; if(typeof closeOverlays==="function") closeOverlays();
+  go({v:"kx",g:g.id,tab:"prog"}); kxProgStart("taste",g.id); return true; }
+addEventListener("hashchange",()=>kxLinkPruefen()); setTimeout(()=>kxLinkPruefen(),400);
 
 /* ===== Klicks ===== */
 document.addEventListener("click",async ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act^="kx"]'); if(!b) return; const a=b.dataset.act; ev.stopPropagation();
@@ -261,15 +412,31 @@ document.addEventListener("click",async ev=>{ const b=ev.target.closest&&ev.targ
   if(a==="kxTStd"){ KX_TDLG=KX_TYP_STD.map(t=>({...t})); kxTypenDlg(); return; }
   if(a==="kxTAbbr"){ KX_TDLG=null; closeOverlays(); return; }
   if(a==="kxTOk"){ const L=KX_TDLG||kxTypen(), n=(document.getElementById("f_kxTNeu")||{}).value; if(n&&n.trim()) L.push({id:"t-"+uid(),name:n.trim(),bus:true,eti:1}); kxTypenSpeichern(L.map(t=>({id:t.id,name:t.name,bus:!!t.bus,eti:+t.eti||1}))); KX_TDLG=null; closeOverlays(); render(); toast("Gerätearten gespeichert"); return; }
-  /* Programmieren */
-  if(a==="kxRolle"){ const g=kxGebAkt(); if(!g) return; kxProgStart(b.dataset.v,g.id); render(); return; }
+  /* Programmieren zu zweit */
+  const kxA=()=>{ const s=KX_PROG.sitz; return s&&s.auf&&s.auf[b.dataset.h]; };
+  if(a==="kxRolle"){ const g=kxGebAkt(); if(!g) return; await kxProgStart(b.dataset.v,g.id); return; }
   if(a==="kxRolleEnde"){ kxProgEnde(); render(); return; }
-  if(a==="kxAnf"){ const g=kxGebAkt()||vtGeb(KX_PROG.g); if(!g) return; if(!KX_PROG.rolle) kxProgStart("ets",g.id); const d=kxNorm(g).geraete.find(x=>x.id===b.dataset.id); if(d) await kxAnfordern(g,d); return; }
-  if(a==="kxAbbr"){ await kxSetze("fertig",{geraet:""}); return; }
-  if(a==="kxGedrueckt"){ await kxSetze("gedrueckt",{}); toast("Gemeldet – dein Kollege programmiert jetzt"); return; }
-  if(a==="kxNichtGef"){ await kxSetze("problem",{notiz:"Gerät nicht gefunden oder reagiert nicht"}); return; }
-  if(a==="kxProbl"){ const g=vtGeb(KX_PROG.g), s=KX_PROG.sitz, d=g&&s&&kxNorm(g).geraete.find(x=>x.id===s.geraet); if(d){ d.problem={art:"problem",notiz:"beim Programmieren",...kxWer()}; kxSpeichern(g); } const nx=g&&kxNaechstes(g,s&&s.geraet); if(nx) await kxAnfordern(g,nx); else await kxSetze("fertig",{geraet:""}); return; }
-  if(a==="kxFertig"||a==="kxUeberspr"){ const g=vtGeb(KX_PROG.g), s=KX_PROG.sitz, d=g&&s&&kxNorm(g).geraete.find(x=>x.id===s.geraet);
-    if(d&&a==="kxFertig"){ d.prog=kxWer(); kxSpeichern(g); }
-    const nx=g&&kxNaechstes(g,s&&s.geraet); if(nx) await kxAnfordern(g,nx); else await kxSetze("fertig",{geraet:""}); return; }
+  if(a==="kxCodeAuf"||a==="kxCodeZu"){ KX_PROG.codeAuf=a==="kxCodeAuf"; render(); return; }
+  if(a==="kxDauer"){ if(KX_PROG.sitz){ KX_PROG.sitz.dauer=+b.dataset.v; await kxEtsSchreiben(); kxAnzeigen(); } return; }
+  if(a==="kxAuto"){ if(KX_PROG.sitz){ KX_PROG.sitz.auto=KX_PROG.sitz.auto===false; await kxEtsSchreiben(); kxAnzeigen(); } return; }
+  if(a==="kxAnfH"){ const g=vtGeb(KX_PROG.g), d=g&&kxNorm(g).geraete.find(x=>x.id===b.dataset.id); if(d) await kxAnfordernFuer(b.dataset.h,g,d); return; }
+  if(a==="kxAnf"){ const g=kxGebAkt()||vtGeb(KX_PROG.g); if(!g) return; if(KX_PROG.rolle!=="ets"){ toast("Erst unter „Programmieren“ „Ich programmiere“ wählen"); return; }
+    const d=kxNorm(g).geraete.find(x=>x.id===b.dataset.id), h=d&&kxHelferFuer(g,d); if(!h){ toast("Kein freier Helfer verbunden"); return; } await kxAnfordernFuer(h.dev,g,d); return; }
+  if(a==="kxAbbr"){ const x=kxA(); if(x){ x.status="abgebrochen"; await kxEtsSchreiben(); kxAnzeigen(); } return; }
+  if(a==="kxStart"){ const x=kxA(); if(x){ x.status="laeuft"; x.start=Date.now(); x.dauer=KX_PROG.sitz.dauer||20; await kxEtsSchreiben(); kxAnzeigen(); } return; }
+  if(a==="kxPlus10"){ const x=kxA(); if(x&&x.status==="laeuft"){ x.dauer=(x.dauer||20)+10; await kxEtsSchreiben(); } return; }
+  if(a==="kxFertig"){ const x=kxA(); if(x){ KX_PROG.fertigAuto[x.id]=1; await kxFertigMachen(b.dataset.h); } return; }
+  if(a==="kxUeberspr"){ const x=kxA(), g=vtGeb(KX_PROG.g); if(!x||!g) return; KX_PROG.fertigAuto[x.id]=1; const d=kxNorm(g).geraete.find(y=>y.id===x.geraet);
+    if(d){ d.problem={art:"problem",notiz:"beim Programmieren übersprungen",...kxWer()}; kxSpeichern(g); } x.status="abgebrochen"; x.ende=Date.now(); await kxEtsSchreiben(); kxAnzeigen();
+    if(KX_PROG.sitz.auto!==false){ const h=kxVerbunden().find(y=>y.dev===b.dataset.h), nx=h&&kxNaechstesZone(g,h.zone,x.geraet); if(nx) await kxAnfordernFuer(b.dataset.h,g,nx); } return; }
+  if(a==="kxNochmal"){ const x=kxA(), g=vtGeb(KX_PROG.g), d=x&&g&&kxNorm(g).geraete.find(y=>y.id===x.geraet); if(d) await kxAnfordernFuer(b.dataset.h,g,d); return; }
+  if(a==="kxRueck"){ const x=kxA(), g=vtGeb(KX_PROG.g), d=x&&g&&kxNorm(g).geraete.find(y=>y.id===x.geraet); if(d&&d.prog){ delete d.prog; kxSpeichern(g); } if(x){ x.status="abgebrochen"; await kxEtsSchreiben(); kxAnzeigen(); } return; }
+  /* Helfer */
+  const kxCodeMerken=()=>{ const c=document.getElementById("kxCode"); if(c) KX_PROG.join.code=c.value.replace(/\D/g,"").slice(0,4); };
+  if(a==="kxZone"){ kxCodeMerken(); KX_PROG.join.zone=b.dataset.v; render(); return; }
+  if(a==="kxVerbinden"){ kxCodeMerken(); await kxVerbinden(); return; }
+  if(a==="kxScan"){ kxCodeMerken(); if(typeof scOeffnen==="function") scOeffnen(); return; }
+  if(a==="kxGedrueckt"||a==="kxNichtGef"){ const x=KX_PROG.sitz&&KX_PROG.sitz.auf&&KX_PROG.sitz.auf[KX_DEV]; if(!x) return;
+    KX_PROG.antwort={id:x.id,status:a==="kxGedrueckt"?"gedrueckt":"problem",notiz:a==="kxGedrueckt"?"":"Gerät nicht gefunden oder reagiert nicht",at:Date.now()}; kxPopupZu(); kxAnzeigen();
+    try{ await kxHelfSchreiben(); }catch(e){ KX_PROG.antwort=null; kxAnzeigen(); toast("Keine Verbindung – nochmal tippen"); } return; }
 },true);

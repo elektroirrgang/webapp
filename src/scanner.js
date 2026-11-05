@@ -69,11 +69,15 @@ async function scFotoLesen(f,jq,info){
 /* Android: Chrome nimmt bei mehreren Rückkameras gern die Weitwinkel- oder Tiefenkamera (ohne Autofokus → unscharf).
    Darum: gemerkte Kamera, sonst „camera2 0“ – und ein Knopf zum Wechseln (oben links im Bild). */
 const SC_CAM_LS="sc-kamera";
+/* QR vom ETS-Gerät (KNX „Programmieren zu zweit“) */
+function scKxLink(t){ const m=/[#&]kxk=([\w-]+\.\d{4})/.exec(String(t||"")); if(!m) return false; scZu();
+  if(typeof kxLinkPruefen==="function"){ location.hash="kxk="+m[1]; kxLinkPruefen(); } else location.href="../echeck/#kxk="+m[1]; return true; }
 function scFoto(){ if(!SC) return; const i=SC.el.querySelector("#scDatei"); if(i){ i.value=""; i.click(); } }
 async function scFotoDa(f){ const cam=SC; if(!cam||!f) return; [0,100,400,1000].forEach(ms=>setTimeout(scLage,ms)); const el=cam.el, hin=t=>{ const h=el.querySelector("#scHin"); if(h) h.textContent=t; };
   const bild=el.querySelector(".sc-bild"); try{ if(bild.src) URL.revokeObjectURL(bild.src); }catch(e){} bild.src=URL.createObjectURL(f); el.classList.add("sc-liest"); hin("Wird gelesen …");
   let t=""; try{ t=await scFotoLesen(f,await scJq()); }catch(e){ if(SC===cam){ el.classList.remove("sc-liest"); hin("Scanner braucht einmal Internet – Code eintippen"); } return; }
   if(SC!==cam) return; el.classList.remove("sc-liest");
+  if(t&&scKxLink(t)) return;
   const c=t&&scNorm(t); if(c){ hin("Erkannt"); scTreffer(c,t); return; }
   hin(t?"Das ist kein Irrgang-Aufkleber":"Kein Code erkannt – 20–30 cm Abstand, Licht von der Seite, nicht von vorn");
   el.querySelector(".sc-foto span").textContent="Nochmal fotografieren"; }
@@ -159,6 +163,7 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
     const runde=async()=>{ if(cam.aus||cam.liveAus) return; if(!cam.pause&&vid.readyState>=2){ let t=""; rd++; if(rd%5===0) dunkelPruefen();
         try{ if(det){ const r=await det.detect(rd%3?mitte():vid); t=r[0]&&r[0].rawValue||""; }
           else { mitte(); const r=jq(cx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height,{inversionAttempts:rd%4?"dontInvert":"attemptBoth"}); t=r&&r.data||""; } }catch(e){}
+        if(t&&scKxLink(t)) return;
         if(t){ const c=scNorm(t); if(c) scTreffer(c,t); else if(t!==zuletzt){ zuletzt=t; hin("Das ist kein Irrgang-Aufkleber"); setTimeout(()=>{ if(SC===cam&&!cam.pause) hin("Aufkleber in den Rahmen halten"); },1800); } } }
       setTimeout(runde,det?120:180); };
     runde();
