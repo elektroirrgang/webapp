@@ -258,8 +258,8 @@ function kxProgView(g){ kxPopupZu(); const R=KX_PROG.rolle&&KX_PROG.g===g.id?KX_
     <p class="meta" style="margin:14px 4px 0">${offen.length} von ${D.length} Geräten mit Adresse sind noch nicht programmiert.${D.length?"":" Erst unter „Übersicht“ Linien anlegen und Adressen vergeben."}</p></section></div>`;
   return R==="ets"?kxEtsView(g,D):kxHelferView(g); }
 function kxEtsView(g,D){ const s=KX_PROG.sitz, H=kxVerbunden(), fr=H.filter(h=>kxFrisch(h.at)), L=kxNorm(g).linien, st=kxStand(g)||{n:0,m:0,zonen:{}};
-  const kopf=`<div class="kxz-kopf"><div><b>Du programmierst</b><small>${KX_PROG.fehler?`<span style="color:var(--err)">${esc(KX_PROG.fehler)}</span>`:`${fr.length} ${fr.length===1?"Helfer":"Helfer"} verbunden`}</small></div>${kxVerb(fr.length>0,"")}<button type="button" class="btn-text" data-act="kxRolleEnde">Beenden</button></div>`;
-  if(!s) return `<div class="narrow ec-spalte">${kopf}<section class="card kx-warte">${kxPuls(true,true)}<h3>Sitzung wird angelegt …</h3></section></div>`;
+  const kopf=KX_PROG.fehler?`<div class="kxz-fehler">${icon("warn")}<span>${esc(KX_PROG.fehler)}</span></div>`:"", ende=`<div class="kxz-ende"><button type="button" class="btn-tonal" data-act="kxRolleEnde">Programmieren beenden</button></div>`;
+  if(!s) return `<div class="narrow ec-spalte">${kopf}<section class="card kx-warte">${kxPuls(true,true)}<h3>Sitzung wird angelegt …</h3></section>${ende}</div>`;
   const code=s.code||"", link=kxLink(g.id,code), viel=!fr.length||KX_PROG.codeAuf;
   const koppel=viel?`<section class="card kxz-koppel"><div class="kxz-qr">${kxQrSvg(link)}</div><div><h3>Helfer verbinden</h3><p class="meta">Mit dem Scanner der App den QR scannen – oder im Projekt „Ich drücke die Tasten“ und den Code eingeben</p><div class="kxz-ziff">${[...code].map(z=>`<span>${z}</span>`).join("")}</div>${fr.length?`<button type="button" class="btn-text" data-act="kxCodeZu">Ausblenden</button>`:""}</div></section>`
     :`<button type="button" class="kxz-codezeile" data-act="kxCodeAuf">${icon("scQr")}<span>Code <b>${esc(code)}</b> · weitere Helfer verbinden</span>${icon("chev")}</button>`;
@@ -271,7 +271,7 @@ function kxEtsView(g,D){ const s=KX_PROG.sitz, H=kxVerbunden(), fr=H.filter(h=>k
   return `<div class="narrow ec-spalte">${kopf}${koppel}${karten||`<section class="card kx-warte">${kxPuls(true,true)}<h3>Noch kein Helfer verbunden</h3><p class="meta">Sobald sich jemand mit dem Code verbindet, erscheint er hier mit seiner Zone.</p></section>`}
     ${freieZonen.length&&fr.length?`<p class="meta" style="margin:0 6px 12px">Ohne Helfer: ${freieZonen.map(l=>esc(kxLName(l))).join(" · ")}</p>`:""}
     <section class="card"><div class="kxz-fort">${kxMini(st.n,st.m)}<div><h3>${st.n} von ${st.m} programmiert</h3><p class="meta">${st.m-st.n} offen</p></div></div>${zonenStand?`<div class="kxz-bars">${zonenStand}</div>`:""}${einst}</section>
-    ${(()=>{ const bes=kxAktiveIds(), R=kxOffen(g).filter(d=>!bes.has(d.id)); return R.length?`<section class="card"><h3>Noch offen · ${R.length}</h3>${ecListe(R.slice(0,40).map(d=>{ const l=kxLinieVonRaum(g,d.raumId); return ecLi({lead:`<b>${esc(kxPA(g,d))}</b>`,breit:true,kopf:esc(kxTyp(d.typ).name),text:esc(kxRaumTitel(g,d.raumId)+(l?" · "+kxLName(l):"")),act:"kxAnf",id:d.id,rechts:`<span class="kx-anf">Anfordern</span>`}); }))}</section>`:""; })()}</div>`; }
+    ${(()=>{ const bes=kxAktiveIds(), R=kxOffen(g).filter(d=>!bes.has(d.id)); return R.length?`<section class="card"><h3>Noch offen · ${R.length}</h3>${ecListe(R.slice(0,40).map(d=>{ const l=kxLinieVonRaum(g,d.raumId); return ecLi({lead:`<b>${esc(kxPA(g,d))}</b>`,breit:true,kopf:esc(kxTyp(d.typ).name),text:esc(kxRaumTitel(g,d.raumId)+(l?" · "+kxLName(l):"")),act:"kxAnf",id:d.id,rechts:`<span class="kx-anf">Anfordern</span>`}); }))}</section>`:""; })()}${ende}</div>`; }
 function kxEtsHelferKarte(g,h){ const s=KX_PROG.sitz, a=s.auf&&s.auf[h.dev], z=kxZustand(a,h), l=kxNorm(g).linien.find(x=>x.id===h.zone), frisch=kxFrisch(h.at);
   const kopf=`<div class="kxz-helf"><span class="kxz-av${frisch?" ok":""}">${esc(kxKurz(h.wer))}</span><div><b>${esc(h.wer||"Helfer")}</b><small>${frisch?"verbunden":"keine Verbindung"} · ${esc(h.geraet||"")}</small></div><span class="kxz-zone">${esc(kxLName(l))}</span></div>`;
   const d=a&&kxNorm(g).geraete.find(x=>x.id===a.geraet), was=a?`${esc(a.typ||"")} · ${esc(a.raum||"")}`:"";
@@ -295,8 +295,8 @@ function kxHelferView(g){ const s=KX_PROG.sitz, j=KX_PROG.join, L=kxNorm(g).lini
     <div class="kxz-chips">${[...L.map(x=>[x.id,kxLName(x)]),["","Alle"]].map(([id,t])=>`<button type="button" class="kxz-chip gross" data-act="kxZone" data-v="${esc(id)}" aria-pressed="${(j.zone||"")===id}">${esc(t)}</button>`).join("")}</div>
     ${KX_PROG.fehler?`<p class="meta" style="color:var(--err);margin-top:12px">${esc(KX_PROG.fehler)}</p>`:""}
     <div class="kx-knoepfe" style="margin-top:16px"><button type="button" class="btn-tonal" data-act="kxRolleEnde">Zurück</button><button type="button" class="btn-filled" data-act="kxVerbinden">Verbinden</button></div></section></div>`;
-  const kopf=`<div class="kxz-kopf"><div><b>${esc(kxLName(l))}</b><small>${ok?`verbunden mit ${esc(s.ets.wer||"ETS")}`:j.code&&s&&s.code&&s.code!==j.code?"Code passt nicht mehr – neu verbinden":"warte auf das ETS-Gerät …"}</small></div>${kxVerb(ok,"")}<button type="button" class="btn-text" data-act="kxRolleEnde">Beenden</button></div>`;
-  return `<div class="narrow ec-spalte">${kopf}${kxHelferInhalt(g,s,ok)}</div>`; }
+  const hinweis=KX_PROG.fehler?KX_PROG.fehler:!ok&&j.code&&s&&s.code&&s.code!==j.code?"Code passt nicht mehr – Beenden und neu verbinden":"";
+  return `<div class="narrow ec-spalte">${hinweis?`<div class="kxz-fehler">${icon("warn")}<span>${esc(hinweis)}</span></div>`:""}${kxHelferInhalt(g,s,ok)}<div class="kxz-ende"><button type="button" class="btn-tonal" data-act="kxRolleEnde">Beenden</button></div></div>`; }
 function kxHelferInhalt(g,s,ok){ const a=s&&s.auf&&s.auf[KX_DEV], an=KX_PROG.antwort, z=!a?"frei":a.status==="laeuft"||a.status==="fertig"||a.status==="abgebrochen"?a.status:an&&an.id===a.id?(an.status==="problem"?"problem":"gedrueckt"):"angefordert";
   const zst=s&&s.stand&&s.stand.zonen&&s.stand.zonen[KX_PROG.join.zone||"-"], st=KX_PROG.join.zone?zst:s&&s.stand?[s.stand.n,s.stand.m]:null;
   const fort=st?`<section class="card"><div class="kxz-fort">${kxMini(st[0],st[1])}<div><h3>${KX_PROG.join.zone?"Deine Zone":"Alle Zonen"}</h3><p class="meta">${st[1]-st[0]} ${st[1]-st[0]===1?"Gerät":"Geräte"} offen</p></div></div></section>`:"";
@@ -322,7 +322,7 @@ setInterval(kxTick,250);
 /* ---- Ton (Helfer) ---- */
 function kxTonAn(){ try{ if(!KX_PROG.ton){ const A=window.AudioContext||window.webkitAudioContext; if(A) KX_PROG.ton=new A(); } KX_PROG.ton&&KX_PROG.ton.resume&&KX_PROG.ton.resume(); }catch(e){} }
 function kxPiep(){ const c=KX_PROG.ton; if(!c) return; try{ [0,.18].forEach(t=>{ const o=c.createOscillator(), v=c.createGain(); o.frequency.value=t?1320:990; v.gain.setValueAtTime(.0001,c.currentTime+t); v.gain.exponentialRampToValueAtTime(.25,c.currentTime+t+.02); v.gain.exponentialRampToValueAtTime(.0001,c.currentTime+t+.15); o.connect(v).connect(c.destination); o.start(c.currentTime+t); o.stop(c.currentTime+t+.16); }); }catch(e){} }
-function kxRuetteln(m){ try{ if(navigator.vibrate) navigator.vibrate(m||[200,100,200]); else if(typeof navHaptik==="function"){ navHaptik(); setTimeout(navHaptik,180); } }catch(e){} }
+function kxRuetteln(m){ try{ if(navigator.vibrate) navigator.vibrate(m||[400,150,400,150,600]); else if(typeof navHaptik==="function"){ navHaptik(); setTimeout(navHaptik,180); } }catch(e){} }
 /* ---- Start/Ende ---- */
 async function kxProgStart(rolle,gid){ KX_PROG.rolle=rolle; KX_PROG.g=gid; KX_PROG.fehler=""; KX_PROG.sitz=null; KX_PROG.etag=""; KX_PROG.sitzRoh=null; KX_PROG.helfer={}; KX_PROG.letzt=""; KX_PROG.antwort=null; KX_PROG.codeAuf=false;
   if(rolle==="taste"){ KX_PROG.join={code:KX_PROG.join.g===gid?KX_PROG.join.code:"",zone:KX_PROG.join.g===gid?KX_PROG.join.zone:"",g:gid,verbunden:false}; }
@@ -356,7 +356,7 @@ async function kxAbfrage(){ if(!KX_PROG.rolle||KX_PROG.busy) return; KX_PROG.bus
       const s=KX_PROG.sitz; if(s) kxVerbunden().forEach(h=>{ const a=s.auf&&s.auf[h.dev]; if(a&&h.antwort&&h.antwort.id===a.id&&h.antwort.status==="gedrueckt"&&!KX_PROG.lokal["g"+a.id]){ KX_PROG.lokal["g"+a.id]=1; kxRuetteln(120); } });
       if(s&&Date.now()-KX_PROG.herz>10000) await kxEtsSchreiben();
       if(KX_PROG.fehler){ KX_PROG.fehler=""; kxAnzeigen(true); } else if(vorher!==KX_PROG.sigH) kxAnzeigen(); else kxLeiste(); }
-    else { const s=await kxSitzLesen(gid), sig=s?JSON.stringify([s.seq,s.code,kxFrisch(s.ets&&s.ets.at)]):"";
+    else { const s=await kxSitzLesen(gid), sig=s?JSON.stringify([s.code,kxFrisch(s.ets&&s.ets.at),s.auf&&s.auf[KX_DEV],s.stand,s.vorschau&&s.vorschau[KX_DEV]]):"";
       if(KX_PROG.join.verbunden&&Date.now()-KX_PROG.herz>10000) await kxHelfSchreiben();
       if(sig!==KX_PROG.letzt||KX_PROG.fehler){ KX_PROG.letzt=sig; const a0=KX_PROG.sitz&&KX_PROG.sitz.auf&&KX_PROG.sitz.auf[KX_DEV]; KX_PROG.sitz=s; KX_PROG.fehler="";
         const a=s&&s.auf&&s.auf[KX_DEV];
