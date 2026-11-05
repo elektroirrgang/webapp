@@ -374,20 +374,30 @@ function kxAnzeigen(){ kxLeiste(); if(kxImReiter()){ kxPopupZu(); const y=scroll
 /* Symbol in der Kopfzeile (links neben dem QR-Knopf), solange eine Sitzung läuft – Punkt grün = verbunden, grau = keine Verbindung,
    rot pulsierend = es ist etwas zu tun (Taste gedrückt / Programmiertaste drücken). Antippen führt in den Reiter „Programmieren“. */
 IC.kxGeraete="M4 6h18V4H4c-1.1 0-2 .9-2 2v11H0v3h14v-3H4V6zm19 2h-6c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1zm-1 9h-4v-7h4v7z";
-function kxLeiste(){ let el=document.getElementById("kxKopf"); const alt=document.getElementById("kxBar"); if(alt) alt.remove();
-  if(!KX_PROG.rolle){ if(el){ el.remove(); if(typeof scPlatz==="function") scPlatz(); } return; }
+/* Handy: statt Symbol in der (engen) Kopfzeile ein Live-Eintrag ganz oben in den Benachrichtigungen; die Glocke pulsiert rot, wenn etwas zu tun ist */
+const kxHandy=()=>typeof WIDE!=="undefined"?!WIDE.matches:innerWidth<744;
+function kxLeiste(){ let el=document.getElementById("kxKopf"); const alt=document.getElementById("kxBar"), gl=document.getElementById("glBtn"); if(alt) alt.remove();
+  const live=()=>{ if((document.getElementById("mlSeite")||document.getElementById("mlPop"))&&typeof mlFuellen==="function") mlFuellen(); };
+  if(!KX_PROG.rolle){ if(el){ el.remove(); if(typeof scPlatz==="function") scPlatz(); } if(gl) gl.classList.remove("kx-gl-warn","kx-gl-live"); live(); return; }
   const s=KX_PROG.sitz; let t="", warn=false, ok=false;
   if(KX_PROG.rolle==="ets"){ const H=kxVerbunden().filter(h=>kxFrisch(h.at)), ged=s&&H.find(h=>kxZustand(s.auf&&s.auf[h.dev],h)==="gedrueckt"), pr=s&&H.find(h=>kxZustand(s.auf&&s.auf[h.dev],h)==="problem");
     ok=H.length>0; t=ged?`${s.auf[ged.dev].pa}: Taste gedrückt – jetzt starten`:pr?`${s.auf[pr.dev].pa}: Problem gemeldet`:`Programmieren · ${H.length} Helfer verbunden`; warn=!!(ged||pr)&&!kxImReiter(); }
   else { const a=s&&s.auf&&s.auf[KX_DEV], an=KX_PROG.antwort; ok=!!(KX_PROG.join.verbunden&&s&&kxFrisch(s.ets&&s.ets.at));
     t=!KX_PROG.join.verbunden?"Programmieren: nicht verbunden":a&&a.status==="laeuft"?`${a.pa} wird programmiert`:a&&a.status==="angefordert"?`${a.pa}: Programmiertaste drücken`:"Programmieren: warte auf das nächste Gerät";
     warn=!!(a&&a.status==="angefordert"&&!(an&&an.id===a.id))&&!kxImReiter(); }
+  KX_PROG.stat={t,warn,ok};
+  if(kxHandy()){ if(el){ el.remove(); el=null; } if(gl){ gl.classList.toggle("kx-gl-warn",warn); gl.classList.toggle("kx-gl-live",!warn); } live(); return; }
+  if(gl) gl.classList.remove("kx-gl-warn","kx-gl-live"); live();
   if(!el){ const sc=document.getElementById("scBtn")||document.getElementById("glBtn"); if(!sc) return;
     el=document.createElement("button"); el.type="button"; el.id="kxKopf"; el.className="glocke kx-kopfbtn";
     el.addEventListener("click",ev=>{ ev.stopPropagation(); if(typeof closeOverlays==="function") closeOverlays(); go({v:"kx",g:KX_PROG.g,tab:"prog"}); },true);
     sc.before(el); if(typeof scPlatz==="function") setTimeout(scPlatz,0); }
   el.className="glocke kx-kopfbtn"+(warn?" warn":ok?" ok":""); el.setAttribute("aria-label",t); el.title=t;
   el.innerHTML=`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC.kxGeraete}"/></svg><i></i>`; }
+/* Live-Eintrag für die Benachrichtigungen (Handy und iPad) */
+function kxLiveMeldung(){ if(!KX_PROG.rolle) return ""; const st=KX_PROG.stat||{t:"Programmieren läuft",warn:false,ok:false}, g=vtGeb(KX_PROG.g), o=g&&typeof ecOrt==="function"?ecOrt(g.ortId):null;
+  return `<div class="ml-gr">Live</div><button type="button" class="kx-live${st.warn?" warn":""}" data-act="kxLiveAuf"><span class="kx-live-av">${kxVerb(st.ok,"")}</span><span class="kx-live-tx"><b>${esc(st.t)}</b><small>${KX_PROG.rolle==="ets"?"Du programmierst":"Du drückst die Tasten"}${o&&o.titel?` · ${esc(o.titel)}`:""}</small></span>${icon("chev")}</button>`; }
+addEventListener("resize",()=>{ if(KX_PROG.rolle) kxLeiste(); });
 /* Sitzung merken: App im Hintergrund oder von iOS beendet → beim nächsten Öffnen geht es weiter (bis 3 h) */
 function kxMerken(){ try{ if(KX_PROG.rolle) localStorage.setItem("kx-sitzung",JSON.stringify({rolle:KX_PROG.rolle,g:KX_PROG.g,join:KX_PROG.join,antwort:KX_PROG.antwort||null,gesehen:KX_PROG.gesehen||"",at:Date.now()})); else localStorage.removeItem("kx-sitzung"); }catch(e){} }
 function kxFortsetzen(n){ let m=null; try{ m=JSON.parse(localStorage.getItem("kx-sitzung")||"null"); }catch(e){} if(!m||!m.g||Date.now()-m.at>3*36e5||KX_PROG.rolle) return;
@@ -466,6 +476,7 @@ document.addEventListener("click",async ev=>{ const b=ev.target.closest&&ev.targ
   if(a==="kxTAbbr"){ KX_TDLG=null; closeOverlays(); return; }
   if(a==="kxTOk"){ const L=KX_TDLG||kxTypen(), n=(document.getElementById("f_kxTNeu")||{}).value; if(n&&n.trim()) L.push({id:"t-"+uid(),name:n.trim(),bus:true,eti:1}); kxTypenSpeichern(L.map(t=>({id:t.id,name:t.name,bus:!!t.bus,eti:+t.eti||1}))); KX_TDLG=null; closeOverlays(); render(); toast("Gerätearten gespeichert"); return; }
   if(a==="kxTest"){ kxTestprojekt(); return; }
+  if(a==="kxLiveAuf"){ if(typeof mlZu==="function") mlZu(); if(typeof closeOverlays==="function") closeOverlays(); go({v:"kx",g:KX_PROG.g,tab:"prog"}); return; }
   /* Programmieren zu zweit */
   const kxA=()=>{ const s=KX_PROG.sitz; return s&&s.auf&&s.auf[b.dataset.h]; };
   if(a==="kxRolle"){ const g=kxGebAkt(); if(!g) return; await kxProgStart(b.dataset.v,g.id); return; }

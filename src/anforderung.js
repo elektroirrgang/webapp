@@ -184,7 +184,7 @@ function mlFuellen(){
   const LK=kat==="alle"?L:L.filter(m=>mlKatVon(m.id)===kat), neuK=LK.filter(m=>!S.gel[m.id]).length;
   const pin=LK.filter(m=>S.pin[m.id]), rest=LK.filter(m=>!S.pin[m.id]);
   const html=`<div class="ml-kopf"><b>${seite?`${neuK?`${neuK} neu`:"Keine neuen"}`:"Benachrichtigungen"}</b>${neuK?`<button class="ml-alle" data-act="mlAlleGel">Alle gelesen</button>`:""}</div>
-    <div class="ml-liste">${LK.length?`${pin.length?`<div class="ml-gr">Angepinnt</div>${pin.map(zeile).join("")}${rest.length?`<div class="ml-gr">Neueste</div>`:""}`:""}${rest.map(zeile).join("")}`
+    ${typeof kxLiveMeldung==="function"?kxLiveMeldung():""}<div class="ml-liste">${LK.length?`${pin.length?`<div class="ml-gr">Angepinnt</div>${pin.map(zeile).join("")}${rest.length?`<div class="ml-gr">Neueste</div>`:""}`:""}${rest.map(zeile).join("")}`
       :`<div class="ml-leer"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span>Aktuell keine Benachrichtigungen</span></div>`}</div>
     ${Object.keys(S.weg).length?`<div class="ml-fuss"><button class="btn-text" data-act="mlWiederher">Entfernte wieder anzeigen</button></div>`:""}`;
   if(pop) pop.innerHTML=html; if(seite) seite.innerHTML=`<div class="ml-wrap">${kats}<div class="ml-inhalt">${html}</div></div>`;
