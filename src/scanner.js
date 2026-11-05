@@ -41,7 +41,7 @@ function scListe(){ if(!SC) return; const box=SC.el.querySelector("#scListe"); i
     .filter(x=>f==="alles"||x.ic===f);
   box.innerHTML=L.length?`<div class="sc-lbl">${SC.el.classList.contains("sc-pc")?"Zuletzt geöffnet":"Zuletzt gescannt"}</div>${L.map(x=>`<button type="button" class="sc-li" data-sc="alt" data-c="${esc(x.c)}"><span class="sc-av">${scSvg(SC_IC[x.ic]&&x.ic!=="neu"?x.ic:"vt")}</span><span class="sc-kt"><b>${esc(x.titel||scZeig(x.c))}</b><small>${esc([x.sub,scWann(x.t)].filter(Boolean).join(" · "))}</small></span></button>`).join("")}`
     :`<p class="sc-leer">${f==="alles"?(SC.el.classList.contains("sc-pc")?"Hier erscheinen die zuletzt geöffneten Anlagen.":"Hier erscheinen die zuletzt gescannten Aufkleber."):f==="schrank"?"Noch kein Netzwerkschrank gescannt.":f==="wb"?"Noch keine Wallbox gescannt.":"Noch kein Verteiler gescannt."}</p>`; }
-function scZu(){ if(!SC) return; if(window.visualViewport){ visualViewport.removeEventListener("resize",scLage); visualViewport.removeEventListener("scroll",scLage); } removeEventListener("resize",scLage); document.removeEventListener("visibilitychange",scLage); const cam=SC; SC=null; cam.aus=true; try{ const b=cam.el.querySelector(".sc-bild"); if(b&&b.src) URL.revokeObjectURL(b.src); }catch(e){} try{ cam.st&&cam.st.getTracks().forEach(t=>t.stop()); }catch(e){}
+function scZu(){ if(!SC) return; clearTimeout(SC.autoT); if(window.visualViewport){ visualViewport.removeEventListener("resize",scLage); visualViewport.removeEventListener("scroll",scLage); } removeEventListener("resize",scLage); document.removeEventListener("visibilitychange",scLage); const cam=SC; SC=null; cam.aus=true; try{ const b=cam.el.querySelector(".sc-bild"); if(b&&b.src) URL.revokeObjectURL(b.src); }catch(e){} try{ cam.st&&cam.st.getTracks().forEach(t=>t.stop()); }catch(e){}
   removeEventListener("keydown",scTaste); document.body.classList.remove("sc-offen"); cam.el.classList.add("sc-weg"); setTimeout(()=>cam.el.remove(),220); }
 function scTaste(e){ if(e.key==="Escape"&&SC){ e.preventDefault(); e.stopPropagation(); scZu(); } }
 /* iPhone/iPad: kein Live-Bild, sondern ein Foto mit der iOS-Kamera (12 MP, Autofokus, Makro, ohne Kamera-Nachfrage).
@@ -161,12 +161,15 @@ function scNrOk(){ if(!SC) return; const c=scNorm(SC.el.querySelector("#scNr").v
 function scTreffer(c,roh){ if(!SC||SC.pause) return; SC.pause=true; SC.c=c; SC.roh=roh||""; if(navigator.vibrate) try{ navigator.vibrate(40); }catch(e){} else if(typeof navHaptik==="function") navHaptik();
   if(SC.devId&&!SC.liveAus) try{ localStorage.setItem(SC_CAM_LS,SC.devId); }catch(e){}
   const T=(SC.opt.treffer||scSuche)(c)||{titel:`Aufkleber ${scZeig(c)}`,sub:"",ic:"vt",knopf:"Öffnen"}; SC.T=T;
-  /* Erkannt → direkt öffnen. Karte nur beim Zuordnen, bei neuen (noch freien) Aufklebern und am PC */
-  if(!SC.opt.treffer&&!SC.opt.aktion&&T.ic!=="neu"&&!SC.el.classList.contains("sc-pc")){ scLos(c,T); return; }
-  SC.el.classList.add("sc-treffer"); scLage(); const k=SC.el.querySelector("#scKarte");
+  /* Erkannt → nach 1 s von selbst öffnen (Karte kurz sichtbar, „Weiter scannen“ bricht ab).
+     Ohne Automatik: beim Zuordnen, bei neuen (noch freien) Aufklebern und am PC */
+  const auto=!SC.opt.treffer&&!SC.opt.aktion&&T.ic!=="neu"&&!SC.el.classList.contains("sc-pc");
+  SC.el.classList.add("sc-treffer"); scLage(); { const h=SC.el.querySelector("#scHin"); if(h) h.textContent="Erkannt"; } const k=SC.el.querySelector("#scKarte");
   k.innerHTML=`<div class="sc-k"><span class="sc-av">${scSvg(T.ic||"vt")}</span><div class="sc-kt"><b>${esc(T.titel)}</b>${T.sub?`<small>${esc(T.sub)}</small>`:""}<span class="sc-nr">${esc(scZeig(c))}</span></div></div>
     <div class="sc-kb"><button type="button" class="sc-n" data-sc="weiter">${SC.el.classList.contains("sc-pc")?"Anderer Code":"Weiter scannen"}</button><button type="button" class="sc-h" data-sc="los">${esc(T.knopf||"Öffnen")}</button></div>`;
-  k.hidden=false; if(SC.el.classList.contains("sc-pc")) setTimeout(()=>{ const l=SC&&SC.el.querySelector('[data-sc="los"]'); if(l) l.focus(); },30); }
+  k.hidden=false;
+  if(auto){ const cam=SC; k.querySelector('[data-sc="los"]').classList.add("sc-auto"); clearTimeout(cam.autoT); cam.autoT=setTimeout(()=>{ if(SC===cam&&cam.pause&&cam.c===c) scLos(c,T); },1000); }
+  if(SC.el.classList.contains("sc-pc")) setTimeout(()=>{ const l=SC&&SC.el.querySelector('[data-sc="los"]'); if(l) l.focus(); },30); }
 function scLos(c,T){ const f=SC&&SC.opt.aktion, art=SC&&SC.filter; if(!f) scMerken(c,T); scZu();
   if(f){ f(c); return; }
   if(T&&T.ic==="wb"&&!SC_EVSE){ location.href=`../evse/#qr=${encodeURIComponent(c)}`; return; }
@@ -183,7 +186,7 @@ function scKlick(e){ const b=e.target.closest("[data-sc]"); if(!b||!SC) return; 
   else if(a==="f"){ SC.filter=b.dataset.f; SC.el.querySelectorAll('[data-sc="f"]').forEach(x=>x.setAttribute("aria-pressed",String(x===b))); scListe(); }
   else if(a==="alt"){ const c=b.dataset.c, x=scZuletzt().find(z=>z.c===c); scLos(c,x); }
   else if(a==="licht"){ const tr=SC.st&&SC.st.getVideoTracks()[0]; if(!tr) return; SC.licht=!SC.licht; tr.applyConstraints({advanced:[{torch:SC.licht}]}).catch(()=>{}); b.classList.toggle("an",SC.licht); }
-  else if(a==="weiter"){ SC.pause=false; SC.el.classList.remove("sc-treffer"); SC.el.querySelector("#scKarte").hidden=true; if(SC.el.classList.contains("sc-fotom")&&!SC.el.classList.contains("sc-ohne")){ scFoto(); return; } const n=SC.el.querySelector("#scNr"); if(n){ n.value=""; if(SC.el.classList.contains("sc-ohne")) n.focus(); } }
+  else if(a==="weiter"){ clearTimeout(SC.autoT); SC.pause=false; { const h=SC.el.querySelector("#scHin"); if(h&&!SC.el.classList.contains("sc-fotom")) h.textContent="Aufkleber in den Rahmen halten"; } SC.el.classList.remove("sc-treffer"); SC.el.querySelector("#scKarte").hidden=true; if(SC.el.classList.contains("sc-fotom")&&!SC.el.classList.contains("sc-ohne")){ scFoto(); return; } const n=SC.el.querySelector("#scNr"); if(n){ n.value=""; if(SC.el.classList.contains("sc-ohne")) n.focus(); } }
   else if(a==="los") scLos(SC.c,SC.T); }
 /* Knopf oben rechts neben der Glocke – in jeder App gleich */
 function scKnopf(){ const gl=document.getElementById("glBtn"); if(!gl||document.getElementById("scBtn")) return;
