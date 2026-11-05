@@ -11,7 +11,10 @@ version = f"{V} · {datetime.date.today().strftime('%d.%m.%Y')}"
 
 # Herstellerbilder vom eigenen Server: nur Einträge, deren Datei in bilder/ wirklich liegt (tools/bilder.py)
 _liste = root / "bilder" / "liste.json"
-BILDER = {u: n for u, n in (json.loads(_liste.read_text(encoding="utf-8")).items() if _liste.exists() else []) if (root / "bilder" / n).exists()}
+# Bilder, die schon im SharePoint liegen (Stand der Liste bilder/alle.json), behalten ihre Zuordnung auch ohne Datei auf dem Server
+_alle_json = root / "bilder" / "alle.json"
+_IM_SP = set(json.loads(_alle_json.read_text(encoding="utf-8"))) if _alle_json.exists() else set()
+BILDER = {u: n for u, n in (json.loads(_liste.read_text(encoding="utf-8")).items() if _liste.exists() else []) if (root / "bilder" / n).exists() or n in _IM_SP}
 
 
 def baue(quelle, ziel, icon):
@@ -30,7 +33,7 @@ def baue(quelle, ziel, icon):
     html = html.replace("/*ABGLEICH*/", (root / "src/abgleich.js").read_text(encoding="utf-8"))
     html = html.replace("/*ANSCHLUSS*/", (root / "src/anschluss.js").read_text(encoding="utf-8").replace("/*MFTSVG*/\"\"", json.dumps((root / "src/geraete/pruefgeraet.svg").read_text(encoding="utf-8"), ensure_ascii=False)).replace("/*FEVSVG*/\"\"", json.dumps((root / "src/geraete/fev300.svg").read_text(encoding="utf-8"), ensure_ascii=False)))
     html = html.replace("/*FILTER*/", (root / "src/filter.js").read_text(encoding="utf-8"))
-    html = html.replace("/*KUNDE*/", (root / "src/kunde.js").read_text(encoding="utf-8") + "\n" + (root / "src/ki.js").read_text(encoding="utf-8") + "\n" + (root / "src/handbuch-link.js").read_text(encoding="utf-8") + "\n" + (root / "src/suche.js").read_text(encoding="utf-8") + "\n" + (root / "src/foto-markieren.js").read_text(encoding="utf-8") + "\n" + (root / "src/plausi.js").read_text(encoding="utf-8") + "\n" + (root / "src/rechner.js").read_text(encoding="utf-8") + "\n" + (root / "src/scanner.js").read_text(encoding="utf-8"))
+    html = html.replace("/*KUNDE*/", (root / "src/kunde.js").read_text(encoding="utf-8") + "\n" + (root / "src/ki.js").read_text(encoding="utf-8") + "\n" + (root / "src/handbuch-link.js").read_text(encoding="utf-8") + "\n" + (root / "src/suche.js").read_text(encoding="utf-8") + "\n" + (root / "src/foto-markieren.js").read_text(encoding="utf-8") + "\n" + (root / "src/plausi.js").read_text(encoding="utf-8") + "\n" + (root / "src/rechner.js").read_text(encoding="utf-8") + "\n" + (root / "src/scanner.js").read_text(encoding="utf-8") + "\n" + (root / "src/bilder-sp.js").read_text(encoding="utf-8"))
     html = html.replace("/*ECHECKPRUEF*/", (root / "src/lbx-zip.js").read_text(encoding="utf-8") + "\n" + (root / "src/echeck-pruef.js").read_text(encoding="utf-8"))
     html = html.replace("/*LEGENDE*/", (root / "src/legende.js").read_text(encoding="utf-8"))
     html = html.replace("/*VERTEILER*/", (root / "src/verteiler.js").read_text(encoding="utf-8") + "\n" + (root / "src/material-daten.js").read_text(encoding="utf-8") + "\n" + (root / "src/vt-aufnahme.js").read_text(encoding="utf-8") + "\n" + (root / "src/zaehlerschrank.js").read_text(encoding="utf-8") + "\n" + (root / "src/zs-zeichnung.js").read_text(encoding="utf-8") + "\n" + (root / "src/vt-uebersicht.js").read_text(encoding="utf-8") + "\n" + (root / "src/anlagenpass.js").read_text(encoding="utf-8"))
@@ -67,6 +70,9 @@ def baue(quelle, ziel, icon):
     print(f"{ziel}: {len(html)} Zeichen, Cache {m.group(1) if (m:=re.search(r'const CACHE = \"([^\"]+)\"', t)) else '?'}")
 
 
+# Liste aller Bilddateien auf dem Server – für den einmaligen Umzug in den SharePoint (bilder-sp.js)
+_alle = sorted(str(p.relative_to(root / "bilder")) for p in (root / "bilder").rglob("*") if p.is_file() and p.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".svg"))
+if _alle: (root / "bilder" / "alle.json").write_text(json.dumps(_alle, ensure_ascii=False), encoding="utf-8")   # nach dem Löschen der Dateien bleibt die letzte Liste stehen
 baue("src/start.html", "uebersicht/index.html", "uebersicht/icon-180.png")
 baue("src/app.html", "evse/index.html", "evse/icon-180.png")
 baue("src/baustelle.html", "baustelle/index.html", "baustelle/icon-180.png")
