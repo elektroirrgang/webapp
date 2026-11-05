@@ -1,5 +1,12 @@
 # Geplant / Hintergrund
 
+## Merkliste Max (05.11.2026)
+- **Kalender verbinden** (Übersicht › Kalender) – noch offen, Max will es sich merken.
+- **Hallen bei Merten** (Bauteil F, G, H): nächste Woche Foto vom Hallenplan machen – danach entscheiden: Hallen-Begriffe (Ebene/Bereich), „Raum im Raum“ für Büros am Rand, Stützenraster (Achsen) als Ortsangabe, Raumarten Hochregallager/Versand/Rampe/Kompressorraum/Leitstand.
+- **Wohnhaus testen:** das eigene Haus als Beispiel aufnehmen (Außenbereich, Werkstatt, Keller).
+- **KNX-Vorlage je Raumart** (z. B. Büro = 2 Präsenzmelder, 1 RTR, 2 Jalousieaktoren) – vorgeschlagen, nicht beantwortet.
+- **Suche auf der Kundenseite findet auch Räume/Verteiler** – vorgeschlagen, nicht beantwortet.
+
 ## KI (vorbereitet 04.11.2026 – wartet auf Zugang, Entscheidung Chef/Microsoft)
 - Eingebaut, aber aus: `src/ki.js`, Einstellungen in der Übersicht › Einstellungen › KI (nur Admin). Anleitung: `server/README.md`.
 - Weg 1 Azure OpenAI mit Microsoft-Anmeldung (kein Schlüssel in der App), Weg 2 eigener Server `server/ki-worker.js`.

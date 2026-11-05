@@ -240,8 +240,28 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(z.cur&&typeof oeffne==="function"){ oeffne(z.cur); nav=z.nav; render(); return; } if(typeof query!=="undefined") query=""; go(z.nav); },true);
 function startBereich(){ if(navZurueckholen()) return; const v=META.startV; if(v&&einTop().some(x=>x[0]===v)) nav={v}; }
 const einZ=(act,ic,t,sub)=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(ic)}</span><span class="lt"><span class="h">${t}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}</span>${icon("chev")}</div>`;
+/* ===== Reihenfolge der Leiste (05.11.2026): je App, im Profil gespeichert – gilt auf allen Geräten des Mitarbeiters ===== */
+const LEISTE_APP=(location.pathname.split("/").filter(Boolean).slice(-2,-1)[0]||location.pathname.split("/").filter(Boolean)[0]||"app").replace(/\.html$/,"");
+const leisteReihe=()=>{ const p=typeof ME!=="undefined"&&ME.mail&&DB.profile?DB.profile.get(String(ME.mail).toLowerCase()):null; return p&&p.leiste&&Array.isArray(p.leiste[LEISTE_APP])?p.leiste[LEISTE_APP]:null; };
+function leisteOrdnen(L){ const R=leisteReihe(); if(!R) return L; const pos=k=>{ const i=R.indexOf(k); return i<0?999:i; };
+  return L.map((d,i)=>[d,i]).sort((a,b)=>pos(a[0][0])-pos(b[0][0])||a[1]-b[1]).map(x=>x[0]); }
+let LEISTE_DLG=null;
+function leisteDlg(){ const L=LEISTE_DLG||(LEISTE_DLG=leisteOrdnen(einTop()).map(d=>[d[0],d[1],d[2]]));
+  dialog("Reihenfolge der Leiste",`<p class="meta" style="margin:0 0 12px">Gilt für diese App auf allen deinen Geräten. Auf dem Handy bleiben es höchstens fünf Einträge.</p>
+    <div class="kx-tl">${L.map((d,i)=>`<div class="kx-tz"><span class="av lst-ic">${icon(d[2])}</span><span class="kx-tn"><b>${esc(d[1])}</b></span><button type="button" class="kx-tk" data-act="lstAuf" data-i="${i}" ${i?"":"disabled"} aria-label="nach oben">↑</button><button type="button" class="kx-tk" data-act="lstAb" data-i="${i}" ${i<L.length-1?"":"disabled"} aria-label="nach unten">↓</button></div>`).join("")}</div>`,
+    `<button class="btn-text" data-act="lstStd">Standard</button><span style="flex:1"></span><button class="btn-text" data-act="lstAbbr">Abbrechen</button><button class="btn-text" data-act="lstOk">Speichern</button>`,{breit:true}); }
+function leisteSpeichern(R){ const id=String(ME.mail||"").toLowerCase(); if(!id||!DB.profile) return; const alt=DB.profile.get(id), r=alt||{id}; r.leiste=Object.assign({},r.leiste||{});
+  if(R) r.leiste[LEISTE_APP]=R; else delete r.leiste[LEISTE_APP]; saveRec("profile",r,!alt); }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="lst"]'); if(!b) return; const a=b.dataset.act; if(!["lstDlg","lstAuf","lstAb","lstStd","lstAbbr","lstOk"].includes(a)) return; e.stopPropagation();
+  if(a==="lstDlg"){ LEISTE_DLG=null; leisteDlg(); return; }
+  const L=LEISTE_DLG, i=+b.dataset.i;
+  if(a==="lstAuf"&&L&&i>0){ [L[i-1],L[i]]=[L[i],L[i-1]]; leisteDlg(); return; }
+  if(a==="lstAb"&&L&&i<L.length-1){ [L[i+1],L[i]]=[L[i],L[i+1]]; leisteDlg(); return; }
+  if(a==="lstStd"){ leisteSpeichern(null); LEISTE_DLG=null; closeOverlays(); render(); toast("Standard-Reihenfolge"); return; }
+  if(a==="lstAbbr"){ LEISTE_DLG=null; closeOverlays(); return; }
+  if(a==="lstOk"&&L){ leisteSpeichern(L.map(d=>d[0])); LEISTE_DLG=null; closeOverlays(); render(); toast("Reihenfolge gespeichert"); return; } },true);
 function darstellungZeilen(){ const T=einTop(), st=T.find(x=>x[0]===META.startV)||T[0];
-  return einZ("einStartDlg","einStart","Start mit",st?st[1]:"")+einZ("einTextDlg","einTxt","Textgröße",(TXT_GR.find(x=>x[0]===txtGr())||TXT_GR[0])[1]+" · für alle Apps auf diesem Gerät"); }
+  return einZ("einStartDlg","einStart","Start mit",st?st[1]:"")+einZ("lstDlg","menu","Reihenfolge der Leiste",leisteOrdnen(einTop()).map(d=>d[1]).join(" · "))+einZ("einTextDlg","einTxt","Textgröße",(TXT_GR.find(x=>x[0]===txtGr())||TXT_GR[0])[1]+" · für alle Apps auf diesem Gerät"); }
 function geraetZeilen(mitPush){ return (mitPush&&typeof mlGeraetZeile==="function"&&ME.mail?mlGeraetZeile():"")+einZ("nav:speicher","einSp","Speicher auf diesem Gerät","Belegung anzeigen und aufräumen"); }
 /* Konto-Seite – Reihenfolge für alle Apps gleich: Konto · Abgleich · Darstellung · Apps · Dieses Gerät · Verwaltung · App-Eigenes · Info · Entwickler (mit Präsentationsmodus) */
 function kontoSeite(o){ const sek=(t,z)=>{ z=(Array.isArray(z)?z.join(""):z||"").trim(); return z?`<div class="sec-lbl">${t}</div><div class="list">${z}</div>`:""; };

@@ -350,5 +350,5 @@ function kbLetzt(v){ try{ if(v) localStorage.setItem("irrgang_kb",v); return loc
 function kbSeg(v){ if(!kbHandy()) return ""; kbLetzt(v);
   return `<div class="kb-seg" role="group" aria-label="Anzeigen">${[["kunden","Kunden"],["bibliothek","Bibliothek"]].map(([k,t])=>`<button type="button" data-act="nav" data-v="${k}" aria-pressed="${k===v}">${t}</button>`).join("")}</div>`; }
 /* Leiste: Bibliothek raus, „Kunden“ führt dorthin, wo man zuletzt war, und bleibt markiert */
-const kbLeiste=L=>kbHandy()?L.filter(d=>d[0]!=="bibliothek").map(d=>d[0]==="kunden"?[kbLetzt()==="bibliothek"?"bibliothek":"kunden",d[1],d[2],"kunden"]:d):L;
+const kbLeiste=L=>(L=typeof leisteOrdnen==="function"?leisteOrdnen(L):L,kbHandy()?L.filter(d=>d[0]!=="bibliothek").map(d=>d[0]==="kunden"?[kbLetzt()==="bibliothek"?"bibliothek":"kunden",d[1],d[2],"kunden"]:d):L);
 const kbAktiv=a=>kbHandy()&&a==="bibliothek"?"kunden":a;

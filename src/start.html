@@ -1537,10 +1537,11 @@ const ENTWICKLUNG=[
   {t:"Konto und Einstellungen",st:"wip",s:"Neu seit 26.10.2026",d:"Einheitlich in allen Apps: Abgleich mit Anzeige am Profilbild, Konto, Start-Seite, Textgröße, Speicher, Backup für Chef und Entwickler."},
   {t:"Anbindung an SCC-CONTROL",st:"open",s:"In Klärung",d:"Ziel: Kunden und Aufträge aus SCC übernehmen, statt sie doppelt zu pflegen. Wird mit dem Chef und einem IT-Dienstleister besprochen."}];
 const ENTW_STAND="26.10.2026";
-const TOPDEST_ALLE=[["start","Start","home"],["auftraege","Aufträge","board"],["kalender","Kalender","kal"],["uebersicht","Statistik","chart"],["kunden","Kunden","firma"],["geraete","Messgeräte","geraet"],["bibliothek","Bibliothek","folder"]];
+const TOPDEST_ALLE=[["start","Start","home"],["auftraege","Aufträge","board"],["kalender","Kalender","kal"],["uebersicht","Statistik","chart"],["kunden","Kunden","firma"],["geraete","Messgeräte","geraet"],["bibliothek","Bibliothek","folder"],["hb","Handbuch","book"]];
 /* Handy (schmaler als iPad): nur vier Tabs – Statistik und Messgeräte sind dort Karten auf der Startseite */
 const HANDY_WEG=["uebersicht","geraete","kalender"], istHandy=()=>!WIDE.matches;
-const topdest=()=>TOPDEST_ALLE.filter(d=>(d[0]!=="uebersicht"||ME.admin)&&!(istHandy()&&HANDY_WEG.includes(d[0])));
+/* Betriebshandbuch nur am PC in der Leiste (Platz genug); auf Handy/iPad über die Startseite */
+const topdest=()=>{ const L=TOPDEST_ALLE.filter(d=>(d[0]!=="uebersicht"||ME.admin)&&!(istHandy()&&HANDY_WEG.includes(d[0]))&&(d[0]!=="hb"||DESK.matches)); return typeof leisteOrdnen==="function"?leisteOrdnen(L):L; };
 const MEHR_SUB={ki:"KI",aufbewahrung:"Aufbewahrung",team:"Mitarbeiter",ma:"Mitarbeiter",backup:"Backup",impressum:"Impressum",about:"Über",entwicklung:"Entwicklung"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
 const KIND_NAME={kunden:"Kunde",standorte:"Standort"};
@@ -1557,6 +1558,7 @@ const kette=(kid,sid,lid)=>{ const r=[["Kunden",{v:"kunden"}]], k=kid&&kundeOf(k
   if(k) r.push([k.name||"Kunde",{v:"kunde",id:k.id}]); if(s) r.push([s.name||"Standort",{v:"standort",id:s.id}]); if(l) r.push([l.name||"Ladepark",{v:"ladepark",id:l.id}]); return r; };
 function pfadVerlassen(){}
 function pfadTeile(){
+  if(nav.v==="hb"&&nav.id) return [["Betriebshandbuch",{v:"hb"}]];
   if(nav.v==="standort"){ const s=standortOf(nav.id); return kette(s&&s.kundeId); }
   if(nav.v==="kunde") return kette();
   if(nav.v==="ma") return [["Einstellungen",{v:"mehr"}],["Mitarbeiter",{v:"team"}]];
@@ -1745,13 +1747,13 @@ function render(){ profilAnwenden(); setTimeout(()=>{ if(typeof kalPaneKlasse===
   if(nav.v==="team"&&!ME.admin) nav={v:"mehr"};
   try{ if(nav.v==="ma") sessionStorage.setItem("irrgang_ma_offen",nav.id||""); else if(nav.v!=="login"&&maWieder) sessionStorage.removeItem("irrgang_ma_offen");
     if(!maWieder&&ME.signedIn&&ME.admin&&nav.v!=="login"){ maWieder=true; const o=sessionStorage.getItem("irrgang_ma_offen"); if(o!==null&&nav.v==="start"&&performance.now()<30000){ teamForm=null; nav={v:"ma",id:o}; } } }catch(e){}
-  const TD=topdest(), TOP=TD.map(x=>x[0]), top=TOP.includes(nav.v), login=nav.v==="login";
+  const TD=topdest(), TOP=TD.map(x=>x[0]), top=TOP.includes(nav.v)&&!(nav.v==="hb"&&nav.id), login=nav.v==="login";
   document.body.classList.toggle("is-list",nav.v==="start"||login);
   document.body.classList.toggle("is-login",login);
   document.body.classList.toggle("has-nav",!login);
   $("#backBtn").hidden=top||login; $("#navbar").hidden=login; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]);
   $("#menuBtn").hidden=!(VIEW_KIND[nav.v]&&kdDarf()); kdKopfKnopf();
-  const active=nav.v==="meldungen"?"":top?nav.v:nav.v==="mldg"?"auftraege":["anl","masch"].includes(nav.v)?"kunden":HANDY_WEG.includes(nav.v)||["hb","fristen"].includes(nav.v)?"start":(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":"kunden";
+  const active=nav.v==="meldungen"?"":top||(nav.v==="hb"&&TOP.includes("hb"))?nav.v:nav.v==="mldg"?"auftraege":["anl","masch"].includes(nav.v)?"kunden":HANDY_WEG.includes(nav.v)||["hb","fristen"].includes(nav.v)?"start":(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":"kunden";
   const lh=$(".logo.l-hell").src, ld=$(".logo.l-dunkel").src;
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
     +TD.map(([k,t,i])=>`<button class="nav-item${k==="mehr"?" nav-end":""}" data-act="nav" data-v="${k}" ${k===active?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join("");
