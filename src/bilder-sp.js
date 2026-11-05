@@ -20,11 +20,22 @@ async function bspListe(erzwingen){
   BSP.laeuft=true; let fertig; BSP.p=new Promise(r=>fertig=r);
   try{ await syncRoot(); const fid=await folderId(BSP_ORDNER,BSP_BIB), L=await listAll(fid), m={};
     L.forEach(it=>{ if(it.file&&it["@microsoft.graph.downloadUrl"]) m[bspPfad(it.name)]=it["@microsoft.graph.downloadUrl"]; });
-    BSP.liste=m; BSP.t=Date.now(); BSP.anzahl=Object.keys(m).length; await bspAnSw(m); setTimeout(bspNachladen,400); setTimeout(()=>bspAuto(),1500);
+    BSP.liste=m; BSP.t=Date.now(); BSP.anzahl=Object.keys(m).length; await bspAnSw(m); setTimeout(bspNachladen,400); setTimeout(()=>bspAuto(),1500); setTimeout(()=>bspVorab(),4000);
   }catch(e){ console.warn("Bilderliste",e); }
   finally{ BSP.laeuft=false; fertig(); }
   return BSP.liste; }
-setTimeout(()=>bspListe(),2500);
+setTimeout(()=>bspListe(),800);
+/* Einmal geladene Bilder bleiben im Gerätespeicher („irrgang-bilder“, auch über Updates hinweg). Im WLAN holt die App alle
+   noch fehlenden Bilder leise vorab, damit sie beim ersten Anzeigen nicht erst nachladen. Speicher als „dauerhaft“ anfragen,
+   damit der Browser ihn nicht bei Platzmangel leert. */
+let BSP_VORAB=false;
+async function bspVorab(){ if(BSP_VORAB||!BSP.liste||bspMobilfunk()||!("caches" in window)) return; BSP_VORAB=true;
+  try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{});
+    const c=await caches.open("irrgang-bilder"), P=[];
+    for(const pfad of Object.keys(BSP.liste)) if(!(await c.match(pfad))) P.push(pfad);
+    const lauf=async()=>{ while(P.length){ const p=P.shift(); try{ await fetch(p); }catch(e){} await new Promise(r=>setTimeout(r,60)); } };
+    await Promise.all([lauf(),lauf(),lauf()]);
+  }catch(e){ BSP_VORAB=false; } }
 setInterval(()=>{ if(document.visibilityState==="visible") bspListe(); },5*60e3);
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") bspListe(); });
 
