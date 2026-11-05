@@ -1116,6 +1116,66 @@ body.kopf-oben .edk-platz{display:none!important}
 .wg-wd{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px;border-radius:12px;background:var(--sc);min-width:0}
 .wg-wd .w-ic{width:22px;height:22px}.wg-wd b{font-size:14px}.wg-wd small{font-size:12px;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .wg-wd.nass small:last-child{color:#3D7FD6}
+/* Wochenstreifen (Termine) */
+.kw-str{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;flex:none}
+.kw-tag{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;padding:6px 2px 7px;border:0;border-radius:14px;background:var(--sc);color:var(--on-surface);font:inherit;cursor:pointer}
+.kw-tag:hover{background:var(--sc-high)}
+.kw-tag small{font-size:11px;color:var(--on-sv);white-space:nowrap}.kw-tag b{font-size:17px;line-height:22px;font-weight:800}
+.kw-tag.we{background:color-mix(in srgb,var(--sc) 55%,transparent)}
+.kw-tag.heute{background:var(--pc);color:var(--on-pc)}.kw-tag.heute small{color:inherit;opacity:.85}
+.kw-p{display:flex;gap:3px;height:8px;align-items:center}.kw-p em{font-size:10px;font-style:normal;line-height:8px;font-weight:800}
+.kw-pt{width:7px;height:7px;border-radius:50%;background:var(--primary)}.kw-pt.kal-a{background:#3b6fd8}.kw-pt.kal-g{background:#2e9b5b}.kw-pt.kal-c{background:var(--c)}.kw-pt.kal-f{background:var(--on-sv)}
+.kw-tag.heute .kw-pt.kal-o{background:var(--on-pc)}
+.kw-w{display:flex;align-items:center;gap:1px;font-size:11px;font-weight:700;margin-top:2px}.kw-w .w-ic{width:15px;height:15px}
+.wg-l .kw-str,.wg-br .kw-str{margin-bottom:4px}
+.wg-leer.klein{font-size:13px;margin:8px 4px 0}
+/* Heute: Zeitleiste 7–17 Uhr */
+.hz{--sp:59px;--hz-h:calc((var(--sp) - (var(--n) - 1) * 3px) / var(--n));display:flex;flex-direction:column;gap:4px;margin-top:auto;min-width:0}
+.hz-l{--sp:150px}
+.hz .hz-ganz{display:flex;gap:4px;align-items:center;min-width:0;overflow:hidden}.hz .hz-ganz .kal-mev{height:auto;padding:2px 8px;border:0;font:inherit;font-size:12px;font-weight:600;cursor:pointer;max-width:50%;flex:0 1 auto}.hz-ganz small{font-size:12px;color:var(--on-sv)}
+.hz-wetter{display:grid;grid-template-columns:repeat(10,minmax(0,1fr))}
+.hz-wetter span{display:flex;align-items:center;justify-content:center;gap:1px;font-size:11px;color:var(--on-sv);min-width:0;overflow:hidden}.hz-wetter .w-ic{width:16px;height:16px;flex:none}
+.hz-spur{position:relative;height:var(--sp);border-radius:10px;background:var(--sc) linear-gradient(90deg,color-mix(in srgb,var(--on-surface) 10%,transparent) 1px,transparent 1px) 0 0/10% 100%}
+.hz-regen{position:absolute;top:0;bottom:0;background:color-mix(in srgb,#3D7FD6 22%,transparent)}
+.hz-regen:first-child{border-radius:10px 0 0 10px}
+.hz .hz-ev{height:var(--hz-h);border:0;font:inherit;text-align:left;flex-direction:row;align-items:center;justify-content:flex-start;gap:6px;margin-left:1px;padding:0 8px;max-height:none}
+.hz .hz-ev b{display:block;-webkit-line-clamp:unset;line-height:1.2;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}.hz .hz-ev small{font-size:11px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.85;flex:0 100 auto;min-width:0}
+.hz-ev.vorbei{opacity:.55}
+.hz-frei{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;color:var(--on-sv)}
+.hz-jetzt{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--err);border-radius:1px;z-index:2;pointer-events:none}
+.hz-jetzt::before{content:"";position:absolute;top:-3px;left:-3px;width:8px;height:8px;border-radius:50%;background:var(--err)}
+.hz-uhr{position:relative;height:18px}.hz-uhr i{position:absolute;top:1px;transform:translateX(-50%);display:flex}.hz-uhr i .w-ic{width:16px;height:16px}
+.hz-uhr span{position:absolute;top:2px;white-space:nowrap;transform:translateX(-50%);font-size:11px;color:var(--on-sv)}.hz-uhr span.a{transform:none}.hz-uhr span.e{transform:translateX(-100%)}.hz>*{flex:none}
+.hz-raus{font-size:11px;color:var(--on-sv);margin-top:-2px}
+.hz-dann{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-top:6px;padding:8px 12px;border-radius:12px;background:var(--sc);font-size:13px;font-weight:600}.hz-dann small{color:var(--on-sv);font-weight:700}
+@container (max-width:839px){.wg-m .hz-wetter span:nth-child(2n) small{display:none}}
+/* Pinnwand */
+.pnw-raster{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;min-height:0;flex:1}
+.pnw-raster.pnw-b{grid-template-columns:repeat(4,minmax(0,1fr))}.pnw-raster.pnw-l{grid-template-rows:repeat(3,minmax(0,1fr))}
+.pnw-raster.pnw-start{margin-bottom:8px}.pnw-raster.pnw-alle{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.pnw{display:flex;flex-direction:column;justify-content:space-between;gap:6px;min-width:0;min-height:0;padding:10px 12px;border:0;border-radius:16px;background:color-mix(in srgb,var(--pf) 24%,var(--surface));color:var(--on-surface);font:inherit;text-align:left;cursor:pointer;overflow:hidden}
+.pnw:hover{background:color-mix(in srgb,var(--pf) 32%,var(--surface))}
+.pnw-t{font-size:14px;font-weight:600;line-height:19px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.pnw-l .pnw-t,.pnw-m .pnw-t,.pnw-b .pnw-t{-webkit-line-clamp:2}
+.pnw-f{display:flex;align-items:center;gap:6px;min-width:0}.pnw-f small{font-size:11px;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pnw-f .pav{width:18px;height:18px;font-size:8px}
+.pnw-start .pnw,.pnw-alle .pnw{min-height:96px}
+.pnw-leer{flex:1;display:flex;align-items:center;gap:12px;margin:0;padding:12px 16px;border:0;border-radius:16px;background:var(--sc);color:var(--on-sv);font:inherit;font-size:13px;text-align:left;cursor:pointer}
+.pnw-leer:hover{background:var(--sc-high)}.pnw-leer .ic{width:24px;height:24px;flex:none;fill:var(--primary)}
+.pnw-fp{width:14px;height:14px;border-radius:50%;margin-right:6px;display:inline-block}
+.pnw-lesen{font-size:16px;line-height:24px;margin:4px;white-space:pre-wrap}
+.wg-mehr{align-self:flex-start;border:0;background:none;color:var(--primary);font:inherit;font-size:13px;font-weight:700;padding:4px 2px;cursor:pointer;flex:none}
+/* Wer ist wo */
+.ww{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;align-content:start}
+.ww-b{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ww-z{display:flex;align-items:center;gap:10px;min-width:0;padding:5px 10px;border-radius:12px;background:var(--sc)}
+.ww-z .pav{width:28px;height:28px;font-size:11px}
+.ww-t{display:flex;flex-direction:column;min-width:0}.ww-t b{font-size:13px;line-height:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ww-t small{font-size:12px;line-height:16px;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ww-z.frei{background:transparent}.ww-z.frei .pav{opacity:.55}
+/* Handy: Stift neben der Begrüßung */
+.gruss-z{display:flex;align-items:flex-start;gap:8px}.gruss-t{flex:1;min-width:0}
+.gruss-anp{width:40px;height:40px;margin-top:6px;border:0;border-radius:50%;background:var(--sc);color:var(--on-surface);display:grid;place-items:center;cursor:pointer;flex:none}.gruss-anp .ic{width:20px;height:20px}
+.gruss-fertig{height:40px;margin-top:6px;padding:0 20px;border:0;border-radius:20px;background:var(--primary);color:var(--on-primary);font:inherit;font-size:14px;font-weight:700;cursor:pointer;flex:none}
+@media (max-width:743px){.hz{margin-top:4px}.hz-uhr span:nth-child(2n):not(.e),.hz-uhr i:nth-of-type(2n){display:none}.gruss-sub .w-kopf{display:flex;width:max-content;margin:2px 0 0 -6px}.gruss-sub .w-kopf::before{display:none}.pnw-raster.pnw-b{grid-template-columns:repeat(2,minmax(0,1fr))}.ww-b{grid-template-columns:minmax(0,1fr)}.kw-tag{padding:5px 1px 6px}.kw-w{display:none}}
 /* einmal beim Öffnen: Kacheln kommen nacheinander herein */
 .wg.rein{animation:wgRein .45s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(min(var(--i),12)*35ms)}
 @keyframes wgRein{from{opacity:0;transform:translateY(12px) scale(.98)}}
@@ -1842,11 +1902,12 @@ function startView(){
   const kacheln=APPS.map(a=>a.geplant?`<div class="app-k geplant"><span class="app-ph">${icon("bulb")}</span><span class="app-t"><b>${a.name}</b><span>${a.text}</span></span>${pill("open","in Planung")}</div>`
     :`<a class="app-k" href="${a.href}"><img src="${a.ic}" alt=""><span class="app-t"><b>${a.name}</b><span>${a.text}</span></span>${icon("chev")}</a>`).join("");
   /* Begrüßung steht am iPad/PC oben im Kopf; am Handy (kein Seitenkopf) bleibt sie im Inhalt */
-  const g=WIDE.matches?"":`<h2 class="gruss">${esc(startTitel())}</h2><p class="gruss-sub">${esc(startUnter())}</p>`;
+  const anpK=anfVerw()&&ME.mail?(DB_ANP?`<button class="gruss-fertig" data-act="dbFertig">Fertig</button>`:`<button class="gruss-anp" data-act="dbAnpassen" aria-label="Startseite anpassen" title="Startseite anpassen">${icon("edit")}</button>`):"";
+  const g=WIDE.matches?"":`<div class="gruss-z"><div class="gruss-t"><h2 class="gruss">${esc(startTitel())}</h2><p class="gruss-sub">${esc(startUnter())}</p></div>${anpK}</div>`;
   if(anfVerw()) return `<div class="narrow">${g}${typeof bfStartZeile==="function"?bfStartZeile():""}${dashboard(kacheln)}</div>`;
   const gerZ=istHandy()?(()=>{ const G=live("geraete").filter(x=>!x.aus), f=G.map(gerKal).filter(k=>k&&k.s!=="ok").length;
     return `<div class="sec-lbl">Betrieb</div>${listOf([`<div class="li" role="button" tabindex="0" data-act="nav" data-v="geraete"><span class="av">${icon("geraet")}</span><span class="lt"><span class="h">Messgeräte</span><span class="s">${G.length} ${G.length===1?"Gerät":"Geräte"}${f?` · ${f} ${f===1?"braucht":"brauchen"} Kalibrierung`:""}</span></span>${icon("chev")}</div>`])}`; })():"";
-  let h=`<div class="narrow">${g}${typeof bfStartZeile==="function"?bfStartZeile():""}${vgStartKarte()}${gerZ}${typeof hbStartZeile==="function"?hbStartZeile():""}<div class="apps app-weiter">${kacheln}</div>`;
+  let h=`<div class="narrow">${g}${typeof bfStartZeile==="function"?bfStartZeile():""}${pinStart()}${vgStartKarte()}${gerZ}${typeof hbStartZeile==="function"?hbStartZeile():""}<div class="apps app-weiter">${kacheln}</div>`;
   return h+`<p class="hint app-weiter">Jede App lässt sich einzeln auf den Home-Bildschirm legen: App öffnen, dann „Teilen“ → „Zum Home-Bildschirm“.</p></div>`;
 }
 const startTitel=()=>`${gruss()}${ME.ruf||ME.name?`, ${ME.ruf||ME.name}`:""}`;
@@ -1860,17 +1921,20 @@ function skRechts(){
    Jeder legt fest, welche Kacheln er sieht, in welcher Reihenfolge und wie breit (halb/ganz).
    Gespeichert im eigenen Profil („profile“) ⇒ gleich auf iPad und PC. Halbe Kacheln werden automatisch
    auf zwei Spalten verteilt, sodass keine Löcher entstehen. */
-const DB_W={handbuch:"Betriebshandbuch",termine:"Termine",material:"Material",auftraege:"Aufträge",pruefungen:"Prüfungen & Fristen",baustellen:"Baustellen",zahlen:"Kennzahlen",geraete:"Messgeräte",apps:"Apps",schnell:"Schnell anlegen",wetter:"Wetter"};
+const DB_W={handbuch:"Betriebshandbuch",termine:"Termine",material:"Material",auftraege:"Aufträge",pruefungen:"Prüfungen & Fristen",baustellen:"Baustellen",zahlen:"Kennzahlen",geraete:"Messgeräte",apps:"Apps",schnell:"Schnell anlegen",wetter:"Wetter",heute:"Heute",pinn:"Pinnwand",werwo:"Wer ist wo"};
 /* Neu hinzugekommene Kacheln erscheinen bei bestehenden Startseiten nicht von selbst (iPad/PC bleiben, wie eingestellt) */
-const DB_NEU_AUS=["geraete","schnell","wetter"];
+const DB_NEU_AUS=["geraete","schnell","wetter","heute","pinn","werwo"];
 /* Auf dem Handy sind das die Wege zu Statistik und Messgeräten (dort keine Tabs) – daher immer sichtbar */
 const dbPflicht=()=>istHandy()?["termine","geraete",...(ME.admin?["zahlen"]:[])]:[];
 /* Größen wie Handy-Widgets: S = 1×1, M = 2×1, B = 4×1 (breit, nur iPad/PC), L = 2×2 Rasterfelder. Jede Kachel kann nur Größen, für die sie Inhalt hat.
    Raster: Handy und schmales iPad 2 Spalten, iPad quer/PC 4 Spalten, großer Bildschirm 6 Spalten. */
-const DB_GR={handbuch:["s","m","b","l"],termine:["s","m","b","l"],geraete:["s","m","b","l"],material:["s","m","b","l"],auftraege:["s","m","b","l"],pruefungen:["s","m","b","l"],baustellen:["s","m","b","l"],zahlen:["m","b","l"],apps:["m","b","l"],schnell:["m","b"],wetter:["s","m","b"]};
+const DB_GR={handbuch:["s","m","b","l"],termine:["s","m","b","l"],geraete:["s","m","b","l"],material:["s","m","b","l"],auftraege:["s","m","b","l"],pruefungen:["s","m","b","l"],baustellen:["s","m","b","l"],zahlen:["m","b","l"],apps:["m","b","l"],schnell:["m","b"],wetter:["s","m","b"],heute:["m","b","l"],pinn:["m","b","l"],werwo:["s","m","b","l"]};
 const DB_GR_TXT={s:"Klein",m:"Mittel",b:"Breit",l:"Groß"};
 const DB_LISTE=["handbuch","termine","material","auftraege","baustellen","geraete","pruefungen"]; /* „Breit“ zeigt die Liste zweispaltig */
-const DB_STD={o:["termine","schnell","auftraege","material","pruefungen","wetter","baustellen","apps","zahlen","geraete","handbuch"],aus:["zahlen","geraete"],gr:{termine:"l",schnell:"m",wetter:"m"}};
+const DB_STD={o:["heute","termine","schnell","auftraege","material","pinn","pruefungen","wetter","baustellen","werwo","apps","zahlen","geraete","handbuch"],aus:["zahlen","geraete","werwo"],gr:{heute:"b",termine:"l",schnell:"m",wetter:"m",pinn:"m"}};
+/* Handy hat eine eigene Anordnung (schmal, untereinander) – iPad und PC teilen sich eine. Beides liegt im eigenen Profil ⇒ auf allen Geräten gleich.
+   Hat jemand am Handy noch nichts eingestellt, gilt dort die iPad-/PC-Anordnung. */
+const dbFeld=()=>istHandy()?"startH":"start";
 /* Firmen-Standard (Admin legt fest): gilt für alle, die selbst noch nichts eingestellt haben */
 const dbFirma=()=>{ const r=DB.einstellungen&&DB.einstellungen.get("start"); return r&&!r.deleted&&r.L&&r.L.o?r.L:null; };
 
@@ -1886,6 +1950,9 @@ const W_P={sonne:"M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2
   schnee:"M22 11h-4.17l3.24-3.24-1.41-1.42L15 11h-2V9l4.66-4.66-1.42-1.41L13 6.17V2h-2v4.17L7.76 2.93 6.34 4.34 11 9v2H9L4.34 6.34 2.93 7.76 6.17 11H2v2h4.17l-3.24 3.24 1.41 1.42L9 13h2v2l-4.66 4.66 1.42 1.41L11 17.83V22h2v-4.17l3.24 3.24 1.42-1.41L13 15v-2h2l4.66 4.66 1.41-1.42L17.83 13H22z",
   gewitter:"M7 2v11h3v9l7-12h-4l4-8z",nebel:"M2 15.5v2h20v-2H2zm0-5v2h20v-2H2zm0-7v2h20v-2H2z"};
 IC.wetter=W_P.teil;
+Object.assign(IC,{zeit:"M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z",
+  pinnadel:"M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z",
+  leute:"M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"});
 const W_ART={"clear-day":["sonne","Sonnig"],"clear-night":["mond","Klar"],"partly-cloudy-day":["teil","Teils bewölkt"],"partly-cloudy-night":["teil","Teils bewölkt"],cloudy:["wolke","Bewölkt"],fog:["nebel","Nebel"],wind:["wolke","Windig"],rain:["regen","Regen"],sleet:["regen","Schneeregen"],hail:["regen","Hagel"],snow:["schnee","Schnee"],thunderstorm:["gewitter","Gewitter"]};
 const W_RANG=["thunderstorm","snow","hail","sleet","rain"];
 const wIc=(k,cls="")=>{ const a=W_ART[k]||W_ART.cloudy; return `<svg class="ic w-ic w-${a[0]} ${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${W_P[a[0]]}"/></svg>`; };
@@ -1900,7 +1967,8 @@ async function wetterHolen(){
       let ic=W_RANG.find(r=>(zahl[r]||0)>=2)||Object.keys(zahl).sort((a,b)=>zahl[b]-zahl[a])[0]||"cloudy"; ic=ic.replace("-night","-day").replace("clear-day","clear-day");
       const pp=H.map(x=>x.precipitation_probability).filter(x=>x!=null);
       return {d,ic,max:temps.length?Math.round(Math.max(...temps)):null,min:temps.length?Math.round(Math.min(...temps)):null,mm:Math.round(H.reduce((a,x)=>a+(x.precipitation||0),0)*10)/10,pp:pp.length?Math.max(...pp):null}; });
-    const cw=c.weather||{}; META.wetter={t:Date.now(),jetzt:{temp:cw.temperature!=null?Math.round(cw.temperature):null,ic:cw.icon||"cloudy"},tage}; metaSave();
+    const cw=c.weather||{}; META.wetter={t:Date.now(),jetzt:{temp:cw.temperature!=null?Math.round(cw.temperature):null,ic:cw.icon||"cloudy"},tage,
+      stdTag:heute,std:(T[heute]||[]).filter(x=>x.st>=6&&x.st<=18).map(x=>({st:x.st,ic:x.icon||"cloudy",t:x.temperature!=null?Math.round(x.temperature):null,mm:x.precipitation||0}))}; metaSave();
     if(nav.v==="start"&&!DB_ANP&&!document.querySelector("#app input:focus")) render();
   }catch(e){ /* offline oder Dienst nicht erreichbar – letzter Stand bleibt */ }
   wLaedt=false;
@@ -1940,13 +2008,13 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(b.dataset.act==="wvOrt"){ WV.ort=+b.dataset.i; WV.tag=""; wetterDlg(); return; }
   if(b.dataset.act==="wvTag"){ WV.tag=b.dataset.v; wetterDlg(); return; } },true);
 let DB_ANP=false;
-function dbLayout(){ const p=profilVon(ME.mail)||{}, L=p.start||dbFirma()||{}, o=(L.o||[]).filter(k=>DB_W[k]);
+function dbLayout(){ const p=profilVon(ME.mail)||{}, L=(istHandy()&&p.startH)||p.start||dbFirma()||{}, o=(L.o||[]).filter(k=>DB_W[k]);
   const aus=(L.o?(L.aus||[]).slice():DB_STD.aus.slice());
   DB_STD.o.forEach(k=>{ if(!o.includes(k)){ o.push(k); if(L.o&&DB_NEU_AUS.includes(k)&&!aus.includes(k)) aus.push(k); } }); const gr={};
-  o.forEach(k=>{ const g=(L.gr||{})[k]||(L.o?"":DB_STD.gr[k]); gr[k]=DB_GR[k].includes(g)?g:DB_GR[k].includes("m")?"m":DB_GR[k][0]; });
+  o.forEach(k=>{ const g=(L.gr||{})[k]||(L.o?"":DB_STD.gr[k]); gr[k]=DB_GR[k].includes(g)?g:DB_GR[k].includes("m")?"m":DB_GR[k][0]; if(istHandy()&&gr[k]==="b") gr[k]=DB_GR[k].includes("m")?"m":"l"; });
   return {o,aus:aus.filter(k=>DB_W[k]),gr}; }
 function dbLayoutSpeichern(L){ const id=String(ME.mail||"").toLowerCase(); if(!id) return; const alt=DB.profile.get(id), r=alt||{id};
-  r.start={o:L.o,aus:L.aus,gr:L.gr}; saveRec("profile",r,!alt); }
+  r[dbFeld()]={o:L.o,aus:L.aus,gr:L.gr}; saveRec("profile",r,!alt); }
 function dbFirmaSpeichern(L){ const neu=!DB.einstellungen.has("start"), r=DB.einstellungen.get("start")||{id:"start"}; r.L={o:L.o,aus:L.aus,gr:L.gr}; r.by=who(); r.at=Date.now(); r.deleted=false; saveRec("einstellungen",r,neu); }
 /* einmal pro Seitenaufruf: Kacheln kommen nacheinander herein */
 let DB_ERST=true;
@@ -1968,6 +2036,71 @@ let DB_ERST=true;
   document.addEventListener("pointerup",ende); document.addEventListener("pointercancel",ende);
   document.addEventListener("click",e=>{ if(klickWeg){ e.stopPropagation(); e.preventDefault(); klickWeg=false; } },true);
 })();
+/* ===== Kachel „Heute“: Zeitleiste 7–17 Uhr mit Terminen, Regenstunden und Jetzt-Linie ===== */
+const HZ_A=7, HZ_B=17;
+const hzPos=d=>{ const x=d.getHours()+d.getMinutes()/60; return Math.max(0,Math.min(100,(x-HZ_A)/(HZ_B-HZ_A)*100)); };
+function heuteKachel(){ if(typeof kalAlle!=="function") return {ic:"kal",m:()=>""};
+  const h=kalTag(new Date()), um=x=>{ const d=new Date(h); d.setHours(x,0,0,0); return d; }, E=kalAlle(h,kalPlus(h,1)), ganz=E.filter(e=>e.ganz), zeit=E.filter(e=>!e.ganz);
+  if(KAL.ebenen.outlook&&!KAL.verbinden&&typeof kalLadenStart==="function") setTimeout(()=>kalLadenStart(),0);
+  const jetzt=new Date(), naechst=zeit.find(e=>e.von>jetzt), lauf=zeit.find(e=>e.von<=jetzt&&e.bis>jetzt), titel=e=>e.privat&&!e.eigen?"Privat":e.t;
+  const W=META.wetter&&META.wetter.stdTag===today()?META.wetter.std||[]:[], regen=W.filter(x=>x.mm>=0.2&&x.st>=HZ_A&&x.st<HZ_B);
+  const aussen=zeit.filter(e=>e.bis<=um(HZ_A)||e.von>=um(HZ_B)).length, gleich=(()=>{ const B=[]; let n=0; zeit.filter(e=>e.bis>um(HZ_A)&&e.von<um(HZ_B)).forEach(e=>{ let i=B.findIndex(b=>b<=e.von); if(i<0){ i=B.length; B.push(0); } B[i]=e.bis; if(i>=2) n++; }); return n; })();
+  return {ic:"zeit",v:"kalender",sub:(lauf?`jetzt: ${titel(lauf)}`:naechst?`als Nächstes ${kalZeit(naechst.von)} · ${titel(naechst)}`:zeit.length?"Für heute nichts mehr im Kalender":"Heute keine Termine im Kalender")+(aussen?` · +${aussen} vor 7 oder nach 17 Uhr`:"")+(gleich?` · +${gleich} gleichzeitig`:""),
+    m:g=>{ const im=zeit.filter(e=>e.bis>um(HZ_A)&&e.von<um(HZ_B)), bahn=[]; im.forEach(e=>{ let i=bahn.findIndex(b=>b<=e.von); if(i<0){ i=bahn.length; bahn.push(0); } bahn[i]=e.bis; e._b=i; });
+      const max=g==="l"?5:2, n=Math.max(1,Math.min(bahn.length,max)), raus=im.filter(e=>e._b>=max).length;
+      const st=[]; for(let x=HZ_A;x<HZ_B;x++) st.push(W.find(w=>w.st===x)||null);
+      const evs=im.filter(e=>e._b<max).map(e=>{ const l=hzPos(e.von<um(HZ_A)?um(HZ_A):e.von), r=hzPos(e.bis>um(HZ_B)?um(HZ_B):e.bis);
+        return `<button type="button" class="kal-ev hz-ev ${kalFarbe(e)}${e.bis<=jetzt?" vorbei":""}" style="${kalCV(e)}left:${l}%;width:calc(${Math.max(r-l,2.5)}% - 2px);top:calc(${e._b} * (var(--hz-h) + 3px))" data-act="kalAuf" data-id="${esc(e.id)}" title="${esc(kalZeit(e.von)+"–"+kalZeit(e.bis)+" "+titel(e))}"><b>${esc(titel(e))}</b>${r-l>24?`<small>${kalZeit(e.von)}${e.ort?" · "+esc(String(e.ort).split(",")[0]):""}</small>`:""}</button>`; }).join("");
+      const jp=jetzt>=um(HZ_A)&&jetzt<=um(HZ_B)?`<i class="hz-jetzt" style="left:${hzPos(jetzt)}%"></i>`:"";
+      const morgen=g==="l"?(()=>{ const M=kalAlle(kalPlus(h,1),kalPlus(h,2)).filter(e=>!e.ganz).slice(0,2); return M.length?`<div class="hz-dann"><small>Morgen</small>${M.map(e=>`<span>${kalZeit(e.von)} ${esc(titel(e))}</span>`).join("")}</div>`:""; })():"";
+      return `<div class="hz hz-${g}" style="--n:${n}">
+        ${ganz.length?`<div class="hz-ganz">${ganz.slice(0,3).map(e=>`<button type="button" class="kal-mev ${kalFarbe(e)}" style="${kalCV(e)}" data-act="kalAuf" data-id="${esc(e.id)}">${esc(titel(e))}</button>`).join("")}${ganz.length>3?`<small>+${ganz.length-3}</small>`:""}</div>`:""}
+        ${W.length&&g==="l"?`<div class="hz-wetter">${st.map(w=>`<span title="${w?w.st+" Uhr":""}">${w?wIc(w.ic)+`<small>${w.t!=null?w.t+"°":""}</small>`:""}</span>`).join("")}</div>`:""}
+        <div class="hz-spur">${regen.map(w=>`<i class="hz-regen" style="left:${(w.st-HZ_A)/(HZ_B-HZ_A)*100}%;width:${100/(HZ_B-HZ_A)}%" title="${w.st} Uhr: ${wvZahl(w.mm)} mm Regen"></i>`).join("")}${evs||`<span class="hz-frei">${zeit.length?"Zwischen 7 und 17 Uhr frei":"Keine Termine heute"}</span>`}${jp}</div>
+        <div class="hz-uhr">${Array.from({length:HZ_B-HZ_A+1},(_,i)=>`<span class="${i===0?"a":i===HZ_B-HZ_A?"e":""}" style="left:${i/(HZ_B-HZ_A)*100}%">${HZ_A+i}</span>`).join("")}${W.length&&g!=="l"?st.map((w,i)=>w?`<i style="left:${(i+.5)/(HZ_B-HZ_A)*100}%" title="${w.st} Uhr${w.t!=null?" · "+w.t+" °C":""}${w.mm>=0.1?" · "+wvZahl(w.mm)+" mm":""}">${wIc(w.ic)}</i>`:"").join(""):""}</div>
+        ${raus&&g==="l"?`<small class="hz-raus">+${raus} weitere gleichzeitig – im Kalender</small>`:""}${morgen}</div>`; }}; }
+/* Jetzt-Linie läuft mit, ohne die Seite neu zu zeichnen */
+setInterval(()=>{ document.querySelectorAll(".hz-jetzt").forEach(i=>{ const d=new Date(); if(d.getHours()<HZ_A||d.getHours()>=HZ_B) i.remove(); else i.style.left=hzPos(d)+"%"; }); },60e3);
+
+/* ===== Pinnwand: kurze Notizen für alle (je Notiz ein eigener Eintrag – zwei Leute gleichzeitig überschreiben sich nicht) ===== */
+const PIN_F=[["gelb","Gelb","#E8B931"],["gruen","Grün","#2e9b5b"],["blau","Blau","#3b6fd8"],["rosa","Rosa","#D9578C"]];
+const pinListe=()=>live("einstellungen").filter(r=>r.typ==="pin"&&!r.deleted&&(!r.bis||r.bis>=today())).sort((a,b)=>(b.created||0)-(a.created||0));
+const pinKarte=r=>{ const f=(PIN_F.find(x=>x[0]===r.farbe)||PIN_F[0]), von=r.createdBy||{};
+  return `<button type="button" class="pnw" style="--pf:${f[2]}" data-act="pinAuf" data-id="${esc(r.id)}"><span class="pnw-t">${esc(r.t)}</span><span class="pnw-f">${persAv(von.mail,von.name)}<small>${esc(von.name?String(von.name).split(" ")[0]:persVoll(von.mail,""))} · ${esc(wann(r.created))}${r.bis?` · bis ${esc(deDate(r.bis))}`:""}</small></span></button>`; };
+function pinStart(){ const P=pinListe(); if(!P.length) return ""; return `<div class="sec-lbl">Pinnwand</div><div class="pnw-raster pnw-start">${P.slice(0,6).map(pinKarte).join("")}</div>`; }
+let PIN_E=null;
+function pinDlg(r){ const neu=!r, darf=neu||canEdit(r); PIN_E={id:r&&r.id,farbe:(r&&r.farbe)||"gelb"};
+  if(!darf){ const von=r.createdBy||{}; dialog("Notiz",`<p class="pnw-lesen">${esc(r.t)}</p><p class="sup" style="margin:12px 4px 0">${esc(von.name||persVoll(von.mail,""))} · ${esc(wann(r.created))}${r.bis?` · angeheftet bis ${esc(deDate(r.bis))}`:""}</p>`,`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`); return; }
+  dialog(neu?"Notiz anheften":"Notiz",`<div class="fg1">${ta("pinT","Notiz",r?r.t:"",{form:true,ph:"z. B. Transporter bis Freitag in der Werkstatt"})}
+    <div class="lbl" style="margin:12px 4px 6px">Farbe</div><div class="chips pnw-farben">${PIN_F.map(([k,t,c])=>`<button type="button" class="chip" data-act="pinFarbe" data-v="${k}" aria-pressed="${k===PIN_E.farbe}"><i class="pnw-fp" style="background:${c}"></i>${t}</button>`).join("")}</div>
+    ${tf("pinBis","Angeheftet bis (optional)",r&&r.bis||"",{form:true,type:"date"})}<p class="sup" style="margin:4px 4px 0">Danach verschwindet die Notiz von selbst. Sichtbar für alle im Betrieb.</p></div>`,
+    `${!neu?`<button class="btn-text danger" data-act="pinWeg">Abnehmen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="pinOk">${neu?"Anheften":"Speichern"}</button>`,{mittel:true}); }
+function pinAlleDlg(){ dialog("Pinnwand",`<div class="pnw-raster pnw-alle">${pinListe().map(pinKarte).join("")}</div>`,`<button class="btn-text" data-act="pinNeu">Notiz anheften</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`,{breit:true}); }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="pin"]'); if(!b) return; const a=b.dataset.act; if(!["pinNeu","pinAuf","pinFarbe","pinOk","pinWeg","pinAlle"].includes(a)) return; e.stopPropagation(); e.preventDefault();
+  if(a==="pinNeu"){ pinDlg(null); return; }
+  if(a==="pinAlle"){ pinAlleDlg(); return; }
+  if(a==="pinAuf"){ const r=DB.einstellungen.get(b.dataset.id); if(r) pinDlg(r); return; }
+  if(a==="pinFarbe"){ PIN_E.farbe=b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); return; }
+  if(a==="pinOk"){ const F=formVals(), t=String(F.pinT||"").trim(); if(!t){ toast("Bitte einen Text eintragen"); document.getElementById("f_pinT")?.focus(); return; }
+    const alt=PIN_E.id&&DB.einstellungen.get(PIN_E.id), r=alt||{id:"pin-"+uid(),typ:"pin"}; Object.assign(r,{t:t.slice(0,400),farbe:PIN_E.farbe,bis:F.pinBis||"",deleted:false}); saveRec("einstellungen",r,!alt); closeOverlays(); render(); toast(alt?"Notiz gespeichert":"Notiz angeheftet – sehen jetzt alle"); return; }
+  if(a==="pinWeg"){ const r=PIN_E.id&&DB.einstellungen.get(PIN_E.id); if(r&&canEdit(r)){ r.deleted=true; saveRec("einstellungen",r,false); } closeOverlays(); render(); toast("Notiz abgenommen"); return; } },true);
+
+/* ===== Wer ist wo (vorbereitet): Einteilung aus Auftragsterminen („Wer fährt hin“) und Kalender, dazu die letzte Meldung von heute (Übergabe, Material) ===== */
+function werwoDaten(){ const t=today(), h=kalTag(new Date()), ab=+h, R=new Map(), key=m=>String(m||"").toLowerCase();
+  team().filter(m=>m.mail&&m.status!=="weg"&&m.stufe!=="buero").forEach(m=>R.set(key(m.mail),{m,plan:[],ist:null}));
+  live("vorgaenge").filter(v=>v.typ!=="meldung"&&!v.deleted&&!v.abgelehnt&&v.s&&v.s.termin&&v.s.termin.datum===t).forEach(v=>{ (typeof mitListe==="function"?mitListe(v.s.termin):[]).forEach(p=>{ const x=R.get(key(p.mail)); if(x) x.plan.push({t:typeof vgKunde==="function"?vgKunde(v):"Auftrag",z:v.s.termin.zeit||""}); }); });
+  if(typeof kalAlle==="function") kalAlle(h,kalPlus(h,1)).filter(e=>e.q!=="auftrag"&&!e.frei&&!(e.privat&&!e.eigen)).forEach(e=>(e.mit||[]).forEach(p=>{ const x=R.get(key(p.mail)); if(x) x.plan.push({t:e.ort?String(e.ort).split(",")[0]:e.t,z:e.ganz?"":kalZeit(e.von)}); }));
+  const meld=(mail,txt,at)=>{ const x=R.get(key(mail)); if(x&&at>=ab&&(!x.ist||at>x.ist.at)) x.ist={t:txt,at}; };
+  echt("eintraege").forEach(e=>{ const b=DB.baustellen.get(e.baustelleId); meld((e.createdBy||{}).mail,b?b.name:"Baustelle",e.created||0); });
+  live("anforderungen").forEach(a=>{ const b=a.baustelleId&&DB.baustellen.get(a.baustelleId); if(b) meld((a.createdBy||{}).mail,b.name,a.created||0); });
+  return [...R.values()].sort((a,b)=>((b.plan.length||b.ist?1:0)-(a.plan.length||a.ist?1:0))||String(a.m.name).localeCompare(String(b.m.name),"de")); }
+function werwoKachel(zeile,leer,gross){ const D=werwoDaten(), ein=D.filter(x=>x.plan.length||x.ist).length;
+  const z=x=>{ const p=x.plan[0], wo=p?p.t:x.ist?x.ist.t:"", wann=p&&p.z?p.z:x.ist?`gemeldet ${new Date(x.ist.at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}`:"";
+    return `<div class="ww-z${wo?"":" frei"}">${persAv(x.m.mail,x.m.name)}<span class="ww-t"><b>${esc(x.m.ruf||x.m.name||persVoll(x.m.mail,""))}</b><small>${wo?esc(wo)+(x.plan.length>1?` +${x.plan.length-1}`:"")+(wann?" · "+esc(wann):""):"nicht eingeteilt"}</small></span></div>`; };
+  return {ic:"leute",v:"auftraege",sub:D.length?`${ein} von ${D.length} heute eingeteilt · aus Terminen und Meldungen`:"Noch keine Mitarbeiter angelegt",
+    s:()=>gross(ein,`von ${D.length} eingeteilt`),
+    m:g=>D.length?`<div class="ww ww-${g}">${D.slice(0,g==="l"?8:g==="b"?4:2).map(z).join("")}</div>`:leer("Mitarbeiter unter Einstellungen → Mitarbeiter anlegen.")}; }
+
 /* Dashboard für Chef und Büro: vier Boxen. Jede zeigt nur, was zu tun ist – Details über „Alle“. */
 function dashboard(kacheln){
   const t=today(), bald=new Date(Date.now()+90*864e5).toISOString().slice(0,10), woche=Date.now()-7*864e5, L=dbLayout();
@@ -2011,6 +2144,11 @@ function dashboard(kacheln){
         m:g=>P.length?P.slice(0,anz(g)).map(({g:x,k})=>zeile(gerLabel(x),k.t)).join(""):leer("Alle Geräte kalibriert."),}; })(),
     apps:{ic:"home",app:true,m:g=>`<div class="wg-apps${g==="l"||g==="b"?" gross":""}${g==="b"?" reihe":""}">${APPS.map(a=>a.geplant?"":`<a class="wg-app" href="${a.href}"><img src="${a.ic}" alt=""><span>${esc(a.name)}</span>${g!=="m"?`<small>${esc(a.text)}</small>`:""}</a>`).join("")}</div>`},
     schnell:{ic:"add",app:true,m:g=>`<div class="wg-schnell${g==="b"?" breit":""}">${[["vgNeu","board","Vorgang"],["afNeu","lager","Material"],["kalNeu","kal","Termin"],...(ME.admin?[["newKunde","firma","Kunde"]]:[])].map(([a,ic,t])=>`<button type="button" class="wg-sb" data-act="${a}">${icon(ic)}<span>${t}</span></button>`).join("")}</div>`},
+    heute:heuteKachel(),
+    pinn:(()=>{ const P=pinListe(); return {ic:"pinnadel",sub:P.length?`${P.length} ${P.length===1?"Notiz":"Notizen"}`:"Für alle sichtbar",plus:["pinNeu","Notiz anheften"],app:true,
+      m:g=>P.length?`<div class="pnw-raster pnw-${g}">${P.slice(0,g==="l"?6:g==="b"?4:2).map(pinKarte).join("")}</div>${P.length>(g==="l"?6:g==="b"?4:2)?`<button class="wg-mehr" data-act="pinAlle">Alle ${P.length} Notizen</button>`:""}`
+        :`<button class="pnw-leer" data-act="pinNeu">${icon("add")}<span>Kurze Notiz für alle anheften – z. B. „Transporter bis Freitag in der Werkstatt“</span></button>`}; })(),
+    werwo:werwoKachel(zeile,leer,gross),
     wetter:(()=>{ const WT=META.wetter, J=WT&&WT.jetzt, T=(WT&&WT.tage)||[], tn=d=>d===t?"Heute":new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short"}).replace(".","");
       const heute=T.find(x=>x.d===t)||T[0];
       return {ic:"wetter",act:"wetterAuf",sub:J&&J.temp!=null?`${(W_ART[J.ic]||W_ART.cloudy)[1]}${heute&&heute.mm?` · heute ${wvZahl(heute.mm)} mm`:" · heute trocken"}`:"Betrieb Waldbröl",
@@ -2024,13 +2162,13 @@ function dashboard(kacheln){
     return `<section class="wg wg-${g==="b"?"br":g}${ganzKlick?" klick":""}${DB_ERST&&!DB_ANP?" rein":""}" style="--i:${i}" data-w="${k}" ${ganzKlick?`data-act="${w.act||"nav"}"${w.v?` data-v="${w.v}"`:""}${w.ziel?` data-ziel="${w.ziel}"`:""} role="button" tabindex="0"`:""}>
       <div class="wg-k"><span class="wg-ic${w.warn?" warn":""}">${icon(w.ic)}</span><span class="wg-t"><b>${esc(k==="zahlen"&&istHandy()?"Statistik":DB_W[k])}</b>${w.sub&&g!=="s"?`<small class="${w.warn?"warn":""}">${esc(w.sub)}</small>`:""}</span>${w.plus&&!DB_ANP&&g!=="s"?`<button class="wg-plus" data-act="${w.plus[0]}" aria-label="${w.plus[1]}" title="${w.plus[1]}">${icon("add")}</button>`:""}</div>
       <div class="wg-b${g==="b"&&DB_LISTE.includes(k)?" sp2":""}">${inhalt}</div>
-      ${DB_ANP&&!PF.includes(k)?`<button class="wg-weg" data-act="dbAus" data-w="${k}" aria-label="${esc(DB_W[k])} ausblenden" title="Ausblenden">−</button>
+      ${DB_ANP?`${PF.includes(k)?"":`<button class="wg-weg" data-act="dbAus" data-w="${k}" aria-label="${esc(DB_W[k])} ausblenden" title="Ausblenden">−</button>`}
         <div class="wg-anp"><button class="db-ab" data-act="dbZug" data-w="${k}" data-d="-1" ${i===0?"disabled":""} aria-label="Nach vorne" title="Nach vorne">${icon("hoch")}</button><span class="db-gls" role="group" aria-label="Größe">${grZeig(k).map(glyph).join("")}</span><button class="db-ab" data-act="dbZug" data-w="${k}" data-d="1" ${i===sicht.length-1?"disabled":""} aria-label="Nach hinten" title="Nach hinten">${icon("runter")}</button></div>`:""}
     </section>`; };
   setTimeout(wetterKopf,0); if(!DB_ANP) setTimeout(()=>{ DB_ERST=false; },0);
   const versteckt=L.o.filter(k=>L.aus.includes(k)), F=dbFirma();
-  const anpKopf=DB_ANP?`<div class="db-hinweis"><p>${DESK.matches?"Kachel mit der Maus an die gewünschte Stelle ziehen":"Pfeile verschieben"}, unten die Größe wählen, „−“ blendet aus. Gilt nur für dich – auf all deinen Geräten.</p>
-    <div class="db-std">${ME.admin?`<button class="btn-tonal" data-act="dbFirmaSetzen">${icon("person")}Als Standard für alle</button>`:""}<button class="btn-text" data-act="dbStd">${F?"Firmen-Standard übernehmen":"Zurücksetzen"}</button></div></div>`:"";
+  const anpKopf=DB_ANP?`<div class="db-hinweis"><p>${DESK.matches?"Kachel mit der Maus an die gewünschte Stelle ziehen":"Pfeile verschieben"}, unten die Größe wählen, „−“ blendet aus. Gilt nur für dich – ${istHandy()?"auf all deinen Handys (iPad und PC haben eine eigene Anordnung)":"auf iPad und PC (das Handy hat eine eigene Anordnung)"}.</p>
+    <div class="db-std">${ME.admin&&!istHandy()?`<button class="btn-tonal" data-act="dbFirmaSetzen">${icon("person")}Als Standard für alle</button>`:""}${istHandy()?(((profilVon(ME.mail)||{}).startH)?`<button class="btn-text" data-act="dbStd">Wie auf iPad und PC</button>`:""):`<button class="btn-text" data-act="dbStd">${F?"Firmen-Standard übernehmen":"Zurücksetzen"}</button>`}</div></div>`:"";
   return `${anpKopf}
     <div class="wg-box"><div class="wg-raster${DB_ANP?" anp":""}">${sicht.map(kachel).join("")||`<p class="meta">Alle Kacheln sind ausgeblendet.</p>`}</div></div>
     ${DB_ANP&&versteckt.filter(k=>!PF.includes(k)).length?`<div class="sec-lbl" style="margin-top:20px">Ausgeblendet – antippen zum Hinzufügen</div><div class="db-weg">${versteckt.filter(k=>!PF.includes(k)).map(k=>`<button class="chip" data-act="dbEin" data-w="${k}">${icon("add")}${esc(DB_W[k])}</button>`).join("")}</div>`:""}`;
@@ -2495,13 +2633,13 @@ document.addEventListener("click",async ev=>{
   case "bauNeu": { if(!ME.admin) return; if(b.dataset.kind==="standorte"){ const st=standortOf(b.dataset.id); if(st) bauDialog(st.kundeId,st.id); } else bauDialog(b.dataset.id); return; }
   case "bauSave": bauSpeichern(); return;
   case "dbAnpassen": DB_ANP=true; render(); return;
-  case "dbFertig": DB_ANP=false; render(); toast("Startseite gespeichert – gilt auf all deinen Geräten"); return;
+  case "dbFertig": DB_ANP=false; render(); toast(istHandy()?"Gespeichert – gilt auf all deinen Handys":"Gespeichert – gilt auf deinen iPads und PCs"); return;
   case "dbZug": { const L=dbLayout(), k=b.dataset.w, v=L.o.filter(x=>!L.aus.includes(x)), i=v.indexOf(k), j=i+(+b.dataset.d); if(j<0||j>=v.length) return;
     const a=L.o.indexOf(k), z=L.o.indexOf(v[j]); [L.o[a],L.o[z]]=[L.o[z],L.o[a]]; dbLayoutSpeichern(L); render(); return; }
   case "dbBreite": { const L=dbLayout(), k=b.dataset.w, G=DB_GR[k]; L.gr[k]=G[(G.indexOf(L.gr[k])+1)%G.length]; dbLayoutSpeichern(L); render(); return; }
   case "dbGr": { const L=dbLayout(), k=b.dataset.w; if(!DB_GR[k].includes(b.dataset.g)||L.gr[k]===b.dataset.g) return; L.gr[k]=b.dataset.g; dbLayoutSpeichern(L); render(); return; }
   case "dbFirmaSetzen": { if(!ME.admin) return; dbFirmaSpeichern(dbLayout()); render(); toast("Deine Anordnung ist jetzt der Standard für alle, die noch nichts eingestellt haben"); return; }
-  case "dbStd": { const id=String(ME.mail||"").toLowerCase(), r=DB.profile.get(id); if(r&&r.start){ delete r.start; saveRec("profile",r,false); } render(); toast(dbFirma()?"Firmen-Standard übernommen":"Zurückgesetzt"); return; }
+  case "dbStd": { const id=String(ME.mail||"").toLowerCase(), r=DB.profile.get(id); const f=dbFeld(); if(r&&r[f]){ delete r[f]; saveRec("profile",r,false); } render(); toast(f==="startH"?"Wie auf iPad und PC":dbFirma()?"Firmen-Standard übernommen":"Zurückgesetzt"); return; }
   case "dbAus": { const L=dbLayout(); if(!L.aus.includes(b.dataset.w)) L.aus.push(b.dataset.w); dbLayoutSpeichern(L); render(); return; }
   case "dbEin": { const L=dbLayout(); L.aus=L.aus.filter(x=>x!==b.dataset.w); L.o=L.o.filter(x=>x!==b.dataset.w).concat(b.dataset.w); dbLayoutSpeichern(L); render(); return; }
   case "editLoc": { const kind=VIEW_KIND[nav.v]; locDialog(kind,DB[kind].get(nav.id)); return; }
