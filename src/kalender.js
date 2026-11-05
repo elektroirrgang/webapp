@@ -279,7 +279,15 @@ function kalKachel(anz,zeile,leer,gross){ const h=kalTag(new Date()), demo=typeo
   const wann=e=>kalGleich(e.von,h)||(e.ganz&&e.von<=h)?(e.ganz?"heute":`heute ${kalZeit(e.von)}`):kalGleich(e.von,kalPlus(h,1))?(e.ganz?"morgen":`morgen ${kalZeit(e.von)}`):e.von.toLocaleDateString("de-DE",{weekday:"short",day:"numeric",month:"numeric"})+(e.ganz?"":` ${kalZeit(e.von)}`);
   return {ic:"kal",v:"kalender",sub:heute.length?`${heute.length} heute`:E.length?`nächster ${wann(E[0])}`:"Keine Termine diese Woche",plus:["kalNeu","Termin anlegen"],
     s:()=>gross(heute.length,"heute"),
-    m:g=>E.length?E.slice(0,anz(g)).map(e=>zeile(e.privat&&!e.eigen?"Privat":e.t,[wann(e),e.ort].filter(Boolean).join(" · "))).join(""):leer(!demo&&KAL.verbinden?"Outlook noch nicht verbunden – im Kalender auf „Verbinden“.":"Keine Termine in den nächsten 7 Tagen.",true)}; }
+    m:g=>{ const liste=n=>E.slice(0,n).map(e=>zeile(e.privat&&!e.eigen?"Privat":e.t,[wann(e),e.ort].filter(Boolean).join(" · "))).join(""), hinweis=!demo&&KAL.verbinden?"Outlook noch nicht verbunden – im Kalender auf „Verbinden“.":"Keine Termine in den nächsten 7 Tagen.";
+      /* Groß und Breit: Woche oben, darunter die nächsten Termine. Mittel: Liste – ohne Termine statt Leere die Woche */
+      if(g==="l") return kalWoche(h,E)+(E.length?liste(3):`<p class="wg-leer klein">${hinweis}</p>`);
+      if(g==="b") return kalWoche(h,E)+liste(2);
+      return E.length?liste(anz(g)):kalWoche(h,E)+`<p class="wg-leer klein">${hinweis}</p>`; }}; }
+/* Wochenstreifen: heute + 6 Tage, Punkte je Termin (Farbe wie im Kalender), Wetter wenn vorhanden; Tag antippen öffnet den Kalender */
+function kalWoche(h,E){ const W=(typeof META!=="undefined"&&META.wetter&&META.wetter.tage)||[];
+  return `<div class="kw-str">${Array.from({length:7},(_,i)=>{ const d=kalPlus(h,i), n=kalPlus(d,1), iso=kalIso(d), T=E.filter(e=>e.von<n&&e.bis>d), w=W.find(x=>x.d===iso), we=d.getDay()===0||d.getDay()===6;
+    return `<button type="button" class="kw-tag${i===0?" heute":""}${we?" we":""}" data-act="kalTagAuf" data-d="${iso}" title="${esc(d.toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"}))}${T.length?` – ${T.length} ${T.length===1?"Termin":"Termine"}`:""}"><small>${i===0?"Heute":d.toLocaleDateString("de-DE",{weekday:"short"}).replace(".","")}</small><b>${d.getDate()}</b><span class="kw-p">${T.slice(0,4).map(e=>`<i class="kw-pt ${kalFarbe(e)}" style="${kalCV(e)}"></i>`).join("")}${T.length>4?`<em>+</em>`:""}</span>${w&&typeof wIc==="function"?`<span class="kw-w">${wIc(w.ic)}${w.max!=null?w.max+"°":""}</span>`:""}</button>`; }).join("")}</div>`; }
 /* Startseite lädt nur die nächsten Tage – unabhängig davon, welche Ansicht der Kalender gerade hat */
 function kalLadenStart(){ kalPLaden(); if(KAL.verbinden||(KAL.startAm&&Date.now()-KAL.startAm<300e3)) return; KAL.startAm=Date.now(); const h=kalTag(new Date()); kalLaden(false,{von:h,bis:kalPlus(h,7)}); }
 /* --- Termin anlegen / ändern --- */
