@@ -1989,7 +1989,7 @@ function navIndSetzen(){
     if(e.type==="pointercancel"||d.ziel.getAttribute("aria-current")==="page") navIndSetzen(); else d.ziel.click(); };
   nb.addEventListener("pointerup",ende); nb.addEventListener("pointercancel",ende);
   document.addEventListener("click",e=>{ if(e.isTrusted&&Date.now()<unterdr&&nb.contains(e.target)){ unterdr=0; e.stopPropagation(); e.preventDefault(); } },true);
-  addEventListener("resize",()=>navIndSetzen());
+  addEventListener("resize",()=>navIndSetzen()); if(window.ResizeObserver) new ResizeObserver(()=>navIndSetzen()).observe(nb); if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>navIndSetzen());
 })();
 
 
@@ -2134,7 +2134,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   $("#navbar").innerHTML=`<div class="nav-head"><button class="icon-btn nav-tog" data-act="railToggle" aria-label="${railOpen?"Seitenleiste einklappen":"Seitenleiste ausklappen"}" aria-expanded="${railOpen}">${icon(railOpen?"menuOpen":"menu")}</button><img class="nav-logo l-hell" src="${lh}" alt="Elektro Irrgang"><img class="nav-logo l-dunkel" src="${ld}" alt=""></div>`
     +(()=>{ if(nav.v==="kx"&&typeof KX_TABS!=="undefined"){ const a=kxTab(); return KX_TABS.map(([k,t,i])=>`<button class="nav-item" data-act="kxTab" data-v="${k}" ${k===a?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join(""); }
       const LV=(nav.v==="vt"||nav.v==="legende")&&typeof legAkt==="function"&&legAkt(); if(LV){ const a=legTab(LV); /* im Verteiler: Reiter unten wie die Schritte einer Prüfung */
-        return legTabs(LV).map(([k,t,i])=>`<button class="nav-item" data-act="legTab" data-v="${k}" ${k===a?'aria-current="page"':""}><span class="ind">${icon(i)}</span><span>${t}</span></button>`).join(""); }
+        return legTabs(LV).map(([k,t,i,kurz])=>`<button class="nav-item" data-act="legTab" data-v="${k}" ${k===a?'aria-current="page"':""} ${kurz?`aria-label="${t}"`:""}><span class="ind">${icon(i)}</span><span>${kurz&&!WIDE.matches?kurz:t}</span></button>`).join(""); }
       const P=nav.v==="ec"&&DB.echecks.get(nav.id); if(P&&!P.deleted){ const T=ecSchritte(P), a=ecTab(P); /* in der Prüfung: Schritte wie in EVSE */
         return T.map(([k,t,i,gesperrt])=>`<button class="nav-item${gesperrt?" gesperrt":""}" data-act="ecTab" data-v="${k}" ${k===a?'aria-current="page"':""} ${gesperrt?'aria-disabled="true"':""}><span class="ind">${icon(gesperrt?"lock":i)}</span><span>${t}</span></button>`
 ).join(""); }
@@ -2154,7 +2154,7 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
   else if(nav.v==="netzkatmodell"){ const K=ecRkKat(nav.id); if(!K){ nav={v:"netzkatalog"}; return render(); } title=K.kurz||K.modell; sub=K.hersteller; body=ecKatModellView(K); }
   else if(nav.v==="ec"){ const p=DB.echecks.get(nav.id); if(!p||p.deleted){ nav={v:"anlagen"}; return render(); }
     title=ecOrt(p.ortId).titel; sub=`${EC_ART[p.art||"anlage"]} · ${ecDatum(p.datum)}`; if(rkS){ sub=`Netzwerkschrank · ${title}`; title=rkS.name; } body=ecView(p); }
-  else if(nav.v==="kunden"){ title="Kunden"; body=kbSeg("kunden")+(typeof zuletztHtml==="function"&&!query?`<div class="narrow">${zuletztHtml()}</div>`:"")+kundenView(); fab=["newKunde","Kunde","add"]; }
+  else if(nav.v==="kunden"){ title="Kunden"; body=kbSeg("kunden")+kundenView(); fab=["newKunde","Kunde","add"]; }
   else if(nav.v==="bibliothek"){ title=kbHandy()?"Kunden":"Bibliothek"; body=kbSeg("bibliothek")+bibliothekView(); }
   else if(nav.v==="mehr"){ title="Einstellungen"; body=mehrView(); }
   else if(KONTO_SEITEN[nav.v]){ title=KONTO_SEITEN[nav.v][0]; body=KONTO_SEITEN[nav.v][1](); }
@@ -2242,7 +2242,7 @@ function kzAusfuehren(zid,wegIds){
 }
 function kundenView(){
   if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden und Standorte sind dieselben wie in der Übersicht und den Apps EVSE und Baustelle.</p></div><div class="narrow">${legOhneEintrag(false)}</div>`;
-  return `<div class="narrow">${searchBar("Kunde, Ort, Kontakt",fKnopf("kunden"))}${query?"":kDoppeltKarte()}<div id="res">${kundenListe()}</div></div>`;
+  return `<div class="narrow">${searchBar("Kunde, Ort, Kontakt",fKnopf("kunden"))}${query?"":(typeof zuletztHtml==="function"?zuletztHtml():"")+kDoppeltKarte()}<div id="res">${kundenListe()}</div></div>`;
 }
 function kundeView(k){ return kdSeite(k,"kunden",ecBeiKunde("kunden",k)+gvBeiKunde("kunden",k)+vtBeiKunde("kunden",k)+kxBeiKunde("kunden",k)); }
 function standortView(s){ return kdSeite(s,"standorte",ecBeiKunde("standorte",s)+gvBeiKunde("standorte",s)+vtBeiKunde("standorte",s)+kxBeiKunde("standorte",s)); }

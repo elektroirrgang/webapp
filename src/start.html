@@ -1727,7 +1727,7 @@ function navIndSetzen(){
     if(e.type==="pointercancel"||d.ziel.getAttribute("aria-current")==="page") navIndSetzen(); else d.ziel.click(); };
   nb.addEventListener("pointerup",ende); nb.addEventListener("pointercancel",ende);
   document.addEventListener("click",e=>{ if(e.isTrusted&&Date.now()<unterdr&&nb.contains(e.target)){ unterdr=0; e.stopPropagation(); e.preventDefault(); } },true);
-  addEventListener("resize",()=>navIndSetzen());
+  addEventListener("resize",()=>navIndSetzen()); if(window.ResizeObserver) new ResizeObserver(()=>navIndSetzen()).observe(nb); if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>navIndSetzen());
 })();
 
 const monatVon=d=>{ const x=new Date((d||"")+"T12:00"); return isNaN(x)?"Ohne Datum":x.toLocaleDateString("de-DE",{month:"long",year:"numeric"}); };
