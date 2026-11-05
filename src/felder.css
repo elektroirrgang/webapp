@@ -2084,7 +2084,7 @@ body.has-nav .bsp-karte{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
     html body nav.navbar.zieht{touch-action:none}
     html body nav.navbar .nav-ind{display:block;position:absolute;left:0;top:5px;height:54px;width:0;border-radius:27px;background:var(--sec-c);pointer-events:none;z-index:0;opacity:0;
       transition:translate .34s cubic-bezier(.32,.72,0,1),width .34s cubic-bezier(.32,.72,0,1),scale .2s ease-out,opacity .15s}
-    html body nav.navbar.zieht .nav-ind{transition:width .2s ease-out,scale .2s ease-out;scale:1.06}
+    html body nav.navbar.zieht .nav-ind{transition:width .2s ease-out,scale .22s cubic-bezier(.3,1.4,.5,1),box-shadow .2s;scale:1.18;box-shadow:0 6px 18px rgba(0,0,0,.28)}
     html body nav.navbar.zieht .nav-item[aria-current="page"]{color:var(--on-sv)}
     html body nav.navbar.zieht .nav-item.nav-ziel{color:var(--on-sec-c)}
     html body .fab{bottom:calc(var(--dock-u) + 64px + 10px)}
