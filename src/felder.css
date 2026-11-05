@@ -2216,3 +2216,7 @@ body.has-nav .bsp-karte{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .kx-live-av{width:40px;height:40px;border-radius:50%;background:var(--ok-c);display:grid;place-items:center}.kx-live-av svg{width:22px;height:22px;fill:var(--ok)}
 .kx-live.warn .kx-live-av{background:rgba(255,255,255,.2)}.kx-live.warn .kx-live-av svg{fill:var(--on-fab)}
 @media (prefers-reduced-motion:reduce){.kx-live-lbl i{animation:none}}
+
+.kxz-ende{display:flex;justify-content:center;margin:4px 0 24px}.kxz-ende .btn-tonal{min-width:200px;justify-content:center}
+.kxz-fehler{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:12px 16px;border-radius:18px;background:var(--wip-c);font-weight:700;font-size:14px}
+.kxz-fehler svg,.kxz-fehler .ic{width:22px;height:22px;fill:#E0A526;flex:none}
