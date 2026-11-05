@@ -429,7 +429,7 @@ function datenschutzView(){
 </ul>
     <p>Rechtsgrundlage ist jeweils Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an funktionierenden Karten, Adressen und Wetterangaben). Die Info-Seiten hinter den QR-Aufklebern sind öffentlich und haben eigene Hinweise (webapp.elektro-irrgang.de/recht/); nur dort gibt es eine Geschwindigkeitsmessung über Cloudflare.</p>
     <p><b>KI über Microsoft</b> (Azure OpenAI) ist vorbereitet, aber ausgeschaltet. Vor dem Einschalten werden diese Hinweise ergänzt.</p>
-    <p><b>Produktbilder</b> in den Katalogen liegen auf unserem eigenen Server und werden nicht von Herstellerseiten geladen. Nur ein Bild, das ein Mitarbeiter selbst als Internetadresse einträgt, kommt direkt von der jeweiligen Seite.</p>
+    <p><b>Produktbilder</b> in den Katalogen und Zeichnungen liegen im SharePoint von ${F.name} und sind nur nach der Anmeldung sichtbar; sie werden nicht von Herstellerseiten geladen. Nur ein Bild, das ein Mitarbeiter selbst als Internetadresse einträgt, kommt direkt von der jeweiligen Seite.</p>
     ${h(8,"Keine Cookies, kein Tracking")}
     <p>Die Apps setzen keine Cookies und nutzen keine Analyse- oder Werbedienste. Für die Anmeldung wird die Microsoft-Anmeldeseite aufgerufen. Benachrichtigungen erzeugt die App selbst auf dem Gerät; es wird kein Push-Dienst eines Dritten verwendet.</p>
     ${h(9,"Speicherdauer")}

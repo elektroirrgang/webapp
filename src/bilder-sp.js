@@ -38,7 +38,9 @@ const bspEntw=()=>typeof meineRollen==="function"&&meineRollen().includes("Entwi
 const bspMobilfunk=()=>{ const c=navigator.connection; return !!(c&&(c.type==="cellular"||c.saveData)); };
 function bspGesperrt(){ try{ const t=+localStorage.getItem(BSP_SPERRE)||0; return Date.now()-t<15000; }catch(e){ return false; } }
 function bspSperren(an){ try{ an?localStorage.setItem(BSP_SPERRE,String(Date.now())):localStorage.removeItem(BSP_SPERRE); }catch(e){} }
-async function bspAlleDateien(){ try{ const r=await fetch("../bilder/alle.json?"+Date.now(),{cache:"no-store"}); if(!r.ok) return []; return await r.json(); }catch(e){ return []; } }
+/* Was noch auf dem öffentlichen Server liegt: alle.json bleibt nach dem Löschen stehen – deshalb an der ersten Datei prüfen, ob es sie dort noch gibt */
+async function bspAlleDateien(){ try{ const r=await fetch("../bilder/alle.json?"+Date.now(),{cache:"no-store"}); if(!r.ok) return []; const A=await r.json(); if(!A.length) return [];
+  const h=await fetch("../bilder/"+A[0]+"?probe="+Date.now(),{method:"HEAD",cache:"no-store"}).catch(()=>null); return h&&h.ok?A:[]; }catch(e){ return []; } }
 async function bspFehlende(){ const A=await bspAlleDateien(), L=BSP.liste||{}; return {A,fehlt:A.filter(p=>!L[bspPfad(bspName(p))])}; }
 /* von bspListe aufgerufen, wenn die Liste neu ist */
 async function bspAuto(){ if(BSP_UMZUG.laeuft||!bspEntw()||bspMobilfunk()||bspGesperrt()) return;
@@ -51,16 +53,20 @@ async function bspAuto(){ if(BSP_UMZUG.laeuft||!bspEntw()||bspMobilfunk()||bspGe
 const BSP_RING=2*Math.PI*20;
 function bspKarte(){ let k=document.getElementById("bspKarte"); const U=BSP_UMZUG;
   if(U.zu&&U.laeuft) return;
-  if(!k){ k=document.createElement("div"); k.id="bspKarte"; k.className="bsp-karte"; k.setAttribute("role","status");
+  /* PC mit Seitenleiste: kleines Kästchen unten in der Leiste über „Einstellungen“ – Handy/iPad: Karte unten */
+  const sf=document.querySelector("#seitenFuss:not([hidden])");
+  if(k&&!!sf!==k.classList.contains("klein")){ k.remove(); k=null; }
+  if(!k){ k=document.createElement("div"); k.id="bspKarte"; k.className="bsp-karte"+(sf?" klein":""); k.setAttribute("role","status");
     k.innerHTML=`<span class="bsp-ring"><svg viewBox="0 0 48 48" aria-hidden="true"><circle class="bg" cx="24" cy="24" r="20"/><circle class="vg" cx="24" cy="24" r="20" stroke-dasharray="${BSP_RING.toFixed(2)}" stroke-dashoffset="${BSP_RING.toFixed(2)}"/></svg><span class="bsp-ic">${icon("upload")}</span></span>
       <span class="bsp-t"><b></b><small></small><span class="bsp-bar"><i></i></span></span><button type="button" class="bsp-zu" data-act="bspZu" aria-label="Ausblenden">${icon("bspZu")}</button>`;
-    document.body.appendChild(k); requestAnimationFrame(()=>k.classList.add("da")); }
+    if(sf) sf.prepend(k); else document.body.appendChild(k); requestAnimationFrame(()=>k.classList.add("da")); }
+  const klein=k.classList.contains("klein");
   const q=U.gesamt?U.fertig/U.gesamt:0, rest=U.fertig>3?Math.round((Date.now()-U.t0)/U.fertig*(U.gesamt-U.fertig)/1000):null;
   k.querySelector(".vg").setAttribute("stroke-dashoffset",(BSP_RING*(1-q)).toFixed(2));
   k.querySelector(".bsp-bar i").style.width=(q*100).toFixed(1)+"%";
   k.classList.toggle("fertig",!U.laeuft);
-  k.querySelector("b").textContent=U.laeuft?"Produktbilder ziehen um":U.fehler?`${U.neu} von ${U.gesamt} Bildern im SharePoint`:`${U.gesamt} Bilder im SharePoint`;
-  k.querySelector("small").textContent=U.laeuft?`In den SharePoint · ${U.fertig} von ${U.gesamt}${rest!=null?` · noch ${rest>=90?`ca.\u00a0${Math.round(rest/60)}\u00a0Min.`:`${Math.max(5,rest)}\u00a0s`}`:" · wird vorbereitet"}${U.fehler?` · ${U.fehler} Fehler`:""}`
+  k.querySelector("b").textContent=klein?(U.laeuft?"Bilder in den SharePoint":U.fehler?`${U.neu} von ${U.gesamt} Bildern oben`:`${U.gesamt} Bilder im SharePoint`):U.laeuft?"Produktbilder ziehen um":U.fehler?`${U.neu} von ${U.gesamt} Bildern im SharePoint`:`${U.gesamt} Bilder im SharePoint`;
+  k.querySelector("small").textContent=klein?(U.laeuft?`${U.fertig} von ${U.gesamt}${rest!=null?` · ${rest>=90?`${Math.round(rest/60)}\u00a0Min.`:`${Math.max(5,rest)}\u00a0s`}`:""}`:U.fehler?`${U.fehler} beim nächsten Start`:"nur nach Anmeldung sichtbar"):U.laeuft?`In den SharePoint · ${U.fertig} von ${U.gesamt}${rest!=null?` · noch ${rest>=90?`ca.\u00a0${Math.round(rest/60)}\u00a0Min.`:`${Math.max(5,rest)}\u00a0s`}`:" · wird vorbereitet"}${U.fehler?` · ${U.fehler} Fehler`:""}`
     :U.fehler?`${U.fehler} nicht geklappt – der nächste Start versucht es erneut`:"Ab jetzt nur noch nach der Anmeldung sichtbar";
   if(!U.laeuft){ k.querySelector(".bsp-ic").innerHTML=icon(U.fehler?"bspWarn":"bspLock"); clearTimeout(k._weg); k._weg=setTimeout(()=>bspKarteWeg(),U.fehler?9000:6000); } }
 function bspKarteWeg(){ const k=document.getElementById("bspKarte"); if(!k) return; k.classList.remove("da"); setTimeout(()=>k.remove(),300); }

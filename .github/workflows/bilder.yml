@@ -1,11 +1,10 @@
 # Holt Herstellerbilder auf den eigenen Server (bilder/), baut die Apps neu und veröffentlicht.
 # Läuft bei jeder Änderung in src/ und auf Knopfdruck (Actions → Bilder holen → Run workflow).
 name: Bilder holen
+# Seit 05.11.2026 nur noch von Hand: Die Bilder liegen im SharePoint (nicht öffentlich). Neue Herstellerbilder holt diese Action
+# vorübergehend auf den Server; die App des Entwicklers lädt sie von selbst in den SharePoint, danach wieder aus bilder/ löschen.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ["src/**", "tools/bilder.py"]
 permissions:
   contents: write
   pages: write
