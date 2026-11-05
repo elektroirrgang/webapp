@@ -1964,6 +1964,8 @@ function pfadTeile(){
   if(nav.v==="legende"){ const L=DB.legenden.get(nav.id); return L&&kundeOf(L.kundeId)?kette(L.kundeId,L.standortId):[["Kunden",{v:"kunden"}],["Ohne Kunde",{v:"ohnekunde"}]]; }
   if(nav.v==="ohnekunde") return [["Kunden",{v:"kunden"}]];
   if(nav.v==="vt"){ const L=vtL(nav.g,nav.id); return L&&kundeOf(L.kundeId)?kette(L.kundeId,L.standortId):[["Installation",{v:"anlagen"}]]; }
+  if(nav.v==="geb"){ const o=ecOrt(nav.ort)||{}; return o.kunde?kette(o.kunde.id,o.standort&&o.standort.id):[["Kunden",{v:"kunden"}]]; }   /* Gebäude, Etage, Raum: Zurück-Pfeil im Seitenkopf (PC/iPad) */
+  if(nav.v==="kx") return [["KNX",{v:"knx"}]];
   return [];
 }
 let NAV_IND_ALT=null;
