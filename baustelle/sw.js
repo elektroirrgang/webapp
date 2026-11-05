@@ -1,4 +1,4 @@
-const CACHE = "bau-v1.9.30-ac2164e0";
+const CACHE = "bau-v1.9.31-c6851e46";
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll([new Request("./", {cache: "reload"}), new Request("./index.html", {cache: "reload"}), new Request("./pdfjs/pdf.min.js", {cache: "reload"}), new Request("./pdfjs/pdf.worker.min.js", {cache: "reload"})]))); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith("bau-v") && k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
 /* Produktbilder (/bilder/…) liegen im SharePoint der Firma, nicht öffentlich. Die App schickt nach der Anmeldung die Liste
