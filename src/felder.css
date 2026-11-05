@@ -2070,10 +2070,15 @@ body.has-nav .bsp-karte{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
   /* Statusleiste ist durchsichtig: bei kurzen Seiten rechnet iOS die Bildschirmhöhe ohne Statusleiste –
      Dock und Knöpfe unten schweben dann um die Statusleistenhöhe zu hoch. Seite deshalb immer mindestens bildschirmhoch. */
   html.standalone{min-height:calc(100% + env(safe-area-inset-top,0px))}
-  /* Dock wie bei iOS: flacher, weniger Luft über dem Home-Balken */
+  /* iPhone: schwebendes Dock wie im App Store (iOS 26) – Kapsel mit Abstand zum Rand, gefüllt statt Glas,
+     ganzer Eintrag als Pille markiert. --dock-u = Abstand unten (über dem Home-Balken) */
   @media (max-width:743px){
-    html body nav.navbar .nav-item{height:62px}
-    html body nav.navbar{padding-bottom:max(6px,calc(env(safe-area-inset-bottom,0px) - 12px))}
-    html body .fab{bottom:calc(78px + max(6px,calc(env(safe-area-inset-bottom,0px) - 12px)))}
+    html{--dock-u:max(10px,calc(env(safe-area-inset-bottom,0px) - 12px))}
+    html body nav.navbar{left:max(16px,calc(env(safe-area-inset-left,0px) + 16px))!important;right:max(16px,calc(env(safe-area-inset-right,0px) + 16px))!important;bottom:var(--dock-u)!important;
+      height:64px;padding:5px!important;gap:0;border-radius:32px!important;background:var(--sc-high)!important;box-shadow:0 8px 24px rgba(0,0,0,.22),0 1px 4px rgba(0,0,0,.14);box-sizing:border-box}
+    html body nav.navbar .nav-item{height:54px;border-radius:27px;gap:1px;font-size:11px;letter-spacing:0;transition:background .2s}
+    html body nav.navbar .nav-item .ind{width:auto;height:28px;background:transparent!important}
+    html body nav.navbar .nav-item[aria-current="page"]{background:var(--sec-c);color:var(--on-sec-c)}
+    html body .fab{bottom:calc(var(--dock-u) + 64px + 16px)}
   }
 }
