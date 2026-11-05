@@ -2076,9 +2076,17 @@ body.has-nav .bsp-karte{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
     html{--dock-u:max(10px,calc(env(safe-area-inset-bottom,0px) - 12px))}
     html body nav.navbar{left:max(16px,calc(env(safe-area-inset-left,0px) + 16px))!important;right:max(16px,calc(env(safe-area-inset-right,0px) + 16px))!important;bottom:var(--dock-u)!important;
       height:64px;padding:5px!important;gap:0;border-radius:32px!important;background:var(--sc-high)!important;box-shadow:0 8px 24px rgba(0,0,0,.22),0 1px 4px rgba(0,0,0,.14);box-sizing:border-box}
-    html body nav.navbar .nav-item{flex:1 1 auto;min-width:0;height:54px;padding:0 8px;border-radius:27px;gap:1px;font-size:11px;letter-spacing:0;transition:background .2s}
+    html body nav.navbar .nav-item{flex:1 1 0;min-width:0;height:54px;padding:0 2px;border-radius:27px;gap:1px;font-size:10px;letter-spacing:0;position:relative;z-index:1;background:transparent!important;-webkit-tap-highlight-color:transparent;transition:color .2s}
     html body nav.navbar .nav-item .ind{width:auto;height:28px;background:transparent!important}
-    html body nav.navbar .nav-item[aria-current="page"]{background:var(--sec-c);color:var(--on-sec-c)}
-    html body .fab{bottom:calc(var(--dock-u) + 64px + 16px)}
+    html body nav.navbar .nav-item[aria-current="page"]{color:var(--on-sec-c)}
+    /* die Pille ist ein eigenes Element (.nav-ind) – gedrückt halten und zur Seite ziehen wechselt den Bereich */
+    html body nav.navbar{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+    html body nav.navbar.zieht{touch-action:none}
+    html body nav.navbar .nav-ind{display:block;position:absolute;left:0;top:5px;height:54px;width:0;border-radius:27px;background:var(--sec-c);pointer-events:none;z-index:0;opacity:0;
+      transition:translate .34s cubic-bezier(.32,.72,0,1),width .34s cubic-bezier(.32,.72,0,1),scale .2s ease-out,opacity .15s}
+    html body nav.navbar.zieht .nav-ind{transition:width .2s ease-out,scale .2s ease-out;scale:1.06}
+    html body nav.navbar.zieht .nav-item[aria-current="page"]{color:var(--on-sv)}
+    html body nav.navbar.zieht .nav-item.nav-ziel{color:var(--on-sec-c)}
+    html body .fab{bottom:calc(var(--dock-u) + 64px + 10px)}
   }
 }
