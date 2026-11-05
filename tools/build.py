@@ -91,6 +91,16 @@ def baue_qr():
     (root / "q" / "index.html").write_text(html, encoding="utf-8")
     shutil.copyfile(root / "src/fi-pruefung.ics", root / "q" / "fi-pruefung.ics")
     print(f"q/index.html: {len(html)} Zeichen")
+    # Impressum und Datenschutz für die öffentlichen Seiten (QR-Seite, Anmeldeseiten) – /recht/
+    r = (root / "src/recht.html").read_text(encoding="utf-8")
+    r = r.replace("<!--LOGO_HELL-->", "data:image/png;base64," + b64("brand/logo-hell.png"))
+    r = r.replace("<!--LOGO_DUNKEL-->", "data:image/png;base64," + b64("brand/logo-dunkel.png"))
+    r = r.replace("<!--ICON_FAV-->", "data:image/png;base64," + b64("echeck/icon-rund-64.png"))
+    for w in (400, 700, 800):
+        r = r.replace(f"<!--F{w}-->", b64(f"vendor/fonts/manrope-latin-{w}-normal.woff2"))
+    (root / "recht").mkdir(exist_ok=True)
+    (root / "recht" / "index.html").write_text(r, encoding="utf-8")
+    print(f"recht/index.html: {len(r)} Zeichen")
 
 
 baue_qr()
