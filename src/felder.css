@@ -1717,6 +1717,9 @@ body.sc-offen{overflow:hidden}
 #sc.sc-liest .sc-foto{opacity:.5;pointer-events:none}
 #sc.sc-treffer .sc-foto,#sc.sc-ohne .sc-foto,#sc.sc-ohne .sc-bild{display:none}
 #sc:not(.sc-fotom) .sc-foto{display:none}
+/* zu dunkel: „Code eintippen“ bzw. Taschenlampe hervorheben */
+#sc.sc-dunkel:not(.sc-dunkel-lampe) .sc-pill[data-sc="nr"]{background:var(--fab);color:var(--on-fab)}
+#sc.sc-dunkel-lampe .sc-licht:not(.sc-kam){background:var(--fab);color:var(--on-fab)}
 /* Erkannt: „Öffnen“ füllt sich 1 s lang, dann öffnet der Aufkleber von selbst */
 #sc .sc-h.sc-auto{position:relative;overflow:hidden;isolation:isolate}
 #sc .sc-h.sc-auto::after{content:"";position:absolute;inset:0;z-index:-1;background:rgba(255,255,255,.24);transform-origin:left center;animation:scAuto 1s linear forwards}
