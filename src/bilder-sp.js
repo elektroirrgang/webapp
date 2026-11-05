@@ -20,7 +20,7 @@ async function bspListe(erzwingen){
   BSP.laeuft=true; let fertig; BSP.p=new Promise(r=>fertig=r);
   try{ await syncRoot(); const fid=await folderId(BSP_ORDNER,BSP_BIB), L=await listAll(fid), m={};
     L.forEach(it=>{ if(it.file&&it["@microsoft.graph.downloadUrl"]) m[bspPfad(it.name)]=it["@microsoft.graph.downloadUrl"]; });
-    BSP.liste=m; BSP.t=Date.now(); BSP.anzahl=Object.keys(m).length; await bspAnSw(m); setTimeout(bspNachladen,400);
+    BSP.liste=m; BSP.t=Date.now(); BSP.anzahl=Object.keys(m).length; await bspAnSw(m); setTimeout(bspNachladen,400); setTimeout(()=>bspAuto(),1500);
   }catch(e){ console.warn("Bilderliste",e); }
   finally{ BSP.laeuft=false; fertig(); }
   return BSP.liste; }
@@ -28,30 +28,70 @@ setTimeout(()=>bspListe(),2500);
 setInterval(()=>{ if(document.visibilityState==="visible") bspListe(); },5*60e3);
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") bspListe(); });
 
-/* ---- Einmaliger Umzug (Entwickler, Übersicht › Mehr › Verwaltung): Bilder vom Server in den SharePoint kopieren ---- */
-const BSP_UMZUG={laeuft:false,fertig:0,neu:0,fehler:0,gesamt:0,abbruch:false};
+/* ---- Umzug in den SharePoint: läuft beim Entwickler von selbst im Hintergrund (Max, 05.11.2026) ----
+   Sobald die Liste da ist und auf dem Server noch Bilder liegen, die im SharePoint fehlen, lädt die App sie hoch –
+   vier gleichzeitig, mit Fortschrittskarte unten. Nur eine App bzw. ein Tab gleichzeitig (Sperre im Gerätespeicher).
+   Nicht im Mobilfunk (rund 80 MB). Fehlgeschlagene Bilder versucht der nächste Start erneut. */
+const BSP_UMZUG={laeuft:false,fertig:0,neu:0,fehler:0,gesamt:0,t0:0,zu:false,fehlt:[]};
+const BSP_SPERRE="irrgang_bilder_umzug";
+const bspEntw=()=>typeof meineRollen==="function"&&meineRollen().includes("Entwickler");
+const bspMobilfunk=()=>{ const c=navigator.connection; return !!(c&&(c.type==="cellular"||c.saveData)); };
+function bspGesperrt(){ try{ const t=+localStorage.getItem(BSP_SPERRE)||0; return Date.now()-t<15000; }catch(e){ return false; } }
+function bspSperren(an){ try{ an?localStorage.setItem(BSP_SPERRE,String(Date.now())):localStorage.removeItem(BSP_SPERRE); }catch(e){} }
 async function bspAlleDateien(){ try{ const r=await fetch("../bilder/alle.json?"+Date.now(),{cache:"no-store"}); if(!r.ok) return []; return await r.json(); }catch(e){ return []; } }
-function bspZeile(){ return `<div class="li" role="button" tabindex="0" data-act="bspDlg"><span class="av">${icon("upload")}</span><span class="lt"><span class="h">Produktbilder im SharePoint</span><span class="s">${BSP.liste?`${BSP.anzahl} Bilder hinter der Anmeldung`:"Bilder aus dem öffentlichen Server übernehmen"}</span></span>${icon("chev")}</div>`; }
-async function bspDlg(){ const A=await bspAlleDateien(), L=(await bspListe(true))||{}, fehlt=A.filter(p=>!L[bspPfad(bspName(p))]);
-  const U=BSP_UMZUG;
-  dialog("Produktbilder im SharePoint",`<p>Herstellerfotos und Feldgrafiken liegen künftig nur noch im SharePoint der Firma (Bibliothek „Kundendaten“ › „_App/Bilder“) – sichtbar erst nach der Anmeldung. Danach werden sie vom öffentlichen Server gelöscht.</p>
-    <p style="margin:12px 0"><b>${A.length}</b> auf dem Server · <b>${A.length-fehlt.length}</b> im SharePoint · <b>${fehlt.length}</b> fehlen noch</p>
-    <p class="hint" id="bspStand">${U.laeuft?`Läuft … ${U.fertig} von ${U.gesamt}`:fehlt.length?`Einmal hochladen, dauert je nach Netz einige Minuten (rund ${Math.round(A.length/3)} MB). App dabei offen lassen.`:A.length?"Alle Bilder sind im SharePoint. Sie können jetzt vom Server gelöscht werden.":"Keine Bilder mehr auf dem Server – die Apps laden alles aus dem SharePoint."}</p>`,
-    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>${fehlt.length&&!U.laeuft?`<button class="btn-text" data-act="bspLos">${fehlt.length} hochladen</button>`:""}`);
-  BSP_UMZUG.fehlt=fehlt; }
+async function bspFehlende(){ const A=await bspAlleDateien(), L=BSP.liste||{}; return {A,fehlt:A.filter(p=>!L[bspPfad(bspName(p))])}; }
+/* von bspListe aufgerufen, wenn die Liste neu ist */
+async function bspAuto(){ if(BSP_UMZUG.laeuft||!bspEntw()||bspMobilfunk()||bspGesperrt()) return;
+  const {fehlt}=await bspFehlende(); if(!fehlt.length) return;
+  /* Prüfen, ob die Dateien auf dem Server überhaupt noch liegen (nach dem Löschen nicht mehr) */
+  try{ const r=await fetch("../bilder/"+fehlt[0]+"?probe="+Date.now(),{method:"HEAD",cache:"no-store"}); if(!r.ok) return; }catch(e){ return; }
+  BSP_UMZUG.fehlt=fehlt; bspHochladen(); }
+
+/* ---- Fortschrittskarte ---- */
+const BSP_RING=2*Math.PI*20;
+function bspKarte(){ let k=document.getElementById("bspKarte"); const U=BSP_UMZUG;
+  if(U.zu&&U.laeuft) return;
+  if(!k){ k=document.createElement("div"); k.id="bspKarte"; k.className="bsp-karte"; k.setAttribute("role","status");
+    k.innerHTML=`<span class="bsp-ring"><svg viewBox="0 0 48 48" aria-hidden="true"><circle class="bg" cx="24" cy="24" r="20"/><circle class="vg" cx="24" cy="24" r="20" stroke-dasharray="${BSP_RING.toFixed(2)}" stroke-dashoffset="${BSP_RING.toFixed(2)}"/></svg><span class="bsp-ic">${icon("upload")}</span></span>
+      <span class="bsp-t"><b></b><small></small><span class="bsp-bar"><i></i></span></span><button type="button" class="bsp-zu" data-act="bspZu" aria-label="Ausblenden">${icon("bspZu")}</button>`;
+    document.body.appendChild(k); requestAnimationFrame(()=>k.classList.add("da")); }
+  const q=U.gesamt?U.fertig/U.gesamt:0, rest=U.fertig>3?Math.round((Date.now()-U.t0)/U.fertig*(U.gesamt-U.fertig)/1000):null;
+  k.querySelector(".vg").setAttribute("stroke-dashoffset",(BSP_RING*(1-q)).toFixed(2));
+  k.querySelector(".bsp-bar i").style.width=(q*100).toFixed(1)+"%";
+  k.classList.toggle("fertig",!U.laeuft);
+  k.querySelector("b").textContent=U.laeuft?"Produktbilder ziehen um":U.fehler?`${U.neu} von ${U.gesamt} Bildern im SharePoint`:`${U.gesamt} Bilder im SharePoint`;
+  k.querySelector("small").textContent=U.laeuft?`In den SharePoint · ${U.fertig} von ${U.gesamt}${rest!=null?` · noch ${rest>=90?`ca.\u00a0${Math.round(rest/60)}\u00a0Min.`:`${Math.max(5,rest)}\u00a0s`}`:" · wird vorbereitet"}${U.fehler?` · ${U.fehler} Fehler`:""}`
+    :U.fehler?`${U.fehler} nicht geklappt – der nächste Start versucht es erneut`:"Ab jetzt nur noch nach der Anmeldung sichtbar";
+  if(!U.laeuft){ k.querySelector(".bsp-ic").innerHTML=icon(U.fehler?"bspWarn":"bspLock"); clearTimeout(k._weg); k._weg=setTimeout(()=>bspKarteWeg(),U.fehler?9000:6000); } }
+function bspKarteWeg(){ const k=document.getElementById("bspKarte"); if(!k) return; k.classList.remove("da"); setTimeout(()=>k.remove(),300); }
+Object.assign(IC,{bspLock:"M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z",
+  bspZu:"M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
+  bspWarn:"M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"});
+
 async function bspHochladen(){ const U=BSP_UMZUG; if(U.laeuft) return; const P=(U.fehlt||[]).slice(); if(!P.length) return;
-  Object.assign(U,{laeuft:true,fertig:0,neu:0,fehler:0,gesamt:P.length,abbruch:false});
-  const stand=()=>{ const s=document.getElementById("bspStand"); if(s) s.textContent=`Läuft … ${U.fertig} von ${U.gesamt}${U.fehler?` · ${U.fehler} Fehler`:""}`; };
+  Object.assign(U,{laeuft:true,fertig:0,neu:0,fehler:0,gesamt:P.length,t0:Date.now(),zu:false});
+  bspSperren(true); const puls=setInterval(()=>bspSperren(true),5000); bspKarte();
   try{ await syncRoot(); const fid=await folderId(BSP_ORDNER,BSP_BIB);
-    for(const p of P){ if(U.abbruch) break;
-      try{ const r=await fetch("../bilder/"+p,{cache:"no-store"}); if(!r.ok) throw new Error("Server "+r.status);
-        const b=await r.blob(), up=await g(`/drives/${fid}:/${encodeURIComponent(bspName(p))}:/content`,{method:"PUT",headers:{"Content-Type":b.type||"application/octet-stream"},body:b});
-        if(!up.ok) throw new Error("SharePoint "+up.status); U.neu++;
-      }catch(e){ U.fehler++; console.warn("Bild",p,e); }
-      U.fertig++; stand(); }
-  } finally{ U.laeuft=false; }
-  await bspListe(true);
-  toast(U.fehler?`${U.neu} Bilder hochgeladen, ${U.fehler} fehlgeschlagen – nochmal starten`:`${U.neu} Bilder im SharePoint`);
-  if(!document.getElementById("dlg").hidden&&document.getElementById("bspStand")) bspDlg(); }
-document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="bspDlg"],[data-act="bspLos"]'); if(!b) return; e.stopPropagation();
-  if(b.dataset.act==="bspDlg") bspDlg(); else { b.disabled=true; bspHochladen(); } },true);
+    const eins=async p=>{ for(let v=0;v<2;v++){ try{ const r=await fetch("../bilder/"+p,{cache:"no-store"}); if(!r.ok) throw new Error("Server "+r.status);
+          const b=await r.blob(), up=await g(`/drives/${fid}:/${encodeURIComponent(bspName(p))}:/content`,{method:"PUT",headers:{"Content-Type":b.type||"application/octet-stream"},body:b});
+          if(!up.ok) throw new Error("SharePoint "+up.status); U.neu++; return; }catch(e){ if(v) { U.fehler++; console.warn("Bild",p,e); } } } };
+    const arbeiter=async()=>{ while(P.length){ const p=P.shift(); await eins(p); U.fertig++; bspKarte(); bspStandDlg(); } };
+    await Promise.all([arbeiter(),arbeiter(),arbeiter(),arbeiter()]);
+  }catch(e){ console.warn("Umzug",e); U.fehler+=P.length; U.fertig=U.gesamt; }
+  finally{ U.laeuft=false; clearInterval(puls); bspSperren(false); }
+  await bspListe(true); U.zu=false; bspKarte(); bspStandDlg();
+  if(typeof nav!=="undefined"&&nav.v==="mehr"&&typeof render==="function") render(); }
+
+/* ---- Zeile in Einstellungen › Verwaltung und Detailfenster ---- */
+function bspZeile(){ const U=BSP_UMZUG; return `<div class="li" role="button" tabindex="0" data-act="bspDlg"><span class="av">${icon(U.laeuft?"upload":"bspLock")}</span><span class="lt"><span class="h">Produktbilder im SharePoint</span><span class="s">${U.laeuft?`Wird hochgeladen … ${U.fertig} von ${U.gesamt}`:BSP.liste?`${BSP.anzahl} Bilder, nur nach der Anmeldung sichtbar`:"Wird beim nächsten Start geprüft"}</span></span>${icon("chev")}</div>`; }
+function bspStandDlg(){ const s=document.getElementById("bspStand"), U=BSP_UMZUG; if(s&&U.laeuft) s.textContent=`Wird im Hintergrund hochgeladen … ${U.fertig} von ${U.gesamt}`; }
+async function bspDlg(){ await bspListe(true); const {A,fehlt}=await bspFehlende(), U=BSP_UMZUG;
+  dialog("Produktbilder im SharePoint",`<p>Herstellerfotos und Feldgrafiken liegen im SharePoint der Firma (Bibliothek „Kundendaten“ › „_App/Bilder“) und sind nur nach der Anmeldung sichtbar. Fehlende Bilder lädt die App beim Entwickler von selbst hoch, sobald sie geöffnet wird.</p>
+    <p style="margin:12px 0"><b>${BSP.anzahl}</b> im SharePoint${A.length?` · <b>${A.length}</b> noch auf dem öffentlichen Server · <b>${fehlt.length}</b> fehlen im SharePoint`:""}</p>
+    <p class="hint" id="bspStand">${U.laeuft?`Wird im Hintergrund hochgeladen … ${U.fertig} von ${U.gesamt}`:fehlt.length?(bspMobilfunk()?"Im Mobilfunk wird nicht hochgeladen – im WLAN geht es von selbst los.":"Startet gleich von selbst."):A.length?"Alle Bilder sind im SharePoint. Sie können vom öffentlichen Server gelöscht werden.":"Keine Bilder mehr auf dem öffentlichen Server."}</p>`,
+    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>${fehlt.length&&!U.laeuft?`<button class="btn-text" data-act="bspLos">Jetzt hochladen</button>`:""}`);
+  U.fehlt=fehlt; }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="bspDlg"],[data-act="bspLos"],[data-act="bspZu"]'); if(!b) return; e.stopPropagation();
+  if(b.dataset.act==="bspDlg") bspDlg();
+  else if(b.dataset.act==="bspZu"){ BSP_UMZUG.zu=true; bspKarteWeg(); }
+  else { closeOverlays(); bspHochladen(); } },true);
