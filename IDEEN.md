@@ -11,7 +11,7 @@
   - **Neozed (D01/D02)** als echtes Bauteil: Sockel 1-/3-polig, TE-Breite, Sicherung und Passhülse je Pol. Material ist in der Firmenliste schon da (Neozed-Elemente, LINOCUR D02, Schraubkappen, Passhülsen). DIAZED für Altbestand.
   - **NH nicht im Verteiler:** Bei Irrgang sitzen die NH-Sicherungen im **Hausanschlusskasten (HAK)** – eigener Kasten, Max schickt ein Foto. NH-Leisten nur bei sehr großen Verteilungen.
   - **Hutschienen-Netzteile** und **KNX-Spannungsversorgung**.
-  - **KNX-Aktoren allgemein** (Schalt-, Jalousie-, Dimm-, Heizungsaktoren …): Hersteller **MDT** und **Schneider**, Altbestand viel **Merten**. **Hager KNX nicht** (wird bei Irrgang nicht verwendet).
+  - **Alle KNX-Bauteile für die Hutschiene** (Max, 05.11.2026): Spannungsversorgung, Linienkoppler, IP-Router/IP-Schnittstelle, Schaltaktoren (MDT AKS/AKU), Jalousieaktoren, Dimmaktoren, Heizungsaktoren, Binäreingänge, Logikmodul u. Ä. Hersteller **MDT** und **Schneider**, Altbestand viel **Merten**. **Hager KNX nicht** (wird bei Irrgang nicht verwendet).
   - Weiter offen: fehlende LS-Werte (B6, B13, B40–B63, C-Typen), FI Typ B (Wallbox/PV), FI 2-polig/25 A, Brandschutzschalter (AFDD), Überspannungsschutz Typ 2/3 im Unterverteiler, Reihenklemmen und Phasenschienen als Bauteil.
 
 ## KI (vorbereitet 04.11.2026 – wartet auf Zugang, Entscheidung Chef/Microsoft)
