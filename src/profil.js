@@ -215,7 +215,27 @@ const txtGr=()=>{ try{ return localStorage.getItem("irrgang_text")||"normal"; }c
 function txtAnwenden(){ const f=(TXT_GR.find(x=>x[0]===txtGr())||TXT_GR[0])[2]; document.documentElement.style.zoom=f===1?"":String(f); }
 txtAnwenden();
 const einTop=()=>typeof topdest==="function"?topdest():typeof TOPDEST!=="undefined"?TOPDEST:[];
-function startBereich(){ const v=META.startV; if(v&&einTop().some(x=>x[0]===v)) nav={v}; }
+/* ===== Letzte Ansicht merken (05.11.2026): nach Update, Neuladen oder App-Neustart wieder dort weitermachen, wo man war =====
+   Gespeichert pro App (Pfad) auf dem Gerät; gilt 12 Stunden, danach wieder der eingestellte Startbereich. Dazu „Zuletzt geöffnet“ (bis zu 8 Orte). */
+const NAV_KEY="irrgang_nav_"+location.pathname.replace(/[^a-z0-9]/gi,"_"), NAV_ZUL=NAV_KEY+"_zul";
+const navSchl=n=>["v","id","g","ort","et","raum"].map(k=>n[k]||"").join("|");
+function navMerken(){ try{ if(typeof nav==="undefined"||!nav||!nav.v||nav.v==="login") return; const c=typeof cur!=="undefined"&&cur&&cur.id||null;
+    localStorage.setItem(NAV_KEY,JSON.stringify({at:Date.now(),nav,cur:c}));
+    /* Zuletzt geöffnet: nur Detailseiten (keine Hauptlisten, keine Einstellungen) */
+    const top=einTop().some(x=>x[0]===nav.v)||["mehr","start","bibliothek","kunden","knx"].includes(nav.v)||(typeof MEHR_SUB!=="undefined"&&MEHR_SUB[nav.v]); if(top) return;
+    const t=document.querySelector("#topTitle span"), sub=document.querySelector("#topTitle small"); if(!t||!t.textContent) return;
+    const L=JSON.parse(localStorage.getItem(NAV_ZUL)||"[]").filter(x=>navSchl(x.nav)!==navSchl(nav));
+    L.unshift({nav:JSON.parse(JSON.stringify(nav)),cur:c,t:t.textContent,s:sub?sub.textContent:"",at:Date.now()}); localStorage.setItem(NAV_ZUL,JSON.stringify(L.slice(0,8))); }catch(e){} }
+function navZurueckholen(){ try{ const s=JSON.parse(localStorage.getItem(NAV_KEY)||"null"); if(!s||!s.nav||!s.nav.v||s.nav.v==="login"||Date.now()-(s.at||0)>12*3600e3) return false;
+    if(s.cur&&typeof oeffne==="function") oeffne(s.cur); nav=s.nav; return true; }catch(e){ return false; } }
+addEventListener("pagehide",navMerken); document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden") navMerken(); });
+setInterval(()=>{ if(document.visibilityState==="visible") navMerken(); },4000);
+const ZUL_IC={kunde:"firma",standort:"ort",geb:"gvGeb",vt:"ra_verteil",legende:"ra_verteil",kx:"knx",ec:"doc"};
+function zuletztHtml(){ let L=[]; try{ L=JSON.parse(localStorage.getItem(NAV_ZUL)||"[]"); }catch(e){} if(!L.length) return "";
+  return `<div class="sec-lbl" style="margin-top:4px">Zuletzt geöffnet</div><div class="zul">${L.map((x,i)=>`<button type="button" class="zul-k" data-act="zulAuf" data-i="${i}"><span class="av">${icon(typeof IC!=="undefined"&&IC[ZUL_IC[x.nav.v]]?ZUL_IC[x.nav.v]:"chev")}</span><b>${esc(x.t)}</b><small>${esc(x.s||"")}</small></button>`).join("")}</div>`; }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="zulAuf"]'); if(!b) return; e.stopPropagation(); let L=[]; try{ L=JSON.parse(localStorage.getItem(NAV_ZUL)||"[]"); }catch(x){} const z=L[+b.dataset.i]; if(!z) return;
+  if(z.cur&&typeof oeffne==="function"){ oeffne(z.cur); nav=z.nav; render(); return; } if(typeof query!=="undefined") query=""; go(z.nav); },true);
+function startBereich(){ if(navZurueckholen()) return; const v=META.startV; if(v&&einTop().some(x=>x[0]===v)) nav={v}; }
 const einZ=(act,ic,t,sub)=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(ic)}</span><span class="lt"><span class="h">${t}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}</span>${icon("chev")}</div>`;
 function darstellungZeilen(){ const T=einTop(), st=T.find(x=>x[0]===META.startV)||T[0];
   return einZ("einStartDlg","einStart","Start mit",st?st[1]:"")+einZ("einTextDlg","einTxt","Textgröße",(TXT_GR.find(x=>x[0]===txtGr())||TXT_GR[0])[1]+" · für alle Apps auf diesem Gerät"); }
