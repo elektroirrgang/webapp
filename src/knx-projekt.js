@@ -40,6 +40,31 @@ const kxSpeichern=g=>{ g.knx.updated=Date.now(); ecGebSpeichern(g); };
 const kxGebAkt=()=>{ const g=nav.g&&vtGeb(nav.g); return g&&g.knx&&g.knx.an?(kxNorm(g),g):null; };
 const kxDatum=t=>t?new Date(t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}):"";
 
+/* ===== Testprojekt (nur Entwickler): Bürogebäude mit zwei Leveln – zum Ausprobieren von „Programmieren zu zweit“ =====
+   Bauteil B, Level 3 (Linien 5.1–5.3) und Level 4 (6.1–6.3): links 7 Büros, Mitte WCs, Teeküche, Vorflur und Flur, rechts 7 Büros.
+   Echte Datensätze (werden abgeglichen, damit Handy und iPad dasselbe Projekt sehen), Kunde „Testkunde KNX“ – darf gelöscht werden.
+   Ist es schon da, setzt der Knopf alle Häkchen (programmiert, eingebaut, geprüft, Problem) zurück. */
+const KX_TEST_K="test-knx-kunde";
+const kxTestDa=()=>{ const k=DB.kunden&&DB.kunden.get(KX_TEST_K); return !!(k&&!k.deleted); };
+function kxTestprojekt(){
+  if(kxTestDa()){ const g=ecGeb("k:"+KX_TEST_K); kxNorm(g).geraete.forEach(d=>{ delete d.prog; delete d.einb; delete d.pruef; delete d.problem; }); kxSpeichern(g); toast("Testprojekt zurückgesetzt – alles wieder offen"); go({v:"kx",g:g.id,tab:"ueb"}); return; }
+  saveRec("kunden",{id:KX_TEST_K,art:"gewerbe",name:"Testkunde KNX (Bürogebäude)",kdnr:"TEST-KNX",strasse:"Teststraße 1",plz:"51545",ort:"Waldbröl",notiz:"Testdaten zum Ausprobieren von „Programmieren zu zweit“ – darf gelöscht werden."},true);
+  const g={id:ecGebId("k:"+KX_TEST_K),ortId:"k:"+KX_TEST_K}; let n=0; const id=x=>`tk-${x}`;
+  g.bauteile=[{id:id("b"),name:"B"}];
+  const geraete=[], linien=[], dev=(rid,typ)=>geraete.push({id:id("d"+(++n)),raumId:rid,typ,zustand:"neu",created:Date.now()+n});
+  const buero=["jal","praes","tast","rtr","stell","motor"], wc=["praes","tast"], tee=["praes","tast","rtr","stell"];
+  g.etagen=[[3,2,5],[4,3,6]].map(([lv,eb,ber])=>{ const e={id:id("e"+lv),name:`Level ${lv}`,ebene:eb,bauteilId:id("b"),raeume:[],bereiche:[{id:id(`z${lv}l`),name:"links"},{id:id(`z${lv}m`),name:"Mitte"},{id:id(`z${lv}r`),name:"rechts"}]};
+    const raum=(nm,z,typen)=>{ const r={id:id(`r${lv}-${e.raeume.length+1}`),name:nm,bauteilId:id("b"),bereichId:id(`z${lv}${z}`)}; e.raeume.push(r); typen.forEach(t=>dev(r.id,t)); return r.id; };
+    const L=[], M=[], R=[];
+    for(let i=1;i<=7;i++) L.push(raum(`B ${lv}0${i} Büro`,"l",buero));
+    M.push(raum(`B ${lv}08 WC Damen`,"m",wc),raum(`B ${lv}09 WC Herren`,"m",wc),raum(`B ${lv}10 Teeküche`,"m",tee),raum(`B ${lv}11 Vorflur`,"m",["praes"]),raum(`Flur Level ${lv}`,"m",["praes","praes","praes","tast","tast"]));
+    for(let i=12;i<=18;i++) R.push(raum(`B ${lv}${i} Büro`,"r",buero));
+    [[1,L],[2,M],[3,R]].forEach(([li,rs])=>linien.push({id:id(`l${ber}${li}`),bereich:ber,linie:li,start:1,raeume:rs}));
+    return e; });
+  ecGebNorm(g); g.knx={an:true,created:Date.now(),linien,geraete};
+  /* Adressen je Linie Raum für Raum, nur Busgeräte */
+  linien.forEach(l=>{ let nr=l.start; kxSort(g,geraete.filter(d=>l.raeume.includes(d.raumId)&&kxTyp(d.typ).bus)).forEach(d=>{ d.nr=nr++; }); });
+  saveRec("gebaeude",g,true); toast("Testprojekt angelegt – auf dem Handy erscheint es nach dem Abgleich"); go({v:"kx",g:g.id,tab:"ueb"}); }
 /* ===== Liste im Reiter „KNX“ ===== */
 function kxListeInhalt(){ const q=(typeof query!=="undefined"?query:"").trim().toLowerCase(), P=kxProjekte().map(g=>({g,o:ecOrt(g.ortId)})).filter(({g,o})=>!q||suPasst(q,o.titel,(o.kunde||{}).kdnr)).sort((a,b)=>(b.g.knx.updated||b.g.updated||0)-(a.g.knx.updated||a.g.updated||0));
   if(!P.length) return q?`<p class="meta" style="margin:16px 4px">Kein KNX-Projekt gefunden.</p>`:`<div class="empty">${icon("knx")}<h2>Noch kein KNX-Projekt</h2><p>Mit „Projekt“ einen Kunden wählen – dann Räume anlegen, Geräte bei der Begehung zählen, Adressen vergeben und zu zweit programmieren.</p></div>`;
@@ -48,7 +73,7 @@ function kxListeInhalt(){ const q=(typeof query!=="undefined"?query:"").trim().t
       <span class="s">${esc([`${R} Räume`,`${G.length} Geräte`,bus.length?`${p} von ${bus.length} programmiert`:""].filter(Boolean).join(" · "))}</span>
       <span class="st">${def?pill("bad",`${def} defekt`):bus.length&&p===bus.length&&G.every(kxFertig)?pill("ok","fertig"):pill("wip","in Arbeit")}</span></span>${icon("chev")}</div>`; })); }
 function knxView(){ return `<div class="narrow">${searchBar("Kunde, Ort",null)}<div id="res">${kxListeInhalt()}</div>
-  <div class="sec-lbl" style="margin-top:24px">Ohne Projekt</div>${listOf([`<div class="li" role="button" tabindex="0" data-act="knxEti"><span class="av">${icon("tag")}</span><span class="lt"><span class="h">Etiketten für eine Linie</span><span class="s">Adressbereich von Hand, z. B. 6.1.01 bis 6.1.36 – für den Brother, 6 mm</span></span>${icon("chev")}</div>`])}</div>`; }
+  <div class="sec-lbl" style="margin-top:24px">Ohne Projekt</div>${listOf([...(typeof istEntwickler==="function"&&istEntwickler()?[`<div class="li" role="button" tabindex="0" data-act="kxTest"><span class="av">${icon("knx")}</span><span class="lt"><span class="h">${kxTestDa()?"Testprojekt zurücksetzen":"Testprojekt anlegen"}</span><span class="s">Bürogebäude, Bauteil B, Level 3 und 4 · Linien 5.1–5.3 und 6.1–6.3 · nur für Entwickler sichtbar</span></span>${icon("chev")}</div>`]:[]),`<div class="li" role="button" tabindex="0" data-act="knxEti"><span class="av">${icon("tag")}</span><span class="lt"><span class="h">Etiketten für eine Linie</span><span class="s">Adressbereich von Hand, z. B. 6.1.01 bis 6.1.36 – für den Brother, 6 mm</span></span>${icon("chev")}</div>`])}</div>`; }
 if(typeof SU_LISTE!=="undefined") SU_LISTE.knx=kxListeInhalt;
 /* beim Kunden / Standort, wie die Verteiler */
 function kxBeiKunde(kind,r){ const orte=kind==="kunden"?["k:"+r.id,...standorteVon(r.id).map(s=>s.id)]:[r.id], P=kxProjekte().filter(g=>orte.includes(g.ortId));
@@ -412,6 +437,7 @@ document.addEventListener("click",async ev=>{ const b=ev.target.closest&&ev.targ
   if(a==="kxTStd"){ KX_TDLG=KX_TYP_STD.map(t=>({...t})); kxTypenDlg(); return; }
   if(a==="kxTAbbr"){ KX_TDLG=null; closeOverlays(); return; }
   if(a==="kxTOk"){ const L=KX_TDLG||kxTypen(), n=(document.getElementById("f_kxTNeu")||{}).value; if(n&&n.trim()) L.push({id:"t-"+uid(),name:n.trim(),bus:true,eti:1}); kxTypenSpeichern(L.map(t=>({id:t.id,name:t.name,bus:!!t.bus,eti:+t.eti||1}))); KX_TDLG=null; closeOverlays(); render(); toast("Gerätearten gespeichert"); return; }
+  if(a==="kxTest"){ kxTestprojekt(); return; }
   /* Programmieren zu zweit */
   const kxA=()=>{ const s=KX_PROG.sitz; return s&&s.auf&&s.auf[b.dataset.h]; };
   if(a==="kxRolle"){ const g=kxGebAkt(); if(!g) return; await kxProgStart(b.dataset.v,g.id); return; }
