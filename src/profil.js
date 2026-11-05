@@ -392,7 +392,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else { META.entwZu=!META.entwZu; metaSave(); const y=scrollY; render(); scrollTo(0,y); } },true);
 
 /* ===== Datenschutzhinweise – gemeinsam für alle Apps (früher nur EVSE). Gelb markierte Stellen legt der Betrieb fest. ===== */
-const DS_STAND="Oktober 2026";
+const DS_STAND="November 2026";
 function datenschutzView(){
   const F=FIRMA, ph=t=>`<span class="ph">${t}</span>`, h=(n,t)=>`<h4>${n}. ${t}</h4>`, app=document.title.split(" · ")[0];
   return rechtsSeite(`<h3>Datenschutzhinweise zu den Apps von ${F.name}</h3>
@@ -420,11 +420,15 @@ function datenschutzView(){
     ${h(7,"Bereitstellung der Apps und Dienste Dritter")}
     <p>Die Apps werden über GitHub Pages (GitHub Inc., USA) ausgeliefert. Beim Aufruf verarbeitet GitHub technisch notwendige Verbindungsdaten wie IP-Adresse, Zeitpunkt und Browsertyp (Art. 6 Abs. 1 lit. f DSGVO). Kunden- oder Prüfdaten liegen dort nicht. Die Übermittlung in die USA stützt sich auf das EU-US Data Privacy Framework. ${ph("Vor Veröffentlichung prüfen: GitHub in der Liste auf dataprivacyframework.gov")}</p>
     <p>Für einzelne Funktionen ruft das Gerät direkt Dienste Dritter auf; dabei werden die IP-Adresse und die jeweilige Anfrage übertragen, aber keine Kunden- oder Prüfdaten außer bei der Adresssuche:</p>
-    <ul><li><b>Karten:</b> Kartenkacheln von OpenFreeMap und Luftbilder von Esri (ArcGIS).</li>
-      <li><b>Adresssuche:</b> Nominatim (OpenStreetMap Foundation) – übertragen wird die eingegebene Adresse.</li>
-      <li><b>Wetter</b> (Übersicht): Bright Sky (Daten des Deutschen Wetterdienstes) – übertragen wird der ungefähre Ort.</li>
+    <ul><li><b>Karten:</b> Kartenkacheln von OpenFreeMap und Luftbilder von Esri (ArcGIS); das Kartenprogramm (MapLibre) wird von unpkg.com geladen.</li>
+      <li><b>Adresssuche:</b> Nominatim (OpenStreetMap Foundation) und Photon (komoot GmbH, Potsdam) – übertragen wird die eingegebene Adresse.</li>
+      <li><b>Umgebung beim Kunden</b> (Karte auf der Kundenseite: Feuerwehr, Krankenhaus, Tankstellen …): Photon (komoot GmbH) und Overpass-Server der OpenStreetMap-Gemeinschaft (overpass-api.de, overpass.kumi.systems, overpass.private.coffee) – übertragen werden nur die Koordinaten des Standorts, kein Kundenname.</li>
+      <li><b>Wetter</b> (Übersicht): Bright Sky (Daten des Deutschen Wetterdienstes) – übertragen wird der ungefähre Ort des Betriebs bzw. der Baustelle.</li>
+      <li><b>Spracheingabe</b> (Mikrofon-Knopf): Es arbeitet die Spracherkennung des Browsers bzw. Betriebssystems. Je nach Gerät verarbeitet Google (Chrome, Android) oder Apple (iPad, iPhone) die Aufnahme, teils auf deren Servern. Deshalb keine Gesundheits- oder Bankdaten von Kunden diktieren.</li>
+      <li><b>Wünsche zusammenführen</b> (nur am PC, nur auf Knopfdruck): Das Sprachmodell wird einmalig von jsDelivr und Hugging Face geladen und läuft danach auf dem Gerät; die Texte der Wünsche verlassen das Gerät nicht.</li>
 </ul>
-    <p>Rechtsgrundlage ist jeweils Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an funktionierenden Karten, Adressen und Wetterangaben).</p>
+    <p>Rechtsgrundlage ist jeweils Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an funktionierenden Karten, Adressen und Wetterangaben). Die Info-Seiten hinter den QR-Aufklebern sind öffentlich und haben eigene Hinweise (webapp.elektro-irrgang.de/recht/); nur dort gibt es eine Geschwindigkeitsmessung über Cloudflare.</p>
+    <p><b>KI über Microsoft</b> (Azure OpenAI) ist vorbereitet, aber ausgeschaltet. Vor dem Einschalten werden diese Hinweise ergänzt.</p>
     <p><b>Produktbilder</b> in den Katalogen liegen auf unserem eigenen Server und werden nicht von Herstellerseiten geladen. Nur ein Bild, das ein Mitarbeiter selbst als Internetadresse einträgt, kommt direkt von der jeweiligen Seite.</p>
     ${h(8,"Keine Cookies, kein Tracking")}
     <p>Die Apps setzen keine Cookies und nutzen keine Analyse- oder Werbedienste. Für die Anmeldung wird die Microsoft-Anmeldeseite aufgerufen. Benachrichtigungen erzeugt die App selbst auf dem Gerät; es wird kein Push-Dienst eines Dritten verwendet.</p>
