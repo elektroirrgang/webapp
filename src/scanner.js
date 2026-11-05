@@ -47,11 +47,18 @@ function scTaste(e){ if(e.key==="Escape"&&SC){ e.preventDefault(); e.stopPropaga
 /* iPhone/iPad: kein Live-Bild, sondern ein Foto mit der iOS-Kamera (12 MP, Autofokus, Makro, ohne Kamera-Nachfrage).
    Safari kann QR-Codes im Live-Bild nicht selbst erkennen, und die Web-Kamera fragt in der Home-Bildschirm-App jedes Mal nach. */
 const SC_IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+/* Safari/iPhone hat kein eingebautes BarcodeDetector – dort ZXing (WebAssembly) als Ersatz, deutlich stärker als jsQR.
+   Dateien liegen in /vendor/zxing (siehe LIESMICH.txt), die .wasm wird nicht vom CDN, sondern von uns geladen. */
+let SC_ZXD=null;
+function scZx(){ if(SC_ZXD) return Promise.resolve(SC_ZXD);
+  return new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="../vendor/zxing/barcode-detector-2.3.1.iife.js"; s.onerror=()=>no(); s.onload=()=>{ try{ const A=window.BarcodeDetectionAPI;
+      A.setZXingModuleOverrides({locateFile:(pfad,pre)=>pfad.endsWith(".wasm")?new URL("../vendor/zxing/zxing_reader-1.3.4.wasm",location.href).href:pre+pfad});
+      SC_ZXD=new A.BarcodeDetector({formats:["qr_code"]}); ok(SC_ZXD); }catch(e){ no(e); } }; document.head.appendChild(s); }); }
 function scJq(){ return window.jsQR?Promise.resolve(window.jsQR):new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="../vendor/jsqr.min.js"; s.onload=()=>ok(window.jsQR); s.onerror=()=>no(); document.head.appendChild(s); }); }
 /* Foto (12 MP) auswerten: erst Mitte fast in voller Auflösung, dann ganzes Bild, dann Kacheln */
 async function scFotoLesen(f,jq,info){
   const url=URL.createObjectURL(f), img=await new Promise((ok,no)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=no; i.src=url; });
-  if("BarcodeDetector" in window){ try{ const r=await new BarcodeDetector({formats:["qr_code"]}).detect(img); if(r[0]&&r[0].rawValue){ URL.revokeObjectURL(url); info&&info(-2); return r[0].rawValue; } }catch(e){} }
+  const D=typeof window.BarcodeDetector==="function"?new BarcodeDetector({formats:["qr_code"]}):await scZx().catch(()=>null); if(D){ try{ const r=await D.detect(img); if(r[0]&&r[0].rawValue){ URL.revokeObjectURL(url); info&&info(-2); return r[0].rawValue; } }catch(e){} }
   const W=img.naturalWidth, H=img.naturalHeight, cv=document.createElement("canvas"), cx=cv.getContext("2d",{willReadFrequently:true});
   const lies=(x,y,w,h,max,inv)=>{ const z=Math.min(1,max/Math.max(w,h)); cv.width=Math.max(1,Math.round(w*z)); cv.height=Math.max(1,Math.round(h*z));
     cx.drawImage(img,x,y,w,h,0,0,cv.width,cv.height); const r=jq(cx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height,{inversionAttempts:inv||"dontInvert"}); return r&&r.data||""; };
@@ -84,7 +91,7 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
     <div class="sc-kopf"><b>${esc(opt.titel||"Aufkleber scannen")}</b><button type="button" class="sc-rk" data-sc="zu" aria-label="Schließen">${scSvg("zu")}</button></div>
     <div class="sc-cam"><video playsinline muted autoplay></video><div class="sc-loch"><i class="sc-e e1"></i><i class="sc-e e2"></i><i class="sc-e e3"></i><i class="sc-e e4"></i></div>
       <button type="button" class="sc-licht" data-sc="licht" aria-label="Taschenlampe" hidden>${scSvg("licht")}</button><button type="button" class="sc-licht sc-kam" data-sc="kam" aria-label="Kamera wechseln" hidden>${scSvg("kam")}</button><p class="sc-hin" id="scHin">Kamera wird gestartet …</p>${!pc?`<img class="sc-bild" alt=""><button type="button" class="sc-foto" data-sc="foto"><i>${scSvg("foto")}</i><span>Aufkleber fotografieren</span></button><input type="file" id="scDatei" accept="image/*" capture="environment" hidden>`:""}
-      <div class="sc-pills">${!pc&&!SC_IOS?`<button type="button" class="sc-pill sc-pill-foto" data-sc="fotoLive">${scSvg("foto")}<span>Foto</span></button>`:""}<button type="button" class="sc-pill" data-sc="nr">${scSvg("tast")}<span>Code eintippen</span></button></div></div>
+      <div class="sc-pills">${!pc?`<button type="button" class="sc-pill sc-pill-foto" data-sc="fotoLive">${scSvg("foto")}<span>Foto</span></button>`:""}<button type="button" class="sc-pill" data-sc="nr">${scSvg("tast")}<span>Code eintippen</span></button></div></div>
     <div class="sc-karte" id="scKarte" hidden></div>
     <div class="sc-rest">
       <div class="sc-ein" hidden>${pc?`<span class="sc-ein-ic">${scSvg("qr")}</span>`:""}<input id="scNr" placeholder="Code, z. B. 4K7 P2M" autocomplete="off" autocapitalize="characters" enterkeyhint="go" maxlength="9"><button type="button" class="sc-ok" data-sc="nrOk">${zu?"Zuordnen":"Öffnen"}</button></div>
@@ -103,7 +110,6 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
   const hin=t=>{ const h=el.querySelector("#scHin"); if(h) h.textContent=t; };
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||(typeof DESK!=="undefined"&&DESK.matches)){ el.classList.add("sc-ohne"); hin(pc?"Der Code steht auf dem QR-Aufkleber unter „Anlage“ – 6 Zeichen, z. B. 4K7 P2M.":"Code vom Aufkleber eintippen"); scEingabe(true); return; }
   { const d=el.querySelector("#scDatei"); if(d) d.addEventListener("change",e=>{ const f=e.target.files&&e.target.files[0]; if(f) scFotoDa(f); }); }
-  if(SC_IOS){ el.classList.add("sc-fotom"); hin("Aus 20–30 cm – der Aufkleber muss nicht bildfüllend sein"); scFoto(); return; }
   const cam=SC, vid=el.querySelector("video");
   /* Kamera starten – mit Geräte-ID (gewählte/gemerkte Kamera) oder „irgendeine Rückkamera“ */
   /* Android lässt meist nur eine Rückkamera gleichzeitig zu: die laufende erst schließen, dann die neue öffnen */
@@ -133,10 +139,11 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
     if(!st&&!cam.aus) st=await kameraAn("");
     if(!st) return;
     cam.liste=await rueck(); if(cam.aus) return;
-    if(!gem&&cam.liste.length>1&&cam.liste[0].deviceId!==cam.devId) try{ await kameraAn(cam.liste[0].deviceId); }catch(e){}
+    if(!gem&&!SC_IOS&&cam.liste.length>1&&cam.liste[0].deviceId!==cam.devId) try{ await kameraAn(cam.liste[0].deviceId); }catch(e){}
     el.querySelector('[data-sc="kam"]').hidden=!(cam.liste.length>1);
     hin("Aufkleber in den Rahmen halten");
-    let det=null; try{ if("BarcodeDetector" in window&&(await BarcodeDetector.getSupportedFormats()).includes("qr_code")) det=new BarcodeDetector({formats:["qr_code"]}); }catch(e){}
+    let det=null; try{ if(typeof window.BarcodeDetector==="function"&&(await BarcodeDetector.getSupportedFormats()).includes("qr_code")) det=new BarcodeDetector({formats:["qr_code"]}); }catch(e){}
+    if(!det) try{ hin("Scanner wird geladen …"); det=await scZx(); await det.detect(document.createElement("canvas")).catch(()=>{}); hin("Aufkleber in den Rahmen halten"); }catch(e){ det=null; }
     let jq=null; if(!det){ try{ jq=await scJq(); }catch(e){ hin("Scanner braucht einmal Internet – Code eintippen"); return; } }
     const cv=document.createElement("canvas"), cx=cv.getContext("2d",{willReadFrequently:true}); let zuletzt="";
     /* Ausschnitt in der Bildmitte (dort ist der Rahmen) in voller Auflösung – kleine Codes werden nicht weggerechnet */
