@@ -2045,4 +2045,12 @@ body.has-nav .bsp-karte{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .bsp-karte.fertig .bsp-ring .vg{stroke:var(--ok,#1E8E3E)}.bsp-karte.fertig .bsp-ic{color:var(--ok,#1E8E3E)}
 .bsp-zu{width:40px;height:40px;border:0;border-radius:20px;background:transparent;color:var(--on-sv);display:grid;place-items:center;cursor:pointer;flex:none}.bsp-zu .ic{width:20px;height:20px}
 @media (prefers-reduced-motion:reduce){.bsp-karte,.bsp-ring .vg,.bsp-bar i{transition:none}.bsp-karte .bsp-ic .ic,.bsp-karte .bsp-bar::after{animation:none!important}}
+/* PC: als kleines Kästchen unten in der Seitenleiste */
+.bsp-karte.klein{position:static;width:auto;gap:10px;padding:10px 12px;margin:0 0 6px;border-radius:16px;box-shadow:none;background:var(--sc-high);transform:translateY(8px)}
+.bsp-karte.klein.da{transform:none}
+.bsp-karte.klein .bsp-ring,.bsp-karte.klein .bsp-ring>svg{width:34px;height:34px}
+.bsp-karte.klein .bsp-ic .ic{width:16px;height:16px}
+.bsp-karte.klein .bsp-t b{font-size:13px;line-height:17px}.bsp-karte.klein .bsp-t small{font-size:12px;line-height:16px}
+.bsp-karte.klein .bsp-bar{height:3px;margin-top:4px}
+.bsp-karte.klein .bsp-zu{display:none}
 
