@@ -163,6 +163,7 @@ function mlGelesenFuer(mid){ const S=mlSt(); let ch=false; meldungen().forEach(x
 let ML_VON=null;
 function mlFuellen(){
   const pop=document.getElementById("mlPop"), seite=document.getElementById("mlSeite"); if(!pop&&!seite) return; const S=mlSt(), L=meldungen(), neu=L.filter(m=>!S.gel[m.id]).length;
+  const live=typeof kxLiveMeldung==="function"?kxLiveMeldung():"";
   const zeile=m=>`<div class="ml-it${S.gel[m.id]?"":" neu"}${S.pin[m.id]?" ml-gepinnt":""}" data-act="mlKlick" data-id="${esc(m.id)}" role="button" tabindex="0">${mlAv(m)}
     <span class="ml-tx"><span class="ml-k"><b>${esc(mlName(m))}</b>${S.pin[m.id]?`<span class="ml-pinz" title="Angepinnt">${mlSvg("pin")}</span>`:""}<span class="ml-zeit">${esc(wann(m.t))}</span>${S.gel[m.id]?"":`<i class="ml-punkt" aria-label="ungelesen"></i>`}</span>
       <span class="ml-h">${esc(m.h)}</span>${m.s?`<span class="ml-s">${esc(m.s)}</span>`:""}</span>
@@ -180,14 +181,14 @@ function mlFuellen(){
     const leer={offen:"Keine offenen Meldungen.",frei:"Alle offenen Meldungen haben einen Zuständigen.",mein:"Dir ist keine offene Meldung zugeordnet.",spaeter:"Nichts zurückgestellt.",fertig:"Noch nichts abgeschlossen."}[f];
     const inhalt=fch+([...G].map(([rid,R])=>{ const r=DB.vorgaenge.get(rid);
       return `<div class="sec-row"><div class="sec-lbl">${esc(vgKunde(r))} · Rahmenauftrag${r.s&&r.s.auftrag&&r.s.auftrag.nr?` · SCC ${esc(r.s.auftrag.nr)}`:""}</div><span class="ab-btns"><button class="ab-ic" data-act="vgMlNeu" data-id="${esc(rid)}" aria-label="Meldung erfassen" title="Meldung erfassen">${icon("add")}</button></span></div>${R.map(m=>mlZeile(m,neuIds.has(m.id))).join("")}`; }).join("")||`<p class="meta" style="margin:16px 4px">${leer}</p>`);
-    seite.innerHTML=`<div class="ml-wrap">${kats}<div class="ml-inhalt">${inhalt}</div></div>`; if(pop) pop.innerHTML=""; return; }
+    seite.innerHTML=`<div class="ml-wrap">${live}${kats}<div class="ml-inhalt">${inhalt}</div></div>`; if(pop) pop.innerHTML=""; return; }
   const LK=kat==="alle"?L:L.filter(m=>mlKatVon(m.id)===kat), neuK=LK.filter(m=>!S.gel[m.id]).length;
   const pin=LK.filter(m=>S.pin[m.id]), rest=LK.filter(m=>!S.pin[m.id]);
   const html=`<div class="ml-kopf"><b>${seite?`${neuK?`${neuK} neu`:"Keine neuen"}`:"Benachrichtigungen"}</b>${neuK?`<button class="ml-alle" data-act="mlAlleGel">Alle gelesen</button>`:""}</div>
-    ${typeof kxLiveMeldung==="function"?kxLiveMeldung():""}<div class="ml-liste">${LK.length?`${pin.length?`<div class="ml-gr">Angepinnt</div>${pin.map(zeile).join("")}${rest.length?`<div class="ml-gr">Neueste</div>`:""}`:""}${rest.map(zeile).join("")}`
+    <div class="ml-liste">${LK.length?`${pin.length?`<div class="ml-gr">Angepinnt</div>${pin.map(zeile).join("")}${rest.length?`<div class="ml-gr">Neueste</div>`:""}`:""}${rest.map(zeile).join("")}`
       :`<div class="ml-leer"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><span>Aktuell keine Benachrichtigungen</span></div>`}</div>
     ${Object.keys(S.weg).length?`<div class="ml-fuss"><button class="btn-text" data-act="mlWiederher">Entfernte wieder anzeigen</button></div>`:""}`;
-  if(pop) pop.innerHTML=html; if(seite) seite.innerHTML=`<div class="ml-wrap">${kats}<div class="ml-inhalt">${html}</div></div>`;
+  if(pop) pop.innerHTML=live+html; if(seite) seite.innerHTML=`<div class="ml-wrap">${live}${kats}<div class="ml-inhalt">${html}</div></div>`;
 }
 function mlAuf(){ mlZu(); if(nav.v==="meldungen"){ go(ML_VON||{v:"start"}); return; } ML_VON=nav; go({v:"meldungen"}); }
 function mlPlatz(){ const pop=document.getElementById("mlPop"), z=document.querySelector("#seitenFuss:not([hidden]) .sf-gl"), b=z||document.getElementById("glBtn"); if(!pop||!b) return; const r=b.getBoundingClientRect();
