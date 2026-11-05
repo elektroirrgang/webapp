@@ -568,7 +568,9 @@ function ecGerLesen(){ const pr=ecPr(); if(!pr||!ecDlg||!ecDlg.ger||pr.status===
 function ecBmDlg(bm){ ecDlg={bm:bm&&bm.id}; const v=bm||{sk:"I"};
   dialog(bm?"Gerät bearbeiten":"Neues Gerät",`<div class="fg1">${tf("bmBez","Bezeichnung",v.bez||"",{form:true,ph:"z. B. Bohrmaschine"})}
     <div class="reihe2">${tf("bmTyp","Hersteller / Typ",v.typ||"",{form:true,ph:"z. B. Bosch GSB 18V"})}${tf("bmSn","Seriennummer",v.sn||"",{form:true})}</div>
-    <div class="reihe2">${tf("bmInv","Inventarnummer",v.inv||"",{form:true})}${tf("bmRaum","Standort im Gebäude",v.raum||"",{form:true,ph:"z. B. Werkstatt"})}</div>
+    ${(()=>{ const pr=ecPr(), g=pr&&ecGeb(pr.ortId), R=g&&typeof gvAlleRaeume==="function"?gvAlleRaeume(typeof gvNorm==="function"?gvNorm(g):g,null):[], rid=g&&typeof gvBmRaumId==="function"?gvBmRaumId(g,v):"";
+      return `<div class="reihe2">${tf("bmInv","Inventarnummer",v.inv||"",{form:true})}${R.length?sf("bmRaumId","Raum",rid,[["","– anderer Ort –"],...R.map(x=>[x.r.id,typeof gvEtName==="function"?`${x.r.name} · ${gvEtName(g,x.e)}`:x.r.name])],{form:true}):tf("bmRaum","Standort im Gebäude",v.raum||"",{form:true,ph:"z. B. Werkstatt"})}</div>
+      ${R.length?`<div class="fg1" id="bmRaumFrei" ${rid?"hidden":""}>${tf("bmRaum","Anderer Ort (Freitext)",rid?"":v.raum||"",{form:true,ph:"z. B. Werkstatt, Fahrzeug"})}</div>`:""}`; })()}
     <div class="lbl" style="margin:8px 4px 0">Schutzklasse</div>${seg("bmSk",v.sk||"I",[["I","I – mit Schutzleiter"],["II","II – schutzisoliert"],["III","III – Schutzkleinspannung"]])}</div>`,
     `${bm?`<button class="btn-text danger" data-act="ecBmDel">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="ecBmOk">Speichern</button>`,{breit:true}); }
 function ecMaengelText(pr){ const L=[];
@@ -1833,6 +1835,7 @@ async function ecPdfAblegen(pr){ toast("PDF wird erstellt …");
 document.addEventListener("change",e=>{ const el=e.target;
   if(el.id==="f_ecMg"){ const pr=ecPr(); if(!pr||pr.status==="fertig") return; if(el.value==="__neu"){ ecMgHandDlg(); render(); return; } if(el.value==="__hand"||!el.value) return;
     const m=DB.geraete&&DB.geraete.get(el.value); if(m){ pr.geraet=ecMgDaten(m); saveRec("echecks",pr); render(); } return; }
+  if(el.id==="f_bmRaumId"){ const f=document.getElementById("bmRaumFrei"); if(f) f.hidden=!!el.value; return; }
   if(el.id==="f_ecKunde"){ const f=document.getElementById("ecOrtFeld"); if(f) f.innerHTML=ecOrtFeld(el.value); return; }
   if(el.id==="f_ecEbene"&&ecDlg&&"ebeneHand" in ecDlg){ ecDlg.ebeneHand=el.value!==""; return; }
   if(el.id==="f_ecSchr"&&ecDlg&&"dose" in ecDlg){ const pr=ecPr(), g=ecGeb(pr.ortId), s2=g.schraenke.find(x=>x.id===el.value), pf=ecPfWahl(s2,+ecDlg.w.pf||1); ecDlg.w.pf=String(pf);
@@ -1993,6 +1996,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "bmSk": { b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); return; }
   case "ecBmOk": { const F=formVals(), sk=(document.querySelector('#dlg [data-act="bmSk"][aria-pressed="true"]')||{dataset:{v:"I"}}).dataset.v; if(!F.bmBez){ toast("Bitte eine Bezeichnung eingeben"); return; }
     const o=ecOrt(pr.ortId), neu={bez:F.bmBez,typ:F.bmTyp,sn:F.bmSn,inv:F.bmInv,raum:F.bmRaum,sk};
+    if(F.bmRaumId!==undefined){ if(F.bmRaumId){ const gg=ecGeb(pr.ortId); let rn=""; gg.etagen.forEach(e=>e.raeume.forEach(r=>{ if(r.id===F.bmRaumId) rn=r.name; })); neu.raumId=F.bmRaumId; neu.raum=rn; } else neu.raumId=""; }
     if(ecDlg.bm){ const bm=DB.betriebsmittel.get(ecDlg.bm); Object.assign(bm,neu); saveRec("betriebsmittel",bm); } else saveRec("betriebsmittel",{id:uid(),ortId:pr.ortId,kundeId:o.kunde?o.kunde.id:"",...neu},true);
     closeOverlays(); render(); return; }
   case "ecBmDel": { const bm=DB.betriebsmittel.get(ecDlg.bm); if(bm){ bm.deleted=true; saveRec("betriebsmittel",bm); } closeOverlays(); render(); return; }
