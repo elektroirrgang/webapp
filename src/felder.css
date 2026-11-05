@@ -1915,3 +1915,19 @@ body:has(.gv-aktbar) #app{padding-bottom:190px}
 .gv-pa{font-size:11px!important;font-weight:800;letter-spacing:-.3px}
 .gv-hws{position:absolute;bottom:8px;right:8px;display:flex;gap:2px}
 .gv-hw{flex:none;display:grid;place-items:center;width:22px;height:22px;color:var(--on-sv)}.gv-hw .ic{width:16px;height:16px;fill:currentColor}.gv-hw.warn{color:var(--err)}
+/* Bauzustand, Themen */
+.gv-zst{display:flex;flex-wrap:wrap;gap:6px}
+.gv-zst button{flex:1 1 auto;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);padding:9px 12px;font:600 13px var(--font);cursor:pointer;white-space:nowrap}
+.gv-zst button[aria-pressed="true"]{background:var(--ra-bg);color:var(--ra-fg);box-shadow:inset 0 0 0 2px var(--ra-fg)}
+.gv-rkopf{display:block!important}.gv-rk1{display:flex;align-items:center;gap:14px}
+.gv-rk1>div{flex:1;min-width:0;display:flex;flex-direction:column}.gv-rk1 b{font-size:18px}.gv-rk1 small{font-size:13px;color:var(--on-sv)}
+.gv-rk1 .ra{width:48px;height:48px;border-radius:24px}.gv-rk1 .ra .ic{width:26px;height:26px}
+.gv-thema{margin-top:22px}.gv-tnr{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:11px;background:var(--sc-high);color:var(--on-surface);font-size:12px;font-weight:700;margin-right:8px;vertical-align:1px}
+.gv-raum .ab-grid{margin-top:8px}
+.gv-zs{box-shadow:inset 5px 0 0 var(--ra-fg)}
+.gv-k.gv-zs{box-shadow:inset 0 4px 0 var(--ra-fg)}
+.gv-bar{display:flex;gap:2px;height:6px;margin-top:6px;border-radius:3px;overflow:hidden;max-width:220px}
+.gv-bar i{display:block;background:var(--ra-fg)}.gv-bar i.leer{background:var(--sc-highest)}
+.gv-zk{background:var(--ra-bg)!important;color:var(--ra-fg)!important}
+.gv-rkopf>.gv-rk1{flex-direction:row;align-items:center}.gv-rkopf>.gv-zst{flex-direction:row}
+.gv-rkopf>.gv-rk1>div{flex:1;min-width:0;display:flex;flex-direction:column}
