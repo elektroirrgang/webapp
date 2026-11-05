@@ -2220,3 +2220,13 @@ body.has-nav .bsp-karte{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .kxz-ende{display:flex;justify-content:center;margin:4px 0 24px}.kxz-ende .btn-tonal{min-width:200px;justify-content:center}
 .kxz-fehler{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:12px 16px;border-radius:18px;background:var(--wip-c);font-weight:700;font-size:14px}
 .kxz-fehler svg,.kxz-fehler .ic{width:22px;height:22px;fill:#E0A526;flex:none}
+
+/* große Lade-/Warte-Animation Laptop · Punkt · Handy */
+.kxz-vg{display:flex;align-items:center;justify-content:center;gap:14px;margin:18px auto 10px;padding:14px 22px;width:max-content;border-radius:28px;background:var(--sc-high)}
+.kxz-vg svg{width:40px;height:40px;fill:var(--on-sv)}
+.kxz-vg-leit{position:relative;width:96px;height:6px;border-radius:3px;background:var(--sc-highest)}
+.kxz-vg-leit i{position:absolute;top:-5px;left:0;width:16px;height:16px;border-radius:50%;background:var(--on-sv);animation:kxzVg 1.4s cubic-bezier(.45,0,.55,1) infinite alternate}
+.kxz-vg.an svg{fill:var(--on-surface)}.kxz-vg.an .kxz-vg-leit i{background:var(--ok);box-shadow:0 0 0 6px color-mix(in srgb,var(--ok) 22%,transparent)}
+@keyframes kxzVg{from{left:0}to{left:80px}}
+.kxz-vg-tx{margin:4px 0 0;font-size:14px;color:var(--on-sv)}
+@media (prefers-reduced-motion:reduce){.kxz-vg-leit i{animation:none;left:40px}}

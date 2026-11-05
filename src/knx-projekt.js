@@ -243,10 +243,12 @@ function kxZustand(a,h){ if(!a) return "frei"; if(a.status==="laeuft"||a.status=
 const kxSvgP=(k,cls)=>`<svg class="${cls||""}" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[k]}"/></svg>`;
 Object.assign(IC,{kxLap:"M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z",kxHand:"M15.5 1h-8C6.12 1 5 2.12 5 3.5v17C5 21.88 6.12 23 7.5 23h8c1.38 0 2.5-1.12 2.5-2.5v-17C18 2.12 16.88 1 15.5 1zm-4 21c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4.5-4H7V4h9v14z"});
 const kxVerb=(an,txt)=>`<span class="kxz-verb${an?" an":""}">${kxSvgP("kxLap")}<span class="kxz-leit"><i></i></span>${kxSvgP("kxHand")}${txt?`<span>${esc(txt)}</span>`:""}</span>`;
+/* große Lade-/Warte-Animation: Laptop · Punkt läuft hin und her · Handy */
+const kxVerbGross=(an,txt)=>`<div class="kxz-vg${an?" an":""}">${kxSvgP("kxLap")}<span class="kxz-vg-leit"><i></i></span>${kxSvgP("kxHand")}</div>${txt?`<p class="kxz-vg-tx">${esc(txt)}</p>`:""}`;
 const kxSchritte=n=>`<div class="kxz-schr">${["Angefordert","Taste gedrückt","Programmiert"].map((t,i)=>`<span class="${i<n?"fe":i===n?"an":""}"><i></i>${t}</span>`).join("<em></em>")}</div>`;
 const kxRing=(id,gr,txt)=>{ const r=gr==="k"?31:88, w=gr==="k"?9:14, v=gr==="k"?76:200, u=(2*Math.PI*r).toFixed(1);
   return `<div class="kxz-ring ${gr==="k"?"k":""}" ${id?`data-kxuhr="${esc(id)}"`:""}><svg viewBox="0 0 ${v} ${v}"><circle cx="${v/2}" cy="${v/2}" r="${r}" fill="none" stroke-width="${w}" class="hg"/><circle cx="${v/2}" cy="${v/2}" r="${r}" fill="none" stroke-width="${w}" stroke-linecap="round" class="vg" stroke-dasharray="${u}" stroke-dashoffset="0"/></svg><div class="z"><b>–</b>${txt?`<small>${esc(txt)}</small>`:""}</div></div>`; };
-const kxMini=(n,m)=>{ const r=31,u=2*Math.PI*r, a=m?n/m:0; return `<div class="kxz-ring k"><svg viewBox="0 0 76 76"><circle cx="38" cy="38" r="${r}" fill="none" stroke-width="9" class="hg"/><circle cx="38" cy="38" r="${r}" fill="none" stroke-width="9" stroke-linecap="round" class="ok" stroke-dasharray="${(u*a).toFixed(1)} ${u.toFixed(1)}"/></svg><div class="z"><b>${n}/${m}</b></div></div>`; };
+const kxMini=(n,m)=>{ const r=31,u=2*Math.PI*r, a=m?n/m:0; return `<div class="kxz-ring k"><svg viewBox="0 0 76 76"><circle cx="38" cy="38" r="${r}" fill="none" stroke-width="9" class="hg"/><circle cx="38" cy="38" r="${r}" fill="none" stroke-width="9" stroke-linecap="round" class="ok" stroke-dasharray="${(u*a).toFixed(1)} ${u.toFixed(1)}"${n?"":` stroke-opacity="0"`}/></svg><div class="z"><b>${n}/${m}</b></div></div>`; };
 const kxPuls=(klein,grau)=>`<div class="kxz-puls${klein?" k":""}${grau?" grau":""}">${icon("kxTipp")}</div>`;
 function kxQrSvg(text){ try{ const q=qrcode(0,"M"); q.addData(text); q.make(); const n=q.getModuleCount(); let d=""; for(let y=0;y<n;y++) for(let x=0;x<n;x++) if(q.isDark(y,x)) d+=`M${x+2} ${y+2}h1v1h-1z`; return `<svg viewBox="0 0 ${n+4} ${n+4}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#111"/></svg>`; }catch(e){ return ""; } }
 const kxLink=(gid,code)=>`${location.origin}${location.pathname}#kxk=${kxBasis(gid)}.${code}`;
@@ -259,7 +261,7 @@ function kxProgView(g){ kxPopupZu(); const R=KX_PROG.rolle&&KX_PROG.g===g.id?KX_
   return R==="ets"?kxEtsView(g,D):kxHelferView(g); }
 function kxEtsView(g,D){ const s=KX_PROG.sitz, H=kxVerbunden(), fr=H.filter(h=>kxFrisch(h.at)), L=kxNorm(g).linien, st=kxStand(g)||{n:0,m:0,zonen:{}};
   const kopf=KX_PROG.fehler?`<div class="kxz-fehler">${icon("warn")}<span>${esc(KX_PROG.fehler)}</span></div>`:"", ende=`<div class="kxz-ende"><button type="button" class="btn-tonal" data-act="kxRolleEnde">Programmieren beenden</button></div>`;
-  if(!s) return `<div class="narrow ec-spalte">${kopf}<section class="card kx-warte">${kxPuls(true,true)}<h3>Sitzung wird angelegt …</h3></section>${ende}</div>`;
+  if(!s) return `<div class="narrow ec-spalte">${kopf}<section class="card kx-warte">${kxVerbGross(false)}<h3>Sitzung wird angelegt …</h3></section>${ende}</div>`;
   const code=s.code||"", link=kxLink(g.id,code), viel=!fr.length||KX_PROG.codeAuf;
   const koppel=viel?`<section class="card kxz-koppel"><div class="kxz-qr">${kxQrSvg(link)}</div><div><h3>Helfer verbinden</h3><p class="meta">Mit dem Scanner der App den QR scannen – oder im Projekt „Ich drücke die Tasten“ und den Code eingeben</p><div class="kxz-ziff">${[...code].map(z=>`<span>${z}</span>`).join("")}</div>${fr.length?`<button type="button" class="btn-text" data-act="kxCodeZu">Ausblenden</button>`:""}</div></section>`
     :`<button type="button" class="kxz-codezeile" data-act="kxCodeAuf">${icon("scQr")}<span>Code <b>${esc(code)}</b> · weitere Helfer verbinden</span>${icon("chev")}</button>`;
@@ -268,7 +270,7 @@ function kxEtsView(g,D){ const s=KX_PROG.sitz, H=kxVerbunden(), fr=H.filter(h=>k
   const zonenStand=L.map(l=>{ const z=st.zonen[l.id]||[0,0], h=fr.find(x=>x.zone===l.id); return `<div class="kxz-bar"><span>${esc(kxLName(l))}${h?` · ${esc(h.wer)}`:fr.some(x=>!x.zone)?"":" · frei"}</span><i><b style="width:${z[1]?Math.round(z[0]/z[1]*100):0}%"></b></i><em>${z[0]}/${z[1]}</em></div>`; }).join("");
   const dauer=s.dauer||20;
   const einst=`<div class="kxz-einst"><span>Timer</span>${[10,20,30,45].map(t=>`<button type="button" class="kxz-chip" data-act="kxDauer" data-v="${t}" aria-pressed="${t===dauer}">${t} s</button>`).join("")}<button type="button" class="kxz-chip" data-act="kxAuto" aria-pressed="${s.auto!==false}">Automatisch weiter</button></div>`;
-  return `<div class="narrow ec-spalte">${kopf}${koppel}${karten||`<section class="card kx-warte">${kxPuls(true,true)}<h3>Noch kein Helfer verbunden</h3><p class="meta">Sobald sich jemand mit dem Code verbindet, erscheint er hier mit seiner Zone.</p></section>`}
+  return `<div class="narrow ec-spalte">${kopf}${koppel}${karten||`<section class="card kx-warte">${kxVerbGross(false)}<h3>Noch kein Helfer verbunden</h3><p class="meta">Sobald sich jemand mit dem Code verbindet, erscheint er hier mit seiner Zone.</p></section>`}
     ${freieZonen.length&&fr.length?`<p class="meta" style="margin:0 6px 12px">Ohne Helfer: ${freieZonen.map(l=>esc(kxLName(l))).join(" · ")}</p>`:""}
     <section class="card"><div class="kxz-fort">${kxMini(st.n,st.m)}<div><h3>${st.n} von ${st.m} programmiert</h3><p class="meta">${st.m-st.n} offen</p></div></div>${zonenStand?`<div class="kxz-bars">${zonenStand}</div>`:""}${einst}</section>
     ${(()=>{ const bes=kxAktiveIds(), R=kxOffen(g).filter(d=>!bes.has(d.id)); return R.length?`<section class="card"><h3>Noch offen · ${R.length}</h3>${ecListe(R.slice(0,40).map(d=>{ const l=kxLinieVonRaum(g,d.raumId); return ecLi({lead:`<b>${esc(kxPA(g,d))}</b>`,breit:true,kopf:esc(kxTyp(d.typ).name),text:esc(kxRaumTitel(g,d.raumId)+(l?" · "+kxLName(l):"")),act:"kxAnf",id:d.id,rechts:`<span class="kx-anf">Anfordern</span>`}); }))}</section>`:""; })()}${ende}</div>`; }
@@ -288,6 +290,7 @@ function kxEtsHelferKarte(g,h){ const s=KX_PROG.sitz, a=s.auf&&s.auf[h.dev], z=k
 function kxHelferView(g){ const s=KX_PROG.sitz, j=KX_PROG.join, L=kxNorm(g).linien;
   const ok=s&&s.code&&j.verbunden&&s.code===j.code&&kxFrisch(s.ets&&s.ets.at);
   const l=L.find(x=>x.id===j.zone);
+  if(KX_PROG.verbindet) return `<div class="narrow ec-spalte"><section class="card kx-warte">${kxVerbGross(false)}<h3>Verbinde …</h3><p class="meta">Code ${esc(j.code)} · ${esc(kxLName(L.find(x=>x.id===j.zone)))}</p></section></div>`;
   if(!j.verbunden) return `<div class="narrow ec-spalte"><section class="card"><h3>Mit ETS verbinden</h3><p class="meta" style="margin:0 0 12px">Code vom ETS-Gerät eingeben – oder mit dem Scanner der App den QR-Code scannen</p>
     <input id="kxCode" class="kxz-codein" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="––––" value="${esc(j.code||"")}">
     <div class="kx-knoepfe"><button type="button" class="btn-tonal" data-act="kxScan">${icon("scQr")}QR scannen</button></div>
@@ -305,7 +308,7 @@ function kxHelferInhalt(g,s,ok){ const a=s&&s.auf&&s.auf[KX_DEV], an=KX_PROG.ant
   if(ok&&z==="laeuft") return `<section class="card kxz-helfer">${kxSchritte(2)}<div class="kxz-mitte">${kxRing("ich|"+a.id,"g","wird programmiert")}<div class="kxz-pa m">${esc(a.pa)}</div><p class="kxz-typ">${esc(a.typ||"")}</p><p class="meta">${esc(a.raum||"")}</p></div><div class="kxz-hinweis">${icon("warn")}<span>Keine weitere Programmiertaste im Raum drücken, bis der Ring durch ist</span></div></section>`;
   if(ok&&z==="problem") return `<section class="card kxz-helfer"><div class="kxz-mitte"><div class="kxz-puls k warn">${icon("warn")}</div><h3>Problem gemeldet</h3><p class="meta">${esc(a.pa)} · warte, was die ETS entscheidet</p></div></section>${fort}`;
   const fertig=ok&&z==="fertig"&&a&&Date.now()-(a.ende||0)<6000, nx=s&&s.vorschau&&s.vorschau[KX_DEV];
-  return `${fertig?`<div class="kxz-erfolg"><span class="pk"></span><span>${esc(a.pa)} fertig</span></div>`:""}<section class="card kx-warte">${kxPuls(false,true)}<h3>${ok?"Warte auf das nächste Gerät …":"Warte auf das ETS-Gerät …"}</h3>
+  return `${fertig?`<div class="kxz-erfolg"><span class="pk"></span><span>${esc(a.pa)} fertig</span></div>`:""}<section class="card kx-warte">${kxVerbGross(ok)}<h3>${ok?"Warte auf das nächste Gerät …":"Warte auf das ETS-Gerät …"}</h3>
     <p class="meta">${ok&&nx?`Als Nächstes in deiner Zone:<br><b class="kxz-vor">${esc(nx.pa)} · ${esc(nx.typ)} · ${esc(nx.raum)}</b><br>Du kannst schon hingehen.`:ok?"Sobald ein Gerät angefordert wird, klingelt es – auch in einem anderen Reiter.":"Ist das ETS-Gerät noch in „Programmieren“? Sonst Beenden und neu verbinden."}</p></section>${fort}`; }
 function kxTasteKarte(g,a){ const x=g&&kxRaumInfo(g,(kxNorm(g).geraete.find(d=>d.id===a.geraet)||{}).raumId);
   return `<div class="kx-gross kxz-rein"><small>Programmiertaste drücken</small>${kxPuls()}<b>${esc(a.pa)}</b><span>${esc(a.typ||"")}</span><span class="kx-raum">${esc(a.raum||"")}${x?` · ${esc(kxGruppe(x))}`:""}</span></div>
@@ -340,10 +343,10 @@ function kxProgEnde(){ clearInterval(KX_PROG.timer); KX_PROG.timer=null; const r
   KX_PROG.rolle=""; KX_PROG.sitz=null; KX_PROG.join.verbunden=false; try{ KX_PROG.wl&&KX_PROG.wl.release(); }catch(e){} kxPopupZu(); kxMerken(); kxLeiste(); }
 async function kxVerbinden(){ const j=KX_PROG.join, c=(document.getElementById("kxCode")||{}).value||j.code; j.code=String(c||"").replace(/\D/g,"").slice(0,4);
   if(j.code.length!==4){ KX_PROG.fehler="Der Code hat 4 Ziffern"; render(); return; }
-  kxTonAn(); KX_PROG.fehler="";
-  try{ const s=await kxSitzLesen(KX_PROG.g); if(!s||s.v!==2||s.code!==j.code||!kxFrisch(s.ets&&s.ets.at)){ KX_PROG.fehler=!s||!s.code?"Auf dem ETS-Gerät läuft gerade keine Sitzung":"Code passt nicht"; render(); return; }
+  kxTonAn(); KX_PROG.fehler=""; KX_PROG.verbindet=true; render(); const t0=Date.now(), mind=()=>new Promise(r=>setTimeout(r,Math.max(0,900-(Date.now()-t0))));
+  try{ const s=await kxSitzLesen(KX_PROG.g); await mind(); KX_PROG.verbindet=false; if(!s||s.v!==2||s.code!==j.code||!kxFrisch(s.ets&&s.ets.at)){ KX_PROG.fehler=!s||!s.code?"Auf dem ETS-Gerät läuft gerade keine Sitzung":"Code passt nicht"; render(); return; }
     KX_PROG.sitz=s; j.verbunden=true; await kxHelfSchreiben(); }
-  catch(e){ KX_PROG.fehler=e.message==="ohne Anmeldung"?"nur mit Anmeldung und Internet":"keine Verbindung"; render(); return; }
+  catch(e){ KX_PROG.verbindet=false; KX_PROG.fehler=e.message==="ohne Anmeldung"?"nur mit Anmeldung und Internet":"keine Verbindung"; render(); return; }
   clearInterval(KX_PROG.timer); KX_PROG.timer=setInterval(kxAbfrage,1000); kxMerken(); toast(`Verbunden mit ${s_wer()}`); kxAnzeigen(true); }
 const s_wer=()=>(KX_PROG.sitz&&KX_PROG.sitz.ets&&KX_PROG.sitz.ets.wer)||"der ETS";
 /* ---- Abfrage jede Sekunde ---- */
