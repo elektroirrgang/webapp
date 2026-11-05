@@ -149,7 +149,14 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
     /* Ausschnitt in der Bildmitte (dort ist der Rahmen) in voller Auflösung – kleine Codes werden nicht weggerechnet */
     let rd=0; const mitte=()=>{ const w=vid.videoWidth, h=vid.videoHeight, q=Math.round(Math.min(w,h)*0.75), z=Math.min(1,960/q); cv.width=q*z|0; cv.height=q*z|0;
       cx.drawImage(vid,(w-q)/2,(h-q)/2,q,q,0,0,cv.width,cv.height); return cv; };
-    const runde=async()=>{ if(cam.aus||cam.liveAus) return; if(!cam.pause&&vid.readyState>=2){ let t=""; rd++;
+    /* Zu dunkel? Bildmitte stark verkleinert mitteln; 1,5 s dunkel → Hinweis (mit Lampe: Lampe hervorheben, ohne – z. B. iPad –: „Code eintippen“) */
+    const hc=document.createElement("canvas"); hc.width=hc.height=24; const hx=hc.getContext("2d",{willReadFrequently:true}); let dunkelSeit=0;
+    const hell=()=>{ try{ const w=vid.videoWidth, h=vid.videoHeight, q=Math.min(w,h)*0.6; hx.drawImage(vid,(w-q)/2,(h-q)/2,q,q,0,0,24,24); const d=hx.getImageData(0,0,24,24).data; let m=0; for(let i=0;i<d.length;i+=4) m+=d[i]*.299+d[i+1]*.587+d[i+2]*.114; return m/(d.length/4); }catch(e){ return 255; } };
+    const dunkelPruefen=()=>{ const m=hell(), jetzt=Date.now(), ist=el.classList.contains("sc-dunkel");
+      if(m<42){ if(!dunkelSeit) dunkelSeit=jetzt; if(!ist&&jetzt-dunkelSeit>1500){ el.classList.add("sc-dunkel"); const lampe=!el.querySelector('[data-sc="licht"]').hidden;
+          hin(lampe?(cam.licht?"Zu dunkel – Code eintippen":"Zu dunkel – Taschenlampe einschalten"):"Zu dunkel – Code eintippen oder Licht machen"); el.classList.toggle("sc-dunkel-lampe",lampe&&!cam.licht); } }
+      else if(m>58){ dunkelSeit=0; if(ist){ el.classList.remove("sc-dunkel","sc-dunkel-lampe"); hin("Aufkleber in den Rahmen halten"); } } };
+    const runde=async()=>{ if(cam.aus||cam.liveAus) return; if(!cam.pause&&vid.readyState>=2){ let t=""; rd++; if(rd%5===0) dunkelPruefen();
         try{ if(det){ const r=await det.detect(rd%3?mitte():vid); t=r[0]&&r[0].rawValue||""; }
           else { mitte(); const r=jq(cx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height,{inversionAttempts:rd%4?"dontInvert":"attemptBoth"}); t=r&&r.data||""; } }catch(e){}
         if(t){ const c=scNorm(t); if(c) scTreffer(c,t); else if(t!==zuletzt){ zuletzt=t; hin("Das ist kein Irrgang-Aufkleber"); setTimeout(()=>{ if(SC===cam&&!cam.pause) hin("Aufkleber in den Rahmen halten"); },1800); } } }
@@ -185,7 +192,7 @@ function scKlick(e){ const b=e.target.closest("[data-sc]"); if(!b||!SC) return; 
   else if(a==="nrOk") scNrOk();
   else if(a==="f"){ SC.filter=b.dataset.f; SC.el.querySelectorAll('[data-sc="f"]').forEach(x=>x.setAttribute("aria-pressed",String(x===b))); scListe(); }
   else if(a==="alt"){ const c=b.dataset.c, x=scZuletzt().find(z=>z.c===c); scLos(c,x); }
-  else if(a==="licht"){ const tr=SC.st&&SC.st.getVideoTracks()[0]; if(!tr) return; SC.licht=!SC.licht; tr.applyConstraints({advanced:[{torch:SC.licht}]}).catch(()=>{}); b.classList.toggle("an",SC.licht); }
+  else if(a==="licht"){ const tr=SC.st&&SC.st.getVideoTracks()[0]; if(!tr) return; SC.licht=!SC.licht; tr.applyConstraints({advanced:[{torch:SC.licht}]}).catch(()=>{}); SC.el.classList.remove("sc-dunkel-lampe"); b.classList.toggle("an",SC.licht); }
   else if(a==="weiter"){ clearTimeout(SC.autoT); SC.pause=false; { const h=SC.el.querySelector("#scHin"); if(h&&!SC.el.classList.contains("sc-fotom")) h.textContent="Aufkleber in den Rahmen halten"; } SC.el.classList.remove("sc-treffer"); SC.el.querySelector("#scKarte").hidden=true; if(SC.el.classList.contains("sc-fotom")&&!SC.el.classList.contains("sc-ohne")){ scFoto(); return; } const n=SC.el.querySelector("#scNr"); if(n){ n.value=""; if(SC.el.classList.contains("sc-ohne")) n.focus(); } }
   else if(a==="los") scLos(SC.c,SC.T); }
 /* Knopf oben rechts neben der Glocke – in jeder App gleich */
