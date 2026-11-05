@@ -106,10 +106,13 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
   if(SC_IOS){ el.classList.add("sc-fotom"); hin("Aus 20–30 cm – der Aufkleber muss nicht bildfüllend sein"); scFoto(); return; }
   const cam=SC, vid=el.querySelector("video");
   /* Kamera starten – mit Geräte-ID (gewählte/gemerkte Kamera) oder „irgendeine Rückkamera“ */
+  /* Android lässt meist nur eine Rückkamera gleichzeitig zu: die laufende erst schließen, dann die neue öffnen */
+  const kameraAus=async()=>{ if(!cam.st) return; try{ cam.st.getTracks().forEach(t=>t.stop()); }catch(e){} cam.st=null; vid.srcObject=null; await new Promise(r=>setTimeout(r,250)); };
   const kameraAn=async id=>{ const v={width:{ideal:1920},height:{ideal:1080},advanced:[{focusMode:"continuous"}]};
+    await kameraAus();
     const st=await navigator.mediaDevices.getUserMedia({video:id?{...v,deviceId:{exact:id}}:{...v,facingMode:"environment"},audio:false});
     if(cam.aus||cam.liveAus){ st.getTracks().forEach(t=>t.stop()); return null; }
-    try{ cam.st&&cam.st.getTracks().forEach(t=>t.stop()); }catch(e){} cam.st=st; cam.licht=false; vid.srcObject=st; try{ await vid.play(); }catch(e){}
+    cam.st=st; cam.licht=false; vid.srcObject=st; try{ await vid.play(); }catch(e){}
     const tr=st.getVideoTracks()[0]; try{ cam.devId=tr.getSettings().deviceId||id||""; }catch(e){ cam.devId=id||""; }
     try{ const cap=tr.getCapabilities?tr.getCapabilities():{}, lb=el.querySelector('[data-sc="licht"]'); lb.hidden=!cap.torch; lb.classList.remove("an");
       /* kleine Aufkleber (24-mm-Band): 2-fach zoomen, wo das Handy es kann – so bleibt man im Schärfebereich der Kamera */
@@ -119,8 +122,11 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
   /* Rückkameras: Hauptkamera zuerst („camera2 0“), dann nach Nummer */
   const rueck=async()=>{ try{ const nr=d=>{ const m=d.label.match(/camera2?\s*(\d+)/i); return m?+m[1]:99; };
     return (await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==="videoinput"&&!/front|vorder|user|selfie/i.test(d.label)).sort((a,b)=>nr(a)-nr(b)); }catch(e){ return []; } };
-  cam.wechsel=async()=>{ const L=cam.liste||[]; if(L.length<2) return; const i=Math.max(0,L.findIndex(d=>d.deviceId===cam.devId)), n=L[(i+1)%L.length];
-    try{ await kameraAn(n.deviceId); try{ localStorage.setItem(SC_CAM_LS,n.deviceId); }catch(e){} hin(`Kamera ${(i+1)%L.length+1} von ${L.length}`); }catch(e){ hin("Diese Kamera geht nicht – nochmal wechseln"); } };
+  /* nächste Rückkamera; eine, die sich nicht öffnen lässt, wird übersprungen – zur Not zurück zur bisherigen */
+  cam.wechsel=async()=>{ const L=cam.liste||[]; if(L.length<2||cam.wechselt) return; cam.wechselt=true; const alt=cam.devId, i=Math.max(0,L.findIndex(d=>d.deviceId===alt));
+    try{ for(let k=1;k<L.length;k++){ const j=(i+k)%L.length; try{ if(!await kameraAn(L[j].deviceId)) return; try{ localStorage.setItem(SC_CAM_LS,L[j].deviceId); }catch(e){} hin(`Kamera ${j+1} von ${L.length}`); return; }catch(e){} }
+      try{ await kameraAn(alt); }catch(e){ try{ await kameraAn(""); }catch(x){} } hin("Keine andere Kamera nutzbar"); }
+    finally{ cam.wechselt=false; } };
   (async()=>{ try{
     let gem=""; try{ gem=localStorage.getItem(SC_CAM_LS)||""; }catch(e){}
     let st=null; if(gem) try{ st=await kameraAn(gem); }catch(e){ st=null; }
