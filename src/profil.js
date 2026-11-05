@@ -216,17 +216,20 @@ function txtAnwenden(){ const f=(TXT_GR.find(x=>x[0]===txtGr())||TXT_GR[0])[2]; 
 txtAnwenden();
 const einTop=()=>typeof topdest==="function"?topdest():typeof TOPDEST!=="undefined"?TOPDEST:[];
 /* ===== Letzte Ansicht merken (05.11.2026): nach Update, Neuladen oder App-Neustart wieder dort weitermachen, wo man war =====
-   Gespeichert pro App (Pfad) auf dem Gerät; gilt 12 Stunden, danach wieder der eingestellte Startbereich. Dazu „Zuletzt geöffnet“ (bis zu 8 Orte). */
+   Neuladen/Update: immer; App neu geöffnet: nur innerhalb von 30 Minuten, sonst der eingestellte Startbereich. Dazu „Zuletzt geöffnet“ (bis zu 8 Orte). */
 const NAV_KEY="irrgang_nav_"+location.pathname.replace(/[^a-z0-9]/gi,"_"), NAV_ZUL=NAV_KEY+"_zul";
 const navSchl=n=>["v","id","g","ort","et","raum"].map(k=>n[k]||"").join("|");
 function navMerken(){ try{ if(typeof nav==="undefined"||!nav||!nav.v||nav.v==="login") return; const c=typeof cur!=="undefined"&&cur&&cur.id||null;
-    localStorage.setItem(NAV_KEY,JSON.stringify({at:Date.now(),nav,cur:c}));
+    const j=JSON.stringify({at:Date.now(),nav,cur:c}); localStorage.setItem(NAV_KEY,j); try{ sessionStorage.setItem(NAV_KEY,j); }catch(e){}
     /* Zuletzt geöffnet: nur Detailseiten (keine Hauptlisten, keine Einstellungen) */
     const top=einTop().some(x=>x[0]===nav.v)||["mehr","start","bibliothek","kunden","knx"].includes(nav.v)||(typeof MEHR_SUB!=="undefined"&&MEHR_SUB[nav.v]); if(top) return;
     const t=document.querySelector("#topTitle span"), sub=document.querySelector("#topTitle small"); if(!t||!t.textContent) return;
     const L=JSON.parse(localStorage.getItem(NAV_ZUL)||"[]").filter(x=>navSchl(x.nav)!==navSchl(nav));
     L.unshift({nav:JSON.parse(JSON.stringify(nav)),cur:c,t:t.textContent,s:sub?sub.textContent:"",at:Date.now()}); localStorage.setItem(NAV_ZUL,JSON.stringify(L.slice(0,8))); }catch(e){} }
-function navZurueckholen(){ try{ const s=JSON.parse(localStorage.getItem(NAV_KEY)||"null"); if(!s||!s.nav||!s.nav.v||s.nav.v==="login"||Date.now()-(s.at||0)>12*3600e3) return false;
+/* wie Android/iOS: Neuladen und Update (gleiche Sitzung) immer zurück an dieselbe Stelle; neu geöffnet nur, wenn man vor höchstens 30 Minuten dort war */
+function navZurueckholen(){ try{ let s=null; try{ s=JSON.parse(sessionStorage.getItem(NAV_KEY)||"null"); }catch(e){}
+    if(!s){ s=JSON.parse(localStorage.getItem(NAV_KEY)||"null"); if(s&&Date.now()-(s.at||0)>30*60e3) s=null; }
+    if(!s||!s.nav||!s.nav.v||s.nav.v==="login") return false;
     if(s.cur&&typeof oeffne==="function") oeffne(s.cur); nav=s.nav; return true; }catch(e){ return false; } }
 addEventListener("pagehide",navMerken); document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden") navMerken(); });
 setInterval(()=>{ if(document.visibilityState==="visible") navMerken(); },4000);
