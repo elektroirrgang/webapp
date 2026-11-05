@@ -409,6 +409,7 @@ function datenschutzView(){
     <p><b>Fotos und Dokumente:</b> Fotos der Technik und Dokumente zu Kunden (z. B. Angebote, Pläne, Datenblätter, Schriftverkehr). Fotos zeigen die Technik, nicht Personen.</p>
     <p><b>Unterschriften:</b> Unterschrift und Name des Prüfers sowie des Auftraggebers bzw. seines Vertreters.</p>
     <p><b>Mitarbeiter:</b> Name, dienstliche E-Mail-Adresse und Rolle aus dem Microsoft-Firmenkonto, freiwillig ein Profilbild und ein Rufname; wer einen Eintrag angelegt oder zuletzt geändert hat; verwendete Messgeräte.</p>
+    <p><b>Status und Abwesenheit:</b> freiwillig gesetzter Tagesstatus (z. B. „im Büro“, gilt nur für den Tag), Abwesenheiten mit Zeitraum und Art (Urlaub, Schulung oder „abwesend“) und die Schultage von Auszubildenden. Eine Krankheit wird nicht gespeichert – eingetragen wird nur „abwesend“. Den Grund sehen nur Chef, Büro und die Person selbst, alle anderen sehen „nicht verfügbar“.</p>
     ${h(4,"Zwecke und Rechtsgrundlagen")}
     <p>Durchführung und Dokumentation von Aufträgen und Prüfungen (Art. 6 Abs. 1 lit. b DSGVO). Nachweis normgerechter Prüfungen, Planung von Wiederholungsprüfungen, Abstimmung im Team und Absicherung bei Gewährleistung oder Haftung (Art. 6 Abs. 1 lit. f DSGVO – berechtigtes Interesse an einer vollständigen Dokumentation). Aufbewahrung nach gesetzlichen Pflichten (Art. 6 Abs. 1 lit. c DSGVO). Daten der Mitarbeiter: Durchführung des Beschäftigungsverhältnisses (Art. 6 Abs. 1 lit. b DSGVO, § 26 BDSG).</p>
     ${h(5,"Wo die Daten gespeichert werden")}
