@@ -1946,3 +1946,4 @@ body:has(.gv-aktbar) #app{padding-bottom:190px}
 .zul-k .av{width:36px;height:36px;border-radius:18px;display:grid;place-items:center;background:var(--pc);color:var(--on-pc);margin-bottom:6px}.zul-k .av .ic{width:20px;height:20px;fill:currentColor}
 .zul-k b{font-size:14px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.zul-k small{font-size:12px;color:var(--on-sv);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .zul-k:active{background:var(--sc-highest)}
+.lst-ic{width:36px!important;height:36px;border-radius:18px;display:grid;place-items:center;background:var(--sc-highest);color:var(--on-surface);margin-right:4px}.lst-ic .ic{width:20px;height:20px;fill:currentColor}
