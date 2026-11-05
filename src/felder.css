@@ -1957,3 +1957,17 @@ body:has(.gv-aktbar) #app{padding-bottom:190px}
 .lst-t{flex:1;min-width:0;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lst-z .kx-tk{width:34px;height:34px}
 .lst-fuss{display:flex;align-items:center;gap:4px;padding-top:12px}
+/* Wetter-Vorschau (Übersicht) */
+.wv-orte{margin:0 0 8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.wv-orte::-webkit-scrollbar{display:none}
+.wv-tage{display:flex;flex-direction:column;gap:4px}
+.wv-tag{display:grid;grid-template-columns:88px 28px 70px 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);padding:8px 14px;font:inherit;text-align:left;cursor:pointer}
+.wv-tag b{grid-row:1/3;font-size:14px}.wv-tag .w-ic{grid-row:1/3;width:26px;height:26px}.wv-tag .wv-t{grid-row:1/3;font-weight:700;font-size:16px}.wv-tag .wv-t small{font-weight:500;color:var(--on-sv);font-size:13px}
+.wv-r,.wv-w{font-size:12px;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wv-r.nass{color:#2F6FDE;font-weight:600}.wv-w.stark{color:var(--err);font-weight:600}
+.wv-tag.an{background:var(--pc);color:var(--on-pc)}.wv-tag.an .wv-r,.wv-tag.an .wv-w,.wv-tag.an .wv-t small{color:var(--on-pc)}
+.wv-std{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.wv-h{flex:none;width:58px;display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:14px;background:var(--sc-high);padding:8px 4px}.wv-h small{font-size:11px;color:var(--on-sv)}.wv-h b{font-size:14px}.wv-h .w-ic{width:22px;height:22px}
+.wv-h.nass{background:color-mix(in srgb,#2F6FDE 18%,var(--sc-high))}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .wv-r.nass{color:#A8C7FA}}:root[data-theme="dark"] .wv-r.nass{color:#A8C7FA}
+.gruss-sub{margin:-6px 4px 14px;font-size:14px;color:var(--on-sv)}.gruss-sub .w-kopf{color:var(--on-surface)}
+#dlg .da a.btn-text{text-decoration:none;display:inline-flex;align-items:center}
+@media (max-width:520px){.wv-tag{grid-template-columns:66px 24px 50px 1fr;column-gap:8px;padding:8px 10px}.wv-tag b{font-size:13px}.wv-tag .w-ic{width:22px;height:22px}}
