@@ -39,10 +39,10 @@ const scZuord=()=>!!(SC&&(SC.opt.treffer||SC.opt.aktion));
 function scListe(){ if(!SC) return; const box=SC.el.querySelector("#scListe"); if(!box) return;
   const f=SC.filter, L=scZuletzt().map(x=>{ let T=null; try{ T=scSuche(x.c); }catch(e){} if(!T||T.ic==="neu"||/^Aufkleber /.test(T.titel)) T={titel:x.titel,sub:x.sub,ic:x.ic}; return {...x,...T}; })
     .filter(x=>f==="alles"||x.ic===f);
-  box.innerHTML=L.length?`<div class="sc-lbl">${SC.el.classList.contains("pc")?"Zuletzt geöffnet":"Zuletzt gescannt"}</div>${L.map(x=>`<button type="button" class="sc-li" data-sc="alt" data-c="${esc(x.c)}"><span class="sc-av">${scSvg(SC_IC[x.ic]&&x.ic!=="neu"?x.ic:"vt")}</span><span class="sc-kt"><b>${esc(x.titel||scZeig(x.c))}</b><small>${esc([x.sub,scWann(x.t)].filter(Boolean).join(" · "))}</small></span></button>`).join("")}`
-    :`<p class="sc-leer">${f==="alles"?(SC.el.classList.contains("pc")?"Hier erscheinen die zuletzt geöffneten Anlagen.":"Hier erscheinen die zuletzt gescannten Aufkleber."):f==="schrank"?"Noch kein Netzwerkschrank gescannt.":f==="wb"?"Noch keine Wallbox gescannt.":"Noch kein Verteiler gescannt."}</p>`; }
+  box.innerHTML=L.length?`<div class="sc-lbl">${SC.el.classList.contains("sc-pc")?"Zuletzt geöffnet":"Zuletzt gescannt"}</div>${L.map(x=>`<button type="button" class="sc-li" data-sc="alt" data-c="${esc(x.c)}"><span class="sc-av">${scSvg(SC_IC[x.ic]&&x.ic!=="neu"?x.ic:"vt")}</span><span class="sc-kt"><b>${esc(x.titel||scZeig(x.c))}</b><small>${esc([x.sub,scWann(x.t)].filter(Boolean).join(" · "))}</small></span></button>`).join("")}`
+    :`<p class="sc-leer">${f==="alles"?(SC.el.classList.contains("sc-pc")?"Hier erscheinen die zuletzt geöffneten Anlagen.":"Hier erscheinen die zuletzt gescannten Aufkleber."):f==="schrank"?"Noch kein Netzwerkschrank gescannt.":f==="wb"?"Noch keine Wallbox gescannt.":"Noch kein Verteiler gescannt."}</p>`; }
 function scZu(){ if(!SC) return; if(window.visualViewport){ visualViewport.removeEventListener("resize",scLage); visualViewport.removeEventListener("scroll",scLage); } removeEventListener("resize",scLage); document.removeEventListener("visibilitychange",scLage); const cam=SC; SC=null; cam.aus=true; try{ const b=cam.el.querySelector(".sc-bild"); if(b&&b.src) URL.revokeObjectURL(b.src); }catch(e){} try{ cam.st&&cam.st.getTracks().forEach(t=>t.stop()); }catch(e){}
-  removeEventListener("keydown",scTaste); document.body.classList.remove("sc-offen"); cam.el.classList.add("weg"); setTimeout(()=>cam.el.remove(),220); }
+  removeEventListener("keydown",scTaste); document.body.classList.remove("sc-offen"); cam.el.classList.add("sc-weg"); setTimeout(()=>cam.el.remove(),220); }
 function scTaste(e){ if(e.key==="Escape"&&SC){ e.preventDefault(); e.stopPropagation(); scZu(); } }
 /* iPhone/iPad: kein Live-Bild, sondern ein Foto mit der iOS-Kamera (12 MP, Autofokus, Makro, ohne Kamera-Nachfrage).
    Safari kann QR-Codes im Live-Bild nicht selbst erkennen, und die Web-Kamera fragt in der Home-Bildschirm-App jedes Mal nach. */
@@ -60,9 +60,9 @@ async function scFotoLesen(f,jq,info){
   finally{ URL.revokeObjectURL(url); cv.width=cv.height=0; } }
 function scFoto(){ if(!SC) return; const i=SC.el.querySelector("#scDatei"); if(i){ i.value=""; i.click(); } }
 async function scFotoDa(f){ const cam=SC; if(!cam||!f) return; [0,100,400,1000].forEach(ms=>setTimeout(scLage,ms)); const el=cam.el, hin=t=>{ const h=el.querySelector("#scHin"); if(h) h.textContent=t; };
-  const bild=el.querySelector(".sc-bild"); try{ if(bild.src) URL.revokeObjectURL(bild.src); }catch(e){} bild.src=URL.createObjectURL(f); el.classList.add("liest"); hin("Wird gelesen …");
-  let t=""; try{ t=await scFotoLesen(f,await scJq()); }catch(e){ if(SC===cam){ el.classList.remove("liest"); hin("Scanner braucht einmal Internet – Code eintippen"); } return; }
-  if(SC!==cam) return; el.classList.remove("liest");
+  const bild=el.querySelector(".sc-bild"); try{ if(bild.src) URL.revokeObjectURL(bild.src); }catch(e){} bild.src=URL.createObjectURL(f); el.classList.add("sc-liest"); hin("Wird gelesen …");
+  let t=""; try{ t=await scFotoLesen(f,await scJq()); }catch(e){ if(SC===cam){ el.classList.remove("sc-liest"); hin("Scanner braucht einmal Internet – Code eintippen"); } return; }
+  if(SC!==cam) return; el.classList.remove("sc-liest");
   const c=t&&scNorm(t); if(c){ hin("Erkannt"); scTreffer(c,t); return; }
   hin(t?"Das ist kein Irrgang-Aufkleber":"Kein Code erkannt – 20–30 cm Abstand, Licht von der Seite, nicht von vorn");
   el.querySelector(".sc-foto span").textContent="Nochmal fotografieren"; }
@@ -72,7 +72,7 @@ function scLage(){ if(!SC) return; const v=window.visualViewport, e=SC.el; if(!v
 function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="function") tipWeg();
   /* Handy: Blatt von unten · iPad: Fenster in der Mitte · PC: Fenster in der Mitte, ohne Kamera – Code eintippen (z. B. wenn jemand von der Baustelle anruft) */
   const pc=typeof DESK!=="undefined"&&DESK.matches, mitte=pc||(typeof WIDE!=="undefined"?WIDE.matches:innerWidth>=744);
-  const zu=!!(opt.treffer||opt.aktion), el=document.createElement("div"); el.className="sc"+(mitte?" mitte":"")+(pc?" pc":""); el.id="sc";
+  const zu=!!(opt.treffer||opt.aktion), el=document.createElement("div"); el.className="sc"+(mitte?" sc-mitte":"")+(pc?" sc-pc":""); el.id="sc";
   if(pc&&!opt.titel) opt={...opt,titel:"Code eingeben"};
   const chip=(f,t)=>`<button type="button" class="sc-chip" data-sc="f" data-f="${f}" aria-pressed="${f==="alles"}"><span>${t}</span></button>`;
   el.innerHTML=`<div class="sc-scrim" data-sc="zu"></div><div class="sc-blatt" role="dialog" aria-modal="true" aria-label="${esc(opt.titel||"Aufkleber scannen")}">
@@ -87,7 +87,7 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
       ${zu?"":`<div class="sc-chips">${chip("alles","Alles")+(SC_EVSE?chip("wb","Wallbox")+chip("vt","Verteiler"):chip("vt","Verteiler")+chip("schrank","Netzwerkschrank"))}</div><div id="scListe"></div>`}</div></div>`;
   document.body.appendChild(el); document.body.classList.add("sc-offen"); addEventListener("keydown",scTaste); if(window.visualViewport){ visualViewport.addEventListener("resize",scLage); visualViewport.addEventListener("scroll",scLage); } addEventListener("resize",scLage); document.addEventListener("visibilitychange",scLage);
   SC={el,opt,aus:false,pause:false,st:null,licht:false,filter:"alles"}; scListe(); scLage();
-  requestAnimationFrame(()=>el.classList.add("da"));
+  requestAnimationFrame(()=>el.classList.add("sc-da"));
   el.addEventListener("click",scKlick); el.querySelector("#scNr").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); scNrOk(); } });
   /* Eingabe gleich als „4K7 P2M“ zeigen – so wie auf dem Aufkleber */
   el.querySelector("#scNr").addEventListener("input",e=>{ const i=e.target, r=i.value.toUpperCase().replace(/[^0-9A-Z]/g,"").slice(0,6), v=r.length>3?r.slice(0,3)+" "+r.slice(3):r; if(i.value!==v) i.value=v; });
@@ -97,8 +97,8 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
     z.addEventListener("touchmove",e=>{ if(y0==null) return; dy=Math.max(0,e.touches[0].clientY-y0); bl.style.transform=`translateY(${dy}px)`; },{passive:true});
     z.addEventListener("touchend",()=>{ if(y0==null) return; y0=null; bl.style.transition=""; bl.style.transform=""; if(dy>90) scZu(); }); });
   const hin=t=>{ const h=el.querySelector("#scHin"); if(h) h.textContent=t; };
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||(typeof DESK!=="undefined"&&DESK.matches)){ el.classList.add("ohne"); hin(pc?"Der Code steht auf dem QR-Aufkleber unter „Anlage“ – 6 Zeichen, z. B. 4K7 P2M.":"Code vom Aufkleber eintippen"); scEingabe(true); return; }
-  if(SC_IOS){ el.classList.add("foto"); hin("Aus 20–30 cm – der Aufkleber muss nicht bildfüllend sein");
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||(typeof DESK!=="undefined"&&DESK.matches)){ el.classList.add("sc-ohne"); hin(pc?"Der Code steht auf dem QR-Aufkleber unter „Anlage“ – 6 Zeichen, z. B. 4K7 P2M.":"Code vom Aufkleber eintippen"); scEingabe(true); return; }
+  if(SC_IOS){ el.classList.add("sc-fotom"); hin("Aus 20–30 cm – der Aufkleber muss nicht bildfüllend sein");
     el.querySelector("#scDatei").addEventListener("change",e=>{ const f=e.target.files&&e.target.files[0]; if(f) scFotoDa(f); });
     scFoto(); return; }
   const cam=SC;
@@ -121,15 +121,15 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
         if(t){ const c=scNorm(t); if(c) scTreffer(c,t); else if(t!==zuletzt){ zuletzt=t; hin("Das ist kein Irrgang-Aufkleber"); setTimeout(()=>{ if(SC===cam&&!cam.pause) hin("Aufkleber in den Rahmen halten"); },1800); } } }
       setTimeout(runde,det?120:180); };
     runde();
-  }).catch(e=>{ if(cam.aus) return; el.classList.add("ohne"); hin(/NotAllowed|Permission/i.test(e&&e.name||"")?"Kamera nicht erlaubt – Code eintippen":"Keine Kamera – Code eintippen"); scEingabe(true); }); }
+  }).catch(e=>{ if(cam.aus) return; el.classList.add("sc-ohne"); hin(/NotAllowed|Permission/i.test(e&&e.name||"")?"Kamera nicht erlaubt – Code eintippen":"Keine Kamera – Code eintippen"); scEingabe(true); }); }
 function scEingabe(an){ if(!SC) return; const e=SC.el.querySelector(".sc-ein"), n=SC.el.querySelector('[data-sc="nr"]'); e.hidden=!an; if(n) n.hidden=an; if(an) setTimeout(()=>SC&&SC.el.querySelector("#scNr").focus(),60); }
 function scNrOk(){ if(!SC) return; const c=scNorm(SC.el.querySelector("#scNr").value); if(!c){ const h=SC.el.querySelector("#scHin"); if(h) h.textContent="Der Code hat 6 Zeichen, z. B. 4K7 P2M"; return; } SC.el.querySelector("#scNr").blur(); scTreffer(c); }
 function scTreffer(c,roh){ if(!SC||SC.pause) return; SC.pause=true; SC.c=c; SC.roh=roh||""; if(navigator.vibrate) try{ navigator.vibrate(40); }catch(e){}
   const T=(SC.opt.treffer||scSuche)(c)||{titel:`Aufkleber ${scZeig(c)}`,sub:"",ic:"vt",knopf:"Öffnen"}; SC.T=T;
-  SC.el.classList.add("treffer"); scLage(); const k=SC.el.querySelector("#scKarte");
+  SC.el.classList.add("sc-treffer"); scLage(); const k=SC.el.querySelector("#scKarte");
   k.innerHTML=`<div class="sc-k"><span class="sc-av">${scSvg(T.ic||"vt")}</span><div class="sc-kt"><b>${esc(T.titel)}</b>${T.sub?`<small>${esc(T.sub)}</small>`:""}<span class="sc-nr">${esc(scZeig(c))}</span></div></div>
-    <div class="sc-kb"><button type="button" class="sc-n" data-sc="weiter">${SC.el.classList.contains("pc")?"Anderer Code":"Weiter scannen"}</button><button type="button" class="sc-h" data-sc="los">${esc(T.knopf||"Öffnen")}</button></div>`;
-  k.hidden=false; if(SC.el.classList.contains("pc")) setTimeout(()=>{ const l=SC&&SC.el.querySelector('[data-sc="los"]'); if(l) l.focus(); },30); }
+    <div class="sc-kb"><button type="button" class="sc-n" data-sc="weiter">${SC.el.classList.contains("sc-pc")?"Anderer Code":"Weiter scannen"}</button><button type="button" class="sc-h" data-sc="los">${esc(T.knopf||"Öffnen")}</button></div>`;
+  k.hidden=false; if(SC.el.classList.contains("sc-pc")) setTimeout(()=>{ const l=SC&&SC.el.querySelector('[data-sc="los"]'); if(l) l.focus(); },30); }
 function scLos(c,T){ const f=SC&&SC.opt.aktion, art=SC&&SC.filter; if(!f) scMerken(c,T); scZu();
   if(f){ f(c); return; }
   if(T&&T.ic==="wb"&&!SC_EVSE){ location.href=`../evse/#qr=${encodeURIComponent(c)}`; return; }
@@ -144,7 +144,7 @@ function scKlick(e){ const b=e.target.closest("[data-sc]"); if(!b||!SC) return; 
   else if(a==="f"){ SC.filter=b.dataset.f; SC.el.querySelectorAll('[data-sc="f"]').forEach(x=>x.setAttribute("aria-pressed",String(x===b))); scListe(); }
   else if(a==="alt"){ const c=b.dataset.c, x=scZuletzt().find(z=>z.c===c); scLos(c,x); }
   else if(a==="licht"){ const tr=SC.st&&SC.st.getVideoTracks()[0]; if(!tr) return; SC.licht=!SC.licht; tr.applyConstraints({advanced:[{torch:SC.licht}]}).catch(()=>{}); b.classList.toggle("an",SC.licht); }
-  else if(a==="weiter"){ SC.pause=false; SC.el.classList.remove("treffer"); SC.el.querySelector("#scKarte").hidden=true; if(SC.el.classList.contains("foto")&&!SC.el.classList.contains("ohne")){ scFoto(); return; } const n=SC.el.querySelector("#scNr"); if(n){ n.value=""; if(SC.el.classList.contains("ohne")) n.focus(); } }
+  else if(a==="weiter"){ SC.pause=false; SC.el.classList.remove("sc-treffer"); SC.el.querySelector("#scKarte").hidden=true; if(SC.el.classList.contains("sc-fotom")&&!SC.el.classList.contains("sc-ohne")){ scFoto(); return; } const n=SC.el.querySelector("#scNr"); if(n){ n.value=""; if(SC.el.classList.contains("sc-ohne")) n.focus(); } }
   else if(a==="los") scLos(SC.c,SC.T); }
 /* Knopf oben rechts neben der Glocke – in jeder App gleich */
 function scKnopf(){ const gl=document.getElementById("glBtn"); if(!gl||document.getElementById("scBtn")) return;
