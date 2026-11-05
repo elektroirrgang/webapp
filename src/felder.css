@@ -1937,3 +1937,6 @@ body:has(.gv-aktbar) #app{padding-bottom:190px}
 .zs-rohbau{--zs:#D9A200}.zs-fein{--zs:#2F6FDE}.zs-geprueft{--zs:#7B4FD6}.zs-fertig{--zs:#2E8B3E}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .zs-rohbau{--zs:#F5CD47}:root:not([data-theme="light"]) .zs-fein{--zs:#A8C7FA}:root:not([data-theme="light"]) .zs-geprueft{--zs:#D3BBFF}:root:not([data-theme="light"]) .zs-fertig{--zs:#9DD69A}}
 :root[data-theme="dark"] .zs-rohbau{--zs:#F5CD47}:root[data-theme="dark"] .zs-fein{--zs:#A8C7FA}:root[data-theme="dark"] .zs-geprueft{--zs:#D3BBFF}:root[data-theme="dark"] .zs-fertig{--zs:#9DD69A}
+.zs-bestand,.zs-offen{--zs:#8A8D96}.zs-demontage{--zs:#E07B00}.zs-install{--zs:#2F6FDE}.zs-maengel{--zs:#C8102E}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .zs-bestand,:root:not([data-theme="light"]) .zs-offen{--zs:#C8C8CC}:root:not([data-theme="light"]) .zs-demontage{--zs:#FFB870}:root:not([data-theme="light"]) .zs-install{--zs:#A8C7FA}:root:not([data-theme="light"]) .zs-maengel{--zs:#FFB3AE}}
+:root[data-theme="dark"] .zs-bestand,:root[data-theme="dark"] .zs-offen{--zs:#C8C8CC}:root[data-theme="dark"] .zs-demontage{--zs:#FFB870}:root[data-theme="dark"] .zs-install{--zs:#A8C7FA}:root[data-theme="dark"] .zs-maengel{--zs:#FFB3AE}
