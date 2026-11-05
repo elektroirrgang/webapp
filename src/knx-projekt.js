@@ -328,22 +328,23 @@ async function kxProgStart(rolle,gid){ KX_PROG.rolle=rolle; KX_PROG.g=gid; KX_PR
   if(rolle==="taste"){ KX_PROG.join={code:KX_PROG.join.g===gid?KX_PROG.join.code:"",zone:KX_PROG.join.g===gid?KX_PROG.join.zone:"",g:gid,verbunden:false}; }
   clearInterval(KX_PROG.timer);
   try{ navigator.wakeLock&&navigator.wakeLock.request("screen").then(w=>KX_PROG.wl=w).catch(()=>{}); }catch(e){}
-  if(rolle==="ets"){ try{ const alt=await kxSitzLesen(gid); const code=String(1000+Math.floor(Math.random()*9000));
-      await kxSitzSchreiben(gid,{v:2,g:gid,code,dauer:(alt&&alt.v===2&&alt.dauer)||20,auto:alt&&alt.v===2?alt.auto!==false:true,auf:{},vorschau:{}}); }
+  if(rolle==="ets"){ try{ const alt=await kxSitzLesen(gid);
+      if(alt&&alt.v===2&&alt.code&&alt.ets&&alt.ets.dev===KX_DEV&&Date.now()-alt.ets.at<3*36e5){ KX_PROG.sitz=alt; await kxSitzSchreiben(gid,alt); }
+      else { const code=String(1000+Math.floor(Math.random()*9000)); await kxSitzSchreiben(gid,{v:2,g:gid,code,dauer:(alt&&alt.v===2&&alt.dauer)||20,auto:alt&&alt.v===2?alt.auto!==false:true,auf:{},vorschau:{}}); } }
     catch(e){ KX_PROG.fehler=e.message==="ohne Anmeldung"?"nur mit Anmeldung und Internet":"keine Verbindung"; }
     KX_PROG.timer=setInterval(kxAbfrage,1000); kxAbfrage(); }
-  kxAnzeigen(true); }
+  kxMerken(); kxAnzeigen(true); }
 function kxProgEnde(){ clearInterval(KX_PROG.timer); KX_PROG.timer=null; const r=KX_PROG.rolle, gid=KX_PROG.g;
   if(r==="taste"&&KX_PROG.join.verbunden) kxDateiWeg(kxHelfName(gid,KX_DEV));
   if(r==="ets"&&KX_PROG.sitz){ const s={...KX_PROG.sitz,code:"",auf:{}}; kxSitzSchreiben(gid,s).catch(()=>{}); }
-  KX_PROG.rolle=""; KX_PROG.sitz=null; KX_PROG.join.verbunden=false; try{ KX_PROG.wl&&KX_PROG.wl.release(); }catch(e){} kxPopupZu(); }
+  KX_PROG.rolle=""; KX_PROG.sitz=null; KX_PROG.join.verbunden=false; try{ KX_PROG.wl&&KX_PROG.wl.release(); }catch(e){} kxPopupZu(); kxMerken(); kxLeiste(); }
 async function kxVerbinden(){ const j=KX_PROG.join, c=(document.getElementById("kxCode")||{}).value||j.code; j.code=String(c||"").replace(/\D/g,"").slice(0,4);
   if(j.code.length!==4){ KX_PROG.fehler="Der Code hat 4 Ziffern"; render(); return; }
   kxTonAn(); KX_PROG.fehler="";
   try{ const s=await kxSitzLesen(KX_PROG.g); if(!s||s.v!==2||s.code!==j.code||!kxFrisch(s.ets&&s.ets.at)){ KX_PROG.fehler=!s||!s.code?"Auf dem ETS-Gerät läuft gerade keine Sitzung":"Code passt nicht"; render(); return; }
     KX_PROG.sitz=s; j.verbunden=true; await kxHelfSchreiben(); }
   catch(e){ KX_PROG.fehler=e.message==="ohne Anmeldung"?"nur mit Anmeldung und Internet":"keine Verbindung"; render(); return; }
-  clearInterval(KX_PROG.timer); KX_PROG.timer=setInterval(kxAbfrage,1000); toast(`Verbunden mit ${s_wer()}`); kxAnzeigen(true); }
+  clearInterval(KX_PROG.timer); KX_PROG.timer=setInterval(kxAbfrage,1000); kxMerken(); toast(`Verbunden mit ${s_wer()}`); kxAnzeigen(true); }
 const s_wer=()=>(KX_PROG.sitz&&KX_PROG.sitz.ets&&KX_PROG.sitz.ets.wer)||"der ETS";
 /* ---- Abfrage jede Sekunde ---- */
 async function kxAbfrage(){ if(!KX_PROG.rolle||KX_PROG.busy) return; KX_PROG.busy=true;
@@ -354,21 +355,40 @@ async function kxAbfrage(){ if(!KX_PROG.rolle||KX_PROG.busy) return; KX_PROG.bus
       /* gedrückt gemeldet → kurz rütteln */
       const s=KX_PROG.sitz; if(s) kxVerbunden().forEach(h=>{ const a=s.auf&&s.auf[h.dev]; if(a&&h.antwort&&h.antwort.id===a.id&&h.antwort.status==="gedrueckt"&&!KX_PROG.lokal["g"+a.id]){ KX_PROG.lokal["g"+a.id]=1; kxRuetteln(120); } });
       if(s&&Date.now()-KX_PROG.herz>10000) await kxEtsSchreiben();
-      if(KX_PROG.fehler){ KX_PROG.fehler=""; kxAnzeigen(true); } else if(vorher!==KX_PROG.sigH) kxAnzeigen(); }
+      if(KX_PROG.fehler){ KX_PROG.fehler=""; kxAnzeigen(true); } else if(vorher!==KX_PROG.sigH) kxAnzeigen(); else kxLeiste(); }
     else { const s=await kxSitzLesen(gid), sig=s?JSON.stringify([s.seq,s.code,kxFrisch(s.ets&&s.ets.at)]):"";
       if(KX_PROG.join.verbunden&&Date.now()-KX_PROG.herz>10000) await kxHelfSchreiben();
       if(sig!==KX_PROG.letzt||KX_PROG.fehler){ KX_PROG.letzt=sig; const a0=KX_PROG.sitz&&KX_PROG.sitz.auf&&KX_PROG.sitz.auf[KX_DEV]; KX_PROG.sitz=s; KX_PROG.fehler="";
         const a=s&&s.auf&&s.auf[KX_DEV];
-        if(a&&a.status==="angefordert"&&(!a0||a0.id!==a.id)){ KX_PROG.antwort=null; kxPiep(); kxRuetteln(); }
+        if(a&&a.status==="angefordert"&&KX_PROG.gesehen!==a.id){ KX_PROG.gesehen=a.id; if(KX_PROG.antwort&&KX_PROG.antwort.id!==a.id) KX_PROG.antwort=null; kxMerken(); if(!(KX_PROG.antwort&&KX_PROG.antwort.id===a.id)){ kxPiep(); kxRuetteln(); } }
         kxAnzeigen(); }
       /* außerhalb des Reiters: offene Anforderung immer als Fenster zeigen */
-      else if(!(nav.v==="kx"&&nav.g===KX_PROG.g&&kxTab()==="prog")&&!document.getElementById("kxPop")) kxAnzeigen(); } }
+      else if(!kxImReiter()&&!document.getElementById("kxPop")) kxAnzeigen(); else kxLeiste(); } }
   catch(e){ const f=e.message==="ohne Anmeldung"?"nur mit Anmeldung und Internet":"keine Verbindung"; if(KX_PROG.fehler!==f){ KX_PROG.fehler=f; kxAnzeigen(true); } }
   KX_PROG.busy=false; }
-function kxAnzeigen(){ if(nav.v==="kx"&&nav.g===KX_PROG.g&&kxTab()==="prog"){ kxPopupZu(); const y=scrollY; render(); scrollTo(0,y); return; }
+const kxImReiter=()=>nav.v==="kx"&&nav.g===KX_PROG.g&&kxTab()==="prog";
+function kxAnzeigen(){ kxLeiste(); if(kxImReiter()){ kxPopupZu(); const y=scrollY; render(); scrollTo(0,y); return; }
   /* Helfer außerhalb des Reiters: Fenster über allem */
   const s=KX_PROG.sitz, g=vtGeb(KX_PROG.g), a=s&&s.auf&&s.auf[KX_DEV], an=KX_PROG.antwort;
   if(KX_PROG.rolle==="taste"&&g&&a&&a.status==="angefordert"&&!(an&&an.id===a.id)) kxPopup(kxTasteKarte(g,a)); else kxPopupZu(); }
+/* Leiste oben, solange eine Sitzung läuft und man woanders in der App ist – Antippen führt zurück */
+function kxLeiste(){ let el=document.getElementById("kxBar"); const an=KX_PROG.rolle&&!kxImReiter();
+  if(!an){ if(el) el.remove(); return; }
+  const s=KX_PROG.sitz; let t="", warn=false;
+  if(KX_PROG.rolle==="ets"){ const H=kxVerbunden().filter(h=>kxFrisch(h.at)), ged=s&&H.find(h=>kxZustand(s.auf&&s.auf[h.dev],h)==="gedrueckt"), pr=s&&H.find(h=>kxZustand(s.auf&&s.auf[h.dev],h)==="problem");
+    t=ged?`${s.auf[ged.dev].pa}: Taste gedrückt – jetzt starten`:pr?`${s.auf[pr.dev].pa}: Problem gemeldet`:`Programmieren läuft · ${H.length} ${H.length===1?"Helfer":"Helfer"}`; warn=!!(ged||pr); }
+  else { const a=s&&s.auf&&s.auf[KX_DEV]; t=!KX_PROG.join.verbunden?"Programmieren: nicht verbunden":a&&a.status==="laeuft"?`${a.pa} wird programmiert – nichts drücken`:a&&a.status==="angefordert"?`${a.pa}: Programmiertaste drücken`:"Programmieren: warte auf das nächste Gerät"; warn=!!(a&&(a.status==="angefordert"||a.status==="laeuft")); }
+  if(!el){ el=document.createElement("button"); el.type="button"; el.id="kxBar"; el.addEventListener("click",()=>{ if(typeof closeOverlays==="function") closeOverlays(); go({v:"kx",g:KX_PROG.g,tab:"prog"}); }); document.body.appendChild(el); }
+  el.className=warn?"warn":""; el.innerHTML=`${kxVerb(KX_PROG.rolle==="ets"?kxVerbunden().some(h=>kxFrisch(h.at)):!!(s&&kxFrisch(s.ets&&s.ets.at)),"")}<span>${esc(t)}</span>${icon("chev")}`; }
+/* Sitzung merken: App im Hintergrund oder von iOS beendet → beim nächsten Öffnen geht es weiter (bis 3 h) */
+function kxMerken(){ try{ if(KX_PROG.rolle) localStorage.setItem("kx-sitzung",JSON.stringify({rolle:KX_PROG.rolle,g:KX_PROG.g,join:KX_PROG.join,antwort:KX_PROG.antwort||null,gesehen:KX_PROG.gesehen||"",at:Date.now()})); else localStorage.removeItem("kx-sitzung"); }catch(e){} }
+function kxFortsetzen(n){ let m=null; try{ m=JSON.parse(localStorage.getItem("kx-sitzung")||"null"); }catch(e){} if(!m||!m.g||Date.now()-m.at>3*36e5||KX_PROG.rolle) return;
+  if(typeof DB==="undefined"||!DB.gebaeude||!vtGeb(m.g)||typeof ME==="undefined"||!ME.signedIn){ if((n||0)<40) setTimeout(()=>kxFortsetzen((n||0)+1),500); return; }
+  if(m.rolle==="ets"){ kxProgStart("ets",m.g); return; }
+  KX_PROG.join={...m.join,g:m.g}; const war=!!m.join.verbunden; kxProgStart("taste",m.g).then(()=>{ if(war){ KX_PROG.join.verbunden=true; KX_PROG.antwort=m.antwort||null; KX_PROG.gesehen=m.gesehen||""; KX_PROG.herz=0; clearInterval(KX_PROG.timer); KX_PROG.timer=setInterval(kxAbfrage,1000); kxMerken(); kxAbfrage(); } }); }
+setTimeout(()=>kxFortsetzen(),800);
+/* zurück in die App (aus dem Hintergrund): sofort nachfragen statt auf den nächsten Takt zu warten */
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&KX_PROG.rolle){ KX_PROG.herz=0; kxAbfrage(); try{ navigator.wakeLock&&navigator.wakeLock.request("screen").then(w=>KX_PROG.wl=w).catch(()=>{}); }catch(e){} } });
 function kxPopup(html){ let el=document.getElementById("kxPop"); if(!el){ el=document.createElement("div"); el.id="kxPop"; el.innerHTML=`<div class="kx-pop-in"></div>`; document.body.appendChild(el); } el.querySelector(".kx-pop-in").innerHTML=html; }
 function kxPopupZu(){ const el=document.getElementById("kxPop"); if(el) el.remove(); }
 /* ---- ETS: schreiben, anfordern, Timer ---- */
@@ -463,6 +483,6 @@ document.addEventListener("click",async ev=>{ const b=ev.target.closest&&ev.targ
   if(a==="kxVerbinden"){ kxCodeMerken(); await kxVerbinden(); return; }
   if(a==="kxScan"){ kxCodeMerken(); if(typeof scOeffnen==="function") scOeffnen(); return; }
   if(a==="kxGedrueckt"||a==="kxNichtGef"){ const x=KX_PROG.sitz&&KX_PROG.sitz.auf&&KX_PROG.sitz.auf[KX_DEV]; if(!x) return;
-    KX_PROG.antwort={id:x.id,status:a==="kxGedrueckt"?"gedrueckt":"problem",notiz:a==="kxGedrueckt"?"":"Gerät nicht gefunden oder reagiert nicht",at:Date.now()}; kxPopupZu(); kxAnzeigen();
+    KX_PROG.antwort={id:x.id,status:a==="kxGedrueckt"?"gedrueckt":"problem",notiz:a==="kxGedrueckt"?"":"Gerät nicht gefunden oder reagiert nicht",at:Date.now()}; kxMerken(); kxPopupZu(); kxAnzeigen();
     try{ await kxHelfSchreiben(); }catch(e){ KX_PROG.antwort=null; kxAnzeigen(); toast("Keine Verbindung – nochmal tippen"); } return; }
 },true);
