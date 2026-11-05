@@ -386,7 +386,7 @@ function kxLeiste(){ let el=document.getElementById("kxKopf"); const alt=documen
     t=!KX_PROG.join.verbunden?"Programmieren: nicht verbunden":a&&a.status==="laeuft"?`${a.pa} wird programmiert`:a&&a.status==="angefordert"?`${a.pa}: Programmiertaste drücken`:"Programmieren: warte auf das nächste Gerät";
     warn=!!(a&&a.status==="angefordert"&&!(an&&an.id===a.id))&&!kxImReiter(); }
   KX_PROG.stat={t,warn,ok};
-  if(kxHandy()){ if(el){ el.remove(); el=null; } if(gl){ gl.classList.toggle("kx-gl-warn",warn); gl.classList.toggle("kx-gl-live",!warn); } live(); return; }
+  if(kxHandy()){ if(el){ el.remove(); el=null; } if(gl){ const hier=kxImReiter(); gl.classList.toggle("kx-gl-warn",warn&&!hier); gl.classList.toggle("kx-gl-live",!warn&&!hier); } live(); return; }
   if(gl) gl.classList.remove("kx-gl-warn","kx-gl-live"); live();
   if(!el){ const sc=document.getElementById("scBtn")||document.getElementById("glBtn"); if(!sc) return;
     el=document.createElement("button"); el.type="button"; el.id="kxKopf"; el.className="glocke kx-kopfbtn";
@@ -396,7 +396,7 @@ function kxLeiste(){ let el=document.getElementById("kxKopf"); const alt=documen
   el.innerHTML=`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC.kxGeraete}"/></svg><i></i>`; }
 /* Live-Eintrag für die Benachrichtigungen (Handy und iPad) */
 function kxLiveMeldung(){ if(!KX_PROG.rolle) return ""; const st=KX_PROG.stat||{t:"Programmieren läuft",warn:false,ok:false}, g=vtGeb(KX_PROG.g), o=g&&typeof ecOrt==="function"?ecOrt(g.ortId):null;
-  return `<div class="ml-gr">Live</div><button type="button" class="kx-live${st.warn?" warn":""}" data-act="kxLiveAuf"><span class="kx-live-av">${kxVerb(st.ok,"")}</span><span class="kx-live-tx"><b>${esc(st.t)}</b><small>${KX_PROG.rolle==="ets"?"Du programmierst":"Du drückst die Tasten"}${o&&o.titel?` · ${esc(o.titel)}`:""}</small></span>${icon("chev")}</button>`; }
+  return `<section class="kx-live-sek" aria-label="Live"><div class="kx-live-lbl"><i></i>Live</div><button type="button" class="kx-live${st.warn?" warn":""}" data-act="kxLiveAuf"><span class="kx-live-av">${kxSvgP("kxGeraete")}</span><span class="kx-live-tx"><b>${esc(st.t)}</b><small>${KX_PROG.rolle==="ets"?"Du programmierst":"Du drückst die Tasten"}${o&&o.titel?` · ${esc(o.titel)}`:""}</small></span>${icon("chev")}</button></section>`; }
 addEventListener("resize",()=>{ if(KX_PROG.rolle) kxLeiste(); });
 /* Sitzung merken: App im Hintergrund oder von iOS beendet → beim nächsten Öffnen geht es weiter (bis 3 h) */
 function kxMerken(){ try{ if(KX_PROG.rolle) localStorage.setItem("kx-sitzung",JSON.stringify({rolle:KX_PROG.rolle,g:KX_PROG.g,join:KX_PROG.join,antwort:KX_PROG.antwort||null,gesehen:KX_PROG.gesehen||"",at:Date.now()})); else localStorage.removeItem("kx-sitzung"); }catch(e){} }
