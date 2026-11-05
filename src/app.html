@@ -1799,6 +1799,7 @@ function weiterKnopf(s,st){ const li=st==="geraet"?-1:+st.slice(2), k=(v,t)=>`<d
 function render(){ profilAnwenden();
   const app=$("#app"), ed=EDITOR.includes(nav.v);
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
+  if(QR_WARTET&&nav.v!=="login") qrNachLogin();
   if(ed&&!cur) nav={v:"start"};
   if(nav.v==="saeule"&&!cur.s[nav.si]) nav={v:"saeulen"};
   const top=TOP.includes(nav.v), login=nav.v==="login", E=EDITOR.includes(nav.v);
@@ -1977,6 +1978,7 @@ function wann(ts){ if(!ts) return ""; const d=new Date(ts), h=new Date(); const 
   const uhr=d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
   return tage===0?`heute, ${uhr}`:tage===1?`gestern, ${uhr}`:d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"}); }
 /*DATEIEN*/
+/*QRWB*/
 /*ANFORDERUNG*/
 /* Benachrichtigungen: Aufträge und Materialanforderungen öffnen in der Übersicht */
 const ML_FREMD={auftraege:"../uebersicht/",materialanf:"../uebersicht/",geraete:"../uebersicht/"};
@@ -2777,7 +2779,7 @@ function geraetItem(t){ const T=geraeteTreffer(t.s.sn), r=saeuleResult(t.s);
 /* Geräte gehören zum Ort (Ladepark bzw. Standort ohne Ladepark); Prüfungen verweisen über gid darauf */
 /* Ort ohne eigenen Standort = Adresse des Kunden; dann ist die Standort-Kennung „k:<Kunde>“ und Geräte/Prüfverlauf hängen am Kunden */
 const ortRec=(sid,lid)=>lid?ladeparkOf(lid):kOrt(sid)?kundeOf(sid.slice(2)):standortOf(sid), ortKind=(lid,sid)=>lid?"ladeparks":kOrt(sid)?"kunden":"standorte";
-const STAMM_AUS=["id","gid","lp","sicht","fotos","aus"];
+const STAMM_AUS=["id","gid","lp","sicht","fotos","aus","qr"];   /* qr: Wallbox-Aufkleber gehört zum Gerät am Ort, nicht zur Prüfung */
 const stamm=s=>{ const o={}; for(const k in s) if(!STAMM_AUS.includes(k)) o[k]=JSON.parse(JSON.stringify(s[k])); return o; };
 const begonnen=s=>Object.keys(s.sicht||{}).length>0||Object.keys(s.fotos||{}).length>0||(s.lp||[]).some(l=>Object.values(l.v||{}).some(v=>v!==""&&v!=null)||(l.bem||"").trim());
 function geraeteOrt(sid,lid){ const o=ortRec(sid,lid); if(o&&Array.isArray(o.geraete)) return o.geraete;
@@ -2798,7 +2800,7 @@ function abgleich(p,neuAbgewaehlt=true){ if(!p||!istAktuell(p)) return false; le
 function zurueckAnOrt(p){ if(!p||!istAktuell(p)) return; const o=ortRec(p.standortId,p.ladeparkId); if(!o||!canEdit(o)&&SYNC_ON&&!o.demo) return;
   const vorher=JSON.stringify(o.geraete||null); ortFest(p.standortId,p.ladeparkId);
   p.s.forEach(x=>{ const gid=x.gid||x.id, i=o.geraete.findIndex(g=>g.gid===gid), neu=Object.assign(stamm(x),{gid});
-    if(i<0) o.geraete.push(neu); else { if(o.geraete[i].aus) neu.aus=true; o.geraete[i]=neu; } });
+    if(i<0) o.geraete.push(neu); else { if(o.geraete[i].aus) neu.aus=true; if(o.geraete[i].qr) neu.qr=o.geraete[i].qr; o.geraete[i]=neu; } });
   if(JSON.stringify(o.geraete)!==vorher) saveRec(ortKind(p.ladeparkId,p.standortId),o,false); }
 function geraeteGeaendert(sid,lid){ const p=pruefAt(sid,lid)[0]; if(!p||hatPdf(p)) return;
   const c=JSON.parse(JSON.stringify(p)); if(abgleich(c)){ saveRec("pruefungen",c,false); if(cur&&cur.id===c.id){ cur=JSON.parse(JSON.stringify(c)); dirtyCur=false; } } }
@@ -2814,7 +2816,7 @@ function geraeteSektion(sid,lid){ const G=geraeteOrt(sid,lid), A=G.filter(g=>!g.
   return `<div class="sec-row"><div class="sec-lbl">Geräte${A.length?` · ${A.length}`:""}</div>${ed?`<button class="btn-text" data-act="geraetNeu" data-sid="${esc(sid)}" data-lid="${esc(lid||"")}">${icon("add")}Gerät</button>`:""}</div>`
     +(A.length?`<div class="list">${A.map((g,i)=>geraetOrtItem(g,i,sid,lid)).join("")}</div>`:`<p class="meta">Noch keine Geräte – über „Gerät“ anlegen.</p>`)
     +(X.length?`<details class="aus-g"><summary class="sec-lbl">Außer Betrieb · ${X.length}</summary><div class="list">${X.map((g,i)=>geraetOrtItem(g,i,sid,lid)).join("")}</div></details>`:"")
-    +(A.length&&ed?`<p class="hint">Gerät nach links wischen: außer Betrieb nehmen</p>`:""); }
+    +(A.length&&ed?`<p class="hint">Gerät nach links wischen: außer Betrieb nehmen</p>`:"")+qrWbOrtZeile(sid,lid); }
 function verlaufKopf(standortId,ladeparkId){ const p=pruefAt(standortId,ladeparkId)[0]; if(!p||!p.a||!p.a.naechste) return "";
   const t=today(), kl=p.a.naechste<t?"bad":p.a.naechste<=new Date(Date.now()+90*864e5).toISOString().slice(0,10)?"wip":"open";
   return `<p class="faellig-zeile">${icon("pending")}Nächste Prüfung fällig: <b>${esc(deDate(p.a.naechste))}</b> ${pill(kl,kl==="bad"?"überfällig":kl==="wip"?"bald":"geplant")}</p>`; }
@@ -2830,7 +2832,7 @@ function akteView(sn){
   return `<div class="narrow"><section class="card akte-k"><div class="ak-h">${stAv(s,true)}<div><h2>${esc(s.typ||sName(s,L.i))}</h2>
       <p>${esc([BAUART(s),`SN ${s.sn}`,s.ort&&`Stellplatz ${s.ort}`].filter(Boolean).join(" · "))}</p><p>${esc(orte.join(" · "))}</p></div></div>
       <div class="kpis3"><div><b>${T.length}</b><span>Prüfung${T.length===1?"":"en"}</span></div><div><b>${esc(deDate(T[T.length-1].p.p.datum))}</b><span>erste Prüfung</span></div><div><b>${esc(deDate(L.p.p.datum))}</b><span>letzte Prüfung</span></div></div>
-      ${kat?`<button class="btn-text" data-act="nav" data-v="katmodell" data-id="${esc(kat.id)}">${icon("book")}Steckbrief im Katalog</button>`:""}</section>
+      ${kat?`<button class="btn-text" data-act="nav" data-v="katmodell" data-id="${esc(kat.id)}">${icon("book")}Steckbrief im Katalog</button>`:""}</section>${qrWbAkteKarte(sn)}
     <div class="sec-lbl">Messwerte im Verlauf</div>
     <div class="akte-tab"><table><thead><tr><th>Prüfung</th><th></th>${AKTE_SP.map(([,l,u])=>`<th>${l}<small>${u}</small></th>`).join("")}<th>Ergebnis</th></tr></thead><tbody>${zeilen}</tbody></table></div>
     <p class="hint">Rot = Grenzwert nicht eingehalten. Die Akte ergibt sich automatisch aus der Seriennummer.</p>

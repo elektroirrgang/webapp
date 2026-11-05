@@ -12,11 +12,11 @@
 /* Mitarbeiter, die in diesem Browser schon angemeldet sind, gehen direkt in die App zum Verteiler bzw. Netzwerkschrank. Alle anderen sehen nur diese Seite – ohne Daten. */
 (function(){ var c=(location.hash||location.search||"").replace(/^[#?]/,"").toUpperCase().replace(/[^0-9A-Z]/g,"").slice(0,6);
   window.QR_NR=/^[0-9A-Z]{6}$/.test(c)?c:"";
-  /* Art steht im Link (&a=netz / &a=zs), gesetzt von der App beim Drucken – Bogen-Aufkleber haben keine */
-  var a=((location.hash||"")+"&"+(location.search||"")).match(/[&?#]a=(netz|zs)\b/i); window.QR_ART=a?a[1].toLowerCase():"";
+  /* Art steht im Link (&a=netz / &a=zs / &a=wb Wallbox / &a=ws öffentliche Ladesäule), gesetzt von der App beim Drucken – Bogen-Aufkleber haben keine */
+  var q=(location.hash||"")+"&"+(location.search||""), a=q.match(/[&?#]a=(netz|zs|wb|ws)\b/i), h=q.match(/[&?#]h=([a-z]{2})\b/i); window.QR_ART=a?a[1].toLowerCase():""; window.QR_H=h?h[1].toLowerCase():"";
   var an=false; try{ var l=JSON.parse(localStorage.getItem("irrgang_login")||"null"); if(l&&l.mail&&!l.aus) an=true;
     if(!an){ var k=JSON.parse(localStorage.getItem("msal.account.keys")||"[]"); if(k&&k.length) an=true; } }catch(e){}
-  if(an&&window.QR_NR&&!/[?&]info\b/.test(location.search)) location.replace("../echeck/#qr="+window.QR_NR); })();
+  if(an&&window.QR_NR&&!/[?&]info\b/.test(location.search)) location.replace((/^w[bs]$/.test(window.QR_ART)?"../evse/":"../echeck/")+"#qr="+window.QR_NR); })();
 </script>
 <style>
 @font-face{font-family:Manrope;font-weight:400;font-display:swap;src:url(data:font/woff2;base64,<!--F400-->) format("woff2")}
@@ -133,18 +133,18 @@ ol.st b{color:var(--on-surface)}
   <div class="karte">
     <p class="ober" id="ober">Elektrische Anlage</p>
     <h1 id="h1">Diese Anlage wird von Elektro Irrgang betreut</h1>
-    <p><span id="einl">Die Stromkreise und Prüfungen dieser Anlage sind bei uns dokumentiert.</span> Bei Fragen oder einer Störung nennen Sie uns bitte die unten stehende <span style="white-space:nowrap">Anlagen-Nr.</span> So können wir Ihr Anliegen umgehend zuordnen.</p>
+    <p><span id="einl">Die Stromkreise und Prüfungen dieser Anlage sind bei uns dokumentiert.</span> <span id="einl2">Bei Fragen oder einer Störung nennen Sie uns bitte die unten stehende <span style="white-space:nowrap">Anlagen-Nr.</span> So können wir Ihr Anliegen umgehend zuordnen.</span></p>
     <div class="nr" id="nr"><b id="nrT" aria-label="Anlagen-Nr."></b></div>
     <div class="kn">
       <a class="btn f" href="tel:+4922914878"><svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>Anrufen · 02291 4878</a>
-      <a class="btn t" id="stoer" href="mailto:info@elektro-irrgang.de"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>Störung melden</a>
-      <button type="button" class="btn t" id="fotoBtn" data-art="netz" hidden style="border:0;width:100%;font-family:inherit;cursor:pointer"><svg viewBox="0 0 24 24"><path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4zM9 2 7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg>Foto vom Router senden</button>
+      <a class="btn t" id="stoer" href="mailto:info@elektro-irrgang.de"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg><span id="stoerT">Störung melden</span></a>
+      <button type="button" class="btn t" id="fotoBtn" data-art="netz wb" hidden style="border:0;width:100%;font-family:inherit;cursor:pointer"><svg viewBox="0 0 24 24"><path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4zM9 2 7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg><span id="fotoT">Foto vom Router senden</span></button>
       <input type="file" id="fotoIn" accept="image/*" capture="environment" hidden>
     </div>
     <div class="fv" id="fv"><img id="fvImg" alt="Ihr Foto"><div class="zeile"><button type="button" class="btn2 g" id="fvNeu">Anderes Foto</button><button type="button" class="btn2 f" id="fvLos">Senden</button></div>
-      <p class="klein" style="margin:0">Das Foto geht mit der Anlagen-Nr. und Ihren Messwerten an uns – per Mail, WhatsApp oder einer anderen App Ihrer Wahl.</p></div>
+      <p class="klein" style="margin:0" id="fvH">Das Foto geht mit der Anlagen-Nr. und Ihren Messwerten an uns – per Mail, WhatsApp oder einer anderen App Ihrer Wahl.</p></div>
   </div>
-  <section class="blk" data-art="strom">
+  <section class="blk" data-art="_ zs">
     <h2>Stromausfall: Was Sie selbst prüfen können</h2>
     <p class="u">Häufig hat lediglich eine Schutzeinrichtung ausgelöst.</p>
     <ol class="st">
@@ -155,6 +155,29 @@ ol.st b{color:var(--on-surface)}
     </ol>
     <div class="warn"><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><span><b>Bitte keine Abdeckungen entfernen.</b>Berühren Sie bei Brandgeruch, Rauch, Funken oder Feuchtigkeit am Verteiler nichts. Rufen Sie bei Feuer sofort die 112 an.</span></div>
     <div class="warn" data-art="zs" hidden><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg><span><b>Zähler und Plomben nicht öffnen.</b>Der Zählerplatz und verplombte Bereiche gehören dem Netzbetreiber. Arbeiten daran dürfen nur der Netzbetreiber oder ein eingetragener Fachbetrieb ausführen.</span></div>
+  </section>
+  <section class="blk" data-art="wb" hidden>
+    <h2>Wallbox lädt nicht? Was Sie selbst prüfen können</h2>
+    <p class="u">Oft liegt es nicht an der Wallbox, sondern an Kabel, Fahrzeug oder Freigabe.</p>
+    <ol class="st">
+      <li><span><b>Kabel und Fahrzeug:</b> Ist der Stecker an Wallbox und Fahrzeug ganz eingesteckt und eingerastet? Ist im Fahrzeug ein Ladetimer, ein Ladelimit oder „später laden“ eingestellt?</span></li>
+      <li><span><b>Freigabe:</b> Viele Wallboxen laden erst nach einer Freigabe – per Ladekarte, App oder Schlüsselschalter. Halten Sie die Karte an das Lesefeld bzw. geben Sie die Ladung in der App frei.</span></li>
+      <li><span><b>Alle Lampen aus:</b> Dann hat die Wallbox keinen Strom. Prüfen Sie im Sicherungskasten den Sicherungsautomaten und den FI-Schutzschalter der Wallbox (meist mit „Wallbox“ oder „Ladestation“ beschriftet). Ist einer ausgelöst, schalten Sie ihn einmal wieder ein.</span></li>
+      <li><span><b>Wallbox zeigt einen Fehler:</b> Leuchtet oder blinkt eine Lampe rot, merken Sie sich das Muster (gern ein Foto). Schalten Sie die Wallbox dann über ihren Sicherungsautomaten etwa eine Minute aus und wieder ein.</span></li>
+      <li><span><b>Weiterhin keine Ladung:</b> Löst ein Schalter sofort wieder aus oder lädt die Wallbox weiterhin nicht, unternehmen Sie bitte keine weiteren Versuche und melden Sie uns die Störung.</span></li>
+    </ol>
+    <div class="warn"><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><span><b>Bei Schäden nicht mehr laden.</b>Sind Gehäuse, Ladekabel oder Stecker beschädigt, riecht es verbrannt oder ist Wasser eingedrungen: Kabel nicht berühren, die Wallbox im Sicherungskasten ausschalten und uns anrufen. Die Wallbox bitte nicht öffnen.</span></div>
+    <div class="kn" id="anlKn" hidden><a class="btn2 t" id="anl" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg><span id="anlT">Bedienungsanleitung</span></a></div>
+    <p class="kh" id="anlH" hidden>Das genaue Modell steht auf dem Typenschild der Wallbox.</p>
+  </section>
+  <section class="blk" data-art="ws" hidden>
+    <h2>Probleme beim Laden?</h2>
+    <p class="u">Wir betreuen die elektrische Anlage dieser Ladestation – nicht den Ladebetrieb.</p>
+    <ol class="st">
+      <li><span><b>Hotline des Betreibers:</b> Freischaltung, Ladekarte, App und Abrechnung klärt der Betreiber der Ladestation. Die Telefonnummer steht auf der Ladesäule oder in Ihrer Lade-App.</span></li>
+      <li><span><b>Anderen Ladepunkt nutzen:</b> Ist nur ein Ladepunkt gestört, laden Sie bitte an einem anderen.</span></li>
+    </ol>
+    <div class="warn"><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><span><b>Schaden an der Ladesäule?</b>Ist ein Kabel, Stecker oder das Gehäuse beschädigt: nicht laden, nichts berühren und den Betreiber oder uns informieren.</span></div>
   </section>
   <section class="blk" data-art="netz" hidden>
     <h2>Internet-Geschwindigkeit messen</h2>
@@ -180,9 +203,10 @@ ol.st b{color:var(--on-surface)}
   </section>
   <section class="blk">
     <h2>Gut zu wissen</h2>
-    <div class="tipp" data-art="strom"><i><svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg></i><span><b>FI-Schutzschalter regelmäßig prüfen</b>Die Hersteller empfehlen, etwa alle sechs Monate die Prüftaste „T“ zu betätigen. Der Schalter muss dabei auslösen und kann anschließend wieder eingeschaltet werden. Bitte fahren Sie vorher Computer und ähnliche Geräte herunter. Löst der Schalter nicht aus, informieren Sie uns bitte.</span></div>
-    <div class="kn" data-art="strom"><a class="btn t" id="kal" href="fi-pruefung.ics"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm-7-8.5 1.18 2.39 2.64.38-1.91 1.86.45 2.62L12 17.5l-2.36 1.25.45-2.62-1.91-1.86 2.64-.38L12 11.5z"/></svg>Erinnerung in den Kalender</a></div>
-    <p class="kh" data-art="strom">Sie werden zweimal im Jahr erinnert, jeweils am letzten Samstag im März und im Oktober, passend zur Zeitumstellung.</p>
+    <div class="tipp" data-art="wb" hidden style="margin-bottom:14px"><i><svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg></i><span><b>Regelmäßige Prüfung</b>Wallboxen sollten regelmäßig geprüft werden – in Betrieben nach DGUV Vorschrift 3. Wann die nächste Prüfung fällig ist, steht auf der Prüfplakette. Einen Termin vereinbaren Sie gern telefonisch.</span></div>
+    <div class="tipp" data-art="_ zs"><i><svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg></i><span><b>FI-Schutzschalter regelmäßig prüfen</b>Die Hersteller empfehlen, etwa alle sechs Monate die Prüftaste „T“ zu betätigen. Der Schalter muss dabei auslösen und kann anschließend wieder eingeschaltet werden. Bitte fahren Sie vorher Computer und ähnliche Geräte herunter. Löst der Schalter nicht aus, informieren Sie uns bitte.</span></div>
+    <div class="kn" data-art="_ zs"><a class="btn t" id="kal" href="fi-pruefung.ics"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm-7-8.5 1.18 2.39 2.64.38-1.91 1.86.45 2.62L12 17.5l-2.36 1.25.45-2.62-1.91-1.86 2.64-.38L12 11.5z"/></svg>Erinnerung in den Kalender</a></div>
+    <p class="kh" data-art="_ zs">Sie werden zweimal im Jahr erinnert, jeweils am letzten Samstag im März und im Oktober, passend zur Zeitumstellung.</p>
     <div class="tipp"><i><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></i><span><b>Dokumentation für Vermieter, Hausverwaltungen und Fachbetriebe</b><span id="doku">Stromkreisliste und Prüfprotokolle dieser Anlage liegen uns vor.</span> Bitte geben Sie bei Ihrer Anfrage die Anlagen-Nr. an.</span></div>
     <div class="kn"><a class="btn t" id="mail" href="mailto:info@elektro-irrgang.de"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>Dokumentation anfragen</a></div>
     <div class="tipp" data-art="netz" hidden style="margin-top:22px"><i><svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg></i><span><b>Für IT-Dienstleister und Fachfirmen</b>Sie haben im Schrank etwas umgesteckt, getauscht oder ergänzt? Bitte melden Sie es uns kurz – so bleibt die Dokumentation für alle aktuell.</span></div>
@@ -197,22 +221,35 @@ ol.st b{color:var(--on-surface)}
   /* Inhalt je Art: Netzwerkschrank, Zählerschrank oder Verteiler (Standard). Ohne Art (Bogen-Aufkleber) gibt es unten den Wechsel zum Netzwerkschrank. */
   var T={netz:{ober:"Netzwerk",h1:"Dieser Netzwerkschrank wird von Elektro Irrgang betreut",einl:"Verkabelung, Patchfelder und Belegung dieses Schranks sind bei uns dokumentiert.",doku:"Patchplan, Belegung und Messprotokolle dieses Netzwerks liegen uns vor.",titel:"Netzwerkschrank · Elektro Irrgang",was:"am Netzwerk"},
     zs:{ober:"Zählerschrank",h1:"Dieser Zählerschrank wird von Elektro Irrgang betreut",einl:"Die Stromkreise und Prüfungen dieser Anlage sind bei uns dokumentiert.",doku:"Stromkreisliste und Prüfprotokolle dieser Anlage liegen uns vor.",titel:"Zählerschrank · Elektro Irrgang",was:"an der elektrischen Anlage"},
+    wb:{ober:"Wallbox",h1:"Diese Wallbox wird von Elektro Irrgang betreut",einl:"Installation und Prüfungen dieser Ladestation sind bei uns dokumentiert.",doku:"Prüfprotokolle und Messwerte dieser Ladestation liegen uns vor.",titel:"Wallbox · Elektro Irrgang",was:"an der Wallbox",foto:"Foto der Wallbox senden",fotoH:"Das Foto geht mit der Anlagen-Nr. an uns – per Mail, WhatsApp oder einer anderen App Ihrer Wahl. Gut zu sehen: Lampen bzw. Anzeige der Wallbox.",fotoTitel:"Störung Wallbox",
+      felder:"Was zeigt die Wallbox (Lampen, Farbe, Blinken):\nFahrzeug:\nSeit wann:\n"},
+    ws:{ober:"Service / Wartung",h1:"Service-Kennzeichnung von Elektro Irrgang",einl:"Wir betreuen die elektrische Anlage dieser Ladestation.",einl2:"Probleme beim Laden, mit Ladekarte oder Abrechnung klärt der Betreiber – seine Hotline steht auf der Ladesäule. Für Service und Schäden an der Anlage nennen Sie uns bitte die unten stehende Nummer.",doku:"Prüfprotokolle und Messwerte dieser Ladestation liegen uns vor.",titel:"Service / Wartung · Elektro Irrgang",was:"an der Ladestation",stoer:"Schaden melden",
+      felder:"Was ist beschädigt bzw. was funktioniert nicht:\nSeit wann:\n"},
     "":{ober:"Elektrische Anlage",h1:"Diese Anlage wird von Elektro Irrgang betreut",einl:"Die Stromkreise und Prüfungen dieser Anlage sind bei uns dokumentiert.",doku:"Stromkreisliste und Prüfprotokolle dieser Anlage liegen uns vor.",titel:"Elektrische Anlage · Elektro Irrgang",was:"an der elektrischen Anlage"}};
   var ohneArt=!window.QR_ART;
+  var E2=document.getElementById("einl2").innerHTML;
   function zeig(art){ var t=T[art]||T[""];
     ["ober","h1","einl","doku"].forEach(function(k){ document.getElementById(k).textContent=t[k]; }); document.title=t.titel;
-    [].forEach.call(document.querySelectorAll("[data-art]"),function(e){ var d=e.getAttribute("data-art"); e.hidden=d==="netz"?art!=="netz":d==="zs"?art!=="zs":art==="netz"; });
+    if(t.einl2) document.getElementById("einl2").textContent=t.einl2; else document.getElementById("einl2").innerHTML=E2;
+    document.getElementById("stoerT").textContent=t.stoer||"Störung melden"; document.getElementById("fotoT").textContent=t.foto||"Foto vom Router senden";
+    document.getElementById("fvH").textContent=t.fotoH||"Das Foto geht mit der Anlagen-Nr. und Ihren Messwerten an uns – per Mail, WhatsApp oder einer anderen App Ihrer Wahl.";
+    /* data-art: Liste der Arten, bei denen das Element sichtbar ist („_“ = Verteiler ohne Art) */
+    [].forEach.call(document.querySelectorAll("[data-art]"),function(e){ e.hidden=e.getAttribute("data-art").split(" ").indexOf(art||"_")<0; });
     var w=document.getElementById("wechsel"); w.hidden=!ohneArt; w.textContent=art==="netz"?"Hier ist ein Stromverteiler? Zur Stromseite ›":"Hier ist ein Netzwerkschrank? Zur Netzwerkseite ›"; w.onclick=function(){ zeig(art==="netz"?"":"netz"); scrollTo(0,0); };
     mails(t.was); }
   if(c){ document.getElementById("nrT").textContent=z; } else document.getElementById("nr").style.display="none";
   function mails(was){ var b="Sehr geehrte Damen und Herren,\n\nhiermit bitte ich um die Dokumentation zur Anlage"+(c?" mit der Anlagen-Nr. "+z:"")+".\n\nName:\nFirma:\nTelefon:\nAnschrift der Anlage:\nGrund der Anfrage:\n\nMit freundlichen Grüßen";
   document.getElementById("mail").href="mailto:info@elektro-irrgang.de?subject="+encodeURIComponent("Dokumentation Anlage"+(c?" "+z:""))+"&body="+encodeURIComponent(b);
-  var s="Sehr geehrte Damen und Herren,\n\nhiermit melde ich eine Störung "+was+(c?" mit der Anlagen-Nr. "+z:"")+"."+(was==="am Netzwerk"&&window.MESS_TXT?"\n\n"+window.MESS_TXT():"")+"\n\nWas ist passiert:\nSeit wann:\nBetroffene Räume oder Geräte:\n\nName:\nTelefon für Rückruf:\nAnschrift der Anlage:\n\nMit freundlichen Grüßen";
-  document.getElementById("stoer").href="mailto:info@elektro-irrgang.de?subject="+encodeURIComponent("Störung Anlage"+(c?" "+z:""))+"&body="+encodeURIComponent(s); }
+  var t=T[AKT]||T[""], s="Sehr geehrte Damen und Herren,\n\nhiermit melde ich "+(AKT==="ws"?"einen Schaden ":"eine Störung ")+was+(c?" mit der Anlagen-Nr. "+z:"")+"."+(was==="am Netzwerk"&&window.MESS_TXT?"\n\n"+window.MESS_TXT():"")+"\n\n"+(t.felder||"Was ist passiert:\nSeit wann:\nBetroffene Räume oder Geräte:\n")+"\nName:\nTelefon für Rückruf:\nAnschrift der Anlage:\n\nMit freundlichen Grüßen";
+  document.getElementById("stoer").href="mailto:info@elektro-irrgang.de?subject="+encodeURIComponent((AKT==="ws"?"Schaden Ladestation":AKT==="wb"?"Störung Wallbox":"Störung Anlage")+(c?" "+z:""))+"&body="+encodeURIComponent(s); }
   window.MAILS=function(){ mails(T[AKT].was); };
   var AKT=window.QR_ART||""; var zeig0=zeig; zeig=function(a){ AKT=a; zeig0(a); }; zeig(AKT);
   var aend=document.getElementById("aend"); if(aend) aend.href="mailto:info@elektro-irrgang.de?subject="+encodeURIComponent("Änderung Netzwerkschrank"+(c?" "+z:""))+"&body="+encodeURIComponent("Sehr geehrte Damen und Herren,\n\nwir haben am Netzwerkschrank"+(c?" mit der Anlagen-Nr. "+z:"")+" etwas geändert.\n\nFirma:\nName und Telefon:\nDatum:\n\nWas wurde geändert (z. B. Kabel umgesteckt, Gerät getauscht, neues Gerät, Dose neu aufgelegt):\n\nPatchfeld / Port:\nSwitch / Port:\nGerät (Hersteller, Modell):\nBemerkung:\n\nMit freundlichen Grüßen");
-  if(c) document.getElementById("ma").href="../echeck/#qr="+c; })();
+  if(c) document.getElementById("ma").href=(/^w[bs]$/.test(AKT)?"../evse/":"../echeck/")+"#qr="+c;
+  /* Anleitung des Herstellers (&h=…): KEBA hat eine feste Download-Seite, sonst Suche nach Hersteller + Anleitung */
+  var H={me:"Mennekes",ke:"KEBA",se:"Schneider Electric",hu:"Huawei",ab:"ABL",we:"Webasto",he:"Heidelberg",al:"Alfen",ea:"Easee",go:"go-e",za:"Zaptec",co:"Compleo",hg:"Hager",wa:"Wallbox",sm:"SMA",fr:"Fronius",eb:"EVBox",cp:"ChargePoint"}, hn=H[window.QR_H||""];
+  if(AKT==="wb"&&hn){ var an=document.getElementById("anl"); an.href=window.QR_H==="ke"?"https://keba.com/emobility-downloads":"https://www.google.com/search?q="+encodeURIComponent(hn+" Wallbox Bedienungsanleitung");
+    document.getElementById("anlT").textContent=window.QR_H==="ke"?"Bedienungsanleitung von KEBA":"Bedienungsanleitung finden · "+hn; document.getElementById("anlKn").hidden=false; document.getElementById("anlH").hidden=false; } })();
 </script>
 <script>
 /* ===== Netzwerk: Geschwindigkeit messen, geführter Neustart, Foto senden (04.11.2026) =====
@@ -331,10 +368,11 @@ ol.st b{color:var(--on-surface)}
   document.getElementById("fvNeu").addEventListener("click",function(){ FI.value=""; FI.click(); });
   FI.addEventListener("change",function(){ var d=FI.files&&FI.files[0]; if(!d) return; DATEI=d; var img=document.getElementById("fvImg"); try{ URL.revokeObjectURL(img.src); }catch(e){} img.src=URL.createObjectURL(d); FV.classList.add("an"); FV.scrollIntoView({behavior:"smooth",block:"center"}); });
   document.getElementById("fvLos").addEventListener("click",async function(){ if(!DATEI) return;
-    var txt="Störung Netzwerk"+(c?" · Anlagen-Nr. "+z:"")+"\n\n"+(window.MESS_TXT()||"(noch keine Messung)")+"\n\nName:\nTelefon für Rückruf:\nAnschrift:";
-    var datei=new File([DATEI],"Netzwerk "+(z||"Foto")+(/\.\w+$/.exec(DATEI.name)||[".jpg"])[0],{type:DATEI.type||"image/jpeg"});
-    if(navigator.canShare&&navigator.canShare({files:[datei]})){ try{ await navigator.share({files:[datei],title:"Störung Netzwerk "+z,text:txt}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
-    location.href="mailto:info@elektro-irrgang.de?subject="+encodeURIComponent("Störung Netzwerk"+(c?" "+z:""))+"&body="+encodeURIComponent(txt+"\n\n(Bitte das Foto an diese Mail anhängen.)"); });
+    var wb=window.QR_ART==="wb", ti=wb?"Störung Wallbox":"Störung Netzwerk";
+    var txt=ti+(c?" · Anlagen-Nr. "+z:"")+"\n\n"+(wb?"Was zeigt die Wallbox:\nFahrzeug:":(window.MESS_TXT()||"(noch keine Messung)"))+"\n\nName:\nTelefon für Rückruf:\nAnschrift:";
+    var datei=new File([DATEI],(wb?"Wallbox ":"Netzwerk ")+(z||"Foto")+(/\.\w+$/.exec(DATEI.name)||[".jpg"])[0],{type:DATEI.type||"image/jpeg"});
+    if(navigator.canShare&&navigator.canShare({files:[datei]})){ try{ await navigator.share({files:[datei],title:ti+" "+z,text:txt}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
+    location.href="mailto:info@elektro-irrgang.de?subject="+encodeURIComponent(ti+(c?" "+z:""))+"&body="+encodeURIComponent(txt+"\n\n(Bitte das Foto an diese Mail anhängen.)"); });
 })();
 </script>
 </body>

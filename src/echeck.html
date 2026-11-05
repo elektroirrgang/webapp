@@ -1260,7 +1260,6 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .leg-rcd{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:8px;background:var(--sec-c);color:var(--on-sec-c);font-size:11px;font-weight:700;vertical-align:1px}
 .leg-n{display:inline-grid;place-items:center;min-width:26px;height:24px;padding:0 8px;margin-left:8px;border-radius:12px;background:var(--sc-high);font-size:13px;font-weight:700;color:var(--on-sv);vertical-align:3px;font-variant-numeric:tabular-nums}
 /* QR-Aufkleber */
-.qr-karte h3{margin-bottom:12px}
 /* ===== Verteiler-Assistent (vt-aufnahme.js): eine Frage pro Fenster. Handy: ganze Seite, ab iPad: großes Fenster ===== */
 .dlg.aw{display:flex;flex-direction:column;padding:0;left:0;top:0;transform:none;width:100%;height:100dvh;max-height:100dvh;border-radius:0;background:var(--surface);overflow:hidden}
 @media (min-width:700px){.dlg.aw{left:50%;top:50%;transform:translate(-50%,-50%);width:min(640px,calc(100% - 48px));height:min(860px,calc(100dvh - 48px));border-radius:28px}}
@@ -1388,16 +1387,6 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .zs-bs{flex:none;font-size:13px;font-weight:700;color:var(--on-sv)}.zs-bp[aria-pressed="true"] .zs-bs{color:inherit}.zs-bs.offen{color:var(--primary)}
 
 
-.qr-zeile,.qr-neu{display:flex;align-items:center;gap:16px}
-.qr-svg{flex:none;border-radius:8px;background:#fff;padding:0;display:block}
-.qr-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
-.qr-txt small{font-size:13px;font-weight:700;color:var(--on-sv)}.qr-txt .meta{margin:4px 0 0;font-size:14px;line-height:20px}
-.qr-nr{font-size:26px;line-height:32px;font-weight:800;letter-spacing:.08em;font-variant-numeric:tabular-nums}
-.qr-zeile .qr-svg{border-radius:14px}
-.qr-knoepfe{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}.qr-knoepfe.zwei{grid-template-columns:repeat(2,minmax(0,1fr))}
-.qr-k{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px 10px;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.qr-k .ic{width:22px;height:22px;color:var(--primary)}.qr-k:active{background:var(--sc-highest)}.qr-k.weg .ic{color:var(--err)}
-.qr-neu{margin-bottom:14px}.qr-neu .meta{margin:4px 0 0}
 .qr-cam{position:relative;aspect-ratio:4/3;background:#000;border-radius:16px;overflow:hidden}
 .qr-cam video{width:100%;height:100%;object-fit:cover;display:block}
 .qr-rahmen{position:absolute;left:50%;top:46%;width:56%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:18px;box-shadow:0 0 0 2000px rgba(0,0,0,.38);background:transparent;
@@ -1406,12 +1395,6 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
   background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%}
 .qr-cam-msg{position:absolute;left:0;right:0;bottom:10px;margin:0;text-align:center;color:#fff;font-size:14px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 #qrBtn{margin-right:8px}
-.qr-band-v{background:var(--sc-high);border-radius:16px;padding:18px;display:grid;place-items:center;margin-bottom:14px}
-.qr-band{width:min(100%,340px);height:auto;filter:drop-shadow(0 1px 3px rgba(0,0,0,.18))}
-.qr-wahl{display:flex;flex-direction:column;gap:8px}
-.qr-w{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:0;background:var(--sc-high);color:inherit;border-radius:16px;padding:12px 14px;font:inherit;cursor:pointer}
-.qr-w .av{width:40px;height:40px;border-radius:50%;background:var(--pc);color:var(--on-pc);display:grid;place-items:center;flex:none}.qr-w .av .ic{width:22px;height:22px}
-.qr-w .lt{flex:1;display:flex;flex-direction:column;min-width:0}.qr-w .h{font-weight:700}.qr-w .s{font-size:13px;color:var(--on-sv)}
 .leg-fuss{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:4px 0 8px}
 .leg-fuss .btn-tonal,.leg-fuss .btn-filled{display:inline-flex;align-items:center;gap:8px}.leg-fuss .ic{width:18px;height:18px}
 .leg-fuss .leg-del{height:48px;padding:0 22px 0 18px;background:#C62828;color:#fff;border-radius:24px;font-size:15px}
