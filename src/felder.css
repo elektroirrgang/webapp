@@ -2023,3 +2023,26 @@ body:has(.gv-aktbar) #app{padding-bottom:190px}
 .wbq-ort{display:flex;align-items:center;gap:14px;width:100%;margin-top:10px;text-align:left;border:0;border-radius:16px;padding:12px 14px;background:var(--sc);color:inherit;font:inherit;cursor:pointer}
 .wbq-ort .av{width:40px;height:40px;border-radius:50%;background:var(--pc);color:var(--on-pc);display:grid;place-items:center;flex:none}.wbq-ort .av .ic{width:22px;height:22px}
 .wbq-ort .lt{flex:1;display:flex;flex-direction:column;min-width:0}.wbq-ort .h{font-weight:700}.wbq-ort .s{font-size:13px;color:var(--on-sv)}.wbq-ort>.ic{color:var(--on-sv)}
+/* ---- Produktbilder: Fortschrittskarte beim Umzug in den SharePoint ---- */
+.bsp-karte{position:fixed;z-index:60;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(380px,calc(100vw - 32px));display:flex;align-items:center;gap:14px;padding:14px 10px 14px 14px;border-radius:24px;background:var(--sc-high);color:var(--on-surface);box-shadow:0 8px 28px rgba(0,0,0,.18);transform:translateY(24px);opacity:0;transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .3s}
+.bsp-karte.da{transform:none;opacity:1}
+body.has-nav .bsp-karte{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+@media (max-width:743px){.bsp-karte{left:16px;right:16px;width:auto}}
+.bsp-ring{position:relative;width:48px;height:48px;flex:none}
+.bsp-ring>svg{width:48px;height:48px;transform:rotate(-90deg)}
+.bsp-ring circle{fill:none;stroke-width:4.5}.bsp-ring .bg{stroke:var(--surface)}
+.bsp-ring .vg{stroke:var(--primary);stroke-linecap:round;transition:stroke-dashoffset .5s ease}
+.bsp-ic{position:absolute;inset:0;display:grid;place-items:center;color:var(--primary)}.bsp-ic .ic{width:22px;height:22px}
+.bsp-karte:not(.fertig) .bsp-ic .ic{animation:bspHoch 1.4s ease-in-out infinite}
+@keyframes bspHoch{0%{transform:translateY(3px);opacity:.35}45%{transform:none;opacity:1}100%{transform:translateY(-3px);opacity:.35}}
+.bsp-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.bsp-t b{font-size:15px;line-height:20px}.bsp-t small{font-size:13px;line-height:18px;color:var(--on-sv);font-variant-numeric:tabular-nums}
+.bsp-bar{display:block;height:4px;border-radius:2px;background:var(--surface);overflow:hidden;margin-top:6px;position:relative}
+.bsp-bar i{display:block;height:100%;width:0;border-radius:2px;background:var(--primary);transition:width .5s ease}
+.bsp-karte:not(.fertig) .bsp-bar::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);transform:translateX(-100%);animation:bspGlanz 1.6s ease-in-out infinite}
+@keyframes bspGlanz{to{transform:translateX(100%)}}
+.bsp-karte.fertig .bsp-bar{display:none}
+.bsp-karte.fertig .bsp-ring .vg{stroke:var(--ok,#1E8E3E)}.bsp-karte.fertig .bsp-ic{color:var(--ok,#1E8E3E)}
+.bsp-zu{width:40px;height:40px;border:0;border-radius:20px;background:transparent;color:var(--on-sv);display:grid;place-items:center;cursor:pointer;flex:none}.bsp-zu .ic{width:20px;height:20px}
+@media (prefers-reduced-motion:reduce){.bsp-karte,.bsp-ring .vg,.bsp-bar i{transition:none}.bsp-karte .bsp-ic .ic,.bsp-karte .bsp-bar::after{animation:none!important}}
+
