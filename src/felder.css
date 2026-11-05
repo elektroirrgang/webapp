@@ -2087,6 +2087,7 @@ body.has-nav .bsp-karte{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
     html body nav.navbar.zieht .nav-ind{transition:width .2s ease-out,scale .22s cubic-bezier(.3,1.4,.5,1),box-shadow .2s;scale:1.18;box-shadow:0 6px 18px rgba(0,0,0,.28)}
     html body nav.navbar.zieht .nav-item[aria-current="page"]{color:var(--on-sv)}
     html body nav.navbar.zieht .nav-item.nav-ziel{color:var(--on-sec-c)}
-    html body .fab{bottom:calc(var(--dock-u) + 64px + 10px)}
+    /* Prüfungs-Knopf: kompakter, als Kapsel wie das Dock, 10 pt darüber (body.has-nav .fab der App ist stärker – deshalb hier gleich stark plus html) */
+    html body.has-nav .fab,html body .fab{bottom:calc(var(--dock-u) + 64px + 10px);height:50px;border-radius:25px;padding:0 18px 0 14px;gap:8px;font-size:15px}
   }
 }
