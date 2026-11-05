@@ -121,8 +121,9 @@ function kaCfg(){ const r=DB.einstellungen&&DB.einstellungen.get("karte"), o=r&&
 const POI_RANG=POI_RANG_STD;
 /* Zwischenspeicher je Ort: Treffer 30 Tage, „nichts gefunden“ nur 1 Tag (sonst bleibt ein ausgelasteter Server einen Monat lang hängen).
    META.poi aus älteren Fassungen kann solche leeren Antworten enthalten → einmalig verworfen (poi2). */
-async function kartePoiHolen(g){ const C=kaCfg(), key=g.lat.toFixed(4)+","+g.lon.toFixed(4)+"|"+C.radius+"|2"+(C.an("parking")?"p":""); if(META.poi) delete META.poi; META.poi2=META.poi2||{}; const alt=META.poi2[key];
-  if(alt&&Date.now()-alt.t<(alt.L.length?30:1)*864e5) return kaFiltern(alt.L,g,C);
+async function kartePoiHolen(g){ const C=kaCfg(), key=g.lat.toFixed(4)+","+g.lon.toFixed(4)+"|"+C.radius+"|3"+(C.an("parking")?"p":""); if(META.poi) delete META.poi; META.poi2=META.poi2||{}; const alt=META.poi2[key];
+  /* Overpass-Treffer 30 Tage; Ersatzquellen (vollständig nicht sicher) nur 1 Tag; nichts gefunden 1 Stunde */
+  if(alt&&Date.now()-alt.t<(!alt.L.length?1/24:alt.q==="ov"?30:1)*864e5) return kaFiltern(alt.L,g,C);
   const um=`(around:${C.radius},${g.lat},${g.lon})`, q=`[out:json][timeout:15];(nwr${um}["shop"~"^(supermarket|doityourself)$"];nwr${um}["amenity"~"^(place_of_worship|fuel|charging_station|school|pharmacy|townhall|hospital|bank|fire_station${C.an("parking")?"|parking":""})$"];nwr${um}["railway"="station"];);out center 80;`;
   /* Overpass-Server sind oft ausgelastet (Okt. 2026: alle vier zeitweise ohne Antwort): alle gleichzeitig fragen, die erste brauchbare Antwort zählt (max. 10 s).
      Klappt keiner, ersatzweise Nominatim (je Art eine Suche im Kartenausschnitt, eine pro Sekunde laut Nutzungsregeln). */
@@ -130,15 +131,17 @@ async function kartePoiHolen(g){ const C=kaCfg(), key=g.lat.toFixed(4)+","+g.lon
     fetch(srv,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"},signal:ab.signal}).then(r=>r.ok?r.json():Promise.reject(r.status))
       .then(j=>{ /* ausgelastet: Overpass antwortet trotzdem mit 200, leerer Liste und „remark: runtime error …“ */ if(j&&Array.isArray(j.elements)&&!(j.remark&&/error|timeout|busy|out of memory/i.test(j.remark))) ok(j); else no(0); }).catch(no).finally(()=>clearTimeout(t)); });
   const SRV=["https://overpass-api.de/api/interpreter","https://overpass.private.coffee/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
+  const phP=kartePoiPhoton(g,C);   /* Ersatz gleich mitstarten – fällt Overpass aus, ist er schon da */
   let j=await new Promise(ok=>{ let offen=SRV.length; SRV.forEach(u=>ov(u).then(ok,()=>{ if(!--offen) ok(null); })); });
-  if(!j) j=await kartePoiNominatim(g,C.radius);
+  let quelle="ov"; if(!j){ quelle="ph"; j=await phP; }
+  if(!j){ quelle="nom"; j=await kartePoiNominatim(g,C.radius); }
   if(!j) throw new Error("Anhaltspunkte nicht erreichbar");
   const d=(a,b)=>Math.hypot((a.lat-b.lat)*111000,(a.lon-b.lon)*111000*Math.cos(a.lat*Math.PI/180));
   let L=(j.elements||[]).map(e=>{ const t=e.tags||{}, art=t.shop==="supermarket"?"supermarket":t.shop==="doityourself"?"doityourself":t.railway==="station"?"station":t.amenity, lat=e.lat||(e.center&&e.center.lat), lon=e.lon||(e.center&&e.center.lon);
     return POI_ART[art]&&lat?{art,lat,lon,n:String(t.name||t.brand||POI_ART[art][0]).slice(0,28)}:null; }).filter(Boolean);
   /* gemerkt werden alle Treffer (bis 80) – Auswahl, Reihenfolge, Höchstzahl und Abstand erst beim Anzeigen, damit Einstellungen sofort wirken */
   L=L.filter(x=>d(x,g)>25).slice(0,80).map(x=>({art:x.art,lat:x.lat,lon:x.lon,n:x.n})); const W=L;
-  META.poi2[key]={t:Date.now(),L:W}; const ks=Object.keys(META.poi2); if(ks.length>60) delete META.poi2[ks[0]]; metaSave(); return kaFiltern(W,g,C); }
+  META.poi2[key]={t:Date.now(),L:W,q:quelle}; KARTE.poiQ=quelle; const ks=Object.keys(META.poi2); if(ks.length>60) delete META.poi2[ks[0]]; metaSave(); return kaFiltern(W,g,C); }
 function kaFiltern(L,g,C){ const d=(a,b)=>Math.hypot((a.lat-b.lat)*111000,(a.lon-b.lon)*111000*Math.cos(a.lat*Math.PI/180));
   const S=L.filter(x=>POI_ART[x.art]&&C.an(x.art)).map(x=>Object.assign({},x,{d:d(x,g)})).sort((a,b)=>C.rang.indexOf(a.art)-C.rang.indexOf(b.art)||a.d-b.d);
   const W=[]; for(const x of S){ if(W.length>=C.max) break; if(C.abstand&&W.some(y=>d(x,y)<C.abstand)) continue; W.push(x); } return W; }
@@ -146,6 +149,13 @@ function kaFiltern(L,g,C){ const d=(a,b)=>Math.hypot((a.lat-b.lat)*111000,(a.lon
 const POI_NOM=[["supermarket","Supermarkt","shop/supermarket"],["place_of_worship","place of worship","amenity/place_of_worship"],["fuel","Tankstelle","amenity/fuel"],["station","railway station","railway/station"],
   ["charging_station","charging station","amenity/charging_station"],["doityourself","Baumarkt","shop/doityourself"],
   ["townhall","Rathaus","amenity/townhall"],["school","Schule","amenity/school"],["pharmacy","Apotheke","amenity/pharmacy"],["hospital","Krankenhaus","amenity/hospital"],["fire_station","Feuerwehr","amenity/fire_station"],["bank","Banken","amenity/bank"]];
+/* Ersatz 1 (05.11.2026): Photon (komoot) – eine einzige Abfrage im Umkreis für alle Arten, schnell und ohne 1-pro-Sekunde-Grenze.
+   Vorher ging die Ersatzsuche Art für Art über Nominatim (über 10 s) und blieb bei Abbruch oder Sperre unvollständig – z. B. bei Merten nur Kirchen, obwohl die Feuerwehr 80 m entfernt ist. */
+const PH_TAG={supermarket:"shop:supermarket",doityourself:"shop:doityourself",station:"railway:station"};
+async function kartePoiPhoton(g,C){ try{ const A=Object.keys(POI_ART).filter(k=>C.an(k)), tags=A.map(k=>"&osm_tag="+encodeURIComponent(PH_TAG[k]||"amenity:"+k)).join("");
+    const ab=new AbortController(), t=setTimeout(()=>ab.abort(),12000);
+    const r=await fetch(`https://photon.komoot.io/reverse?lon=${g.lon}&lat=${g.lat}&radius=${(C.radius/1000).toFixed(2)}&limit=50&lang=de${tags}`,{signal:ab.signal}); clearTimeout(t); if(!r.ok) return null;
+    const F=(await r.json()).features||[]; return {elements:F.map(f=>{ const p=f.properties||{}, c=(f.geometry||{}).coordinates||[]; return {lat:c[1],lon:c[0],tags:{[p.osm_key]:p.osm_value,name:p.name||""}}; })}; }catch(e){ return null; } }
 async function kartePoiNominatim(g,rad){ const f=(rad||800)/800, dx=.011*f, dy=.0072*f, vb=[g.lon-dx,g.lat+dy,g.lon+dx,g.lat-dy].join(","), E=[]; let ok=0;
   for(const [art,q,typ] of POI_NOM){
     try{ const r=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&bounded=1&accept-language=de&viewbox=${vb}&q=${encodeURIComponent(q)}`); if(r.ok){ ok++;
