@@ -74,16 +74,22 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
   const hin=t=>{ const h=el.querySelector("#scHin"); if(h) h.textContent=t; };
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||(typeof DESK!=="undefined"&&DESK.matches)){ el.classList.add("ohne"); hin(pc?"Der Code steht auf dem QR-Aufkleber unter „Anlage“ – 6 Zeichen, z. B. 4K7 P2M.":"Code vom Aufkleber eintippen"); scEingabe(true); return; }
   const cam=SC;
-  navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}},audio:false}).then(async st=>{
+  navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1920},height:{ideal:1080},advanced:[{focusMode:"continuous"}]},audio:false}).then(async st=>{
     if(cam.aus){ st.getTracks().forEach(t=>t.stop()); return; } cam.st=st; const vid=el.querySelector("video"); vid.srcObject=st; try{ await vid.play(); }catch(e){}
     hin("Aufkleber in den Rahmen halten");
-    try{ const tr=st.getVideoTracks()[0], cap=tr.getCapabilities?tr.getCapabilities():{}; if(cap.torch) el.querySelector('[data-sc="licht"]').hidden=false; }catch(e){}
+    try{ const tr=st.getVideoTracks()[0], cap=tr.getCapabilities?tr.getCapabilities():{}; if(cap.torch) el.querySelector('[data-sc="licht"]').hidden=false;
+      /* kleine Aufkleber (24-mm-Band): 2-fach zoomen, wo das Handy es kann – so bleibt man im Schärfebereich der Kamera */
+      if(cap.zoom&&cap.zoom.max>=1.5) tr.applyConstraints({advanced:[{zoom:Math.min(2,cap.zoom.max)}]}).catch(()=>{});
+      if(cap.focusMode&&cap.focusMode.includes("continuous")) tr.applyConstraints({advanced:[{focusMode:"continuous"}]}).catch(()=>{}); }catch(e){}
     let det=null; try{ if("BarcodeDetector" in window&&(await BarcodeDetector.getSupportedFormats()).includes("qr_code")) det=new BarcodeDetector({formats:["qr_code"]}); }catch(e){}
     let jq=null; if(!det){ try{ jq=window.jsQR||await new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="../vendor/jsqr.min.js"; s.onload=()=>ok(window.jsQR); s.onerror=()=>no(); document.head.appendChild(s); }); }catch(e){ hin("Scanner braucht einmal Internet – Code eintippen"); return; } }
     const cv=document.createElement("canvas"), cx=cv.getContext("2d",{willReadFrequently:true}); let zuletzt="";
-    const runde=async()=>{ if(cam.aus) return; if(!cam.pause&&vid.readyState>=2){ let t="";
-        try{ if(det){ const r=await det.detect(vid); t=r[0]&&r[0].rawValue||""; }
-          else { const w=vid.videoWidth, h=vid.videoHeight, s=Math.min(1,640/Math.max(w,h)); cv.width=w*s|0; cv.height=h*s|0; cx.drawImage(vid,0,0,cv.width,cv.height); const r=jq(cx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height,{inversionAttempts:"dontInvert"}); t=r&&r.data||""; } }catch(e){}
+    /* Ausschnitt in der Bildmitte (dort ist der Rahmen) in voller Auflösung – kleine Codes werden nicht weggerechnet */
+    let rd=0; const mitte=()=>{ const w=vid.videoWidth, h=vid.videoHeight, q=Math.round(Math.min(w,h)*0.75), z=Math.min(1,960/q); cv.width=q*z|0; cv.height=q*z|0;
+      cx.drawImage(vid,(w-q)/2,(h-q)/2,q,q,0,0,cv.width,cv.height); return cv; };
+    const runde=async()=>{ if(cam.aus) return; if(!cam.pause&&vid.readyState>=2){ let t=""; rd++;
+        try{ if(det){ const r=await det.detect(rd%3?mitte():vid); t=r[0]&&r[0].rawValue||""; }
+          else { mitte(); const r=jq(cx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height,{inversionAttempts:rd%4?"dontInvert":"attemptBoth"}); t=r&&r.data||""; } }catch(e){}
         if(t){ const c=scNorm(t); if(c) scTreffer(c,t); else if(t!==zuletzt){ zuletzt=t; hin("Das ist kein Irrgang-Aufkleber"); setTimeout(()=>{ if(SC===cam&&!cam.pause) hin("Aufkleber in den Rahmen halten"); },1800); } } }
       setTimeout(runde,det?120:180); };
     runde();
