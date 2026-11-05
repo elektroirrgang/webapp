@@ -1931,3 +1931,9 @@ body:has(.gv-aktbar) #app{padding-bottom:190px}
 .gv-zk{background:var(--ra-bg)!important;color:var(--ra-fg)!important}
 .gv-rkopf>.gv-rk1{flex-direction:row;align-items:center}.gv-rkopf>.gv-zst{flex-direction:row}
 .gv-rkopf>.gv-rk1>div{flex:1;min-width:0;display:flex;flex-direction:column}
+/* Bauzustand: Ring um das Raumart-Symbol statt Kante */
+.gv-zs,.gv-k.gv-zs{box-shadow:none}
+.gv-zs .ra{box-shadow:0 0 0 2px var(--sc-high),0 0 0 4.5px var(--zs)}
+.zs-rohbau{--zs:#D9A200}.zs-fein{--zs:#2F6FDE}.zs-geprueft{--zs:#7B4FD6}.zs-fertig{--zs:#2E8B3E}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .zs-rohbau{--zs:#F5CD47}:root:not([data-theme="light"]) .zs-fein{--zs:#A8C7FA}:root:not([data-theme="light"]) .zs-geprueft{--zs:#D3BBFF}:root:not([data-theme="light"]) .zs-fertig{--zs:#9DD69A}}
+:root[data-theme="dark"] .zs-rohbau{--zs:#F5CD47}:root[data-theme="dark"] .zs-fein{--zs:#A8C7FA}:root[data-theme="dark"] .zs-geprueft{--zs:#D3BBFF}:root[data-theme="dark"] .zs-fertig{--zs:#9DD69A}

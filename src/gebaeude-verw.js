@@ -74,7 +74,7 @@ function gvRaumHtml(g,x,o){ o=o||{}; const z=gvNr(x.r.name), a=raArt(x.art), V=g
   const act=o.act||"gvRaum", an=o.an?" an":"";
   const prob=g.knx&&g.knx.an&&(g.knx.geraete||[]).some(d=>d.raumId===x.r.id&&d.problem), nF=typeof dateienVon==="function"?dateienVon("raeume",x.r.id).length:0, nN=(x.r.notizen||[]).length;
   const hinw=o.teil?"":`${prob?`<span class="gv-hw warn" title="Gerät defekt oder Problem">${icon("warn")}</span>`:""}${nN?`<span class="gv-hw" title="${nN} Notiz${nN===1?"":"en"}">${icon("gvEdit")}</span>`:""}${nF?`<span class="gv-hw" title="${nF} Fotos/Dateien">${icon("cam")}</span>`:""}`;
-  const zs=gvZst(x.r.zustand), zc=zs?` gv-zs ra-${zs[2]}`:"";
+  const zs=gvZst(x.r.zustand), zc=zs?` gv-zs zs-${zs[0]}`:"";
   if(GV_ANS==="kachel"&&!o.teil) return `<button type="button" class="gv-k${an}${zc}" data-act="${act}" data-id="${esc(x.r.id)}">${raIcon(x.art,"klein")}<b>${esc(z.nr||txt)}</b><small>${esc(z.nr?txt:(a?a.name:""))}</small>${ort?`<small class="gv-ort">${esc(ort)}</small>`:""}${vt}${hinw?`<span class="gv-hws">${hinw}</span>`:""}</button>`;
   return `<button type="button" class="gv-rz${an}${zc}" data-act="${act}" data-id="${esc(x.r.id)}">${raIcon(x.art)}<span class="gv-nr${z.nr?"":" leer"}">${esc(z.nr||"–")}</span><span class="gv-rt"><span>${esc(txt)}</span>${ort||zs?`<small>${esc([zs&&zs[1],ort].filter(Boolean).join(" · "))}</small>`:""}</span>${hinw}${vt}${o.rechts||""}</button>`; }
 const gvRaeumeHtml=(g,L,o)=>`<div class="${GV_ANS==="kachel"&&!(o&&o.teil)?"gv-kl":"gv-rl"}">${L.map(x=>gvRaumHtml(g,x,o)).join("")}</div>`;
