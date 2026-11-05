@@ -981,7 +981,8 @@ body.kopf-oben .edk-platz{display:none!important}
 .db-kpis.vier{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media (max-width:720px){.db-kpis.vier{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .db-grid.anp .db-box{background:color-mix(in srgb,var(--primary) 7%,var(--sc-low))!important}
-.db-hinweis{margin:0 4px 4px;font-size:14px;color:var(--on-sv)}
+.db-hinweis{margin:0 4px 8px;font-size:14px;color:var(--on-sv);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px}.db-hinweis p{margin:0;flex:1 1 320px}
+.db-std{display:flex;flex-wrap:wrap;gap:8px}.db-std .btn-tonal{display:inline-flex;align-items:center;gap:8px;padding:0 18px}.db-std .btn-tonal .ic{width:18px;height:18px}
 .db-grid.anp .db-box > :not(.db-anp){pointer-events:none;opacity:.55}
 .db-anp{position:absolute;top:10px;right:10px;z-index:2;display:flex;gap:4px;background:var(--surface);border-radius:20px;padding:4px;box-shadow:0 2px 8px rgba(0,0,0,.14)}
 .db-ab{min-width:36px;height:36px;border:0;border-radius:18px;background:transparent;color:var(--on-surface);display:grid;place-items:center;font:inherit;font-size:13px;font-weight:700;padding:0 8px;cursor:pointer}
@@ -1084,7 +1085,46 @@ body.kopf-oben .edk-platz{display:none!important}
 .wg-weg{position:absolute;top:8px;left:8px;width:26px;height:26px;border:0;border-radius:50%;background:var(--on-surface);color:var(--surface);font-size:20px;line-height:1;display:grid;place-items:center;cursor:pointer;z-index:3;padding:0 0 2px}
 .wg-anp{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:2px;background:var(--surface);border-radius:20px;padding:3px;box-shadow:0 2px 8px rgba(0,0,0,.15);z-index:3}
 .wg-anp .db-ab .ic{transform:rotate(-90deg)}
-.wg-gr{min-width:64px!important}
+.wg-anp .db-ab{min-width:32px;height:32px;padding:0}
+.db-gls{display:flex;gap:2px}
+.db-gl{width:30px;height:32px;border:0;border-radius:10px;background:transparent;color:var(--on-surface);display:grid;place-items:center;cursor:pointer;padding:0}
+.db-gl:hover{background:var(--sc-high)}.db-gl.an{background:var(--pc);color:var(--on-pc)}
+.db-gl i{display:block;background:currentColor;border-radius:2px;opacity:.8}.db-gl.an i{opacity:1}
+.gl-s{width:8px;height:8px}.gl-m{width:16px;height:8px}.gl-b{width:22px;height:7px}.gl-l{width:16px;height:16px}
+/* iPad quer und PC: Raster richtet sich nach der Breite des Inhalts (4 bzw. 6 Spalten) */
+.wg-box{container-type:inline-size}
+.wg-br{grid-column:span 2;grid-row:span 1}
+@container (max-width:839px){.wg-raster{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container (min-width:840px){.wg-raster{grid-template-columns:repeat(4,minmax(0,1fr))}.wg-br{grid-column:span 4}}
+@container (min-width:1320px){.wg-raster{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.wg-b.sp2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:min-content;align-content:start;gap:6px}
+.wg-b.sp2>:not(.wg-z){grid-column:1/-1}
+.wg-kpis.breit{margin:auto 0}
+.wg-apps.gross.reihe{grid-template-columns:repeat(3,minmax(0,1fr));margin:auto 0}
+.wg-ic{position:relative}
+.wg-ic.warn::after{content:"";position:absolute;top:-3px;right:-3px;width:12px;height:12px;border-radius:50%;background:var(--err);box-shadow:0 0 0 2px var(--sc-low)}
+/* Schnell anlegen */
+.wg-schnell{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:auto 0}
+.wg-schnell.breit{grid-template-columns:repeat(4,minmax(0,1fr))}
+.wg-sb{display:flex;align-items:center;gap:10px;min-width:0;height:48px;padding:0 14px;border:0;border-radius:14px;background:var(--sc);color:var(--on-surface);font:inherit;font-size:14px;font-weight:700;cursor:pointer;text-align:left}
+.wg-sb:hover{background:var(--sc-high)}.wg-sb .ic{width:20px;height:20px;flex:none;fill:var(--primary)}.wg-sb span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Wetter */
+.wg-wetter{display:flex;align-items:center;gap:14px;margin:auto 0;min-width:0}
+.wg-wj{display:flex;align-items:center;gap:6px;flex:none}.wg-wj .w-ic{width:40px;height:40px}.wg-wj b{font-size:36px;line-height:1;font-weight:800}
+.wg-wj.klein{margin-top:auto}.wg-wh{font-size:13px;color:var(--on-sv);margin-top:4px}
+.wg-wt{flex:1;min-width:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px}
+.wg-wd{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px;border-radius:12px;background:var(--sc);min-width:0}
+.wg-wd .w-ic{width:22px;height:22px}.wg-wd b{font-size:14px}.wg-wd small{font-size:12px;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.wg-wd.nass small:last-child{color:#3D7FD6}
+/* einmal beim Öffnen: Kacheln kommen nacheinander herein */
+.wg.rein{animation:wgRein .45s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(min(var(--i),12)*35ms)}
+@keyframes wgRein{from{opacity:0;transform:translateY(12px) scale(.98)}}
+@media (prefers-reduced-motion:reduce){.wg.rein{animation:none}}
+/* Ziehen mit der Maus */
+@media (hover:hover) and (pointer:fine){.wg-raster.anp .wg{cursor:grab}}
+.wg-raster.zieht-r .wg{animation:none!important}
+.wg.zieht{z-index:5;cursor:grabbing!important;box-shadow:0 14px 36px rgba(0,0,0,.35);transition:box-shadow .15s}
+@media (max-width:743px){.wg-b.sp2{grid-template-columns:minmax(0,1fr)}.wg-schnell{margin:0}.wg-wetter{margin:0}.wg-wj .w-ic{width:34px;height:34px}.wg-wj b{font-size:30px}}
 /*FELDER*/
 </style>
 </head>
@@ -1820,15 +1860,19 @@ function skRechts(){
    Jeder legt fest, welche Kacheln er sieht, in welcher Reihenfolge und wie breit (halb/ganz).
    Gespeichert im eigenen Profil („profile“) ⇒ gleich auf iPad und PC. Halbe Kacheln werden automatisch
    auf zwei Spalten verteilt, sodass keine Löcher entstehen. */
-const DB_W={handbuch:"Betriebshandbuch",termine:"Termine",material:"Material",auftraege:"Aufträge",pruefungen:"Prüfungen & Fristen",baustellen:"Baustellen",zahlen:"Kennzahlen",geraete:"Messgeräte",apps:"Apps"};
+const DB_W={handbuch:"Betriebshandbuch",termine:"Termine",material:"Material",auftraege:"Aufträge",pruefungen:"Prüfungen & Fristen",baustellen:"Baustellen",zahlen:"Kennzahlen",geraete:"Messgeräte",apps:"Apps",schnell:"Schnell anlegen",wetter:"Wetter"};
 /* Neu hinzugekommene Kacheln erscheinen bei bestehenden Startseiten nicht von selbst (iPad/PC bleiben, wie eingestellt) */
-const DB_NEU_AUS=["geraete"];
+const DB_NEU_AUS=["geraete","schnell","wetter"];
 /* Auf dem Handy sind das die Wege zu Statistik und Messgeräten (dort keine Tabs) – daher immer sichtbar */
 const dbPflicht=()=>istHandy()?["termine","geraete",...(ME.admin?["zahlen"]:[])]:[];
-/* Größen wie Handy-Widgets: S = 1×1, M = 2×1, L = 2×2 Rasterfelder. Jede Kachel kann nur Größen, für die sie Inhalt hat. */
-const DB_GR={handbuch:["s","m","l"],termine:["s","m","l"],geraete:["s","m","l"],material:["s","m","l"],auftraege:["s","m","l"],pruefungen:["s","m","l"],baustellen:["s","m","l"],zahlen:["m","l"],apps:["m","l"]};
-const DB_GR_TXT={s:"Klein",m:"Mittel",l:"Groß"};
-const DB_STD={o:["termine","material","auftraege","pruefungen","baustellen","apps","zahlen","geraete","handbuch"],aus:["zahlen","geraete"],gr:{}};
+/* Größen wie Handy-Widgets: S = 1×1, M = 2×1, B = 4×1 (breit, nur iPad/PC), L = 2×2 Rasterfelder. Jede Kachel kann nur Größen, für die sie Inhalt hat.
+   Raster: Handy und schmales iPad 2 Spalten, iPad quer/PC 4 Spalten, großer Bildschirm 6 Spalten. */
+const DB_GR={handbuch:["s","m","b","l"],termine:["s","m","b","l"],geraete:["s","m","b","l"],material:["s","m","b","l"],auftraege:["s","m","b","l"],pruefungen:["s","m","b","l"],baustellen:["s","m","b","l"],zahlen:["m","b","l"],apps:["m","b","l"],schnell:["m","b"],wetter:["s","m","b"]};
+const DB_GR_TXT={s:"Klein",m:"Mittel",b:"Breit",l:"Groß"};
+const DB_LISTE=["handbuch","termine","material","auftraege","baustellen","geraete","pruefungen"]; /* „Breit“ zeigt die Liste zweispaltig */
+const DB_STD={o:["termine","schnell","auftraege","material","pruefungen","wetter","baustellen","apps","zahlen","geraete","handbuch"],aus:["zahlen","geraete"],gr:{termine:"l",schnell:"m",wetter:"m"}};
+/* Firmen-Standard (Admin legt fest): gilt für alle, die selbst noch nichts eingestellt haben */
+const dbFirma=()=>{ const r=DB.einstellungen&&DB.einstellungen.get("start"); return r&&!r.deleted&&r.L&&r.L.o?r.L:null; };
 
 /* ===== Wetter für den Betrieb (Waldbröl) =====
    Bright Sky – kostenlos, ohne Schlüssel, auch gewerblich erlaubt; Daten vom Deutschen Wetterdienst.
@@ -1841,6 +1885,7 @@ const W_P={sonne:"M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2
   regen:"M19.35 8.04A7.49 7.49 0 0 0 12 2C9.11 2 6.6 3.64 5.35 6.04A5.994 5.994 0 0 0 0 12c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM7 19.5l-1.2 3h1.6l1.2-3H7zm4.5 0l-1.2 3h1.6l1.2-3h-1.6zm4.5 0l-1.2 3h1.6l1.2-3H16z",
   schnee:"M22 11h-4.17l3.24-3.24-1.41-1.42L15 11h-2V9l4.66-4.66-1.42-1.41L13 6.17V2h-2v4.17L7.76 2.93 6.34 4.34 11 9v2H9L4.34 6.34 2.93 7.76 6.17 11H2v2h4.17l-3.24 3.24 1.41 1.42L9 13h2v2l-4.66 4.66 1.42 1.41L11 17.83V22h2v-4.17l3.24 3.24 1.42-1.41L13 15v-2h2l4.66 4.66 1.41-1.42L17.83 13H22z",
   gewitter:"M7 2v11h3v9l7-12h-4l4-8z",nebel:"M2 15.5v2h20v-2H2zm0-5v2h20v-2H2zm0-7v2h20v-2H2z"};
+IC.wetter=W_P.teil;
 const W_ART={"clear-day":["sonne","Sonnig"],"clear-night":["mond","Klar"],"partly-cloudy-day":["teil","Teils bewölkt"],"partly-cloudy-night":["teil","Teils bewölkt"],cloudy:["wolke","Bewölkt"],fog:["nebel","Nebel"],wind:["wolke","Windig"],rain:["regen","Regen"],sleet:["regen","Schneeregen"],hail:["regen","Hagel"],snow:["schnee","Schnee"],thunderstorm:["gewitter","Gewitter"]};
 const W_RANG=["thunderstorm","snow","hail","sleet","rain"];
 const wIc=(k,cls="")=>{ const a=W_ART[k]||W_ART.cloudy; return `<svg class="ic w-ic w-${a[0]} ${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${W_P[a[0]]}"/></svg>`; };
@@ -1895,13 +1940,34 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(b.dataset.act==="wvOrt"){ WV.ort=+b.dataset.i; WV.tag=""; wetterDlg(); return; }
   if(b.dataset.act==="wvTag"){ WV.tag=b.dataset.v; wetterDlg(); return; } },true);
 let DB_ANP=false;
-function dbLayout(){ const p=profilVon(ME.mail), L=p&&p.start||{}, o=(L.o||[]).filter(k=>DB_W[k]);
+function dbLayout(){ const p=profilVon(ME.mail)||{}, L=p.start||dbFirma()||{}, o=(L.o||[]).filter(k=>DB_W[k]);
   const aus=(L.o?(L.aus||[]).slice():DB_STD.aus.slice());
   DB_STD.o.forEach(k=>{ if(!o.includes(k)){ o.push(k); if(L.o&&DB_NEU_AUS.includes(k)&&!aus.includes(k)) aus.push(k); } }); const gr={};
-  o.forEach(k=>{ const g=(L.gr||{})[k]; gr[k]=DB_GR[k].includes(g)?g:"m"; });
+  o.forEach(k=>{ const g=(L.gr||{})[k]||(L.o?"":DB_STD.gr[k]); gr[k]=DB_GR[k].includes(g)?g:DB_GR[k].includes("m")?"m":DB_GR[k][0]; });
   return {o,aus:aus.filter(k=>DB_W[k]),gr}; }
 function dbLayoutSpeichern(L){ const id=String(ME.mail||"").toLowerCase(); if(!id) return; const alt=DB.profile.get(id), r=alt||{id};
   r.start={o:L.o,aus:L.aus,gr:L.gr}; saveRec("profile",r,!alt); }
+function dbFirmaSpeichern(L){ const neu=!DB.einstellungen.has("start"), r=DB.einstellungen.get("start")||{id:"start"}; r.L={o:L.o,aus:L.aus,gr:L.gr}; r.by=who(); r.at=Date.now(); r.deleted=false; saveRec("einstellungen",r,neu); }
+/* einmal pro Seitenaufruf: Kacheln kommen nacheinander herein */
+let DB_ERST=true;
+/* Bearbeiten: Kachel mit der Maus (auch Trackpad am iPad) an eine andere Stelle ziehen; mit dem Finger bleiben die Pfeile */
+(()=>{ let D=null, sperre=0, klickWeg=false;
+  const flip=R=>{ const vor=new Map([...R.children].map(el=>[el,el.getBoundingClientRect()])); return ()=>[...R.children].forEach(el=>{ if(el===D.el) return; const a=vor.get(el), b=el.getBoundingClientRect(); if(!a) return;
+    const dx=a.left-b.left, dy=a.top-b.top; if(!dx&&!dy) return; el.style.transition="none"; el.style.transform=`translate(${dx}px,${dy}px)`; el.getBoundingClientRect(); el.style.transition="transform .22s cubic-bezier(.2,.8,.2,1)"; el.style.transform=""; }); };
+  const setze=()=>{ const el=D.el; el.style.transform="none"; const r=el.getBoundingClientRect(); el.style.transform=`translate(${D.x-D.gx-r.left}px,${D.y-D.gy-r.top}px) scale(1.02)`; };
+  document.addEventListener("pointerdown",e=>{ if(e.pointerType==="touch"||e.button!==0) return; const el=e.target.closest&&e.target.closest(".wg-raster.anp>.wg"); if(!el||e.target.closest("button")) return;
+    const r=el.getBoundingClientRect(); D={el,R:el.parentElement,x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,gx:e.clientX-r.left,gy:e.clientY-r.top,an:false,id:e.pointerId}; });
+  document.addEventListener("pointermove",e=>{ if(!D||e.pointerId!==D.id) return; if(!D.el.isConnected){ D=null; return; } D.x=e.clientX; D.y=e.clientY;
+    if(!D.an){ if(Math.hypot(D.x-D.sx,D.y-D.sy)<6) return; D.an=true; D.el.classList.add("zieht"); D.R.classList.add("zieht-r"); }
+    e.preventDefault(); setze(); if(Date.now()<sperre) return;
+    D.el.style.pointerEvents="none"; const u=document.elementFromPoint(D.x,D.y); D.el.style.pointerEvents="";
+    const z=u&&u.closest&&u.closest(".wg"); if(!z||z===D.el||z.parentElement!==D.R) return;
+    const K=[...D.R.children], a=K.indexOf(D.el), b=K.indexOf(z), nach=flip(D.R); D.R.insertBefore(D.el,a<b?z.nextSibling:z); nach(); setze(); sperre=Date.now()+240; });
+  const ende=e=>{ if(!D||e.pointerId!==D.id) return; const d=D; D=null; if(!d.an) return; klickWeg=true; setTimeout(()=>{ klickWeg=false; },0);
+    const vis=[...d.R.children].map(x=>x.dataset.w).filter(Boolean), L=dbLayout(); L.o=vis.concat(L.o.filter(k=>!vis.includes(k))); dbLayoutSpeichern(L); render(); };
+  document.addEventListener("pointerup",ende); document.addEventListener("pointercancel",ende);
+  document.addEventListener("click",e=>{ if(klickWeg){ e.stopPropagation(); e.preventDefault(); klickWeg=false; } },true);
+})();
 /* Dashboard für Chef und Büro: vier Boxen. Jede zeigt nur, was zu tun ist – Details über „Alle“. */
 function dashboard(kacheln){
   const t=today(), bald=new Date(Date.now()+90*864e5).toISOString().slice(0,10), woche=Date.now()-7*864e5, L=dbLayout();
@@ -1909,7 +1975,7 @@ function dashboard(kacheln){
   const zeile=(h,s2)=>`<div class="wg-z"><span>${esc(h)}</span>${s2?`<small>${esc(s2)}</small>`:""}</div>`;
   const leer=(txt,dopp)=>`<p class="wg-leer${dopp?" dopp":""}">${esc(txt)}</p>`;
   const gross=(z,txt,warn)=>`<div class="wg-gross${warn?" warn":""}"><b>${z}</b><span>${esc(txt)}</span></div>`;
-  const anz=g=>g==="l"?5:2;
+  const anz=g=>g==="l"?5:g==="b"?(istHandy()?3:4):2;
   const A=anfOffen().sort((a,b)=>(a.status==="angefordert"?0:1)-(b.status==="angefordert"?0:1)||(b.created||0)-(a.created||0)), an=A.filter(a=>a.status==="angefordert").length;
   const aktiv=echt("baustellen").filter(b=>(b.status||"aktiv")==="aktiv"), E=echt("eintraege").sort((a,b)=>(b.created||0)-(a.created||0));
   const FR=frListe(), ueber=FR.filter(x=>x.nie||!x.faellig||x.faellig<t), fb=FR.filter(x=>!x.nie&&x.faellig>=t&&x.faellig<=bald), neu=echt("pruefungen").filter(p=>p.pdfAblage&&(p.updated||0)>=woche);
@@ -1933,31 +1999,40 @@ function dashboard(kacheln){
     pruefungen:{ic:"doc",v:"fristen",sub:(ueber.length?`${ueber.length} überfällig`:fb.length?`${fb.length} fällig in 3 Monaten`:"Keine Fristen offen")+(BZ.ueber?` · Betrieb ${BZ.ueber} überfällig`:""),warn:ueber.length>0||BZ.ueber>0||G.some(x=>x.k.s==="ab"),
       s:()=>gross(ueber.length,"überfällig",ueber.length>0),
       m:g=>`<div class="wg-kpis">${kpi(neu.length,"neue Protokolle")}${kpi(ueber.length,"überfällig",ueber.length?"warn":"")}${kpi(fb.length,"fällig in 3 Mon.")}</div>`
-        +(g==="l"?([...G.slice(0,3).map(({g:x,k})=>zeile(gerName(x),k.t)),...ueber.slice(0,3).map(x=>zeile((kundeOf(x.kundeId)||{}).name||"Kunde",`${(FR_ART[x.art]||["Prüfung"])[0]} · ${x.faellig?"fällig seit "+deDate(x.faellig):"noch nie geprüft"}`))].join("")||leer("Keine Fristen in Gefahr.")):"")},
+        +(g==="l"||g==="b"?([...G.slice(0,g==="l"?3:2).map(({g:x,k})=>zeile(gerName(x),k.t)),...ueber.slice(0,3).map(x=>zeile((kundeOf(x.kundeId)||{}).name||"Kunde",`${(FR_ART[x.art]||["Prüfung"])[0]} · ${x.faellig?"fällig seit "+deDate(x.faellig):"noch nie geprüft"}`))].slice(0,g==="l"?5:2).join("")||leer("Keine Fristen in Gefahr.")):"")},
     baustellen:{ic:"baustelle",v:"uebersicht",sub:`${aktiv.length} aktiv`,
       s:()=>gross(aktiv.length,"aktiv"),
       m:g=>E.length?E.slice(0,anz(g)).map(e=>{ const b=DB.baustellen.get(e.baustelleId); return zeile(b?b.name:"Baustelle",[(e.createdBy||{}).name,wann(e.created)].filter(Boolean).join(" · ")); }).join(""):leer("Noch keine Übergaben.")},
     zahlen:{ic:"chart",v:"uebersicht",
-      m:g=>`<div class="wg-kpis ${g==="l"?"zwei":"vier"}">${kpi(aktiv.length,"aktive Baustellen")}${kpi(inArbeit,"Prüfungen in Arbeit")}${kpi(ueber.length+fb.length,"fällig in 3 Mon.",ueber.length?"warn":"")}${kpi(echt("kunden").length,"Kunden")}</div>`},
+      m:g=>`<div class="wg-kpis ${g==="l"?"zwei":"vier"}${g==="b"?" breit":""}">${kpi(aktiv.length,"aktive Baustellen")}${kpi(inArbeit,"Prüfungen in Arbeit")}${kpi(ueber.length+fb.length,"fällig in 3 Mon.",ueber.length?"warn":"")}${kpi(echt("kunden").length,"Kunden")}</div>`},
     geraete:(()=>{ const alle=live("geraete").filter(g=>!g.aus), P=alle.map(g=>({g,k:gerKal(g)})).filter(x=>x.k&&x.k.s!=="ok"), rot=P.some(x=>x.k.s==="ab"||x.k.s==="leer");
       return {ic:"geraet",v:"geraete",sub:`${alle.length} ${alle.length===1?"Gerät":"Geräte"}${P.length?` · ${P.length} ${P.length===1?"braucht":"brauchen"} Kalibrierung`:""}`,warn:rot,
         s:()=>gross(P.length,"Kalibrierung offen",rot),
         m:g=>P.length?P.slice(0,anz(g)).map(({g:x,k})=>zeile(gerLabel(x),k.t)).join(""):leer("Alle Geräte kalibriert."),}; })(),
-    apps:{ic:"home",app:true,m:g=>`<div class="wg-apps${g==="l"?" gross":""}">${APPS.map(a=>a.geplant?"":`<a class="wg-app" href="${a.href}"><img src="${a.ic}" alt=""><span>${esc(a.name)}</span>${g==="l"?`<small>${esc(a.text)}</small>`:""}</a>`).join("")}</div>`}
+    apps:{ic:"home",app:true,m:g=>`<div class="wg-apps${g==="l"||g==="b"?" gross":""}${g==="b"?" reihe":""}">${APPS.map(a=>a.geplant?"":`<a class="wg-app" href="${a.href}"><img src="${a.ic}" alt=""><span>${esc(a.name)}</span>${g!=="m"?`<small>${esc(a.text)}</small>`:""}</a>`).join("")}</div>`},
+    schnell:{ic:"add",app:true,m:g=>`<div class="wg-schnell${g==="b"?" breit":""}">${[["vgNeu","board","Vorgang"],["afNeu","lager","Material"],["kalNeu","kal","Termin"],...(ME.admin?[["newKunde","firma","Kunde"]]:[])].map(([a,ic,t])=>`<button type="button" class="wg-sb" data-act="${a}">${icon(ic)}<span>${t}</span></button>`).join("")}</div>`},
+    wetter:(()=>{ const WT=META.wetter, J=WT&&WT.jetzt, T=(WT&&WT.tage)||[], tn=d=>d===t?"Heute":new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short"}).replace(".","");
+      const heute=T.find(x=>x.d===t)||T[0];
+      return {ic:"wetter",act:"wetterAuf",sub:J&&J.temp!=null?`${(W_ART[J.ic]||W_ART.cloudy)[1]}${heute&&heute.mm?` · heute ${wvZahl(heute.mm)} mm`:" · heute trocken"}`:"Betrieb Waldbröl",
+        s:()=>J&&J.temp!=null?`<div class="wg-wj klein">${wIc(J.ic)}<b>${J.temp}°</b></div>${heute&&heute.max!=null?`<small class="wg-wh">Heute ${heute.max}° / ${heute.min}°${heute.mm>=0.1?` · ${wvZahl(heute.mm)} mm`:""}</small>`:""}`:leer("Lädt …"),
+        m:g=>J&&J.temp!=null?`<div class="wg-wetter${g==="b"?" breit":""}"><div class="wg-wj">${wIc(J.ic)}<b>${J.temp}°</b></div><div class="wg-wt">${T.slice(g==="b"?0:1,g==="b"?5:5).map(x=>`<div class="wg-wd${x.mm>=1?" nass":""}"><small>${esc(tn(x.d))}</small>${wIc(x.ic)}<b>${x.max!=null?x.max:"–"}°</b>${g==="b"?`<small>${x.mm>=0.1?wvZahl(x.mm)+" mm":"trocken"}</small>`:""}</div>`).join("")}</div></div>`:leer("Wetter wird geladen …")}; })()
   };
   const PF=dbPflicht(), sicht=L.o.filter(k=>!L.aus.includes(k)||PF.includes(k));
-  const kachel=(k,i)=>{ const w=W[k], g=L.gr[k], inhalt=g==="s"&&w.s?w.s():w.m(g), ganzKlick=!DB_ANP&&!w.app&&w.v;
-    const grN=DB_GR[k][(DB_GR[k].indexOf(g)+1)%DB_GR[k].length];
-    return `<section class="wg wg-${g}${ganzKlick?" klick":""}" data-w="${k}" ${ganzKlick?`data-act="nav" data-v="${w.v}"${w.ziel?` data-ziel="${w.ziel}"`:""} role="button" tabindex="0"`:""}>
-      <div class="wg-k"><span class="wg-ic">${icon(w.ic)}</span><span class="wg-t"><b>${esc(k==="zahlen"&&istHandy()?"Statistik":DB_W[k])}</b>${w.sub&&g!=="s"?`<small class="${w.warn?"warn":""}">${esc(w.sub)}</small>`:""}</span>${w.plus&&!DB_ANP&&g!=="s"?`<button class="wg-plus" data-act="${w.plus[0]}" aria-label="${w.plus[1]}" title="${w.plus[1]}">${icon("add")}</button>`:""}</div>
-      <div class="wg-b">${inhalt}</div>
+  const grZeig=k=>DB_GR[k].filter(x=>x!=="b"||!istHandy());
+  const kachel=(k,i)=>{ const w=W[k], g=L.gr[k], inhalt=g==="s"&&w.s?w.s():w.m(g), ganzKlick=!DB_ANP&&!w.app&&(w.v||w.act);
+    const glyph=x=>`<button class="db-gl${x===g?" an":""}" data-act="dbGr" data-w="${k}" data-g="${x}" aria-pressed="${x===g}" aria-label="${DB_GR_TXT[x]}" title="${DB_GR_TXT[x]}"><i class="gl-${x}"></i></button>`;
+    return `<section class="wg wg-${g==="b"?"br":g}${ganzKlick?" klick":""}${DB_ERST&&!DB_ANP?" rein":""}" style="--i:${i}" data-w="${k}" ${ganzKlick?`data-act="${w.act||"nav"}"${w.v?` data-v="${w.v}"`:""}${w.ziel?` data-ziel="${w.ziel}"`:""} role="button" tabindex="0"`:""}>
+      <div class="wg-k"><span class="wg-ic${w.warn?" warn":""}">${icon(w.ic)}</span><span class="wg-t"><b>${esc(k==="zahlen"&&istHandy()?"Statistik":DB_W[k])}</b>${w.sub&&g!=="s"?`<small class="${w.warn?"warn":""}">${esc(w.sub)}</small>`:""}</span>${w.plus&&!DB_ANP&&g!=="s"?`<button class="wg-plus" data-act="${w.plus[0]}" aria-label="${w.plus[1]}" title="${w.plus[1]}">${icon("add")}</button>`:""}</div>
+      <div class="wg-b${g==="b"&&DB_LISTE.includes(k)?" sp2":""}">${inhalt}</div>
       ${DB_ANP&&!PF.includes(k)?`<button class="wg-weg" data-act="dbAus" data-w="${k}" aria-label="${esc(DB_W[k])} ausblenden" title="Ausblenden">−</button>
-        <div class="wg-anp"><button class="db-ab" data-act="dbZug" data-w="${k}" data-d="-1" ${i===0?"disabled":""} aria-label="Nach vorne" title="Nach vorne">${icon("hoch")}</button><button class="db-ab wg-gr" data-act="dbBreite" data-w="${k}" title="Größe ändern – als Nächstes: ${DB_GR_TXT[grN]}">${DB_GR_TXT[g]}</button><button class="db-ab" data-act="dbZug" data-w="${k}" data-d="1" ${i===sicht.length-1?"disabled":""} aria-label="Nach hinten" title="Nach hinten">${icon("runter")}</button></div>`:""}
+        <div class="wg-anp"><button class="db-ab" data-act="dbZug" data-w="${k}" data-d="-1" ${i===0?"disabled":""} aria-label="Nach vorne" title="Nach vorne">${icon("hoch")}</button><span class="db-gls" role="group" aria-label="Größe">${grZeig(k).map(glyph).join("")}</span><button class="db-ab" data-act="dbZug" data-w="${k}" data-d="1" ${i===sicht.length-1?"disabled":""} aria-label="Nach hinten" title="Nach hinten">${icon("runter")}</button></div>`:""}
     </section>`; };
-  setTimeout(wetterKopf,0);
-  const versteckt=L.o.filter(k=>L.aus.includes(k));
-  return `${DB_ANP?`<p class="db-hinweis">Pfeile verschieben, die Mitte ändert die Größe (Klein, Mittel, Groß), „−“ blendet aus. Gilt nur für dich – auf all deinen Geräten.</p>`:""}
-    <div class="wg-raster${DB_ANP?" anp":""}">${sicht.map(kachel).join("")||`<p class="meta">Alle Kacheln sind ausgeblendet.</p>`}</div>
+  setTimeout(wetterKopf,0); if(!DB_ANP) setTimeout(()=>{ DB_ERST=false; },0);
+  const versteckt=L.o.filter(k=>L.aus.includes(k)), F=dbFirma();
+  const anpKopf=DB_ANP?`<div class="db-hinweis"><p>${DESK.matches?"Kachel mit der Maus an die gewünschte Stelle ziehen":"Pfeile verschieben"}, unten die Größe wählen, „−“ blendet aus. Gilt nur für dich – auf all deinen Geräten.</p>
+    <div class="db-std">${ME.admin?`<button class="btn-tonal" data-act="dbFirmaSetzen">${icon("person")}Als Standard für alle</button>`:""}<button class="btn-text" data-act="dbStd">${F?"Firmen-Standard übernehmen":"Zurücksetzen"}</button></div></div>`:"";
+  return `${anpKopf}
+    <div class="wg-box"><div class="wg-raster${DB_ANP?" anp":""}">${sicht.map(kachel).join("")||`<p class="meta">Alle Kacheln sind ausgeblendet.</p>`}</div></div>
     ${DB_ANP&&versteckt.filter(k=>!PF.includes(k)).length?`<div class="sec-lbl" style="margin-top:20px">Ausgeblendet – antippen zum Hinzufügen</div><div class="db-weg">${versteckt.filter(k=>!PF.includes(k)).map(k=>`<button class="chip" data-act="dbEin" data-w="${k}">${icon("add")}${esc(DB_W[k])}</button>`).join("")}</div>`:""}`;
 }
 function balken(werte){ const max=Math.max(1,...werte.map(w=>w[1]));
@@ -2424,6 +2499,9 @@ document.addEventListener("click",async ev=>{
   case "dbZug": { const L=dbLayout(), k=b.dataset.w, v=L.o.filter(x=>!L.aus.includes(x)), i=v.indexOf(k), j=i+(+b.dataset.d); if(j<0||j>=v.length) return;
     const a=L.o.indexOf(k), z=L.o.indexOf(v[j]); [L.o[a],L.o[z]]=[L.o[z],L.o[a]]; dbLayoutSpeichern(L); render(); return; }
   case "dbBreite": { const L=dbLayout(), k=b.dataset.w, G=DB_GR[k]; L.gr[k]=G[(G.indexOf(L.gr[k])+1)%G.length]; dbLayoutSpeichern(L); render(); return; }
+  case "dbGr": { const L=dbLayout(), k=b.dataset.w; if(!DB_GR[k].includes(b.dataset.g)||L.gr[k]===b.dataset.g) return; L.gr[k]=b.dataset.g; dbLayoutSpeichern(L); render(); return; }
+  case "dbFirmaSetzen": { if(!ME.admin) return; dbFirmaSpeichern(dbLayout()); render(); toast("Deine Anordnung ist jetzt der Standard für alle, die noch nichts eingestellt haben"); return; }
+  case "dbStd": { const id=String(ME.mail||"").toLowerCase(), r=DB.profile.get(id); if(r&&r.start){ delete r.start; saveRec("profile",r,false); } render(); toast(dbFirma()?"Firmen-Standard übernommen":"Zurückgesetzt"); return; }
   case "dbAus": { const L=dbLayout(); if(!L.aus.includes(b.dataset.w)) L.aus.push(b.dataset.w); dbLayoutSpeichern(L); render(); return; }
   case "dbEin": { const L=dbLayout(); L.aus=L.aus.filter(x=>x!==b.dataset.w); L.o=L.o.filter(x=>x!==b.dataset.w).concat(b.dataset.w); dbLayoutSpeichern(L); render(); return; }
   case "editLoc": { const kind=VIEW_KIND[nav.v]; locDialog(kind,DB[kind].get(nav.id)); return; }
