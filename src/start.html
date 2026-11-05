@@ -1171,6 +1171,27 @@ body.kopf-oben .edk-platz{display:none!important}
 .ww-z .pav{width:28px;height:28px;font-size:11px}
 .ww-t{display:flex;flex-direction:column;min-width:0}.ww-t b{font-size:13px;line-height:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ww-t small{font-size:12px;line-height:16px;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ww-z.frei{background:transparent}.ww-z.frei .pav{opacity:.55}
+/* Status: Punkt am Bild (Ring/Punkt statt Seitenkante) */
+.st-av{position:relative;display:inline-flex;flex:none}
+.st-av::after{content:"";position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;border-radius:50%;box-shadow:0 0 0 2px var(--sc-low);display:none}
+.st-buero::after,.st-baustelle::after,.st-unterwegs::after,.st-auto::after,.st-weg::after,.st-abw::after{display:block}
+.st-buero{--st:#2e9b5b}.st-baustelle{--st:#3b6fd8}.st-unterwegs{--st:#E0A100}.st-auto{--st:#3b6fd8}.st-weg{--st:#8a8a8a}.st-abw{--st:var(--err)}.st-leer{--st:var(--outline)}
+.st-av::after{background:var(--st)}.st-av.st-auto::after{background:var(--sc-low);box-shadow:inset 0 0 0 2.5px var(--st),0 0 0 2px var(--sc-low)}
+.ww-z.ww-abw .ww-t small{color:var(--err)}.ww-z.ww-abw .pav,.ww-z.ww-leer .pav{opacity:.6}
+.ww-z.klick{cursor:pointer}.ww-z.klick:hover{background:var(--sc-high)}
+.ww-start,.ww-alle{gap:6px}.ww-start .ww-z,.ww-alle .ww-z{padding:8px 12px;background:var(--sc-low)}.ww-alle .ww-z{background:var(--sc)}
+.ww-start .ww-z .pav,.ww-alle .ww-z .pav{width:34px;height:34px;font-size:12px}
+.mst-kopf{display:inline-flex;align-items:center;gap:6px;margin-left:4px;padding:2px 10px 2px 8px;border:0;border-radius:12px;background:var(--sc);color:inherit;font:inherit;font-weight:600;cursor:pointer;vertical-align:baseline}
+.mst-kopf:hover{background:var(--sc-high)}.mst-kopf i{width:8px;height:8px;border-radius:50%;background:var(--st)}.mst-kopf.st-auto i{background:transparent;box-shadow:inset 0 0 0 2px var(--st)}
+.st-wahl{display:grid;gap:6px}
+.st-opt{display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 14px;border:0;border-radius:16px;background:var(--sc);color:var(--on-surface);font:inherit;text-align:left;cursor:pointer}
+.st-opt:hover{background:var(--sc-high)}.st-opt[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
+.st-opt i{width:12px;height:12px;border-radius:50%;background:var(--st);flex:none}.st-opt.st-auto i{background:transparent;box-shadow:inset 0 0 0 2.5px var(--st)}
+.st-opt span{display:flex;flex-direction:column}.st-opt b{font-size:15px}.st-opt small{font-size:12px;opacity:.75}
+.st-hinweis{margin:0 4px 12px;padding:10px 14px;border-radius:14px;background:color-mix(in srgb,var(--err) 14%,var(--surface));font-size:14px}
+.st-abw-l{display:grid;gap:6px;margin-bottom:8px}.st-abwz{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;border:0;border-radius:14px;background:var(--sc);color:var(--on-surface);font:inherit;cursor:pointer}.st-abwz small{color:var(--on-sv)}
+.st-abmelden{display:inline-flex;align-items:center;gap:8px;padding:0 18px}.st-abmelden .ic{width:18px;height:18px}
+@media (max-width:743px){.gruss-sub .mst-kopf{margin:6px 0 0}}
 /* Handy: Stift neben der Begrüßung */
 .gruss-z{display:flex;align-items:flex-start;gap:8px}.gruss-t{flex:1;min-width:0}
 .gruss-anp{width:40px;height:40px;margin-top:6px;border:0;border-radius:50%;background:var(--sc);color:var(--on-surface);display:grid;place-items:center;cursor:pointer;flex:none}.gruss-anp .ic{width:20px;height:20px}
@@ -1907,7 +1928,8 @@ function startView(){
   if(anfVerw()) return `<div class="narrow">${g}${typeof bfStartZeile==="function"?bfStartZeile():""}${dashboard(kacheln)}</div>`;
   const gerZ=istHandy()?(()=>{ const G=live("geraete").filter(x=>!x.aus), f=G.map(gerKal).filter(k=>k&&k.s!=="ok").length;
     return `<div class="sec-lbl">Betrieb</div>${listOf([`<div class="li" role="button" tabindex="0" data-act="nav" data-v="geraete"><span class="av">${icon("geraet")}</span><span class="lt"><span class="h">Messgeräte</span><span class="s">${G.length} ${G.length===1?"Gerät":"Geräte"}${f?` · ${f} ${f===1?"braucht":"brauchen"} Kalibrierung`:""}</span></span>${icon("chev")}</div>`])}`; })():"";
-  let h=`<div class="narrow">${g}${typeof bfStartZeile==="function"?bfStartZeile():""}${pinStart()}${vgStartKarte()}${gerZ}${typeof hbStartZeile==="function"?hbStartZeile():""}<div class="apps app-weiter">${kacheln}</div>`;
+  setTimeout(mstKopf,0);
+  let h=`<div class="narrow">${g}${typeof bfStartZeile==="function"?bfStartZeile():""}${pinStart()}${vgStartKarte()}${teamHeuteStart()}${gerZ}${typeof hbStartZeile==="function"?hbStartZeile():""}<div class="apps app-weiter">${kacheln}</div>`;
   return h+`<p class="hint app-weiter">Jede App lässt sich einzeln auf den Home-Bildschirm legen: App öffnen, dann „Teilen“ → „Zum Home-Bildschirm“.</p></div>`;
 }
 const startTitel=()=>`${gruss()}${ME.ruf||ME.name?`, ${ME.ruf||ME.name}`:""}`;
@@ -2085,21 +2107,93 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     const alt=PIN_E.id&&DB.einstellungen.get(PIN_E.id), r=alt||{id:"pin-"+uid(),typ:"pin"}; Object.assign(r,{t:t.slice(0,400),farbe:PIN_E.farbe,bis:F.pinBis||"",deleted:false}); saveRec("einstellungen",r,!alt); closeOverlays(); render(); toast(alt?"Notiz gespeichert":"Notiz angeheftet – sehen jetzt alle"); return; }
   if(a==="pinWeg"){ const r=PIN_E.id&&DB.einstellungen.get(PIN_E.id); if(r&&canEdit(r)){ r.deleted=true; saveRec("einstellungen",r,false); } closeOverlays(); render(); toast("Notiz abgenommen"); return; } },true);
 
-/* ===== Wer ist wo (vorbereitet): Einteilung aus Auftragsterminen („Wer fährt hin“) und Kalender, dazu die letzte Meldung von heute (Übergabe, Material) ===== */
-function werwoDaten(){ const t=today(), h=kalTag(new Date()), ab=+h, R=new Map(), key=m=>String(m||"").toLowerCase();
-  team().filter(m=>m.mail&&m.status!=="weg"&&m.stufe!=="buero").forEach(m=>R.set(key(m.mail),{m,plan:[],ist:null}));
-  live("vorgaenge").filter(v=>v.typ!=="meldung"&&!v.deleted&&!v.abgelehnt&&v.s&&v.s.termin&&v.s.termin.datum===t).forEach(v=>{ (typeof mitListe==="function"?mitListe(v.s.termin):[]).forEach(p=>{ const x=R.get(key(p.mail)); if(x) x.plan.push({t:typeof vgKunde==="function"?vgKunde(v):"Auftrag",z:v.s.termin.zeit||""}); }); });
-  if(typeof kalAlle==="function") kalAlle(h,kalPlus(h,1)).filter(e=>e.q!=="auftrag"&&!e.frei&&!(e.privat&&!e.eigen)).forEach(e=>(e.mit||[]).forEach(p=>{ const x=R.get(key(p.mail)); if(x) x.plan.push({t:e.ort?String(e.ort).split(",")[0]:e.t,z:e.ganz?"":kalZeit(e.von)}); }));
-  const meld=(mail,txt,at)=>{ const x=R.get(key(mail)); if(x&&at>=ab&&(!x.ist||at>x.ist.at)) x.ist={t:txt,at}; };
+/* ===== Status und Abwesenheit (05.11.2026) =====
+   Abwesenheit: je Eintrag ein Datensatz (einstellungen, typ "abw"): wer, Art, von, bis. „Krank“ wird NICHT gespeichert –
+   gespeichert wird nur „abwesend“ (Gesundheitsdaten gehören nicht auf jedes Gerät). Urlaub, Schulung bleiben als Art erhalten.
+   Den Grund sehen nur Chef/Büro und die Person selbst; alle anderen sehen „nicht verfügbar“.
+   Tagesstatus: selbst gesetzt (gilt nur heute), sonst automatisch aus der Einteilung (Auftragstermine, Kalender, Meldungen).
+   Berufsschule: feste Schultage je Azubi (Mitarbeiter → Schultage). */
+const ST_ART={buero:"Im Büro",baustelle:"Auf Baustelle",unterwegs:"Unterwegs",weg:"Nicht erreichbar"};
+const ABW_ART={urlaub:"Urlaub",schulung:"Schulung",abwesend:"Abwesend"};
+const stMk=m=>String(m||"").toLowerCase();
+const stIch=mail=>!!ME.mail&&stMk(mail)===stMk(ME.mail);
+const stGrund=mail=>anfVerw()||stIch(mail);
+const stTag=iso=>{ const d=new Date(iso+"T12:00:00"); return iso===today()?"heute":d.toLocaleDateString("de-DE",{weekday:"short",day:"numeric",month:"numeric"}).replace(".,",","); };
+const abwListe=()=>live("einstellungen").filter(r=>r.typ==="abw"&&!r.deleted&&r.mail);
+function abwAm(mail,t=today()){ return abwListe().filter(r=>stMk(r.mail)===stMk(mail)&&r.von<=t&&(r.bis||r.von)>=t).sort((a,b)=>(b.created||0)-(a.created||0))[0]||null; }
+function schuleAm(m,d=new Date()){ const az=(m.stufe==="azubi")&&(!m.azubiBis||m.azubiBis>=today()); return az&&Array.isArray(m.schule)&&m.schule.includes(d.getDay()); }
+function stManuell(mail){ const r=DB.einstellungen.get("status-"+stMk(mail)); return r&&!r.deleted&&r.tag===today()&&ST_ART[r.s]?r:null; }
+/* Status einer Person heute: k = abw | buero | baustelle | unterwegs | weg | auto | leer */
+function personStatus(m,x){ const a=abwAm(m.mail);
+  if(a){ const bis=(a.bis||a.von)>today()?`bis ${stTag(a.bis)}`:"heute"; return {k:"abw",t:stGrund(m.mail)?ABW_ART[a.art]||"Abwesend":"Nicht verfügbar",s:bis,abw:a}; }
+  if(schuleAm(m)) return {k:"abw",t:stGrund(m.mail)?"Berufsschule":"Nicht verfügbar",s:"heute"};
+  const r=stManuell(m.mail); if(r) return {k:r.s,t:ST_ART[r.s],s:r.wo||"",selbst:true};
+  if(x&&x.plan.length){ const p=x.plan[0]; return {k:"auto",t:p.t,s:(p.z?p.z+" · ":"")+"laut Einteilung"+(x.plan.length>1?` (+${x.plan.length-1})`:"")}; }
+  if(x&&x.ist) return {k:"auto",t:x.ist.t,s:`gemeldet ${new Date(x.ist.at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}`};
+  return {k:"leer",t:"Kein Status",s:""}; }
+const stAv=(m,st)=>`<span class="st-av st-${st.k}">${persAv(m.mail,m.name)}</span>`;
+const stName=m=>m.ruf||m.name||persVoll(m.mail,"");
+function werwoDaten(){ const t=today(), h=kalTag(new Date()), ab=+h, R=new Map();
+  team().filter(m=>m.mail&&m.status!=="weg").forEach(m=>R.set(stMk(m.mail),{m,plan:[],ist:null}));
+  live("vorgaenge").filter(v=>v.typ!=="meldung"&&!v.deleted&&!v.abgelehnt&&v.s&&v.s.termin&&v.s.termin.datum===t).forEach(v=>{ (typeof mitListe==="function"?mitListe(v.s.termin):[]).forEach(p=>{ const x=R.get(stMk(p.mail)); if(x) x.plan.push({t:typeof vgKunde==="function"?vgKunde(v):"Auftrag",z:v.s.termin.zeit||""}); }); });
+  if(typeof kalAlle==="function") kalAlle(h,kalPlus(h,1)).filter(e=>e.q!=="auftrag"&&!e.frei&&!(e.privat&&!e.eigen)).forEach(e=>(e.mit||[]).forEach(p=>{ const x=R.get(stMk(p.mail)); if(x) x.plan.push({t:e.ort?String(e.ort).split(",")[0]:e.t,z:e.ganz?"":kalZeit(e.von)}); }));
+  const meld=(mail,txt,at)=>{ const x=R.get(stMk(mail)); if(x&&at>=ab&&(!x.ist||at>x.ist.at)) x.ist={t:txt,at}; };
   echt("eintraege").forEach(e=>{ const b=DB.baustellen.get(e.baustelleId); meld((e.createdBy||{}).mail,b?b.name:"Baustelle",e.created||0); });
   live("anforderungen").forEach(a=>{ const b=a.baustelleId&&DB.baustellen.get(a.baustelleId); if(b) meld((a.createdBy||{}).mail,b.name,a.created||0); });
-  return [...R.values()].sort((a,b)=>((b.plan.length||b.ist?1:0)-(a.plan.length||a.ist?1:0))||String(a.m.name).localeCompare(String(b.m.name),"de")); }
-function werwoKachel(zeile,leer,gross){ const D=werwoDaten(), ein=D.filter(x=>x.plan.length||x.ist).length;
-  const z=x=>{ const p=x.plan[0], wo=p?p.t:x.ist?x.ist.t:"", wann=p&&p.z?p.z:x.ist?`gemeldet ${new Date(x.ist.at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}`:"";
-    return `<div class="ww-z${wo?"":" frei"}">${persAv(x.m.mail,x.m.name)}<span class="ww-t"><b>${esc(x.m.ruf||x.m.name||persVoll(x.m.mail,""))}</b><small>${wo?esc(wo)+(x.plan.length>1?` +${x.plan.length-1}`:"")+(wann?" · "+esc(wann):""):"nicht eingeteilt"}</small></span></div>`; };
-  return {ic:"leute",v:"auftraege",sub:D.length?`${ein} von ${D.length} heute eingeteilt · aus Terminen und Meldungen`:"Noch keine Mitarbeiter angelegt",
-    s:()=>gross(ein,`von ${D.length} eingeteilt`),
-    m:g=>D.length?`<div class="ww ww-${g}">${D.slice(0,g==="l"?8:g==="b"?4:2).map(z).join("")}</div>`:leer("Mitarbeiter unter Einstellungen → Mitarbeiter anlegen.")}; }
+  const rang={buero:0,baustelle:0,unterwegs:0,auto:1,weg:2,leer:3,abw:4};
+  return [...R.values()].map(x=>Object.assign(x,{st:personStatus(x.m,x)})).sort((a,b)=>(stIch(b.m.mail)-stIch(a.m.mail))||(rang[a.st.k]-rang[b.st.k])||String(stName(a.m)).localeCompare(String(stName(b.m)),"de")); }
+const stZeile=x=>`<div class="ww-z ww-${x.st.k}${stIch(x.m.mail)||(anfVerw()&&x.st.abw)?" klick":""}"${stIch(x.m.mail)?` role="button" tabindex="0" data-act="stSetzen"`:anfVerw()&&x.st.abw?` role="button" tabindex="0" data-act="abwAuf" data-id="${esc(x.st.abw.id)}"`:""}>${stAv(x.m,x.st)}<span class="ww-t"><b>${esc(stName(x.m))}${stIch(x.m.mail)?" (du)":""}</b><small>${esc(x.st.t)}${x.st.s?" · "+esc(x.st.s):""}</small></span></div>`;
+function werwoKachel(zeile,leer,gross){ const D=werwoDaten(), da=D.filter(x=>!["abw","leer","weg"].includes(x.st.k)).length, weg=D.filter(x=>x.st.k==="abw").length;
+  return {ic:"leute",act:"teamHeute",sub:D.length?`${da} verfügbar${weg?` · ${weg} nicht da`:""}`:"Noch keine Mitarbeiter angelegt",plus:["stSetzen","Meinen Status setzen"],
+    s:()=>gross(da,`von ${D.length} verfügbar`),
+    m:g=>D.length?`<div class="ww ww-${g}">${D.slice(0,g==="l"?8:g==="b"?4:2).map(stZeile).join("")}</div>`:leer("Mitarbeiter unter Einstellungen → Mitarbeiter anlegen.")}; }
+/* Kopfzeile: eigener Status als kleiner Knopf neben Datum und Wetter (alle, auch Monteure) */
+function mstKopf(){ const p=document.querySelector("#tbKopf .sk-t p, #app .sk .sk-t p, #app .gruss-sub"); if(!p||p.querySelector(".mst-kopf")||!ME.mail) return;
+  const m=team().find(x=>stIch(x.mail))||{mail:ME.mail,name:ME.name}, st=personStatus(m,werwoDaten().find(x=>stIch(x.m.mail)));
+  p.insertAdjacentHTML("beforeend",`<button type="button" class="mst-kopf st-${st.k}" data-act="stSetzen" title="Meinen Status setzen"><i></i>${esc(st.k==="leer"?"Status setzen":st.k==="auto"?"Status: automatisch":st.t)}</button>`); }
+/* Monteur-Startseite: Team heute */
+function teamHeuteStart(){ const D=werwoDaten().filter(x=>!stIch(x.m.mail)); if(!D.length) return ""; return `<div class="sec-lbl">Team heute</div><div class="ww ww-start">${D.map(stZeile).join("")}</div>`; }
+/* Dialog: eigener Status */
+let ST_E=null;
+function stDlg(){ const r=stManuell(ME.mail), m=team().find(x=>stIch(x.mail))||{mail:ME.mail,name:ME.name}, a=abwAm(ME.mail);
+  ST_E={s:r?r.s:"auto"}; const B=live("baustellen").filter(b=>(b.status||"aktiv")==="aktiv").map(b=>[b.name,b.name]);
+  const kommt=abwListe().filter(x=>stIch(x.mail)&&(x.bis||x.von)>=today()).sort((x,y)=>x.von<y.von?-1:1);
+  dialog("Mein Status heute",`${a?`<p class="st-hinweis">Du bist eingetragen als <b>${esc(ABW_ART[a.art]||"abwesend")}</b> ${(a.bis||a.von)>today()?"bis "+esc(stTag(a.bis)):"heute"}. Andere sehen „nicht verfügbar“.</p>`:""}
+    <div class="st-wahl">${[["auto","Automatisch","aus Einteilung und Meldungen"],["buero","Im Büro",""],["baustelle","Auf Baustelle",""],["unterwegs","Unterwegs","z. B. Großhandel, Kunde"],["weg","Nicht erreichbar","z. B. Termin, Pause"]].map(([k,t,u])=>`<button type="button" class="st-opt st-${k}" data-act="stWahl" data-v="${k}" aria-pressed="${ST_E.s===k}"><i></i><span><b>${t}</b>${u?`<small>${u}</small>`:""}</span></button>`).join("")}</div>
+    <div id="stWo" ${ST_E.s==="baustelle"?"":"hidden"} style="margin-top:12px">${tf("stWo","Welche Baustelle (optional)",r&&r.wo||"",{form:true,list:"stWoL",ph:"z. B. Merten Bauteil B"})}${datalist("stWoL",B.map(x=>x[0]))}</div>
+    <p class="sup" style="margin:10px 4px 0">Gilt nur für heute – morgen ist wieder „Automatisch“.</p>
+    <div class="sec-lbl" style="margin-top:18px">Nicht da?</div>
+    ${kommt.length?`<div class="st-abw-l">${kommt.map(x=>`<button type="button" class="st-abwz" data-act="abwAuf" data-id="${esc(x.id)}"><b>${esc(ABW_ART[x.art]||"Abwesend")}</b><small>${esc(stTag(x.von))}${x.bis&&x.bis!==x.von?" – "+esc(stTag(x.bis)):""}</small></button>`).join("")}</div>`:""}
+    <button type="button" class="btn-tonal st-abmelden" data-act="abwNeu">${icon("add")}Abwesenheit eintragen (krank, Urlaub …)</button>`,
+    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="stOk">Speichern</button>`,{mittel:true}); }
+/* Dialog: Abwesenheit (selbst oder – Chef/Büro – für andere) */
+let ABW_E=null;
+function abwDlg(r){ const neu=!r, verw=anfVerw(); if(r&&!(stIch(r.mail)||verw)) return;
+  ABW_E={id:r&&r.id,art:r?(r.art==="abwesend"?"abwesend":r.art):"krank"};
+  const T=team().filter(m=>m.mail&&m.status!=="weg"), wer=r?r.mail:ME.mail;
+  dialog(neu?"Abwesenheit eintragen":"Abwesenheit",`<div class="fg1">${verw?sf("abwWer","Wer",stMk(wer),T.map(m=>[stMk(m.mail),m.name+(stIch(m.mail)?" (du)":"")]),{form:true}):""}
+    <div class="lbl" style="margin:${verw?12:0}px 4px 6px">Grund</div><div class="chips abw-art">${(r?[["urlaub","Urlaub"],["schulung","Schulung"],["abwesend","Krank / Sonstiges"]]:[["krank","Krank"],["urlaub","Urlaub"],["schulung","Schulung"],["abwesend","Sonstiges"]]).map(([k,t])=>`<button type="button" class="chip" data-act="abwArt" data-v="${k}" aria-pressed="${ABW_E.art===k}">${t}</button>`).join("")}</div>
+    <div class="row2" style="margin-top:12px">${tf("abwVon","Von",r?r.von:today(),{form:true,type:"date"})}${tf("abwBis","Bis einschließlich",r?(r.bis||r.von):today(),{form:true,type:"date"})}</div>
+    <p class="sup abw-krank" style="margin:8px 4px 0" ${ABW_E.art==="krank"?"":"hidden"}>Gespeichert wird nur „abwesend bis …“ – nicht, dass du krank bist. Chef und Büro sehen den Eintrag in den Benachrichtigungen. Ob das als Krankmeldung reicht oder du zusätzlich anrufst, legt der Chef fest.</p>
+    <p class="sup" style="margin:8px 4px 0">Den Grund sehen nur Chef, Büro und du – alle anderen sehen „nicht verfügbar“.</p></div>`,
+    `${!neu?`<button class="btn-text danger" data-act="abwWeg">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="abwOk">${neu?"Eintragen":"Speichern"}</button>`,{mittel:true}); }
+function teamHeuteDlg(){ dialog("Team heute",`<div class="ww ww-alle">${werwoDaten().map(stZeile).join("")}</div>`,`<button class="btn-text" data-act="abwNeu">Abwesenheit eintragen</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`,{mittel:true}); }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="st"],[data-act^="abw"],[data-act="teamHeute"]'); if(!b) return; const a=b.dataset.act;
+  if(!["stSetzen","stWahl","stOk","abwNeu","abwAuf","abwArt","abwOk","abwWeg","teamHeute"].includes(a)) return; e.stopPropagation(); e.preventDefault();
+  if(a==="stSetzen"){ stDlg(); return; }
+  if(a==="teamHeute"){ teamHeuteDlg(); return; }
+  if(a==="stWahl"){ ST_E.s=b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); const w=document.getElementById("stWo"); if(w) w.hidden=ST_E.s!=="baustelle"; return; }
+  if(a==="stOk"){ const F=formVals(), id="status-"+stMk(ME.mail), alt=DB.einstellungen.get(id), r=alt||{id,typ:"status"};
+    Object.assign(r,{mail:stMk(ME.mail),s:ST_E.s==="auto"?"":ST_E.s,wo:ST_E.s==="baustelle"?String(F.stWo||"").trim().slice(0,80):"",tag:today(),deleted:ST_E.s==="auto"}); saveRec("einstellungen",r,!alt); closeOverlays(); render(); toast(ST_E.s==="auto"?"Status: automatisch":"Status gesetzt – gilt bis heute Abend"); return; }
+  if(a==="abwNeu"){ abwDlg(null); return; }
+  if(a==="abwAuf"){ const r=DB.einstellungen.get(b.dataset.id); if(r) abwDlg(r); return; }
+  if(a==="abwArt"){ ABW_E.art=b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); const k=document.querySelector("#dlg .abw-krank"); if(k) k.hidden=ABW_E.art!=="krank"; return; }
+  if(a==="abwOk"){ const F=formVals(), von=F.abwVon||today(), bis=F.abwBis&&F.abwBis>=von?F.abwBis:von, mail=stMk(F.abwWer||ME.mail);
+    if(!stIch(mail)&&!anfVerw()) return;
+    const alt=ABW_E.id&&DB.einstellungen.get(ABW_E.id), r=alt||{id:"abw-"+uid(),typ:"abw"};
+    Object.assign(r,{mail,art:ABW_E.art==="krank"?"abwesend":ABW_E.art,von,bis,deleted:false}); saveRec("einstellungen",r,!alt); closeOverlays(); render();
+    toast(stIch(mail)?"Eingetragen – andere sehen „nicht verfügbar“":"Abwesenheit eingetragen"); return; }
+  if(a==="abwWeg"){ const r=ABW_E.id&&DB.einstellungen.get(ABW_E.id); if(r&&(stIch(r.mail)||anfVerw())){ r.deleted=true; saveRec("einstellungen",r,false); } closeOverlays(); render(); toast("Abwesenheit gelöscht"); return; } },true);
 
 /* Dashboard für Chef und Büro: vier Boxen. Jede zeigt nur, was zu tun ist – Details über „Alle“. */
 function dashboard(kacheln){
@@ -2165,7 +2259,7 @@ function dashboard(kacheln){
       ${DB_ANP?`${PF.includes(k)?"":`<button class="wg-weg" data-act="dbAus" data-w="${k}" aria-label="${esc(DB_W[k])} ausblenden" title="Ausblenden">−</button>`}
         <div class="wg-anp"><button class="db-ab" data-act="dbZug" data-w="${k}" data-d="-1" ${i===0?"disabled":""} aria-label="Nach vorne" title="Nach vorne">${icon("hoch")}</button><span class="db-gls" role="group" aria-label="Größe">${grZeig(k).map(glyph).join("")}</span><button class="db-ab" data-act="dbZug" data-w="${k}" data-d="1" ${i===sicht.length-1?"disabled":""} aria-label="Nach hinten" title="Nach hinten">${icon("runter")}</button></div>`:""}
     </section>`; };
-  setTimeout(wetterKopf,0); if(!DB_ANP) setTimeout(()=>{ DB_ERST=false; },0);
+  setTimeout(()=>{ wetterKopf(); mstKopf(); },0); if(!DB_ANP) setTimeout(()=>{ DB_ERST=false; },0);
   const versteckt=L.o.filter(k=>L.aus.includes(k)), F=dbFirma();
   const anpKopf=DB_ANP?`<div class="db-hinweis"><p>${DESK.matches?"Kachel mit der Maus an die gewünschte Stelle ziehen":"Pfeile verschieben"}, unten die Größe wählen, „−“ blendet aus. Gilt nur für dich – ${istHandy()?"auf all deinen Handys (iPad und PC haben eine eigene Anordnung)":"auf iPad und PC (das Handy hat eine eigene Anordnung)"}.</p>
     <div class="db-std">${ME.admin&&!istHandy()?`<button class="btn-tonal" data-act="dbFirmaSetzen">${icon("person")}Als Standard für alle</button>`:""}${istHandy()?(((profilVon(ME.mail)||{}).startH)?`<button class="btn-text" data-act="dbStd">Wie auf iPad und PC</button>`:""):`<button class="btn-text" data-act="dbStd">${F?"Firmen-Standard übernehmen":"Zurücksetzen"}</button>`}</div></div>`:"";
@@ -2474,7 +2568,7 @@ function maEntwurfMerken(){ if(nav.v!=="ma"||!teamForm) return; const f={}; docu
 document.addEventListener("click",e=>{ if(e.target.closest&&e.target.closest(".ma-seite [data-act]")) setTimeout(maEntwurfMerken,0); });
 /* Mitarbeiter als eigene Seite (Chef/Entwickler): Profil (Vorname, Nachname, Rufname) + Firma (Kürzel, Mail, Aufgabe, Status, Rechte, Prüfer) */
 function maView(m){
-  if(!teamForm||teamForm.alt!==(m?m.mail:null)) teamForm={alt:m?m.mail:null,admin:!!(m&&m.admin),entw:maEntw(m),status:m?m.status||"aktiv":"aktiv",pruefer:!!(m&&m.pruefer),stufe:m?(m.stufe||maStufe(m).k||(m.azubiBis?"azubi":"")):""};
+  if(!teamForm||teamForm.alt!==(m?m.mail:null)) teamForm={alt:m?m.mail:null,admin:!!(m&&m.admin),entw:maEntw(m),status:m?m.status||"aktiv":"aktiv",pruefer:!!(m&&m.pruefer),stufe:m?(m.stufe||maStufe(m).k||(m.azubiBis?"azubi":"")):"",schule:m&&Array.isArray(m.schule)?m.schule.slice():[]};
   /* Zwischenstand: Eingaben liegen laufend auf dem Gerät und kommen nach Neuladen/Update zurück, bis gespeichert oder verworfen wird */
   if(!teamForm.basis){ const {alt,...T0}=teamForm; teamForm.basis=JSON.stringify(T0); const E=maEntwurf(); if(E&&E.k===(m?m.mail:"")){ Object.assign(teamForm,E.T); teamForm.ef=E.f; teamForm.wieder=true; } }
   const fv=(k,d)=>teamForm.ef&&teamForm.ef[k]!=null?teamForm.ef[k]:d;
@@ -2493,6 +2587,8 @@ function maView(m){
     <div class="chips ma-stufen">${MA_STUFEN.map(([v,t])=>`<button type="button" class="chip" data-act="teamStufe" data-v="${v}" aria-pressed="${teamForm.stufe===v}">${t}</button>`).join("")}</div>
     <div id="maAzubi" ${teamForm.stufe==="azubi"?"":"hidden"}><div class="row2" style="margin-top:12px">${tf("azubiVon","Ausbildung seit",fv("azubiVon",m&&m.azubiVon||""),{form:true,type:"date"})}${tf("azubiBis","Ausbildung bis",fv("azubiBis",m&&m.azubiBis||""),{form:true,type:"date"})}</div>
       <div style="margin-top:12px">${tf("lj","Lehrjahr jetzt (nur wenn abweichend, z. B. nach Betriebswechsel)",fv("lj",m&&m.lj?String(maLehrjahr(m)):""),{form:true,type:"number",ph:m&&m.azubiVon?`gerechnet: ${maLehrjahr(Object.assign({},m,{lj:0}))}`:"1 bis 4"})}</div>
+      <div class="lbl" style="margin:16px 4px 8px">Schultage (Berufsschule)</div><div class="chips ma-schule">${[[1,"Mo"],[2,"Di"],[3,"Mi"],[4,"Do"],[5,"Fr"]].map(([d,t])=>`<button type="button" class="chip" data-act="teamSchule" data-v="${d}" aria-pressed="${(teamForm.schule||[]).includes(d)}">${t}</button>`).join("")}</div>
+      <p class="sup" style="margin:8px 4px 0">An diesen Tagen steht er bei „Wer ist wo“ als nicht verfügbar (Chef und Büro sehen „Berufsschule“). Blockunterricht als Abwesenheit „Schulung“ eintragen.</p>
       <p class="sup" style="margin:8px 4px 0">Das Lehrjahr rechnet sich aus „seit“ und zählt jedes Jahr am Ausbildungsbeginn weiter. Weicht es ab, hier eintragen – ab dann zählt es von diesem Stand aus weiter. Ab dem Tag nach „bis“ wird er automatisch als Geselle geführt; Rechte und Prüfer ändert das nicht.</p></div>
     <div class="lbl" style="margin:16px 4px 8px">Status</div>${seg("teamStatus",teamForm.status,STATUS_MA)}
     <div class="lbl" style="margin:16px 4px 8px">Rechte</div>${seg("teamAdmin",teamForm.entw?"2":teamForm.admin?"1":"0",[["0","Mitarbeiter"],["1","Admin"],["2","Entwickler"]])}
@@ -2678,6 +2774,7 @@ document.addEventListener("click",async ev=>{
   case "gerAus": { const r=gerForm&&DB.geraete.get(gerForm.id); if(!r||!ME.admin) return; r.aus=!r.aus; saveRec("geraete",r); gerForm=null; closeOverlays(); render(); toast(r.aus?"Ausgemustert – in EVSE nicht mehr auswählbar":"Wieder aktiv"); return; }
   case "teamEdit": teamForm=null; go({v:"ma",id:b.dataset.mail}); return;
   case "teamStatus": if(teamForm){ if(teamForm.alt===ME.mail&&b.dataset.v==="weg"){ toast("Dich selbst kannst du nicht austragen"); return; } teamForm.status=b.dataset.v; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;
+  case "teamSchule": if(teamForm){ const d=+b.dataset.v, S=teamForm.schule||(teamForm.schule=[]); const i=S.indexOf(d); if(i<0) S.push(d); else S.splice(i,1); S.sort(); b.setAttribute("aria-pressed",String(i<0)); } return;
   case "teamStufe": if(teamForm){ teamForm.stufe=teamForm.stufe===b.dataset.v?"":b.dataset.v; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===teamForm.stufe))); const z=document.getElementById("maAzubi"); if(z) z.hidden=teamForm.stufe!=="azubi"; } return;
   case "teamPruefer": if(teamForm){ teamForm.pruefer=b.dataset.v==="1"; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;
   case "teamAdmin": if(teamForm){ if(teamForm.alt===ME.mail&&b.dataset.v==="0"){ toast("Dich selbst kannst du nicht herabstufen"); return; } teamForm.admin=b.dataset.v!=="0"; teamForm.entw=b.dataset.v==="2"; b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); } return;
@@ -2687,10 +2784,10 @@ document.addEventListener("click",async ev=>{
     const L=teamAlle().map(m=>({...m}));
     if(L.some(m=>m.mail===mail&&m.mail!==T.alt)){ toast("Diese Adresse ist schon eingetragen"); return; }
     const neu={name:F.name.trim(),mail,rolle:(F.rolle||"").trim()||undefined,admin:T.admin,entwickler:T.entw||undefined,status:T.status,pruefer:T.pruefer||undefined};
-    if(nav.v==="ma"){ if(T.stufe) neu.stufe=T.stufe; if(T.stufe==="azubi"){ if(F.azubiVon) neu.azubiVon=F.azubiVon; if(F.azubiBis) neu.azubiBis=F.azubiBis;
+    if(nav.v==="ma"){ if(T.stufe) neu.stufe=T.stufe; if(T.stufe==="azubi"){ if(F.azubiVon) neu.azubiVon=F.azubiVon; if(F.azubiBis) neu.azubiBis=F.azubiBis; if(T.schule&&T.schule.length) neu.schule=T.schule.slice();
       const alt=teamAlle().find(x=>x.mail===T.alt), lj=parseInt(F.lj,10);
       if(lj>=1&&lj<=4){ const bisher=alt&&alt.lj?maLehrjahr(Object.assign({},alt,{azubiVon:neu.azubiVon})):0; if(bisher===lj&&alt.ljAm){ neu.lj=alt.lj; neu.ljAm=alt.ljAm; } else { neu.lj=lj; neu.ljAm=new Date().toISOString().slice(0,10); } } } }
-    else { const alt=teamAlle().find(m=>m.mail===T.alt); if(alt) ["stufe","azubiVon","azubiBis","lj","ljAm"].forEach(k=>{ if(alt[k]) neu[k]=alt[k]; }); }
+    else { const alt=teamAlle().find(m=>m.mail===T.alt); if(alt) ["stufe","azubiVon","azubiBis","lj","ljAm","schule"].forEach(k=>{ if(alt[k]) neu[k]=alt[k]; }); }
     const i=L.findIndex(m=>m.mail===T.alt); if(i>=0) L[i]=neu; else L.push(neu);
     if(!L.some(m=>m.admin&&m.status!=="weg")){ toast("Mindestens ein aktiver Admin muss bleiben"); return; }
     teamSpeichern(L);

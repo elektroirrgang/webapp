@@ -94,6 +94,10 @@ function meldungenRoh(){
   const ab=Date.now()-ML_TAGE*864e5, L=[], v=anfVerw(), alle=k=>DB[k]?[...DB[k].values()].filter(r=>!r.deleted&&(typeof nurDemo==="function"&&nurDemo()?r.demo:(!r.demo||r.sim))):[]; /* Simulation: nur auf diesem Gerät, wird nie abgeglichen */
   const P=(id,t,von,h,s,go)=>L.push({id,t,von,h,s,go});
   if(v){
+    /* Abwesenheiten (Status): „Krank“ steht nicht in den Daten – nur „abwesend“ */
+    alle("einstellungen").filter(r=>r.typ==="abw"&&r.mail&&(r.created||0)>=ab&&!mlIch(r.createdBy)).forEach(r=>{ const T=typeof team==="function"?team():[], k=String(r.mail).toLowerCase(), m=T.find(x=>String(x.mail).toLowerCase()===k), selbst=r.createdBy&&String(r.createdBy.mail||"").toLowerCase()===k;
+      const d=x=>{ const t=new Date(x+"T12:00:00"); return isNaN(t)?x:t.toLocaleDateString("de-DE",{weekday:"short",day:"numeric",month:"numeric"}); };
+      P("abw:"+r.id,r.created,r.createdBy,selbst?"meldet sich ab":`Abwesenheit für ${m?m.name:r.mail}`,`${({urlaub:"Urlaub",schulung:"Schulung"})[r.art]||"Abwesend"}: ${d(r.von)}${r.bis&&r.bis!==r.von?" bis "+d(r.bis):""}`,{v:"start"}); });
     anfAlle().filter(a=>(a.created||0)>=ab&&!mlIch(a.createdBy)).forEach(a=>P("anf:"+a.id,a.created,a.createdBy,"fordert Material an",`${anfOrt(a)}: ${anfPosText(a)}`,{v:"materialanf"}));
     alle("eintraege").filter(e=>(e.created||0)>=ab&&!mlIch(e.createdBy)).forEach(e=>{ const b=DB.baustellen&&DB.baustellen.get(e.baustelleId);
       P("ue:"+e.id,e.created,e.createdBy,`Übergabe: ${b?b.name:"Baustelle"}`,e.stand?String(e.stand).slice(0,90):"",{v:"baustelle",id:e.baustelleId}); });
