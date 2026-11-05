@@ -23,7 +23,10 @@ const gvGsOpts=()=>[["","aus der Bezeichnung erkennen"],...EC_GESCHOSS.map(([v,t
 const gvZahl=g=>{ const R=g.etagen.reduce((n,e)=>n+(e.raeume||[]).length,0); return {b:g.bauteile.length,e:g.etagen.length,r:R}; };
 const gvLeer=g=>!DB.gebaeude.has(g.id)||(!g.bauteile.length&&gvZahl(g).r===0&&g.etagen.length<=1);
 function gvText(g){ if(gvLeer(g)) return "Noch nichts angelegt – Bauteile, Etagen und Räume"; const z=gvZahl(g);
-  return [z.b&&`${z.b} Bauteil${z.b===1?"":"e"}`,`${z.e} Etage${z.e===1?"":"n"}`,`${z.r} Räume`].filter(Boolean).join(" · "); }
+  /* Etagen nicht über alle Bauteile zusammenzählen (9 Bauteile mit je 2 Etagen sind kein Hochhaus mit 18 Etagen) – sondern von … bis */
+  const E=g.etagen.filter(e=>e.raeume.length||e.id!=="eg"), eb=E.map(e=>ecEbene(e)).filter(x=>x!=null&&!isNaN(x)), lo=Math.min(...eb), hi=Math.max(...eb);
+  const et=!E.length?"":z.b>1&&eb.length?(lo===hi?ecGeschossName(lo):`${ecGeschossName(lo)} bis ${ecGeschossName(hi)}`):`${E.length} Etage${E.length===1?"":"n"}`;
+  return [z.b&&`${z.b} Bauteil${z.b===1?"":"e"}`,et,`${z.r} ${z.r===1?"Raum":"Räume"}`].filter(Boolean).join(" · "); }
 /* Block auf der Kunden-/Standortseite */
 function gvBeiKunde(kind,r){ const O=kind==="kunden"?[{id:"k:"+r.id,name:"Adresse des Kunden"},...standorteVon(r.id).map(s=>({id:s.id,name:s.name||"Standort"}))]:[{id:r.id,name:r.name}];
   return `<div class="sec-row"><div class="sec-lbl">Gebäude</div></div>`+listOf(O.map(o=>{ const g=gvGeb(o.id);
