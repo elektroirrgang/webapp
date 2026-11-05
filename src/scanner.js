@@ -8,7 +8,7 @@
 IC.scQr=IC.scQr||"M3 11h8V3H3v8zm2-6h4v4H5V5zm-2 16h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zm0 10h2v2h-2zm-6-6h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2zm2-2h2v2h-2zm0-4h2v2h-2zm2 2h2v2h-2z";
 const SC_IC={zu:"M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",licht:"M6 2v6l4 4v10h4V12l4-4V2H6zm2 2h8v1H8V4z",
   tast:"M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z",
-  vt:"M7 2v11h3v9l7-12h-4l4-8z",wb:"M19.77 7.23l.01-.01-3.72-3.72L15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33a2.5 2.5 0 0 0 2.5 2.5c.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14c0-1.1-.9-2-2-2h-1V5c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v16h10v-7.5h1.5v5a2.5 2.5 0 0 0 5 0V9c0-.69-.28-1.32-.73-1.77zM18 10c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zM8 18v-4.5H6L10 6v5h2l-4 7z",schrank:"M3 4h18v6H3zm0 8h18v6H3zM6 6v2h2V6zm0 8v2h2v-2z",neu:"M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",qr:IC.scQr};
+  vt:"M7 2v11h3v9l7-12h-4l4-8z",wb:"M19.77 7.23l.01-.01-3.72-3.72L15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33a2.5 2.5 0 0 0 2.5 2.5c.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14c0-1.1-.9-2-2-2h-1V5c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v16h10v-7.5h1.5v5a2.5 2.5 0 0 0 5 0V9c0-.69-.28-1.32-.73-1.77zM18 10c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zM8 18v-4.5H6L10 6v5h2l-4 7z",schrank:"M3 4h18v6H3zm0 8h18v6H3zM6 6v2h2V6zm0 8v2h2v-2z",neu:"M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",foto:"M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zM9 2 7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z",qr:IC.scQr};
 const scSvg=k=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${SC_IC[k]}"/></svg>`;
 const SC_Z="23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 function scNorm(t){ if(typeof qrNorm==="function") return qrNorm(t); t=String(t||"").trim(); const m=t.match(/\/q\/?[#?]([0-9A-Za-z]{6})\b/)||t.match(/qr=([0-9A-Za-z]{6})\b/i); const c=(m?m[1]:t).toUpperCase().replace(/[\s-]/g,"");
@@ -41,9 +41,31 @@ function scListe(){ if(!SC) return; const box=SC.el.querySelector("#scListe"); i
     .filter(x=>f==="alles"||x.ic===f);
   box.innerHTML=L.length?`<div class="sc-lbl">${SC.el.classList.contains("pc")?"Zuletzt geöffnet":"Zuletzt gescannt"}</div>${L.map(x=>`<button type="button" class="sc-li" data-sc="alt" data-c="${esc(x.c)}"><span class="sc-av">${scSvg(SC_IC[x.ic]&&x.ic!=="neu"?x.ic:"vt")}</span><span class="sc-kt"><b>${esc(x.titel||scZeig(x.c))}</b><small>${esc([x.sub,scWann(x.t)].filter(Boolean).join(" · "))}</small></span></button>`).join("")}`
     :`<p class="sc-leer">${f==="alles"?(SC.el.classList.contains("pc")?"Hier erscheinen die zuletzt geöffneten Anlagen.":"Hier erscheinen die zuletzt gescannten Aufkleber."):f==="schrank"?"Noch kein Netzwerkschrank gescannt.":f==="wb"?"Noch keine Wallbox gescannt.":"Noch kein Verteiler gescannt."}</p>`; }
-function scZu(){ if(!SC) return; const cam=SC; SC=null; cam.aus=true; try{ cam.st&&cam.st.getTracks().forEach(t=>t.stop()); }catch(e){}
+function scZu(){ if(!SC) return; const cam=SC; SC=null; cam.aus=true; try{ const b=cam.el.querySelector(".sc-bild"); if(b&&b.src) URL.revokeObjectURL(b.src); }catch(e){} try{ cam.st&&cam.st.getTracks().forEach(t=>t.stop()); }catch(e){}
   removeEventListener("keydown",scTaste); document.body.classList.remove("sc-offen"); cam.el.classList.add("weg"); setTimeout(()=>cam.el.remove(),220); }
 function scTaste(e){ if(e.key==="Escape"&&SC){ e.preventDefault(); e.stopPropagation(); scZu(); } }
+/* iPhone/iPad: kein Live-Bild, sondern ein Foto mit der iOS-Kamera (12 MP, Autofokus, Makro, ohne Kamera-Nachfrage).
+   Safari kann QR-Codes im Live-Bild nicht selbst erkennen, und die Web-Kamera fragt in der Home-Bildschirm-App jedes Mal nach. */
+const SC_IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+function scJq(){ return window.jsQR?Promise.resolve(window.jsQR):new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="../vendor/jsqr.min.js"; s.onload=()=>ok(window.jsQR); s.onerror=()=>no(); document.head.appendChild(s); }); }
+/* Foto (12 MP) auswerten: erst Mitte fast in voller Auflösung, dann ganzes Bild, dann Kacheln */
+async function scFotoLesen(f,jq,info){
+  const url=URL.createObjectURL(f), img=await new Promise((ok,no)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=no; i.src=url; });
+  const W=img.naturalWidth, H=img.naturalHeight, cv=document.createElement("canvas"), cx=cv.getContext("2d",{willReadFrequently:true});
+  const lies=(x,y,w,h,max,inv)=>{ const z=Math.min(1,max/Math.max(w,h)); cv.width=Math.max(1,Math.round(w*z)); cv.height=Math.max(1,Math.round(h*z));
+    cx.drawImage(img,x,y,w,h,0,0,cv.width,cv.height); const r=jq(cx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height,{inversionAttempts:inv||"dontInvert"}); return r&&r.data||""; };
+  const V=[[W*.25,H*.25,W*.5,H*.5,1600],[0,0,W,H,1600],[W*.35,H*.35,W*.3,H*.3,1400],[0,0,W,H,2400],[0,0,W,H,1000,"attemptBoth"]];
+  for(let i=0;i<3;i++) for(let j=0;j<3;j++) V.push([W*i/4,H*j/4,W/2,H/2,1500]);
+  try{ for(let k=0;k<V.length;k++){ const t=lies(...V[k]); if(t){ info&&info(k); return t; } await new Promise(r=>setTimeout(r,0)); } return ""; }
+  finally{ URL.revokeObjectURL(url); cv.width=cv.height=0; } }
+function scFoto(){ if(!SC) return; const i=SC.el.querySelector("#scDatei"); if(i){ i.value=""; i.click(); } }
+async function scFotoDa(f){ const cam=SC; if(!cam||!f) return; const el=cam.el, hin=t=>{ const h=el.querySelector("#scHin"); if(h) h.textContent=t; };
+  const bild=el.querySelector(".sc-bild"); try{ if(bild.src) URL.revokeObjectURL(bild.src); }catch(e){} bild.src=URL.createObjectURL(f); el.classList.add("liest"); hin("Wird gelesen …");
+  let t=""; try{ t=await scFotoLesen(f,await scJq()); }catch(e){ if(SC===cam){ el.classList.remove("liest"); hin("Scanner braucht einmal Internet – Code eintippen"); } return; }
+  if(SC!==cam) return; el.classList.remove("liest");
+  const c=t&&scNorm(t); if(c){ hin("Erkannt"); scTreffer(c,t); return; }
+  hin(t?"Das ist kein Irrgang-Aufkleber":"Kein Code erkannt – 20–30 cm Abstand, Licht von der Seite, nicht von vorn");
+  el.querySelector(".sc-foto span").textContent="Nochmal fotografieren"; }
 function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="function") tipWeg();
   /* Handy: Blatt von unten · iPad: Fenster in der Mitte · PC: Fenster in der Mitte, ohne Kamera – Code eintippen (z. B. wenn jemand von der Baustelle anruft) */
   const pc=typeof DESK!=="undefined"&&DESK.matches, mitte=pc||(typeof WIDE!=="undefined"?WIDE.matches:innerWidth>=744);
@@ -54,7 +76,7 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
     <div class="sc-griff"><i></i></div>
     <div class="sc-kopf"><b>${esc(opt.titel||"Aufkleber scannen")}</b><button type="button" class="sc-rk" data-sc="zu" aria-label="Schließen">${scSvg("zu")}</button></div>
     <div class="sc-cam"><video playsinline muted autoplay></video><div class="sc-loch"><i class="sc-e e1"></i><i class="sc-e e2"></i><i class="sc-e e3"></i><i class="sc-e e4"></i></div>
-      <button type="button" class="sc-licht" data-sc="licht" aria-label="Taschenlampe" hidden>${scSvg("licht")}</button><p class="sc-hin" id="scHin">Kamera wird gestartet …</p>
+      <button type="button" class="sc-licht" data-sc="licht" aria-label="Taschenlampe" hidden>${scSvg("licht")}</button><p class="sc-hin" id="scHin">Kamera wird gestartet …</p>${SC_IOS&&!pc?`<img class="sc-bild" alt=""><button type="button" class="sc-foto" data-sc="foto"><i>${scSvg("foto")}</i><span>Aufkleber fotografieren</span></button><input type="file" id="scDatei" accept="image/*" capture="environment" hidden>`:""}
       <button type="button" class="sc-pill" data-sc="nr">${scSvg("tast")}<span>Code eintippen</span></button></div>
     <div class="sc-karte" id="scKarte" hidden></div>
     <div class="sc-rest">
@@ -73,6 +95,9 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
     z.addEventListener("touchend",()=>{ if(y0==null) return; y0=null; bl.style.transition=""; bl.style.transform=""; if(dy>90) scZu(); }); });
   const hin=t=>{ const h=el.querySelector("#scHin"); if(h) h.textContent=t; };
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||(typeof DESK!=="undefined"&&DESK.matches)){ el.classList.add("ohne"); hin(pc?"Der Code steht auf dem QR-Aufkleber unter „Anlage“ – 6 Zeichen, z. B. 4K7 P2M.":"Code vom Aufkleber eintippen"); scEingabe(true); return; }
+  if(SC_IOS){ el.classList.add("foto"); hin("Aus 20–30 cm – der Aufkleber muss nicht bildfüllend sein");
+    el.querySelector("#scDatei").addEventListener("change",e=>{ const f=e.target.files&&e.target.files[0]; if(f) scFotoDa(f); });
+    scFoto(); return; }
   const cam=SC;
   navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1920},height:{ideal:1080},advanced:[{focusMode:"continuous"}]},audio:false}).then(async st=>{
     if(cam.aus){ st.getTracks().forEach(t=>t.stop()); return; } cam.st=st; const vid=el.querySelector("video"); vid.srcObject=st; try{ await vid.play(); }catch(e){}
@@ -82,7 +107,7 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
       if(cap.zoom&&cap.zoom.max>=1.5) tr.applyConstraints({advanced:[{zoom:Math.min(2,cap.zoom.max)}]}).catch(()=>{});
       if(cap.focusMode&&cap.focusMode.includes("continuous")) tr.applyConstraints({advanced:[{focusMode:"continuous"}]}).catch(()=>{}); }catch(e){}
     let det=null; try{ if("BarcodeDetector" in window&&(await BarcodeDetector.getSupportedFormats()).includes("qr_code")) det=new BarcodeDetector({formats:["qr_code"]}); }catch(e){}
-    let jq=null; if(!det){ try{ jq=window.jsQR||await new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="../vendor/jsqr.min.js"; s.onload=()=>ok(window.jsQR); s.onerror=()=>no(); document.head.appendChild(s); }); }catch(e){ hin("Scanner braucht einmal Internet – Code eintippen"); return; } }
+    let jq=null; if(!det){ try{ jq=await scJq(); }catch(e){ hin("Scanner braucht einmal Internet – Code eintippen"); return; } }
     const cv=document.createElement("canvas"), cx=cv.getContext("2d",{willReadFrequently:true}); let zuletzt="";
     /* Ausschnitt in der Bildmitte (dort ist der Rahmen) in voller Auflösung – kleine Codes werden nicht weggerechnet */
     let rd=0; const mitte=()=>{ const w=vid.videoWidth, h=vid.videoHeight, q=Math.round(Math.min(w,h)*0.75), z=Math.min(1,960/q); cv.width=q*z|0; cv.height=q*z|0;
@@ -111,11 +136,12 @@ var SC_ART="vt";
 function scKlick(e){ const b=e.target.closest("[data-sc]"); if(!b||!SC) return; e.stopPropagation(); const a=b.dataset.sc;
   if(a==="zu") scZu();
   else if(a==="nr") scEingabe(true);
+  else if(a==="foto") scFoto();
   else if(a==="nrOk") scNrOk();
   else if(a==="f"){ SC.filter=b.dataset.f; SC.el.querySelectorAll('[data-sc="f"]').forEach(x=>x.setAttribute("aria-pressed",String(x===b))); scListe(); }
   else if(a==="alt"){ const c=b.dataset.c, x=scZuletzt().find(z=>z.c===c); scLos(c,x); }
   else if(a==="licht"){ const tr=SC.st&&SC.st.getVideoTracks()[0]; if(!tr) return; SC.licht=!SC.licht; tr.applyConstraints({advanced:[{torch:SC.licht}]}).catch(()=>{}); b.classList.toggle("an",SC.licht); }
-  else if(a==="weiter"){ SC.pause=false; SC.el.classList.remove("treffer"); SC.el.querySelector("#scKarte").hidden=true; const n=SC.el.querySelector("#scNr"); if(n){ n.value=""; if(SC.el.classList.contains("ohne")) n.focus(); } }
+  else if(a==="weiter"){ SC.pause=false; SC.el.classList.remove("treffer"); SC.el.querySelector("#scKarte").hidden=true; if(SC.el.classList.contains("foto")&&!SC.el.classList.contains("ohne")){ scFoto(); return; } const n=SC.el.querySelector("#scNr"); if(n){ n.value=""; if(SC.el.classList.contains("ohne")) n.focus(); } }
   else if(a==="los") scLos(SC.c,SC.T); }
 /* Knopf oben rechts neben der Glocke – in jeder App gleich */
 function scKnopf(){ const gl=document.getElementById("glBtn"); if(!gl||document.getElementById("scBtn")) return;
