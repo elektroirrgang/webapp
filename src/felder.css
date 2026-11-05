@@ -1716,6 +1716,10 @@ body.sc-offen{overflow:hidden}
 .sc-foto svg{width:34px;height:34px;fill:currentColor}
 #sc.sc-liest .sc-foto{opacity:.5;pointer-events:none}
 #sc.sc-treffer .sc-foto,#sc.sc-ohne .sc-foto,#sc.sc-ohne .sc-bild{display:none}
+#sc:not(.sc-fotom) .sc-foto{display:none}
+.sc-pills{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:8px}
+.sc-pills .sc-pill{position:static;transform:none;left:auto;bottom:auto}
+#sc.sc-fotom .sc-pill-foto,#sc.sc-treffer .sc-pills{display:none}
 .sc-karte{margin-top:12px;background:var(--sc);border-radius:24px;padding:16px}
 .sc-k{display:flex;gap:12px;align-items:center}
 .sc-av{width:44px;height:44px;border-radius:50%;background:var(--pc);color:var(--brand);display:grid;place-items:center;flex:none}.sc-av svg{width:24px;height:24px;fill:currentColor}

@@ -51,6 +51,7 @@ function scJq(){ return window.jsQR?Promise.resolve(window.jsQR):new Promise((ok
 /* Foto (12 MP) auswerten: erst Mitte fast in voller Auflösung, dann ganzes Bild, dann Kacheln */
 async function scFotoLesen(f,jq,info){
   const url=URL.createObjectURL(f), img=await new Promise((ok,no)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=no; i.src=url; });
+  if("BarcodeDetector" in window){ try{ const r=await new BarcodeDetector({formats:["qr_code"]}).detect(img); if(r[0]&&r[0].rawValue){ URL.revokeObjectURL(url); info&&info(-2); return r[0].rawValue; } }catch(e){} }
   const W=img.naturalWidth, H=img.naturalHeight, cv=document.createElement("canvas"), cx=cv.getContext("2d",{willReadFrequently:true});
   const lies=(x,y,w,h,max,inv)=>{ const z=Math.min(1,max/Math.max(w,h)); cv.width=Math.max(1,Math.round(w*z)); cv.height=Math.max(1,Math.round(h*z));
     cx.drawImage(img,x,y,w,h,0,0,cv.width,cv.height); const r=jq(cx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height,{inversionAttempts:inv||"dontInvert"}); return r&&r.data||""; };
@@ -58,6 +59,17 @@ async function scFotoLesen(f,jq,info){
   for(let i=0;i<3;i++) for(let j=0;j<3;j++) V.push([W*i/4,H*j/4,W/2,H/2,1500]);
   try{ for(let k=0;k<V.length;k++){ const t=lies(...V[k]); if(t){ info&&info(k); return t; } await new Promise(r=>setTimeout(r,0)); } return ""; }
   finally{ URL.revokeObjectURL(url); cv.width=cv.height=0; } }
+/* Android: Chrome nimmt bei mehreren Rückkameras gern die Weitwinkel- oder Tiefenkamera (ohne Autofokus → unscharf).
+   Deshalb die Hauptkamera nehmen: die zuletzt erfolgreiche, sonst die Rückkamera mit der kleinsten Nummer („camera2 0“ = Hauptkamera). */
+const SC_CAM_LS="sc-kamera";
+async function scHauptkamera(st,cam){ try{ const tr=st.getVideoTracks()[0], jetzt=tr.getSettings?tr.getSettings().deviceId:"";
+  const D=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==="videoinput"&&/back|rück|rear|environment|hinten/i.test(d.label));
+  if(D.length<2) return st;
+  let ziel=""; try{ const g=localStorage.getItem(SC_CAM_LS); if(g&&D.some(d=>d.deviceId===g)) ziel=g; }catch(e){}
+  if(!ziel){ const nr=d=>{ const m=d.label.match(/camera2?\s*(\d+)/i); return m?+m[1]:99; }; ziel=D.slice().sort((a,b)=>nr(a)-nr(b))[0].deviceId; }
+  if(!ziel||ziel===jetzt||cam.aus) return st;
+  const neu=await navigator.mediaDevices.getUserMedia({video:{deviceId:{exact:ziel},width:{ideal:1920},height:{ideal:1080},advanced:[{focusMode:"continuous"}]},audio:false});
+  st.getTracks().forEach(t=>t.stop()); return neu; }catch(e){ return st; } }
 function scFoto(){ if(!SC) return; const i=SC.el.querySelector("#scDatei"); if(i){ i.value=""; i.click(); } }
 async function scFotoDa(f){ const cam=SC; if(!cam||!f) return; [0,100,400,1000].forEach(ms=>setTimeout(scLage,ms)); const el=cam.el, hin=t=>{ const h=el.querySelector("#scHin"); if(h) h.textContent=t; };
   const bild=el.querySelector(".sc-bild"); try{ if(bild.src) URL.revokeObjectURL(bild.src); }catch(e){} bild.src=URL.createObjectURL(f); el.classList.add("sc-liest"); hin("Wird gelesen …");
@@ -79,8 +91,8 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
     <div class="sc-griff"><i></i></div>
     <div class="sc-kopf"><b>${esc(opt.titel||"Aufkleber scannen")}</b><button type="button" class="sc-rk" data-sc="zu" aria-label="Schließen">${scSvg("zu")}</button></div>
     <div class="sc-cam"><video playsinline muted autoplay></video><div class="sc-loch"><i class="sc-e e1"></i><i class="sc-e e2"></i><i class="sc-e e3"></i><i class="sc-e e4"></i></div>
-      <button type="button" class="sc-licht" data-sc="licht" aria-label="Taschenlampe" hidden>${scSvg("licht")}</button><p class="sc-hin" id="scHin">Kamera wird gestartet …</p>${SC_IOS&&!pc?`<img class="sc-bild" alt=""><button type="button" class="sc-foto" data-sc="foto"><i>${scSvg("foto")}</i><span>Aufkleber fotografieren</span></button><input type="file" id="scDatei" accept="image/*" capture="environment" hidden>`:""}
-      <button type="button" class="sc-pill" data-sc="nr">${scSvg("tast")}<span>Code eintippen</span></button></div>
+      <button type="button" class="sc-licht" data-sc="licht" aria-label="Taschenlampe" hidden>${scSvg("licht")}</button><p class="sc-hin" id="scHin">Kamera wird gestartet …</p>${!pc?`<img class="sc-bild" alt=""><button type="button" class="sc-foto" data-sc="foto"><i>${scSvg("foto")}</i><span>Aufkleber fotografieren</span></button><input type="file" id="scDatei" accept="image/*" capture="environment" hidden>`:""}
+      <div class="sc-pills">${!pc&&!SC_IOS?`<button type="button" class="sc-pill sc-pill-foto" data-sc="fotoLive">${scSvg("foto")}<span>Foto</span></button>`:""}<button type="button" class="sc-pill" data-sc="nr">${scSvg("tast")}<span>Code eintippen</span></button></div></div>
     <div class="sc-karte" id="scKarte" hidden></div>
     <div class="sc-rest">
       <div class="sc-ein" hidden>${pc?`<span class="sc-ein-ic">${scSvg("qr")}</span>`:""}<input id="scNr" placeholder="Code, z. B. 4K7 P2M" autocomplete="off" autocapitalize="characters" enterkeyhint="go" maxlength="9"><button type="button" class="sc-ok" data-sc="nrOk">${zu?"Zuordnen":"Öffnen"}</button></div>
@@ -98,12 +110,12 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
     z.addEventListener("touchend",()=>{ if(y0==null) return; y0=null; bl.style.transition=""; bl.style.transform=""; if(dy>90) scZu(); }); });
   const hin=t=>{ const h=el.querySelector("#scHin"); if(h) h.textContent=t; };
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||(typeof DESK!=="undefined"&&DESK.matches)){ el.classList.add("sc-ohne"); hin(pc?"Der Code steht auf dem QR-Aufkleber unter „Anlage“ – 6 Zeichen, z. B. 4K7 P2M.":"Code vom Aufkleber eintippen"); scEingabe(true); return; }
-  if(SC_IOS){ el.classList.add("sc-fotom"); hin("Aus 20–30 cm – der Aufkleber muss nicht bildfüllend sein");
-    el.querySelector("#scDatei").addEventListener("change",e=>{ const f=e.target.files&&e.target.files[0]; if(f) scFotoDa(f); });
-    scFoto(); return; }
+  { const d=el.querySelector("#scDatei"); if(d) d.addEventListener("change",e=>{ const f=e.target.files&&e.target.files[0]; if(f) scFotoDa(f); }); }
+  if(SC_IOS){ el.classList.add("sc-fotom"); hin("Aus 20–30 cm – der Aufkleber muss nicht bildfüllend sein"); scFoto(); return; }
   const cam=SC;
   navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1920},height:{ideal:1080},advanced:[{focusMode:"continuous"}]},audio:false}).then(async st=>{
-    if(cam.aus){ st.getTracks().forEach(t=>t.stop()); return; } cam.st=st; const vid=el.querySelector("video"); vid.srcObject=st; try{ await vid.play(); }catch(e){}
+    if(cam.aus){ st.getTracks().forEach(t=>t.stop()); return; } st=await scHauptkamera(st,cam); if(cam.aus){ st.getTracks().forEach(t=>t.stop()); return; }
+    cam.st=st; try{ const s0=st.getVideoTracks()[0].getSettings(); cam.devId=s0&&s0.deviceId||""; }catch(e){} const vid=el.querySelector("video"); vid.srcObject=st; try{ await vid.play(); }catch(e){}
     hin("Aufkleber in den Rahmen halten");
     try{ const tr=st.getVideoTracks()[0], cap=tr.getCapabilities?tr.getCapabilities():{}; if(cap.torch) el.querySelector('[data-sc="licht"]').hidden=false;
       /* kleine Aufkleber (24-mm-Band): 2-fach zoomen, wo das Handy es kann – so bleibt man im Schärfebereich der Kamera */
@@ -115,7 +127,7 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
     /* Ausschnitt in der Bildmitte (dort ist der Rahmen) in voller Auflösung – kleine Codes werden nicht weggerechnet */
     let rd=0; const mitte=()=>{ const w=vid.videoWidth, h=vid.videoHeight, q=Math.round(Math.min(w,h)*0.75), z=Math.min(1,960/q); cv.width=q*z|0; cv.height=q*z|0;
       cx.drawImage(vid,(w-q)/2,(h-q)/2,q,q,0,0,cv.width,cv.height); return cv; };
-    const runde=async()=>{ if(cam.aus) return; if(!cam.pause&&vid.readyState>=2){ let t=""; rd++;
+    const runde=async()=>{ if(cam.aus||cam.liveAus) return; if(!cam.pause&&vid.readyState>=2){ let t=""; rd++;
         try{ if(det){ const r=await det.detect(rd%3?mitte():vid); t=r[0]&&r[0].rawValue||""; }
           else { mitte(); const r=jq(cx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height,{inversionAttempts:rd%4?"dontInvert":"attemptBoth"}); t=r&&r.data||""; } }catch(e){}
         if(t){ const c=scNorm(t); if(c) scTreffer(c,t); else if(t!==zuletzt){ zuletzt=t; hin("Das ist kein Irrgang-Aufkleber"); setTimeout(()=>{ if(SC===cam&&!cam.pause) hin("Aufkleber in den Rahmen halten"); },1800); } } }
@@ -124,8 +136,11 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
   }).catch(e=>{ if(cam.aus) return; el.classList.add("sc-ohne"); hin(/NotAllowed|Permission/i.test(e&&e.name||"")?"Kamera nicht erlaubt – Code eintippen":"Keine Kamera – Code eintippen"); scEingabe(true); }); }
 function scEingabe(an){ if(!SC) return; const e=SC.el.querySelector(".sc-ein"), n=SC.el.querySelector('[data-sc="nr"]'); e.hidden=!an; if(n) n.hidden=an; if(an) setTimeout(()=>SC&&SC.el.querySelector("#scNr").focus(),60); }
 function scNrOk(){ if(!SC) return; const c=scNorm(SC.el.querySelector("#scNr").value); if(!c){ const h=SC.el.querySelector("#scHin"); if(h) h.textContent="Der Code hat 6 Zeichen, z. B. 4K7 P2M"; return; } SC.el.querySelector("#scNr").blur(); scTreffer(c); }
-function scTreffer(c,roh){ if(!SC||SC.pause) return; SC.pause=true; SC.c=c; SC.roh=roh||""; if(navigator.vibrate) try{ navigator.vibrate(40); }catch(e){}
+function scTreffer(c,roh){ if(!SC||SC.pause) return; SC.pause=true; SC.c=c; SC.roh=roh||""; if(navigator.vibrate) try{ navigator.vibrate(40); }catch(e){} else if(typeof navHaptik==="function") navHaptik();
+  if(SC.devId&&!SC.liveAus) try{ localStorage.setItem(SC_CAM_LS,SC.devId); }catch(e){}
   const T=(SC.opt.treffer||scSuche)(c)||{titel:`Aufkleber ${scZeig(c)}`,sub:"",ic:"vt",knopf:"Öffnen"}; SC.T=T;
+  /* Erkannt → direkt öffnen. Karte nur beim Zuordnen, bei neuen (noch freien) Aufklebern und am PC */
+  if(!SC.opt.treffer&&!SC.opt.aktion&&T.ic!=="neu"&&!SC.el.classList.contains("sc-pc")){ scLos(c,T); return; }
   SC.el.classList.add("sc-treffer"); scLage(); const k=SC.el.querySelector("#scKarte");
   k.innerHTML=`<div class="sc-k"><span class="sc-av">${scSvg(T.ic||"vt")}</span><div class="sc-kt"><b>${esc(T.titel)}</b>${T.sub?`<small>${esc(T.sub)}</small>`:""}<span class="sc-nr">${esc(scZeig(c))}</span></div></div>
     <div class="sc-kb"><button type="button" class="sc-n" data-sc="weiter">${SC.el.classList.contains("sc-pc")?"Anderer Code":"Weiter scannen"}</button><button type="button" class="sc-h" data-sc="los">${esc(T.knopf||"Öffnen")}</button></div>`;
@@ -140,6 +155,7 @@ function scKlick(e){ const b=e.target.closest("[data-sc]"); if(!b||!SC) return; 
   if(a==="zu") scZu();
   else if(a==="nr") scEingabe(true);
   else if(a==="foto") scFoto();
+  else if(a==="fotoLive"){ SC.liveAus=true; try{ SC.st&&SC.st.getTracks().forEach(t=>t.stop()); }catch(x){} SC.st=null; SC.el.classList.add("sc-fotom"); const h=SC.el.querySelector("#scHin"); if(h) h.textContent="Aus 20–30 cm – der Aufkleber muss nicht bildfüllend sein"; scFoto(); }
   else if(a==="nrOk") scNrOk();
   else if(a==="f"){ SC.filter=b.dataset.f; SC.el.querySelectorAll('[data-sc="f"]').forEach(x=>x.setAttribute("aria-pressed",String(x===b))); scListe(); }
   else if(a==="alt"){ const c=b.dataset.c, x=scZuletzt().find(z=>z.c===c); scLos(c,x); }
