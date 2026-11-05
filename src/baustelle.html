@@ -1967,6 +1967,10 @@ let NAV_IND_ALT=null;
 const navSatz=nb=>[...nb.querySelectorAll(".nav-item")].map(x=>x.textContent).join("|");
 /* Pille im Dock ziehen: iPad (oben) und iPhone (schwebendes Dock) */
 const NAV_IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1), navGleit=()=>!DESK.matches&&(WIDE.matches||NAV_IOS);
+/* Haptik beim Wechsel: Android über vibrate, iPhone über einen unsichtbaren iOS-Schalter (Safari ab iOS 18 gibt dabei ein kurzes Klicken) */
+const navHaptik=(()=>{ let l=null; return ()=>{ try{ if(navigator.vibrate&&!NAV_IOS){ navigator.vibrate(8); return; } if(!NAV_IOS) return;
+  if(!l){ l=document.createElement("label"); l.setAttribute("aria-hidden","true"); l.style.cssText="position:fixed;left:-200px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none"; l.innerHTML='<input type="checkbox" switch tabindex="-1">'; l.addEventListener("click",e=>e.stopPropagation()); document.body.appendChild(l); }
+  l.click(); }catch(e){} }; })();
 function navIndSetzen(){
   const nb=$("#navbar"); if(!nb||nb.hidden||!navGleit()) return;
   let ind=nb.querySelector(".nav-ind"); const neu=!ind;
@@ -1983,14 +1987,14 @@ function navIndSetzen(){
     if(!it||it.getAttribute("aria-current")!=="page") return;
     z={id:e.pointerId,x0:e.clientX,dx:e.clientX-it.getBoundingClientRect().left-it.offsetWidth/2,an:false,ziel:it}; });
   nb.addEventListener("pointermove",e=>{ if(!z||e.pointerId!==z.id) return;
-    if(!z.an){ if(Math.abs(e.clientX-z.x0)<6) return; z.an=true; try{ nb.setPointerCapture(e.pointerId); }catch(_){} nb.classList.add("zieht"); }
+    if(!z.an){ if(Math.abs(e.clientX-z.x0)<6) return; z.an=true; try{ nb.setPointerCapture(e.pointerId); }catch(_){} nb.classList.add("zieht"); navHaptik(); }
     const ind=nb.querySelector(".nav-ind"), its=items(); if(!ind||!its.length) return;
     const nl=nb.getBoundingClientRect().left, mitte=e.clientX-z.dx-nl;
     let ziel=its[0], best=1e9; its.forEach(i=>{ const d=Math.abs(i.offsetLeft+i.offsetWidth/2-mitte); if(d<best){ best=d; ziel=i; } });
     const w=ziel.offsetWidth, min=its[0].offsetLeft, max=its[its.length-1].offsetLeft+its[its.length-1].offsetWidth-w;
     const x=Math.max(min,Math.min(max,mitte-w/2));
     ind.style.translate=`${x}px 0`; ind.style.width=w+"px";
-    if(ziel!==z.ziel){ z.ziel.classList.remove("nav-ziel"); z.ziel=ziel; } ziel.classList.add("nav-ziel"); NAV_IND_ALT=[x,w,navSatz(nb)]; });
+    if(ziel!==z.ziel){ z.ziel.classList.remove("nav-ziel"); z.ziel=ziel; navHaptik(); } ziel.classList.add("nav-ziel"); NAV_IND_ALT=[x,w,navSatz(nb)]; });
   const ende=e=>{ if(!z||e.pointerId!==z.id) return; const d=z; z=null; if(!d.an) return;
     nb.classList.remove("zieht"); d.ziel.classList.remove("nav-ziel"); unterdr=Date.now()+500;
     if(e.type==="pointercancel"||d.ziel.getAttribute("aria-current")==="page") navIndSetzen(); else d.ziel.click(); };
