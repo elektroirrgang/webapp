@@ -1692,8 +1692,10 @@ function pfadTeile(){
 }
 let NAV_IND_ALT=null;
 const navSatz=nb=>[...nb.querySelectorAll(".nav-item")].map(x=>x.textContent).join("|");
+/* Pille im Dock ziehen: iPad (oben) und iPhone (schwebendes Dock) */
+const NAV_IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1), navGleit=()=>!DESK.matches&&(WIDE.matches||NAV_IOS);
 function navIndSetzen(){
-  const nb=$("#navbar"); if(!nb||nb.hidden||!WIDE.matches||DESK.matches) return;
+  const nb=$("#navbar"); if(!nb||nb.hidden||!navGleit()) return;
   let ind=nb.querySelector(".nav-ind"); const neu=!ind;
   if(neu){ ind=document.createElement("span"); ind.className="nav-ind"; nb.prepend(ind); }
   const it=nb.querySelector('.nav-item[aria-current="page"]'); if(!it){ ind.style.opacity=0; return; }
@@ -1704,7 +1706,7 @@ function navIndSetzen(){
 }
 (()=>{ const nb=$("#navbar"); let z=null, unterdr=0;
   const items=()=>[...nb.querySelectorAll(".nav-item")];
-  nb.addEventListener("pointerdown",e=>{ if(!WIDE.matches||DESK.matches||e.button>0) return; const it=e.target.closest(".nav-item");
+  nb.addEventListener("pointerdown",e=>{ if(!navGleit()||e.button>0) return; const it=e.target.closest(".nav-item");
     if(!it||it.getAttribute("aria-current")!=="page") return;
     z={id:e.pointerId,x0:e.clientX,dx:e.clientX-it.getBoundingClientRect().left-it.offsetWidth/2,an:false,ziel:it}; });
   nb.addEventListener("pointermove",e=>{ if(!z||e.pointerId!==z.id) return;
