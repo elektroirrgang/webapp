@@ -1987,3 +1987,38 @@ body:has(.gv-aktbar) #app{padding-bottom:190px}
 .ka-ic{height:40px;border:0;border-radius:12px;background:var(--sc-high);color:var(--on-surface);display:grid;place-items:center;cursor:pointer}.ka-ic svg{width:22px;height:22px;fill:currentColor}
 .ka-ic[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
 .kd-zentr{right:6px}@media (min-width:744px){.kd-zentr{right:10px}}   /* in einer Flucht mit + / − und Info (05.11.2026) */
+/* ---- QR-Aufkleber: Karte, Druck-Dialog (Gebäudetechnik und EVSE) ---- */
+.qr-karte h3{margin-bottom:12px}
+.qr-zeile,.qr-neu{display:flex;align-items:center;gap:16px}
+.qr-svg{flex:none;border-radius:8px;background:#fff;padding:0;display:block}
+.qr-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.qr-txt small{font-size:13px;font-weight:700;color:var(--on-sv)}.qr-txt .meta{margin:4px 0 0;font-size:14px;line-height:20px}
+.qr-nr{font-size:26px;line-height:32px;font-weight:800;letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.qr-zeile .qr-svg{border-radius:14px}
+.qr-knoepfe{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}.qr-knoepfe.zwei{grid-template-columns:repeat(2,minmax(0,1fr))}
+.qr-k{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px 10px;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.qr-k .ic{width:22px;height:22px;color:var(--primary)}.qr-k:active{background:var(--sc-highest)}.qr-k.weg .ic{color:var(--err)}
+.qr-neu{margin-bottom:14px}.qr-neu .meta{margin:4px 0 0}
+.qr-band-v{background:var(--sc-high);border-radius:16px;padding:18px;display:grid;place-items:center;margin-bottom:14px}
+.qr-band{width:min(100%,340px);height:auto;filter:drop-shadow(0 1px 3px rgba(0,0,0,.18))}
+.qr-wahl{display:flex;flex-direction:column;gap:8px}
+.qr-w{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:0;background:var(--sc-high);color:inherit;border-radius:16px;padding:12px 14px;font:inherit;cursor:pointer}
+.qr-w .av{width:40px;height:40px;border-radius:50%;background:var(--pc);color:var(--on-pc);display:grid;place-items:center;flex:none}.qr-w .av .ic{width:22px;height:22px}
+.qr-w .lt{flex:1;display:flex;flex-direction:column;min-width:0}.qr-w .h{font-weight:700}.qr-w .s{font-size:13px;color:var(--on-sv)}
+/* ---- Wallbox-QR (EVSE): Dialog am Ort, Zeile unter den Geräten ---- */
+.wbq-ein{margin:0}
+.wbq-wahl{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wbq-wahl button{display:flex;flex-direction:column;gap:2px;align-items:flex-start;text-align:left;border:0;border-radius:16px;padding:12px 14px;background:var(--sc-high);color:var(--on-surface);font:inherit;cursor:pointer}
+.wbq-wahl button b{font-size:15px}.wbq-wahl button small{font-size:13px;line-height:18px;color:var(--on-sv)}
+.wbq-wahl button[aria-pressed="true"]{background:var(--sec-c);color:var(--on-sec-c)}.wbq-wahl button[aria-pressed="true"] small{color:inherit;opacity:.85}
+.wbq-wahl button:disabled{cursor:default;opacity:.7}
+.wbq-liste{display:flex;flex-direction:column;gap:6px}
+.wbq-z{display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 8px 8px 12px;border-radius:16px;background:var(--sc-high)}
+.wbq-z .lt{flex:1;min-width:0;display:flex;flex-direction:column}.wbq-z .h{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wbq-z .s{font-size:13px;color:var(--on-sv)}
+.wbq-qr{flex:none;width:44px;height:44px;display:block}.wbq-qr .qr-svg{border-radius:8px}
+.wbq-kn{display:flex;align-items:center;gap:6px;flex:none}
+.wbq-b{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:40px;min-width:40px;padding:0 10px;border:0;border-radius:20px;background:var(--surface);color:var(--primary);font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.wbq-b .ic{width:20px;height:20px}.wbq-b.voll{background:var(--primary);color:var(--on-primary);padding:0 14px 0 12px}.wbq-b.weg{color:var(--err)}
+.wbq-ort{display:flex;align-items:center;gap:14px;width:100%;margin-top:10px;text-align:left;border:0;border-radius:16px;padding:12px 14px;background:var(--sc);color:inherit;font:inherit;cursor:pointer}
+.wbq-ort .av{width:40px;height:40px;border-radius:50%;background:var(--pc);color:var(--on-pc);display:grid;place-items:center;flex:none}.wbq-ort .av .ic{width:22px;height:22px}
+.wbq-ort .lt{flex:1;display:flex;flex-direction:column;min-width:0}.wbq-ort .h{font-weight:700}.wbq-ort .s{font-size:13px;color:var(--on-sv)}.wbq-ort>.ic{color:var(--on-sv)}

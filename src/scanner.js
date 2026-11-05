@@ -8,14 +8,21 @@
 IC.scQr=IC.scQr||"M3 11h8V3H3v8zm2-6h4v4H5V5zm-2 16h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zm0 10h2v2h-2zm-6-6h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2zm2-2h2v2h-2zm0-4h2v2h-2zm2 2h2v2h-2z";
 const SC_IC={zu:"M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",licht:"M6 2v6l4 4v10h4V12l4-4V2H6zm2 2h8v1H8V4z",
   tast:"M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z",
-  vt:"M7 2v11h3v9l7-12h-4l4-8z",schrank:"M3 4h18v6H3zm0 8h18v6H3zM6 6v2h2V6zm0 8v2h2v-2z",neu:"M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",qr:IC.scQr};
+  vt:"M7 2v11h3v9l7-12h-4l4-8z",wb:"M19.77 7.23l.01-.01-3.72-3.72L15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33a2.5 2.5 0 0 0 2.5 2.5c.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14c0-1.1-.9-2-2-2h-1V5c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v16h10v-7.5h1.5v5a2.5 2.5 0 0 0 5 0V9c0-.69-.28-1.32-.73-1.77zM18 10c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zM8 18v-4.5H6L10 6v5h2l-4 7z",schrank:"M3 4h18v6H3zm0 8h18v6H3zM6 6v2h2V6zm0 8v2h2v-2z",neu:"M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",qr:IC.scQr};
 const scSvg=k=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${SC_IC[k]}"/></svg>`;
 const SC_Z="23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 function scNorm(t){ if(typeof qrNorm==="function") return qrNorm(t); t=String(t||"").trim(); const m=t.match(/\/q\/?[#?]([0-9A-Za-z]{6})\b/)||t.match(/qr=([0-9A-Za-z]{6})\b/i); const c=(m?m[1]:t).toUpperCase().replace(/[\s-]/g,"");
   return /^[0-9A-Z]{6}$/.test(c)&&[...c].every(z=>SC_Z.includes(z))?c:""; }
 const scZeig=c=>String(c||"").replace(/^(.{3})(.+)$/,"$1 $2");
+/* Wallbox-Aufkleber (EVSE) außerhalb von EVSE: in den Geräten der Orte suchen, soweit diese App sie hat – oder am Link erkennen (&a=wb / &a=ws) */
+const SC_EVSE=typeof qrWbOrte==="function";
+function scWallbox(c){ if(SC_EVSE) return null;
+  for(const k of ["ladeparks","standorte","kunden"]){ if(!DB[k]) continue; for(const o of live(k)){ const g=(o.geraete||[]).find(x=>x.qr===c); if(g) return {titel:g.name||g.typ||"Wallbox",sub:[g.typ,o.name].filter(Boolean).join(" · ")+" · öffnet in EVSE",ic:"wb",knopf:"Öffnen"}; } }
+  if(SC&&SC.c===c&&/[&?#]a=w[bs]\b/i.test(SC.roh||"")) return {titel:`Wallbox ${scZeig(c)}`,sub:"Öffnet in EVSE",ic:"wb",knopf:"Öffnen"};
+  return null; }
 /* Ohne Gebäudetechnik: Aufkleber in den Gebäudedaten suchen, soweit diese App sie hat (Übersicht) */
-function scSuche(c){ if(typeof qrTreffer==="function") return qrTreffer(c);
+function scSuche(c){ const W=scWallbox(c);
+  if(typeof qrTreffer==="function"){ const T=qrTreffer(c); return W&&(!T||T.ic==="neu")?W:T; } if(W) return W;
   const G=DB.gebaeude?live("gebaeude"):[]; for(const g of G){ const ort=String(g.ortId||""), kid=ort.startsWith("k:")?ort.slice(2):((typeof standortOf==="function"&&standortOf(ort))||{}).kundeId, k=kid&&typeof kundeOf==="function"&&kundeOf(kid), st=!ort.startsWith("k:")&&typeof standortOf==="function"&&standortOf(ort);
     const sub=[k&&k.name,st&&st.name||k&&k.ort].filter(Boolean).join(" · ");
     const v=(g.verteiler||[]).find(x=>x.qr===c); if(v) return {titel:v.name||"Verteiler",sub,ic:"vt",knopf:"Öffnen"};
@@ -32,8 +39,8 @@ const scZuord=()=>!!(SC&&(SC.opt.treffer||SC.opt.aktion));
 function scListe(){ if(!SC) return; const box=SC.el.querySelector("#scListe"); if(!box) return;
   const f=SC.filter, L=scZuletzt().map(x=>{ let T=null; try{ T=scSuche(x.c); }catch(e){} if(!T||T.ic==="neu"||/^Aufkleber /.test(T.titel)) T={titel:x.titel,sub:x.sub,ic:x.ic}; return {...x,...T}; })
     .filter(x=>f==="alles"||x.ic===f);
-  box.innerHTML=L.length?`<div class="sc-lbl">${SC.el.classList.contains("pc")?"Zuletzt geöffnet":"Zuletzt gescannt"}</div>${L.map(x=>`<button type="button" class="sc-li" data-sc="alt" data-c="${esc(x.c)}"><span class="sc-av">${scSvg(x.ic==="schrank"?"schrank":"vt")}</span><span class="sc-kt"><b>${esc(x.titel||scZeig(x.c))}</b><small>${esc([x.sub,scWann(x.t)].filter(Boolean).join(" · "))}</small></span></button>`).join("")}`
-    :`<p class="sc-leer">${f==="alles"?(SC.el.classList.contains("pc")?"Hier erscheinen die zuletzt geöffneten Anlagen.":"Hier erscheinen die zuletzt gescannten Aufkleber."):f==="schrank"?"Noch kein Netzwerkschrank gescannt.":"Noch kein Verteiler gescannt."}</p>`; }
+  box.innerHTML=L.length?`<div class="sc-lbl">${SC.el.classList.contains("pc")?"Zuletzt geöffnet":"Zuletzt gescannt"}</div>${L.map(x=>`<button type="button" class="sc-li" data-sc="alt" data-c="${esc(x.c)}"><span class="sc-av">${scSvg(SC_IC[x.ic]&&x.ic!=="neu"?x.ic:"vt")}</span><span class="sc-kt"><b>${esc(x.titel||scZeig(x.c))}</b><small>${esc([x.sub,scWann(x.t)].filter(Boolean).join(" · "))}</small></span></button>`).join("")}`
+    :`<p class="sc-leer">${f==="alles"?(SC.el.classList.contains("pc")?"Hier erscheinen die zuletzt geöffneten Anlagen.":"Hier erscheinen die zuletzt gescannten Aufkleber."):f==="schrank"?"Noch kein Netzwerkschrank gescannt.":f==="wb"?"Noch keine Wallbox gescannt.":"Noch kein Verteiler gescannt."}</p>`; }
 function scZu(){ if(!SC) return; const cam=SC; SC=null; cam.aus=true; try{ cam.st&&cam.st.getTracks().forEach(t=>t.stop()); }catch(e){}
   removeEventListener("keydown",scTaste); document.body.classList.remove("sc-offen"); cam.el.classList.add("weg"); setTimeout(()=>cam.el.remove(),220); }
 function scTaste(e){ if(e.key==="Escape"&&SC){ e.preventDefault(); e.stopPropagation(); scZu(); } }
@@ -52,7 +59,7 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
     <div class="sc-karte" id="scKarte" hidden></div>
     <div class="sc-rest">
       <div class="sc-ein" hidden>${pc?`<span class="sc-ein-ic">${scSvg("qr")}</span>`:""}<input id="scNr" placeholder="Code, z. B. 4K7 P2M" autocomplete="off" autocapitalize="characters" enterkeyhint="go" maxlength="9"><button type="button" class="sc-ok" data-sc="nrOk">${zu?"Zuordnen":"Öffnen"}</button></div>
-      ${zu?"":`<div class="sc-chips">${chip("alles","Alles")+chip("vt","Verteiler")+chip("schrank","Netzwerkschrank")}</div><div id="scListe"></div>`}</div></div>`;
+      ${zu?"":`<div class="sc-chips">${chip("alles","Alles")+(SC_EVSE?chip("wb","Wallbox")+chip("vt","Verteiler"):chip("vt","Verteiler")+chip("schrank","Netzwerkschrank"))}</div><div id="scListe"></div>`}</div></div>`;
   document.body.appendChild(el); document.body.classList.add("sc-offen"); addEventListener("keydown",scTaste);
   SC={el,opt,aus:false,pause:false,st:null,licht:false,filter:"alles"}; scListe();
   requestAnimationFrame(()=>el.classList.add("da"));
@@ -77,20 +84,22 @@ function scOeffnen(opt){ if(SC) scZu(); opt=opt||{}; if(typeof tipWeg==="functio
     const runde=async()=>{ if(cam.aus) return; if(!cam.pause&&vid.readyState>=2){ let t="";
         try{ if(det){ const r=await det.detect(vid); t=r[0]&&r[0].rawValue||""; }
           else { const w=vid.videoWidth, h=vid.videoHeight, s=Math.min(1,640/Math.max(w,h)); cv.width=w*s|0; cv.height=h*s|0; cx.drawImage(vid,0,0,cv.width,cv.height); const r=jq(cx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height,{inversionAttempts:"dontInvert"}); t=r&&r.data||""; } }catch(e){}
-        if(t){ const c=scNorm(t); if(c) scTreffer(c); else if(t!==zuletzt){ zuletzt=t; hin("Das ist kein Irrgang-Aufkleber"); setTimeout(()=>{ if(SC===cam&&!cam.pause) hin("Aufkleber in den Rahmen halten"); },1800); } } }
+        if(t){ const c=scNorm(t); if(c) scTreffer(c,t); else if(t!==zuletzt){ zuletzt=t; hin("Das ist kein Irrgang-Aufkleber"); setTimeout(()=>{ if(SC===cam&&!cam.pause) hin("Aufkleber in den Rahmen halten"); },1800); } } }
       setTimeout(runde,det?120:180); };
     runde();
   }).catch(e=>{ if(cam.aus) return; el.classList.add("ohne"); hin(/NotAllowed|Permission/i.test(e&&e.name||"")?"Kamera nicht erlaubt – Code eintippen":"Keine Kamera – Code eintippen"); scEingabe(true); }); }
 function scEingabe(an){ if(!SC) return; const e=SC.el.querySelector(".sc-ein"), n=SC.el.querySelector('[data-sc="nr"]'); e.hidden=!an; if(n) n.hidden=an; if(an) setTimeout(()=>SC&&SC.el.querySelector("#scNr").focus(),60); }
 function scNrOk(){ if(!SC) return; const c=scNorm(SC.el.querySelector("#scNr").value); if(!c){ const h=SC.el.querySelector("#scHin"); if(h) h.textContent="Der Code hat 6 Zeichen, z. B. 4K7 P2M"; return; } SC.el.querySelector("#scNr").blur(); scTreffer(c); }
-function scTreffer(c){ if(!SC||SC.pause) return; SC.pause=true; SC.c=c; if(navigator.vibrate) try{ navigator.vibrate(40); }catch(e){}
+function scTreffer(c,roh){ if(!SC||SC.pause) return; SC.pause=true; SC.c=c; SC.roh=roh||""; if(navigator.vibrate) try{ navigator.vibrate(40); }catch(e){}
   const T=(SC.opt.treffer||scSuche)(c)||{titel:`Aufkleber ${scZeig(c)}`,sub:"",ic:"vt",knopf:"Öffnen"}; SC.T=T;
   SC.el.classList.add("treffer"); const k=SC.el.querySelector("#scKarte");
   k.innerHTML=`<div class="sc-k"><span class="sc-av">${scSvg(T.ic||"vt")}</span><div class="sc-kt"><b>${esc(T.titel)}</b>${T.sub?`<small>${esc(T.sub)}</small>`:""}<span class="sc-nr">${esc(scZeig(c))}</span></div></div>
     <div class="sc-kb"><button type="button" class="sc-n" data-sc="weiter">${SC.el.classList.contains("pc")?"Anderer Code":"Weiter scannen"}</button><button type="button" class="sc-h" data-sc="los">${esc(T.knopf||"Öffnen")}</button></div>`;
   k.hidden=false; if(SC.el.classList.contains("pc")) setTimeout(()=>{ const l=SC&&SC.el.querySelector('[data-sc="los"]'); if(l) l.focus(); },30); }
 function scLos(c,T){ const f=SC&&SC.opt.aktion, art=SC&&SC.filter; if(!f) scMerken(c,T); scZu();
-  if(f){ f(c); return; } if(typeof qrOeffnen==="function"){ if(typeof qrZu!=="undefined") SC_ART=art==="schrank"?"schrank":"vt"; qrOeffnen(c); return; }
+  if(f){ f(c); return; }
+  if(T&&T.ic==="wb"&&!SC_EVSE){ location.href=`../evse/#qr=${encodeURIComponent(c)}`; return; }
+  if(typeof qrOeffnen==="function"){ if(typeof qrZu!=="undefined") SC_ART=art==="schrank"?"schrank":"vt"; qrOeffnen(c); return; }
   location.href=`../echeck/#qr=${encodeURIComponent(c)}${art==="schrank"?"&art=schrank":""}`; }
 var SC_ART="vt";
 function scKlick(e){ const b=e.target.closest("[data-sc]"); if(!b||!SC) return; e.stopPropagation(); const a=b.dataset.sc;
