@@ -1675,12 +1675,13 @@ button.kt-b{border:0;padding:0;cursor:pointer;font:inherit}button.kt-b:focus-vis
 body.sc-offen{overflow:hidden}
 #sc{position:fixed;inset:0;z-index:2000;font-family:var(--font)}
 .sc-scrim{position:absolute;inset:0;background:rgba(0,0,0,.4);opacity:0;transition:opacity .2s}
-.sc-blatt{position:absolute;left:0;right:0;bottom:0;max-height:calc(100dvh - 40px);overflow:auto;overscroll-behavior:contain;background:var(--surface);color:var(--on-surface);border-radius:28px 28px 0 0;padding:0 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box;transform:translateY(100%);transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.sc-blatt{position:absolute;left:0;right:0;bottom:0;max-height:calc(100% - 40px);overflow:auto;overscroll-behavior:contain;background:var(--surface);color:var(--on-surface);border-radius:28px 28px 0 0;padding:0 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box;transform:translateY(100%);transition:transform .22s cubic-bezier(.2,.8,.2,1)}
 #sc.da .sc-scrim{opacity:1}#sc.da .sc-blatt{transform:none}
 #sc.weg .sc-scrim{opacity:0}#sc.weg .sc-blatt{transform:translateY(100%)}
 /* iPad und PC: Fenster in der Mitte statt Blatt von unten */
-#sc.mitte .sc-blatt{left:50%;right:auto;top:50%;bottom:auto;width:min(520px,calc(100vw - 48px));max-height:calc(100dvh - 48px);border-radius:28px;padding:20px 20px 20px;opacity:0;transform:translate(-50%,-50%) scale(.96);transition:transform .2s cubic-bezier(.2,.8,.2,1),opacity .2s}
-#sc.mitte.da .sc-blatt{opacity:1;transform:translate(-50%,-50%)}#sc.mitte.weg .sc-blatt{opacity:0;transform:translate(-50%,-50%) scale(.96)}
+#sc.mitte{display:flex;align-items:center;justify-content:center}
+#sc.mitte .sc-blatt{position:relative;left:auto;right:auto;top:auto;bottom:auto;width:min(520px,calc(100vw - 48px));max-height:calc(100% - 48px);border-radius:28px;padding:20px 20px 20px;opacity:0;transform:scale(.96);transition:transform .2s cubic-bezier(.2,.8,.2,1),opacity .2s}
+#sc.mitte.da .sc-blatt{opacity:1;transform:none}#sc.mitte.weg .sc-blatt{opacity:0;transform:scale(.96)}
 #sc.mitte .sc-griff{display:none}#sc.mitte .sc-cam{height:min(380px,46dvh)}
 #sc.pc .sc-blatt{width:460px}
 #sc.pc .sc-hin{padding:0 4px 4px;font-size:14px;line-height:1.4}
@@ -2063,3 +2064,16 @@ body.has-nav .bsp-karte{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .bsp-karte.klein .bsp-bar{height:3px;margin-top:4px}
 .bsp-karte.klein .bsp-zu{display:none}
 
+
+/* ===== iPhone/iPad (Safari, als App vom Home-Bildschirm) ===== */
+@supports (-webkit-touch-callout:none){
+  /* Statusleiste ist durchsichtig: bei kurzen Seiten rechnet iOS die Bildschirmhöhe ohne Statusleiste –
+     Dock und Knöpfe unten schweben dann um die Statusleistenhöhe zu hoch. Seite deshalb immer mindestens bildschirmhoch. */
+  html.standalone{min-height:calc(100% + env(safe-area-inset-top,0px))}
+  /* Dock wie bei iOS: flacher, weniger Luft über dem Home-Balken */
+  @media (max-width:743px){
+    html body nav.navbar .nav-item{height:62px}
+    html body nav.navbar{padding-bottom:max(6px,calc(env(safe-area-inset-bottom,0px) - 12px))}
+    html body .fab{bottom:calc(78px + max(6px,calc(env(safe-area-inset-bottom,0px) - 12px)))}
+  }
+}
