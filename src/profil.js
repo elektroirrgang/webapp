@@ -260,6 +260,25 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="lstStd"){ leisteSpeichern(null); LEISTE_DLG=null; closeOverlays(); render(); toast("Standard-Reihenfolge"); return; }
   if(a==="lstAbbr"){ LEISTE_DLG=null; closeOverlays(); return; }
   if(a==="lstOk"&&L){ leisteSpeichern(L.map(d=>d[0])); LEISTE_DLG=null; closeOverlays(); render(); toast("Reihenfolge gespeichert"); return; } },true);
+/* PC/iPad: zweimal aufs Logo oben in der Leiste → Leiste direkt an Ort und Stelle anordnen */
+let LST_EDIT=null, LST_KLICK=0;
+function leisteEditZeigen(){ const nb=document.getElementById("navbar"); if(!nb) return; const r=nb.getBoundingClientRect(); let el=document.getElementById("lstEdit");
+  if(!el){ el=document.createElement("div"); el.id="lstEdit"; document.body.appendChild(el); }
+  const L=LST_EDIT; el.style.cssText=`left:${r.left}px;top:${r.top}px;width:${Math.max(r.width,248)}px;height:${r.height}px`;
+  el.innerHTML=`<div class="lst-kopf"><b>Leiste anordnen</b><small>Gilt für diese App auf allen deinen Geräten</small></div>
+    <div class="lst-liste">${L.map((d,i)=>`<div class="lst-z"><span class="lst-ic">${icon(d[2])}</span><span class="lst-t">${esc(d[1])}</span><button type="button" class="kx-tk" data-act="lstEAuf" data-i="${i}" ${i?"":"disabled"} aria-label="${esc(d[1])} nach oben">↑</button><button type="button" class="kx-tk" data-act="lstEAb" data-i="${i}" ${i<L.length-1?"":"disabled"} aria-label="${esc(d[1])} nach unten">↓</button></div>`).join("")}</div>
+    <div class="lst-fuss"><button type="button" class="btn-text" data-act="lstEStd">Standard</button><span style="flex:1"></span><button type="button" class="btn-filled sm" data-act="lstEOk">Fertig</button></div>`;
+  let sc=document.getElementById("lstScrim"); if(!sc){ sc=document.createElement("div"); sc.id="lstScrim"; sc.dataset.act="lstEAbbr"; document.body.appendChild(sc); } }
+function leisteEditZu(){ LST_EDIT=null; ["lstEdit","lstScrim"].forEach(id=>{ const x=document.getElementById(id); if(x) x.remove(); }); }
+document.addEventListener("click",e=>{ const lg=e.target.closest&&e.target.closest("#navbar .nav-logo");
+  if(lg){ const t=Date.now(); if(t-LST_KLICK<450){ LST_KLICK=0; e.preventDefault(); e.stopPropagation(); LST_EDIT=leisteOrdnen(einTop()).map(d=>[d[0],d[1],d[2]]); leisteEditZeigen(); return; } LST_KLICK=t; return; }
+  const b=e.target.closest&&e.target.closest('[data-act^="lstE"]'); if(!b||!LST_EDIT) return; e.stopPropagation(); const a=b.dataset.act, L=LST_EDIT, i=+b.dataset.i;
+  if(a==="lstEAuf"&&i>0){ [L[i-1],L[i]]=[L[i],L[i-1]]; leisteEditZeigen(); return; }
+  if(a==="lstEAb"&&i<L.length-1){ [L[i+1],L[i]]=[L[i],L[i+1]]; leisteEditZeigen(); return; }
+  if(a==="lstEStd"){ leisteSpeichern(null); leisteEditZu(); render(); toast("Standard-Reihenfolge"); return; }
+  if(a==="lstEAbbr"){ leisteEditZu(); return; }
+  if(a==="lstEOk"){ leisteSpeichern(L.map(d=>d[0])); leisteEditZu(); render(); toast("Reihenfolge gespeichert"); return; } },true);
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&LST_EDIT) leisteEditZu(); });
 function darstellungZeilen(){ const T=einTop(), st=T.find(x=>x[0]===META.startV)||T[0];
   return einZ("einStartDlg","einStart","Start mit",st?st[1]:"")+einZ("lstDlg","menu","Reihenfolge der Leiste",leisteOrdnen(einTop()).map(d=>d[1]).join(" · "))+einZ("einTextDlg","einTxt","Textgröße",(TXT_GR.find(x=>x[0]===txtGr())||TXT_GR[0])[1]+" · für alle Apps auf diesem Gerät"); }
 function geraetZeilen(mitPush){ return (mitPush&&typeof mlGeraetZeile==="function"&&ME.mail?mlGeraetZeile():"")+einZ("nav:speicher","einSp","Speicher auf diesem Gerät","Belegung anzeigen und aufräumen"); }
