@@ -371,15 +371,23 @@ function kxAnzeigen(){ kxLeiste(); if(kxImReiter()){ kxPopupZu(); const y=scroll
   /* Helfer außerhalb des Reiters: Fenster über allem */
   const s=KX_PROG.sitz, g=vtGeb(KX_PROG.g), a=s&&s.auf&&s.auf[KX_DEV], an=KX_PROG.antwort;
   if(KX_PROG.rolle==="taste"&&g&&a&&a.status==="angefordert"&&!(an&&an.id===a.id)) kxPopup(kxTasteKarte(g,a)); else kxPopupZu(); }
-/* Leiste oben, solange eine Sitzung läuft und man woanders in der App ist – Antippen führt zurück */
-function kxLeiste(){ let el=document.getElementById("kxBar"); const an=KX_PROG.rolle&&!kxImReiter();
-  if(!an){ if(el) el.remove(); return; }
-  const s=KX_PROG.sitz; let t="", warn=false;
+/* Symbol in der Kopfzeile (links neben dem QR-Knopf), solange eine Sitzung läuft – Punkt grün = verbunden, grau = keine Verbindung,
+   rot pulsierend = es ist etwas zu tun (Taste gedrückt / Programmiertaste drücken). Antippen führt in den Reiter „Programmieren“. */
+IC.kxGeraete="M4 6h18V4H4c-1.1 0-2 .9-2 2v11H0v3h14v-3H4V6zm19 2h-6c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1zm-1 9h-4v-7h4v7z";
+function kxLeiste(){ let el=document.getElementById("kxKopf"); const alt=document.getElementById("kxBar"); if(alt) alt.remove();
+  if(!KX_PROG.rolle){ if(el){ el.remove(); if(typeof scPlatz==="function") scPlatz(); } return; }
+  const s=KX_PROG.sitz; let t="", warn=false, ok=false;
   if(KX_PROG.rolle==="ets"){ const H=kxVerbunden().filter(h=>kxFrisch(h.at)), ged=s&&H.find(h=>kxZustand(s.auf&&s.auf[h.dev],h)==="gedrueckt"), pr=s&&H.find(h=>kxZustand(s.auf&&s.auf[h.dev],h)==="problem");
-    t=ged?`${s.auf[ged.dev].pa}: Taste gedrückt – jetzt starten`:pr?`${s.auf[pr.dev].pa}: Problem gemeldet`:`Programmieren läuft · ${H.length} ${H.length===1?"Helfer":"Helfer"}`; warn=!!(ged||pr); }
-  else { const a=s&&s.auf&&s.auf[KX_DEV]; t=!KX_PROG.join.verbunden?"Programmieren: nicht verbunden":a&&a.status==="laeuft"?`${a.pa} wird programmiert – nichts drücken`:a&&a.status==="angefordert"?`${a.pa}: Programmiertaste drücken`:"Programmieren: warte auf das nächste Gerät"; warn=!!(a&&(a.status==="angefordert"||a.status==="laeuft")); }
-  if(!el){ el=document.createElement("button"); el.type="button"; el.id="kxBar"; el.addEventListener("click",()=>{ if(typeof closeOverlays==="function") closeOverlays(); go({v:"kx",g:KX_PROG.g,tab:"prog"}); }); document.body.appendChild(el); }
-  el.className=warn?"warn":""; el.innerHTML=`${kxVerb(KX_PROG.rolle==="ets"?kxVerbunden().some(h=>kxFrisch(h.at)):!!(s&&kxFrisch(s.ets&&s.ets.at)),"")}<span>${esc(t)}</span>${icon("chev")}`; }
+    ok=H.length>0; t=ged?`${s.auf[ged.dev].pa}: Taste gedrückt – jetzt starten`:pr?`${s.auf[pr.dev].pa}: Problem gemeldet`:`Programmieren · ${H.length} Helfer verbunden`; warn=!!(ged||pr)&&!kxImReiter(); }
+  else { const a=s&&s.auf&&s.auf[KX_DEV], an=KX_PROG.antwort; ok=!!(KX_PROG.join.verbunden&&s&&kxFrisch(s.ets&&s.ets.at));
+    t=!KX_PROG.join.verbunden?"Programmieren: nicht verbunden":a&&a.status==="laeuft"?`${a.pa} wird programmiert`:a&&a.status==="angefordert"?`${a.pa}: Programmiertaste drücken`:"Programmieren: warte auf das nächste Gerät";
+    warn=!!(a&&a.status==="angefordert"&&!(an&&an.id===a.id))&&!kxImReiter(); }
+  if(!el){ const sc=document.getElementById("scBtn")||document.getElementById("glBtn"); if(!sc) return;
+    el=document.createElement("button"); el.type="button"; el.id="kxKopf"; el.className="glocke kx-kopfbtn";
+    el.addEventListener("click",ev=>{ ev.stopPropagation(); if(typeof closeOverlays==="function") closeOverlays(); go({v:"kx",g:KX_PROG.g,tab:"prog"}); },true);
+    sc.before(el); if(typeof scPlatz==="function") setTimeout(scPlatz,0); }
+  el.className="glocke kx-kopfbtn"+(warn?" warn":ok?" ok":""); el.setAttribute("aria-label",t); el.title=t;
+  el.innerHTML=`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC.kxGeraete}"/></svg><i></i>`; }
 /* Sitzung merken: App im Hintergrund oder von iOS beendet → beim nächsten Öffnen geht es weiter (bis 3 h) */
 function kxMerken(){ try{ if(KX_PROG.rolle) localStorage.setItem("kx-sitzung",JSON.stringify({rolle:KX_PROG.rolle,g:KX_PROG.g,join:KX_PROG.join,antwort:KX_PROG.antwort||null,gesehen:KX_PROG.gesehen||"",at:Date.now()})); else localStorage.removeItem("kx-sitzung"); }catch(e){} }
 function kxFortsetzen(n){ let m=null; try{ m=JSON.parse(localStorage.getItem("kx-sitzung")||"null"); }catch(e){} if(!m||!m.g||Date.now()-m.at>3*36e5||KX_PROG.rolle) return;

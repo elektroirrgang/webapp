@@ -207,7 +207,7 @@ function scKnopf(){ const gl=document.getElementById("glBtn"); if(!gl||document.
   new MutationObserver(()=>{ b.hidden=gl.hidden; scPlatz(); }).observe(gl,{attributes:true,attributeFilter:["hidden"]});
   const n=document.getElementById("navbar"); if(n&&window.ResizeObserver) new ResizeObserver(()=>scPlatz()).observe(n); addEventListener("resize",()=>setTimeout(scPlatz,50)); scPlatz(); }
 /* iPad: die Tab-Leiste sitzt mittig oben – ist sie breit, rückt sie so weit nach links, dass der Scanner-Knopf frei bleibt */
-function scPlatz(){ const b=document.getElementById("scBtn"), n=document.getElementById("navbar"), bd=document.body; let ov=0;
+function scPlatz(){ const k=document.getElementById("kxKopf"), b=k&&!k.hidden?k:document.getElementById("scBtn"), n=document.getElementById("navbar"), bd=document.body; let ov=0;
   if(b&&!b.hidden&&n&&!n.hidden){ const rb=b.getBoundingClientRect(), rn=n.getBoundingClientRect(), cs=getComputedStyle(n);
     if(rb.width&&rn.width&&cs.position==="fixed"&&rn.top<rb.bottom&&rn.bottom>rb.top&&rn.width<innerWidth*0.9) ov=Math.ceil(innerWidth/2+rn.width/2+8-rb.left); }
   if(ov>0){ bd.style.setProperty("--sc-rueck",ov+"px"); bd.classList.add("sc-eng"); } else { bd.classList.remove("sc-eng"); bd.style.removeProperty("--sc-rueck"); } }

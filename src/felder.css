@@ -2189,10 +2189,11 @@ body.has-nav .bsp-karte{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .kxz-helfer .kx-knoepfe .btn-filled,.kxz-helfer .kx-knoepfe .btn-tonal{min-height:56px;font-size:17px}
 @media (prefers-reduced-motion:reduce){.kxz-puls:before,.kxz-puls:after,.kxz-verb.an .kxz-leit i,.kxz-rein,.kxz-ok,.kxz-erfolg{animation:none}}
 
-/* Leiste „Programmieren läuft“, wenn man woanders in der App ist */
-#kxBar{position:fixed;z-index:60;left:50%;transform:translateX(-50%);top:calc(var(--tbh,64px) + 8px);max-width:calc(100vw - 32px);display:flex;align-items:center;gap:10px;height:44px;padding:0 10px 0 6px;border:0;border-radius:22px;background:var(--sc-highest);color:var(--on-surface);font:700 14px var(--font);box-shadow:0 4px 14px rgba(0,0,0,.22);cursor:pointer;white-space:nowrap;animation:kxzRein .35s cubic-bezier(.2,1.2,.4,1)}
-#kxBar>span:not(.kxz-verb){overflow:hidden;text-overflow:ellipsis}
-#kxBar .kxz-verb{background:transparent;padding:4px}
-#kxBar svg.ic,#kxBar>.ic{width:20px;height:20px;fill:currentColor;flex:none}
-#kxBar.warn{background:var(--fab);color:var(--on-fab)}
-@media (min-width:744px){#kxBar{top:auto;bottom:24px}}#kxBar.warn .kxz-verb svg{fill:var(--on-fab)}
+/* KNX zu zweit: Symbol in der Kopfzeile neben dem QR-Knopf */
+.kx-kopfbtn{margin-right:-4px}
+.kx-kopfbtn i{position:absolute;right:7px;top:8px;width:10px;height:10px;border-radius:50%;background:var(--on-sv);box-shadow:0 0 0 2px var(--surface)}
+.kx-kopfbtn.ok i{background:var(--ok)}
+.kx-kopfbtn.warn{background:var(--fab);color:var(--on-fab);animation:kxzKopf 1.2s ease-in-out infinite}
+.kx-kopfbtn.warn i{background:#fff;box-shadow:none}
+@keyframes kxzKopf{0%,100%{box-shadow:0 0 0 0 rgba(200,16,46,.55)}50%{box-shadow:0 0 0 8px rgba(200,16,46,0)}}
+@media (prefers-reduced-motion:reduce){.kx-kopfbtn.warn{animation:none}}
