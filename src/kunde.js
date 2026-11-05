@@ -104,12 +104,20 @@ const POI_ART={supermarket:["Supermarkt","#2E7D32","M7 18c-1.1 0-1.99.9-1.99 2S5
   bank:["Bank","#455A64","M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z"],
   fire_station:["Feuerwehr","#D84315","M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"],
   station:["Bahnhof","#37474F","M12 2c-4 0-8 .5-8 4v9.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h2.23l2-2H14l2 2h2v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V6c0-3.5-3.58-4-8-4zM7.5 17c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm3.5-7H6V6h5v4zm2 0V6h5v4h-5zm3.5 7c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"]};
-const POI_RANG=["supermarket","place_of_worship","fuel","station","townhall","school","pharmacy","hospital","fire_station","bank"];
+const POI_RANG_STD=["supermarket","place_of_worship","fuel","station","townhall","school","pharmacy","hospital","fire_station","bank"];
+/* Einstellungen der Karte (Entwickler, Übersicht › Einstellungen › „Karte beim Kunden“): firmenweit in einstellungen/karte
+   {radius, max, abstand, pin, arten:{art:{an,farbe}}, rang:[…]} – fehlt etwas, gilt der Standard */
+const KA_STD={radius:800,max:12,abstand:90,pin:""};
+function kaCfg(){ const r=DB.einstellungen&&DB.einstellungen.get("karte"), o=r&&!r.deleted?r:{}, A=o.arten||{};
+  const rang=(Array.isArray(o.rang)?o.rang.filter(k=>POI_ART[k]):[]).concat(POI_RANG_STD.filter(k=>!(o.rang||[]).includes(k)));
+  return {radius:+o.radius||KA_STD.radius,max:+o.max||KA_STD.max,abstand:o.abstand!=null?+o.abstand:KA_STD.abstand,pin:o.pin||"",rang,
+    an:k=>!(A[k]&&A[k].an===false),farbe:k=>(A[k]&&A[k].farbe)||POI_ART[k][1]}; }
+const POI_RANG=POI_RANG_STD;
 /* Zwischenspeicher je Ort: Treffer 30 Tage, „nichts gefunden“ nur 1 Tag (sonst bleibt ein ausgelasteter Server einen Monat lang hängen).
    META.poi aus älteren Fassungen kann solche leeren Antworten enthalten → einmalig verworfen (poi2). */
-async function kartePoiHolen(g){ const key=g.lat.toFixed(4)+","+g.lon.toFixed(4); if(META.poi) delete META.poi; META.poi2=META.poi2||{}; const alt=META.poi2[key];
-  if(alt&&Date.now()-alt.t<(alt.L.length?30:1)*864e5) return alt.L;
-  const um=`(around:800,${g.lat},${g.lon})`, q=`[out:json][timeout:15];(nwr${um}["shop"="supermarket"];nwr${um}["amenity"~"^(place_of_worship|fuel|school|pharmacy|townhall|hospital|bank|fire_station)$"];nwr${um}["railway"="station"];);out center 80;`;
+async function kartePoiHolen(g){ const C=kaCfg(), key=g.lat.toFixed(4)+","+g.lon.toFixed(4)+"|"+C.radius; if(META.poi) delete META.poi; META.poi2=META.poi2||{}; const alt=META.poi2[key];
+  if(alt&&Date.now()-alt.t<(alt.L.length?30:1)*864e5) return kaFiltern(alt.L,g,C);
+  const um=`(around:${C.radius},${g.lat},${g.lon})`, q=`[out:json][timeout:15];(nwr${um}["shop"="supermarket"];nwr${um}["amenity"~"^(place_of_worship|fuel|school|pharmacy|townhall|hospital|bank|fire_station)$"];nwr${um}["railway"="station"];);out center 80;`;
   /* Overpass-Server sind oft ausgelastet (Okt. 2026: alle vier zeitweise ohne Antwort): alle gleichzeitig fragen, die erste brauchbare Antwort zählt (max. 10 s).
      Klappt keiner, ersatzweise Nominatim (je Art eine Suche im Kartenausschnitt, eine pro Sekunde laut Nutzungsregeln). */
   const ov=srv=>new Promise((ok,no)=>{ const ab=new AbortController(), t=setTimeout(()=>ab.abort(),10000);
@@ -117,18 +125,21 @@ async function kartePoiHolen(g){ const key=g.lat.toFixed(4)+","+g.lon.toFixed(4)
       .then(j=>{ /* ausgelastet: Overpass antwortet trotzdem mit 200, leerer Liste und „remark: runtime error …“ */ if(j&&Array.isArray(j.elements)&&!(j.remark&&/error|timeout|busy|out of memory/i.test(j.remark))) ok(j); else no(0); }).catch(no).finally(()=>clearTimeout(t)); });
   const SRV=["https://overpass-api.de/api/interpreter","https://overpass.private.coffee/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
   let j=await new Promise(ok=>{ let offen=SRV.length; SRV.forEach(u=>ov(u).then(ok,()=>{ if(!--offen) ok(null); })); });
-  if(!j) j=await kartePoiNominatim(g);
+  if(!j) j=await kartePoiNominatim(g,C.radius);
   if(!j) throw new Error("Anhaltspunkte nicht erreichbar");
   const d=(a,b)=>Math.hypot((a.lat-b.lat)*111000,(a.lon-b.lon)*111000*Math.cos(a.lat*Math.PI/180));
   let L=(j.elements||[]).map(e=>{ const t=e.tags||{}, art=t.shop==="supermarket"?"supermarket":t.railway==="station"?"station":t.amenity, lat=e.lat||(e.center&&e.center.lat), lon=e.lon||(e.center&&e.center.lon);
     return POI_ART[art]&&lat?{art,lat,lon,n:String(t.name||t.brand||POI_ART[art][0]).slice(0,28)}:null; }).filter(Boolean);
-  L.forEach(x=>x.d=d(x,g)); L=L.filter(x=>x.d>25).sort((a,b)=>POI_RANG.indexOf(a.art)-POI_RANG.indexOf(b.art)||a.d-b.d);
-  const W=[]; for(const x of L){ if(W.length>=12) break; if(W.some(y=>d(x,y)<90)) continue; W.push({art:x.art,lat:x.lat,lon:x.lon,n:x.n}); }
-  META.poi2[key]={t:Date.now(),L:W}; const ks=Object.keys(META.poi2); if(ks.length>60) delete META.poi2[ks[0]]; metaSave(); return W; }
+  /* gemerkt werden alle Treffer (bis 80) – Auswahl, Reihenfolge, Höchstzahl und Abstand erst beim Anzeigen, damit Einstellungen sofort wirken */
+  L=L.filter(x=>d(x,g)>25).slice(0,80).map(x=>({art:x.art,lat:x.lat,lon:x.lon,n:x.n})); const W=L;
+  META.poi2[key]={t:Date.now(),L:W}; const ks=Object.keys(META.poi2); if(ks.length>60) delete META.poi2[ks[0]]; metaSave(); return kaFiltern(W,g,C); }
+function kaFiltern(L,g,C){ const d=(a,b)=>Math.hypot((a.lat-b.lat)*111000,(a.lon-b.lon)*111000*Math.cos(a.lat*Math.PI/180));
+  const S=L.filter(x=>POI_ART[x.art]&&C.an(x.art)).map(x=>Object.assign({},x,{d:d(x,g)})).sort((a,b)=>C.rang.indexOf(a.art)-C.rang.indexOf(b.art)||a.d-b.d);
+  const W=[]; for(const x of S){ if(W.length>=C.max) break; if(C.abstand&&W.some(y=>d(x,y)<C.abstand)) continue; W.push(x); } return W; }
 /* Ersatz über Nominatim: Suchbegriffe, die Nominatim als Kategorie versteht; Ergebnis im Overpass-Format */
 const POI_NOM=[["supermarket","Supermarkt","shop/supermarket"],["place_of_worship","place of worship","amenity/place_of_worship"],["fuel","Tankstelle","amenity/fuel"],["station","railway station","railway/station"],
   ["townhall","Rathaus","amenity/townhall"],["school","Schule","amenity/school"],["pharmacy","Apotheke","amenity/pharmacy"],["hospital","Krankenhaus","amenity/hospital"],["fire_station","Feuerwehr","amenity/fire_station"],["bank","Banken","amenity/bank"]];
-async function kartePoiNominatim(g){ const dx=.011, dy=.0072, vb=[g.lon-dx,g.lat+dy,g.lon+dx,g.lat-dy].join(","), E=[]; let ok=0;
+async function kartePoiNominatim(g,rad){ const f=(rad||800)/800, dx=.011*f, dy=.0072*f, vb=[g.lon-dx,g.lat+dy,g.lon+dx,g.lat-dy].join(","), E=[]; let ok=0;
   for(const [art,q,typ] of POI_NOM){
     try{ const r=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&bounded=1&accept-language=de&viewbox=${vb}&q=${encodeURIComponent(q)}`); if(r.ok){ ok++;
         (await r.json()).filter(x=>`${x.category}/${x.type}`===typ).forEach(x=>{ const [k,v]=typ.split("/"); E.push({lat:+x.lat,lon:+x.lon,tags:{[k]:v,name:x.name||""}}); }); } }catch(e){}
@@ -137,13 +148,13 @@ async function kartePoiNominatim(g){ const dx=.011, dy=.0072, vb=[g.lon-dx,g.lat
 async function kartePoi(g,a){ (KARTE.poi||[]).forEach(m=>m.remove()); KARTE.poi=[];
   let L=[]; try{ L=await kartePoiHolen(g); }catch(e){ console.warn("Anhaltspunkte:",e.message); KARTE.poiA=null; return; }
   const el=document.getElementById("kdKarte"); if(!el||el.dataset.a!==a||!KARTE.map) return;
-  KARTE.poi=L.map(x=>{ const [t,f,pfad]=POI_ART[x.art], d=document.createElement("div"); d.className="kd-poi"; d.title=`${t}: ${x.n}`;
+  const C=kaCfg(); KARTE.poi=L.map(x=>{ const [t,,pfad]=POI_ART[x.art], f=C.farbe(x.art), d=document.createElement("div"); d.className="kd-poi"; d.title=`${t}: ${x.n}`;
     d.addEventListener("click",e=>{ e.stopPropagation(); const an=!d.classList.contains("zeig"); document.querySelectorAll(".kd-poi.zeig").forEach(x=>x.classList.remove("zeig")); d.classList.toggle("zeig",an); });
     d.innerHTML=`<i style="--poi:${f}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${pfad}"/></svg></i><span>${esc(x.n)}</span>`;
     return new maplibregl.Marker({element:d,anchor:"left",offset:[-13,0]}).setLngLat([x.lon,x.lat]).addTo(KARTE.map); });
   if(KARTE.mk){ const p=KARTE.mk.getElement(); p.parentNode&&p.parentNode.appendChild(p); } }
 function karteVorlagePoiAus(){ try{ const st=KARTE.map.getStyle(); (st&&st.layers||[]).forEach(l=>{ if(/^poi/.test(l.id)) KARTE.map.setLayoutProperty(l.id,"visibility","none"); }); }catch(e){} }
-const karteGrenze=c=>[[c[0]-.022,c[1]-.014],[c[0]+.022,c[1]+.014]];
+const karteGrenze=c=>{ const f=Math.max(1,kaCfg().radius/800); return [[c[0]-.022*f,c[1]-.014*f],[c[0]+.022*f,c[1]+.014*f]]; };
 async function karteLaden(a){
   const el=document.getElementById("kdKarte"); if(!el||el.dataset.a!==a) return;
   let g; try{ g=await karteGeo(a); }catch(e){ return karteFehler(el,"Karte gerade nicht erreichbar"); }
@@ -173,7 +184,7 @@ async function karteLaden(a){
     /* falls der dunkle Kartenstil nicht lädt: hellen nehmen */
     KARTE.map.on("error",ev=>{ if(KARTE.stil==="liberty"&&!KARTE.map.isStyleLoaded()&&!KARTE.ersatz){ KARTE.ersatz=1; KARTE.stil="positron"; KARTE.map.setStyle(karteStil("positron")); } });
     if(window.ResizeObserver) new ResizeObserver(()=>{ if(KARTE.map&&KARTE.el.isConnected) KARTE.map.resize(); }).observe(KARTE.el);
-    const m=document.createElement("div"); m.className="kd-pin"; KARTE.mk=new maplibregl.Marker({element:m,anchor:"bottom"}).setLngLat(c).addTo(KARTE.map);
+    const m=document.createElement("div"); m.className="kd-pin"; if(kaCfg().pin) m.style.background=kaCfg().pin; KARTE.mk=new maplibregl.Marker({element:m,anchor:"bottom"}).setLngLat(c).addTo(KARTE.map);
   } else {
     slot.appendChild(KARTE.el); KARTE.map.resize();
     if(KARTE.stil!==stil){ KARTE.stil=stil; KARTE.map.setStyle(karteStil(stil)); }
@@ -352,3 +363,40 @@ function kbSeg(v){ if(!kbHandy()) return ""; kbLetzt(v);
 /* Leiste: Bibliothek raus, „Kunden“ führt dorthin, wo man zuletzt war, und bleibt markiert */
 const kbLeiste=L=>(L=typeof leisteOrdnen==="function"?leisteOrdnen(L):L,kbHandy()?L.filter(d=>d[0]!=="bibliothek").map(d=>d[0]==="kunden"?[kbLetzt()==="bibliothek"?"bibliothek":"kunden",d[1],d[2],"kunden"]:d):L);
 const kbAktiv=a=>kbHandy()&&a==="bibliothek"?"kunden":a;
+
+/* ===== Einstellungen „Karte beim Kunden“ (Entwickler) – 05.11.2026 ===== */
+const KA_FARBEN=["#C8102E","#C62828","#D84315","#E65100","#F9A825","#2E7D32","#00838F","#1565C0","#3949AB","#7B1FA2","#6D4C41","#455A64","#37474F","#000000"];
+function kaSpeichern(f){ const neu=!DB.einstellungen.has("karte"), r=DB.einstellungen.get("karte")||{id:"karte"}; f(r); r.deleted=false; saveRec("einstellungen",r,neu); }
+function karteEinstView(){ const C=kaCfg(), r=DB.einstellungen.get("karte")||{};
+  const seg3=(act,v,L,fmt)=>`<div class="knx-seg">${L.map(x=>`<button type="button" data-act="${act}" data-v="${x}" aria-pressed="${+v===x}">${fmt(x)}</button>`).join("")}</div>`;
+  return `<div class="narrow ka-einst">
+    <p class="meta" style="margin:0 4px 16px">Gilt für die Karte auf jeder Kunden- und Standortseite, in allen Apps und für alle Mitarbeiter.</p>
+    <div class="sec-lbl">Suche</div>
+    <div class="lbl">Umkreis</div>${seg3("kaRad",C.radius,[400,800,1500,3000],x=>x<1000?`${x} m`:`${String(x/1000).replace(".",",")} km`)}
+    <div class="lbl" style="margin-top:12px">Höchstens so viele Punkte</div>${seg3("kaMax",C.max,[6,12,20,30],x=>String(x))}
+    <div class="lbl" style="margin-top:12px">Mindestabstand zwischen Punkten</div>${seg3("kaAbst",C.abstand,[0,50,90,150],x=>x?`${x} m`:"aus")}
+    <p class="meta" style="margin:8px 4px 0">Größerer Umkreis findet mehr, die Karte zoomt dafür weiter heraus. Der Mindestabstand verhindert, dass Punkte übereinanderliegen.</p>
+    <div class="sec-row" style="margin-top:22px"><div class="sec-lbl">Anhaltspunkte</div></div>
+    <p class="meta" style="margin:0 4px 8px">Reihenfolge = was zuerst gezeigt wird, wenn es mehr Treffer als erlaubt gibt. Antippen für Farbe und an/aus.</p>
+    <div class="ka-liste">${C.rang.map((k,i)=>{ const [t,,pfad]=POI_ART[k], an=C.an(k);
+      return `<div class="ka-z${an?"":" aus"}"><button type="button" class="ka-k" data-act="kaArt" data-v="${k}"><i style="background:${C.farbe(k)}"><svg viewBox="0 0 24 24"><path d="${pfad}"/></svg></i><b>${esc(t)}</b><small>${an?"wird gezeigt":"ausgeblendet"}</small></button>
+        <button type="button" class="kx-tk" data-act="kaAuf" data-i="${i}" ${i?"":"disabled"} aria-label="${esc(t)} nach oben">↑</button><button type="button" class="kx-tk" data-act="kaAb" data-i="${i}" ${i<C.rang.length-1?"":"disabled"} aria-label="${esc(t)} nach unten">↓</button></div>`; }).join("")}</div>
+    <div class="sec-lbl" style="margin-top:22px">Markierung des Kunden</div>
+    <div class="ka-farben">${["",...KA_FARBEN].map(f=>`<button type="button" class="ka-f${f?"":" std"}" data-act="kaPin" data-v="${f}" aria-pressed="${(r.pin||"")===f}" style="${f?`background:${f}`:""}" aria-label="${f||"Standard"}">${f?"":"Std"}</button>`).join("")}</div>
+    <div class="kx-knoepfe" style="margin-top:24px"><button type="button" class="btn-tonal" data-act="kaStd">Alles auf Standard</button><button type="button" class="btn-tonal" data-act="kaNeu">Gemerkte Punkte neu suchen</button></div></div>`; }
+function kaArtDlg(k){ const C=kaCfg(), [t,,pfad]=POI_ART[k];
+  dialog(t,`<div class="knx-seg">${[["1","zeigen"],["0","ausblenden"]].map(([v,x])=>`<button type="button" data-act="kaAn" data-k="${k}" data-v="${v}" aria-pressed="${(C.an(k)?"1":"0")===v}">${x}</button>`).join("")}</div>
+    <div class="lbl" style="margin-top:14px">Farbe</div><div class="ka-farben">${KA_FARBEN.map(f=>`<button type="button" class="ka-f" data-act="kaFarbe" data-k="${k}" data-v="${f}" aria-pressed="${C.farbe(k).toLowerCase()===f.toLowerCase()}" style="background:${f}" aria-label="${f}"></button>`).join("")}</div>
+    <div class="ka-vorschau"><span class="kd-poi zeig"><i style="--poi:${C.farbe(k)}"><svg viewBox="0 0 24 24"><path d="${pfad}"/></svg></i><span>${esc(t)}</span></span></div>`,
+    `<button class="btn-text" data-act="kaArtStd" data-k="${k}">Standardfarbe</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Fertig</button>`); }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="ka"]'); if(!b||!["kaRad","kaMax","kaAbst","kaArt","kaAuf","kaAb","kaPin","kaStd","kaNeu","kaAn","kaFarbe","kaArtStd"].includes(b.dataset.act)) return; e.stopPropagation();
+  const a=b.dataset.act, v=b.dataset.v, k=b.dataset.k, y=scrollY, neu=()=>{ render(); scrollTo(0,y); };
+  if(a==="kaRad"){ kaSpeichern(r=>r.radius=+v); neu(); return; }
+  if(a==="kaMax"){ kaSpeichern(r=>r.max=+v); neu(); return; }
+  if(a==="kaAbst"){ kaSpeichern(r=>r.abstand=+v); neu(); return; }
+  if(a==="kaArt"){ kaArtDlg(v); return; }
+  if(a==="kaAuf"||a==="kaAb"){ const R=kaCfg().rang.slice(), i=+b.dataset.i, j=a==="kaAuf"?i-1:i+1; if(j<0||j>=R.length) return; [R[i],R[j]]=[R[j],R[i]]; kaSpeichern(r=>r.rang=R); neu(); return; }
+  if(a==="kaPin"){ kaSpeichern(r=>{ if(v) r.pin=v; else delete r.pin; }); neu(); return; }
+  if(a==="kaStd"){ kaSpeichern(r=>{ ["radius","max","abstand","pin","arten","rang"].forEach(x=>delete r[x]); }); neu(); toast("Karte auf Standard"); return; }
+  if(a==="kaNeu"){ if(META.poi2){ META.poi2={}; metaSave(); } toast("Wird beim nächsten Öffnen einer Kundenkarte neu gesucht"); return; }
+  if(a==="kaAn"||a==="kaFarbe"||a==="kaArtStd"){ kaSpeichern(r=>{ r.arten=r.arten||{}; const o=r.arten[k]=r.arten[k]||{}; if(a==="kaAn") o.an=v==="1"; if(a==="kaFarbe") o.farbe=v; if(a==="kaArtStd") delete o.farbe; }); kaArtDlg(k); neu(); return; } },true);
