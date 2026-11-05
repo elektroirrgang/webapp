@@ -1878,7 +1878,7 @@ function render(){ profilAnwenden(); setTimeout(()=>{ if(typeof kalPaneKlasse===
   const TD=topdest(), TOP=TD.map(x=>x[0]), top=TOP.includes(nav.v)&&!(nav.v==="hb"&&nav.id), login=nav.v==="login";
   document.body.classList.toggle("is-list",nav.v==="start"||login);
   document.body.classList.toggle("is-login",login);
-  document.body.classList.toggle("has-nav",!login);
+  document.body.classList.toggle("has-nav",!login); document.body.classList.toggle("ohne-dock",!login&&!TOP.includes(nav.v)&&(["mehr","konto","meldungen","speicher","abgleich","wuensche","datenschutz"].includes(nav.v)||(typeof MEHR_SUB!=="undefined"&&!!MEHR_SUB[nav.v])));   /* Profil, Einstellungen, Benachrichtigungen: ohne Dock (iPhone) */
   $("#backBtn").hidden=top||login; $("#navbar").hidden=login; $("#tabs").hidden=true; $("#avBtn").hidden=login; $("#avBtn").classList.toggle("aktiv",nav.v==="mehr"||!!MEHR_SUB[nav.v]);
   $("#menuBtn").hidden=!(VIEW_KIND[nav.v]&&kdDarf()); kdKopfKnopf();
   const active=nav.v==="meldungen"?"":top||(nav.v==="hb"&&TOP.includes("hb"))?nav.v:nav.v==="mldg"?"auftraege":["anl","masch"].includes(nav.v)?"kunden":HANDY_WEG.includes(nav.v)||["hb","fristen"].includes(nav.v)?"start":(MEHR_SUB[nav.v]||nav.v==="mehr")?"mehr":"kunden";
