@@ -1986,3 +1986,4 @@ body:has(.gv-aktbar) #app{padding-bottom:190px}
 .ka-icons{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:6px;margin-top:6px;max-height:190px;overflow:auto}
 .ka-ic{height:40px;border:0;border-radius:12px;background:var(--sc-high);color:var(--on-surface);display:grid;place-items:center;cursor:pointer}.ka-ic svg{width:22px;height:22px;fill:currentColor}
 .ka-ic[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
+.kd-zentr{right:6px}@media (min-width:744px){.kd-zentr{right:10px}}   /* in einer Flucht mit + / − und Info (05.11.2026) */
