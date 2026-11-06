@@ -5,7 +5,7 @@ function infoKarte(r,kind){
   const T=kind==="kunden"?telefoneVon(r):(r.tel?[{art:"Telefon vor Ort",nr:r.tel}]:[]);
   const adr=adrText(r), tel=T.length&&T[0].nr.replace(/[^\d+]/g,""), vorschlag=kind==="kunden"&&!r.web?webVorschlag(r):"";
   const qa=(href,ic,t,act)=>`<${href?`a href="${href}"${/^https/.test(href)?' target="_blank" rel="noopener"':""}`:`button type="button" data-act="${act}"`} class="qa"><span class="qa-ic">${icon(ic)}</span><span>${t}</span></${href?"a":"button"}>`;
-  const aktionen=[tel&&qa("tel:"+tel,"phone","Anrufen"),r.mail&&qa("mailto:"+r.mail,"mail","E-Mail"),adr&&qa(mapsHref(adr),"route","Route"),
+  const aktionen=[tel&&qa("tel:"+tel,"phone","Anrufen"),r.mail&&qa("mailto:"+r.mail,"mail","E-Mail"),(r.park_lat&&typeof parkRouteHref==="function"?qa(parkRouteHref(r),"route","Route"):adr&&qa(mapsHref(adr),"route","Route")),
     kind==="kunden"&&(r.web?qa(webHref(r.web),"globe","Webseite"):kdArt(r)==="privat"?"":vorschlag?qa(webHref(vorschlag),"globe","Webseite"):canEdit(r)?qa("","search","Webseite suchen","webSuchen"):""),
     typeof nav!=="undefined"&&nav.id===r.id&&kdDarf(r)&&qa("","edit","Bearbeiten","editLoc")].filter(Boolean);
   /* Eckdaten nur zum Lesen – Anrufen, E-Mail, Route und Webseite gibt es oben als Knöpfe */
@@ -73,7 +73,7 @@ function karteView(r,ss){
   const O=karteOrte(r,ss); if(!O.length) return `<div class="kd-karte leer"><span class="kd-lade">${icon("ort")}<span>Keine Adresse hinterlegt</span></span></div>`;
   const w=O.find(x=>x.id===karteWahl[r.id])||O[0];
   setTimeout(()=>karteLaden(w.a),0);
-  return `<div class="kd-karte" id="kdKarte" data-a="${esc(w.a)}"><div class="kd-slot"></div><span class="kd-lade">${icon("ort")}</span><button class="kd-zentr" data-act="karteZentr" hidden title="Zurück zum Ort" aria-label="Zurück zum Ort"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg></button>
+  return `<div class="kd-karte" id="kdKarte" data-a="${esc(w.a)}" data-id="${esc(w.id)}"><div class="kd-slot"></div><span class="kd-lade">${icon("ort")}</span><button class="kd-zentr" data-act="karteZentr" hidden title="Zurück zum Ort" aria-label="Zurück zum Ort"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg></button>
     ${O.length>1?`<div class="kd-orte">${O.map(x=>`<button class="kd-ort" data-act="karteOrt" data-r="${esc(r.id)}" data-id="${esc(x.id)}" aria-pressed="${x===w}">${esc(x.t)}</button>`).join("")}</div>`:""}</div>`;
 }
 function karteLib(){
@@ -211,6 +211,7 @@ async function karteLaden(a){
     if(Math.abs(alt.lng-c[0])+Math.abs(alt.lat-c[1])>1e-6) KARTE.map.easeTo({center:c,duration:500}); else KARTE.map.jumpTo({center:c});
   }
   const l=el2.querySelector(".kd-lade"); if(l) l.hidden=true;
+  if(typeof parkKartePin==="function") parkKartePin();
   if(KARTE.poiA!==a||!(KARTE.poi||[]).length){ KARTE.poiA=a; kartePoi(g,a); }
 }
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{ const el=document.getElementById("kdKarte"); if(el) karteLaden(el.dataset.a); });

@@ -10,7 +10,7 @@ IC.park="M13 3H6v18h4v-6h3c3.31 0 6-2.69 6-6s-2.69-6-6-6zm.2 8H10V7h3.2c1.1 0 2 
 const PARK_ARTEN=[["","Keine Angabe"],["scheibe","Parkscheibe"],["automat","Parkschein"],["frei","Frei parken"]];
 const PARK_MIN=[["30","30 Min."],["60","1 Std."],["90","1,5 Std."],["120","2 Std."],["180","3 Std."]];
 const PARK_LS="irrgang-park", PARK_VOR=10*60000;
-const PARK={ton:null};
+const PARK={ton:null,pin:null};
 const parkChips=(act,cur,opts)=>`<div class="park-chips" role="group">${opts.map(([v,t])=>`<button type="button" class="park-ch" data-act="${act}" data-v="${v}" aria-pressed="${String(cur)===String(v)}">${esc(t)}</button>`).join("")}</div>`;
 const parkSvg=()=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${IC.park}"/></svg>`;
 const parkVon=r=>({art:(r&&r.park_art)||"",min:+(r&&r.park_min)||0,notiz:String((r&&r.park_notiz)||"").trim()});
@@ -116,15 +116,23 @@ function parkZeile(r,kind){ if(!r||!["kunden","standorte"].includes(kind)||parkV
   return `<button type="button" class="dz dz-park" data-act="parkQ" data-kind="${kind}" data-id="${esc(r.id)}"><span class="dz-ic">${parkSvg()}</span><span class="dz-t"><small>Parken</small><span>Noch nichts hinterlegt · eintragen</span></span>${icon("chev")}</button>`; }
 const PARK_Q={kind:"",id:"",art:"",min:"120",nah:null,lade:false};
 function parkQDlg(kind,id){ const r=DB[kind]&&DB[kind].get(id); if(!r) return; const p=parkVon(r);
-  if(PARK_Q.id!==id||PARK_Q.kind!==kind) Object.assign(PARK_Q,{kind,id,art:p.art||"",min:String(p.min||120),nah:null,lade:false});
+  if(PARK_Q.id!==id||PARK_Q.kind!==kind) Object.assign(PARK_Q,{kind,id,art:p.art||"",min:String(p.min||120),nah:null,lade:false,pos:null,notiz:null});
   dialog("Parken",`<p class="ec-sub" style="margin:0 4px 12px">Gilt für alle Kollegen bei ${esc(r.name||"diesem Ort")}.</p>
     <div class="leg-eti-opt park-q">
       <div class="leg-eti-z"><span class="lbl">Hier gilt</span><div class="chips">${PARK_ARTEN.filter(x=>x[0]).map(([v,t])=>`<button type="button" class="chip" data-act="parkQW" data-v="${v}" aria-pressed="${PARK_Q.art===v}">${t}</button>`).join("")}</div></div>
       <div class="leg-eti-z" id="parkQMin"${PARK_Q.art==="scheibe"||PARK_Q.art==="automat"?"":" hidden"}><span class="lbl">Höchstens</span><div class="chips">${PARK_MIN.map(([v,t])=>`<button type="button" class="chip" data-act="parkQM" data-v="${v}" aria-pressed="${PARK_Q.min===v}">${t}</button>`).join("")}</div></div></div>
-    ${tf("park_notiz","Wo parken? (optional)",p.notiz,{form:true,ph:"z. B. Hof hinter dem Haus"})}
+    ${tf("park_notiz","Wo parken? (optional)",PARK_Q.notiz!=null?PARK_Q.notiz:p.notiz,{form:true,ph:"z. B. Hof hinter dem Haus"})}
+    ${parkPosHtml(r)}
     <div class="park-nah" id="parkNah">${parkNahHtml()}</div>`,
     `${p.art?`<button class="btn-text danger" data-act="parkQWeg">Hinweis entfernen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="parkQOk">Speichern</button>`);
   setTimeout(()=>{ const a=document.activeElement; if(a&&a.id==="f_park_notiz") a.blur(); },80); }
+/* Stelle auf der Karte im Fenster: markiert (mit Entfernung zum Haus) oder setzen */
+function parkPosHtml(r){ const pos=PARK_Q.pos===false?null:PARK_Q.pos||(r.park_lat?{lat:+r.park_lat,lon:+r.park_lon}:null);
+  const knopf=(act,t,ic)=>`<button type="button" class="park-such park-such2" data-act="${act}">${ic}<span>${t}</span></button>`;
+  const gps=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.94 3A8.99 8.99 0 0 0 13 3.06V1h-2v2.06A8.99 8.99 0 0 0 3.06 11H1v2h2.06A8.99 8.99 0 0 0 11 20.94V23h2v-2.06A8.99 8.99 0 0 0 20.94 13H23v-2h-2.06zM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/></svg>`;
+  if(pos) return `<div class="park-pos"><div class="lbl">Auf der Karte</div><div class="park-nz"><span class="park-nz-t"><b>Parkplatz markiert</b><small>${PARK_Q.pos&&PARK_Q.pos.gen?`per Standort, auf ca. ${PARK_Q.pos.gen} m genau · `:""}„Route“ führt dorthin</small></span><button type="button" class="park-b" data-act="parkSetzen">Ändern</button></div>
+    <button type="button" class="park-weg" data-act="parkPosWeg">Markierung entfernen</button></div>`;
+  return `<div class="park-pos"><div class="lbl">Auf der Karte</div><div class="park-2">${knopf("parkGps","Ich stehe am Parkplatz",gps)}${knopf("parkSetzen","Auf der Karte setzen",parkSvg())}</div></div>`; }
 function parkNahHtml(){ const N=PARK_Q.nah;
   if(PARK_Q.lade) return `<div class="lbl">In der Nähe</div><p class="meta park-nah-t">Suche in OpenStreetMap …</p>`;
   if(!N) return `<button type="button" class="park-such" data-act="parkNahSuchen">${parkSvg()}<span>Parkplätze in der Nähe suchen</span></button>`;
@@ -170,7 +178,7 @@ async function parkNahSuchen(){ const r=DB[PARK_Q.kind]&&DB[PARK_Q.kind].get(PAR
     if(strasse&&!Object.entries(t).some(([k,x])=>/^parking:(both|left|right|lane:(both|left|right))$/.test(k)&&/lane|street_side|on_kerb|half_on_kerb|shoulder|parallel|diagonal|perpendicular|marked|yes/.test(x))) return;
     const D=parkDeuten(t,strasse), typ=t.parking==="multi-storey"?"Parkhaus":t.parking==="underground"?"Tiefgarage":t.parking==="street_side"||t.parking==="lane"?"Parkbucht":"Parkplatz";
     const titel=strasse?`Straßenrand ${t.name||""}`.trim():t.name?`${typ} ${t.name}`:(strName?`${typ} ${strName}`:typ);
-    const key=titel+"|"+D.info; if(gesehen.has(key)) return; gesehen.add(key); L.push({titel,m,...D}); };
+    const key=titel+"|"+D.info; if(gesehen.has(key)) return; gesehen.add(key); L.push({titel,m,lat:+lat,lon:+lon,...D}); };
   /* Reihenfolge: öffentlich mit bekannter Regel, öffentlich ohne Regel, Kundenparkplätze (Supermarkt usw.) zuletzt – dort dürfen Handwerker eigentlich nicht stehen */
   const rang=x=>x.kunden?2:x.info?0:1;
   const fertig=()=>{ L.sort((a,b)=>rang(a)-rang(b)||a.m-b.m); PARK_Q.nah={L:L.slice(0,8),strasse:PARK_Q.nah&&PARK_Q.nah.strasse}; };
@@ -198,12 +206,45 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="parkQW"){ PARK_Q.art=b.dataset.v; wahl(); return; }
   if(a==="parkQM"){ PARK_Q.min=b.dataset.v; wahl(); return; }
   if(a==="parkNahSuchen"){ parkNahSuchen(); return; }
-  if(a==="parkNahNimm"){ const x=PARK_Q.nah&&PARK_Q.nah.L[+b.dataset.i]; if(!x) return; if(x.art) PARK_Q.art=x.art; if(x.min&&PARK_MIN.some(m=>+m[0]===x.min)) PARK_Q.min=String(x.min); else if(x.min) PARK_Q.min=String(x.min);
+  if(a==="parkNahNimm"){ const x=PARK_Q.nah&&PARK_Q.nah.L[+b.dataset.i]; if(!x) return; if(x.art) PARK_Q.art=x.art; if(x.lat) PARK_Q.pos={lat:x.lat,lon:x.lon}; if(x.min&&PARK_MIN.some(m=>+m[0]===x.min)) PARK_Q.min=String(x.min); else if(x.min) PARK_Q.min=String(x.min);
     const n=document.getElementById("f_park_notiz"); if(n){ n.value=`${x.titel}, ca. ${x.m} m`; n.dispatchEvent(new Event("input",{bubbles:true})); n.closest(".tf")&&n.closest(".tf").classList.add("fl"); }
+    const pp=document.querySelector("#dlg .park-pos"), rr=DB[PARK_Q.kind]&&DB[PARK_Q.kind].get(PARK_Q.id); if(pp&&rr) pp.outerHTML=parkPosHtml(rr);
     wahl(); if(!x.art&&typeof toast==="function") toast("Regel unbekannt – oben auswählen, was auf dem Schild steht"); return; }
   if(a==="parkQOk"||a==="parkQWeg"){ const r=DB[PARK_Q.kind]&&DB[PARK_Q.kind].get(PARK_Q.id); if(!r) return; const n=document.getElementById("f_park_notiz");
     if(a==="parkQOk"&&!PARK_Q.art){ if(typeof toast==="function") toast("Bitte auswählen, was hier gilt"); return; }
-    if(a==="parkQWeg"){ ["park_art","park_min","park_notiz","park_von","park_am"].forEach(k=>delete r[k]); }
+    if(a==="parkQWeg"){ ["park_art","park_min","park_notiz","park_von","park_am","park_lat","park_lon"].forEach(k=>delete r[k]); }
     else Object.assign(r,{park_art:PARK_Q.art,park_min:PARK_Q.art==="scheibe"||PARK_Q.art==="automat"?PARK_Q.min:"",park_notiz:n?n.value.trim():"",park_von:(typeof ME!=="undefined"&&(ME.name||ME.mail))||"",park_am:Date.now()});
+    if(a==="parkQOk"&&PARK_Q.pos){ r.park_lat=String(PARK_Q.pos.lat); r.park_lon=String(PARK_Q.pos.lon); } else if(a==="parkQOk"&&PARK_Q.pos===false){ delete r.park_lat; delete r.park_lon; }
     saveRec(PARK_Q.kind,r); PARK_Q.id=""; if(typeof closeOverlays==="function") closeOverlays(); if(typeof render==="function") render(); if(typeof toast==="function") toast(a==="parkQWeg"?"Parkhinweis entfernt":"Parkhinweis gespeichert – gilt für alle"); return; }
+},true);
+
+/* ===== Parkplatz auf der Kundenkarte (Max 06.11.2026) =====
+   park_lat/park_lon am Kunden/Standort. Gesetzt über „Übernehmen“ (Treffer aus der Nähe), „Ich stehe am Parkplatz“ (GPS)
+   oder „Auf der Karte setzen“ (Karte verschieben, Mitte = Parkplatz). Auf der Karte ein blaues P; „Route“ führt dann zum Parkplatz. */
+const parkRec=id=>(DB.kunden&&DB.kunden.get(id))?["kunden",DB.kunden.get(id)]:(DB.standorte&&DB.standorte.get(id))?["standorte",DB.standorte.get(id)]:[null,null];
+function parkRouteHref(r){ const z=`${r.park_lat},${r.park_lon}`; return /iPad|iPhone|Macintosh/.test(navigator.userAgent)?`https://maps.apple.com/?daddr=${z}&dirflg=d`:`https://www.google.com/maps/dir/?api=1&destination=${z}&travelmode=driving`; }
+function parkKartePin(){ if(typeof KARTE==="undefined"||!KARTE.map||!window.maplibregl) return; const k=document.getElementById("kdKarte"); if(PARK.pin){ PARK.pin.remove(); PARK.pin=null; }
+  if(!k) return; const [,r]=parkRec(k.dataset.id); if(!r||!r.park_lat) return;
+  const d=document.createElement("div"); d.className="park-pin"; d.title="Parkplatz"; d.innerHTML=parkSvg();
+  PARK.pin=new maplibregl.Marker({element:d,anchor:"center"}).setLngLat([+r.park_lon,+r.park_lat]).addTo(KARTE.map); }
+/* Karte: Setzen-Modus */
+function parkSetzenStart(){ const k=document.getElementById("kdKarte"); if(!k||typeof KARTE==="undefined"||!KARTE.map){ if(typeof toast==="function") toast("Die Karte ist noch nicht geladen"); return; }
+  if(typeof closeOverlays==="function") closeOverlays();
+  const p=PARK_Q.pos||(()=>{ const [,r]=parkRec(PARK_Q.id); return r&&r.park_lat?{lat:+r.park_lat,lon:+r.park_lon}:null; })();
+  if(p) KARTE.map.jumpTo({center:[p.lon,p.lat],zoom:Math.max(KARTE.map.getZoom(),17)}); else KARTE.map.easeTo({zoom:Math.max(KARTE.map.getZoom(),17),duration:300});
+  if(PARK.pin) PARK.pin.getElement().style.visibility="hidden";
+  k.classList.add("park-setzen");
+  k.insertAdjacentHTML("beforeend",`<div class="park-kreuz" aria-hidden="true">${parkSvg()}</div><div class="park-leiste"><span>Karte verschieben, bis das P auf dem Parkplatz steht</span><div><button type="button" class="park-b" data-act="parkSetzenAbbr">Abbrechen</button><button type="button" class="park-go" data-act="parkSetzenOk">Hier parken</button></div></div>`);
+  k.scrollIntoView({behavior:"smooth",block:"center"}); }
+function parkSetzenEnde(){ const k=document.getElementById("kdKarte"); if(!k) return; k.classList.remove("park-setzen"); k.querySelectorAll(".park-kreuz,.park-leiste").forEach(x=>x.remove()); if(PARK.pin) PARK.pin.getElement().style.visibility=""; }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="parkSetzen"],[data-act="parkSetzenOk"],[data-act="parkSetzenAbbr"],[data-act="parkGps"],[data-act="parkPosWeg"]'); if(!b) return;
+  e.stopImmediatePropagation(); e.preventDefault(); const a=b.dataset.act;
+  const merk=()=>{ const n=document.getElementById("f_park_notiz"); if(n) PARK_Q.notiz=n.value; };
+  if(a==="parkSetzen"){ merk(); parkSetzenStart(); return; }
+  if(a==="parkSetzenAbbr"){ parkSetzenEnde(); parkQDlg(PARK_Q.kind,PARK_Q.id); return; }
+  if(a==="parkSetzenOk"){ const c=KARTE.map.getCenter(); PARK_Q.pos={lat:+c.lat.toFixed(6),lon:+c.lng.toFixed(6)}; parkSetzenEnde(); parkQDlg(PARK_Q.kind,PARK_Q.id); return; }
+  if(a==="parkPosWeg"){ merk(); PARK_Q.pos=false; parkQDlg(PARK_Q.kind,PARK_Q.id); return; }
+  if(a==="parkGps"){ if(!navigator.geolocation){ if(typeof toast==="function") toast("Standort ist auf diesem Gerät nicht verfügbar"); return; } merk(); b.disabled=true; b.querySelector("span").textContent="Standort wird bestimmt …";
+    navigator.geolocation.getCurrentPosition(g=>{ PARK_Q.pos={lat:+g.coords.latitude.toFixed(6),lon:+g.coords.longitude.toFixed(6),gen:Math.round(g.coords.accuracy)}; parkQDlg(PARK_Q.kind,PARK_Q.id); },
+      ()=>{ b.disabled=false; b.querySelector("span").textContent="Ich stehe am Parkplatz"; if(typeof toast==="function") toast("Standort nicht freigegeben oder nicht gefunden"); },{enableHighAccuracy:true,timeout:15000,maximumAge:0}); return; }
 },true);
