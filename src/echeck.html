@@ -2323,6 +2323,7 @@ function openMenu(){
   $("#menu").hidden=false; $("#scrim").hidden=false; $("#menuBtn").setAttribute("aria-expanded","true");
 }
 function zurueck(){
+  if(nav.zur){ go(nav.zur); return; }   /* nach einem Scan: zurück dorthin, wo gescannt wurde */
   if(nav.v==="standort"){ const s=standortOf(nav.id); go(s?{v:"kunde",id:s.kundeId}:{v:"kunden"}); return; }
   if(nav.v==="kunde"){ go({v:"kunden"}); return; }
   if(MEHR_SUB[nav.v]){ go({v:"mehr"}); return; }

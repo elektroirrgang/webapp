@@ -2702,6 +2702,7 @@ function oeffne(id){ const p=DB.pruefungen.get(id); if(!p||p.deleted) return; cu
   fotoFetch(cur.s.flatMap(fotoIds)); go({v:"projekt"}); }
 function zurueck(){
   saveNow();
+  if(nav.zur&&!EDITOR.includes(nav.v)){ go(nav.zur); return; }   /* nach einem Scan: zurück dorthin, wo gescannt wurde */
   if(nav.v==="saeule"){ go({v:"saeulen"}); return; }
   if(EDITOR.includes(nav.v)){ const back=cur.ladeparkId&&ladeparkOf(cur.ladeparkId)?{v:"ladepark",id:cur.ladeparkId}:standortOf(cur.standortId)?{v:"standort",id:cur.standortId}:kOrt(cur.standortId)&&kundeOf(cur.kundeId)?{v:"kunde",id:cur.kundeId}:{v:"start"}; cur=null; go(back); return; }
   if(nav.v==="ladepark"){ const l=ladeparkOf(nav.id); go(l?{v:"standort",id:l.standortId}:{v:"kunden"}); return; }
