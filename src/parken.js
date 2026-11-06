@@ -30,7 +30,7 @@ function parkZustand(){ const P=parkLaden(); if(!P) return null; const rest=P.en
 function parkKarte(r,kind){ const p=parkVon(r), P=parkLaden(), meins=!!(P&&P.id===r.id&&P.k===kind);
   if(!p.art&&!meins) return "";
   const art=meins?P.art:p.art, min=p.min||120;
-  const kopf=`<div class="park-kopf"><span class="park-av">${parkSvg()}</span><span class="park-tx"><b>${esc(parkTitel(r,art))}${art!=="frei"?` · höchstens ${esc(parkDauer(meins?P.min:min))}`:""}</b>${p.notiz?`<small>${esc(p.notiz)}</small>`:""}</span></div>`;
+  const kopf=`<div class="park-kopf"><span class="park-av">${parkSvg()}</span><span class="park-tx"><b>${esc(parkTitel(r,art))}${art!=="frei"?` · höchstens ${esc(parkDauer(meins?P.min:min))}`:""}</b>${p.notiz?`<small>${esc(p.notiz)}</small>`:""}${r.park_von?`<small class="park-von">Hinweis von ${esc(r.park_von)}${r.park_am?` · ${esc(new Date(r.park_am).toLocaleDateString("de-DE"))}`:""}</small>`:""}</span>${meins?"":`<button type="button" class="park-ed" data-act="parkQ" data-kind="${kind}" data-id="${esc(r.id)}" aria-label="Parkhinweis ändern" title="Parkhinweis ändern">${icon("edit")}</button>`}</div>`;
   let unten="";
   if(meins){ const rest=P.ende-Date.now(), warn=rest<=PARK_VOR, ges=Math.max(1,P.ende-P.start);
     unten=`<div class="park-lauf"><div class="park-zeit"><b id="parkRest">${rest>0?`noch ${parkRest(rest)}`:`abgelaufen seit ${parkRest(rest)}`}</b><small>${P.art==="scheibe"?`Scheibe ${parkUhr(P.scheibe)} · `:""}bis ${parkUhr(P.ende)}</small></div>
@@ -107,3 +107,86 @@ function parkDlgFelder(d,r){ const fg=d&&d.querySelector(".fg1"); if(!fg) return
 function parkDlgAnwenden(art){ const d=document.getElementById("dlg"); if(!d) return; const m=d.querySelector(".kd-park-min"), n=d.querySelector(".kd-park-notiz");
   if(m) m.hidden=!(art==="scheibe"||art==="automat"); if(n) n.hidden=!art;
   const h=d.querySelector('input[type=hidden][data-f="park_min"]'); if(h&&(art==="scheibe"||art==="automat")&&!h.value){ const on=d.querySelector('.kd-park-min [aria-pressed="true"]'); h.value=on?on.dataset.v:"120"; } }
+
+/* ===== Parkhinweis ohne Bearbeiten-Rechte (Max 06.11.2026): jeder Kollege kann vor Ort eintragen, was auf dem Schild steht =====
+   Zeile in den Eckdaten („Parken · noch nichts hinterlegt“) bzw. Stift an der Parkkarte öffnen ein kleines Fenster.
+   Dazu „In der Nähe suchen“: Parkplätze und Straßenränder aus OpenStreetMap (Overpass) im Umkreis von 400 m mit dem, was dort
+   eingetragen ist (kostenlos, Parkschein, Parkscheibe, Höchstdauer). Oft ist nichts eingetragen – dann steht „Regel unbekannt“. */
+function parkZeile(r,kind){ if(!r||!["kunden","standorte"].includes(kind)||parkVon(r).art||typeof ME==="undefined"||!ME.signedIn&&typeof SYNC_ON!=="undefined"&&SYNC_ON) return "";
+  return `<button type="button" class="dz dz-park" data-act="parkQ" data-kind="${kind}" data-id="${esc(r.id)}"><span class="dz-ic">${parkSvg()}</span><span class="dz-t"><small>Parken</small><span>Noch nichts hinterlegt · eintragen</span></span>${icon("chev")}</button>`; }
+const PARK_Q={kind:"",id:"",art:"",min:"120",nah:null,lade:false};
+function parkQDlg(kind,id){ const r=DB[kind]&&DB[kind].get(id); if(!r) return; const p=parkVon(r);
+  if(PARK_Q.id!==id||PARK_Q.kind!==kind) Object.assign(PARK_Q,{kind,id,art:p.art||"",min:String(p.min||120),nah:null,lade:false});
+  dialog("Parken",`<p class="ec-sub" style="margin:0 4px 12px">Gilt für alle Kollegen bei ${esc(r.name||"diesem Ort")}.</p>
+    <div class="leg-eti-opt park-q">
+      <div class="leg-eti-z"><span class="lbl">Hier gilt</span><div class="chips">${PARK_ARTEN.filter(x=>x[0]).map(([v,t])=>`<button type="button" class="chip" data-act="parkQW" data-v="${v}" aria-pressed="${PARK_Q.art===v}">${t}</button>`).join("")}</div></div>
+      <div class="leg-eti-z" id="parkQMin"${PARK_Q.art==="scheibe"||PARK_Q.art==="automat"?"":" hidden"}><span class="lbl">Höchstens</span><div class="chips">${PARK_MIN.map(([v,t])=>`<button type="button" class="chip" data-act="parkQM" data-v="${v}" aria-pressed="${PARK_Q.min===v}">${t}</button>`).join("")}</div></div></div>
+    ${tf("park_notiz","Wo parken? (optional)",p.notiz,{form:true,ph:"z. B. Hof hinter dem Haus"})}
+    <div class="park-nah" id="parkNah">${parkNahHtml()}</div>`,
+    `${p.art?`<button class="btn-text danger" data-act="parkQWeg">Hinweis entfernen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="parkQOk">Speichern</button>`);
+  setTimeout(()=>{ const a=document.activeElement; if(a&&a.id==="f_park_notiz") a.blur(); },80); }
+function parkNahHtml(){ const N=PARK_Q.nah;
+  if(PARK_Q.lade) return `<div class="lbl">In der Nähe</div><p class="meta park-nah-t">Suche in OpenStreetMap …</p>`;
+  if(!N) return `<button type="button" class="park-such" data-act="parkNahSuchen">${parkSvg()}<span>Parkplätze in der Nähe suchen</span></button>`;
+  if(N.fehler) return `<div class="lbl">In der Nähe</div><p class="meta park-nah-t">${esc(N.fehler)}</p><button type="button" class="park-such" data-act="parkNahSuchen">${parkSvg()}<span>Nochmal suchen</span></button>`;
+  if(!N.L.length) return `<div class="lbl">In der Nähe</div><p class="meta park-nah-t">Im Umkreis von 400 m ist in OpenStreetMap kein Parkplatz eingetragen. Vor Ort aufs Schild schauen und oben eintragen.</p>`;
+  return `<div class="lbl">In der Nähe · aus OpenStreetMap</div>${N.L.map((x,i)=>`<div class="park-nz"><span class="park-nz-t"><b>${esc(x.titel)}</b><small>${esc([x.m+" m",x.info||"Regel unbekannt"].join(" · "))}</small></span><button type="button" class="park-b" data-act="parkNahNimm" data-i="${i}">Übernehmen</button></div>`).join("")}
+    <p class="meta park-nah-t">Nicht immer vollständig oder aktuell – vor Ort das Schild gilt.</p>`; }
+/* Overpass: alle Server gleichzeitig, die erste brauchbare Antwort zählt (wie die Anhaltspunkte der Karte) */
+function parkOverpass(q){ const SRV=["https://overpass-api.de/api/interpreter","https://overpass.private.coffee/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
+  const ov=u=>new Promise((ok,no)=>{ const ab=new AbortController(), t=setTimeout(()=>ab.abort(),12000);
+    fetch(u,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"},signal:ab.signal}).then(r=>r.ok?r.json():Promise.reject(r.status))
+      .then(j=>{ if(j&&Array.isArray(j.elements)&&!(j.remark&&/error|timeout|busy|out of memory/i.test(j.remark))) ok(j); else no(0); }).catch(no).finally(()=>clearTimeout(t)); });
+  return new Promise(ok=>{ let offen=SRV.length; SRV.forEach(u=>ov(u).then(ok,()=>{ if(!--offen) ok(null); })); }); }
+/* „2 hours“, „90 minutes“, „1:30“, „2 h“ → Minuten */
+function parkMaxstay(v){ v=String(v||"").trim().toLowerCase(); if(!v||v==="no"||v==="unlimited") return 0; let m;
+  if((m=v.match(/^(\d+):(\d\d)$/))) return +m[1]*60+ +m[2];
+  if((m=v.match(/^([\d.,]+)\s*(h|hours?|std)/))) return Math.round(parseFloat(m[1].replace(",","."))*60);
+  if((m=v.match(/^(\d+)\s*(min|minutes?)/))) return +m[1]; return 0; }
+/* Tags eines Parkplatzes oder Straßenrands deuten → {art, min, info} */
+function parkDeuten(t,strasse){ const W=Object.entries(t), hat=(re,v)=>W.some(([k,x])=>re.test(k)&&(v?v.test(String(x)):true));
+  let art="", min=0;
+  const pre=strasse?/^parking:(both|left|right)/:/^/;
+  if(hat(strasse?/^parking:(both|left|right)(:[a-z_]+)*:authentication:disc$/:/^authentication:disc$/,/^yes$/)||hat(/^parking:condition(:(both|left|right))?$/,/disc/)||hat(/^parking:(both|left|right)(:[a-z_]+)*:restriction$/,/disc/)) art="scheibe";
+  else if(hat(strasse?/^parking:(both|left|right)(:[a-z_]+)*:fee$/:/^fee$/,/^yes$/)||hat(/^parking:condition(:(both|left|right))?$/,/ticket|fee/)) art="automat";
+  else if(hat(strasse?/^parking:(both|left|right)(:[a-z_]+)*:fee$/:/^fee$/,/^no$/)||hat(/^parking:condition(:(both|left|right))?$/,/^free$/)) art="frei";
+  W.forEach(([k,x])=>{ if(!min&&(strasse?/^parking:(both|left|right)(:[a-z_]+)*:maxstay$|^parking:condition(:(both|left|right))?:maxstay$/:/^maxstay$/).test(k)) min=parkMaxstay(x); });
+  const kunden=!strasse&&t.access==="customers";
+  const info=[art==="scheibe"?"Parkscheibe":art==="automat"?"Parkschein":art==="frei"?"kostenlos":"",min?"höchstens "+parkDauer(min):"",kunden?"nur für Kunden":""].filter(Boolean).join(" · ");
+  return {art,min,info}; }
+async function parkNahSuchen(){ const r=DB[PARK_Q.kind]&&DB[PARK_Q.kind].get(PARK_Q.id); if(!r) return; const el=()=>document.getElementById("parkNah");
+  const adr=typeof adrText==="function"?adrText(r):""; if(!adr){ PARK_Q.nah={fehler:"Ohne Adresse kann ich nicht suchen."}; if(el()) el().innerHTML=parkNahHtml(); return; }
+  PARK_Q.lade=true; if(el()) el().innerHTML=parkNahHtml();
+  let g=null; try{ g=typeof karteGeo==="function"?await karteGeo(adr):null; }catch(e){}
+  if(!g||g.nix){ PARK_Q.lade=false; PARK_Q.nah={fehler:"Die Adresse wurde auf der Karte nicht gefunden."}; if(el()) el().innerHTML=parkNahHtml(); return; }
+  const q=`[out:json][timeout:15];(nwr(around:400,${g.lat},${g.lon})["amenity"="parking"];way(around:200,${g.lat},${g.lon})["highway"][~"^parking:"~"."];);out center tags 80;`;
+  const j=await parkOverpass(q); PARK_Q.lade=false;
+  if(!j){ PARK_Q.nah={fehler:"OpenStreetMap antwortet gerade nicht (Server ausgelastet oder kein Netz)."}; if(el()) el().innerHTML=parkNahHtml(); return; }
+  const d=(lat,lon)=>Math.round(Math.hypot((lat-g.lat)*111000,(lon-g.lon)*111000*Math.cos(g.lat*Math.PI/180))/10)*10;
+  const L=[], gesehen=new Set();
+  (j.elements||[]).forEach(e=>{ const t=e.tags||{}, lat=e.lat||(e.center&&e.center.lat), lon=e.lon||(e.center&&e.center.lon); if(!lat) return;
+    const strasse=!t.amenity; if(!strasse&&(t.access==="private"||t.access==="no")) return;
+    if(strasse&&!Object.entries(t).some(([k,x])=>/^parking:(both|left|right|lane:(both|left|right))$/.test(k)&&/lane|street_side|on_kerb|half_on_kerb|shoulder|parallel|diagonal|perpendicular|marked|yes/.test(x))) return;
+    const D=parkDeuten(t,strasse), typ=t.parking==="multi-storey"?"Parkhaus":t.parking==="underground"?"Tiefgarage":t.parking==="street_side"||t.parking==="lane"?"Parkbucht":"Parkplatz";
+    const titel=strasse?`Straßenrand ${t.name||""}`.trim():t.name?`${typ} ${t.name}`:typ;
+    const key=titel+"|"+D.info; if(gesehen.has(key)) return; gesehen.add(key);
+    L.push({titel,m:d(lat,lon),...D}); });
+  L.sort((a,b)=>(!!b.info-!!a.info)||a.m-b.m);
+  PARK_Q.nah={L:L.slice(0,8)}; if(el()) el().innerHTML=parkNahHtml(); }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="parkQ"],[data-act="parkQW"],[data-act="parkQM"],[data-act="parkQOk"],[data-act="parkQWeg"],[data-act="parkNahSuchen"],[data-act="parkNahNimm"]'); if(!b) return;
+  e.stopImmediatePropagation(); e.preventDefault(); const a=b.dataset.act, d=document.getElementById("dlg");
+  const wahl=()=>{ d.querySelectorAll('[data-act="parkQW"]').forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===PARK_Q.art))); d.querySelectorAll('[data-act="parkQM"]').forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===PARK_Q.min)));
+    const m=document.getElementById("parkQMin"); if(m) m.hidden=!(PARK_Q.art==="scheibe"||PARK_Q.art==="automat"); };
+  if(a==="parkQ"){ PARK_Q.id=""; parkQDlg(b.dataset.kind,b.dataset.id); return; }
+  if(a==="parkQW"){ PARK_Q.art=b.dataset.v; wahl(); return; }
+  if(a==="parkQM"){ PARK_Q.min=b.dataset.v; wahl(); return; }
+  if(a==="parkNahSuchen"){ parkNahSuchen(); return; }
+  if(a==="parkNahNimm"){ const x=PARK_Q.nah&&PARK_Q.nah.L[+b.dataset.i]; if(!x) return; if(x.art) PARK_Q.art=x.art; if(x.min&&PARK_MIN.some(m=>+m[0]===x.min)) PARK_Q.min=String(x.min); else if(x.min) PARK_Q.min=String(x.min);
+    const n=document.getElementById("f_park_notiz"); if(n){ n.value=`${x.titel}, ca. ${x.m} m`; n.dispatchEvent(new Event("input",{bubbles:true})); n.closest(".tf")&&n.closest(".tf").classList.add("fl"); }
+    wahl(); if(!x.art&&typeof toast==="function") toast("Regel unbekannt – oben auswählen, was auf dem Schild steht"); return; }
+  if(a==="parkQOk"||a==="parkQWeg"){ const r=DB[PARK_Q.kind]&&DB[PARK_Q.kind].get(PARK_Q.id); if(!r) return; const n=document.getElementById("f_park_notiz");
+    if(a==="parkQOk"&&!PARK_Q.art){ if(typeof toast==="function") toast("Bitte auswählen, was hier gilt"); return; }
+    if(a==="parkQWeg"){ ["park_art","park_min","park_notiz","park_von","park_am"].forEach(k=>delete r[k]); }
+    else Object.assign(r,{park_art:PARK_Q.art,park_min:PARK_Q.art==="scheibe"||PARK_Q.art==="automat"?PARK_Q.min:"",park_notiz:n?n.value.trim():"",park_von:(typeof ME!=="undefined"&&(ME.name||ME.mail))||"",park_am:Date.now()});
+    saveRec(PARK_Q.kind,r); PARK_Q.id=""; if(typeof closeOverlays==="function") closeOverlays(); if(typeof render==="function") render(); if(typeof toast==="function") toast(a==="parkQWeg"?"Parkhinweis entfernt":"Parkhinweis gespeichert – gilt für alle"); return; }
+},true);

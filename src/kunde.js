@@ -13,7 +13,7 @@ function infoKarte(r,kind){
   const art=kind==="kunden"?`${KD_ART_LANG[kdArt(r)]}${r.art?"":" (vorgeschlagen)"}${kdArt(r)==="privat"&&kdAnrede(r)?` · ${kdAnrede(r)} ${r.nachname||""}`.trimEnd():""}`:"";
   const zeilen=[z("firma","Kundenart",art),z("tag","Kundennummer",r.kdnr),z("ort","Adresse",adr),
     T.map(x=>`<a class="dz dz-tel" href="tel:${esc(x.nr.replace(/[^\d+]/g,""))}"><span class="dz-ic">${icon("phone")}</span><span class="dz-t"><small>${esc(T.length>1||kind!=="kunden"?x.art:"Telefon · "+x.art)}</small><span>${esc(x.nr)}</span></span></a>`).join(""),z("mail","E-Mail",r.mail),
-    z("globe",r.web?"Webseite":"Webseite (aus der E-Mail-Adresse)",r.web?webText(r.web):vorschlag),z("notes","Notiz",r.notiz)].join("");
+    z("globe",r.web?"Webseite":"Webseite (aus der E-Mail-Adresse)",r.web?webText(r.web):vorschlag),z("notes","Notiz",r.notiz),typeof parkZeile==="function"?parkZeile(r,kind):""].join("");
   if(!aktionen.length&&!zeilen) return "";
   return `<div class="infok2">${aktionen.length?`<div class="qa-row">${aktionen.join("")}</div>`:""}${zeilen?`<div class="dz-list">${zeilen}</div>`:""}</div>`;
 }
