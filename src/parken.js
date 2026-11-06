@@ -154,7 +154,7 @@ function parkDeuten(t,strasse){ const W=Object.entries(t), hat=(re,v)=>W.some(([
   W.forEach(([k,x])=>{ if(!min&&(strasse?/^parking:(both|left|right)(:[a-z_]+)*:maxstay$|^parking:condition(:(both|left|right))?:maxstay$/:/^maxstay$/).test(k)) min=parkMaxstay(x); });
   const kunden=!strasse&&t.access==="customers";
   const info=[art==="scheibe"?"Parkscheibe":art==="automat"?"Parkschein":art==="frei"?"kostenlos":"",min?"höchstens "+parkDauer(min):"",kunden?"nur für Kunden":""].filter(Boolean).join(" · ");
-  return {art,min,info}; }
+  return {art,min,info,kunden}; }
 /* 06.11.2026 nachgemessen (aus der App heraus): overpass-api.de antwortet mit 406, die Spiegel brauchen 20 s oder mehr bzw. gar nicht.
    Darum: Parkplätze über Nominatim (0,4 s, liefert die Tags als extratags), Straßenränder zusätzlich über Overpass im Hintergrund – kommen sie, werden sie ergänzt. */
 async function parkNahSuchen(){ const r=DB[PARK_Q.kind]&&DB[PARK_Q.kind].get(PARK_Q.id); if(!r) return; const el=()=>document.getElementById("parkNah"), zeig=()=>{ if(el()) el().innerHTML=parkNahHtml(); };
@@ -171,7 +171,9 @@ async function parkNahSuchen(){ const r=DB[PARK_Q.kind]&&DB[PARK_Q.kind].get(PAR
     const D=parkDeuten(t,strasse), typ=t.parking==="multi-storey"?"Parkhaus":t.parking==="underground"?"Tiefgarage":t.parking==="street_side"||t.parking==="lane"?"Parkbucht":"Parkplatz";
     const titel=strasse?`Straßenrand ${t.name||""}`.trim():t.name?`${typ} ${t.name}`:(strName?`${typ} ${strName}`:typ);
     const key=titel+"|"+D.info; if(gesehen.has(key)) return; gesehen.add(key); L.push({titel,m,...D}); };
-  const fertig=()=>{ L.sort((a,b)=>(!!b.info-!!a.info)||a.m-b.m); PARK_Q.nah={L:L.slice(0,8),strasse:PARK_Q.nah&&PARK_Q.nah.strasse}; };
+  /* Reihenfolge: öffentlich mit bekannter Regel, öffentlich ohne Regel, Kundenparkplätze (Supermarkt usw.) zuletzt – dort dürfen Handwerker eigentlich nicht stehen */
+  const rang=x=>x.kunden?2:x.info?0:1;
+  const fertig=()=>{ L.sort((a,b)=>rang(a)-rang(b)||a.m-b.m); PARK_Q.nah={L:L.slice(0,8),strasse:PARK_Q.nah&&PARK_Q.nah.strasse}; };
   /* 1. Parkplätze: Nominatim im Ausschnitt ±500 m */
   const dy=.0045, dx=dy/Math.cos(g.lat*Math.PI/180);
   let nj=null; try{ const ab=new AbortController(), t=setTimeout(()=>ab.abort(),12000);
