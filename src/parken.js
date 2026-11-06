@@ -129,12 +129,13 @@ function parkNahHtml(){ const N=PARK_Q.nah;
   if(PARK_Q.lade) return `<div class="lbl">In der Nähe</div><p class="meta park-nah-t">Suche in OpenStreetMap …</p>`;
   if(!N) return `<button type="button" class="park-such" data-act="parkNahSuchen">${parkSvg()}<span>Parkplätze in der Nähe suchen</span></button>`;
   if(N.fehler) return `<div class="lbl">In der Nähe</div><p class="meta park-nah-t">${esc(N.fehler)}</p><button type="button" class="park-such" data-act="parkNahSuchen">${parkSvg()}<span>Nochmal suchen</span></button>`;
-  if(!N.L.length) return `<div class="lbl">In der Nähe</div><p class="meta park-nah-t">Im Umkreis von 400 m ist in OpenStreetMap kein Parkplatz eingetragen. Vor Ort aufs Schild schauen und oben eintragen.</p>`;
+  const st=N.strasse==="läuft"?`<p class="meta park-nah-t">Straßenränder werden noch gesucht …</p>`:"";
+  if(!N.L.length) return `<div class="lbl">In der Nähe</div><p class="meta park-nah-t">${N.strasse==="läuft"?"Bisher kein Parkplatz gefunden.":"Im Umkreis von 500 m ist in OpenStreetMap kein Parkplatz eingetragen. Vor Ort aufs Schild schauen und oben eintragen."}</p>${st}`;
   return `<div class="lbl">In der Nähe · aus OpenStreetMap</div>${N.L.map((x,i)=>`<div class="park-nz"><span class="park-nz-t"><b>${esc(x.titel)}</b><small>${esc([x.m+" m",x.info||"Regel unbekannt"].join(" · "))}</small></span><button type="button" class="park-b" data-act="parkNahNimm" data-i="${i}">Übernehmen</button></div>`).join("")}
-    <p class="meta park-nah-t">Nicht immer vollständig oder aktuell – vor Ort das Schild gilt.</p>`; }
+    ${st}<p class="meta park-nah-t">Nicht immer vollständig oder aktuell – vor Ort das Schild gilt.</p>`; }
 /* Overpass: alle Server gleichzeitig, die erste brauchbare Antwort zählt (wie die Anhaltspunkte der Karte) */
 function parkOverpass(q){ const SRV=["https://overpass-api.de/api/interpreter","https://overpass.private.coffee/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
-  const ov=u=>new Promise((ok,no)=>{ const ab=new AbortController(), t=setTimeout(()=>ab.abort(),12000);
+  const ov=u=>new Promise((ok,no)=>{ const ab=new AbortController(), t=setTimeout(()=>ab.abort(),25000);
     fetch(u,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"},signal:ab.signal}).then(r=>r.ok?r.json():Promise.reject(r.status))
       .then(j=>{ if(j&&Array.isArray(j.elements)&&!(j.remark&&/error|timeout|busy|out of memory/i.test(j.remark))) ok(j); else no(0); }).catch(no).finally(()=>clearTimeout(t)); });
   return new Promise(ok=>{ let offen=SRV.length; SRV.forEach(u=>ov(u).then(ok,()=>{ if(!--offen) ok(null); })); }); }
@@ -154,25 +155,39 @@ function parkDeuten(t,strasse){ const W=Object.entries(t), hat=(re,v)=>W.some(([
   const kunden=!strasse&&t.access==="customers";
   const info=[art==="scheibe"?"Parkscheibe":art==="automat"?"Parkschein":art==="frei"?"kostenlos":"",min?"höchstens "+parkDauer(min):"",kunden?"nur für Kunden":""].filter(Boolean).join(" · ");
   return {art,min,info}; }
-async function parkNahSuchen(){ const r=DB[PARK_Q.kind]&&DB[PARK_Q.kind].get(PARK_Q.id); if(!r) return; const el=()=>document.getElementById("parkNah");
-  const adr=typeof adrText==="function"?adrText(r):""; if(!adr){ PARK_Q.nah={fehler:"Ohne Adresse kann ich nicht suchen."}; if(el()) el().innerHTML=parkNahHtml(); return; }
-  PARK_Q.lade=true; if(el()) el().innerHTML=parkNahHtml();
+/* 06.11.2026 nachgemessen (aus der App heraus): overpass-api.de antwortet mit 406, die Spiegel brauchen 20 s oder mehr bzw. gar nicht.
+   Darum: Parkplätze über Nominatim (0,4 s, liefert die Tags als extratags), Straßenränder zusätzlich über Overpass im Hintergrund – kommen sie, werden sie ergänzt. */
+async function parkNahSuchen(){ const r=DB[PARK_Q.kind]&&DB[PARK_Q.kind].get(PARK_Q.id); if(!r) return; const el=()=>document.getElementById("parkNah"), zeig=()=>{ if(el()) el().innerHTML=parkNahHtml(); };
+  const id=PARK_Q.id;
+  const adr=typeof adrText==="function"?adrText(r):""; if(!adr){ PARK_Q.nah={fehler:"Ohne Adresse kann ich nicht suchen."}; zeig(); return; }
+  PARK_Q.lade=true; zeig();
   let g=null; try{ g=typeof karteGeo==="function"?await karteGeo(adr):null; }catch(e){}
-  if(!g||g.nix){ PARK_Q.lade=false; PARK_Q.nah={fehler:"Die Adresse wurde auf der Karte nicht gefunden."}; if(el()) el().innerHTML=parkNahHtml(); return; }
-  const q=`[out:json][timeout:15];(nwr(around:400,${g.lat},${g.lon})["amenity"="parking"];way(around:200,${g.lat},${g.lon})["highway"][~"^parking:"~"."];);out center tags 80;`;
-  const j=await parkOverpass(q); PARK_Q.lade=false;
-  if(!j){ PARK_Q.nah={fehler:"OpenStreetMap antwortet gerade nicht (Server ausgelastet oder kein Netz)."}; if(el()) el().innerHTML=parkNahHtml(); return; }
-  const d=(lat,lon)=>Math.round(Math.hypot((lat-g.lat)*111000,(lon-g.lon)*111000*Math.cos(g.lat*Math.PI/180))/10)*10;
+  if(!g||g.nix){ PARK_Q.lade=false; PARK_Q.nah={fehler:"Die Adresse wurde auf der Karte nicht gefunden."}; zeig(); return; }
+  const dist=(lat,lon)=>Math.round(Math.hypot((lat-g.lat)*111000,(lon-g.lon)*111000*Math.cos(g.lat*Math.PI/180))/10)*10;
   const L=[], gesehen=new Set();
-  (j.elements||[]).forEach(e=>{ const t=e.tags||{}, lat=e.lat||(e.center&&e.center.lat), lon=e.lon||(e.center&&e.center.lon); if(!lat) return;
-    const strasse=!t.amenity; if(!strasse&&(t.access==="private"||t.access==="no")) return;
+  const dazu=(t,lat,lon,strasse,strName)=>{ if(!lat) return; const m=dist(+lat,+lon); if(m>500) return;
+    if(!strasse&&(t.access==="private"||t.access==="no")) return;
     if(strasse&&!Object.entries(t).some(([k,x])=>/^parking:(both|left|right|lane:(both|left|right))$/.test(k)&&/lane|street_side|on_kerb|half_on_kerb|shoulder|parallel|diagonal|perpendicular|marked|yes/.test(x))) return;
     const D=parkDeuten(t,strasse), typ=t.parking==="multi-storey"?"Parkhaus":t.parking==="underground"?"Tiefgarage":t.parking==="street_side"||t.parking==="lane"?"Parkbucht":"Parkplatz";
-    const titel=strasse?`Straßenrand ${t.name||""}`.trim():t.name?`${typ} ${t.name}`:typ;
-    const key=titel+"|"+D.info; if(gesehen.has(key)) return; gesehen.add(key);
-    L.push({titel,m:d(lat,lon),...D}); });
-  L.sort((a,b)=>(!!b.info-!!a.info)||a.m-b.m);
-  PARK_Q.nah={L:L.slice(0,8)}; if(el()) el().innerHTML=parkNahHtml(); }
+    const titel=strasse?`Straßenrand ${t.name||""}`.trim():t.name?`${typ} ${t.name}`:(strName?`${typ} ${strName}`:typ);
+    const key=titel+"|"+D.info; if(gesehen.has(key)) return; gesehen.add(key); L.push({titel,m,...D}); };
+  const fertig=()=>{ L.sort((a,b)=>(!!b.info-!!a.info)||a.m-b.m); PARK_Q.nah={L:L.slice(0,8),strasse:PARK_Q.nah&&PARK_Q.nah.strasse}; };
+  /* 1. Parkplätze: Nominatim im Ausschnitt ±500 m */
+  const dy=.0045, dx=dy/Math.cos(g.lat*Math.PI/180);
+  let nj=null; try{ const ab=new AbortController(), t=setTimeout(()=>ab.abort(),12000);
+    nj=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&amenity=parking&bounded=1&limit=40&extratags=1&addressdetails=1&accept-language=de&countrycodes=de&viewbox=${g.lon-dx},${g.lat+dy},${g.lon+dx},${g.lat-dy}`,{signal:ab.signal}).then(x=>x.ok?x.json():null); clearTimeout(t); }catch(e){}
+  if(PARK_Q.id!==id) return;
+  PARK_Q.lade=false;
+  if(Array.isArray(nj)) nj.forEach(x=>dazu({...(x.extratags||{}),amenity:"parking",...(x.name?{name:x.name}:{})},x.lat,x.lon,false,x.address&&(x.address.road||x.address.pedestrian||x.address.square)));
+  PARK_Q.nah={strasse:"läuft"}; fertig(); if(!Array.isArray(nj)&&!L.length) PARK_Q.nah.fehler="";
+  zeig();
+  /* 2. Straßenränder: Overpass im Hintergrund */
+  const q=`[out:json][timeout:20];way(around:200,${g.lat},${g.lon})["highway"][~"^parking:"~"."];out center tags 60;`;
+  const j=await parkOverpass(q); if(PARK_Q.id!==id) return;
+  (j&&j.elements||[]).forEach(e=>dazu(e.tags||{},e.center&&e.center.lat,e.center&&e.center.lon,true));
+  PARK_Q.nah={strasse:j?"ok":"weg"}; fertig();
+  if(!Array.isArray(nj)&&!j){ PARK_Q.nah={fehler:"Die Kartendienste antworten gerade nicht. Später nochmal versuchen."}; }
+  zeig(); }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="parkQ"],[data-act="parkQW"],[data-act="parkQM"],[data-act="parkQOk"],[data-act="parkQWeg"],[data-act="parkNahSuchen"],[data-act="parkNahNimm"]'); if(!b) return;
   e.stopImmediatePropagation(); e.preventDefault(); const a=b.dataset.act, d=document.getElementById("dlg");
   const wahl=()=>{ d.querySelectorAll('[data-act="parkQW"]').forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===PARK_Q.art))); d.querySelectorAll('[data-act="parkQM"]').forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===PARK_Q.min)));
