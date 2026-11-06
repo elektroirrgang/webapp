@@ -521,7 +521,7 @@ function legEtiStreifen(L){ legEtiCfg(L); const n=+L.teReihe||12;
 const legEtiChip=(k,v,t)=>`<button type="button" class="chip" data-act="legEtiW" data-k="${k}" data-v="${v}" aria-pressed="${String(LE[k])===String(v)}">${t}</button>`;
 const legEtiWahl=()=>`<div class="leg-eti-opt">
     <div class="leg-eti-z"><span class="lbl">Text</span><div class="chips">${legEtiChip("inh","bez","Bezeichnung")}${legEtiChip("inh","kz","Kennzeichnung")}${legEtiChip("inh","beide","Beides")}</div></div>
-    <div class="leg-eti-z"><span class="lbl">Band</span><div class="chips">${legEtiChip("band",9,"9 mm")}${legEtiChip("band",12,"12 mm")}</div></div>
+    <div class="leg-eti-z"><span class="lbl">Band</span><div class="chips">${[9,12,18,24].map(b=>legEtiChip("band",b,b+" mm")).join("")}</div></div>
     <div class="leg-eti-z"><span class="lbl">Breite je TE</span><div class="chips">${legEtiChip("te",17.5,"17,5 mm")}${legEtiChip("te",18,"18 mm")}</div></div></div>`;
 function legEtiKarte(L){ if(typeof ecLbxs!=="function"||!legE(L).some(e=>e.art!=="gr")) return ""; const ST=legEtiStreifen(L); if(!ST.length) return "";
   return `<section class="card leg-eti-k"><h3>Beschriftungsstreifen</h3>
@@ -534,7 +534,7 @@ function legEtiDlg(){ const L=legAkt(); if(!L) return; const ST=legEtiStreifen(L
     ${legEtiWahl()}
     <div class="lbl" style="margin-top:14px">Vorschau · ${ST.length} Streifen</div>
     <div class="ec-baender leg-eti-l">${ST.map(st=>`<div class="ec-bd"><div class="ec-bd-k">Reihe ${st.nr} · ${st.te} TE · ${ecEtiMm(st.p,st.mm)} × ${st.p.band} mm</div><div class="leg-eti-v">${ecEtiSvg(st.p,st.T)}</div></div>`).join("")}</div>
-    ${(()=>{ const z=LE.band>=12?6.5:9, lang=ST.reduce((a,st)=>a+st.T.filter((t,i)=>t.length>z*st.p.mult[i]*LE.te/17.5).length,0);
+    ${(()=>{ const z=90/((EC_BAND[LE.band]||EC_BAND[9]).schrift), lang=ST.reduce((a,st)=>a+st.T.filter((t,i)=>t.length>z*st.p.mult[i]*LE.te/17.5).length,0);
       return lang?`<p class="ec-hinweis">${icon("warn")}<span>${lang===1?"Ein Text ist":`${lang} Texte sind`} zu lang für das Feld und ${lang===1?"wird":"werden"} sehr klein gedruckt. Kürzere Bezeichnung wählen oder „Kennzeichnung“ drucken.</span></p>`:""; })()}
     <p class="meta" style="margin:8px 4px 0">Lange Texte verkleinert die App automatisch. Je Reihe kommt eine Datei.</p>
     <details class="ec-eti-hilfe"><summary>So druckst du in der App</summary><ol><li>„Teilen“ tippen und „Pro Label Tool“ wählen – oder herunterladen und in der App unter „Öffnen“ laden.</li><li>Blöcke, Breiten und Texte sind schon eingestellt, nur noch drucken.</li><li>Streifen am Anfang der Reihe ansetzen – freie Plätze am Ende bleiben leer.</li></ol></details>`,

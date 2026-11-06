@@ -11,8 +11,10 @@ function qrTreffer(c){ const t=qrAlle().get(c);
   if(!t) return {titel:"Neuer Aufkleber",sub:"Noch keinem Verteiler oder Netzwerkschrank zugeordnet",ic:"neu",knopf:"Zuordnen"};
   const o=ecOrt(t.g.ortId); return {titel:t.x.name||qrArtName(t),sub:[qrArtName(t),o.titel].filter(Boolean).join(" · "),ic:t.art==="schrank"?"schrank":"vt",knopf:"Öffnen"}; }
 /* Netzwerkschrank öffnen: in der neuesten Netzwerkprüfung des Objekts, Bereich „Infrastruktur“ */
+/* Nach dem Scan führt „Zurück“ dorthin, wo man gescannt hat (bzw. zur Startseite der App) – nicht durch Kunde und Kundenliste (Max 06.11.2026) */
+const qrVorher=()=>{ if(typeof nav==="undefined"||!nav||!nav.v||nav.v==="login") return null; return {...nav}; };
 function qrSchrankOeffnen(g,x){ const P=live("echecks").filter(p=>p.ortId===g.ortId&&p.art==="netz").sort((a,b)=>String(b.datum||"").localeCompare(String(a.datum||"")));
-  if(P.length){ if(typeof ecRkTab!=="undefined") ecRkTab="ansicht"; go({v:"ec",id:P[0].id,tab:"infra",schr:x.id}); return; }
+  if(P.length){ if(typeof ecRkTab!=="undefined") ecRkTab="ansicht"; go({v:"ec",id:P[0].id,tab:"infra",schr:x.id,zur:qrVorher()}); return; }
   toast(`Für „${x.name||"Netzwerkschrank"}“ gibt es noch keine Netzwerkprüfung`); }
 /* Art im Link – die öffentliche Seite (q/) hat keine Daten und erkennt so, was sie zeigen soll.
    Ergibt sich automatisch aus der Zuordnung: Netzwerkschrank → &a=netz, Zählerschrank (HV/Zählerschrank) → &a=zs, Unterverteilung → ohne.
@@ -23,7 +25,7 @@ const qrLink=c=>{ const a=qrArt(c); return QR_URL+c+(a?"&a="+a:""); };
 /* ---- Öffnen nach Scan ---- */
 let QR_WARTET="";
 function qrOeffnen(c,nochmal){ c=qrNorm(c); if(!c){ toast("Kein Irrgang-Aufkleber erkannt"); return; }
-  const t=qrAlle().get(c); if(t){ QR_WARTET=""; if(typeof SC_ART!=="undefined") SC_ART="vt"; if(t.art==="schrank") qrSchrankOeffnen(t.g,t.x); else go({v:"vt",g:t.g.id,id:t.v.id,tab:"info"}); return; }
+  const t=qrAlle().get(c); if(t){ QR_WARTET=""; if(typeof SC_ART!=="undefined") SC_ART="vt"; if(t.art==="schrank") qrSchrankOeffnen(t.g,t.x); else go({v:"vt",g:t.g.id,id:t.v.id,tab:"info",zur:qrVorher()}); return; }
   if(!nochmal&&SYNC_ON&&ME.signedIn&&typeof syncNow==="function"){ toast("Aufkleber wird gesucht …"); Promise.resolve(syncNow()).catch(()=>{}).then(()=>qrOeffnen(c,true)); return; }
   qrZuDlg(c); }
 /* Aufruf über die Info-Seite: …/echeck/#qr=NUMMER – nach der Anmeldung weiter */

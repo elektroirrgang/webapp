@@ -33,7 +33,7 @@ function qrTreffer(c){ const t=qrAlle().get(c);
   return {titel:qrWbName(t),sub:[t.g.typ,qrWbOrtText(t.sid,t.lid)].filter(Boolean).join(" · "),ic:"wb",knopf:"Öffnen"}; }
 let QR_WARTET="";
 function qrOeffnen(c,nochmal){ c=qrNorm(c); if(!c){ toast("Kein Irrgang-Aufkleber erkannt"); return; }
-  const t=qrAlle().get(c); if(t){ QR_WARTET=""; go(qrWbNav(t)); return; }
+  const t=qrAlle().get(c); if(t){ QR_WARTET=""; const vor=typeof nav!=="undefined"&&nav&&nav.v&&nav.v!=="login"?{...nav}:null; go({...qrWbNav(t),zur:vor}); return; }
   if(!nochmal&&SYNC_ON&&ME.signedIn&&typeof syncNow==="function"){ toast("Aufkleber wird gesucht …"); Promise.resolve(syncNow()).catch(()=>{}).then(()=>qrOeffnen(c,true)); return; }
   qrWbZuDlg(c); }
 /* Aufruf über die Info-Seite: …/evse/#qr=NUMMER – nach der Anmeldung weiter (render() ruft qrNachLogin) */
