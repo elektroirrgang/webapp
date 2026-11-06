@@ -161,9 +161,17 @@ const mlHatMeldungen=()=>typeof mlFilter==="function"&&!!DB.vorgaenge&&[...DB.vo
 function mlGelesenFuer(mid){ const S=mlSt(); let ch=false; meldungen().forEach(x=>{ if(x.id.split(":")[1]===mid&&mlKatVon(x.id)==="meldung"&&!S.gel[x.id]){ S.gel[x.id]=1; ch=true; } }); if(ch){ mlStSpeichern(); mlGlocke(); mlFuellen(); } }
 /* Benachrichtigungen sind eine eigene Seite („meldungen“, in allen Apps mit Glocke) – mehr Platz als das frühere Fenster */
 let ML_VON=null;
+/* Live-Einträge (KNX zu zweit, Parkzeit): eigener Block ganz oben, nicht löschbar */
+function liveBlock(){ const it=[typeof kxLiveEintrag==="function"?kxLiveEintrag():"",typeof parkLiveEintrag==="function"?parkLiveEintrag():""].join("");
+  return it?`<section class="kx-live-sek" aria-label="Live"><div class="kx-live-lbl"><i></i>Live</div>${it}</section>`:""; }
+/* Glocke: grün, solange etwas live läuft; rot pulsierend, wenn etwas zu tun ist (nicht, wenn man gerade auf der passenden Seite steht) */
+function liveGlocke(){ const gl=document.getElementById("glBtn"); if(!gl) return; let live=false, warn=false;
+  if(typeof KX_PROG!=="undefined"&&KX_PROG.rolle&&typeof kxHandy==="function"&&kxHandy()&&!kxImReiter()){ if(KX_PROG.stat&&KX_PROG.stat.warn) warn=true; else live=true; }
+  const p=typeof parkZustand==="function"?parkZustand():null; if(p&&!p.hier){ if(p.warn) warn=true; else live=true; }
+  gl.classList.toggle("kx-gl-warn",warn); gl.classList.toggle("kx-gl-live",live&&!warn); }
 function mlFuellen(){
   const pop=document.getElementById("mlPop"), seite=document.getElementById("mlSeite"); if(!pop&&!seite) return; const S=mlSt(), L=meldungen(), neu=L.filter(m=>!S.gel[m.id]).length;
-  const live=typeof kxLiveMeldung==="function"?kxLiveMeldung():"";
+  const live=liveBlock();
   const zeile=m=>`<div class="ml-it${S.gel[m.id]?"":" neu"}${S.pin[m.id]?" ml-gepinnt":""}" data-act="mlKlick" data-id="${esc(m.id)}" role="button" tabindex="0">${mlAv(m)}
     <span class="ml-tx"><span class="ml-k"><b>${esc(mlName(m))}</b>${S.pin[m.id]?`<span class="ml-pinz" title="Angepinnt">${mlSvg("pin")}</span>`:""}<span class="ml-zeit">${esc(wann(m.t))}</span>${S.gel[m.id]?"":`<i class="ml-punkt" aria-label="ungelesen"></i>`}</span>
       <span class="ml-h">${esc(m.h)}</span>${m.s?`<span class="ml-s">${esc(m.s)}</span>`:""}</span>
