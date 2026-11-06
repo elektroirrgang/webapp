@@ -52,7 +52,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 .ic{width:24px;height:24px;fill:currentColor;flex:none;display:block}
 :focus-visible{outline:2px solid var(--primary);outline-offset:2px}
-.topbar{position:sticky;top:0;z-index:20;background:var(--surface);padding-top:env(safe-area-inset-top,0px);transition:background .2s}
+.topbar{position:sticky;top:0;z-index:20;background:var(--surface);padding-top:var(--sat);transition:background .2s}
 .topbar.scrolled{background:var(--surface);box-shadow:0 1px 0 var(--outline-v)}
 .tb-row{display:flex;align-items:center;gap:4px;height:64px;padding:0 max(4px,env(safe-area-inset-right,0px)) 0 max(4px,env(safe-area-inset-left,0px))}
 .tb-title{flex:1;min-width:0;margin:0 0 0 4px;font-size:20px;font-weight:700;letter-spacing:-.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -82,7 +82,7 @@ body.is-list .tb-title{visibility:hidden}
 .nav-item[aria-current="page"]{color:var(--on-surface)}
 .nav-item[aria-current="page"] .ind{background:var(--sec-c);color:var(--on-sec-c)}
 @media (min-width:744px){
-  .navbar{top:0;right:auto;width:88px;flex-direction:column;justify-content:flex-start;gap:12px;padding:calc(env(safe-area-inset-top,0px) + 8px) 0 calc(env(safe-area-inset-bottom,0px) + 20px) env(safe-area-inset-left,0px);background:var(--sc);transition:width .2s}
+  .navbar{top:0;right:auto;width:88px;flex-direction:column;justify-content:flex-start;gap:12px;padding:calc(var(--sat) + 8px) 0 calc(env(safe-area-inset-bottom,0px) + 20px) env(safe-area-inset-left,0px);background:var(--sc);transition:width .2s}
   .nav-head{display:flex;align-items:center;gap:8px;height:56px;margin:0 0 20px;justify-content:center}
   .nav-tog{display:grid}
   .nav-head .nav-logo{display:none;height:24px;width:auto}
@@ -217,7 +217,7 @@ body.has-nav main{padding-bottom:calc(184px + env(safe-area-inset-bottom,0px))}
 button.pad{width:100%;height:120px;border:0;padding:0;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px var(--outline-v);display:grid;place-items:center;color:#5a5f68;font-size:14px;font-weight:600;cursor:pointer}
 button.pad span{display:flex;align-items:center;gap:8px}
 button.pad img{max-width:90%;max-height:100px;display:block}
-.sigfull{position:fixed;inset:0;z-index:80;background:var(--surface);display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+.sigfull{position:fixed;inset:0;z-index:80;background:var(--surface);display:flex;flex-direction:column;padding:var(--sat) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 .sf-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--outline-v)}
 .sf-head b{flex:1;text-align:center;font-size:17px}
 .btn-filled.sm{height:40px;padding:0 18px;font-size:14px}
@@ -239,7 +239,7 @@ body.has-nav .fab{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 @media (min-width:744px){.fab{right:24px;bottom:24px!important}body.has-fab #app{padding-bottom:104px}}
 .scrim{position:fixed;inset:0;z-index:40;background:transparent}
 .scrim.dim{background:var(--scrim)}
-.menu{position:fixed;z-index:41;top:calc(env(safe-area-inset-top,0px) + 56px);right:max(8px,env(safe-area-inset-right,0px));min-width:224px;max-width:300px;background:var(--sc);border-radius:4px;box-shadow:var(--e3);padding:8px 0}
+.menu{position:fixed;z-index:41;top:calc(var(--sat) + 56px);right:max(8px,env(safe-area-inset-right,0px));min-width:224px;max-width:300px;background:var(--sc);border-radius:4px;box-shadow:var(--e3);padding:8px 0}
 .mh{padding:4px 16px 8px;font-size:12px;color:var(--on-sv)}
 .mi{display:flex;align-items:center;gap:12px;width:100%;height:48px;border:0;background:transparent;padding:0 16px 0 12px;font-size:15px;font-weight:600;text-align:left;color:var(--on-surface)}
 .mi .ic{color:var(--on-sv)}
@@ -557,7 +557,7 @@ html.standalone .app-weiter{display:none!important}html.standalone a.li.weiter{p
 #railBtn{display:none}
 @media (min-width:744px){
   #railBtn{display:grid;margin-right:4px}
-  .navbar{top:var(--kopf,calc(64px + env(safe-area-inset-top,0px)));background:var(--surface);padding-top:12px}
+  .navbar{top:var(--kopf,calc(64px + var(--sat)));background:var(--surface);padding-top:12px}
   .topbar{position:fixed;top:0;left:0;right:0}
   main{padding-top:calc(max(var(--tbh,0px), var(--tbmin)) + 8px)}
   .nav-head{display:none!important}
@@ -582,7 +582,7 @@ html.standalone .app-weiter{display:none!important}html.standalone a.li.weiter{p
   #backBtn .bk{display:grid;transform:rotate(180deg)}
   #backBtn .bk .ic{width:22px;height:22px}
   #backBtn span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  body .navbar,body.rail-open .navbar{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px)!important;bottom:auto;left:50%;right:auto;transform:translateX(-50%);width:auto!important;height:40px;flex-direction:row;align-items:center;justify-content:center;gap:2px!important;padding:4px!important;margin:0;border-radius:20px;background:var(--sc-high)!important;z-index:21;transition:none}
+  body .navbar,body.rail-open .navbar{position:fixed;top:calc(var(--sat) + 12px)!important;bottom:auto;left:50%;right:auto;transform:translateX(-50%);width:auto!important;height:40px;flex-direction:row;align-items:center;justify-content:center;gap:2px!important;padding:4px!important;margin:0;border-radius:20px;background:var(--sc-high)!important;z-index:21;transition:none}
   body .nav-item,body.rail-open .nav-item{flex:none;flex-direction:row;height:32px!important;margin:0!important;padding:0 14px!important;border-radius:16px!important;font-size:14px!important;font-weight:700;letter-spacing:0;color:var(--on-sv);gap:0}
   body .nav-item .ind{display:none!important}
   body .nav-item>span:last-child{padding:0}
@@ -909,7 +909,7 @@ html,body{overscroll-behavior-y:none}
 :root{--sb:#C8102E}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--sb:var(--surface)}}
 :root[data-theme="dark"]{--sb:var(--surface)}
-html::after{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--sb);z-index:2147483000;pointer-events:none}
+html::after{content:"";position:fixed;top:0;left:0;right:0;height:var(--sat);background:var(--sb);z-index:2147483000;pointer-events:none}
 /* Pop-up offen: Hintergrund steht still (iOS 16+ und Android respektieren overflow:hidden am html) */
 html.scroll-sperre,html.scroll-sperre body{overflow:hidden!important;overscroll-behavior:none}
 #scrim{touch-action:none;overscroll-behavior:none}
@@ -920,8 +920,8 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 @supports (-webkit-touch-callout:none){ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;display:block;min-height:1.5em} }
 
 /* Kopfleiste: Mindesthöhe inkl. Statusleiste, falls die JS-Messung beim Start der Home-Bildschirm-App zu früh lief */
-:root{--tbmin:calc(env(safe-area-inset-top,0px) + 64px)}
-@media (min-width:744px){:root{--tbmin:calc(env(safe-area-inset-top,0px) + 72px)}}
+:root{--tbmin:calc(var(--sat) + 64px)}
+@media (min-width:744px){:root{--tbmin:calc(var(--sat) + 72px)}}
 
 /* Tastatur auf dem iPad: feste Leisten um den Versatz der sichtbaren Fläche nach unten schieben */
 @media (min-width:744px){ .topbar,body .navbar,.edk{translate:0 var(--vvt,0px)} html::after{translate:0 var(--vvt,0px)} }

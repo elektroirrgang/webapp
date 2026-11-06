@@ -1,3 +1,11 @@
+/* Oberer Rand: --sat = Statusleiste. iPad als Home-Bildschirm-App (iPadOS 26/27): das System legt eine milchige Fläche über den
+   oberen Rand, die man nicht abschalten kann (WebKit-Fehler 301994) – Kopfzeile, Tab-Leiste und alles oben verankerte rücken
+   deshalb 16 pt nach unten, und der Streifen hinter der Statusleiste ist auf iPhone und iPad Hintergrundfarbe statt Rot. */
+:root{--sat:env(safe-area-inset-top,0px)}
+@supports (-webkit-touch-callout:none){
+  html:root{--sb:var(--surface)}
+  @media (min-width:744px){ html.standalone{--sat:calc(env(safe-area-inset-top,0px) + 16px)} }
+}
 /* Gemeinsam für alle Apps (tools/build.py setzt es ans Ende der Styles):
    Eingabefelder sind immer deutlich unterlegt – etwas dunkler als die Fläche darunter (hell) bzw. heller (dunkel).
    Dialoge bekommen dafür eine eigene, ruhige Fläche. Dazu eigene, schmale Scrollleisten am PC. */
@@ -573,7 +581,7 @@ body:has(.vg-bar) .snackbar{bottom:96px!important}
 .vgk-hin .ic{width:16px;height:16px;flex:none} .vgk-hin:not(.neu){color:var(--ok)}
 
 /* Banner für neue Benachrichtigungen (oben mittig, wie am iPhone) */
-.ml-ban{position:fixed;z-index:140;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:min(440px,calc(100vw - 24px));display:flex;align-items:flex-start;gap:2px;padding:6px;border-radius:24px;background:var(--sc-high);color:var(--on-surface);box-shadow:var(--schweben-dlg);animation:mlBanEin .28s cubic-bezier(.2,.8,.2,1)}
+.ml-ban{position:fixed;z-index:140;top:calc(12px + var(--sat));left:50%;transform:translateX(-50%);width:min(440px,calc(100vw - 24px));display:flex;align-items:flex-start;gap:2px;padding:6px;border-radius:24px;background:var(--sc-high);color:var(--on-surface);box-shadow:var(--schweben-dlg);animation:mlBanEin .28s cubic-bezier(.2,.8,.2,1)}
 .ml-ban.geht{animation:mlBanAus .2s ease-in forwards}
 @keyframes mlBanEin{from{opacity:0;transform:translate(-50%,-24px)}to{opacity:1;transform:translate(-50%,0)}}
 @keyframes mlBanAus{to{opacity:0;transform:translate(-50%,-16px)}}
@@ -690,7 +698,7 @@ body:has(.vg-bar) .snackbar{bottom:96px!important}
 .kt-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px}
 
 /* Fenster nie unter die Statusleiste (iOS-Web-App mit durchscheinender Leiste): Mitte und Höhe ohne die sicheren Ränder */
-.dlg{top:calc(50% + (env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) / 2);max-height:calc(100dvh - 48px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow:auto}
+.dlg{top:calc(50% + (var(--sat) - env(safe-area-inset-bottom,0px)) / 2);max-height:calc(100dvh - 48px - var(--sat) - env(safe-area-inset-bottom,0px));overflow:auto}
 /* iPad und PC: Fenster breiter (mehr Platz für Text und Fotos) */
 @media (min-width:744px){.dlg{width:min(680px,calc(100% - 64px))}.dlg.breit{width:min(960px,calc(100% - 64px))}}
 /* PC: Seitenleiste oben rechts abgerundet (Wunsch 22.10.2026) */
@@ -1332,7 +1340,7 @@ a.dz{color:inherit;text-decoration:none;border-radius:12px}
 
 /* PDF-Ansicht – gemeinsam für alle Apps (src/pdfansicht.js) */
 .pv{position:fixed;inset:0;z-index:80;background:var(--sc-low);display:flex;flex-direction:column}
-.pv-kopf{display:flex;align-items:center;gap:8px;min-height:56px;padding:env(safe-area-inset-top,0px) max(8px,env(safe-area-inset-right,0px)) 0 max(8px,env(safe-area-inset-left,0px));background:var(--surface);flex:none}
+.pv-kopf{display:flex;align-items:center;gap:8px;min-height:56px;padding:var(--sat) max(8px,env(safe-area-inset-right,0px)) 0 max(8px,env(safe-area-inset-left,0px));background:var(--surface);flex:none}
 .pv-t{flex:1;min-width:0;text-align:center;display:flex;flex-direction:column}
 .pv-t b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pv-t span{font-size:12px;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1357,11 +1365,11 @@ body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dl
 @media (hover:hover) and (pointer:fine){.pv.m-seiten .pv-pfeil{display:grid}}
 .pv{isolation:isolate}.pv-seiten{position:relative}
 .pv-seiten{padding:12px 12px calc(24px + env(safe-area-inset-bottom,0px));gap:12px}
-.pv-zahl{left:max(16px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 68px);bottom:auto;transform:none;background:rgba(40,40,42,.88);color:#fff;font-size:14px;font-weight:700;padding:6px 14px;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.25);transition:opacity .35s}
+.pv-zahl{left:max(16px,env(safe-area-inset-left,0px));top:calc(var(--sat) + 68px);bottom:auto;transform:none;background:rgba(40,40,42,.88);color:#fff;font-size:14px;font-weight:700;padding:6px 14px;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.25);transition:opacity .35s}
 .pv.m-seiten .pv-zahl{opacity:0}.pv.m-seiten .pv-zahl.an{opacity:.95}
 .pv.m-seiten .pv-blatt{padding:12px 12px calc(24px + env(safe-area-inset-bottom,0px))}
 .pv.m-seiten .pv-seite{margin:0 auto!important}
-.pv-kopf{position:absolute;top:0;left:0;right:0;z-index:3;min-height:0;height:calc(64px + env(safe-area-inset-top,0px));gap:8px;padding:env(safe-area-inset-top,0px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));transition:height .28s cubic-bezier(.3,.7,.2,1)}
+.pv-kopf{position:absolute;top:0;left:0;right:0;z-index:3;min-height:0;height:calc(64px + var(--sat));gap:8px;padding:var(--sat) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));transition:height .28s cubic-bezier(.3,.7,.2,1)}
 .pv-l,.pv-r{flex:none;width:88px;display:flex;align-items:center;gap:8px;transition:opacity .2s,transform .28s cubic-bezier(.3,.7,.2,1)}
 .pv-r{justify-content:flex-end}
 .pv-rund{width:40px;height:40px;border-radius:50%;border:0;background:var(--sc-high);color:var(--on-surface);display:grid;place-items:center;flex:none;-webkit-tap-highlight-color:transparent;transition:background .15s,transform .15s}
@@ -1370,16 +1378,16 @@ body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dl
 .pv-t{cursor:default;transition:transform .28s cubic-bezier(.3,.7,.2,1)}
 .pv-t b{transition:font-size .28s cubic-bezier(.3,.7,.2,1)}
 .pv-t span{max-height:18px;overflow:hidden;transition:max-height .25s,opacity .2s}
-.pv.kompakt .pv-kopf{height:calc(36px + env(safe-area-inset-top,0px))}
+.pv.kompakt .pv-kopf{height:calc(36px + var(--sat))}
 .pv.kompakt .pv-l,.pv.kompakt .pv-r{opacity:0;pointer-events:none;transform:scale(.8)}
 .pv.kompakt .pv-t{cursor:pointer}
 .pv.kompakt .pv-t b{font-size:13px}
 .pv.kompakt .pv-t span{max-height:0;opacity:0}
-.pv-seiten{padding-top:calc(76px + env(safe-area-inset-top,0px))!important}
+.pv-seiten{padding-top:calc(76px + var(--sat))!important}
 .pv.m-seiten .pv-seiten{padding-top:0!important}
-.pv.m-seiten .pv-blatt{padding-top:calc(76px + env(safe-area-inset-top,0px))!important}
-.pv-zahl{top:calc(env(safe-area-inset-top,0px) + 76px)!important;transition:opacity .35s,top .28s cubic-bezier(.3,.7,.2,1)!important}
-.pv.kompakt .pv-zahl{top:calc(env(safe-area-inset-top,0px) + 48px)!important}
+.pv.m-seiten .pv-blatt{padding-top:calc(76px + var(--sat))!important}
+.pv-zahl{top:calc(var(--sat) + 76px)!important;transition:opacity .35s,top .28s cubic-bezier(.3,.7,.2,1)!important}
+.pv.kompakt .pv-zahl{top:calc(var(--sat) + 48px)!important}
 .pv-zahl,.pv.kompakt .pv-zahl{top:auto!important;bottom:calc(20px + env(safe-area-inset-bottom,0px))!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important}
 
 /* Glocke – gemeinsam für alle Apps */
@@ -1548,7 +1556,7 @@ body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dl
 .wu-mini{display:flex;gap:6px;margin:6px 0 2px}.wu-mini img{width:44px;height:64px;object-fit:cover;object-position:top;border-radius:8px;background:var(--sc-high)}
 .wu-gross{position:fixed;inset:0;z-index:400;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.85);cursor:zoom-out}
 .wu-gross img{max-width:100%;max-height:100%;border-radius:12px}
-.wu-gross button{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;width:44px;height:44px;border:0;border-radius:22px;background:rgba(255,255,255,.15);display:grid;place-items:center}.wu-gross button .ic{color:#fff;width:24px;height:24px}
+.wu-gross button{position:absolute;top:calc(12px + var(--sat));right:12px;width:44px;height:44px;border:0;border-radius:22px;background:rgba(255,255,255,.15);display:grid;place-items:center}.wu-gross button .ic{color:#fff;width:24px;height:24px}
 .wu-stw{margin:0 0 12px}
 
 /* Suchleisten einheitlich (04.11.2026): Lupe · Feld · [Leeren] [Mikrofon] [Filter] [Ansicht] – alle Knöpfe 40 px, rechts bündig */
@@ -1567,7 +1575,7 @@ body.pv-offen #scrim{z-index:90}body.pv-offen .menu{z-index:92}body.pv-offen .dl
 .aw-such.su{display:flex;align-items:center;gap:6px}
 
 /* ===== Fotos markieren (foto-markieren.js) ===== */
-.fm{position:fixed;inset:0;z-index:85;display:flex;flex-direction:column;background:#17181B;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.fm{position:fixed;inset:0;z-index:85;display:flex;flex-direction:column;background:#17181B;padding:var(--sat) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 body.fm-offen{overflow:hidden}
 .fm-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:60px;padding:8px 12px;background:var(--surface)}
 .fm-mitte{display:flex;gap:4px}
@@ -1586,7 +1594,7 @@ body.fm-offen{overflow:hidden}
 .fm-flaeche canvas{position:absolute;inset:0;touch-action:none;display:block}
 .fm-tipp{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);margin:0;padding:8px 16px;border-radius:18px;background:rgba(0,0,0,.6);color:#fff;font-size:14px;white-space:nowrap;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 .fm-tipp:empty{display:none}
-.fm-frage{position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 8px);display:flex;justify-content:center;padding:0 12px;z-index:2}
+.fm-frage{position:absolute;left:0;right:0;top:calc(var(--sat) + 8px);display:flex;justify-content:center;padding:0 12px;z-index:2}
 .fm-ein{display:flex;align-items:center;gap:8px;width:min(520px,100%);padding:8px;border-radius:28px;background:var(--surface);box-shadow:0 12px 32px rgba(0,0,0,.35)}
 .fm-ein input{flex:1;min-width:0;height:44px;border:0;border-radius:22px;padding:0 16px;background:var(--sc-high,#ECEDF1);color:var(--on-surface);font:inherit;font-size:17px;outline:none}
 .fm-wirklich span{flex:1;padding-left:10px;font-weight:600}
@@ -2087,7 +2095,7 @@ body.has-nav .bsp-karte{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 @supports (-webkit-touch-callout:none){
   /* Statusleiste ist durchsichtig: bei kurzen Seiten rechnet iOS die Bildschirmhöhe ohne Statusleiste –
      Dock und Knöpfe unten schweben dann um die Statusleistenhöhe zu hoch. Seite deshalb immer mindestens bildschirmhoch. */
-  html.standalone{min-height:calc(100% + env(safe-area-inset-top,0px))}
+  html.standalone{min-height:calc(100% + var(--sat))}
   /* iPhone: schwebendes Dock wie im App Store (iOS 26) – Kapsel mit Abstand zum Rand, gefüllt statt Glas,
      ganzer Eintrag als Pille markiert. --dock-u = Abstand unten (über dem Home-Balken) */
   @media (max-width:743px){
