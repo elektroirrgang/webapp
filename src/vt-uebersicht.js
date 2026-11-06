@@ -59,13 +59,10 @@ function vuView(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v)
   const geb=andere.length?`<section class="card"><h3>Im Gebäude</h3>${ecListe(andere.map(x=>{ const n=g.stromkreise.filter(s=>s.vId===x.id).length, rel=x.id===v.vonVId?"speist diesen Verteiler":x.vonVId===v.id?"wird von hier gespeist":"";
       return ecLi({lead:icon("zsSchrank"),ton:rel?"ok":"",kopf:esc(x.name||"Verteiler"),text:esc([rel,`${n} Stromkreis${n===1?"":"e"}`].filter(Boolean).join(" · ")),act:"vuVt",id:x.id}); }))}</section>`:"";
 
-  /* Verlauf: Prüfungen dieses Verteilers, dazu Wallbox-Prüfungen am selben Ort */
-  const wb=(DB.protokolle?live("protokolle"):[]).filter(p=>o.standort?p.standortId===o.standort.id:k&&p.kundeId===k.id&&!p.standortId).sort((a,b)=>String((b.p||{}).datum||"").localeCompare(String((a.p||{}).datum||""))).slice(0,3);
-  const verlauf=P.length||wb.length?`<section class="card"><h3>Verlauf</h3>${ecListe([
-      ...P.slice(0,6).map(p=>{ const e=vuErg(p); return ecLi({lead:icon("ecMess"),ton:e==="bad"?"bad":e==="wip"?"wip":"ok",kopf:esc(`${p.pruefart||"Prüfung"} · ${ecDatum(p.datum)}`),text:esc([p.pruefer,p.status==="fertig"?(e==="bad"?"mit Mängeln":"ohne Mängel"):"in Arbeit"].filter(Boolean).join(" · ")),act:"ecOeffnen",id:p.id}); }),
-      ...wb.map(p=>{ const d=(p.p||{}).datum, n=(p.a||{}).naechste; return ecLi({lead:icon("wallbox"),kopf:esc(`Wallbox-Prüfung · ${ecDatum(d)}`),text:esc([(p.p||{}).pruefer,n&&`nächste ${ecDatum(n)}`].filter(Boolean).join(" · "))}); })])}</section>`:"";
+  /* Verlauf: nur Prüfungen DIESES Verteilers. Wallbox-Prüfungen gehören zur Wallbox bzw. zum Kunden, nicht hierher (Max 06.11.2026) */
+  const verlauf=P.length?`<section class="card"><h3>Verlauf</h3>${ecListe(P.slice(0,6).map(p=>{ const e=vuErg(p); return ecLi({lead:icon("ecMess"),ton:e==="bad"?"bad":e==="wip"?"wip":"ok",kopf:esc(`${p.pruefart||"Prüfung"} · ${ecDatum(p.datum)}`),text:esc([p.pruefer,p.status==="fertig"?(e==="bad"?"mit Mängeln":"ohne Mängel"):"in Arbeit"].filter(Boolean).join(" · ")),act:"ecOeffnen",id:p.id}); }))}</section>`:"";
 
-  return `<div class="narrow ec-spalte leg vu">${kopf}${pruef}${zahlen}${geb}${verlauf}${typeof hbLink==="function"?hbLink("hb-verteiler","So bauen und beschriften wir Verteiler"):""}</div>`; }
+  return `<div class="narrow ec-spalte leg vu">${kopf}${pruef}${zahlen}${geb}${verlauf}</div>`; }
 
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="vu"]'); if(!b||nav.v!=="vt") return; e.stopPropagation();
   if(b.dataset.act==="vuVt"){ go({v:"vt",g:nav.g,id:b.dataset.id,tab:"info"}); return; }

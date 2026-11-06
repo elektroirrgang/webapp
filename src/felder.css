@@ -2264,3 +2264,4 @@ body.has-nav .bsp-karte{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .park-chips{display:flex;flex-wrap:wrap;gap:8px}
 .park-ch{height:36px;border:0;border-radius:18px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:14px;font-weight:600;padding:0 14px;cursor:pointer}
 .park-ch[aria-pressed="true"]{background:var(--on-surface);color:var(--surface)}
+.leg-hb{margin-top:16px}.leg-hb .hb-link{margin:0;padding:14px 16px}
