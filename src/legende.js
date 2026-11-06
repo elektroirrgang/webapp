@@ -109,7 +109,7 @@ function legFab(L){ if(!L||L.fertig) return null; const t=legTab(L); return t===
 function legView(L){ const E=legE(L), tab=legTab(L);
   if(tab==="info") return vuView(L);
   if(tab==="zs") return `<div class="narrow ec-spalte leg">${typeof zsKarte==="function"?zsKarte(L,true):""}</div>`;
-  if(tab==="uv") return `<div class="narrow ec-spalte leg">${legUvKarte(L)}</div>`;
+  if(tab==="uv") return `<div class="narrow ec-spalte leg">${legUvKarte(L)}${typeof hbLink==="function"?`<div class="leg-hb">${hbLink("hb-verteiler","So bauen und beschriften wir Verteiler")}</div>`:""}</div>`; /* Handbuch gehört zum Aufbauen, nicht in die Übersicht */
   if(tab==="mat") return typeof vmView==="function"?vmView(L):`<div class="narrow ec-spalte leg">${typeof zsMaterialKarte==="function"?zsMaterialKarte(L):""}</div>`;
   if(tab==="sk") return `<div class="narrow ec-spalte leg">${legSkKarte(L,E)}</div>`;
   return `<div class="narrow ec-spalte leg">
