@@ -216,7 +216,7 @@ async function karteLaden(a){
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{ const el=document.getElementById("kdKarte"); if(el) karteLaden(el.dataset.a); });
 
 /* Seitenkopf der Kundenansicht: Eckdaten und Karte nebeneinander (ab 900 px), darunter einspaltig */
-const kdOben=(r,kind,ss)=>`<div class="kd-oben">${infoKarte(r,kind)}${karteView(r,ss||[])}</div>`;
+const kdOben=(r,kind,ss)=>`<div class="kd-oben">${infoKarte(r,kind)}${typeof parkKarte==="function"?parkKarte(r,kind):""}${karteView(r,ss||[])}</div>`;
 /* Abschnittskopf mit rundem Plus rechts – wie in der Übersicht */
 /* Kunde/Standort: kein ⋮ – Bearbeiten steht als Schnellaktion in der Kontaktkarte, Löschen im Bearbeiten-Fenster */
 function kdKopfKnopf(){ const b=document.getElementById("menuBtn"); if(b&&typeof VIEW_KIND!=="undefined"&&VIEW_KIND[nav.v]) b.hidden=true; }
@@ -272,6 +272,7 @@ function kdDlgErweitern(kind,rec){ const d=document.getElementById("dlg"), fg=d&
     kdArtAnwenden(art); }
   /* Gebäude, Ebenen, Verteiler und Maschinen pflegt jetzt die Seite „Anlagen“ (Übersicht) – ein Modell für alle Apps */
   if(kind==="kunden") telFelder(d,r);
+  if(typeof parkDlgFelder==="function") parkDlgFelder(d,rec);
   adrHelfer(d);
 }
 function kdArtAnwenden(art){ const d=document.getElementById("dlg"); if(!d) return; const priv=art==="privat";

@@ -383,7 +383,7 @@ IC.kxGeraete="M4 6h18V4H4c-1.1 0-2 .9-2 2v11H0v3h14v-3H4V6zm19 2h-6c-.55 0-1 .45
 const kxHandy=()=>typeof WIDE!=="undefined"?!WIDE.matches:innerWidth<744;
 function kxLeiste(){ let el=document.getElementById("kxKopf"); const alt=document.getElementById("kxBar"), gl=document.getElementById("glBtn"); if(alt) alt.remove();
   const live=()=>{ if((document.getElementById("mlSeite")||document.getElementById("mlPop"))&&typeof mlFuellen==="function") mlFuellen(); };
-  if(!KX_PROG.rolle){ if(el){ el.remove(); if(typeof scPlatz==="function") scPlatz(); } if(gl) gl.classList.remove("kx-gl-warn","kx-gl-live"); live(); return; }
+  if(!KX_PROG.rolle){ if(el){ el.remove(); if(typeof scPlatz==="function") scPlatz(); } if(typeof liveGlocke==="function") liveGlocke(); live(); return; }
   const s=KX_PROG.sitz; let t="", warn=false, ok=false;
   if(KX_PROG.rolle==="ets"){ const H=kxVerbunden().filter(h=>kxFrisch(h.at)), ged=s&&H.find(h=>kxZustand(s.auf&&s.auf[h.dev],h)==="gedrueckt"), pr=s&&H.find(h=>kxZustand(s.auf&&s.auf[h.dev],h)==="problem");
     ok=H.length>0; t=ged?`${s.auf[ged.dev].pa}: Taste gedrückt – jetzt starten`:pr?`${s.auf[pr.dev].pa}: Problem gemeldet`:`Programmieren · ${H.length} Helfer verbunden`; warn=!!(ged||pr)&&!kxImReiter(); }
@@ -391,8 +391,8 @@ function kxLeiste(){ let el=document.getElementById("kxKopf"); const alt=documen
     t=!KX_PROG.join.verbunden?"Programmieren: nicht verbunden":a&&a.status==="laeuft"?`${a.pa} wird programmiert`:a&&a.status==="angefordert"?`${a.pa}: Programmiertaste drücken`:"Programmieren: warte auf das nächste Gerät";
     warn=!!(a&&a.status==="angefordert"&&!(an&&an.id===a.id))&&!kxImReiter(); }
   KX_PROG.stat={t,warn,ok};
-  if(kxHandy()){ if(el){ el.remove(); el=null; } if(gl){ const hier=kxImReiter(); gl.classList.toggle("kx-gl-warn",warn&&!hier); gl.classList.toggle("kx-gl-live",!warn&&!hier); } live(); return; }
-  if(gl) gl.classList.remove("kx-gl-warn","kx-gl-live"); live();
+  if(kxHandy()){ if(el){ el.remove(); el=null; } if(typeof liveGlocke==="function") liveGlocke(); live(); return; }
+  if(typeof liveGlocke==="function") liveGlocke(); live();
   if(!el){ const sc=document.getElementById("scBtn")||document.getElementById("glBtn"); if(!sc) return;
     el=document.createElement("button"); el.type="button"; el.id="kxKopf"; el.className="glocke kx-kopfbtn";
     el.addEventListener("click",ev=>{ ev.stopPropagation(); if(typeof closeOverlays==="function") closeOverlays(); go({v:"kx",g:KX_PROG.g,tab:"prog"}); },true);
@@ -400,8 +400,8 @@ function kxLeiste(){ let el=document.getElementById("kxKopf"); const alt=documen
   el.className="glocke kx-kopfbtn"+(warn?" warn":ok?" ok":""); el.setAttribute("aria-label",t); el.title=t;
   el.innerHTML=`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC.kxGeraete}"/></svg><i></i>`; }
 /* Live-Eintrag für die Benachrichtigungen (Handy und iPad) */
-function kxLiveMeldung(){ if(!KX_PROG.rolle) return ""; const st=KX_PROG.stat||{t:"Programmieren läuft",warn:false,ok:false}, g=vtGeb(KX_PROG.g), o=g&&typeof ecOrt==="function"?ecOrt(g.ortId):null;
-  return `<section class="kx-live-sek" aria-label="Live"><div class="kx-live-lbl"><i></i>Live</div><button type="button" class="kx-live${st.warn?" warn":""}" data-act="kxLiveAuf"><span class="kx-live-av">${kxSvgP("kxGeraete")}</span><span class="kx-live-tx"><b>${esc(st.t)}</b><small>${KX_PROG.rolle==="ets"?"Du programmierst":"Du drückst die Tasten"}${o&&o.titel?` · ${esc(o.titel)}`:""}</small></span>${icon("chev")}</button></section>`; }
+function kxLiveEintrag(){ if(!KX_PROG.rolle) return ""; const st=KX_PROG.stat||{t:"Programmieren läuft",warn:false,ok:false}, g=vtGeb(KX_PROG.g), o=g&&typeof ecOrt==="function"?ecOrt(g.ortId):null;
+  return `<button type="button" class="kx-live${st.warn?" warn":""}" data-act="kxLiveAuf"><span class="kx-live-av">${kxSvgP("kxGeraete")}</span><span class="kx-live-tx"><b>${esc(st.t)}</b><small>${KX_PROG.rolle==="ets"?"Du programmierst":"Du drückst die Tasten"}${o&&o.titel?` · ${esc(o.titel)}`:""}</small></span>${icon("chev")}</button>`; }
 addEventListener("resize",()=>{ if(KX_PROG.rolle) kxLeiste(); });
 /* Sitzung merken: App im Hintergrund oder von iOS beendet → beim nächsten Öffnen geht es weiter (bis 3 h) */
 function kxMerken(){ try{ if(KX_PROG.rolle) localStorage.setItem("kx-sitzung",JSON.stringify({rolle:KX_PROG.rolle,g:KX_PROG.g,join:KX_PROG.join,antwort:KX_PROG.antwort||null,gesehen:KX_PROG.gesehen||"",at:Date.now()})); else localStorage.removeItem("kx-sitzung"); }catch(e){} }

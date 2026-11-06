@@ -2241,3 +2241,26 @@ body.has-nav .bsp-karte{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
   html body.ohne-dock.has-nav main{padding-bottom:calc(32px + env(safe-area-inset-bottom,0px))}
   html body.ohne-dock.has-nav .fab{bottom:calc(16px + env(safe-area-inset-bottom,0px))}
 }
+/* ===== Parken (parken.js): Karte auf der Kunden-/Standortseite ===== */
+.kx-live-sek .kx-live+.kx-live{margin-top:8px}
+.park-k{background:var(--sc-low);border-radius:24px;padding:16px;margin:12px 0 4px;display:flex;flex-direction:column;gap:14px}
+.park-kopf{display:flex;align-items:center;gap:12px;min-width:0}
+.park-av{flex:none;width:40px;height:40px;border-radius:12px;background:#1F5FBF;display:grid;place-items:center}.park-av svg{width:24px;height:24px;fill:#fff}
+.park-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.park-tx b{font-size:15px}.park-tx small{font-size:13px;color:var(--on-sv)}
+.park-los{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.park-hinw{font-size:14px;color:var(--on-sv)}.park-hinw b{color:var(--on-surface);font-size:16px}
+.park-go{height:44px;border:0;border-radius:22px;background:var(--fab);color:var(--on-fab);font:inherit;font-size:15px;font-weight:700;padding:0 20px;cursor:pointer}
+.park-lauf{display:flex;flex-direction:column;gap:10px}
+.park-zeit{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}.park-zeit b{font-size:20px;font-variant-numeric:tabular-nums}.park-zeit small{font-size:13px;color:var(--on-sv)}
+.park-bar{height:8px;border-radius:4px;background:var(--sc-high);overflow:hidden}.park-bar i{display:block;height:100%;border-radius:4px;background:var(--ok);transition:width .9s linear}
+.park-btns{display:flex;gap:8px;flex-wrap:wrap}
+.park-b{height:40px;border:0;border-radius:20px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:14px;font-weight:700;padding:0 16px;cursor:pointer}
+.park-k.aktiv{background:var(--ok-c)}.park-k.aktiv .park-bar{background:rgba(0,0,0,.08)}.park-k.aktiv .park-b{background:var(--surface)}
+.park-k.warn{background:var(--fab);color:var(--on-fab)}.park-k.warn small,.park-k.warn .park-tx small{color:inherit;opacity:.85}
+.park-k.warn .park-av{background:rgba(255,255,255,.2)}.park-k.warn .park-bar{background:rgba(255,255,255,.25)}.park-k.warn .park-bar i{background:#fff}
+.park-k.warn .park-b{background:rgba(255,255,255,.2);color:var(--on-fab)}
+.kd-oben .park-k{margin:0}
+@media (min-width:900px){.kd-oben .park-k{order:3;grid-column:1/-1}}
+.park-chips{display:flex;flex-wrap:wrap;gap:8px}
+.park-ch{height:36px;border:0;border-radius:18px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:14px;font-weight:600;padding:0 14px;cursor:pointer}
+.park-ch[aria-pressed="true"]{background:var(--on-surface);color:var(--surface)}
