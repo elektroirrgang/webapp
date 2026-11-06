@@ -2288,3 +2288,16 @@ button.dz-park .dz-t{flex:1}button.dz-park>.ic{width:20px;height:20px;fill:var(-
 .leg-eti-opt .chip[aria-pressed="true"]{background:var(--on-surface);color:var(--surface)}
 .leg-eti-opt .chip .ic{display:none}
 @media (max-width:420px){.leg-eti-z{grid-template-columns:1fr;gap:6px}}
+/* Parkplatz auf der Kundenkarte */
+.park-pin{width:30px;height:30px;border-radius:9px;background:#1F5FBF;display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.35);z-index:3}.park-pin svg{width:20px;height:20px;fill:#fff}
+.kd-karte .park-pin{z-index:3}
+.park-kreuz{position:absolute;left:50%;top:50%;width:36px;height:36px;margin:-18px 0 0 -18px;border-radius:10px;background:#1F5FBF;display:grid;place-items:center;box-shadow:0 2px 8px rgba(0,0,0,.4);z-index:6;pointer-events:none}.park-kreuz svg{width:24px;height:24px;fill:#fff}
+.park-leiste{position:absolute;left:8px;right:8px;bottom:8px;z-index:7;background:var(--surface);color:var(--on-surface);border-radius:20px;padding:12px 12px 12px 16px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--e2,0 2px 8px rgba(0,0,0,.25))}
+.park-leiste>span{font-size:14px;font-weight:600}.park-leiste>div{display:flex;gap:8px;justify-content:flex-end}
+.park-leiste .park-go{height:40px}.park-leiste .park-b{background:var(--sc-high)}
+.kd-karte.park-setzen .kd-zentr,.kd-karte.park-setzen .kd-orte{display:none}
+.park-pos{margin-top:14px;display:flex;flex-direction:column;gap:8px}.park-pos .lbl{margin:0 4px}
+.park-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.park-such2{height:auto;min-height:48px;padding:8px 12px;font-size:14px;line-height:1.2;border-radius:16px;background:var(--sc-high);color:var(--on-surface)}.park-such2 svg{fill:#1F5FBF;flex:none}
+.park-weg{align-self:flex-start;border:0;background:none;color:var(--err,#B3261E);font:inherit;font-size:14px;font-weight:600;padding:4px;cursor:pointer}
+.kd-karte.park-setzen{height:min(62vh,560px);min-height:min(62vh,560px)}
