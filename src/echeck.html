@@ -2259,8 +2259,8 @@ function kundenView(){
   if(!live("kunden").length) return `<div class="empty">${icon("firma")}<h2>Noch keine Kunden</h2><p>Kunden und Standorte sind dieselben wie in der Übersicht und den Apps EVSE und Baustelle.</p></div><div class="narrow">${legOhneEintrag(false)}</div>`;
   return `<div class="narrow">${searchBar("Kunde, Ort, Kontakt",fKnopf("kunden"))}${query?"":(typeof zuletztHtml==="function"?zuletztHtml():"")+kDoppeltKarte()}<div id="res">${kundenListe()}</div></div>`;
 }
-function kundeView(k){ return kdSeite(k,"kunden",ecBeiKunde("kunden",k)+gvBeiKunde("kunden",k)+vtBeiKunde("kunden",k)+kxBeiKunde("kunden",k)); }
-function standortView(s){ return kdSeite(s,"standorte",ecBeiKunde("standorte",s)+gvBeiKunde("standorte",s)+vtBeiKunde("standorte",s)+kxBeiKunde("standorte",s)); }
+function kundeView(k){ return kdSeite(k,"kunden",ecBeiKunde("kunden",k)+gvBeiKunde("kunden",k)+vtBeiKunde("kunden",k)+(typeof schrBeiKunde==="function"?schrBeiKunde("kunden",k):"")+kxBeiKunde("kunden",k)); }
+function standortView(s){ return kdSeite(s,"standorte",ecBeiKunde("standorte",s)+gvBeiKunde("standorte",s)+vtBeiKunde("standorte",s)+(typeof schrBeiKunde==="function"?schrBeiKunde("standorte",s):"")+kxBeiKunde("standorte",s)); }
 let locForm=null;
 function locDialog(kind,rec,parentId){
   locForm={kind,id:rec&&rec.id,parentId}; const r=rec||{}; if(rec) adrSplit(r);
