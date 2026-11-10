@@ -2325,3 +2325,5 @@ button.dz-park .dz-t{flex:1}button.dz-park>.ic{width:20px;height:20px;fill:var(-
 .np-o{display:flex;flex-direction:column;min-width:0;font-size:15px}.np-o small{font-size:12px;color:var(--on-sv)}
 .np-k{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--on-sv)}.np-k i{width:14px;height:14px;border-radius:50%;flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
 .np-wahl .pk-wahl{display:flex;flex-wrap:wrap;gap:8px}
+.np-modem{display:flex;align-items:center;gap:12px;width:100%;margin-top:10px;padding:12px 16px;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);font:inherit;text-align:left;cursor:pointer}
+.np-modem>.ic{width:22px;height:22px;fill:var(--primary);flex:none}.np-modem span{display:flex;flex-direction:column;gap:2px}.np-modem b{font-size:15px}.np-modem small{font-size:12.5px;color:var(--on-sv)}
