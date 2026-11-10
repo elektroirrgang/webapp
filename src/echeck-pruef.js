@@ -2031,7 +2031,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecPkOk": { if(!ecDlg||!ecDlg.pk) return; const g0=ecGeb(pr.ortId); g0.pkFarben={an:true,z:{...ecDlg.z}}; ecGebSpeichern(g0); ecDlg=null; closeOverlays(); render(); toast("Farbschema gespeichert"); return; }
   case "ecPkAus": { const g0=ecGeb(pr.ortId); g0.pkFarben={...(g0.pkFarben||{}),an:false}; ecGebSpeichern(g0); ecDlg=null; closeOverlays(); render(); return; }
   case "ecAnschluss": { if(!nichtZu()) return; ecDlg=null; ecAnDlg(); return; }
-  case "ecAnOk": { ecAnLesen(); const W=ecDlg&&ecDlg.w; if(!W) return; const g0=ecGeb(pr.ortId); if(W.routerKat) W.routerText=""; g0.anschluss={...W}; ecGebSpeichern(g0); ecDlg=null; closeOverlays(); render(); return; }
+  case "ecAnOk": { ecAnLesen(); const W=ecDlg&&ecDlg.w; if(!W) return; const g0=ecGeb(pr.ortId); if(W.routerKat) W.routerText=""; g0.anschluss={...W}; ecGebSpeichern(g0); if(ecNz(pr)&&typeof npModemAuto==="function") npModemAuto(g0); ecDlg=null; closeOverlays(); render(); return; }
   case "ecAnWeg": { const g0=ecGeb(pr.ortId); delete g0.anschluss; ecGebSpeichern(g0); ecDlg=null; closeOverlays(); render(); return; }
   case "ecRkTab": ecRkTab=b.dataset.v; closeOverlays(); render(); scrollTo(0,0); return;
   case "ecRkSpick": ecRkSpickAuf(b); return;

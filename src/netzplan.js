@@ -28,7 +28,7 @@ function npDlg(dId,vor){ const pr=ecPr(), g=ecGeb(pr.ortId), d=dId&&g.dosen.find
       <div class="leg-eti-z"><span class="lbl">Anschlüsse</span><div class="chips">${[["1","1 Port"],["2","2 Ports"]].map(([v,t])=>`<button type="button" class="chip" data-act="npW" data-k="ports" data-v="${v}" aria-pressed="${NP.ports===v}">${t}</button>`).join("")}</div></div>
       <div class="leg-eti-z"><span class="lbl">Kabel</span><div class="chips">${[["duplex","Duplex"],["simplex","Simplex"]].map(([v,t])=>`<button type="button" class="chip" data-act="npW" data-k="art" data-v="${v}" aria-pressed="${NP.art===v}">${t}</button>`).join("")}</div></div>
       <div class="leg-eti-z"><span class="lbl">Farbe</span><div class="pk-wahl">${EC_VK_FARBE.map(([f,t,hex])=>`<button type="button" class="pk-sw${NP.farbe===f?" an":""}" data-act="npW" data-k="farbe" data-v="${f}" style="background:${hex}" title="${esc(t)}" aria-label="${esc(t)}"></button>`).join("")}</div></div></div>
-    <div class="fg1">${tf("npOrt1",`Ort Port 1`,d?((d.po&&d.po[1])||d.lage||""):vor?"Modem (Hausanschluss)":"",{form:true,ph:"z. B. Kleine Theke, Fernseher"})}
+    <div class="fg1">${tf("npOrt1",`Ort Port 1`,d?((d.po&&d.po[1])||d.lage||""):vor?"Modem":"",{form:true,ph:"z. B. Kleine Theke, Fernseher"})}
       <div id="npOrt2Z"${NP.ports==="2"?"":" hidden"}>${tf("npOrt2",`Ort Port 2`,d?((d.po&&d.po[2])||""):"",{form:true,ph:"leer = wie Port 1"})}</div></div>
     ${orte.length?`<div class="chips np-orte" style="margin-top:8px">${orte.map(o=>`<button type="button" class="chip" data-act="npOrt" data-v="${esc(o)}">${esc(o)}</button>`).join("")}</div>`:""}
     <div class="fg1" style="margin-top:14px">${sf("npRaum","Raum (freiwillig)",NP.raumId,[["","– ohne Raum –"],...R.map(r=>[r.id,r.titel||r.name])],{form:true})}</div>
@@ -59,3 +59,13 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     else { const ord=Math.max(0,...g.dosen.filter(x=>x.raumId===daten.raumId).map(x=>x.ord||0))+1; g.dosen.push({id:uid(),ord,sId:g.schraenke.length===1?g.schraenke[0].id:"",pp:{},lage:"",...daten}); }
     ecGebSpeichern(g); closeOverlays(); render(); return; }
 },true);
+
+/* Internetanschluss → Netzwerkplan (10.11.2026): Läuft ein Netzwerkkabel vom Hausanschluss zum Schrank
+   („Netzwerkkabel vom Modem zum Router im Schrank“ oder „Router am Hausanschluss, Netzwerkkabel zum Schrank“),
+   legt die App die Strecke 0.1 von selbst an – ohne Raum. Ort „Modem“ bzw. „Router“; aufgelegt wird sie wie jede Dose aufs Patchfeld. */
+function npModemAuto(g){ const A=g.anschluss||{}, ort=A.weg==="lan_zum_schrank"?"Modem":A.weg==="router_am_anschluss"?"Router":""; if(!ort) return;
+  const d0=g.dosen.find(d=>npNr(d)===0);
+  if(d0){ const alt=String((d0.po&&d0.po[1])||""); if(/^(Modem|Router)\b/.test(alt)&&alt!==ort){ d0.po={...(d0.po||{}),1:ort}; ecGebSpeichern(g); } return; }
+  const raumId=npRaumFuer(g,""), ord=Math.max(0,...g.dosen.filter(x=>x.raumId===raumId).map(x=>x.ord||0))+1;
+  g.dosen.push({id:uid(),ord,raumId,ports:1,nr:{1:"0.1"},po:{1:ort},nutz:{1:"uplink"},sId:g.schraenke.length===1?g.schraenke[0].id:"",pp:{},lage:""});
+  ecGebSpeichern(g); toast(`0.1 ${ort} im Netzwerkplan angelegt`); }
