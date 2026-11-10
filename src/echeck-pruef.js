@@ -1634,13 +1634,16 @@ function ecNetMessDlg(id){ const pr=ecPr(), g=ecGeb(pr.ortId), L=ecNetListe(pr,g
       <div class="fg1" style="margin-top:8px">${tf("nwF","Fehlerbild (bei n. i. O.)",w.wmF||"",{form:true,ph:"z. B. Paar 3/6 vertauscht, Ader 7 offen"})}</div>
       <div class="ec-felder"><div class="ec-feld ${lenSt}"><label for="m_len">Länge</label><span class="ec-ein"><input id="m_len" data-nw="len" inputmode="decimal" value="${esc(w.len||"")}" placeholder="–" autocomplete="off" ${zu?"disabled":""}><span>m</span></span><small class="ec-gw">${esc(EC_NLEN.txt)}</small></div>
         <div class="ec-feld"><label for="m_poeW">PoE-Last (optional)</label><span class="ec-ein"><input id="m_poeW" data-nw="poeW" inputmode="decimal" value="${esc(w.poeW||"")}" placeholder="–" autocomplete="off" ${zu?"disabled":""}><span>W</span></span><small class="ec-gw">zur Dokumentation</small></div></div>
-      <div class="sec-lbl">Übertragung</div><div class="list ec-sicht">${EC_NV.map(([k,t])=>tri(k,t)).join("")}</div>
+      <div class="sec-lbl">Übertragung erreicht</div>${(()=>{ const best=[...EC_NV].reverse().find(x=>w[x[0]]==="ok"), akt=best?best[0]:w.v10==="nok"||w.v100==="nok"||w.v1g==="nok"?"nok":"";
+        return `<div class="chips ec-sp">${[...EC_NV.map(([k,t])=>[k,t.replace(" Mbit/s"," Mbit").replace(" Gbit/s"," Gbit")]),["nok","keine"]].map(([v,t])=>`<button type="button" class="chip${v==="nok"?" nok":""}" data-act="ecNetSp" data-v="${v}" aria-pressed="${akt===v}" ${zu?"disabled":""}>${t}</button>`).join("")}</div>`; })()}
       <div class="sec-lbl">PoE</div><div class="list ec-sicht">${tri("poe","PoE unter Last",true)}</div></div>
     ${zu?"":`<div class="chips ec-schnell"><button type="button" class="chip" data-act="ecNetAlleOk">Alles i. O.</button><button type="button" class="chip" data-act="ecNg" aria-pressed="${!!w.ng}">Nicht gemessen …</button><button type="button" class="chip" data-act="ecDoseAusMess" data-id="${esc(p.d.id)}">Dose bearbeiten</button></div>`}
     <div class="tf${w.mangel?" fl":""}"><textarea id="m_mangel" data-nw="mangel" placeholder=" " ${zu?"disabled":""}>${esc(w.mangel||"")}</textarea><label for="m_mangel">Mangel / Bemerkung (optional)</label></div>`,
     `${vor?`<button class="btn-text" data-act="ecNetGeh" data-d="-1">‹ ${esc(vor.pp||vor.nr)}</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="ecNetGeh" data-d="0">Fertig</button>${nach?`<button class="btn-text" data-act="ecNetGeh" data-d="1">Weiter zu ${esc(nach.pp||nach.nr)} ›</button>`:""}`,{breit:true}); }
 function ecNetLesen(){ const pr=ecPr(); if(!pr||!ecDlg||!ecDlg.netMess||pr.status==="fertig") return; const id=ecDlg.netMess, alt=ecW(pr,id), w={};
   document.querySelectorAll("#dlg [data-act=ecNetTri][aria-pressed=true]").forEach(b=>w[b.dataset.k]=b.dataset.v);
+  /* Übertragung: eine Stufe wählen – darunter gilt als bestanden, darüber nicht erreicht (10.11.2026) */
+  { const sp=document.querySelector("#dlg [data-act=ecNetSp][aria-pressed=true]"); if(sp){ if(sp.dataset.v==="nok") w.v10="nok"; else { const i=EC_NV.findIndex(x=>x[0]===sp.dataset.v); EC_NV.forEach(([k],j)=>{ if(j<=i) w[k]="ok"; }); } } }
   document.querySelectorAll("#dlg [data-nw]").forEach(el=>{ const v=el.value.trim(); if(v) w[el.dataset.nw]=el.dataset.nw==="len"||el.dataset.nw==="poeW"?v.replace(".",","):v; });
   const f=document.getElementById("f_nwF"); if(f&&f.value.trim()) w.wmF=f.value.trim();
   if(document.getElementById("ecNgZeile")&&document.getElementById("ecNgZeile").hidden) delete w.ng;
@@ -1655,7 +1658,8 @@ const EC_WMNAME={gn:"grün",or:"orange",bl:"blau",br:"braun"};
 const ecWmAder=(std,i)=>{ const [f,w]=(EC_WMSTD[std]||EC_WMSTD.T568A)[i-1]; return w?`weiß-${EC_WMNAME[f]}`:EC_WMNAME[f]; };
 const ecWmGerade=()=>[1,2,3,4,5,6,7,8];
 const ecWmLesen=t=>{ t=String(t||""); return t.length===8?[...t].map(c=>c==="k"?"k":+c):null; };
-const ecWmStd=pr=>pr.belegung==="T568B"?"T568B":"T568A";
+/* Firmenstandard bei Irrgang ist T568B (Max 10.11.2026); T568A nur, wenn in der Prüfung ausdrücklich gewählt */
+const ecWmStd=pr=>pr.belegung==="T568A"?"T568A":"T568B";
 const ecWmSchirmStd=pr=>pr.schirm==="nein"?"none":"ok";
 const ecWmIstGerade=m=>m.every((x,i)=>x===i+1);
 function ecWmText(m,s){ const T=[], key=m.join("");
@@ -2116,8 +2120,10 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "ecDoseOrd": { const d=g.dosen.find(x=>x.id===b.dataset.id); if(!d) return; const D=g.dosen.filter(x=>x.raumId===d.raumId).sort((x,y)=>(x.ord||0)-(y.ord||0)), i=D.indexOf(d), j=i+(+b.dataset.d); if(j<0||j>=D.length) return;
     [D[i],D[j]]=[D[j],D[i]]; D.forEach((x,k)=>x.ord=k+1); sp(); render(); ecNetRaumDlg(d.raumId); return; }
   case "ecNetMess": ecNetMessDlg(b.dataset.id); return;
+  case "ecNetSp": { if(zu) return; const an=b.getAttribute("aria-pressed")!=="true"; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(an&&x===b))); return; }
   case "ecNetTri": { b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b&&x.getAttribute("aria-pressed")!=="true"))); return; }
   case "ecNetAlleOk": { document.querySelectorAll('#dlg [data-act="ecNetTri"]').forEach(x=>{ if(x.dataset.k!=="poe") x.setAttribute("aria-pressed",String(x.dataset.v==="ok")); });
+    { let sp="v1g"; try{ sp=localStorage.getItem("ec-q-speed")||"v1g"; }catch(x){} document.querySelectorAll('#dlg [data-act="ecNetSp"]').forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===sp))); }
     if(ecDlg&&ecDlg.wm){ const z=ecDlg.wm; z.m=ecWmGerade(); z.sel=null; if(z.s==="offen") z.s=ecWmSchirmStd(pr); ecWmNeu(pr); } return; }
   case "ecWmPin": { if(zu||!ecDlg||!ecDlg.wm) return; const z=ecDlg.wm, p=+b.dataset.p, zeich=()=>{ const el=document.getElementById("ecWm"); if(el) el.innerHTML=ecWmBereich(pr); };
     if(b.dataset.s==="l"){ z.sel=z.sel===p?null:p; zeich(); return; }

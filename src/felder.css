@@ -2351,3 +2351,5 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
 .ecq-ok{background:#1E7D3A;color:#fff}.ecq-bad{background:var(--fab);color:var(--on-fab)}
 .ecq-mehr{display:flex;gap:8px;flex-wrap:wrap}
 .ecq-mehr button{height:40px;border:0;border-radius:20px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:14px;font-weight:600;padding:0 16px;cursor:pointer}
+.ec-sp{margin:4px 0 8px}.ec-sp .chip{border:0;background:var(--sc-high);color:var(--on-surface);min-height:40px;border-radius:20px;padding:4px 16px}.ec-sp .chip .ic{display:none}
+.ec-sp .chip[aria-pressed="true"]{background:#1E7D3A;color:#fff}.ec-sp .chip.nok[aria-pressed="true"]{background:var(--fab);color:var(--on-fab)}
