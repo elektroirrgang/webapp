@@ -2334,3 +2334,20 @@ details.ec-klapp>summary h3{margin:0}
 details.ec-klapp>summary>.ic{width:24px;height:24px;fill:var(--on-sv);transform:rotate(90deg);transition:transform .2s;flex:none}
 details.ec-klapp[open]>summary>.ic{transform:rotate(-90deg)}
 details.ec-klapp[open]>summary{margin-bottom:12px}
+/* Schnell messen (netzmessen.js) */
+.ecq{display:flex;flex-direction:column;gap:14px}
+.ecq-kopf{display:flex;align-items:center;gap:14px}
+.ecq-nr{min-width:64px;height:48px;padding:0 12px;border-radius:14px;background:var(--sc-high);display:grid;place-items:center;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.ecq-t{flex:1;min-width:0;display:flex;flex-direction:column}.ecq-t b{font-size:18px}.ecq-t small{font-size:13px;color:var(--on-sv)}
+.ecq-z{font-size:13px;font-weight:700;color:var(--on-sv);font-variant-numeric:tabular-nums}
+.ecq-zeile{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;gap:8px}
+.ecq-zeile>label,.ecq-zeile>.lbl{margin:0;font-size:13px;font-weight:600;color:var(--on-sv)}
+.ecq-zeile .ec-ein{display:flex;align-items:center;gap:8px;background:var(--sc-high);border-radius:14px;padding:0 14px;height:48px;max-width:200px}
+.ecq-zeile .ec-ein input{flex:1;min-width:0;border:0;background:none;font:inherit;font-size:18px;color:var(--on-surface);outline:none}
+.ecq-zeile .chip{border:0;background:var(--sc-high);color:var(--on-surface);min-height:36px;border-radius:18px;padding:4px 14px}
+.ecq-zeile .chip[aria-pressed="true"]{background:var(--on-surface);color:var(--surface)}.ecq-zeile .chip .ic{display:none}
+.ecq-btns{display:grid;grid-template-columns:2fr 1fr;gap:10px}
+.ecq-btns button{height:64px;border:0;border-radius:20px;font:inherit;font-size:18px;font-weight:800;cursor:pointer}
+.ecq-ok{background:#1E7D3A;color:#fff}.ecq-bad{background:var(--fab);color:var(--on-fab)}
+.ecq-mehr{display:flex;gap:8px;flex-wrap:wrap}
+.ecq-mehr button{height:40px;border:0;border-radius:20px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:14px;font-weight:600;padding:0 16px;cursor:pointer}
