@@ -389,14 +389,16 @@ function ecInfraView(pr){ const g=ecGeb(pr.ortId), zu=pr.status==="fertig", S=g.
     return ecLi({act:"ecRkAuf",id:s2.id,extra:' data-ctx="ecSchrEdit"',lead:lead(s2),breit:ecBeschr(g)==="kennung"&&!!String(s2.kennung||"").trim(),ton:b2?"bad":"",kopf:esc(s2.name),
       text:esc([[`${ecSchrHe(s2)} HE`,s2.bauart==="stand"?"Standschrank":"Wandschrank",ecRaumName(g,s2.raumId)].filter(Boolean).join(" · "),`${PL.B} von ${PL.ports} Ports belegt · ${PL.frei} HE frei${ein?"":" · nicht im Prüfumfang"}`].join("\n")).replace("\n","<br>"),
       rechts:b2?`<span class="m3-st bad">${b2} Problem${b2>1?"e":""}</span>`:h2?`<span class="m3-st wip">${h2} Hinweis${h2>1?"e":""}</span>`:`<span class="m3-st ok">passt</span>`}); };
-  const A=ecNetAlle(g), ohne=A.filter(p=>!p.d.sId||!S.some(s=>s.id===p.d.sId));
+  /* „Noch nicht aufgelegt“: Ports ohne Schrank oder ohne Patchport (10.11.2026) – sortiert nach Dosennummer, sonst Raumfolge */
+  const A=ecNetAlle(g), npn=d=>typeof npNr==="function"?npNr(d):null, ohne=A.filter(p=>!p.d.sId||!S.some(s=>s.id===p.d.sId)||!String(p.ppk||"").trim())
+    .map((p,i)=>({p,i})).sort((x,y)=>{ const a=npn(x.p.d), b=npn(y.p.d); return (a==null)-(b==null)||(a||0)-(b||0)||x.p.i-y.p.i||x.i-y.i; }).map(x=>x.p);
   return `<div class="ec-kz">${k(S.length,`Netzwerkschr${S.length===1?"ank":"änke"}`)}${k(`${B} / ${T}`,"Patchports belegt",T?B/T:0)}${k(SW,"Switch-Ports")}${k(bad||hw,bad?"Probleme":"Hinweise",null,bad>0)}</div>
     <div class="ec-spalte ec-infra">
     <section class="card"><h3>Internetanschluss</h3>${ecListe(ecAnZeilen(g,zu))}</section>
-    <section class="card"><h3>Patchkabel-Farben</h3>${ecListe(ecPkZeilen(g,zu))}</section>
     <section class="card">${karteKopf("Netzwerkschränke",zu?"":"ecSchrNeu","Schrank hinzufügen")}${S.length?ecListe(S.map((s2,i)=>zeile(s2,P[i]))):`<p class="meta">${zu?"Kein Netzwerkschrank angelegt.":"Noch kein Netzwerkschrank – mit + anlegen, z. B. den Hauptschrank im Technikraum."}</p>`}
       ${S.length&&!zu?`<p class="m3-hinweis">Bearbeiten: Rechtsklick, am Handy lange drücken</p>`:""}</section>
-    ${ohne.length?`<section class="card"><h3>Datendosen ohne Schrank <span class="m3-neben">${ohne.length} Port${ohne.length>1?"s":""}</span></h3>${ecListe(ohne.map(p=>ecLi({act:"ecDose",id:p.d.id,lead:icon("ecNetz"),ton:"wip",kopf:esc(ecLinkName(g,p)),text:esc([ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · "))})))}</section>`:""}
+    <details class="card ec-klapp" data-klapp="pk"${EC_KLAPP.pk?" open":""}><summary><h3>Patchkabel-Farben</h3>${icon("chev")}</summary>${ecListe(ecPkZeilen(g,zu))}</details>
+    ${ohne.length?`<section class="card"><h3>Noch nicht aufgelegt <span class="m3-neben">${ohne.length} Port${ohne.length>1?"s":""}</span></h3>${ecListe(ohne.map(p=>ecLi({act:"ecDose",id:p.d.id,lead:icon("ecNetz"),ton:"wip",kopf:esc(`${p.nr} · ${ecPortOrt(g,p)}`),text:esc([ecDoseName(p.d),ecSchrName(g,p.d.sId)||"noch kein Schrank","kein Patchport"].filter(Boolean).join(" · "))})))}</section>`:""}
     ${S.length?`<section class="card"><h3>Etiketten</h3>${ecListe([ecLi({act:"ecEti",id:"",lead:icon("tag"),kopf:"Beschriften mit Brother",text:"Patchfeld-Streifen, Schilder, Dosen und Kabel"})])}</section>`:""}
     </div>
     ${ecWeiter("messen","Weiter zum Messen")}`; }
@@ -713,6 +715,9 @@ const ecPpPlus=(s,k)=>{ const t=ecPpTeile(s); if(t) return `${t.s?t.s+".":""}${t
 const EC_RK={patch:"Patchfeld",switch:"Switch",kabel:"Kabelführung",boden:"Fachboden",router:"Router / Firewall",usv:"USV",pdu:"Steckdosenleiste",luefter:"Lüftereinschub",blind:"Blindblende",nas:"NAS / Rekorder",sonst:"Sonstiges"};
 const EC_RKSTD={patch:{he:1,ports:24},switch:{he:1,ports:24},kabel:{he:1},boden:{he:1},router:{he:1},usv:{he:2},pdu:{he:1},luefter:{he:1},blind:{he:1},nas:{he:1},sonst:{he:1}};
 const EC_RKHE=[6,9,12,15,18,20,22,24,27,32,42,47];
+/* aufklappbare Karten (Infrastruktur): Zustand bleibt beim Neuzeichnen erhalten */
+const EC_KLAPP={};
+document.addEventListener("toggle",e=>{ const d=e.target; if(d&&d.dataset&&d.dataset.klapp) EC_KLAPP[d.dataset.klapp]=d.open; },true);
 /* eigene HE-Zahl tippen: die Chips darüber sind dann nicht mehr gewählt */
 document.addEventListener("input",e=>{ if(e.target&&e.target.id==="f_ecSHe"&&String(e.target.value).trim()) document.querySelectorAll('#dlg [data-act="ecWahl"][data-g="he"]').forEach(x=>x.setAttribute("aria-pressed","false")); });
 /* Vorauswahl gängiger Schränke: [Bauart, HE, Breite, Tiefe] in mm */
@@ -759,7 +764,6 @@ function ecRkPlanung(pr,g,s){ const T=ecSchrTeile(s), N=ecSchrHe(s), belegtHe=T.
   const falsch=[...M.keys()].filter(k=>{ const x=ecPpTeile(k), pf=PF.find(p=>p.nr===x.pf); return !pf||x.port>pf.ports; });
   if(falsch.length) H.push(["bad",`Dose ${falsch.join(", ")}: dieses Patchfeld bzw. diesen Port gibt es im Schrank nicht.`]);
   const dop=[...M].filter(x=>x[1].length>1).map(x=>x[0]); if(dop.length) H.push(["bad",`Port ${dop.join(", ")} ist doppelt vergeben.`]);
-  if(ohne.length) H.push(["wip",`${ohne.length} Port${ohne.length>1?"s":""} ohne Beschriftung nach Patchfeld.Port – im Raster nicht sichtbar.`]);
   if(B) H.push(!SW.length?["wip",`Noch kein Switch geplant – für ${B} belegte Ports braucht es mindestens ${B} Switch-Ports.`]:swPorts<B?["bad",`Es fehlen ${B-swPorts} Switch-Ports (${swPorts} geplant, ${B} belegt).`]:["ok",`Switch-Ports reichen: ${swPorts} für ${B} belegte Ports`]);
   const poe=[...M.values()].flat().filter(p=>{ const w=ecW(pr,p.id); return w.poe==="ok"||w.poe==="nok"||/WLAN|AP|Kamera/i.test(p.d.lage||""); }).length;
   if(poe&&!SW.some(t=>t.poe)) H.push(["wip",`${poe} Port${poe>1?"s":""} brauchen PoE (Messung oder WLAN-AP/Kamera), aber kein PoE-Switch ist geplant.`]);

@@ -2327,3 +2327,10 @@ button.dz-park .dz-t{flex:1}button.dz-park>.ic{width:20px;height:20px;fill:var(-
 .np-wahl .pk-wahl{display:flex;flex-wrap:wrap;gap:8px}
 .np-modem{display:flex;align-items:center;gap:12px;width:100%;margin-top:10px;padding:12px 16px;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);font:inherit;text-align:left;cursor:pointer}
 .np-modem>.ic{width:22px;height:22px;fill:var(--primary);flex:none}.np-modem span{display:flex;flex-direction:column;gap:2px}.np-modem b{font-size:15px}.np-modem small{font-size:12.5px;color:var(--on-sv)}
+/* aufklappbare Karte (Infrastruktur: Patchkabel-Farben) */
+details.ec-klapp>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}
+details.ec-klapp>summary::-webkit-details-marker{display:none}
+details.ec-klapp>summary h3{margin:0}
+details.ec-klapp>summary>.ic{width:24px;height:24px;fill:var(--on-sv);transform:rotate(90deg);transition:transform .2s;flex:none}
+details.ec-klapp[open]>summary>.ic{transform:rotate(-90deg)}
+details.ec-klapp[open]>summary{margin-bottom:12px}
