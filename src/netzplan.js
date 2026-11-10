@@ -59,7 +59,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     const n=NP.ports==="2"?2:1, o1=(F.npOrt1||"").trim(), o2=(F.npOrt2||"").trim()||o1;
     const daten={...(N===0?{nutz:Object.fromEntries(Array.from({length:n},(_,j)=>[j+1,"uplink"]))}:{}),ports:n,nr:Object.fromEntries(Array.from({length:n},(_,j)=>[j+1,`${N}.${j+1}`])),po:n===2?{1:o1,2:o2}:{1:o1},vk:NP.art||NP.farbe?{art:NP.art||"",farbe:NP.farbe||""}:undefined,vkp:n===2&&NP.art==="simplex"&&NP.farbe2&&NP.farbe2!==NP.farbe?{2:NP.farbe2}:undefined,raumId:npRaumFuer(g,F.npRaum||"")};
     if(NP.id){ const d=g.dosen.find(x=>x.id===NP.id); if(!d) return; if(n<(+d.ports||1)&&d.pp) Object.keys(d.pp).forEach(k=>{ if(+k>n) delete d.pp[k]; }); Object.assign(d,daten); if(!d.vk) delete d.vk; if(!d.vkp) delete d.vkp; d.lage=""; }
-    else { const ord=Math.max(0,...g.dosen.filter(x=>x.raumId===daten.raumId).map(x=>x.ord||0))+1; g.dosen.push({id:uid(),ord,sId:g.schraenke.length===1?g.schraenke[0].id:"",pp:{},lage:"",...daten}); }
+    else { const ord=Math.max(0,...g.dosen.filter(x=>x.raumId===daten.raumId).map(x=>x.ord||0))+1; g.dosen.push({id:uid(),ord,sId:"",pp:{},lage:"",...daten}); }
     ecGebSpeichern(g); closeOverlays(); render(); return; }
 },true);
 
@@ -70,7 +70,7 @@ function npModemAuto(g){ const A=g.anschluss||{}, ort=A.weg==="lan_zum_schrank"?
   const d0=g.dosen.find(d=>npNr(d)===0);
   if(d0){ const alt=String((d0.po&&d0.po[1])||""); if(/^(Modem|Router)\b/.test(alt)&&alt!==ort){ d0.po={...(d0.po||{}),1:ort}; ecGebSpeichern(g); } return; }
   const raumId=npRaumFuer(g,""), ord=Math.max(0,...g.dosen.filter(x=>x.raumId===raumId).map(x=>x.ord||0))+1;
-  g.dosen.push({id:uid(),ord,raumId,ports:1,nr:{1:"0.1"},po:{1:ort},nutz:{1:"uplink"},sId:g.schraenke.length===1?g.schraenke[0].id:"",pp:{},lage:""});
+  g.dosen.push({id:uid(),ord,raumId,ports:1,nr:{1:"0.1"},po:{1:ort},nutz:{1:"uplink"},sId:"",pp:{},lage:""});
   ecGebSpeichern(g); toast(`0.1 ${ort} im Netzwerkplan angelegt`); }
 
 /* Hinweis zur Beschriftung folgt der eingetippten Nummer und der Port-Zahl */
