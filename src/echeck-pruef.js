@@ -713,6 +713,8 @@ const ecPpPlus=(s,k)=>{ const t=ecPpTeile(s); if(t) return `${t.s?t.s+".":""}${t
 const EC_RK={patch:"Patchfeld",switch:"Switch",kabel:"Kabelführung",boden:"Fachboden",router:"Router / Firewall",usv:"USV",pdu:"Steckdosenleiste",luefter:"Lüftereinschub",blind:"Blindblende",nas:"NAS / Rekorder",sonst:"Sonstiges"};
 const EC_RKSTD={patch:{he:1,ports:24},switch:{he:1,ports:24},kabel:{he:1},boden:{he:1},router:{he:1},usv:{he:2},pdu:{he:1},luefter:{he:1},blind:{he:1},nas:{he:1},sonst:{he:1}};
 const EC_RKHE=[6,9,12,15,18,20,22,24,27,32,42,47];
+/* eigene HE-Zahl tippen: die Chips darüber sind dann nicht mehr gewählt */
+document.addEventListener("input",e=>{ if(e.target&&e.target.id==="f_ecSHe"&&String(e.target.value).trim()) document.querySelectorAll('#dlg [data-act="ecWahl"][data-g="he"]').forEach(x=>x.setAttribute("aria-pressed","false")); });
 /* Vorauswahl gängiger Schränke: [Bauart, HE, Breite, Tiefe] in mm */
 const EC_RKVOR=[["wand",6,600,450],["wand",9,600,450],["wand",12,600,450],["wand",12,600,600],["wand",15,600,600],["wand",18,600,600],["wand",20,600,600],["stand",22,600,800],["stand",27,800,800],["stand",32,800,800],["stand",42,800,800],["stand",42,800,1000],["stand",47,800,1000]];
 const EC_RKTIEFEN={wand:[250,300,400,450,500,600],stand:[600,800,1000,1200]};
@@ -723,13 +725,16 @@ const ecSchrNutzbar=s=>Math.max(100,ecSchrTiefe(s)-100); /* Annahme: Tür, Rück
 const ecRkTiefe=(s,t)=>+t.tiefe||(t.typ==="boden"?ecSchrNutzbar(s):EC_RKT[t.typ]||200);
 const ecSchrFarbe=s=>s&&s.farbe==="hell"?"hell":s&&s.farbe==="dunkel"?"dunkel":"auto";
 const ecSchrText=s=>[`${ecSchrHe(s)} HE`,s.bauart==="stand"?"Standschrank":"Wandschrank",`${ecSchrBreite(s)} × ${ecSchrTiefe(s)} mm`].join(" · ");
-function ecSchrLesen(){ if(!ecDlg||!ecDlg.w) return; const F=formVals(); if(F.ecName!=null) ecDlg.w.name=F.ecName; if(F.ecSNr!=null) ecDlg.w.nr=F.ecSNr; if(F.ecSKenn!=null) ecDlg.w.kennung=F.ecSKenn; if(F.ecVtRaum!=null) ecDlg.w.raumId=F.ecVtRaum; }
+function ecSchrLesen(){ if(!ecDlg||!ecDlg.w) return; const F=formVals(); if(F.ecName!=null) ecDlg.w.name=F.ecName; if(F.ecSNr!=null) ecDlg.w.nr=F.ecSNr; if(F.ecSKenn!=null) ecDlg.w.kennung=F.ecSKenn; if(F.ecVtRaum!=null) ecDlg.w.raumId=F.ecVtRaum;
+  /* eigene HE-Zahl (10.11.2026, z. B. 7 HE): gilt, wenn eingetragen; ein Chip leert das Feld beim Neuzeichnen */
+  if(F.ecSHe!=null&&String(F.ecSHe).trim()){ const n=parseInt(F.ecSHe,10); if(n>=1&&n<=60) ecDlg.w.he=String(n); } }
 function ecSchrDlg(){ const pr=ecPr(), g=ecGeb(pr.ortId), W=ecDlg.w, vor=EC_RKVOR.findIndex(p=>p[0]===W.bauart&&String(p[1])===W.he&&String(p[2])===W.breite&&String(p[3])===W.tiefe);
   const mehr=g.schraenke.length+(ecDlg.schr?0:1)>1;
   dialog(ecDlg.schr?"Netzwerkschrank bearbeiten":"Neuer Netzwerkschrank",`<div class="fg1">${tf("ecName","Bezeichnung",W.name||"",{form:true,ph:"z. B. Netzwerkschrank EG"})}${ecBeschr(g)==="nr"&&mehr?tf("ecSNr","Schranknummer (erste Stelle der Beschriftung)",W.nr||"",{form:true,im:"numeric",ph:"z. B. 1"}):""}${ecBeschr(g)==="kennung"?tf("ecSKenn","Kennung (steht vor Patchfeld.Port)",W.kennung||"",{form:true,ph:"z. B. ZVERT 2.2"}):""}${sf("ecVtRaum","Raum",W.raumId||"",[["","ohne Raum"],...ecRaeume(g).map(r=>[r.id,r.titel])],{form:true})}</div>
     <div class="lbl" style="margin-top:14px">Vorauswahl</div><div class="chips ec-wahl rk-vor">${EC_RKVOR.map((p,i)=>`<button type="button" class="chip" data-act="ecWahl" data-g="vor" data-v="${i}" aria-pressed="${i===vor}">${p[0]==="wand"?"Wand":"Stand"} ${p[1]} HE · ${p[3]} tief</button>`).join("")}</div>
     <div class="lbl" style="margin-top:14px">Bauart</div>${ecChips("bauart",[["wand","Wandschrank"],["stand","Standschrank"]],W.bauart)}
     <div class="lbl" style="margin-top:12px">Höheneinheiten</div>${ecChips("he",EC_RKHE.map(x=>[String(x),`${x} HE`]),W.he)}
+    <div class="fg1 rk-he-eigen" style="margin-top:10px">${tf("ecSHe","Andere Anzahl HE",EC_RKHE.includes(+W.he)?"":String(W.he||""),{form:true,ph:"z. B. 7",im:"numeric"})}</div>
     <div class="lbl" style="margin-top:12px">Breite</div>${ecChips("breite",[["600","600 mm"],["800","800 mm (mit Kabelkanälen)"]],W.breite)}
     <div class="lbl" style="margin-top:12px">Tiefe</div>${ecChips("tiefe",(EC_RKTIEFEN[W.bauart]||EC_RKTIEFEN.wand).map(x=>[String(x),`${x} mm`]),W.tiefe)}
     <div class="lbl" style="margin-top:12px">Farbe in der Zeichnung</div>${ecChips("farbe",[["auto","wie die App (hell/dunkel)"],["hell","Lichtgrau (RAL 7035)"],["dunkel","Schwarz (RAL 9005)"]],W.farbe)}
@@ -1893,6 +1898,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     if(gr==="etiArt"||gr==="etiInh"||gr==="etiS"){ ecEti[{etiArt:"art",etiInh:"inh",etiS:"sId"}[gr]]=b.dataset.v; ecEtiDlg(); return; }
     if(ecDlg&&"geplant" in ecDlg&&["vor","bauart","he","breite","tiefe","farbe","pfAnz","pfPorts"].includes(gr)){ const v=b.dataset.v; ecSchrLesen();
       if(gr==="vor"){ const p=EC_RKVOR[+v]; Object.assign(ecDlg.w,{bauart:p[0],he:String(p[1]),breite:String(p[2]),tiefe:String(p[3])}); ecSchrDlg(); return; }
+      if(gr==="he"){ const f=document.getElementById("f_ecSHe"); if(f){ f.value=""; const t=f.closest(".tf"); if(t) t.classList.remove("fl"); } }
       ecDlg.w[gr]=v; if(gr==="bauart"){ const T=EC_RKTIEFEN[v]; if(!T.includes(+ecDlg.w.tiefe)) ecDlg.w.tiefe=String(v==="stand"?800:450); ecSchrDlg(); } return; }
     if(ecDlg&&ecDlg.rk&&/^rk/.test(gr)){ const z=ecDlg.rk, v=b.dataset.v; ecRkLesen();
       if(gr==="rkTyp"){ const s2=g&&g.schraenke.find(x=>x.id===nav.schr), d=EC_RKSTD[v]||{he:1}; z.typ=v; z.kat=""; z.he=d.he; z.ports=d.ports||0; if(v==="patch"&&!z.nr&&s2) z.nr=Math.max(0,...ecPfListe(s2).map(x=>x.nr))+1; ecRkDlg(z); return; }
