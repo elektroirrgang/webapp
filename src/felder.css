@@ -2314,3 +2314,14 @@ button.dz-park .dz-t{flex:1}button.dz-park>.ic{width:20px;height:20px;fill:var(-
 .ec-archiv-box[open]>summary>.ic:last-child{transform:rotate(-90deg)}
 .li.ec-archiv{opacity:.8}
 .wisch-bg:not(.voll) b{display:none}
+/* Netzwerkplan (netzplan.js): Liste wie die OneNote-Tabelle */
+.np-karte{padding-bottom:14px}
+.np-kopfz{display:grid;grid-template-columns:64px minmax(0,1fr) 92px;gap:12px;padding:0 12px 6px;font-size:12px;font-weight:700;color:var(--on-sv);text-transform:none}
+.np-liste{display:flex;flex-direction:column;gap:6px}
+.np-d{background:var(--sc-high);border-radius:16px;padding:4px 0;cursor:pointer}
+.np-p{display:grid;grid-template-columns:64px minmax(0,1fr) 92px;gap:12px;align-items:center;padding:6px 12px;min-height:36px}
+.np-p+.np-p{border-top:0}
+.np-nr{justify-self:start;min-width:44px;text-align:center;padding:3px 10px;border-radius:10px;font-weight:700;font-variant-numeric:tabular-nums;background:var(--surface)}
+.np-o{display:flex;flex-direction:column;min-width:0;font-size:15px}.np-o small{font-size:12px;color:var(--on-sv)}
+.np-k{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--on-sv)}.np-k i{width:14px;height:14px;border-radius:50%;flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+.np-wahl .pk-wahl{display:flex;flex-wrap:wrap;gap:8px}
