@@ -2301,3 +2301,16 @@ button.dz-park .dz-t{flex:1}button.dz-park>.ic{width:20px;height:20px;fill:var(-
 .park-such2{height:auto;min-height:48px;padding:8px 12px;font-size:14px;line-height:1.2;border-radius:16px;background:var(--sc-high);color:var(--on-surface)}.park-such2 svg{fill:#1F5FBF;flex:none}
 .park-weg{align-self:flex-start;border:0;background:none;color:var(--err,#B3261E);font:inherit;font-size:14px;font-weight:600;padding:4px;cursor:pointer}
 .kd-karte.park-setzen{height:min(62vh,560px);min-height:min(62vh,560px)}
+/* Wischen in Listen (wisch.js): links Löschen, rechts Archivieren */
+[data-wisch]{touch-action:pan-y;position:relative;z-index:1}
+.wisch-bg{position:absolute;z-index:0;border-radius:inherit;display:flex;align-items:center;justify-content:space-between;overflow:hidden;border-radius:16px;background:var(--sc-high);pointer-events:none}
+.wisch-bg span{display:flex;align-items:center;gap:8px;height:100%;padding:0 22px;color:#fff;font-weight:700;font-size:15px;opacity:0;transition:opacity .12s}
+.wisch-bg .ic{width:22px;height:22px;fill:#fff}
+.wisch-bg.links{background:#C62828;justify-content:flex-end}.wisch-bg.links .wisch-l{opacity:.75}.wisch-bg.links.voll .wisch-l{opacity:1}.wisch-bg.links .wisch-r{display:none}
+.wisch-bg.rechts{background:#1F5FBF;justify-content:flex-start}.wisch-bg.rechts .wisch-r{opacity:.75}.wisch-bg.rechts.voll .wisch-r{opacity:1}.wisch-bg.rechts .wisch-l{display:none}
+.ec-archiv-box{margin-top:12px}
+.ec-archiv-box>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:10px 4px;font-weight:600;color:var(--on-sv);cursor:pointer}
+.ec-archiv-box>summary::-webkit-details-marker{display:none}.ec-archiv-box>summary .ic{width:20px;height:20px;fill:currentColor}.ec-archiv-box>summary>.ic:last-child{margin-left:auto;transform:rotate(90deg);transition:transform .2s}
+.ec-archiv-box[open]>summary>.ic:last-child{transform:rotate(-90deg)}
+.li.ec-archiv{opacity:.8}
+.wisch-bg:not(.voll) b{display:none}

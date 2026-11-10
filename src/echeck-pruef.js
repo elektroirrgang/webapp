@@ -174,13 +174,13 @@ const ecSt=st=>{ const x=EC_PILL[st]||EC_PILL.open; return `<span class="m3-st $
 
 /* ---- Listen ---- */
 function ecItem(pr){ const o=ecOrt(pr.ortId), erg=ecErgebnis(pr), fertig=pr.status==="fertig";
-  return `<div class="li" role="button" tabindex="0" data-act="ecOeffnen" data-id="${esc(pr.id)}" data-ctx="ecPrCtx"><span class="av">${icon(pr.art==="geraete"?"ecStecker":pr.art==="netz"?"ecNetz":"home")}</span>
+  return `<div class="li${pr.archiv?" ec-archiv":""}" role="button" tabindex="0" data-act="ecOeffnen" data-id="${esc(pr.id)}" data-ctx="ecPrCtx" data-wisch="ec" data-wisch-r="${pr.archiv?"Zurückholen":"Archivieren"}" data-wisch-r-ic="${pr.archiv?"unarchive":"archive"}"><span class="av">${icon(pr.art==="geraete"?"ecStecker":pr.art==="netz"?"ecNetz":"home")}</span>
     <span class="lt"><span class="h">${esc(o.titel)}</span><span class="s">${esc([ecDatum(pr.datum),pr.pruefart,pr.bez,o.standort?"":o.name,pr.pruefer].filter(Boolean).join(" · "))}</span>
     <span class="st">${fertig?pill(erg==="bad"?"bad":"ok",erg==="bad"?"Mängel":"abgeschlossen"):pill("wip","in Arbeit")}</span></span>${icon("chev")}</div>`; }
 /* Prüfungslisten: Suchleiste und Filter wie bei den Kunden (filter.js), Rechtsklick/lange drücken = löschen */
 const EC_LISTE_ART={anlagen:"anlage",geraete:"geraete",netzwerk:"netz"};
 ["anlage","geraete","netz"].forEach(art=>{ FDEF["ec_"+art]={std:{sort:"neu",status:"alle",wer:"alle"},sort:[["neu","Neueste zuerst"],["alt","Älteste zuerst"],["az","Ort A–Z"]],
-  gruppen:[{k:"status",t:"Status",opts:[["alle","Alle"],["arbeit","In Arbeit"],["fertig","Abgeschlossen"],["maengel","Mit Mängeln"]]},{k:"wer",t:"Prüfer",opts:[["alle","Alle"],["meine","Meine"]]}],
+  gruppen:[{k:"status",t:"Status",opts:[["alle","Alle"],["arbeit","In Arbeit"],["fertig","Abgeschlossen"],["maengel","Mit Mängeln"],["archiv","Archiviert"]]},{k:"wer",t:"Prüfer",opts:[["alle","Alle"],["meine","Meine"]]}],
   liste:()=>ecListeInhalt(art)}; });
 /* Installation: Verteilerlegenden stehen mit in der Liste – Filter nach Art und „Ohne Kunde“ */
 /* „Art“ steht als Umschalter Prüfungen | Verteiler oben in der Liste, nicht mehr im Filter */
@@ -193,6 +193,7 @@ function ecListeInhalt(art){ const n="ec_"+art, q=query.trim().toLowerCase(), H=
   const mitLeg=art==="anlage"&&typeof legAlle==="function";
   if(mitLeg){ const typ=fW(n,"typ"); if(typ==="leg") L=[]; if(typ!=="pruef") L=L.concat(legListenAlle()); if(fW(n,"kunde")==="ohne") L=L.filter(p=>!kundeOf(p.kundeId)); }
   if(q) L=L.filter(p=>{ if(p.leg) return suPasst(q,p.leg.titel,p.leg.kunde,p.leg.anschrift,p.leg.ersteller,"Verteilerlegende",ecDatum(p.datum)); if(p.vt) return suPasst(q,p.such,ecDatum(p.datum)); const o=ecOrt(p.ortId); return suPasst(q,o.titel,o.name,p.bez,p.pruefer,p.pruefart,p.auftragsnr,ecDatum(p.datum)); });
+  L=L.filter(p=>p.leg||p.vt||(st==="archiv"?!!p.archiv:!p.archiv));   /* Archivierte nur über den Filter „Archiviert“ (10.11.2026) */
   if(st==="arbeit") L=L.filter(p=>p.status!=="fertig"); else if(st==="fertig") L=L.filter(p=>p.status==="fertig"); else if(st==="maengel") L=L.filter(p=>!p.leg&&!p.vt&&ecErgebnis(p)==="bad");
   if(wer==="meine") L=L.filter(p=>p.pruefer===who().name||(p.createdBy&&p.createdBy.mail===ME.mail));
   const tit=p=>p.leg?p.titel:ecOrt(p.ortId).titel, item=p=>p.leg?legListenItem(p.leg):p.vt?vtListenItem(p.vt):ecItem(p), [ein,mehr]=mitLeg?["Eintrag","Einträge"]:["Prüfung","Prüfungen"];
@@ -201,7 +202,7 @@ function ecListeInhalt(art){ const n="ec_"+art, q=query.trim().toLowerCase(), H=
   const auf=L.filter(p=>p.status!=="fertig"), fertig=L.filter(p=>p.status==="fertig");
   if(mitLeg&&!L.length&&!q&&!fAktiv(n)) return ecInstVt()?`<div class="empty">${icon("ecMess")}<h2>Noch keine Verteiler</h2><p>Verteiler legst du beim Kunden an – oder hier mit „+ Verteiler“ ohne Kunde.</p></div>`:`<div class="empty">${icon("home")}<h2>Noch keine Installationsprüfung</h2><p>Hausinstallationen und Anlagen (DIN VDE 0100-600 / 0105-100): Räume, Verteiler, Stromkreise und Steckdosen anlegen, besichtigen, messen – das Protokoll landet in der Bibliothek.</p></div>`;
   if(!L.length) return `${fInfo(n,0,ein,mehr)}<p class="meta">${mitLeg?"Nichts gefunden.":"Keine Prüfung gefunden."}</p>`;
-  const hint=`<p class="hint">Rechtsklick oder lange drücken: anpinnen oder löschen</p>`;
+  const hint=`<p class="hint">Wischen: nach links löschen, nach rechts archivieren · Rechtsklick oder lange drücken: anpinnen</p>`;
   if(!q&&!fAktiv(n)&&L.length>EC_KURZ&&!ecListeAlle[n]){ const P=ecPins(), pin=P.map(id=>L.find(p=>p.id===id)).filter(Boolean).slice(0,EC_KURZ);
     const rest=L.filter(p=>!pin.includes(p)).sort((a,b)=>(b.updated||0)-(a.updated||0)||String(b.datum||"").localeCompare(String(a.datum||""))).slice(0,EC_KURZ-pin.length);
     const alle=`<button class="btn-text" data-act="ecListeAlle" data-n="${n}">Alle ${L.length}</button>`;
@@ -227,7 +228,9 @@ function ecListeView(art){
   return h+`${seg}${typeof qrOhneZeile==="function"?qrOhneZeile(art):""}${searchBar(art==="anlage"&&ecInstVt()?"Verteiler, Kunde, Ort":"Ort, Kunde, Prüfer",fKnopf("ec_"+art))}<div id="res">${ecListeInhalt(art)}</div>${art==="netz"?ecRkDefs()+ecKatVorschau():""}</div>`; }
 /* Abschnitt in der Kunden-/Standortansicht */
 function ecBeiKunde(kind,r){ const L=ecAlle().filter(p=>kind==="kunden"?p.kundeId===r.id:p.standortId===r.id).sort((a,b)=>String(b.datum||"").localeCompare(String(a.datum||"")));
-  return kdKopf("Prüfungen","ecNeuHier","Prüfung anlegen",` data-kind="${kind}" data-id="${esc(r.id)}"`)+(L.length?listOf(L.map(ecItem)):`<p class="meta">Noch keine Prüfung.</p>`); }
+  const A=L.filter(p=>!p.archiv), Ar=L.filter(p=>p.archiv);
+  return kdKopf("Prüfungen","ecNeuHier","Prüfung anlegen",` data-kind="${kind}" data-id="${esc(r.id)}"`)+(A.length?listOf(A.map(ecItem)):`<p class="meta">${Ar.length?"Keine laufende Prüfung.":"Noch keine Prüfung."}</p>`)
+    +(Ar.length?`<details class="ec-archiv-box"><summary>${icon("archive")}<span>Archiviert · ${Ar.length}</span>${icon("chev")}</summary>${listOf(Ar.map(ecItem))}</details>`:""); }
 
 /* ---- Neue Prüfung ---- */
 function ecOrtFeld(kid,ort){ const k=kid&&kundeOf(kid); if(!k) return ""; const ss=standorteVon(k.id);
