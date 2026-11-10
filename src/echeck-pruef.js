@@ -631,8 +631,11 @@ const ecLinkName=(g,p)=>p.pp?`Dose ${p.pp} (${ecPortOrt(g,p)})`:`${ecPortOrt(g,p
 function ecNetStand(pr,p){ const w=ecW(pr,p.id); if(w.ng) return "ng";
   const tests=[w.wm,...EC_NV.map(x=>w[x[0]]),w.poe], lenSt=ecWertStand(EC_NLEN,w.len);
   if(tests.includes("nok")||lenSt==="bad"||String(w.mangel||"").trim()) return "bad";
+  if(w.wm==="ok"&&w.v10==="ok"&&w.v100!=="ok"&&w.v1g!=="ok") return "bad";   /* nur 10 Mbit = Fehler (10.11.2026) */
   if(w.wm==="ok"&&EC_NV.some(x=>w[x[0]]==="ok")) return "ok";
   return tests.some(Boolean)||w.len?"wip":"open"; }
+/* 100 Mbit, aber kein 1 Gbit: gelber Hinweis, kein Mangel (Max 10.11.2026) */
+const ecNetNur100=w=>!w.ng&&w.v100==="ok"&&w.v1g!=="ok";
 const ecNetV=w=>{ const b=[...EC_NV].reverse().find(x=>w[x[0]]); return b?{t:b[1].replace(" Mbit/s"," M").replace(" Gbit/s"," G"),st:EC_NV.some(x=>w[x[0]]==="nok")?"bad":"ok"}:null; };
 function ecNetMaengel(pr,g){ const L=[];
   ecNetListe(pr,g).forEach(p=>{ const w=ecW(pr,p.id); if(w.ng) return; const T=[];
@@ -1615,16 +1618,16 @@ function ecNetMessView(pr){ const g=ecGeb(pr.ortId), L=ecNetListe(pr,g);
   const f=ecNetFilter, passt=p=>f==="offen"?["open","wip"].includes(ST.get(p.id)):f==="maengel"?ST.get(p.id)==="bad":true;
   const werte=(w,p)=>{ if(w.ng) return `nicht gemessen: ${w.ng}`; const v=ecNetV(w), t=[w.wm==="nok"?`Belegung Fehler${w.wmF?` (${w.wmF})`:""}`:w.wm==="ok"?"Belegung i. O.":"",w.len?`${w.len} m`:"",v?v.t.replace(" M"," Mbit/s").replace(" G"," Gbit/s"):"",w.poe==="ok"?"PoE i. O.":w.poe==="nok"?"PoE Fehler":""].filter(Boolean);
     return t.length?t.join(" · "):[ecDoseName(p.d),p.d.lage].filter(Boolean).join(" · "); };
-  const zeile=p=>{ const w=ecW(pr,p.id); return ecLi({act:"ecNetMess",id:p.id,lead:esc(p.pp||"–"),breit:true,ton:ST.get(p.id)==="bad"?"bad":"",kopf:esc(ecLinkOrt(g,p)),text:esc(werte(w,p)),rechts:ecSt(ST.get(p.id))}); };
+  const zeile=p=>{ const w=ecW(pr,p.id); return ecLi({act:"ecNetMess",id:p.id,lead:esc(p.pp||"–"),breit:true,ton:ST.get(p.id)==="bad"?"bad":"",kopf:esc(ecLinkOrt(g,p)),text:esc(werte(w,p)),rechts:ST.get(p.id)==="ok"&&ecNetNur100(w)?`<span class="m3-st wip">nur 100 Mbit</span>`:ecSt(ST.get(p.id))}); };
   const chips=`<div class="ec-filter">${[["alle",`Alle ${L.length}`],["offen",`Offen ${nOffen}`],["maengel",`Mängel ${nBad}`]].map(([v,t])=>`<button type="button" class="m3-filter" data-act="ecNetFilter" data-v="${v}" aria-pressed="${f===v}">${t}</button>`).join("")}</div>`;
   const karten=[...g.schraenke,{id:"",name:"Ohne Schrank"}].map(s=>{ const T=L.filter(p=>s.id?p.d.sId===s.id:(!p.d.sId||!g.schraenke.some(x=>x.id===p.d.sId))), V=T.filter(passt); if(!T.length) return "";
     const fe=T.filter(p=>!["open","wip"].includes(ST.get(p.id))).length;
     return `<section class="card"><h3>${esc(s.name)} <span class="m3-neben">${fe} von ${T.length} gemessen</span></h3>${V.length?ecListe(V.map(zeile)):`<p class="meta">${f==="maengel"?"Keine Mängel.":"Alles gemessen."}</p>`}</section>`; }).join("");
   return `${ecKennzahlen(pr)}${typeof ecqKarte==="function"?ecqKarte(pr,g,L):""}${chips}<div class="ec-spalte">${karten}</div><p class="m3-hinweis">Schnell: oben „Bestanden“ tippen, die Karte springt zum nächsten Link. Ausführlich: Link antippen.</p>`+ecWeiter("abschluss","Weiter zum Abschluss"); }
 function ecNetMessDlg(id){ const pr=ecPr(), g=ecGeb(pr.ortId), L=ecNetListe(pr,g), i=L.findIndex(p=>p.id===id), p=L[i]||ecNetAlle(g).find(x=>x.id===id); if(!p) return;
-  const w=ecW(pr,p.id), wm0=ecWmLesen(w.wmap); ecDlg={netMess:p.id,wm:{m:wm0||ecWmGerade(),s:w.wmS||ecWmSchirmStd(pr),sel:null,leer:!wm0&&w.wm!=="ok",auto:wm0?ecWmText(wm0,w.wmS||""):""}};
+  const w=ecW(pr,p.id), wm0=ecWmLesen(w.wmap); ecDlg={netMess:p.id,wm:{m:wm0||ecWmGerade(),s:w.wmS||ecWmSchirmStd(pr),sel:null,leer:false,vor:!wm0&&!w.wm,auto:wm0?ecWmText(wm0,w.wmS||""):""}};   /* Belegung ist standardmäßig richtig (gerade); geändert wird nur bei Fehler */
   const zu=pr.status==="fertig", vor=L[i-1], nach=L[i+1], lenSt=ecWertStand(EC_NLEN,w.len);
-  const tri=(k,l,na)=>`<div class="ec-sz"><span>${l}</span><span class="ec-tri">${[["ok","i. O."],["nok","n. i. O."],...(na?[["na","entfällt"]]:[])].map(([v,t])=>`<button type="button" data-act="ecNetTri" data-k="${k}" data-v="${v}" aria-pressed="${w[k]===v}" class="${v}" ${zu?"disabled":""}>${t}</button>`).join("")}</span></div>`;
+  const tri=(k,l,na)=>`<div class="ec-sz"><span>${l}</span><span class="ec-tri">${[["ok","i. O."],["nok","n. i. O."],...(na?[["na","entfällt"]]:[])].map(([v,t])=>`<button type="button" data-act="ecNetTri" data-k="${k}" data-v="${v}" aria-pressed="${w[k]===v||(k==="wm"&&!w.wm&&v==="ok")}" class="${v}" ${zu?"disabled":""}>${t}</button>`).join("")}</span></div>`;
   dialog(p.d.nr&&p.d.nr[p.i]?`${p.d.nr[p.i]} · ${ecPortOrt(g,p)}${p.pp?` · Patchport ${p.pp}`:""}`:p.pp?`Dose ${p.pp} · ${ecRaumName(g,p.raumId)}`:ecLinkName(g,p),`<p class="ec-sub">${esc([ecSchrName(g,p.d.sId)||"ohne Schrank",ecDoseName(p.d)+((+p.d.ports||1)>1?` (Port ${p.i})`:""),p.d.lage].filter(Boolean).join(" · "))}</p>
     ${zu?"":`<div class="ec-tipp">${icon("info")}<span>${esc(pr.geraet&&(pr.geraet.kurz||pr.geraet.mess)?`Am ${pr.geraet.kurz||pr.geraet.mess}`:"Am Netzwerktester")}: Hauptgerät an den Patchport, Remote an die Datendose. Kabeltest für Belegung und Länge, danach der Übertragungstest. PoE nur, wenn an der Dose ein PoE-Gerät hängt.</span></div>`}
     <div id="ecNgZeile" ${w.ng?"":"hidden"}><div class="tf fl"><input id="m_ng" data-nw="ng" value="${esc(w.ng||"")}" placeholder="z. B. Raum nicht zugänglich, Dose verbaut" ${zu?"disabled":""}><label for="m_ng">Nicht gemessen – Grund</label></div></div>
@@ -1648,6 +1651,8 @@ function ecNetLesen(){ const pr=ecPr(); if(!pr||!ecDlg||!ecDlg.netMess||pr.statu
   const f=document.getElementById("f_nwF"); if(f&&f.value.trim()) w.wmF=f.value.trim();
   if(document.getElementById("ecNgZeile")&&document.getElementById("ecNgZeile").hidden) delete w.ng;
   if(ecDlg.wm&&!ecDlg.wm.leer){ w.wmap=ecDlg.wm.m.join(""); w.wmS=ecDlg.wm.s; }
+  /* nur geöffnet, nichts eingetragen: die vorbelegte „richtige“ Belegung nicht als Messung speichern */
+  if(ecDlg.wm&&ecDlg.wm.vor&&w.wm==="ok"&&w.wmap==="12345678"&&!Object.keys(w).some(k=>!["wm","wmap","wmS"].includes(k))){ delete w.wm; delete w.wmap; delete w.wmS; }
   pr.werte=pr.werte||{}; if(JSON.stringify(alt)!==JSON.stringify(w)){ if(Object.keys(w).length) pr.werte[id]=w; else delete pr.werte[id]; if(pr.status==="offen") pr.status="laeuft"; saveRec("echecks",pr); } }
 
 /* Belegungsplan (Wiremap) wie am Tester: links Patchfeld, rechts Dose, je Ader eine Linie in ihrer Farbe, Schirm als eigene Linie.
@@ -1705,7 +1710,7 @@ function ecNetPdf(pr,S,pl){ const g=ecGeb(pr.ortId), L=ecNetListe(pr,g), t=v=>v=
   S.abschnitt("Links"); const Z=[];
   [...g.schraenke,{id:"",name:"Ohne Schrank"}].forEach(s=>{ const T=L.filter(p=>s.id?p.d.sId===s.id:(!p.d.sId||!g.schraenke.some(x=>x.id===p.d.sId))); if(!T.length) return; Z.push(s.name);
     T.forEach(p=>{ const w=ecW(pr,p.id), st=ecNetStand(pr,p);
-      Z.push([p.pp||"-",[ecLinkOrt(g,p),p.d.lage,w.ng&&`nicht gemessen: ${w.ng}`].filter(Boolean).join(" - "),w.wm==="nok"?`n.i.O.${w.wmF?": "+w.wmF:""}`:t(w.wm),w.len?w.len+" m":"-",t(w.v10),t(w.v100),t(w.v1g),w.poe==="ok"&&w.poeW?`i.O. ${w.poeW} W`:t(w.poe),st==="ng"?"open|n. gem.":pl(st)]); }); });
+      Z.push([p.pp||"-",[ecLinkOrt(g,p),p.d.lage,w.ng&&`nicht gemessen: ${w.ng}`].filter(Boolean).join(" - "),w.wm==="nok"?`n.i.O.${w.wmF?": "+w.wmF:""}`:t(w.wm),w.len?w.len+" m":"-",t(w.v10),t(w.v100),t(w.v1g),w.poe==="ok"&&w.poeW?`i.O. ${w.poeW} W`:t(w.poe),st==="ng"?"open|n. gem.":st==="ok"&&ecNetNur100(w)?"wip|i. O. (100 M)":pl(st)]); }); });
   if(Z.length) S.tabelle(["Port","Raum","Belegung","Länge","10 M","100 M","1 G","PoE","Ergebnis"],[16,50,24,16,12,14,12,16,22],Z,8); else S.text("Keine Links erfasst.");
   S.text(`Grenzwerte und Hinweise: Belegung nach T568A/B ohne Vertauschung, Unterbrechung oder Kurzschluss; Länge des Channels <= 100 m; Übertragung nach IEEE 802.3 (10BASE-T, 100BASE-TX, 1000BASE-T) mit dem Messgerät bestanden. Diese Prüfung weist die Übertragungsfähigkeit der Links nach (Qualifizierung). Sie ersetzt keine Zertifizierung (Abnahmemessung mit Kategorie- bzw. Klassengrenzwerten nach DIN EN 50173 / ISO/IEC 11801).`); }
 
