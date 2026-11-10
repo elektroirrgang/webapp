@@ -478,9 +478,10 @@ function ecNameDlg(t,wert,act,del,extra){ dialog(t,`<div class="fg1">${tf("ecNam
 function ecRaumDlg(raumId){ if(ecNz(ecPr())) return ecNetRaumDlg(raumId); const pr=ecPr(), g=ecGeb(pr.ortId), zu=pr.status==="fertig", name=ecRaumName(g,raumId); if(!name) return; ecDlg={raumDlg:raumId};
   const S=g.stellen.filter(s=>s.raumId===raumId).sort((a,b)=>(a.ord||0)-(b.ord||0));
   dialog(name,S.length?`<div class="list ec-stl">${S.map((st,k)=>{ const sk=st.skId&&g.stromkreise.find(s=>s.id===st.skId), n=st.art==="sd"?+st.fach||1:1;
-      return `<div class="ec-st"><span class="nr">${k+1}${n>1?`<small>.1–.${n}</small>`:""}</span><button type="button" class="ec-st-t" data-act="ecStelle" data-id="${esc(st.id)}" ${zu?"disabled":""}><b>${esc(ecStName(st))}${st.lage?` · ${esc(st.lage)}`:""}</b><small>${sk?esc(ecSkName(sk)+(sk.schutz?" · "+sk.schutz:"")):'<span class="rot">noch keinem Stromkreis zugeordnet</span>'}</small></button>
-        ${zu?"":`<span class="ec-ord"><button type="button" data-act="ecOrd" data-id="${esc(st.id)}" data-d="-1" ${k?"":"disabled"} aria-label="nach vorn">${icon("chev")}</button><button type="button" class="ab" data-act="ecOrd" data-id="${esc(st.id)}" data-d="1" ${k<S.length-1?"":"disabled"} aria-label="nach hinten">${icon("chev")}</button></span>`}</div>`; }).join("")}</div>
-      <p class="meta" style="margin:10px 4px 0">Reihenfolge = Nummerierung im Protokoll. Vorschlag: ab der Tür im Uhrzeigersinn.</p>`
+      const dn=typeof npNr==="function"?npNr(d):null, ort=[...new Set(Object.values(d.po||{}).map(x=>String(x||"").trim()).filter(Boolean))].join(" / ")||d.lage;
+      return `<div class="ec-st"><span class="nr">${dn!=null?dn:k+1}${n>1?`<small>.1–.${n}</small>`:""}</span><button type="button" class="ec-st-t" data-act="ecStelle" data-id="${esc(st.id)}" ${zu?"disabled":""}><b>${esc(ecStName(st))}${st.lage?` · ${esc(st.lage)}`:""}</b><small>${sk?esc(ecSkName(sk)+(sk.schutz?" · "+sk.schutz:"")):'<span class="rot">noch keinem Stromkreis zugeordnet</span>'}</small></button>
+        ${zu||nrPlan?"":`<span class="ec-ord"><button type="button" data-act="ecOrd" data-id="${esc(st.id)}" data-d="-1" ${k?"":"disabled"} aria-label="nach vorn">${icon("chev")}</button><button type="button" class="ab" data-act="ecOrd" data-id="${esc(st.id)}" data-d="1" ${k<S.length-1?"":"disabled"} aria-label="nach hinten">${icon("chev")}</button></span>`}</div>`; }).join("")}</div>
+      <p class="meta" style="margin:10px 4px 0">${D.some(d=>d.nr)?"Nummern aus dem Netzwerkplan.":"Reihenfolge = Nummerierung im Protokoll. Vorschlag: ab der Tür im Uhrzeigersinn."}</p>`
       :`<p class="meta">Noch keine Anschlusspunkte. Leg sie in der Reihenfolge an, in der du durch den Raum gehst – z. B. ab der Tür im Uhrzeigersinn.</p>`,
     `${zu?"":`<button class="btn-text" data-act="ecRaumEdit" data-id="${esc(raumId)}">Umbenennen</button>`}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>${zu?"":`${S.length?`<button class="btn-text" data-act="ecRaumMess" data-id="${esc(raumId)}">Messen</button>`:""}<button class="btn-text" data-act="ecStelleNeu" data-id="${esc(raumId)}">Anschlusspunkt</button>`}`,{breit:true}); }
 function ecStelleDlg(stId,raumId){ const pr=ecPr(), g=ecGeb(pr.ortId), st=stId&&g.stellen.find(x=>x.id===stId), v=st||{art:"sd",fach:1,lage:"",skId:g.stromkreise.some(s=>s.id===ecLetzterSk)?ecLetzterSk:""};
@@ -624,7 +625,7 @@ const ecDoseName=d=>`${(+d.ports||1)>1?`${d.ports}-Port-`:""}Datendose`;
 /* mit Beschriftung zählt nur die (1.13 steht auf der Dose); ohne Beschriftung die Laufnummer im Raum */
 /* Ort eines Links: Raum, dazu der Ort am Port aus dem Netzwerkplan (z. B. „Kleine Theke“); der Hilfsraum „Ohne Raum“ wird nicht genannt */
 const ecPortOrt=(g,p)=>{ const po=p.d&&p.d.po&&String(p.d.po[p.i]||"").trim(), r=ecRaeume(g).find(x=>x.id===p.raumId), ohne=r&&r.name==="Ohne Raum", rn=ecRaumName(g,p.raumId);
-  return po?(ohne?po:`${rn} · ${po}`):rn; };
+  return po?(ohne?po:r&&po.toLowerCase()===String(r.name||"").toLowerCase()?rn:`${rn} · ${po}`):rn; };
 const ecLinkOrt=(g,p)=>p.pp?ecPortOrt(g,p):`${ecPortOrt(g,p)} ${p.nr}`;
 const ecLinkName=(g,p)=>p.pp?`Dose ${p.pp} (${ecPortOrt(g,p)})`:`${ecPortOrt(g,p)} ${p.nr}`;
 function ecNetStand(pr,p){ const w=ecW(pr,p.id); if(w.ng) return "ng";
@@ -686,11 +687,13 @@ function ecNetRaumKachel(pr,g,r){ const P=ecNetPunkte(g,r.id), st=P.map(p=>ecNet
 
 /* Raum: Datendosen in Laufreihenfolge */
 function ecNetRaumDlg(raumId){ const pr=ecPr(), g=ecGeb(pr.ortId), zu=pr.status==="fertig", name=ecRaumName(g,raumId); if(!name) return; ecDlg={raumDlg:raumId};
-  const D=g.dosen.filter(d=>d.raumId===raumId).sort((a,b)=>(a.ord||0)-(b.ord||0));
+  const nrPlan=g.dosen.some(d=>d.raumId===raumId&&d.nr)&&typeof npNr==="function";
+  const D=g.dosen.filter(d=>d.raumId===raumId).sort((a,b)=>nrPlan?((npNr(a)==null)-(npNr(b)==null)||(npNr(a)||0)-(npNr(b)||0)):(a.ord||0)-(b.ord||0));
   dialog(name,D.length?`<div class="list ec-stl">${D.map((d,k)=>{ const n=+d.ports||1, pp=Array.from({length:n},(_,i)=>{ const t=((d.pp||{})[i+1]||"").trim(); return t?ecPpVoll(g,d.sId,t):""; }), s=ecSchrName(g,d.sId);
-      return `<div class="ec-st"><span class="nr">${k+1}${n>1?`<small>.1–.${n}</small>`:""}</span><button type="button" class="ec-st-t" data-act="ecDose" data-id="${esc(d.id)}" ${zu?"disabled":""}><b>${esc(ecDoseName(d))}${d.lage?` · ${esc(d.lage)}`:""}</b><small>${s||pp.some(Boolean)?esc([s,pp.some(Boolean)&&`Port ${pp.map(x=>x||"?").join(", ")}`].filter(Boolean).join(" · ")):'<span class="rot">noch keinem Patchport zugeordnet</span>'}</small></button>
-        ${zu?"":`<span class="ec-ord"><button type="button" data-act="ecDoseOrd" data-id="${esc(d.id)}" data-d="-1" ${k?"":"disabled"} aria-label="nach vorn">${icon("chev")}</button><button type="button" class="ab" data-act="ecDoseOrd" data-id="${esc(d.id)}" data-d="1" ${k<D.length-1?"":"disabled"} aria-label="nach hinten">${icon("chev")}</button></span>`}</div>`; }).join("")}</div>
-      <p class="meta" style="margin:10px 4px 0">Reihenfolge = Nummerierung im Protokoll. Vorschlag: ab der Tür im Uhrzeigersinn.</p>`
+      const dn=typeof npNr==="function"?npNr(d):null, ort=[...new Set(Object.values(d.po||{}).map(x=>String(x||"").trim()).filter(Boolean))].join(" / ")||d.lage;
+      return `<div class="ec-st"><span class="nr">${dn!=null?dn:k+1}${n>1?`<small>.1–.${n}</small>`:""}</span><button type="button" class="ec-st-t" data-act="ecDose" data-id="${esc(d.id)}" ${zu?"disabled":""}><b>${esc(ecDoseName(d))}${ort?` · ${esc(ort)}`:""}</b><small>${s||pp.some(Boolean)?esc([s,pp.some(Boolean)&&`Port ${pp.map(x=>x||"?").join(", ")}`].filter(Boolean).join(" · ")):'<span class="rot">noch keinem Patchport zugeordnet</span>'}</small></button>
+        ${zu||nrPlan?"":`<span class="ec-ord"><button type="button" data-act="ecDoseOrd" data-id="${esc(d.id)}" data-d="-1" ${k?"":"disabled"} aria-label="nach vorn">${icon("chev")}</button><button type="button" class="ab" data-act="ecDoseOrd" data-id="${esc(d.id)}" data-d="1" ${k<D.length-1?"":"disabled"} aria-label="nach hinten">${icon("chev")}</button></span>`}</div>`; }).join("")}</div>
+      <p class="meta" style="margin:10px 4px 0">${D.some(d=>d.nr)?"Nummern aus dem Netzwerkplan.":"Reihenfolge = Nummerierung im Protokoll. Vorschlag: ab der Tür im Uhrzeigersinn."}</p>`
       :`<p class="meta">Noch keine Datendosen. Leg sie in der Reihenfolge an, in der du durch den Raum gehst, und trag den Port im Patchfeld ein.</p>`,
     `${zu?"":`<button class="btn-text" data-act="ecRaumEdit" data-id="${esc(raumId)}">Umbenennen</button>`}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>${zu?"":`<button class="btn-text" data-act="ecDoseNeu" data-id="${esc(raumId)}">Datendose</button>`}`,{breit:true}); }
 let ecLetzterSchr="";
@@ -701,7 +704,7 @@ function ecDoseDlg(dId,raumId,auflegen){ const pr=ecPr(), g=ecGeb(pr.ortId), d=d
   /* Dose aus dem Netzwerkplan noch ohne Schrank: bei nur einem Schrank diesen vorschlagen (zum Auflegen braucht es ihn) */
   const vS=d&&!d.sId&&g.schraenke.length===1?g.schraenke[0].id:v.sId;
   const n=+v.ports||1, t0=ecPpTeile((v.pp||{})[1]), pf=t0?t0.pf:ecPfWahl(g.schraenke.find(x=>x.id===vS),ecLetzterPf), start=t0?t0.port:ecPfFrei(g,vS,pf,dId,n);
-  ecDlg={dose:dId||null,raumId:d?d.raumId:raumId,w:{ports:String(n),anz:"1",pf:String(pf)}};
+  ecDlg={dose:dId||null,raumId:d?d.raumId:raumId,w:{ports:String(n),anz:"1",pf:String(pf)},ausListe:!!auflegen||(typeof nav!=="undefined"&&nav.tab==="infra")||(d&&!!d.nr)};
   const pp=i=>d&&!(auflegen&&!Object.values(v.pp||{}).some(Boolean))?((v.pp||{})[i]||""):`${pf}.${start+i-1}`;   /* aus „Noch nicht aufgelegt“: freie Ports gleich vorschlagen */
   dialog(d?"Datendose bearbeiten":`Neu in ${ecRaumName(g,ecDlg.raumId)}`,`<div class="lbl">Ports an der Dose</div>${ecChips("ports",[["1","1 Port"],["2","2 Ports"],["3","3 Ports"],["4","4 Ports"]],String(n))}
     ${d?"":`<div class="lbl" style="margin-top:12px">Wie oft gleich anlegen</div>${ecChips("anz",[["1","1×"],["2","2×"],["3","3×"],["4","4×"],["5","5×"],["6","6×"]],"1")}`}
@@ -2106,7 +2109,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     else { let ord=Math.max(0,...g.dosen.filter(d=>d.raumId===raumId).map(d=>d.ord||0)); for(let k=0;k<anz;k++) g.dosen.push({id:uid(),raumId,ord:++ord,...basis,pp:ppFuer(k)}); }
     ecLetzterPf=+W.pf||1;
     const N=new Map(); g.dosen.filter(d=>d.sId&&d.sId===basis.sId).forEach(d=>Object.values(d.pp||{}).forEach(t=>{ const k=String(t).trim(); if(k) N.set(k,(N.get(k)||0)+1); })); const dop=[...N].filter(x=>x[1]>1).map(x=>x[0]);
-    const ausRack=ecDlg&&ecDlg.ausRack; sp(); render(); if(ausRack) closeOverlays(); else if(ecDlg&&ecDlg.netMessZurueck) ecNetMessDlg(ecDlg.netMessZurueck); else ecNetRaumDlg(raumId);
+    const ausRack=ecDlg&&(ecDlg.ausRack||ecDlg.ausListe); sp(); render(); if(ausRack) closeOverlays(); else if(ecDlg&&ecDlg.netMessZurueck) ecNetMessDlg(ecDlg.netMessZurueck); else ecNetRaumDlg(raumId);
     if(dop.length) toast(`Achtung: Port ${dop.join(", ")} ist im Schrank doppelt vergeben`); return; }
   case "ecDoseDel": { const d=g.dosen.find(x=>x.id===ecDlg.dose), raumId=ecDlg.raumId; if(d&&!b.dataset.ok&&pr.werte&&Object.keys(pr.werte).some(k=>k.startsWith(d.id+"."))){ b.dataset.ok="1"; b.textContent="Mit Messwerten löschen"; return; }
     const ausRack=ecDlg.ausRack; g.dosen=g.dosen.filter(x=>x.id!==ecDlg.dose); sp(); render(); if(ausRack) closeOverlays(); else ecNetRaumDlg(raumId); return; }
