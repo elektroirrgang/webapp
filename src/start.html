@@ -1278,12 +1278,25 @@ const Auth={pca:null,account:null,test:null,
         cache:{cacheLocation:"localStorage"}});
       await this.pca.initialize();
       const r=await this.pca.handleRedirectPromise(); if(r&&r.account) this.account=r.account;
-    }catch(e){ toast("Anmeldung fehlgeschlagen: "+(e.errorMessage||e.message||e)); }
+    }catch(e){ let t=0; try{ t=+localStorage.getItem("irrgang_auto_anmeldung")||0; }catch(x){} if(Date.now()-t>2*60000) toast("Anmeldung fehlgeschlagen: "+(e.errorMessage||e.message||e)); }
     if(this.pca&&!this.account) this.account=this.pca.getAllAccounts()[0]||null;
     if(this.account) this.pca.setActiveAccount(this.account);
   },
   login(){ saveNow(); if(!this.pca){ toast("Anmeldung nicht verfügbar"); return; } this.pca.loginRedirect({scopes:SCOPES,prompt:"select_account"}); },
   relogin(){ saveNow(); if(this.pca) this.pca.acquireTokenRedirect({scopes:SCOPES,account:this.account}); },
+  /* 10.11.2026 (Max): Microsoft gibt Web-Apps nur 24 h Anmeldung, das stille Erneuern im Hintergrund scheitert an gesperrten Cookies.
+     Darum beim Öffnen (bzw. Zurückkommen) einmal automatisch kurz zu Microsoft und zurück – ohne Eingabe, solange „Angemeldet bleiben“ gilt.
+     Höchstens ein Versuch je 10 Minuten; klappt es nicht, bleibt das Banner wie bisher. */
+  frisch:Date.now(),
+  autoNeu(){ if(!this.pca||!this.account||!navigator.onLine||document.hidden) return false;
+    if(Date.now()-this.frisch>45000||document.querySelector("#dlg:not([hidden])")) return false;
+    let t=0; try{ t=+localStorage.getItem("irrgang_auto_anmeldung")||0; }catch(e){} if(Date.now()-t<10*60000) return false;
+    try{ localStorage.setItem("irrgang_auto_anmeldung",String(Date.now())); }catch(e){}
+    saveNow(); try{ if(typeof nav!=="undefined"&&nav&&nav.v&&nav.v!=="login") localStorage.setItem("irrgang_auto_nav",JSON.stringify({n:nav,t:Date.now()})); }catch(e){}
+    this.pca.acquireTokenRedirect({scopes:SCOPES,account:this.account,loginHint:this.account.username,prompt:"none"}).catch(()=>{}); return true; },
+  /* nach dem Rücksprung dieselbe Ansicht wieder öffnen (z. B. den gerade gescannten Verteiler) */
+  zurueckAnsicht(){ let x=null; try{ x=JSON.parse(localStorage.getItem("irrgang_auto_nav")||"null"); localStorage.removeItem("irrgang_auto_nav"); }catch(e){}
+    if(x&&x.n&&Date.now()-x.t<3*60000&&nav.v!=="login"&&typeof go==="function") go(x.n); },
   logout(){ saveNow(); try{ localStorage.removeItem("irrgang_kal_privat"); localStorage.removeItem("irrgang_kal_cache"); }catch(e){} if(this.pca) this.pca.logoutRedirect({account:this.account}); },
   async token(){
     if(this.test) return this.test.expired?null:this.test.token;
@@ -1292,6 +1305,7 @@ const Auth={pca:null,account:null,test:null,
     catch(e){ if((window.msal&&e instanceof msal.InteractionRequiredAuthError)||/interaction_required|login_required|consent_required|no_tokens_found/.test(e.errorCode||"")) return null; throw e; }
   },
 };
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") Auth.frisch=Date.now(); });
 function setMe(){
   const a=Auth.account;
   if(!a){ ME={name:META.profil.name||"",mail:(META.profil.mail||"").toLowerCase(),admin:istAdmin(META.profil.mail),signedIn:false}; return; }
@@ -1410,7 +1424,7 @@ async function syncNow(manual){
     if(konflikte.length) toast(`Änderung von ${konflikte[0]} übernommen – sie war neuer als deine`);
     if(c1||c2) softRender();
   }catch(e){
-    if(e.auth){ setSync("anmelden"); softRender(); } else { SY.err=e.message||String(e); setSync(navigator.onLine?"fehler":"offline"); if(manual) toast("Abgleich fehlgeschlagen: "+SY.err); }
+    if(e.auth){ setSync("anmelden"); softRender(); if(Auth.autoNeu) Auth.autoNeu(); } else { SY.err=e.message||String(e); setSync(navigator.onLine?"fehler":"offline"); if(manual) toast("Abgleich fehlgeschlagen: "+SY.err); }
   }finally{ SY.running=false; if(SY.again){ SY.again=false; syncSoon(); } }
 }
 function syncSoon(){ if(!SYNC_ON||!ME.signedIn) return; clearTimeout(syncT); syncT=setTimeout(()=>syncNow(),2500); }
@@ -2828,7 +2842,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   await dataLoad(); loginSync(); await Auth.init(); setMe();
   if(SYNC_ON&&!ME.signedIn) nav={v:"login"}; else startBereich();
   if(nav.v!=="login"&&/^#hb=/.test(location.hash)){ nav={v:"hb",id:decodeURIComponent(location.hash.slice(4))}; history.replaceState(null,"",location.pathname); }
-  render(); protLaden().then(()=>{ if(nav.v==="bibliothek") render(); });
+  render(); if(Auth.zurueckAnsicht) Auth.zurueckAnsicht(); protLaden().then(()=>{ if(nav.v==="bibliothek") render(); });
   if(SYNC_ON&&ME.signedIn){ syncNow(); setInterval(()=>{ if(document.visibilityState==="visible") syncNow(); },60000);
     document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&Date.now()-(META.sync.last||0)>15000) syncSoon(); }); }
 })();
