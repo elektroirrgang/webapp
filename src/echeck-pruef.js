@@ -365,7 +365,7 @@ function ecGebView(pr){ const g=ecGeb(pr.ortId), et=g.etagen.find(e=>e.id===nav.
       ${ohne.length&&R.length?`<div class="ec-vz rcd ohne"><span class="nr"></span><span class="t">ohne RCD</span></div>`:""}${ohne.map(skZeile).join("")}
       <div class="ec-vt-f"><button class="btn-text" data-act="vtAuf" data-g="${esc(g.id)}" data-id="${esc(v.id)}">${icon("ecMess")}Verteiler öffnen</button><span style="flex:1"></span>${pr.status==="fertig"?"":`<button class="btn-text" data-act="ecRcdNeu" data-v="${esc(v.id)}">${icon("add")}RCD</button><button class="btn-text" data-act="ecSkNeu" data-v="${esc(v.id)}">${icon("add")}Stromkreis</button>`}</div></div>`; };
   const ohneV=ecSkListe(g).filter(s=>!s.vId||!g.verteiler.some(v=>v.id===s.vId));
-  return `<div class="ec-et">${ecEtagen(g).map(e=>{ const gs=ecGeschossName(ecEbene(e)), zwei=ecEtLabel(e)!==e.name; return `<button class="ec-etk${e===et?" an":""}${zwei?" zwei":""}" data-act="ecEt" data-id="${esc(e.id)}">${esc(e.name)}${zwei?`<small>${esc(gs)}</small>`:""}</button>`; }).join("")}${pr.status==="fertig"?"":`<button class="ec-etk plus" data-act="ecEtNeu" aria-label="Etage hinzufügen" title="Etage hinzufügen">${icon("add")}</button>`}</div>
+  return `${nz&&typeof npKarte==="function"?npKarte(pr,g):""}<div class="ec-et">${ecEtagen(g).map(e=>{ const gs=ecGeschossName(ecEbene(e)), zwei=ecEtLabel(e)!==e.name; return `<button class="ec-etk${e===et?" an":""}${zwei?" zwei":""}" data-act="ecEt" data-id="${esc(e.id)}">${esc(e.name)}${zwei?`<small>${esc(gs)}</small>`:""}</button>`; }).join("")}${pr.status==="fertig"?"":`<button class="ec-etk plus" data-act="ecEtNeu" aria-label="Etage hinzufügen" title="Etage hinzufügen">${icon("add")}</button>`}</div>
     <div class="${nz?"ec-eins":"ec-zwei"}"><div>${kdKopf(`Räume im ${esc(et?et.name:"")}`,et&&"ecRaumNeu","Raum hinzufügen")}
       ${et&&et.raeume.length?`<div class="ec-raster">${et.raeume.map(raum).join("")}</div>`:`<p class="meta">Noch keine Räume. Mit + anlegen – z. B. Küche, Bad, Flur, Hausanschlussraum.</p>`}
       ${et&&pr.status!=="fertig"?`<button class="btn-text ec-etedit" data-act="ecEtEdit" data-id="${esc(et.id)}">${icon("edit")}Etage „${esc(et.name)}“ umbenennen oder löschen</button>`:""}</div>
@@ -606,7 +606,7 @@ const ecNz=pr=>pr&&pr.art==="netz";
 const ecSchrName=(g,id)=>(g.schraenke.find(s=>s.id===id)||{}).name||"";
 const ecNetImUmfang=(pr,d)=>!(pr.umfang&&pr.umfang.sIds)||!d||!d.sId||pr.umfang.sIds.includes(d.sId);
 function ecNetPunkte(g,raumId){ const D=g.dosen.filter(d=>d.raumId===raumId).sort((a,b)=>(a.ord||0)-(b.ord||0)), P=[];
-  D.forEach((d,k)=>{ const n=Math.max(1,+d.ports||1); for(let i=1;i<=n;i++) { const roh=((d.pp||{})[i]||"").trim(); P.push({id:`${d.id}.${i}`,nr:n>1?`${k+1}.${i}`:`${k+1}`,d,i,raumId,ppk:roh,pp:roh?ecPpVoll(g,d.sId,roh):""}); } }); return P; }
+  D.forEach((d,k)=>{ const n=Math.max(1,+d.ports||1); for(let i=1;i<=n;i++) { const roh=((d.pp||{})[i]||"").trim(); P.push({id:`${d.id}.${i}`,nr:(d.nr&&d.nr[i])||(n>1?`${k+1}.${i}`:`${k+1}`),d,i,raumId,ppk:roh,pp:roh?ecPpVoll(g,d.sId,roh):""}); } }); return P; }
 const ecNetAlle=g=>ecRaeume(g).flatMap(r=>ecNetPunkte(g,r.id));
 /* Reihenfolge beim Messen: je Schrank nach Patchport (so steckt man um), danach Links ohne Schrank in Raumfolge */
 function ecNetListe(pr,g){ const A=ecNetAlle(g).filter(p=>ecNetImUmfang(pr,p.d)), L=[];
@@ -614,8 +614,11 @@ function ecNetListe(pr,g){ const A=ecNetAlle(g).filter(p=>ecNetImUmfang(pr,p.d))
     if(sId) T.sort((a,b)=>(a.ppk?0:1)-(b.ppk?0:1)||a.ppk.localeCompare(b.ppk,"de",{numeric:true})); L.push(...T); }); return L; }
 const ecDoseName=d=>`${(+d.ports||1)>1?`${d.ports}-Port-`:""}Datendose`;
 /* mit Beschriftung zählt nur die (1.13 steht auf der Dose); ohne Beschriftung die Laufnummer im Raum */
-const ecLinkOrt=(g,p)=>p.pp?ecRaumName(g,p.raumId):`${ecRaumName(g,p.raumId)} ${p.nr}`;
-const ecLinkName=(g,p)=>p.pp?`Dose ${p.pp} (${ecRaumName(g,p.raumId)})`:`${ecRaumName(g,p.raumId)} ${p.nr}`;
+/* Ort eines Links: Raum, dazu der Ort am Port aus dem Netzwerkplan (z. B. „Kleine Theke“); der Hilfsraum „Ohne Raum“ wird nicht genannt */
+const ecPortOrt=(g,p)=>{ const po=p.d&&p.d.po&&String(p.d.po[p.i]||"").trim(), r=ecRaeume(g).find(x=>x.id===p.raumId), ohne=r&&r.name==="Ohne Raum", rn=ecRaumName(g,p.raumId);
+  return po?(ohne?po:`${rn} · ${po}`):rn; };
+const ecLinkOrt=(g,p)=>p.pp?ecPortOrt(g,p):`${ecPortOrt(g,p)} ${p.nr}`;
+const ecLinkName=(g,p)=>p.pp?`Dose ${p.pp} (${ecPortOrt(g,p)})`:`${ecPortOrt(g,p)} ${p.nr}`;
 function ecNetStand(pr,p){ const w=ecW(pr,p.id); if(w.ng) return "ng";
   const tests=[w.wm,...EC_NV.map(x=>w[x[0]]),w.poe], lenSt=ecWertStand(EC_NLEN,w.len);
   if(tests.includes("nok")||lenSt==="bad"||String(w.mangel||"").trim()) return "bad";
@@ -827,7 +830,7 @@ function ecAnLesen(){ if(!ecDlg||!ecDlg.an) return; const F=formVals(), W=ecDlg.
 const EC_PK_ZWECK=[["arbeitsplatz","Arbeitsplatz / PC"],["ap","WLAN-Access-Point"],["kamera","Kamera"],["telefon","Telefon"],["tv","TV / Multimedia"],["smart","Smart Home / Haustechnik"],["drucker","Drucker"],["uplink","Uplink, Router, Server"]];
 const EC_PK_FARBE=[["blau","Blau","#1E6FD9"],["gelb","Gelb","#F2C200"],["gruen","Grün","#2E9E4F"],["rot","Rot","#D7263D"],["orange","Orange","#F07F1A"],["violett","Violett","#7B4FC9"],["pink","Pink","#E05AA8"],["grau","Grau","#8C9096"],["schwarz","Schwarz","#22252A"],["weiss","Weiß","#F4F5F6"]];
 /* Verlegekabel (Dose ↔ Patchfeld, das gemessene Kabel): Simplex/Duplex und Mantelfarbe. Standard je Gebäude (g.vk), abweichend je Dose (d.vk) */
-const EC_VK_FARBE=[["orange","Orange","#F07F1A"],["gelb","Gelb","#F2C200"],["gruen","Grün","#2E9E4F"],["grau","Grau","#8C9096"],["weiss","Weiß","#F4F5F6"],["blau","Blau","#1E6FD9"],["violett","Violett","#7B4FC9"],["schwarz","Schwarz","#22252A"]];
+const EC_VK_FARBE=[["orange","Orange","#F07F1A"],["gelb","Gelb","#F2C200"],["gruen","Grün","#2E9E4F"],["grau","Grau","#8C9096"],["weiss","Weiß","#F4F5F6"],["blau","Blau","#1E6FD9"],["violett","Violett","#7B4FC9"],["schwarz","Schwarz","#22252A"],["beige","Beige","#D9C7A3"]];
 const ecVk=(g,d)=>{ const st=g.vk||{}, o=(d&&d.vk)||{}; return {art:o.art||st.art||"",farbe:o.farbe||st.farbe||"",eigen:!!(o.art||o.farbe)}; };
 const ecVkFarbe=f=>EC_VK_FARBE.find(x=>x[0]===f)||null;
 const ecVkText=v=>[v.art?(v.art==="duplex"?"Duplex":"Simplex"):"",v.farbe&&ecVkFarbe(v.farbe)?`Mantel ${ecVkFarbe(v.farbe)[1].toLowerCase()}`:""].filter(Boolean).join(", ");
