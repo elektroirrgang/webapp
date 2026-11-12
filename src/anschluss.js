@@ -163,6 +163,7 @@ const BILD={
     +leitung(mb("blau"),pt(g,wbKlemme(0,0,"PE")),LEIT.gelb,[-10,-110],[10,-130],"klemme")   /* auch bei R ISO: grüne Leitung in die BLAUE MFT-Buchse (Max 12.11.2026) */+hinweis(0,0,"Helfer am Verteiler: LS aus"); },
   "spann-u":()=>grund({fev:{cp:"C",an:["L1","N","PE"]}})+mftG("U",["U","L–N · N–PE"])+dreiLtg()+hinweis(0,0,"Helfer: LS ein · CP STATE auf C","#2e7d32"),
   "spann-zs":()=>grund({fev:{cp:"C",an:["L1","N","PE"]}})+mftG("ZS",["Zs (L-PE)","std. RCD"])+dreiLtg()+hinweis(0,0,"Helfer: LS ein · CP STATE auf C","#2e7d32"),
+  "spann-zs-ev":()=>grund({fev:{cp:"C",an:["L1","N","PE"]}})+mftG("ZS",["Zs (L-PE)","EVSE"])+dreiLtg()+hinweis(0,0,"RCD Typ B-EV: am MFT „EVSE“ wählen","#2e7d32"),
   "rcd":()=>grund({fev:{cp:"C",an:["L1","N","PE"]}})+mftG("RCD",["RCD","Rampe"])+dreiLtg()+hinweis(0,0,"Helfer: RCD nach jeder Auslösung wieder ein"),
   "fkt":()=>{ const w={x:30,y:150,s:.9}, f={x:250,y:-40,s:.53};
     return gr(w,wallbox(0,0,{led:"#e53935"}))+kabelZu(pt(f,FEV_KABEL),pt(w,wbDose(0,0)),9)+gr(f,fevL({cp:"C",tE:true,tF:true}))
@@ -178,5 +179,5 @@ const anschlussBild=id=>AB.bild(id);
 /* Umschalter, wenn eine Gruppe zwei Bilder hat (z. B. Schutzleiter | Isolation) */
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest("[data-ab-tab]"); if(!b) return; const w=b.closest(".ab-w"); if(!w) return;
   w.querySelectorAll("[data-ab-tab]").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); w.querySelectorAll(".ab-bild").forEach(x=>x.hidden=x.dataset.ab!==b.dataset.abTab); });
-function anschlussHtml(ids){ if(!ids||!ids.length) return ""; const N={"frei-rlo":"Schutzleiter","frei-iso":"Isolation","spann-u":"Spannung / Drehfeld","spann-zs":"Schleifenimpedanz Zs","rcd":"RCD","fkt":"Fehlersimulation"};
+function anschlussHtml(ids){ if(!ids||!ids.length) return ""; const N={"frei-rlo":"Schutzleiter","frei-iso":"Isolation","spann-u":"Spannung / Drehfeld","spann-zs":"Schleifenimpedanz Zs","spann-zs-ev":"Schleifenimpedanz Zs","rcd":"RCD","fkt":"Fehlersimulation"};
   return `<div class="ab-w">${ids.length>1?`<div class="seg ab-seg" role="group">${ids.map((i,n)=>`<button type="button" data-ab-tab="${i}" aria-pressed="${!n}">${N[i]||i}</button>`).join("")}</div>`:""}${ids.map((i,n)=>`<div class="ab-bild" data-ab="${i}"${n?" hidden":""}>${anschlussBild(i)}</div>`).join("")}</div>`; }

@@ -1012,7 +1012,7 @@ const GROUPS = [
     "PE-Vortest: Finger auf die Touch-Fläche des FEV300 – keine Warnanzeige.",
     "CP-Schalter A → B → C: Die Wallbox schaltet in C zu (LED/Schütz).",
     "Spannungen und Drehfeld an den Buchsen des FEV300 messen.",
-    "Schleifenimpedanz Zs je Außenleiter gegen PE im Modus „std. RCD“ – der RCD löst dabei nicht aus."], rows:[
+    "Schleifenimpedanz Zs je Außenleiter gegen PE im Modus „std. RCD“ – der RCD löst dabei nicht aus. Bei RCD Typ B-EV (z. B. Schneider Acti9 iID B-EV) am MFT den RCD-Typ „EVSE“ einstellen, sonst löst er aus."], rows:[
     {k:"pevt", l:"PE-Vortest (Touch)", type:"chk", soll:"keine Warnanzeige"},
     {k:"cp", l:"CP A → B → C", type:"chk", soll:"Box schaltet zu, LEDs an"},
     {k:"u1", l:"Spannung L1 – N", u:"V", soll:"207 – 253 V", t:v=>v>=207&&v<=253},
@@ -1109,9 +1109,9 @@ function sollOf(r,s){
   if(r.ria){ const i=num(s.idn)||30; return `${fmt(0.5*i)} – ${fmt(i)} mA`; }
   return r.soll||"";
 }
-const RCD_TYPEN=["A","A-EV","F","B"];
-function rcdInfo(s){ const r=String(s.rcd||""), t=s.rcdTyp||(/^B/.test(r)?"B":/A-EV/.test(r)?"A-EV":/^F/.test(r)?"F":"A"); return {t, dc:(t==="A"||t==="F")&&(s.rdc!==undefined?!!s.rdc:/RDC-DD/.test(r))}; }
-function setRcd(s,t,dc){ if(t==="B"||t==="A-EV") dc=false; s.rcdTyp=t; s.rdc=dc; s.rcd=`${t}${dc?" + RDC-DD 6 mA":""}`; }
+const RCD_TYPEN=["A","A-EV","F","B","B-EV"];
+function rcdInfo(s){ const r=String(s.rcd||""), t=s.rcdTyp||(/^B-EV/.test(r)?"B-EV":/^B/.test(r)?"B":/A-EV/.test(r)?"A-EV":/^F/.test(r)?"F":"A"); return {t, dc:(t==="A"||t==="F")&&(s.rdc!==undefined?!!s.rdc:/RDC-DD/.test(r))}; }
+function setRcd(s,t,dc){ if(t==="B"||t==="B-EV"||t==="A-EV") dc=false; s.rcdTyp=t; s.rdc=dc; s.rcd=`${t}${dc?" + RDC-DD 6 mA":""}`; }
 const polLS=s=>s.phasen===3?"3-polig":"1-polig", polRCD=s=>s.phasen===3?"4-polig":"2-polig";
 /* FI/LS-Schalter (RCBO): LS und RCD in einem Gerät, mit Neutralleiter – 3-phasig also 4-polig (3P+N) */
 const polRCBO=s=>s.phasen===3?"4-polig":"2-polig";
@@ -1121,6 +1121,10 @@ const isoAlt=s=>(s.lp||[]).some(lp=>lp&&lp.v&&lp.v.riso!=null&&lp.v.riso!==""&&!
 /* 6 mA DC: bis 16.10.2026 in Sekunden, seitdem in ms (das MFT zeigt ms). Alte Prüfungen behalten ihre Zeile. */
 const dcAlt=s=>(s.lp||[]).some(lp=>lp&&lp.v&&lp.v.dc6!=null&&lp.v.dc6!==""&&(lp.v.dc6ms==null||lp.v.dc6ms===""));
 function rowVisible(r,s){ if(r.dcAlt&&!dcAlt(s)) return false; if(r.dcNeu&&dcAlt(s)) return false; if(r.rcdw) return !!s.rcdIntern; if(r.rcd&&s.rcdIntern) return false; if(r.isoAlt) return isoAlt(s); if(r.iso&&isoAlt(s)) return false; if(r.isoN&&!s.isoN) return false; if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
+/* Kurzschlussstrom aus der Schleifenimpedanz: Ik = U0 / Zs mit U0 = 230 V (Max 12.11.2026) */
+const IK_U0=230;
+function ikText(val,lang){ const z=num(val); if(isNaN(z)||z<=0) return ""; const ik=IK_U0/z;
+  return lang?`Ik = ${IK_U0} V / ${fmt(z,z<1?3:2)} Ω = ${fmt(ik,2)} A`:`Ik ${ik>=100?Math.round(ik):fmt(ik,1)} A`; }
 function evalRow(r,val,s){
   if(val==null||val==="") return r.opt?"skip":"open";
   if(r.type==="chk") return val==="ok"?"ok":val==="nok"?"bad":"open";
@@ -2207,10 +2211,10 @@ function saeuleView(){
         <div class="full"><div class="lbl">${s.rcbo?"Fehlerstromteil des FI/LS":`Fehlerstromschutzschalter (RCD) · ${polRCD(s)}`}</div>${seg("rcdTyp",ri.t,RCD_TYPEN.map(t=>[t,"Typ "+t]))}</div>
         <div class="full"><div class="lbl">Bemessungsfehlerstrom IΔn</div>${chipSel("idn",s.idn,["30","100","300"],"mA")}</div>
         ${s.rcbo?"":`<div class="full"><div class="lbl">Bemessungsstrom (optional)</div>${chipSel("rcdIn",s.rcdIn,["25","40","63","80","100"],"A")}</div>`}
-        ${s.rcbo?"":tf(b+"rcdHT","Hersteller / Typ RCD (optional)",s.rcdHT,{list:"dl-rcd",ph:"z. B. Schneider RCCB-ID"})}${datalist("dl-rcd",["Schneider RCCB-ID","Doepke DFS 4 B","Hager CDB","ABB F204 B","Siemens 5SV","Eaton PFIM",...live("pruefungen").flatMap(p=>p.s.map(x=>x.rcdHT))])}
+        ${s.rcbo?"":tf(b+"rcdHT","Hersteller / Typ RCD (optional)",s.rcdHT,{list:"dl-rcd",ph:"z. B. Schneider RCCB-ID"})}${datalist("dl-rcd",["Schneider RCCB-ID","Schneider Acti9 iID B-EV A9Z51440","Doepke DFS 4 B","Hager CDB","ABB F204 B","Siemens 5SV","Eaton PFIM",...live("pruefungen").flatMap(p=>p.s.map(x=>x.rcdHT))])}
         ${ri.t==="A"||ri.t==="F"?`<div class="full"><div class="lbl">Erkennt die Wallbox 6 mA DC selbst (RDC-DD)?</div>${seg("rdc",ri.dc?"1":"0",[["0","Nein"],["1","Ja"]])}
           ${!ri.dc?`<p class="warnline">${icon("warn")}RCD Typ ${ri.t} nur zulässig, wenn die Wallbox 6 mA DC selbst erkennt – sonst RCD Typ B (oder A-EV) nötig.</p>`:""}</div>`
-          :`<p class="sup full">${ri.t==="B"?"Typ B erfasst auch glatte Gleichfehlerströme – keine DC-Erkennung in der Wallbox nötig.":"Typ A-EV erkennt 6 mA DC selbst."} Polzahl aus dem Anschluss (${s.phasen===3?"3-phasig":"1-phasig"}).</p>`}
+          :`<p class="sup full">${ri.t==="B"?"Typ B erfasst auch glatte Gleichfehlerströme – keine DC-Erkennung in der Wallbox nötig.":ri.t==="B-EV"?"Typ B-EV (z. B. Schneider Acti9 iID B-EV) erfasst glatte Gleichfehlerströme und löst schon bei 6 mA DC aus. Bei Zs am MFT den RCD-Typ „EVSE“ wählen, sonst löst er aus.":"Typ A-EV erkennt 6 mA DC selbst."} Polzahl aus dem Anschluss (${s.phasen===3?"3-phasig":"1-phasig"}).</p>`}
         <div class="full"><div class="lbl">Ladeleistung je Ladepunkt (Typenschild Wallbox)</div>${seg("leistung",["16","32"].includes(String(s.inenn))&&!s.inennAnders?s.inenn:(s.inenn||s.inennAnders?"x":""),
           s.phasen===3?[["16","11 kW · 16 A"],["32","22 kW · 32 A"],["x","Andere"]]:[["16","3,7 kW · 16 A"],["32","7,4 kW · 32 A"],["x","Andere"]])}</div>
         ${(s.inennAnders||(s.inenn&&!["16","32"].includes(String(s.inenn))))?tf(b+"inenn","Strom je Ladepunkt",s.inenn,{im:"decimal",sfx:"A"}):""}
@@ -2233,13 +2237,15 @@ function saeuleView(){
     const rows=g.rows.filter(r=>rowVisible(r,s)); if(!rows.length) continue;
     const gr=groupState(g,s,li); nr++;
     h+=`<section class="card step"><div class="gh"><span class="stepno">${nr}</span><div><h3>${esc(g.t)}</h3><p>${esc(g.sub)}</p></div><span class="pill ${gr}" data-gres="${g.id}">${RES_SHORT[gr]}</span></div>`;
-    if(g.how) h+=`<details class="how"><summary>So wird gemessen</summary>${anschlussHtml(g.bilder)}<ol>${g.how.map(x=>`<li>${x}</li>`).join("")}</ol></details>`;
+    const bEV=rcdInfo(s).t==="B-EV"&&!s.rcdIntern;
+    if(g.id==="spann"&&bEV) h+=`<p class="warnline">${icon("warn")}RCD Typ B-EV: Bei Zs am MFT den RCD-Typ auf „EVSE“ stellen – sonst löst der RCD aus.</p>`;
+    if(g.how) h+=`<details class="how"><summary>So wird gemessen</summary>${anschlussHtml(bEV?g.bilder.map(x=>x==="spann-zs"?"spann-zs-ev":x):g.bilder)}<ol>${g.how.map(x=>`<li>${x}</li>`).join("")}</ol></details>`;
     if(g.id==="rcd") h+=`<div class="rcdi"><div class="lbl">RCD im Verteiler über den FEV300 messbar?</div>${seg("rcdIntern",s.rcdIntern?"1":"0",[["0","Ja"],["1","Nein, nicht messbar"]])}${s.rcdIntern?`<p class="sup">Auslösestrom, Berührungsspannung und Auslösezeit des RCD entfallen. Was das MFT dabei angezeigt hat, kannst du unten als Abschaltung der Wallbox eintragen (optional).</p>`:""}</div>`;
     let optOpen=false; h+=`<div class="mgrid">`;
     for(const r of rows){
       if(r.opt&&!optOpen){ optOpen=true; const hasVal=rows.some(x=>x.opt&&lp.v[x.k]); h+=`</div><details class="optrows"${hasVal?" open":""}><summary>Zusätzliche Messungen (optional)</summary><div class="mgrid">`; }
       const val=lp.v[r.k]??"", e=evalRow(r,val,s), path=`${lb}v.${r.k}`;
-      const txt=`<div class="txt"><div class="l">${esc(r.l)}</div><div class="s"><span data-soll="${r.k}">${esc(sollOf(r,s))}</span>${r.d?` · ${esc(r.d)}`:""}</div></div>`;
+      const txt=`<div class="txt"><div class="l">${esc(r.l)}</div><div class="s"><span data-soll="${r.k}">${esc(sollOf(r,s))}</span>${r.d?` · ${esc(r.d)}`:""}</div>${r.zs?`<div class="s ik" data-ik="${path}">${esc(ikText(val,true))}</div>`:""}</div>`;
       if(r.type==="chk") h+=`<div class="mrow">${txt}<div class="ctl wide">${seg("chk",val,[["ok","i.O."],["nok","n.i.O."]],"ev").replace(/data-act="chk"/g,`data-act="chk" data-path="${path}"`)}</div></div>`;
       else if(r.type==="sel") h+=`<div class="mrow" data-dot="${path}" data-state="${e}">${txt}<div class="ctl wide"><div class="tf"><select id="${path}" data-bind="${path}" aria-label="${esc(r.l)}">${["",...r.opts].map(o=>`<option value="${esc(o)}" ${o===val?"selected":""}>${o?esc(o):"–"}</option>`).join("")}</select><span class="arr">${icon("drop")}</span></div></div></div>`;
       else h+=`<div class="mrow" data-dot="${path}" data-state="${e}">${txt}<div class="ctl"><div class="tf"><input id="${path}" data-bind="${path}" ${PL_ART[r.k]?`data-pl="${PL_ART[r.k]}"`:""} inputmode="decimal" value="${esc(val)}" placeholder=" " autocomplete="off" aria-label="${esc(r.l)} in ${esc(r.u)}"><span class="sfx">${esc(r.u)}</span></div></div></div>`;
@@ -2979,6 +2985,7 @@ document.addEventListener("input",ev=>{ if(ev.target.id==="kpQ"){ const l=$("#kp
   const s=cur.s[+m[1]];
   if(m[2]==="name"&&nav.v==="saeule"){ $("#topTitle span").textContent=sName(s,+m[1]); const h=$(".sk h1"); if(h) h.textContent=sName(s,+m[1]); }
   if(m[2]==="typ"){ const r=s.katId&&DB.katalog.get(s.katId); if(r&&katNorm(s.typ)!==katNorm(katVoll(r))){ delete s.katId; const w=$("#katWahl"); if(w) w.value=""; } }
+  { const ik=document.querySelector(`[data-ik="${path}"]`); if(ik) ik.textContent=ikText(el.value,true); }
   if(["absIn","zsMan"].includes(m[2])){ const c=$("#calc"); if(c) c.textContent=zsInfo(s).calc; }
   refresh();
 });
@@ -3530,7 +3537,7 @@ function buildPDF(P){
     np(s.name,[P._lp&&(s.lpark||"").trim(),/^(Ladesäule|Wallbox) \d+$/.test(s.name||"")?"":BAUART(s),s.typ,s.ort].filter(Boolean).join(" | ")||BAUART(s));
     const z=zsInfo(s); sec("Gerätedaten");
     kv([["Hersteller / Typ",s.typ],["Seriennummer",s.sn],["Stellplatz",[P._lp&&(s.lpark||"").trim(),s.ort].filter(Boolean).join(" · ")],["Firmware",s.fw],["Absicherung",s.absTyp==="manuell"?"Sicherung, Zs lt. Tabelle":s.rcbo?[`FI/LS (RCBO) ${s.absTyp.replace("LS ","")}${s.absIn} A, ${polRCBO(s)}`,s.lsIcn&&`${s.lsIcn} kA`,s.lsTyp].filter(Boolean).join(", "):[`${s.absTyp}${s.absIn} A, ${polLS(s)}`,s.lsIcn&&`${s.lsIcn} kA`,s.lsTyp].filter(Boolean).join(", ")],["Zs zulässig",isNaN(z.zul)?"-":`${fmt(z.zul,2)} Ohm`],
-        ["RCD",s.rcbo?`Typ ${rcdInfo(s).t}, ${s.idn} mA, im FI/LS (RCBO)`:[`Typ ${rcdInfo(s).t}, ${s.idn} mA`,s.rcdIn&&`${s.rcdIn} A`,polRCD(s),s.rcdHT].filter(Boolean).join(", ")],["Im Verteiler",s.bmk],["DC 6 mA",rcdInfo(s).dc?"in der Wallbox (RDC-DD)":rcdInfo(s).t==="A-EV"?"im RCD (Typ A-EV)":rcdInfo(s).t==="B"?"RCD Typ B":"-"],["Zuleitung",[s.leitung,s.laenge&&`ca. ${s.laenge} m`].filter(Boolean).join(", ")],["Ladeleistung",s.inenn?`${s.inenn} A${num(s.inenn)?` (${fmt(Math.round(num(s.inenn)*230*(s.phasen===3?3:1)/100)/10,1)} kW)`:""}`:"-"],["Freigabe",s.freigabe],["Anschluss",s.phasen===3?"3-phasig":"1-phasig"]]);
+        ["RCD",s.rcbo?`Typ ${rcdInfo(s).t}, ${s.idn} mA, im FI/LS (RCBO)`:[`Typ ${rcdInfo(s).t}, ${s.idn} mA`,s.rcdIn&&`${s.rcdIn} A`,polRCD(s),s.rcdHT].filter(Boolean).join(", ")],["Im Verteiler",s.bmk],["DC 6 mA",rcdInfo(s).dc?"in der Wallbox (RDC-DD)":rcdInfo(s).t==="A-EV"?"im RCD (Typ A-EV)":rcdInfo(s).t==="B"?"RCD Typ B":rcdInfo(s).t==="B-EV"?"RCD Typ B-EV":"-"],["Zuleitung",[s.leitung,s.laenge&&`ca. ${s.laenge} m`].filter(Boolean).join(", ")],["Ladeleistung",s.inenn?`${s.inenn} A${num(s.inenn)?` (${fmt(Math.round(num(s.inenn)*230*(s.phasen===3?3:1)/100)/10,1)} kW)`:""}`:"-"],["Freigabe",s.freigabe],["Anschluss",s.phasen===3?"3-phasig":"1-phasig"]]);
     const F=FOTO_SLOTS.map(([k,l,h])=>({l,h,id:(s.fotos||{})[k],data:fotoCache.get((s.fotos||{})[k])}));
     const hasF=F.some(f=>f.data);
     if(hasF){
@@ -3561,7 +3568,7 @@ function buildPDF(P){
         if(ri%2){ d.setFillColor(250,251,252); d.rect(M,y-off,CW,rh,"F"); }
         d.setFont("helvetica","normal"); d.setFontSize(fs); d.setTextColor(20); d.text(pt(r.l),cP,y); d.setTextColor(...GR); d.text(fitTxt(pt(r.psoll||sollOf(r,s)),c1-cS-3),cS,y);
         for(let li=0;li<s.lps;li++){ const x=li?c2:c1, val=s.lp[li].v[r.k]??"", e=evalRow(r,val,s);
-          const t=r.type==="chk"?(val==="ok"?"i.O.":val==="nok"?"n.i.O.":"-"):(val===""?"-":`${val}${r.u?" "+r.u:""}`);
+          const t=r.type==="chk"?(val==="ok"?"i.O.":val==="nok"?"n.i.O.":"-"):(val===""?"-":`${val}${r.u?" "+r.u:""}${r.zs&&ikText(val)?` · ${ikText(val)}`:""}`);
           d.setTextColor(...(e==="ok"?OKC:e==="bad"?BADC:GR)); d.setFont("helvetica",e==="open"?"normal":"bold"); d.text(pt(t),x,y); }
         y+=rh;
       });
