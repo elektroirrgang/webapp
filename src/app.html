@@ -1191,8 +1191,8 @@ const live=k=>[...DB[k].values()].filter(r=>!r.deleted&&(typeof nurDemoFilter!==
 const who=()=>({name:ME.name||META.profil.name||"",mail:ME.mail||""});
 function stamp(rec,isNew){ const t=Date.now(), w=who(); if(isNew||!rec.created){ rec.created=t; rec.createdBy=w; } rec.updated=t; rec.updatedBy=w; if(!rec.demo) rec._dirty=true; }
 function saveRec(kind,rec,isNew){ stamp(rec,isNew); dbPut(kind,rec); syncSoon(); return rec; }
-function scheduleSave(){ if(!cur||!canEdit(cur)) return; dirtyCur=true; setSub("Ungespeichert …"); clearTimeout(saveTimer); saveTimer=setTimeout(saveNow,900); }
-function commit(){ dirtyCur=true; saveNow(); }
+function scheduleSave(){ if(!cur||!canEdit(cur)) return; try{ stMitziehen(); }catch(e){} dirtyCur=true; setSub("Ungespeichert …"); clearTimeout(saveTimer); saveTimer=setTimeout(saveNow,900); }
+function commit(){ try{ if(cur&&canEdit(cur)) stMitziehen(); }catch(e){} dirtyCur=true; saveNow(); }
 function saveNow(){
   if(!cur) return; clearTimeout(saveTimer); if(!dirtyCur||!canEdit(cur)) return; dirtyCur=false;
   const c=JSON.parse(JSON.stringify(cur)), old=DB.pruefungen.get(c.id); if(old){ c._etag=old._etag; c._itemId=old._itemId; }
@@ -1817,7 +1817,7 @@ function weiterKnopf(s,st){ const li=st==="geraet"?-1:+st.slice(2), k=(v,t)=>`<d
 /*BIBLIOTHEK*/
 /*PROFIL*/
 /*KOPF*/
-function render(){ profilAnwenden();
+function render(){ profilAnwenden(); try{ stSnapSetzen(); }catch(e){}
   const app=$("#app"), ed=EDITOR.includes(nav.v);
   if(((SYNC_ON&&!ME.signedIn)||testGesperrt())&&nav.v!=="login") nav={v:"login"};
   if(QR_WARTET&&nav.v!=="login") qrNachLogin();
@@ -2633,6 +2633,23 @@ function nameFehlt(weiter){ if(SYNC_ON||META.profil.name) return false; nachName
 const ST_TECHNIK=["rcbo","rcdIntern","absTyp","absIn","absInAnders","zsMan","lsIcn","lsTyp","rcd","rcdTyp","rdc","idn","rcdIn","rcdHT","inenn","inennAnders","leitung"];
 const ST_GERAET=["bauart","katId","typ","fw","freigabe","lps","phasen"];
 let stDlg=null;
+/* Max 12.11.2026: Werte der ersten Station gehen automatisch auf die anderen Stationen derselben Gruppe (zusammen angelegt) über,
+   solange diese noch nicht selbst geändert wurden. Ändert man eine andere Station der Gruppe, ist sie eine Ausnahme und zieht nichts mit. */
+const ST_MIT=[...ST_TECHNIK,"typ","katId","fw","freigabe","lps","phasen"];
+let stSnap=null, stMitT=null;
+function stSnapSetzen(){ const s=cur&&nav.v==="saeule"&&cur.s&&cur.s[nav.si]; stSnap=s?{id:s.id,w:Object.fromEntries(ST_MIT.map(k=>[k,JSON.stringify(s[k])]))}:null; }
+function stMitziehen(){ if(!cur||nav.v!=="saeule"||!stSnap) return; const q=cur.s[nav.si]; if(!q||q.id!==stSnap.id) return;
+  const ge=ST_MIT.filter(k=>JSON.stringify(q[k])!==stSnap.w[k]); if(!ge.length) return;
+  ge.forEach(k=>stSnap.w[k]=JSON.stringify(q[k]));
+  if(!q.gr){ /* schon angelegte Prüfungen: Stationen gleicher Bauart/Typ, an denen noch nichts gemacht wurde, bilden nachträglich die Gruppe */
+    const leer=newSaeule(1,BAUART(q)), angef=z=>Object.keys(z.sicht||{}).length||Object.keys(z.fotos||{}).length||(z.lp||[]).some(l=>Object.entries(l.v||{}).some(([k,v])=>k!=="risov"&&v!==""&&v!=null)), unb=z=>!z.gr&&(!z.gid||z.gid===z.id)&&!angef(z)&&!z.sn&&ST_TECHNIK.every(k=>JSON.stringify(z[k])===JSON.stringify(leer[k])),
+      Z=cur.s.filter(z=>z!==q&&BAUART(z)===BAUART(q)&&katNorm(z.typ||"")===katNorm(q.typ||"")&&unb(z));
+    if(!Z.length||(q.gid&&q.gid!==q.id)||cur.s.some(z=>z.gr)) return; const gr=uid(); q.gr=gr; q.quelle=true; Z.forEach(z=>{ z.gr=gr; z.frisch=true; }); }
+  if(q.frisch){ delete q.frisch; if(cur.s.some(z=>z!==q&&z.gr===q.gr&&z.quelle)) return; q.quelle=true; }
+  if(!q.quelle) return;
+  const Z=cur.s.map((z,i)=>({z,i})).filter(x=>x.z!==q&&x.z.gr===q.gr&&x.z.frisch); if(!Z.length) return;
+  Z.forEach(({z})=>ge.forEach(k=>{ if(q[k]===undefined) delete z[k]; else z[k]=JSON.parse(JSON.stringify(q[k])); }));
+  clearTimeout(stMitT); stMitT=setTimeout(()=>toast(Z.length<=3?`Auch für ${Z.map(x=>sName(x.z,x.i)).join(", ")} übernommen`:`Auch für ${Z.length} weitere Stationen übernommen`),700); }
 const stTypListe=()=>[...live("katalog").map(r=>[r.hersteller,katName(r)].filter(Boolean).join(" ")),...live("pruefungen").flatMap(p=>p.s.map(x=>x.typ))];
 function katZuTyp(typ){ const t=katNorm(typ); if(!t) return null;
   return live("katalog").find(r=>katNorm([r.hersteller,katName(r)].join(" "))===t)||live("katalog").find(r=>r.modell&&t.includes(katNorm(r.modell)))||null; }
@@ -2662,15 +2679,15 @@ function stDialog(o){
       ${g.kat&&DB.katalog.get(g.kat)?`<p class="sup" style="margin:8px 4px 0">${esc(katKurz(DB.katalog.get(g.kat))||"Steckbrief noch ohne Angaben")}</p>`:""}</div>`).join("");
   dialog(D.mode==="neu"?"Was wird geprüft?":D.mode==="ort"?"Geräte hinzufügen":"Ladestationen hinzufügen",`<div class="fg1">${body}</div>${datalist("dl-sttyp",stTypListe())}
     <button class="btn-text stgr-add" data-act="stGrAdd">${icon("add")}Weitere Bauart oder Typ</button>
-    <p class="sup" style="margin:8px 0 0">Aus dem Katalog werden Bauart, Ladepunkte, Phasen, Strom und DC-Erkennung übernommen. Schutzeinrichtung und Leitung trägst du bei der ersten Station ein und überträgst sie dann über ⋮ „Auf andere Stationen übertragen“.</p>`,
+    <p class="sup" style="margin:8px 0 0">Aus dem Katalog werden Bauart, Ladepunkte, Phasen, Strom und DC-Erkennung übernommen. Absicherung, RCD und Leitung trägst du nur bei der ersten Station ein – die übrigen Stationen derselben Gruppe übernehmen die Werte automatisch, solange du sie dort nicht selbst änderst.</p>`,
     `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="stOk">${D.mode==="neu"?"Prüfung anlegen":"Hinzufügen"}</button>`);
 }
 function stErzeugen(liste,D){
   const neu=[];
-  for(const g of D.gr){ const n=Math.max(0,Math.min(50,parseInt(g.n,10)||0)); if(!n) continue;
+  for(const g of D.gr){ const n=Math.max(0,Math.min(50,parseInt(g.n,10)||0)); if(!n) continue; const gr=uid();
     const kg=g.kat&&DB.katalog.get(g.kat), typ=kg?katVoll(kg):g.typ;
     const vor=[...liste,...neu].reverse().find(x=>BAUART(x)===g.bauart&&(!typ||katNorm(x.typ)===katNorm(typ))), kat=kg||katZuTyp(typ);
-    for(let i=0;i<n;i++){ const s=newSaeule(1,g.bauart); s.name="";
+    for(let i=0;i<n;i++){ const s=newSaeule(1,g.bauart); s.name=""; if(n>1){ s.gr=gr; s.frisch=true; }
       if(vor){ [...ST_GERAET.filter(k=>k!=="fw"),...ST_TECHNIK].forEach(k=>{ if(vor[k]!==undefined) s[k]=vor[k]; }); }
       if(typ){ s.typ=typ.trim(); if(!vor) katAnwenden(s,kat); }
       neu.push(s); } }
@@ -2804,7 +2821,7 @@ function geraetItem(t){ const T=geraeteTreffer(t.s.sn), r=saeuleResult(t.s);
 /* Geräte gehören zum Ort (Ladepark bzw. Standort ohne Ladepark); Prüfungen verweisen über gid darauf */
 /* Ort ohne eigenen Standort = Adresse des Kunden; dann ist die Standort-Kennung „k:<Kunde>“ und Geräte/Prüfverlauf hängen am Kunden */
 const ortRec=(sid,lid)=>lid?ladeparkOf(lid):kOrt(sid)?kundeOf(sid.slice(2)):standortOf(sid), ortKind=(lid,sid)=>lid?"ladeparks":kOrt(sid)?"kunden":"standorte";
-const STAMM_AUS=["id","gid","lp","sicht","fotos","aus","qr"];   /* qr: Wallbox-Aufkleber gehört zum Gerät am Ort, nicht zur Prüfung */
+const STAMM_AUS=["id","gid","lp","sicht","fotos","aus","qr","frisch","gr","quelle"];   /* qr: Wallbox-Aufkleber gehört zum Gerät am Ort, nicht zur Prüfung */
 const stamm=s=>{ const o={}; for(const k in s) if(!STAMM_AUS.includes(k)) o[k]=JSON.parse(JSON.stringify(s[k])); return o; };
 const begonnen=s=>Object.keys(s.sicht||{}).length>0||Object.keys(s.fotos||{}).length>0||(s.lp||[]).some(l=>Object.values(l.v||{}).some(v=>v!==""&&v!=null)||(l.bem||"").trim());
 function geraeteOrt(sid,lid){ const o=ortRec(sid,lid); if(o&&Array.isArray(o.geraete)) return o.geraete;
