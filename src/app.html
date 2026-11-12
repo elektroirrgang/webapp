@@ -992,7 +992,7 @@ try{ if(matchMedia("(display-mode: standalone)").matches||matchMedia("(display-m
 const GROUPS = [
   {id:"frei", bilder:["frei-rlo","frei-iso"], ps:"Helfer: LS aus", t:"Spannungsfrei", sub:"Helfer schaltet den LS der Ladestation aus", how:[
     "Spannungsfreiheit feststellen, FEV300 in die Ladedose stecken.",
-    "Schutzleiter: MFT auf R<sub>LO</sub>, Prüfspitze an eine blanke Gehäuseschraube, zweite Leitung an die PE-Buchse des FEV300.",
+    "Schutzleiter: MFT auf R<sub>LO</sub>, rote Prüfspitze an eine blanke Gehäuseschraube. Die grüne Leitung von der PE-Buchse des FEV300 kommt am MFT in die <b>blaue Buchse</b> – nicht in die grüne.",
     "Isolation: händisch an der Wallbox, Zuleitung angeschlossen, jede Strecke einzeln messen – Außenleiter untereinander und jeder Außenleiter gegen PE. L – N lässt sich nicht messen (Elektronik der Wallbox dazwischen). Mit Überspannungsschutz 250 V, sonst 500 V."], rows:[
     {k:"rpe", l:"Schutzleiter", d:"Gehäuseschraube ↔ PE-Buchse FEV300", u:"Ω", soll:"≤ 0,3 Ω", t:v=>v<=0.3},
     {k:"riso", l:"Isolation (alt)", d:"L1+L2+L3+N gebrückt gegen PE", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, isoAlt:true},
