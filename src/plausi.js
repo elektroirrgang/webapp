@@ -22,9 +22,10 @@ function plHinweise(art,roh,c){ c=c||{}; const z=plZahl(roh); if(!z) return []; 
     if(c.zi&&v<c.zi) w(`Zs (${plF(v)} Ω) ist kleiner als Zi (${plF(c.zi)} Ω) – unplausibel, die Schleife ist immer mindestens so groß wie die Netzimpedanz.`);
     const L=(c.zs||[]).filter(x=>x&&x>0); if(L.length>=2){ const lo=Math.min(...L), hi=Math.max(...L); if(lo>0&&(hi-lo)/lo>0.5&&v===hi) w(`Deutlich höher als die anderen Außenleiter (${plF(lo)} … ${plF(hi)} Ω) – Klemmstelle oder Übergangswiderstand in diesem Außenleiter prüfen.`); }
     if(c.In&&c.f&&v>0){ const Ia=c.f*c.In, Ik=230/v; let t=`I k = ${plF(Ik)} A · nötig I a = ${c.f} × ${plF(c.In)} A = ${plF(Ia)} A`;
-      if(c.zul){ const res=(c.zul-v)/c.zul*100; if(v<=c.zul) t+=res<10?` · knapp: nur ${plF(res,1)} % Reserve bis ${plF(c.zul)} Ω`:` · Reserve ${plF(res,1)} %`; else t+=` · Zs zu hoch: zulässig ≤ ${plF(c.zul)} Ω${Math.abs(c.zul-230/Ia*2/3)<0.01?" (mit Faktor 2/3, weil die Leitung im Fehlerfall warm wird)":""}`; }
+      if(c.zul){ const res=(c.zul-v)/c.zul*100; if(v<=c.zul) t+=res<10?` · knapp: nur ${plF(res,1)} % Reserve bis ${plF(c.zul)} Ω`:` · Reserve ${plF(res,1)} %`; else if(c.idn&&v<=230/(c.idn/1000)) t+=` · über dem LS-Richtwert ${plF(c.zul)} Ω – Fehlerschutz über den RCD ${plF(c.idn)} mA erfüllt (Zs ≤ ${plF(230/(c.idn/1000),2)} Ω), Begründung steht im Protokoll${Ik<Ia?" · ACHTUNG: Ik < Ia, LS löst Kurzschlüsse nicht sicher unverzögert aus":""}`;
+        else t+=` · Zs zu hoch: zulässig ≤ ${plF(c.zul)} Ω${Math.abs(c.zul-230/Ia*2/3)<0.01?" (mit Faktor 2/3, weil die Leitung im Fehlerfall warm wird)":""}`; }
       else t+=Ik>=Ia?" · Abschaltbedingung erfüllt":" · Abschaltbedingung NICHT erfüllt";
-      (c.zul&&v<=c.zul&&(c.zul-v)/c.zul<0.1)?w(t):i(t); } }
+      ((!c.idn&&c.zul&&v<=c.zul&&(c.zul-v)/c.zul<0.1)||(c.zul&&v>c.zul&&Ik<Ia))?w(t):i(t); } }
   if(art==="u"){ if(v>360&&v<440) w("Das sieht nach Außenleiterspannung (400 V) aus – hier L gegen N messen (ca. 230 V).");
     else if(v<100||v>300) w("Für L–N unrealistisch (erwartet ca. 230 V) – Tippfehler oder Messpunkt falsch?"); }
   if(art==="unpe"&&v>=2&&v<10) w("N–PE erhöht – Belastung oder Übergangswiderstand im Neutralleiter? Richtung Verteiler nachgehen.");
