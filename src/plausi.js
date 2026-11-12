@@ -21,7 +21,7 @@ function plHinweise(art,roh,c){ c=c||{}; const z=plZahl(roh); if(!z) return []; 
     else if(v>20) w("Sehr hoch – Komma vergessen (z. B. 0,82 statt 82)? Oder Messung über einen hochohmigen Pfad?");
     if(c.zi&&v<c.zi) w(`Zs (${plF(v)} Ω) ist kleiner als Zi (${plF(c.zi)} Ω) – unplausibel, die Schleife ist immer mindestens so groß wie die Netzimpedanz.`);
     const L=(c.zs||[]).filter(x=>x&&x>0); if(L.length>=2){ const lo=Math.min(...L), hi=Math.max(...L); if(lo>0&&(hi-lo)/lo>0.5&&v===hi) w(`Deutlich höher als die anderen Außenleiter (${plF(lo)} … ${plF(hi)} Ω) – Klemmstelle oder Übergangswiderstand in diesem Außenleiter prüfen.`); }
-    if(c.In&&c.f&&v>0){ const Ia=c.f*c.In, Ik=230/v; let t=`I k = 230 V ÷ ${plF(v,3)} Ω = ${plF(Ik)} A · nötig I a = ${c.f} × ${plF(c.In)} A = ${plF(Ia)} A`;
+    if(c.In&&c.f&&v>0){ const Ia=c.f*c.In, Ik=230/v; let t=`I k = ${plF(Ik)} A · nötig I a = ${c.f} × ${plF(c.In)} A = ${plF(Ia)} A`;
       if(c.zul){ const res=(c.zul-v)/c.zul*100; if(v<=c.zul) t+=res<10?` · knapp: nur ${plF(res,1)} % Reserve bis ${plF(c.zul)} Ω`:` · Reserve ${plF(res,1)} %`; else t+=` · Zs zu hoch: zulässig ≤ ${plF(c.zul)} Ω${Math.abs(c.zul-230/Ia*2/3)<0.01?" (mit Faktor 2/3, weil die Leitung im Fehlerfall warm wird)":""}`; }
       else t+=Ik>=Ia?" · Abschaltbedingung erfüllt":" · Abschaltbedingung NICHT erfüllt";
       (c.zul&&v<=c.zul&&(c.zul-v)/c.zul<0.1)?w(t):i(t); } }
