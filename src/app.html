@@ -1104,8 +1104,11 @@ function zsInfo(s){
   const m=num(s.zsMan);
   return {zul:isNaN(m)?NaN:m, calc:s.absTyp==="manuell"?"Zs zulässig aus der Sicherungstabelle eintragen.":"Nennstrom des LS eintragen."};
 }
-function sollOf(r,s){
-  if(r.zs){ const z=zsInfo(s).zul; return isNaN(z)?"Zs zulässig fehlt":`≤ ${fmt(z,2)} Ω`; }
+/* Fehlerschutz über RCD (Max 12.11.2026, mit dem Meister abgestimmt): Wallbox-Kreise haben einen RCD – Zs ist i. O., wenn Zs ≤ U0 / IΔn.
+   Der LS-Wert (2/3 · U0/Ia) bleibt als Richtwert und Hinweis; liegt Zs darüber, steht die Begründung im Protokoll. */
+const zsRcd=s=>{ const i=num(s.idn); return i>0?230/(i/1000):NaN; };
+function sollOf(r,s,kurz){
+  if(r.zs){ const z=zsInfo(s).zul, zr=zsRcd(s); if(!isNaN(zr)) return kurz?`≤ ${fmt(zr,0)} Ω (RCD)`:`${isNaN(z)?"":`LS ≤ ${fmt(z,2)} Ω · `}RCD ≤ ${fmt(zr,0)} Ω`; return isNaN(z)?"Zs zulässig fehlt":`≤ ${fmt(z,2)} Ω`; }
   if(r.ria){ const i=num(s.idn)||30; return `${fmt(0.5*i)} – ${fmt(i)} mA`; }
   return r.soll||"";
 }
@@ -1130,7 +1133,7 @@ function evalRow(r,val,s){
   if(r.type==="chk") return val==="ok"?"ok":val==="nok"?"bad":"open";
   if(r.type==="sel") return r.t?(r.t(val)?"ok":"bad"):"ok";
   const v=num(val); if(isNaN(v)) return "open";
-  if(r.zs){ const z=zsInfo(s).zul; if(isNaN(z)) return "open"; return v<=z?"ok":"bad"; }
+  if(r.zs){ const z=zsInfo(s).zul, zr=zsRcd(s); if(!isNaN(zr)) return v<=zr?"ok":"bad"; if(isNaN(z)) return "open"; return v<=z?"ok":"bad"; }
   if(r.ria){ const i=num(s.idn)||30; return (v>=0.5*i&&v<=i)?"ok":"bad"; }
   return r.t(v)?"ok":"bad";
 }
@@ -3567,7 +3570,7 @@ function buildPDF(P){
       d.setFillColor(...SUNK); d.rect(M,y-off,CW,gh,"F"); d.setTextColor(...NAVY); d.setFont("helvetica","bold"); d.setFontSize(fs-0.5); d.text(pt(g.id==="rcd"&&s.rcdIntern?`${g.t} (RCD nicht über den Prüfadapter messbar)`:`${g.t} (${g.ps||g.sub})`),cP,y+(gh-rh)/2); y+=gh;
       rows.forEach((r,ri)=>{
         if(ri%2){ d.setFillColor(250,251,252); d.rect(M,y-off,CW,rh,"F"); }
-        d.setFont("helvetica","normal"); d.setFontSize(fs); d.setTextColor(20); d.text(pt(r.l),cP,y); d.setTextColor(...GR); d.text(fitTxt(pt(r.psoll||sollOf(r,s)),c1-cS-3),cS,y);
+        d.setFont("helvetica","normal"); d.setFontSize(fs); d.setTextColor(20); d.text(pt(r.l),cP,y); d.setTextColor(...GR); d.text(fitTxt(pt(r.psoll||sollOf(r,s,true)),c1-cS-3),cS,y);
         for(let li=0;li<s.lps;li++){ const x=li?c2:c1, val=s.lp[li].v[r.k]??"", e=evalRow(r,val,s);
           const t=r.type==="chk"?(val==="ok"?"i.O.":val==="nok"?"n.i.O.":"-"):(val===""?"-":`${val}${r.u?" "+r.u:""}${r.zs&&ikText(val)?` · ${ikText(val)}`:""}`);
           d.setTextColor(...(e==="ok"?OKC:e==="bad"?BADC:GR)); d.setFont("helvetica",e==="open"?"normal":"bold"); d.text(pt(t),x,y); }
@@ -3575,6 +3578,13 @@ function buildPDF(P){
       });
     }
     y+=4;
+    /* Zs über dem LS-Richtwert, aber Fehlerschutz über RCD: Begründung ins Protokoll */
+    { const z=zsInfo(s), zr=zsRcd(s), In=num(s.absIn), f=s.absTyp==="LS B"?5:s.absTyp==="LS C"?10:0, Ia=f*In, N=[];
+      if(!isNaN(zr)&&!isNaN(z.zul)) for(let li=0;li<s.lps;li++) ["zs1","zs2","zs3"].forEach((k,j)=>{ if(j&&s.phasen===1) return; const v=num(s.lp[li].v[k]); if(!isNaN(v)&&v>z.zul&&v<=zr) N.push({li,j,v}); });
+      if(N.length){ const w=N.map(x=>`${s.lps>1?`LP ${x.li+1} `:""}L${x.j+1}: ${fmt(x.v,3)} Ω`).join(", "), vmax=Math.max(...N.map(x=>x.v)), ikMin=230/vmax;
+        const txt=`Hinweis Schleifenimpedanz (${w}): über dem LS-Richtwert ${fmt(z.zul,2)} Ω (2/3 von U0/Ia). Der Fehlerschutz bei Körperschluss erfolgt über den RCD ${fmt(num(s.idn))} mA: Zs ≤ U0 / IΔn = 230 V / ${fmt(num(s.idn)/1000,3)} A = ${fmt(zr,2)} Ω – erfüllt.`
+          +(Ia?(ikMin>=Ia?` Ik = 230 V / ${fmt(vmax,3)} Ω = ${fmt(ikMin,2)} A ≥ Ia = ${fmt(Ia)} A – der LS schaltet Kurzschlüsse weiterhin unverzögert ab.`:` Ik = 230 V / ${fmt(vmax,3)} Ω = ${fmt(ikMin,2)} A < Ia = ${fmt(Ia)} A – Kurzschlussschutz L–N gesondert bewerten.`):"");
+        d.setFont("helvetica","normal"); d.setFontSize(7.5); d.setTextColor(...GR); const l=d.splitTextToSize(pt(txt),CW-4); if(y+l.length*3.4+4>280) np(`${s.name} (Fortsetzung)`,""); d.text(l,M+2,y); y+=l.length*3.4+4; } }
     if(y+10>280) np(`${s.name} (Fortsetzung)`,"");
     d.setDrawColor(...LINE); d.line(M,y-3.5,M+CW,y-3.5);
     for(let li=0;li<s.lps;li++){ const x0=li?M+CW/2+4:M+2, xr=li||s.lps===1?M+CW-1:M+CW/2-4;
