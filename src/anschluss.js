@@ -156,7 +156,7 @@ const dreiLtg=()=>leitung(mb("rot"),fb("L1"),LEIT.rot,[-10,-150],[30,-150])+leit
 const BILD={
   "frei-rlo":()=>grund({fev:{cp:"A",an:["PE"],leds:false}})+mftG("RLO",["R LOW","– – – Ω"])
     +leitung(mb("rot"),pt(GW,wbSchraube(0,0)),LEIT.rot,[-30,-260],[80,-120],"spitze")
-    +leitung(mb("gelb"),fb("PE"),LEIT.gelb,[-20,-60],[150,-30])+hinweis(0,0,"Helfer am Verteiler: LS aus"),
+    +leitung(mb("blau"),fb("PE"),LEIT.gelb,[-20,-60],[150,-30])+hinweis(0,0,"Helfer am Verteiler: LS aus"),   /* R LOW: grüne Leitung vom FEV300-PE in die BLAUE MFT-Buchse (Max 12.11.2026, vor Ort festgestellt) */
   "frei-iso":()=>{ const g={x:70,y:24,s:1.28};
     return gr(g,wallbox(0,0,{offen:true}))+mftG("RISO",["R ISO","500 V"])
     +leitung(mb("rot"),pt(g,wbKlemme(0,0,"L1")),LEIT.rot,[-40,-150],[10,-170],"klemme")
