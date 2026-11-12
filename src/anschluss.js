@@ -160,7 +160,7 @@ const BILD={
   "frei-iso":()=>{ const g={x:70,y:24,s:1.28};
     return gr(g,wallbox(0,0,{offen:true}))+mftG("RISO",["R ISO","500 V"])
     +leitung(mb("rot"),pt(g,wbKlemme(0,0,"L1")),LEIT.rot,[-40,-150],[10,-170],"klemme")
-    +leitung(mb("gelb"),pt(g,wbKlemme(0,0,"PE")),LEIT.gelb,[-10,-110],[10,-130],"klemme")+hinweis(0,0,"Helfer am Verteiler: LS aus"); },
+    +leitung(mb("blau"),pt(g,wbKlemme(0,0,"PE")),LEIT.gelb,[-10,-110],[10,-130],"klemme")   /* auch bei R ISO: grüne Leitung in die BLAUE MFT-Buchse (Max 12.11.2026) */+hinweis(0,0,"Helfer am Verteiler: LS aus"); },
   "spann-u":()=>grund({fev:{cp:"C",an:["L1","N","PE"]}})+mftG("U",["U","L–N · N–PE"])+dreiLtg()+hinweis(0,0,"Helfer: LS ein · CP STATE auf C","#2e7d32"),
   "spann-zs":()=>grund({fev:{cp:"C",an:["L1","N","PE"]}})+mftG("ZS",["Zs (L-PE)","std. RCD"])+dreiLtg()+hinweis(0,0,"Helfer: LS ein · CP STATE auf C","#2e7d32"),
   "rcd":()=>grund({fev:{cp:"C",an:["L1","N","PE"]}})+mftG("RCD",["RCD","Rampe"])+dreiLtg()+hinweis(0,0,"Helfer: RCD nach jeder Auslösung wieder ein"),
