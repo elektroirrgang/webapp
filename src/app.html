@@ -1025,7 +1025,7 @@ const GROUPS = [
     {k:"zs3", l:"Zs L3 – PE", u:"Ω", zs:true, p3:true},
   ]},
   {id:"rcd", bilder:["rcd"], ps:"CP = C", t:"RCD / DC-Fehlerstrom", sub:"CP = C, Helfer schaltet den RCD nach jeder Auslösung wieder ein", how:[
-    "MFT auf RCD, Mode „current“ (Rampe), RCD-Typ einstellen. Eine Messung zeigt Auslösestrom IΔ, Berührungsspannung UB und Auslösezeit t.",
+    "MFT auf RCD, Mode „current“ (Rampe), RCD-Typ einstellen. Eine Messung zeigt Auslösestrom IΔ, Berührungsspannung UB und Auslösezeit t. Bei RCD Typ B-EV am MFT als RCD-Typ „EVSE“ wählen.",
     "6 mA DC: nur bei DC-Erkennung in der Wallbox bzw. RCD Typ A-EV – die Ladung muss abbrechen.",
     "Die Einzelmessungen bei ½ × und 5 × IΔn sind optional (z. B. AUTO-Modus des MFT).",
     "Schaltet die Wallbox bei der RCD-Rampe selbst ab (rote LED), misst das MFT die Wallbox und nicht den RCD im Verteiler. Dann oben „Nein“ wählen und die angezeigten Werte (mA, ms) optional als Abschaltung der Wallbox eintragen. Die 6-mA-DC-Prüfung bleibt."], rows:[
@@ -2239,7 +2239,8 @@ function saeuleView(){
     h+=`<section class="card step"><div class="gh"><span class="stepno">${nr}</span><div><h3>${esc(g.t)}</h3><p>${esc(g.sub)}</p></div><span class="pill ${gr}" data-gres="${g.id}">${RES_SHORT[gr]}</span></div>`;
     const bEV=rcdInfo(s).t==="B-EV"&&!s.rcdIntern;
     if(g.id==="spann"&&bEV) h+=`<p class="warnline">${icon("warn")}RCD Typ B-EV: Bei Zs am MFT den RCD-Typ auf „EVSE“ stellen – sonst löst der RCD aus.</p>`;
-    if(g.how) h+=`<details class="how"><summary>So wird gemessen</summary>${anschlussHtml(bEV?g.bilder.map(x=>x==="spann-zs"?"spann-zs-ev":x):g.bilder)}<ol>${g.how.map(x=>`<li>${x}</li>`).join("")}</ol></details>`;
+    if(g.id==="rcd"&&bEV) h+=`<p class="warnline">${icon("warn")}RCD Typ B-EV: Am MFT als RCD-Typ „EVSE“ wählen.</p>`;
+    if(g.how) h+=`<details class="how"><summary>So wird gemessen</summary>${anschlussHtml(bEV?g.bilder.map(x=>x==="spann-zs"?"spann-zs-ev":x==="rcd"?"rcd-ev":x):g.bilder)}<ol>${g.how.map(x=>`<li>${x}</li>`).join("")}</ol></details>`;
     if(g.id==="rcd") h+=`<div class="rcdi"><div class="lbl">RCD im Verteiler über den FEV300 messbar?</div>${seg("rcdIntern",s.rcdIntern?"1":"0",[["0","Ja"],["1","Nein, nicht messbar"]])}${s.rcdIntern?`<p class="sup">Auslösestrom, Berührungsspannung und Auslösezeit des RCD entfallen. Was das MFT dabei angezeigt hat, kannst du unten als Abschaltung der Wallbox eintragen (optional).</p>`:""}</div>`;
     let optOpen=false; h+=`<div class="mgrid">`;
     for(const r of rows){
