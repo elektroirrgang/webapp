@@ -993,12 +993,12 @@ const GROUPS = [
   {id:"frei", bilder:["frei-rlo","frei-iso"], ps:"Helfer: LS aus", t:"Spannungsfrei", sub:"Helfer schaltet den LS der Ladestation aus", how:[
     "Spannungsfreiheit feststellen, FEV300 in die Ladedose stecken.",
     "Schutzleiter: MFT auf R<sub>LO</sub>, rote Prüfspitze an eine blanke Gehäuseschraube. Die grüne Leitung von der PE-Buchse des FEV300 kommt am MFT in die <b>blaue Buchse</b> – nicht in die grüne.",
-    "Isolation: MFT auf R<sub>ISO</sub>, rote Leitung in die rote Buchse, grüne Leitung auch hier in die <b>blaue Buchse</b>. Händisch an der Wallbox, Zuleitung angeschlossen, jede Strecke einzeln messen – Außenleiter untereinander, jeder Außenleiter gegen N und gegen PE, dazu N gegen PE. Mit Überspannungsschutz 250 V, sonst 500 V."], rows:[
+    "Isolation: MFT auf R<sub>ISO</sub>, rote Leitung in die rote Buchse, grüne Leitung auch hier in die <b>blaue Buchse</b>. Händisch an der Wallbox, Zuleitung angeschlossen, jede Strecke einzeln messen – jeder Außenleiter gegen N und gegen PE, dazu N gegen PE (Außenleiter untereinander entfällt). Mit Überspannungsschutz 250 V, sonst 500 V."], rows:[
     {k:"rpe", l:"Schutzleiter", d:"Gehäuseschraube ↔ PE-Buchse FEV300", u:"Ω", soll:"≤ 0,3 Ω", t:v=>v<=0.3},
     {k:"riso", l:"Isolation (alt)", d:"L1+L2+L3+N gebrückt gegen PE", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, isoAlt:true},
-    {k:"riso12", l:"Isolation L1 – L2", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, p3:true},
-    {k:"riso13", l:"Isolation L1 – L3", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, p3:true},
-    {k:"riso23", l:"Isolation L2 – L3", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, p3:true},
+    {k:"riso12", isoLL:true, l:"Isolation L1 – L2", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, p3:true},
+    {k:"riso13", isoLL:true, l:"Isolation L1 – L3", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, p3:true},
+    {k:"riso23", isoLL:true, l:"Isolation L2 – L3", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, p3:true},
     {k:"riso1n", l:"Isolation L1 – N", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, isoN:true},
     {k:"riso2n", l:"Isolation L2 – N", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, isoN:true, p3:true},
     {k:"riso3n", l:"Isolation L3 – N", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, isoN:true, p3:true},
@@ -1123,7 +1123,7 @@ const ISO_K=["riso12","riso13","riso23","riso1n","riso2n","riso3n","riso1pe","ri
 const isoAlt=s=>(s.lp||[]).some(lp=>lp&&lp.v&&lp.v.riso!=null&&lp.v.riso!==""&&!ISO_K.some(k=>lp.v[k]!=null&&lp.v[k]!==""));
 /* 6 mA DC: bis 16.10.2026 in Sekunden, seitdem in ms (das MFT zeigt ms). Alte Prüfungen behalten ihre Zeile. */
 const dcAlt=s=>(s.lp||[]).some(lp=>lp&&lp.v&&lp.v.dc6!=null&&lp.v.dc6!==""&&(lp.v.dc6ms==null||lp.v.dc6ms===""));
-function rowVisible(r,s){ if(r.dcAlt&&!dcAlt(s)) return false; if(r.dcNeu&&dcAlt(s)) return false; if(r.rcdw) return !!s.rcdIntern; if(r.rcd&&s.rcdIntern) return false; if(r.isoAlt) return isoAlt(s); if(r.iso&&isoAlt(s)) return false; if(r.isoN&&!s.isoN) return false; if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
+function rowVisible(r,s){ if(r.dcAlt&&!dcAlt(s)) return false; if(r.dcNeu&&dcAlt(s)) return false; if(r.rcdw) return !!s.rcdIntern; if(r.rcd&&s.rcdIntern) return false; if(r.isoAlt) return isoAlt(s); if(r.iso&&isoAlt(s)) return false; if(r.isoN&&!s.isoN) return false; if(r.isoLL&&s.isoN&&!(s.lp||[]).some(lp=>lp&&lp.v&&lp.v[r.k]!=null&&lp.v[r.k]!=="")) return false; if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
 /* Kurzschlussstrom aus der Schleifenimpedanz: Ik = U0 / Zs mit U0 = 230 V (Max 12.11.2026) */
 const IK_U0=230;
 function ikText(val,lang){ const z=num(val); if(isNaN(z)||z<=0) return ""; const ik=IK_U0/z;
