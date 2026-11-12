@@ -993,15 +993,19 @@ const GROUPS = [
   {id:"frei", bilder:["frei-rlo","frei-iso"], ps:"Helfer: LS aus", t:"Spannungsfrei", sub:"Helfer schaltet den LS der Ladestation aus", how:[
     "Spannungsfreiheit feststellen, FEV300 in die Ladedose stecken.",
     "Schutzleiter: MFT auf R<sub>LO</sub>, rote Prüfspitze an eine blanke Gehäuseschraube. Die grüne Leitung von der PE-Buchse des FEV300 kommt am MFT in die <b>blaue Buchse</b> – nicht in die grüne.",
-    "Isolation: händisch an der Wallbox, Zuleitung angeschlossen, jede Strecke einzeln messen – Außenleiter untereinander und jeder Außenleiter gegen PE. L – N lässt sich nicht messen (Elektronik der Wallbox dazwischen). Mit Überspannungsschutz 250 V, sonst 500 V."], rows:[
+    "Isolation: händisch an der Wallbox, Zuleitung angeschlossen, jede Strecke einzeln messen – Außenleiter untereinander, jeder Außenleiter gegen N und gegen PE, dazu N gegen PE. Mit Überspannungsschutz 250 V, sonst 500 V."], rows:[
     {k:"rpe", l:"Schutzleiter", d:"Gehäuseschraube ↔ PE-Buchse FEV300", u:"Ω", soll:"≤ 0,3 Ω", t:v=>v<=0.3},
     {k:"riso", l:"Isolation (alt)", d:"L1+L2+L3+N gebrückt gegen PE", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, isoAlt:true},
     {k:"riso12", l:"Isolation L1 – L2", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, p3:true},
     {k:"riso13", l:"Isolation L1 – L3", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, p3:true},
     {k:"riso23", l:"Isolation L2 – L3", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, p3:true},
+    {k:"riso1n", l:"Isolation L1 – N", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, isoN:true},
+    {k:"riso2n", l:"Isolation L2 – N", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, isoN:true, p3:true},
+    {k:"riso3n", l:"Isolation L3 – N", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, isoN:true, p3:true},
     {k:"riso1pe", l:"Isolation L1 – PE", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true},
     {k:"riso2pe", l:"Isolation L2 – PE", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, p3:true},
     {k:"riso3pe", l:"Isolation L3 – PE", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, p3:true},
+    {k:"risonpe", l:"Isolation N – PE", d:"händisch an der Wallbox", u:"MΩ", soll:"≥ 1 MΩ", t:v=>v>=1, iso:true, isoN:true},
     {k:"risov", l:"Prüfspannung Isolation", type:"sel", pre:true, opts:["500 V","250 V"], soll:"250 V bei Überspannungsschutz", psoll:"500 V (250 V mit SPD)"},
   ]},
   {id:"spann", bilder:["spann-u","spann-zs"], ps:"FEV300 auf CP = C", t:"Unter Spannung", sub:"Helfer schaltet den LS wieder ein, FEV300 auf CP = C", how:[
@@ -1075,7 +1079,7 @@ const today = ()=>new Date().toISOString().slice(0,10);
 const deDate = iso=>iso?iso.split("-").reverse().join("."):"";
 
 function newLP(){ return {v:{risov:"500 V"}, bem:""}; }
-function newSaeule(n,bauart="Wallbox"){ return {id:uid(), sicht:{}, bauart, name:`${bauart} ${n}`, typ:"", sn:"", ort:"", fw:"", absTyp:"LS B", absIn:"16", zsMan:"", inenn:"", rcd:RCD_TYPES[0], idn:"30", freigabe:"", phasen:3, lps:bauart==="Ladesäule"?2:1, lp:[newLP(),newLP()], fotos:{}}; }
+function newSaeule(n,bauart="Wallbox"){ return {id:uid(), sicht:{}, bauart, name:`${bauart} ${n}`, typ:"", sn:"", ort:"", fw:"", absTyp:"LS B", absIn:"16", zsMan:"", inenn:"", rcd:RCD_TYPES[0], idn:"30", freigabe:"", phasen:3, lps:bauart==="Ladesäule"?2:1, lp:[newLP(),newLP()], fotos:{}, isoN:true}; }
 const BAUART=s=>s.bauart||"Ladesäule";
 const BAUARTEN=[["Wallbox","Wallbox","an der Wand"],["Ladesäule","Ladesäule","freistehend"]];
 function newProto(){
@@ -1087,7 +1091,7 @@ function newProto(){
 function evRcPre(s){ const m=String(s.leitung||"").match(/(\d+(?:[.,]\d+)?)\s*mm/), lp0=(s.lp||[])[0]||{v:{}}, I=num(s.inenn)*(s.lps||1);
   return {ph:s.phasen===3?3:1,a:isNaN(I)||!I?"":String(I).replace(".",","),l:s.laenge||"",q:m?m[1].replace(".",","):"",ch:s.absTyp==="LS C"?"C":"B",in:s.absIn||"",zsm:lp0.v.zs1||""}; }
 /* Plausibilitätsprüfung (plausi.js): Art je Messzeile und Bezug aus der Ladestation */
-const PL_ART={rpe:"rlo",riso:"riso",riso12:"riso",riso13:"riso",riso23:"riso",riso1pe:"riso",riso2pe:"riso",riso3pe:"riso",u1:"u",u2:"u",u3:"u",unpe:"unpe",zs1:"zs",zs2:"zs",zs3:"zs",ub:"ub",r1:"t1",r5:"t5",ria:"ria",rcdw:"ria",rcdwt:"t1"};
+const PL_ART={rpe:"rlo",riso:"riso",riso12:"riso",riso13:"riso",riso23:"riso",riso1pe:"riso",riso2pe:"riso",riso3pe:"riso",riso1n:"riso",riso2n:"riso",riso3n:"riso",risonpe:"riso",u1:"u",u2:"u",u3:"u",unpe:"unpe",zs1:"zs",zs2:"zs",zs3:"zs",ub:"ub",r1:"t1",r5:"t5",ria:"ria",rcdw:"ria",rcdwt:"t1"};
 function plCtx(el){ const m=/^s\.(\d+)\.lp\.(\d+)\.v\.(\w+)$/.exec(el.dataset.bind||""); if(!m||!cur) return {}; const s=cur.s[+m[1]], lp=s&&s.lp[+m[2]]; if(!lp) return {};
   const z=zsInfo(s), f=s.absTyp==="LS B"?5:s.absTyp==="LS C"?10:0, zs=["zs1","zs2","zs3"].filter(k=>k==="zs1"||s.phasen!==1).map(k=>num(lp.v[k])).filter(x=>!isNaN(x));
   return {In:num(s.absIn)||0,f,zul:isNaN(z.zul)?0:z.zul,idn:num(s.idn)||30,zs,zsHier:num(lp.v.zs1)||0}; }
@@ -1112,11 +1116,11 @@ const polLS=s=>s.phasen===3?"3-polig":"1-polig", polRCD=s=>s.phasen===3?"4-polig
 /* FI/LS-Schalter (RCBO): LS und RCD in einem Gerät, mit Neutralleiter – 3-phasig also 4-polig (3P+N) */
 const polRCBO=s=>s.phasen===3?"4-polig":"2-polig";
 /* Isolation: bis 16.10.2026 ein Wert „gebrückt gegen PE“, seitdem jede Strecke einzeln. Alte Prüfungen behalten ihre Zeile. */
-const ISO_K=["riso12","riso13","riso23","riso1pe","riso2pe","riso3pe"];
+const ISO_K=["riso12","riso13","riso23","riso1n","riso2n","riso3n","riso1pe","riso2pe","riso3pe","risonpe"];
 const isoAlt=s=>(s.lp||[]).some(lp=>lp&&lp.v&&lp.v.riso!=null&&lp.v.riso!==""&&!ISO_K.some(k=>lp.v[k]!=null&&lp.v[k]!==""));
 /* 6 mA DC: bis 16.10.2026 in Sekunden, seitdem in ms (das MFT zeigt ms). Alte Prüfungen behalten ihre Zeile. */
 const dcAlt=s=>(s.lp||[]).some(lp=>lp&&lp.v&&lp.v.dc6!=null&&lp.v.dc6!==""&&(lp.v.dc6ms==null||lp.v.dc6ms===""));
-function rowVisible(r,s){ if(r.dcAlt&&!dcAlt(s)) return false; if(r.dcNeu&&dcAlt(s)) return false; if(r.rcdw) return !!s.rcdIntern; if(r.rcd&&s.rcdIntern) return false; if(r.isoAlt) return isoAlt(s); if(r.iso&&isoAlt(s)) return false; if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
+function rowVisible(r,s){ if(r.dcAlt&&!dcAlt(s)) return false; if(r.dcNeu&&dcAlt(s)) return false; if(r.rcdw) return !!s.rcdIntern; if(r.rcd&&s.rcdIntern) return false; if(r.isoAlt) return isoAlt(s); if(r.iso&&isoAlt(s)) return false; if(r.isoN&&!s.isoN) return false; if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
 function evalRow(r,val,s){
   if(val==null||val==="") return r.opt?"skip":"open";
   if(r.type==="chk") return val==="ok"?"ok":val==="nok"?"bad":"open";
@@ -2773,6 +2777,7 @@ function neuePruefung(kundeId,standortId,ladeparkId,st,vorlage){
   go({v:"projekt"}); if(cur.s.length>1) setTimeout(umfangDlg,150); toast(!st&&G0.length?`${p.s.length} ${p.s.length>1?"Geräte":"Gerät"} aus dem ${ladeparkId?"Ladepark":"Standort"} übernommen`:"Neue Prüfung angelegt");
 }
 function oeffne(id){ const p=DB.pruefungen.get(id); if(!p||p.deleted) return; cur=JSON.parse(JSON.stringify(p)); dirtyCur=false;
+  if(canEdit(cur)&&!hatPdf(cur)&&cur.s.some(s=>!s.isoN)){ cur.s.forEach(s=>s.isoN=true); dirtyCur=true; }   /* laufende Prüfungen bekommen L–N und N–PE (12.11.2026) */
   if(canEdit(cur)&&!hatPdf(cur)&&abgleich(cur)){ nummeriere(); dirtyCur=true; saveNow(); } setSub(SYNC_ON?"Abgeglichen":"Gespeichert auf diesem Gerät");
   fotoFetch(cur.s.flatMap(fotoIds)); go({v:"projekt"}); }
 function zurueck(){
