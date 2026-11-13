@@ -4,7 +4,7 @@
    in diese App geleitet (#qr=NUMMER) und landet direkt beim Verteiler. Die Nummer steht am Verteiler als v.qr.
    Bögen werden vorgedruckt (70 × 36 mm, 24 je A4) und vor Ort per Scan einem Verteiler zugeordnet. */
 /* Aufkleber → Verteiler (art "vt") oder Netzwerkschrank (art "schrank"); x ist das Objekt (Verteiler bzw. Schrank) */
-function qrAlle(){ const S=new Map(); for(const g0 of live("gebaeude")){ const g=ecGebNorm(g0); g.verteiler.forEach(v=>{ if(v.qr) S.set(v.qr,{g,v,x:v,art:"vt"}); }); (g.schraenke||[]).forEach(x=>{ if(x.qr) S.set(x.qr,{g,x,art:"schrank"}); }); } return S; }
+function qrAlle(){ const S=new Map(); for(const g0 of live("gebaeude")){ if(typeof ortTotSicher==="function"&&ortTotSicher(g0.ortId)) continue; const g=ecGebNorm(g0); g.verteiler.forEach(v=>{ if(v.qr) S.set(v.qr,{g,v,x:v,art:"vt"}); }); (g.schraenke||[]).forEach(x=>{ if(x.qr) S.set(x.qr,{g,x,art:"schrank"}); }); } return S; }
 const qrArtName=t=>t.art==="schrank"?"Netzwerkschrank":"Verteiler";
 /* für den Scanner (scanner.js): was steckt hinter der Nummer? */
 function qrTreffer(c){ const t=qrAlle().get(c);
@@ -13,7 +13,7 @@ function qrTreffer(c){ const t=qrAlle().get(c);
 /* Netzwerkschrank öffnen: in der neuesten Netzwerkprüfung des Objekts, Bereich „Infrastruktur“ */
 /* Nach dem Scan führt „Zurück“ dorthin, wo man gescannt hat (bzw. zur Startseite der App) – nicht durch Kunde und Kundenliste (Max 06.11.2026) */
 const qrVorher=()=>{ if(typeof nav==="undefined"||!nav||!nav.v||nav.v==="login") return null; return {...nav}; };
-function qrSchrankOeffnen(g,x){ const P=live("echecks").filter(p=>p.ortId===g.ortId&&p.art==="netz").sort((a,b)=>String(b.datum||"").localeCompare(String(a.datum||"")));
+function qrSchrankOeffnen(g,x){ if(typeof ortTotSicher==="function"&&ortTotSicher(g.ortId)){ toast(`„${x.name||"Netzwerkschrank"}“ gehört zu einem gelöschten Kunden`); return; } const P=live("echecks").filter(p=>p.ortId===g.ortId&&p.art==="netz").sort((a,b)=>String(b.datum||"").localeCompare(String(a.datum||"")));
   if(P.length){ if(typeof ecRkTab!=="undefined") ecRkTab="ansicht"; go({v:"ec",id:P[0].id,tab:"infra",schr:x.id,zur:qrVorher()}); return; }
   toast(`Für „${x.name||"Netzwerkschrank"}“ gibt es noch keine Netzwerkprüfung`); }
 /* Art im Link – die öffentliche Seite (q/) hat keine Daten und erkennt so, was sie zeigen soll.
@@ -36,7 +36,7 @@ addEventListener("hashchange",qrStart);
 
 /* ---- Unbekannter Aufkleber: einem Verteiler zuordnen ---- */
 let qrZu={c:"",such:"",art:"vt"};
-function qrSchrEintraege(){ const L=[]; for(const g0 of live("gebaeude")){ const g=ecGebNorm(g0), o=ecOrt(g.ortId); (g.schraenke||[]).forEach(x=>L.push({g,x,o,updated:g.updated||0,such:[x.name,o.titel,x.qr].filter(Boolean).join(" ")})); } return L; }
+function qrSchrEintraege(){ const L=[]; for(const g0 of live("gebaeude")){ if(typeof ortTotSicher==="function"&&ortTotSicher(g0.ortId)) continue; const g=ecGebNorm(g0), o=ecOrt(g.ortId); (g.schraenke||[]).forEach(x=>L.push({g,x,o,updated:g.updated||0,such:[x.name,o.titel,x.qr].filter(Boolean).join(" ")})); } return L; }
 function qrZuListe(){ if(qrZu.art==="schrank"){ const q=qrZu.such.trim().toLowerCase(), A=qrSchrEintraege().filter(e=>!q||suPasst(q,e.such)).sort((a,b)=>b.updated-a.updated).slice(0,q?40:8);
     return A.length?listOf(A.map(({g,x,o})=>`<div class="li" role="button" tabindex="0" data-act="qrZuOk" data-art="schrank" data-g="${esc(g.id)}" data-id="${esc(x.id)}"><span class="av">${icon("ecNetz")}</span><span class="lt"><span class="h">${esc(x.name||"Netzwerkschrank")}</span><span class="s">${esc([o.titel,x.qr&&`hat schon ${qrZeig(x.qr)}`].filter(Boolean).join(" · "))}</span></span>${icon("chev")}</div>`)):`<p class="meta">${q?"Kein Netzwerkschrank gefunden.":"Noch keine Netzwerkschränke angelegt."}</p>`; }
   const q=qrZu.such.trim().toLowerCase(), A=vtListenEintraege().filter(e=>!q||suPasst(q,e.such)).sort((a,b)=>(b.updated||0)-(a.updated||0)).slice(0,q?40:8);
@@ -87,7 +87,7 @@ function qrPflicht(L,was){ QR_PFL=L;
     <p class="hint">Klebt schon ein Aufkleber dran, der noch nicht zugeordnet ist? <button type="button" class="btn-text" data-act="qrPflScan" style="padding:0;min-height:0">Aufkleber scannen</button></p>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`); }
 /* Liste „ohne QR-Aufkleber“ in Installation (Verteiler) und Netzwerk (Schränke) */
-function qrOhne(art){ const L=[]; for(const g0 of live("gebaeude")){ const g=ecGebNorm(g0);
+function qrOhne(art){ const L=[]; for(const g0 of live("gebaeude")){ if(typeof ortTotSicher==="function"&&ortTotSicher(g0.ortId)) continue; const g=ecGebNorm(g0);
     if(art==="netz") (g.schraenke||[]).forEach(x=>{ if(!x.qr) L.push({g,x,art:"schrank"}); });
     else g.verteiler.forEach(x=>{ if(!x.qr) L.push({g,x,art:"vt"}); }); } return L; }
 function qrOhneZeile(art){ if(art!=="anlage"&&art!=="netz") return ""; const n=qrOhne(art).length; if(!n) return "";
