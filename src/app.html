@@ -1080,7 +1080,7 @@ const today = ()=>new Date().toISOString().slice(0,10);
 const deDate = iso=>iso?iso.split("-").reverse().join("."):"";
 
 function newLP(){ return {v:{risov:"500 V"}, bem:""}; }
-function newSaeule(n,bauart="Wallbox"){ return {id:uid(), sicht:{}, bauart, name:`${bauart} ${n}`, typ:"", sn:"", ort:"", fw:"", absTyp:"LS B", absIn:"16", zsMan:"", inenn:"", rcd:RCD_TYPES[0], idn:"30", freigabe:"", phasen:3, lps:bauart==="Ladesäule"?2:1, lp:[newLP(),newLP()], fotos:{}, isoN:true, isoOhneLN:true}; }
+function newSaeule(n,bauart="Wallbox"){ return {id:uid(), sicht:{}, bauart, name:`${bauart} ${n}`, typ:"", sn:"", ort:"", fw:"", absTyp:"LS B", absIn:"16", zsMan:"", inenn:"", rcd:RCD_TYPES[0], idn:"30", freigabe:"", phasen:3, lps:bauart==="Ladesäule"?2:1, lp:[newLP(),newLP()], fotos:{}, isoN:true, isoOhneLN:true, fotoPflicht:true}; }
 const BAUART=s=>s.bauart||"Ladesäule";
 const BAUARTEN=[["Wallbox","Wallbox","an der Wand"],["Ladesäule","Ladesäule","freistehend"]];
 function newProto(){
@@ -1140,14 +1140,14 @@ function evalRow(r,val,s){
 }
 function groupResult(g,s,li){ let o=0,b=0; for(const r of g.rows){ if(!rowVisible(r,s)) continue; const e=evalRow(r,s.lp[li].v[r.k],s); if(e==="bad")b++; else if(e==="open")o++; } return b?"bad":o?"open":"ok"; }
 function lpResult(s,li){ const rs=GROUPS.map(g=>groupResult(g,s,li)); return rs.includes("bad")?"bad":rs.includes("open")?"open":"ok"; }
-function saeuleResult(s){ const rs=[sichtResult(s)]; for(let i=0;i<s.lps;i++) rs.push(lpResult(s,i)); return rs.includes("bad")?"bad":rs.includes("open")?"open":"ok"; }
+function saeuleResult(s){ const rs=[sichtResult(s),fotoState(s)==="ok"?"ok":"open"]; for(let i=0;i<s.lps;i++) rs.push(lpResult(s,i)); return rs.includes("bad")?"bad":rs.includes("open")?"open":"ok"; }
 function stateOf(list){ if(list.includes("bad")) return "bad"; if(list.every(x=>x==="ok"||x==="skip")) return "ok"; return list.some(x=>x==="ok"||x==="wip")?"wip":"open"; }
 function groupState(g,s,li){
   const rs=g.rows.filter(r=>rowVisible(r,s)).map(r=>[r,evalRow(r,s.lp[li].v[r.k],s)]).filter(x=>x[1]!=="skip"), es=rs.map(x=>x[1]);
   if(es.includes("bad")) return "bad"; if(es.every(e=>e==="ok")) return "ok";
   return rs.some(([r,e])=>!r.pre&&e!=="open")?"wip":"open"; }
 function lpState(s,li){ const st=GROUPS.map(g=>groupState(g,s,li)); return stateOf(st); }
-function saeuleState(s){ return stateOf([sichtState(s),...Array.from({length:s.lps},(_,i)=>lpState(s,i))]); }
+function saeuleState(s){ return stateOf([sichtState(s),fotoState(s),...Array.from({length:s.lps},(_,i)=>lpState(s,i))]); }
 const imUmfang=(p,s)=>!((p.a&&p.a.pdfOhne)||[]).includes(s.id);
 const umfangS=p=>{ const L=p.s.filter(s=>imUmfang(p,s)); return L.length?L:p.s; };
 const fertigS=s=>{ const st=saeuleState(s); return st==="ok"||st==="bad"; };
@@ -1474,7 +1474,10 @@ function softRender(){
   if(!$("#dlg").hidden) return; const y=scrollY; render(); scrollTo(0,y);
 }
 
-const FOTO_SLOTS=[["ueb","Übersicht","von weiter weg"],["offen","Geöffnet","Anschlussraum"],["plak","Prüfplakette","gut lesbar"],["vert","Verteiler","LS und RCD"]];
+/* 13.11.2026: Typenschild und Prüfplakette sind Pflicht (4. Feld = pflicht), der Rest freiwillig */
+const FOTO_SLOTS=[["typ","Typenschild","gut lesbar",1],["plak","Prüfplakette","gut lesbar",1],["ueb","Ladestation außen","von weiter weg"],["offen","Anschlussraum","geöffnet"],["vtA","Verteiler außen","geschlossen"],["vert","Verteiler innen","LS und RCD"]];
+const FOTO_PFLICHT=FOTO_SLOTS.filter(x=>x[3]).map(x=>x[0]);
+function fotoState(s){ if(!s.fotoPflicht) return "ok"; const n=FOTO_PFLICHT.filter(k=>(s.fotos||{})[k]).length; return n===FOTO_PFLICHT.length?"ok":n?"wip":"open"; }
 const fotoCache=new Map(); let fotoDB=null, fotoTarget=null;
 const fotoIds=s=>Object.values(s.fotos||{}).filter(Boolean);
 function idbOpen(){ return new Promise((res,rej)=>{ if(!window.indexedDB) return rej(0); const r=indexedDB.open("evse_fotos",1); r.onupgradeneeded=()=>r.result.createObjectStore("f"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
@@ -2172,7 +2175,7 @@ function saeulenView(){
   return `<div class="narrow"><p class="meta">${fertig} von ${U.length} ${U.length>1?"Ladestationen":"Ladestation"} geprüft${ok?` · ${ok} bestanden`:""}${bad?` · ${bad} mit Mängeln`:""}</p><div class="list">${cur.s.map((s,si)=>imUmfang(cur,s)||U.length===cur.s.length?
     `<div class="li" role="button" tabindex="0" data-act="openS" data-si="${si}">${stAv(s)}<span class="lt"><span class="h">${esc(sName(s,si))}</span>
       <span class="s">${esc([/^(Ladesäule|Wallbox) \d+$/.test(sName(s,si))?"":BAUART(s),s.typ,s.ort].filter(Boolean).join(" · ")||"Gerätedaten fehlen")}</span>
-      <span class="lps">${(()=>{ const r=sichtState(s); return s.sicht?pill(r,`Sichtprüfung: ${RES_SHORT[r]}`):""; })()}${Array.from({length:s.lps},(_,i)=>{const r=lpState(s,i);return pill(r,`Ladepunkt ${i+1}: ${RES_SHORT[r]}`);}).join("")}</span></span>${icon("chev")}</div>`:"").join("")}</div>
+      <span class="lps">${(()=>{ const r=sichtState(s); return s.sicht?pill(r,`Sichtprüfung: ${RES_SHORT[r]}`):""; })()}${s.fotoPflicht&&fotoState(s)!=="ok"?pill(fotoState(s),"Fotos fehlen"):""}${Array.from({length:s.lps},(_,i)=>{const r=lpState(s,i);return pill(r,`Ladepunkt ${i+1}: ${RES_SHORT[r]}`);}).join("")}</span></span>${icon("chev")}</div>`:"").join("")}</div>
     ${aus?`<p class="hint">${aus} weitere ${aus>1?"Ladestationen sind":"Ladestation ist"} nicht Teil dieser Prüfung. <button class="btn-text inl" data-act="umfangDlg">Umfang ändern</button></p>`:""}
     <p class="hint">Geräte hinzufügen oder außer Betrieb nehmen: im ${cur.ladeparkId?"Ladepark":"Standort"} unter „Geräte“.</p>
     ${fertig===U.length?`<div class="weiter"><button class="btn-filled" data-act="weiterS" data-v="abschluss">Abschließen${icon("chev")}</button></div>`:""}</div>`;
@@ -2228,7 +2231,7 @@ function saeuleView(){
         ${tf(b+"laenge","Länge (ca.)",s.laenge,{im:"decimal",sfx:"m"})}
         <div class="full rc-zeile">${rcKnopf(evRcPre(s),"Spannungsfall und Zs rechnen")}</div>
       </div></section>
-      <section class="card wide"><h3>Fotos</h3><div class="fotos">${FOTO_SLOTS.map(([k,l,hint])=>{ const id=(s.fotos||{})[k], src=id&&fotoCache.get(id);
+      <section class="card wide"><div class="gh"><div><h3>Fotos</h3><p>Typenschild und Prüfplakette sind Pflicht</p></div>${s.fotoPflicht?pill(fotoState(s),fotoState(s)==="ok"?"vollständig":(n=>`${n} ${n===1?"fehlt":"fehlen"}`)(FOTO_PFLICHT.filter(k=>!(s.fotos||{})[k]).length)):""}</div><div class="fotos">${FOTO_SLOTS.map(([k,l,hint,pf])=>{ const id=(s.fotos||{})[k], src=id&&fotoCache.get(id); hint=pf&&s.fotoPflicht?`Pflicht · ${hint}`:hint;
         return src?`<button class="foto" data-act="fotoShow" data-k="${k}" aria-label="Foto ${l} ansehen"><img src="${src}" alt=""><span class="fl">${l}</span></button>`
           :id?`<div class="foto leer">${icon("sync")}<span class="fl">${l}</span><span class="fh">wird geladen …</span></div>`
           :`<button class="foto leer" data-act="fotoAdd" data-k="${k}">${icon("cam")}<span class="fl">${l}</span><span class="fh">${hint}</span></button>`; }).join("")}</div></section>
@@ -2790,6 +2793,7 @@ function neuePruefung(kundeId,standortId,ladeparkId,st,vorlage){
 }
 function oeffne(id){ const p=DB.pruefungen.get(id); if(!p||p.deleted) return; cur=JSON.parse(JSON.stringify(p)); dirtyCur=false;
   if(canEdit(cur)&&!hatPdf(cur)&&cur.s.some(s=>!s.isoN)){ cur.s.forEach(s=>s.isoN=true); dirtyCur=true; }
+  if(canEdit(cur)&&!hatPdf(cur)&&cur.s.some(s=>!s.fotoPflicht)){ cur.s.forEach(s=>s.fotoPflicht=true); dirtyCur=true; }
   if(canEdit(cur)&&!hatPdf(cur)&&cur.s.some(s=>!s.isoOhneLN)){ cur.s.forEach(s=>s.isoOhneLN=true); dirtyCur=true; }   /* 13.11.2026: L–L und L–N auch in laufenden Prüfungen weg, Werte bleiben gespeichert */   /* laufende Prüfungen bekommen L–N und N–PE (12.11.2026) */
   if(canEdit(cur)&&!hatPdf(cur)&&abgleich(cur)){ nummeriere(); dirtyCur=true; saveNow(); } setSub(SYNC_ON?"Abgeglichen":"Gespeichert auf diesem Gerät");
   fotoFetch(cur.s.flatMap(fotoIds)); go({v:"projekt"}); }
