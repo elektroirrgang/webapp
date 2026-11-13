@@ -41,16 +41,25 @@ function kdiPlan(j){ const F=[], K=[];
     K.push({k,n,da,nSt:kdiL(k.standorte).length,nLp:kdiL(k.hauptsitz&&k.hauptsitz.ladeparks).length+kdiL(k.standorte).reduce((a,s)=>a+kdiL(s.ladeparks).length,0),nGer:st.length,nKt:kdiL(k.ansprechpartner).length+kdiL(k.standorte).reduce((a,s)=>a+kdiL(s.ansprechpartner).length,0)}); });
   return {F,K}; }
 let KDI=null, KDI_Z={};
+/* Start: JSON einfügen (Antwort der KI kopiert) oder Datei wählen */
+function kdiStart(){ dialog("Kunden importieren",`<p class="sup" style="margin:0 0 8px">Antwort der KI hier einfügen – oder eine .json-Datei wählen.</p>
+    <textarea id="kdiText" placeholder="{ &quot;format&quot;: &quot;irrgang-kunden&quot;, … }" style="width:100%;height:38vh;font:12px/1.4 ui-monospace,monospace;border:0;border-radius:12px;padding:12px;background:var(--sc-high,#eee);color:inherit;box-sizing:border-box"></textarea>`,
+    `<button class="btn-text" data-act="kdiDatei">Datei wählen</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="kdiPruefen">Prüfen</button>`); }
+/* Text aus der KI: Codeblock-Zäune und Text drumherum weg, nur das JSON-Objekt */
+function kdiParse(t){ t=String(t||"").replace(/^\uFEFF/,"").trim(); const m=t.match(/```(?:json)?\s*([\s\S]*?)```/i); if(m) t=m[1].trim();
+  const a=t.indexOf("{"), b=t.lastIndexOf("}"); if(a>0||(b>=0&&b<t.length-1)) t=t.slice(a,b+1); return JSON.parse(t); }
+function kdiFehler(wo,e){ dialog("Import nicht möglich",`<p>${esc(wo)} ist kein gültiges JSON.</p><p class="sup">${esc(e.message)}</p>`,`<button class="btn-text" data-act="cancel">Schließen</button>`); }
 function kdiWaehlen(){ const i=document.createElement("input"); i.type="file"; i.accept=".json,application/json,text/plain"; i.onchange=async()=>{ const f=i.files&&i.files[0]; if(!f) return; let j;
-    try{ j=JSON.parse((await f.text()).replace(/^﻿/,"")); }catch(e){ dialog("Import nicht möglich",`<p>Die Datei „${esc(f.name)}“ ist kein gültiges JSON.</p><p class="sup">${esc(e.message)}</p>`,`<button class="btn-text" data-act="cancel">Schließen</button>`); return; }
+    try{ j=kdiParse(await f.text()); }catch(e){ kdiFehler(`Die Datei „${f.name}“`,e); return; } kdiVorschau(j); };
+  i.click(); }
+function kdiVorschau(j){
     const P=kdiPlan(j); KDI=P;
     const z=P.K.map(x=>`<div class="li"><span class="av">${icon("firma")}</span><span class="lt"><span class="h">${esc(x.n)}</span><span class="s">${esc([x.da?"vorhanden – wird ergänzt":"neu",x.nSt&&`${x.nSt} Standort${x.nSt===1?"":"e"}`,x.nLp&&`${x.nLp} Ladepark${x.nLp===1?"":"s"}`,x.nGer&&`${x.nGer} Ladestation${x.nGer===1?"":"en"}`,x.nKt&&`${x.nKt} Ansprechpartner`].filter(Boolean).join(" · "))}</span></span></div>`).join("");
     const ohneSt=P.K.some(x=>x.nGer)&&!kdiStation();
     dialog("Kunden importieren",`${P.F.length?`<div style="margin:0 0 12px;padding:12px 16px;border-radius:16px;background:color-mix(in srgb,var(--error,#B3261E) 12%,transparent);color:var(--on-surface)">${P.F.map(t=>`<p style="margin:0 0 4px">${esc(t)}</p>`).join("")}</div>`:""}
       ${z?`<div class="list">${z}</div>`:""}${ohneSt?`<p class="sup" style="margin:12px 0 0">Ladestationen werden nur in der EVSE-App angelegt – hier kommen Kunde, Standorte, Ladeparks und Ansprechpartner.</p>`:""}
       <p class="sup" style="margin:12px 0 0">Vorhandene Angaben werden nicht überschrieben, nur ergänzt.</p>`,
-      `<button class="btn-text" data-act="cancel">Abbrechen</button>${P.K.length&&!P.F.length?`<button class="btn-text" data-act="kdiOk">Importieren</button>`:""}`); };
-  i.click(); }
+      `<button class="btn-text" data-act="cancel">Abbrechen</button>${P.K.length&&!P.F.length?`<button class="btn-text" data-act="kdiOk">Importieren</button>`:""}`); }
 const kdiKt=L=>kdiL(L).map(x=>({id:uid(),name:kdiS(x.name),rolle:kdiS(x.rolle),tel:kdiS(x.tel),telefone:kdiS(x.tel)?[{art:typeof telArtRaten==="function"?telArtRaten(x.tel):"Festnetz",nr:kdiS(x.tel)}]:[],mail:kdiS(x.mail),notiz:kdiS(x.notiz)})).filter(x=>x.name||x.tel||x.mail);
 function kdiFuellen(r,q,felder){ let ch=false; felder.forEach(f=>{ const v=kdiS(q[f]); if(v&&!kdiS(r[f])){ r[f]=v; ch=true; } }); return ch; }
 function kdiKtDazu(r,L){ const neu=kdiKt(L).filter(x=>!(r.kontakte||[]).some(y=>kdiN(y.name)&&kdiN(y.name)===kdiN(x.name))); if(!neu.length) return 0;
@@ -94,10 +103,40 @@ function kdiAusfuehren(){ const P=KDI; if(!P) return; KDI=null; KDI_Z={}; const 
   closeOverlays();
   toast([Z.k&&`${Z.k} Kunde${Z.k===1?"":"n"} neu`,Z.kE&&`${Z.kE} ergänzt`,Z.s&&`${Z.s} Standort${Z.s===1?"":"e"}`,Z.l&&`${Z.l} Ladepark${Z.l===1?"":"s"}`,Z.g&&`${Z.g} Ladestation${Z.g===1?"":"en"}`,Z.kt&&`${Z.kt} Ansprechpartner`].filter(Boolean).join(" · ")||"Nichts Neues – alles war schon da");
   if(erster&&P.K.length===1&&typeof go==="function") go({v:"kunde",id:erster.id}); else if(typeof render==="function") render(); }
+/* Prompt für eine externe KI (ChatGPT, Claude …): bereitet aus Notizen, Mails, Listen oder Fotos die Importdatei vor */
+function kdiPrompt(){ const v=kdiVorlage(), h=v._hilfe; delete v._hilfe;
+  return `Du bereitest Kundendaten für den Import in die Apps von Elektro Irrgang vor. Ich gebe dir gleich Informationen zu einem oder mehreren Kunden (Notizen, E-Mails, Listen, Fotos oder Screenshots). Erstelle daraus GENAU EINE JSON-Datei im Format „irrgang-kunden“, Version 1.
+
+Regeln:
+1. Antworte mit dem JSON in einem einzigen Codeblock. Gib die Datei, wenn du kannst, zusätzlich zum Herunterladen als „Kunden-Import.json“ aus.
+2. Nur gültiges JSON: doppelte Anführungszeichen, keine Kommentare, kein Komma nach dem letzten Eintrag. Umlaute (ä, ö, ü, ß) unverändert lassen.
+3. Erfinde nichts. Was nicht in meinen Angaben steht, lässt du weg oder als leeren Text "". Keine Platzhalter wie „unbekannt“ oder „XXX“.
+4. Die Adresse des Kunden ist sein Hauptsitz. Lege den Hauptsitz NICHT zusätzlich unter „standorte“ an. Ladeparks und Ladestationen am Hauptsitz gehören unter „hauptsitz“.
+5. Weitere Adressen (Werk, Lager, Filiale …) kommen unter „standorte“, jeweils mit eigenem Namen (z. B. „Werk Rheinbach“). Gleiche Orte nicht doppelt.
+6. Ladeparks nur, wenn es an einem Ort mehrere getrennte Parkplätze mit Ladestationen gibt. Sonst stehen die Ladestationen direkt am Ort.
+7. Je Ladestation ein eigener Eintrag (5 gleiche Wallboxen = 5 Einträge). Seriennummern nur, wenn sie genannt sind.
+8. Absicherung als Charakteristik und Nennstrom, z. B. „B32“ oder „C40“. RCD-Typ nur einer von: A, A-EV, F, B, B-EV. FI/LS-Schalter (RCBO) = "rcbo": true. idn in mA (30, 100 oder 300). strom = Strom je Ladepunkt in A (16 oder 32). bauart nur „Wallbox“ (an der Wand) oder „Ladesäule“ (freistehend).
+9. art des Kunden: „privat“, „gewerbe“ oder „industrie“. Telefonnummern als Liste mit art (Mobil, Festnetz, Privat, Geschäftlich, Fax, Sonstige) und nr.
+10. Wenn etwas unklar ist (z. B. ob zwei Adressen derselbe Ort sind), frag mich vor dem Erstellen nach – höchstens 3 kurze Fragen.
+11. Schreibe nach dem Codeblock in 1–3 Sätzen, was du weggelassen hast oder was ich prüfen sollte.
+
+Bedeutung der Felder:
+${Object.entries(h).map(([k,t])=>`- ${k}: ${t}`).join("\n")}
+
+Beispiel (erfundene Firma, zeigt den Aufbau):
+${JSON.stringify(v,null,2)}
+
+Hier sind meine Informationen:
+`; }
+async function kdiPromptKopieren(){ const t=kdiPrompt(); let ok=false;
+  try{ await navigator.clipboard.writeText(t); ok=true; }catch(e){ try{ const a=document.createElement("textarea"); a.value=t; a.style.position="fixed"; a.style.opacity="0"; document.body.appendChild(a); a.select(); ok=document.execCommand("copy"); a.remove(); }catch(x){} }
+  if(ok){ toast("Prompt kopiert – in die KI einfügen und deine Kundeninfos darunter"); return; }
+  dialog("Prompt für die KI",`<p class="sup" style="margin:0 0 8px">Kopieren ging nicht automatisch – Text markieren und kopieren:</p><textarea readonly style="width:100%;height:50vh;font:12px/1.4 ui-monospace,monospace;border:0;border-radius:12px;padding:12px;background:var(--sc-high,#eee);color:inherit">${esc(t)}</textarea>`,`<button class="btn-text" data-act="cancel">Schließen</button>`); }
 /* Zeilen im Entwickler-Bereich */
 function kdImportZeile(){ if(!kdiEntw()||!kdiGeht()) return "";
-  return `<div class="li" role="button" tabindex="0" data-act="kdiWahl"><span class="av">${icon("upload")}</span><span class="lt"><span class="h">Kunden importieren</span><span class="s">JSON-Datei mit Kunde, Standorten, Ladeparks${kdiStation()?" und Ladestationen":""} – vorher siehst du, was passiert</span></span>${icon("chev")}</div>
+  return `<div class="li" role="button" tabindex="0" data-act="kdiWahl"><span class="av">${icon("upload")}</span><span class="lt"><span class="h">Kunden importieren</span><span class="s">Antwort der KI einfügen oder JSON-Datei wählen – vorher siehst du, was passiert</span></span>${icon("chev")}</div>
+    <div class="li" role="button" tabindex="0" data-act="kdiPrompt"><span class="av">${icon("copy")}</span><span class="lt"><span class="h">Prompt für die KI kopieren</span><span class="s">Anweisung mit Schema – in ChatGPT oder Claude einfügen, Kundeninfos darunter, fertige Datei hier importieren</span></span>${icon("chev")}</div>
     <div class="li" role="button" tabindex="0" data-act="kdiVorlage"><span class="av">${icon("doc")}</span><span class="lt"><span class="h">Vorlage für den Kunden-Import</span><span class="s">Beispieldatei mit allen Feldern und Erklärung herunterladen</span></span>${icon("chev")}</div>`; }
-document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="kdiWahl"],[data-act="kdiVorlage"],[data-act="kdiOk"]'); if(!b) return; e.stopImmediatePropagation(); e.preventDefault();
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="kdiWahl"],[data-act="kdiVorlage"],[data-act="kdiOk"],[data-act="kdiPrompt"],[data-act="kdiDatei"],[data-act="kdiPruefen"]'); if(!b) return; e.stopImmediatePropagation(); e.preventDefault();
   if(!kdiEntw()) return; const a=b.dataset.act;
-  if(a==="kdiWahl") kdiWaehlen(); else if(a==="kdiVorlage") kdiVorlageLaden(); else kdiAusfuehren(); },true);
+  if(a==="kdiWahl") kdiStart(); else if(a==="kdiDatei"){ closeOverlays(); kdiWaehlen(); } else if(a==="kdiPruefen"){ const t=(document.getElementById("kdiText")||{}).value||""; if(!t.trim()){ toast("Bitte erst die Antwort der KI einfügen"); return; } let j; try{ j=kdiParse(t); }catch(x){ kdiFehler("Der eingefügte Text",x); return; } kdiVorschau(j); } else if(a==="kdiPrompt") kdiPromptKopieren(); else if(a==="kdiVorlage") kdiVorlageLaden(); else kdiAusfuehren(); },true);
