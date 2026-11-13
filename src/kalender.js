@@ -35,10 +35,12 @@ function kalBereich(){ const s=kalSicht(), ab=KAL.ab||new Date();
 async function kalToken(){ if(typeof Auth==="undefined") return null; if(Auth.test) return Auth.test.kalNein?null:Auth.test.token; if(!Auth.pca||!Auth.account){ KAL.grund="nicht angemeldet"; return null; }
   try{ return (await Auth.pca.acquireTokenSilent({scopes:KAL_SCOPES,account:Auth.account})).accessToken; }catch(e){ KAL.grund=e&&(e.errorCode||e.message)||"Anmeldung fehlt"; return null; } }
 function kalVerbinden(){ try{ localStorage.removeItem(KAL_NEIN); }catch(e){} if(typeof Auth==="undefined"||!Auth.pca||!Auth.account){ toast("Erst mit dem Firmenkonto anmelden"); return; } if(typeof saveNow==="function") saveNow(); Auth.pca.acquireTokenRedirect({scopes:KAL_SCOPES,account:Auth.account}); }
-async function kalG(pfad,opt={}){ const t=await kalToken(); if(!t){ KAL.verbinden=true; KAL.ok=false; throw Object.assign(new Error("verbinden"),{verbinden:true}); }
+async function kalG(pfad,opt={},nochmal=2){ const t=await kalToken(); if(!t){ KAL.verbinden=true; KAL.ok=false; throw Object.assign(new Error("verbinden"),{verbinden:true}); }
   const r=await fetch(pfad.startsWith("http")?pfad:GRAPH+pfad,{...opt,headers:{Authorization:"Bearer "+t,Prefer:`outlook.timezone="${KAL_TZ}"`,...(opt.body?{"Content-Type":"application/json"}:{}),...(opt.headers||{})}});
   if(r.status===401||r.status===403){ KAL.verbinden=true; KAL.ok=false; KAL.grund="Zugriff verweigert ("+r.status+")"; throw Object.assign(new Error("verbinden"),{verbinden:true}); }
-  if(!r.ok){ let m=""; try{ m=(await r.json()).error.message; }catch(e){} throw new Error(m||("Fehler "+r.status)); }
+  /* 13.11.2026: Microsoft antwortet beim Kalender gelegentlich mit 502/503/504 (Zeitüberschreitung im Postfach) – kurz warten und neu versuchen */
+  if((r.status===502||r.status===503||r.status===504||r.status===429)&&nochmal>0&&(!opt.method||opt.method==="GET")){ await new Promise(ok=>setTimeout(ok,(r.headers.get("Retry-After")?+r.headers.get("Retry-After")*1000:1500)*(3-nochmal))); return kalG(pfad,opt,nochmal-1); }
+  if(!r.ok){ let m="", code=""; try{ const j=(await r.json()).error; m=j.message||""; code=j.code||""; }catch(e){} KAL.fehlerInfo=`${r.status}${code?" · "+code:""}${m?" · "+m:""} · ${r.headers.get("request-id")||""}`; throw new Error(m&&m.length<90?m:("Fehler "+r.status)); }
   return r.status===204?null:r.json(); }
 const KAL_SEL="subject,start,end,isAllDay,location,bodyPreview,showAs,sensitivity,organizer,attendees,isOrganizer,webLink,isCancelled";
 function kalAusOutlook(e){ return {id:e.id,q:"outlook",t:e.subject||"(ohne Titel)",von:kalLokal(e.start&&e.start.dateTime),bis:kalLokal(e.end&&e.end.dateTime),ganz:!!e.isAllDay,
@@ -152,8 +154,8 @@ async function kalLaden(erzwingen,bereich){ if(typeof demoAn==="function"&&demoA
   const {von,bis}=bereich||kalBereich(), a=kalPlus(von,-7), b=kalPlus(bis,7), key=kalIso(a)+"|"+kalIso(b), v=KAL.versuch||{};
   if(KAL.lade||(!erzwingen&&v.key===key&&Date.now()-v.am<(v.ok?120e3:60e3))) return;
   KAL.lade=true; KAL.versuch={key,am:Date.now(),ok:false}; const vorher=JSON.stringify([KAL.fehler,KAL.verbinden,KAL.ev.length,KAL.am]);
-  try{ let url=`/me/calendarView?startDateTime=${a.toISOString()}&endDateTime=${b.toISOString()}&$top=250&$orderby=start/dateTime&$select=${KAL_SEL}`, L=[];
-    for(let n=0;url&&n<8;n++){ const r=await kalG(url); L.push(...(r.value||[])); url=r["@odata.nextLink"]||""; }
+  try{ let url=`/me/calendarView?startDateTime=${a.toISOString()}&endDateTime=${b.toISOString()}&$top=100&$select=${KAL_SEL}`, L=[];
+    for(let n=0;url&&n<20;n++){ const r=await kalG(url); L.push(...(r.value||[])); url=r["@odata.nextLink"]||""; }
     const neu=L.filter(e=>!e.isCancelled).map(kalAusOutlook), ids=new Set(neu.map(e=>e.id));
     KAL.ev=[...KAL.ev.filter(e=>!ids.has(e.id)&&(e.bis<=a||e.von>=b)),...neu]; KAL.am=Date.now(); KAL.verbinden=false; KAL.ok=true; KAL.grund=""; KAL.fehler=""; KAL.versuch.ok=true;
     try{ localStorage.removeItem(KAL_NEIN); const behalten=KAL.ev.filter(e=>e.bis>kalPlus(new Date(),-14)&&e.von<kalPlus(new Date(),60)).slice(0,600); localStorage.setItem("irrgang_kal_cache",JSON.stringify({am:Date.now(),ev:behalten})); }catch(e){}
@@ -360,6 +362,8 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
   else if(a==="kalEbene"){ const k=b.dataset.v; KAL.ebenen[k]=k==="meine"?!kalNurMeine():k.startsWith("k:")?KAL.ebenen[k]===false:!KAL.ebenen[k]; try{ localStorage.setItem("irrgang_kal_ebenen",JSON.stringify(KAL.ebenen)); }catch(e){} const sw=b.querySelector(".schalter"); if(sw) sw.classList.toggle("an",k==="meine"?kalNurMeine():k.startsWith("k:")?KAL.ebenen[k]!==false:!!KAL.ebenen[k]); render(); }
   else if(a==="kalFilter"){ ev.stopPropagation(); kalFilterDlg(); }
   else if(a==="kalPane"){ try{ localStorage.setItem("irrgang_kal_panel",kalPaneGewollt()?"aus":"an"); }catch(e){} render(); }
+  else if(a==="kalVerbHilfe"&&KAL.fehler&&!KAL.verbinden) dialog("Outlook nicht erreichbar",`<p style="margin:0 0 10px">Die Anmeldung und die Kalender-Freigabe sind in Ordnung – Microsoft hat beim Abruf der Termine einen Fehler gemeldet. Das liegt meist am Postfach selbst (z. B. vorübergehende Störung bei Microsoft) und nicht an der App.</p><p class="sup" style="margin:0 0 6px">Technische Angabe für EDV Achenbach:</p><p class="sup" style="margin:0;user-select:all;word-break:break-all">${esc(KAL.fehlerInfo||KAL.fehler||"")}</p>`,`<button class="btn-text" data-act="cancel">Schließen</button><button class="btn-text" data-act="kalNeuLaden">Neu versuchen</button>`);
+  else if(a==="kalNeuLaden"){ if(typeof closeOverlays==="function") closeOverlays(); KAL.fehler=""; kalLaden(true); }
   else if(a==="kalVerbHilfe") dialog("Outlook verbinden","<p style=\"margin:0 0 10px\">Mit „Verbinden“ bestätigst du einmal bei Microsoft, dann siehst du hier deine Outlook-Termine und kannst neue anlegen.</p><p class=\"sup\" style=\"margin:0\">Erscheint bei Microsoft „Genehmigung durch Administrator erforderlich“, muss die Kalender-Berechtigung der App erst einmal freigegeben werden (EDV Achenbach bzw. ein Administrator).</p>",`<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button><button class="btn-text" data-act="kalVerbinden">Verbinden</button>`);
   else if(a==="kalVerbinden") kalVerbinden();
   else if(a==="kalGanz"){ kalE.ganz=b.dataset.v==="1"; seg1(); document.querySelector("#dlg .kal-zeiten")?.classList.toggle("ganz",kalE.ganz); }
