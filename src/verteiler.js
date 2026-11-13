@@ -73,7 +73,7 @@ function vtNeuOk(){ const F=formVals(), B=vtNeuBei; if(!B) return; const ortId=B
   g.verteiler.push({id,name:F.legVt||"Verteiler",stand:ecHeute(),ersteller:(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||"")});
   ecGebSpeichern(g); vtNeuBei=null; closeOverlays(); go({v:"vt",g:g.id,id}); }
 /* Einträge für die Liste unter Installation */
-function vtListenEintraege(){ const L=[]; for(const g0 of live("gebaeude")){ const g=ecGebNorm(g0), o=ecOrt(g.ortId);
+function vtListenEintraege(){ const L=[]; for(const g0 of live("gebaeude")){ if(typeof ortTotSicher==="function"&&ortTotSicher(g0.ortId)) continue; const g=ecGebNorm(g0), o=ecOrt(g.ortId);
     g.verteiler.forEach(v=>{ const n=g.stromkreise.filter(s=>s.vId===v.id).length;
       L.push({vt:{g,v},id:"vt-"+v.id,kundeId:o.kunde?o.kunde.id:"",status:v.fertig?"fertig":"",datum:v.stand||"",updated:v.updated||g0.updated,titel:o.titel,pruefer:v.ersteller||"",
         such:[v.name,o.titel,v.ersteller,"Verteiler"].join(" "),n}); }); }

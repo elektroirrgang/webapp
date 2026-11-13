@@ -465,10 +465,11 @@ function hsTauschAusfuehren(sid,name){ const s=DB.standorte.get(sid), k=s&&DB.ku
   hsTauschLauf(); return n; }
 /* Umzugsaufträge für die Daten dieser App umsetzen */
 function hsTauschLauf(){ if(typeof DB==="undefined"||!DB.einstellungen||typeof KINDS==="undefined") return 0;
-  const T=live("einstellungen").filter(r=>(r.typ==="hsTausch"&&r.kundeId&&r.alt&&r.neu)||(r.typ==="ortMerge"&&r.kundeId&&r.von&&r.nach)||(r.typ==="kdMerge"&&r.kundeId&&r.von&&r.hq)).sort((a,b)=>(a.ts||0)-(b.ts||0)); if(!T.length) return 0; let n=0;
+  const T=live("einstellungen").filter(r=>(r.typ==="hsTausch"&&r.kundeId&&r.alt&&r.neu)||(r.typ==="ortMerge"&&r.kundeId&&r.von&&r.nach)||(r.typ==="kdMerge"&&r.kundeId&&r.von&&r.hq)||(r.typ==="kdLoeschen"&&r.kundeId)).sort((a,b)=>(a.ts||0)-(b.ts||0)); if(!T.length) return 0; let n=0;
   for(const t of T){ const HQ="k:"+t.kundeId;
     if(t.typ==="ortMerge"){ n+=ortMergeEin(t); continue; }
     if(t.typ==="kdMerge"){ n+=kdMergeEin(t); continue; }
+    if(t.typ==="kdLoeschen"){ n+=kdLoeschenEin(t); continue; }
     /* Gebäude/Verteiler: feste ID je Ort („g-<ortId>“) – Datensätze tauschen statt nur ortId ändern */
     if(DB.gebaeude){ const gid=o=>"g-"+String(o).replace(/[^A-Za-z0-9_-]/g,"_"), gHQ=DB.gebaeude.get(gid(HQ)), gS=DB.gebaeude.get(gid(t.alt));
       const offen=g=>g&&!g.deleted&&!(g.hsT||[]).includes(t.id)&&((g.created||0)<t.ts||g.ortId===t.alt);
@@ -628,3 +629,51 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="kdmBleibt"){ closeOverlays(); kdMergeBestaetigen(b.dataset.a,b.dataset.b,b.dataset.bleibt); return; }
   const w=DB.kunden.get(b.dataset.w); closeOverlays(); const z=kdMergeAusfuehren(b.dataset.z,b.dataset.w); if(!z) return;
   toast(`„${w?w.name:""}“ ist jetzt Teil von „${z.name}“`); if(typeof go==="function") go({v:"kunde",id:z.id}); else if(typeof render==="function") render(); },true);
+
+/* ===== Lebt der Ort noch? (Max 13.11.2026) – „k:<Kunde>“ oder Standort-ID; gelöschter Kunde/Standort = tot (zusammengeführte folgen dem Ziel) ===== */
+function ortLebt(ortId){ ortId=String(ortId||""); if(!ortId) return false;
+  if(ortId.startsWith("k:")){ const k=typeof kundeOf==="function"?kundeOf(ortId.slice(2)):DB.kunden.get(ortId.slice(2)); return !!k&&!k.deleted; }
+  const st=typeof standortOf==="function"?standortOf(ortId):DB.standorte.get(ortId); if(!st||st.deleted) return false;
+  const k=typeof kundeOf==="function"?kundeOf(st.kundeId):DB.kunden.get(st.kundeId); return !!k&&!k.deleted; }
+function ortTotSicher(ortId){ ortId=String(ortId||""); if(ortId.startsWith("k:")){ const k=DB.kunden.get(ortId.slice(2)); return !!k&&k.deleted&&!k.mergedInto; }
+  const st=DB.standorte.get(ortId); if(st&&st.deleted&&!st.mergedInto&&!st.hsNach) return true; const k=st&&DB.kunden.get(st.kundeId); return !!k&&k.deleted&&!k.mergedInto; }
+
+/* ===== Testdaten aufräumen (einmalig, nur Entwickler) – Max 13.11.2026 =====
+   Findet Testkunden (Name beginnt mit/enthält „Test“, Kd.-Nr. 000000/TEST-…, Notiz „Testdaten“) und verwaiste Daten gelöschter Kunden/Standorte.
+   Löschen läuft über einen Auftrag in „einstellungen“ (typ "kdLoeschen"): jede App löscht ihre Daten dazu, auf jedem Gerät. Beispieldaten (Demo) bleiben unberührt. */
+const testKunde=k=>/(^|\s|-)test/i.test(k.name||"")||/^(test|0+$)/i.test(String(k.kdnr||"").trim())||/testdaten/i.test(k.notiz||"");
+let TA_WAHL=null;
+function taVerwaist(){ const L=[]; const tot=o=>o&&ortTotSicher(o);
+  if(DB.gebaeude) live("gebaeude").forEach(g=>{ if(tot(g.ortId)) L.push(["gebaeude",g.id]); });
+  ["echecks","anlagen","betriebsmittel","legenden"].forEach(k=>{ if(DB[k]) live(k).forEach(r=>{ if(r.ortId&&tot(r.ortId)) L.push([k,r.id]); }); });
+  if(DB.ladeparks) live("ladeparks").forEach(l=>{ if(tot(l.standortId)) L.push(["ladeparks",l.id]); });
+  ["pruefungen","baustellen","vorgaenge"].forEach(k=>{ if(DB[k]) live(k).forEach(r=>{ const kk=r.kundeId&&DB.kunden.get(r.kundeId); if(kk&&kk.deleted&&!kk.mergedInto) L.push([k,r.id]); }); });
+  return L; }
+function taZaehl(K){ const O=new Set(["k:"+K,...live("standorte").filter(s=>s.kundeId===K).map(s=>s.id)]); let n=0;
+  for(const kind of KINDS){ if(["kunden","einstellungen"].includes(kind)||!DB[kind]) continue; for(const r of live(kind)) if(!r.demo&&(r.kundeId===K||O.has(r.standortId)||O.has(r.ortId)||(kind==="gebaeude"&&O.has(r.ortId)))) n++; } return n; }
+function taDialog(){ const K=live("kunden").filter(k=>!k.demo&&testKunde(k)).sort((a,b)=>String(a.name).localeCompare(String(b.name),"de")), V=taVerwaist();
+  if(!TA_WAHL) TA_WAHL=new Set([...K.map(k=>k.id),...(V.length?["__verwaist"]:[])]);
+  const zeile=(id,t,sub)=>{ const an=TA_WAHL.has(id); return `<div class="li" role="button" tabindex="0" data-act="taWahl" data-id="${esc(id)}"><span class="av">${icon(an?"del":"firma")}</span><span class="lt"><span class="h">${esc(t)}</span><span class="s">${esc(sub)}</span></span><span class="st">${typeof pill==="function"?pill(an?"bad":"open",an?"wird gelöscht":"bleibt"):""}</span></div>`; };
+  const z=[...K.map(k=>zeile(k.id,k.name,[k.kdnr&&`Kd.-Nr. ${k.kdnr}`,`${live("standorte").filter(s=>s.kundeId===k.id).length} Standorte`,`${taZaehl(k.id)} Einträge`].filter(Boolean).join(" · "))),
+    ...(V.length?[zeile("__verwaist","Verwaiste Daten",`${V.length} Einträge von bereits gelöschten Kunden/Standorten (z. B. Schränke mit Aufkleber)`)]:[])];
+  const n=TA_WAHL.size;
+  dialog("Testdaten aufräumen",z.length?`<p class="sup" style="margin:0 0 12px">Antippen schaltet zwischen „wird gelöscht“ und „bleibt“. Gelöscht werden Kunde, Standorte, Ladeparks, Prüfungen, Baustellen, Aufträge, E-Checks, Anlagen, Gebäude und Schränke – auch in den anderen Apps. Beispieldaten bleiben.</p><div class="list">${z.join("")}</div>`:`<p>Keine Testkunden und keine verwaisten Daten gefunden.</p>`,
+    `<button class="btn-text" data-act="cancel">${z.length?"Abbrechen":"Schließen"}</button>${n?`<button class="btn-text danger" data-act="taOk">${n===1?"1 Eintrag":n+" Einträge"} löschen</button>`:""}`); }
+function taAusfuehren(){ const W=TA_WAHL; TA_WAHL=null; if(!W||!W.size) return; let n=0;
+  for(const id of W){ if(id==="__verwaist"){ for(const [k,rid] of taVerwaist()){ const r=DB[k].get(rid); if(r&&!r.deleted){ r.deleted=true; saveRec(k,r,false); n++; } } continue; }
+    const k=DB.kunden.get(id); if(!k) continue; const S=live("standorte").filter(s=>s.kundeId===id).map(s=>s.id);
+    saveRec("einstellungen",{id:"kdl-"+uid(),typ:"kdLoeschen",kundeId:id,orte:["k:"+id,...S],ts:Date.now()},true);
+    S.forEach(sid=>{ const s=DB.standorte.get(sid); s.deleted=true; saveRec("standorte",s,false); }); k.deleted=true; saveRec("kunden",k,false); n++; }
+  n+=hsTauschLauf(); closeOverlays(); toast(`Aufgeräumt – ${n} Einträge gelöscht`); if(typeof go==="function") go({v:typeof einTop==="function"&&einTop()[0]?einTop()[0][0]:"start"}); else render(); }
+/* Lösch-Auftrag in dieser App umsetzen */
+function kdLoeschenEin(t){ const O=new Set(t.orte||[]), gid=o=>"g-"+String(o).replace(/[^A-Za-z0-9_-]/g,"_"), G=new Set([...O].map(gid)); let n=0;
+  for(const kind of KINDS){ if(["einstellungen","kunden","standorte"].includes(kind)||!DB[kind]) continue;
+    for(const r of DB[kind].values()){ if(!r||r.deleted||r.demo) continue;
+      if(r.kundeId===t.kundeId||O.has(r.standortId)||O.has(r.ortId)||(kind==="gebaeude"&&G.has(r.id))||(kind==="dateien"&&((r.bezugKind==="kunden"&&r.bezugId===t.kundeId)||(r.bezugKind==="standorte"&&O.has(r.bezugId))))){ r.deleted=true; saveRec(kind,r,false); n++; } } }
+  return n; }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="taDlg"],[data-act="taWahl"],[data-act="taOk"]'); if(!b) return; e.stopImmediatePropagation(); e.preventDefault();
+  if(!(typeof istEntwickler==="function"&&istEntwickler())) return; const a=b.dataset.act;
+  if(a==="taDlg"){ TA_WAHL=null; closeOverlays(); taDialog(); return; }
+  if(a==="taWahl"){ const id=b.dataset.id; TA_WAHL.has(id)?TA_WAHL.delete(id):TA_WAHL.add(id); taDialog(); return; }
+  taAusfuehren(); },true);
+function taZeile(){ return `<div class="li" role="button" tabindex="0" data-act="taDlg"><span class="av">${icon("del")}</span><span class="lt"><span class="h">Testdaten aufräumen</span><span class="s">Testkunden und verwaiste Daten finden und mit allem Zubehör löschen – vorher siehst du die Liste</span></span>${icon("chev")}</div>`; }
