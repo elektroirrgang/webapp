@@ -33,7 +33,9 @@ function kalBereich(){ const s=kalSicht(), ab=KAL.ab||new Date();
   const a=kalTag(ab); return {von:a,bis:kalPlus(a,28)}; }
 /* --- Zugang zu Outlook --- */
 async function kalToken(){ if(typeof Auth==="undefined") return null; if(Auth.test) return Auth.test.kalNein?null:Auth.test.token; if(!Auth.pca||!Auth.account){ KAL.grund="nicht angemeldet"; return null; }
-  try{ return (await Auth.pca.acquireTokenSilent({scopes:KAL_SCOPES,account:Auth.account})).accessToken; }catch(e){ KAL.grund=e&&(e.errorCode||e.message)||"Anmeldung fehlt"; return null; } }
+  /* 13.11.2026: die stille Anmeldung kann im Browser hängen bleiben (Drittanbieter-Cookies gesperrt) – nach 12 s aufgeben, dann zeigt die App „Verbinden“ */
+  try{ return (await Promise.race([Auth.pca.acquireTokenSilent({scopes:KAL_SCOPES,account:Auth.account}),new Promise((_,no)=>setTimeout(()=>no(new Error("Zeitüberschreitung bei der Anmeldung")),12000))])).accessToken; }
+  catch(e){ KAL.grund=e&&(e.errorCode||e.message)||"Anmeldung fehlt"; return null; } }
 function kalVerbinden(){ try{ localStorage.removeItem(KAL_NEIN); }catch(e){} if(typeof Auth==="undefined"||!Auth.pca||!Auth.account){ toast("Erst mit dem Firmenkonto anmelden"); return; } if(typeof saveNow==="function") saveNow(); Auth.pca.acquireTokenRedirect({scopes:KAL_SCOPES,account:Auth.account}); }
 async function kalG(pfad,opt={},nochmal=2){ const t=await kalToken(); if(!t){ KAL.verbinden=true; KAL.ok=false; throw Object.assign(new Error("verbinden"),{verbinden:true}); }
   const r=await fetch(pfad.startsWith("http")?pfad:GRAPH+pfad,{...opt,headers:{Authorization:"Bearer "+t,Prefer:`outlook.timezone="${KAL_TZ}"`,...(opt.body?{"Content-Type":"application/json"}:{}),...(opt.headers||{})}});
@@ -371,7 +373,7 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
   else if(a==="kalMit"){ const m=b.dataset.v; if(kalE.mit.has(m)) kalE.mit.delete(m); else kalE.mit.add(m); b.setAttribute("aria-pressed",String(kalE.mit.has(m))); }
   else if(a==="kalOk") kalSpeichern();
   else if(a==="kalDel") confirmDlg("Termin löschen?",kalE&&kalE.art==="firma"?"Der Firmentermin verschwindet bei allen aus dem Kalender.":kalE&&kalE.art!=="outlook"?"Der Termin wird aus dem Kalender gelöscht.":"Der Termin wird auch in Outlook gelöscht. Eingeladene bekommen eine Absage.","Löschen","kalDelJa");
-  else if(a==="kalArt"&&b.dataset.v==="outlook-verb"){ if(KAL.lade){ toast("Outlook lädt noch – gleich noch einmal versuchen"); return; } if(typeof closeOverlays==="function") closeOverlays(); kalVerbinden(); }
+  else if(a==="kalArt"&&b.dataset.v==="outlook-verb"){ if(typeof closeOverlays==="function") closeOverlays(); kalVerbinden(); }   /* auch während „lädt …“: Anmeldung direkt bei Microsoft */
   else if(a==="kalArt"){ kalE.art=b.dataset.v; KAL.neuArt=kalE.art; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); const w=document.querySelector("#dlg .kal-dlg"), k=kalE.art==="outlook"?"outlook":kalE.art==="firma"?"firma":"eigen"; if(w){ ["outlook","firma","eigen"].forEach(x=>w.classList.toggle("kal-art-"+x,x===k)); } const h=document.querySelector("#dlg h2"); if(h) h.textContent=kalE.art==="firma"?"Neuer Firmentermin":"Neuer Termin"; }
   else if(a==="kalKalNeu"){ ev.stopPropagation(); kalKalDlg(null); }
   else if(a==="kalKalEdit"){ ev.stopPropagation(); const c=kalRec(b.dataset.id); if(c) kalKalDlg(c); }
