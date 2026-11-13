@@ -1079,7 +1079,7 @@ const today = ()=>new Date().toISOString().slice(0,10);
 const deDate = iso=>iso?iso.split("-").reverse().join("."):"";
 
 function newLP(){ return {v:{risov:"500 V"}, bem:""}; }
-function newSaeule(n,bauart="Wallbox"){ return {id:uid(), sicht:{}, bauart, name:`${bauart} ${n}`, typ:"", sn:"", ort:"", fw:"", absTyp:"LS B", absIn:"16", zsMan:"", inenn:"", rcd:RCD_TYPES[0], idn:"30", freigabe:"", phasen:3, lps:bauart==="Ladesäule"?2:1, lp:[newLP(),newLP()], fotos:{}, isoN:true}; }
+function newSaeule(n,bauart="Wallbox"){ return {id:uid(), sicht:{}, bauart, name:`${bauart} ${n}`, typ:"", sn:"", ort:"", fw:"", absTyp:"LS B", absIn:"16", zsMan:"", inenn:"", rcd:RCD_TYPES[0], idn:"30", freigabe:"", phasen:3, lps:bauart==="Ladesäule"?2:1, lp:[newLP(),newLP()], fotos:{}, isoN:true, isoOhneLN:true}; }
 const BAUART=s=>s.bauart||"Ladesäule";
 const BAUARTEN=[["Wallbox","Wallbox","an der Wand"],["Ladesäule","Ladesäule","freistehend"]];
 function newProto(){
@@ -1123,7 +1123,7 @@ const ISO_K=["riso12","riso13","riso23","riso1n","riso2n","riso3n","riso1pe","ri
 const isoAlt=s=>(s.lp||[]).some(lp=>lp&&lp.v&&lp.v.riso!=null&&lp.v.riso!==""&&!ISO_K.some(k=>lp.v[k]!=null&&lp.v[k]!==""));
 /* 6 mA DC: bis 16.10.2026 in Sekunden, seitdem in ms (das MFT zeigt ms). Alte Prüfungen behalten ihre Zeile. */
 const dcAlt=s=>(s.lp||[]).some(lp=>lp&&lp.v&&lp.v.dc6!=null&&lp.v.dc6!==""&&(lp.v.dc6ms==null||lp.v.dc6ms===""));
-function rowVisible(r,s){ if(r.dcAlt&&!dcAlt(s)) return false; if(r.dcNeu&&dcAlt(s)) return false; if(r.rcdw) return !!s.rcdIntern; if(r.rcd&&s.rcdIntern) return false; if(r.isoAlt) return isoAlt(s); if(r.iso&&isoAlt(s)) return false; if(r.isoN&&!s.isoN) return false; if(r.isoLL&&s.isoN&&!(s.lp||[]).some(lp=>lp&&lp.v&&lp.v[r.k]!=null&&lp.v[r.k]!=="")) return false; if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
+function rowVisible(r,s){ if(r.dcAlt&&!dcAlt(s)) return false; if(r.dcNeu&&dcAlt(s)) return false; if(r.rcdw) return !!s.rcdIntern; if(r.rcd&&s.rcdIntern) return false; if(r.isoAlt) return isoAlt(s); if(r.iso&&isoAlt(s)) return false; if(r.isoN&&!s.isoN) return false; if(r.isoLL&&s.isoOhneLN) return false; if(r.isoLL&&s.isoN&&!(s.lp||[]).some(lp=>lp&&lp.v&&lp.v[r.k]!=null&&lp.v[r.k]!=="")) return false; if(r.p3&&s.phasen===1) return false; if(r.dc){ const i=rcdInfo(s); if(!i.dc&&i.t!=="A-EV") return false; } return true; }
 /* Kurzschlussstrom aus der Schleifenimpedanz: Ik = U0 / Zs mit U0 = 230 V (Max 12.11.2026) */
 const IK_U0=230;
 function ikText(val,lang){ const z=num(val); if(isNaN(z)||z<=0) return ""; const ik=IK_U0/z;
@@ -2787,7 +2787,8 @@ function neuePruefung(kundeId,standortId,ladeparkId,st,vorlage){
   go({v:"projekt"}); if(cur.s.length>1) setTimeout(umfangDlg,150); toast(!st&&G0.length?`${p.s.length} ${p.s.length>1?"Geräte":"Gerät"} aus dem ${ladeparkId?"Ladepark":"Standort"} übernommen`:"Neue Prüfung angelegt");
 }
 function oeffne(id){ const p=DB.pruefungen.get(id); if(!p||p.deleted) return; cur=JSON.parse(JSON.stringify(p)); dirtyCur=false;
-  if(canEdit(cur)&&!hatPdf(cur)&&cur.s.some(s=>!s.isoN)){ cur.s.forEach(s=>s.isoN=true); dirtyCur=true; }   /* laufende Prüfungen bekommen L–N und N–PE (12.11.2026) */
+  if(canEdit(cur)&&!hatPdf(cur)&&cur.s.some(s=>!s.isoN)){ cur.s.forEach(s=>s.isoN=true); dirtyCur=true; }
+  if(canEdit(cur)&&!hatPdf(cur)&&cur.s.some(s=>!s.isoOhneLN)){ cur.s.forEach(s=>s.isoOhneLN=true); dirtyCur=true; }   /* 13.11.2026: L–L und L–N auch in laufenden Prüfungen weg, Werte bleiben gespeichert */   /* laufende Prüfungen bekommen L–N und N–PE (12.11.2026) */
   if(canEdit(cur)&&!hatPdf(cur)&&abgleich(cur)){ nummeriere(); dirtyCur=true; saveNow(); } setSub(SYNC_ON?"Abgeglichen":"Gespeichert auf diesem Gerät");
   fotoFetch(cur.s.flatMap(fotoIds)); go({v:"projekt"}); }
 function zurueck(){
