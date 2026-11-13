@@ -346,6 +346,7 @@ details.optrows .mrow:first-of-type{border-top:0}
 .tb-row:has(#backBtn[hidden]) .tb-title{margin-left:16px}
 .row2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:12px}
 .iso-alle{display:block;margin:12px 0 0;width:100%}
+.bed-jetzt{display:inline-flex;align-items:center;gap:8px}
 .row2.gt-r{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .iz{display:flex;gap:12px;padding:3px 0}
 .iz span{flex:none;width:118px;color:var(--on-sv);font-size:13px}
@@ -1204,7 +1205,23 @@ const live=k=>[...DB[k].values()].filter(r=>!r.deleted&&(typeof nurDemoFilter!==
 const who=()=>({name:ME.name||META.profil.name||"",mail:ME.mail||""});
 function stamp(rec,isNew){ const t=Date.now(), w=who(); if(isNew||!rec.created){ rec.created=t; rec.createdBy=w; } rec.updated=t; rec.updatedBy=w; if(!rec.demo) rec._dirty=true; }
 function saveRec(kind,rec,isNew){ stamp(rec,isNew); dbPut(kind,rec); syncSoon(); return rec; }
-function scheduleSave(){ if(!cur||!canEdit(cur)) return; try{ stMitziehen(); }catch(e){} dirtyCur=true; setSub("Ungespeichert …"); clearTimeout(saveTimer); saveTimer=setTimeout(saveNow,900); }
+/* ===== Messbedingungen (Max 13.11.2026): Zeitpunkt, Außentemperatur, Luftfeuchte – beeinflussen Isolations- und Schleifenwerte.
+   Beim ersten Messwert automatisch: Standort per GPS (sonst Adresse), Wetter vom Deutschen Wetterdienst über Bright Sky. Von Hand änderbar. */
+const BED_WETTER={dry:"trocken",fog:"Nebel",rain:"Regen",sleet:"Schneeregen",snow:"Schnee",hail:"Hagel",thunderstorm:"Gewitter"};
+let bedLaeuft=false;
+async function bedOrt(){ const g=await new Promise(ok=>{ if(!navigator.geolocation) return ok(null); navigator.geolocation.getCurrentPosition(x=>ok({lat:x.coords.latitude,lon:x.coords.longitude}),()=>ok(null),{timeout:8000,maximumAge:600000}); });
+  if(g) return g; const {k,s}=pfad(cur), a=adrText(s&&adrText(s)?s:k); if(!a||typeof karteGeo!=="function") return null; const x=await karteGeo(a); return x&&!x.nix?x:null; }
+async function bedErfassen(still){ if(!cur||bedLaeuft) return; bedLaeuft=true; const p=cur.p, id=cur.id;
+  try{ const o=await bedOrt(); if(!o) throw 0;
+    const j=await (await fetch(`https://api.brightsky.dev/current_weather?lat=${o.lat.toFixed(3)}&lon=${o.lon.toFixed(3)}&tz=Europe/Berlin`)).json(), w=j&&j.weather; if(!w) throw 0;
+    if(!cur||cur.id!==id) return; const st=(j.sources||[]).find(x=>x.id===w.source_id)||(j.sources||[])[0]||{};
+    p.bed={at:Date.now(),temp:w.temperature!=null?String(Math.round(w.temperature*10)/10).replace(".",","):"",rh:w.relative_humidity!=null?String(Math.round(w.relative_humidity)):"",wetter:BED_WETTER[w.condition]||"",quelle:`DWD${st.station_name?` · ${st.station_name}`:""}`,auto:1};
+    scheduleSave(); if(nav.v==="projekt") softRender(); if(!still) toast("Messbedingungen erfasst"); }
+  catch(e){ if(!still) toast("Wetter nicht abrufbar – bitte von Hand eintragen"); else if(cur&&!cur.p.bed) cur.p.bed={at:Date.now(),temp:"",rh:"",wetter:"",quelle:""}; }
+  finally{ bedLaeuft=false; } }
+const bedText=b=>b?[b.at&&new Date(b.at).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})+" Uhr",b.temp&&`${b.temp} °C`,b.rh&&`${b.rh} % rel. Feuchte`,b.wetter].filter(Boolean).join(" · "):"";
+function scheduleSave(){ if(!cur||!canEdit(cur)) return; try{ stMitziehen(); }catch(e){}
+  try{ if(!cur.p.bed&&!hatPdf(cur)&&nav.v==="saeule"&&/^lp/.test(nav.st||"")&&cur.s.some(s=>(s.lp||[]).some(l=>Object.entries(l.v||{}).some(([k,v])=>k!=="risov"&&v!==""&&v!=null)))) bedErfassen(true); }catch(e){} dirtyCur=true; setSub("Ungespeichert …"); clearTimeout(saveTimer); saveTimer=setTimeout(saveNow,900); }
 function commit(){ try{ if(cur&&canEdit(cur)) stMitziehen(); }catch(e){} dirtyCur=true; saveNow(); }
 function saveNow(){
   if(!cur) return; clearTimeout(saveTimer); if(!dirtyCur||!canEdit(cur)) return; dirtyCur=false;
@@ -2168,6 +2185,11 @@ function projektView(){
       <div class="full"><div class="lbl">Prüfung nach</div><div class="chips">${NORMEN.map(n=>`<button type="button" class="chip" data-act="norm" data-n="${esc(n)}" aria-pressed="${p.normen.includes(n)}">${icon("check")}${esc(n)}</button>`).join("")}</div></div>
     </div></section>
     <section class="card"><h3>Prüfumfang</h3>${ta("p.umfang","Text im Protokoll",p.umfang)}</section>
+    <section class="card"><div class="gh"><div><h3>Messbedingungen</h3><p>${p.bed&&p.bed.at?`Erfasst ${esc(bedText({at:p.bed.at}))}${p.bed.quelle?` · ${esc(p.bed.quelle)}`:""}`:"Wird beim ersten Messwert automatisch erfasst"}</p></div></div>
+      <div class="fg">${tf("p.bed.temp","Außentemperatur",(p.bed||{}).temp||"",{im:"decimal",sfx:"°C"})}${tf("p.bed.rh","Luftfeuchte",(p.bed||{}).rh||"",{im:"decimal",sfx:"%"})}
+      ${tf("p.bed.wetter","Wetter",(p.bed||{}).wetter||"",{list:"dl-wetter",ph:"z. B. Nebel, Regen, trocken"})}${datalist("dl-wetter",Object.values(BED_WETTER))}
+      <div class="full"><button type="button" class="btn-tonal bed-jetzt" data-act="bedJetzt">${icon("sync")} Jetzt erfassen</button></div></div>
+      ${p.bed&&+p.bed.rh>=85?`<p class="sup" style="margin:12px 4px 0">Hohe Luftfeuchte: Isolationswerte können niedriger ausfallen als bei trockenem Wetter.</p>`:""}</section>
   </div>
   <div class="weiter"><button class="btn-filled" data-act="weiterS" data-v="liste">Weiter zu den Ladestationen${icon("chev")}</button></div>
   <p class="by-line">Angelegt${cur.createdBy&&cur.createdBy.name?` von ${esc(cur.createdBy.name)}`:""} am ${new Date(cur.created||Date.now()).toLocaleString("de-DE",{dateStyle:"medium",timeStyle:"short"})}${cur.updatedBy&&cur.updatedBy.name&&cur.updated?` · zuletzt geändert von ${esc(cur.updatedBy.name)} am ${new Date(cur.updated).toLocaleString("de-DE",{dateStyle:"medium",timeStyle:"short"})}`:""}</p>`;
@@ -3235,6 +3257,7 @@ document.addEventListener("click",ev=>{
     nummeriere(); commit(); toast(`Auf ${ziel.length} Station${ziel.length>1?"en":""} übertragen`); return; }
   case "bauart": { const s=cur.s[nav.si]; s.bauart=b.dataset.v; nummeriere(); commit(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "lps": case "phasen": { const s=cur.s[nav.si]; s[a]=+b.dataset.v; while(s.lp.length<2) s.lp.push(newLP()); scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
+  case "bedJetzt": bedErfassen(false); return;
   case "isoAlle": { /* Max 13.11.2026: alle noch leeren Isolationsfelder dieses Ladepunkts auf „>999“ (MΩ) */
     const s=cur.s[nav.si], li=+b.dataset.lp, lp=s&&s.lp[li]; if(!lp) return;
     const K=GROUPS.find(g=>g.id==="frei").rows.filter(r=>r.iso&&r.k!=="risov"&&rowVisible(r,s)&&(lp.v[r.k]==null||lp.v[r.k]==="")).map(r=>r.k);
@@ -3537,7 +3560,8 @@ function buildPDF(P){
   kv([["Auftraggeber",PF.k?[PF.k.name,adrText(PF.k)].filter(Boolean).join(", "):P.p.auftraggeber],["Auftragsnr.",P.p.auftragsnr],["Kundennr.",PF.k&&PF.k.kdnr],["Ansprechpartner",PF.k&&PF.k.ansprech],
       ["Standort",PF.s?[PF.s.name,adrText(PF.s)].filter(Boolean).join(", "):kOrt(P.standortId)?"wie Auftraggeber":"-"],["Ladepark",PF.l?PF.l.name:P._lp?P._lp.join(", "):"-"],
       ["Verteiler / Anlage",P.p.standort],["Bezeichnung",P.p.projekt],["Prüfdatum",deDate(P.p.datum)],["Prüfer",P.p.pruefer],
-      ["Messgerät",P.p.geraet],["Seriennr.",P.p.geraetSn],["Prüfadapter",P.p.adapter],["Seriennr. Adapter",P.p.adapterSn],["Kal. gültig bis",P.p.kal],["Art der Prüfung",P.p.art],["Netzform",`${P.p.netz} | 230/400 V`],["Protokoll-Nr.",P._nr]]);
+      ["Messgerät",P.p.geraet],["Seriennr.",P.p.geraetSn],["Prüfadapter",P.p.adapter],["Seriennr. Adapter",P.p.adapterSn],["Kal. gültig bis",P.p.kal],["Art der Prüfung",P.p.art],["Netzform",`${P.p.netz} | 230/400 V`],["Protokoll-Nr.",P._nr],
+      ...(P.p.bed&&(P.p.bed.temp||P.p.bed.rh)?[["Messbedingungen",[P.p.bed.at&&new Date(P.p.bed.at).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+" Uhr",P.p.bed.temp&&`${P.p.bed.temp} °C`,P.p.bed.rh&&`${P.p.bed.rh} % rF`,P.p.bed.wetter].filter(Boolean).join(", ")]]:[])]);
   sec("Prüfumfang"); para(P.p.umfang+(P._ohne&&P._ohne.length?` Nicht Bestandteil dieser Prüfung: ${P._ohne.join(", ")}.`:""));
   sec("Übersicht Ladestationen");
   d.setFillColor(...NAVY); d.rect(M,y-4,CW,6,"F"); d.setTextColor(255); d.setFontSize(8); d.setFont("helvetica","bold");
