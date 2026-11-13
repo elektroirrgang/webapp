@@ -2,14 +2,70 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
+<meta name="theme-color" content="#FCFCFD" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141416" media="(prefers-color-scheme: dark)">
 <title>Elektro Irrgang · Apps</title>
-<meta http-equiv="refresh" content="0; url=uebersicht/">
-<script>location.replace("uebersicht/"+location.search+location.hash);</script>
-<style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:40px 16px;text-align:center;color:#1F1F22;background:#FCFCFD}a{color:#C8102E}</style>
+<link rel="icon" href="uebersicht/icon-rund-64.png">
+<link rel="apple-touch-icon" href="uebersicht/icon-180.png">
+<style>
+/* Startseite der Domain (Max 13.11.2026): App-Auswahl statt Weiterleitung, dazu Schnelllinks.
+   Die installierten Apps (Home-Bildschirm) starten weiter direkt in ihrer eigenen Adresse. */
+:root{--bg:#FCFCFD;--fl:#F1F1F4;--fl2:#E8E8EC;--tx:#1F1F22;--tx2:#5F6068;--rot:#C8102E;--rotfl:#F8E4E7}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fl:#202024;--fl2:#2A2A2F;--tx:#ECECEF;--tx2:#A3A3AB;--rot:#FF8A96;--rotfl:#3A1F24}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:920px;margin:0 auto;padding:max(28px,env(safe-area-inset-top)) 16px 40px}
+.kopf{display:flex;align-items:center;gap:16px;margin:8px 0 28px}
+.kopf img{height:40px;width:auto}
+.kopf .hell{display:block}.kopf .dunkel{display:none}
+@media (prefers-color-scheme:dark){.kopf .hell{display:none}.kopf .dunkel{display:block}}
+h1{font-size:28px;margin:0 0 4px;font-weight:700}
+.sub{color:var(--tx2);margin:0 0 24px;font-size:15px}
+.lbl{color:var(--rot);font-weight:700;font-size:16px;margin:28px 0 12px}
+.apps{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.app{display:flex;flex-direction:column;gap:12px;background:var(--fl);border-radius:24px;padding:16px;text-decoration:none;color:inherit;transition:background .15s}
+.app:hover,.app:focus-visible{background:var(--fl2);outline:none}
+.app img{width:56px;height:56px;border-radius:16px}
+.app b{font-size:18px}
+.app span{color:var(--tx2);font-size:14px;line-height:1.4}
+@media (max-width:599px){.apps{gap:8px}.app{display:grid;grid-template-columns:56px 1fr;grid-template-rows:auto auto;column-gap:16px;row-gap:2px;align-items:center;border-radius:20px}.app img{grid-row:1/3}.app b{align-self:end}.app span{align-self:start}}
+.links{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.lk{display:flex;align-items:center;gap:12px;background:var(--fl);border-radius:16px;padding:14px 16px;text-decoration:none;color:inherit}
+.lk:hover,.lk:focus-visible{background:var(--fl2);outline:none}
+.lk i{flex:none;width:36px;height:36px;border-radius:50%;background:var(--rotfl);color:var(--rot);display:grid;place-items:center;font-style:normal;font-weight:700;font-size:13px}
+.lk b{display:block;font-size:15px}.lk small{color:var(--tx2);font-size:13px}
+.lk svg{margin-left:auto;flex:none;opacity:.5}
+.fuss{color:var(--tx2);font-size:12px;margin-top:36px;display:flex;gap:16px;flex-wrap:wrap}
+.fuss a{color:inherit}
+</style>
 </head>
 <body>
-<p>Weiter zur <a href="uebersicht/">Übersicht</a> · <a href="evse/">EVSE</a> · <a href="baustelle/">Baustelle</a> · <a href="echeck/">E-Check</a></p>
+<main>
+  <div class="kopf"><img class="hell" src="brand/logo-hell.png" alt="Elektro Irrgang"><img class="dunkel" src="brand/logo-dunkel.png" alt="Elektro Irrgang"></div>
+  <h1>Apps</h1>
+  <p class="sub">Welche App möchtest du öffnen?</p>
+
+  <div class="apps">
+    <a class="app" href="uebersicht/"><img src="uebersicht/icon-rund-192.png" alt=""><b>Übersicht</b><span>Kunden, Kalender, Benachrichtigungen und Betriebshandbuch</span></a>
+    <a class="app" href="evse/"><img src="evse/icon-rund-192.png" alt=""><b>EVSE</b><span>Prüfprotokolle für Wallboxen und Ladesäulen</span></a>
+    <a class="app" href="echeck/"><img src="echeck/icon-rund-192.png" alt=""><b>Gebäudetechnik</b><span>Verteiler, Legenden, Netzwerk, KNX und E-Check</span></a>
+    <a class="app" href="baustelle/"><img src="baustelle/icon-rund-192.png" alt=""><b>Baustelle</b><span>Übergaben, Notizen und Material je Baustelle</span></a>
+  </div>
+
+  <div class="lbl">Schnelllinks</div>
+  <div class="links">
+    <a class="lk" href="https://outlook.office.com/mail/" target="_blank" rel="noopener"><i>OL</i><div><b>Outlook</b><small>Mail und Kalender</small></div><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3zm5 16H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2z"/></svg></a>
+    <a class="lk" href="https://www.office.com/" target="_blank" rel="noopener"><i>365</i><div><b>Microsoft 365</b><small>OneDrive, SharePoint, OneNote</small></div><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3zm5 16H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2z"/></svg></a>
+    <a class="lk" href="https://www.sonepar.de/" target="_blank" rel="noopener"><i>SP</i><div><b>Sonepar</b><small>Großhandel</small></div><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3zm5 16H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2z"/></svg></a>
+    <a class="lk" href="https://app.ezubis.de/" target="_blank" rel="noopener"><i>EZ</i><div><b>Ezubis</b><small>Berichtsheft für Azubis</small></div><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3zm5 16H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2z"/></svg></a>
+  </div>
+
+  <div class="fuss"><span id="ver"></span><a href="recht/">Impressum &amp; Datenschutz</a></div>
+</main>
+<script>
+fetch("VERSION?"+Date.now()).then(r=>r.ok?r.text():"").then(v=>{ v=v.trim(); if(v) document.getElementById("ver").textContent="Version "+v; }).catch(()=>{});
+</script>
 </body>
 </html>
