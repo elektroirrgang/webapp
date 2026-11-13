@@ -20,7 +20,7 @@ function plHinweise(art,roh,c){ c=c||{}; const z=plZahl(roh); if(!z) return []; 
     if(v<0.05) w("Unter 0,05 Ω ist für einen Endstromkreis unrealistisch – Messung direkt am Hausanschluss oder Komma verrutscht?");
     else if(v>20) w("Sehr hoch – Komma vergessen (z. B. 0,82 statt 82)? Oder Messung über einen hochohmigen Pfad?");
     if(c.zi&&v<c.zi) w(`Zs (${plF(v)} Ω) ist kleiner als Zi (${plF(c.zi)} Ω) – unplausibel, die Schleife ist immer mindestens so groß wie die Netzimpedanz.`);
-    const L=(c.zs||[]).filter(x=>x&&x>0); if(L.length>=2){ const lo=Math.min(...L), hi=Math.max(...L); if(lo>0&&(hi-lo)/lo>0.5&&v===hi) w(`Deutlich höher als die anderen Außenleiter (${plF(lo)} … ${plF(hi)} Ω) – Klemmstelle oder Übergangswiderstand in diesem Außenleiter prüfen.`); }
+    /* Vergleich der Außenleiter untereinander entfernt (Max 13.11.2026): Unterschiede kommen aus der Zuleitung im Haus, an die man nicht rankommt – kein brauchbarer Hinweis */
     if(c.In&&c.f&&v>0){ const Ia=c.f*c.In, Ik=230/v; let t=`I k = ${plF(Ik)} A · nötig I a = ${c.f} × ${plF(c.In)} A = ${plF(Ia)} A`;
       if(c.zul){ const res=(c.zul-v)/c.zul*100; if(v<=c.zul) t+=res<10?` · knapp: nur ${plF(res,1)} % Reserve bis ${plF(c.zul)} Ω`:` · Reserve ${plF(res,1)} %`; else if(c.idn&&v<=230/(c.idn/1000)) t+=` · über dem LS-Richtwert ${plF(c.zul)} Ω – Fehlerschutz über den RCD ${plF(c.idn)} mA erfüllt (Zs ≤ ${plF(230/(c.idn/1000),2)} Ω), Begründung steht im Protokoll${Ik<Ia?" · ACHTUNG: Ik < Ia, LS löst Kurzschlüsse nicht sicher unverzögert aus":""}`;
         else t+=` · Zs zu hoch: zulässig ≤ ${plF(c.zul)} Ω${Math.abs(c.zul-230/Ia*2/3)<0.01?" (mit Faktor 2/3, weil die Leitung im Fehlerfall warm wird)":""}`; }
