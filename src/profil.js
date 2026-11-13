@@ -4,7 +4,24 @@
    Ändern kann jeder nur sein eigenes Profil. Die Rolle kommt aus Microsoft (Chef weist sie zu), hier wird sie nur angezeigt. */
 const ROLLE_TXT={Admin:["Admin","darf alles, vergibt Rollen in Microsoft"],Buero:["Büro","Aufträge, Material bestellen, Kunden pflegen"],
   Entwickler:["Entwickler","wie Admin, dazu Testwerkzeuge"],Mitarbeiter:["Mitarbeiter","bearbeitet eigene Prüfungen, Übergaben und Notizen"]};
-function meineRollen(){ const a=typeof Auth!=="undefined"&&Auth.account; return ((a&&a.idTokenClaims&&a.idTokenClaims.roles)||[]).map(r=>r==="Büro"?"Buero":r); } /* Wert der App-Rolle kann „Buero“ oder „Büro“ sein */
+function echteRollen(){ const a=typeof Auth!=="undefined"&&Auth.account; return ((a&&a.idTokenClaims&&a.idTokenClaims.roles)||[]).map(r=>r==="Büro"?"Buero":r); } /* Wert der App-Rolle kann „Buero“ oder „Büro“ sein */
+/* ===== Ansicht als Mitarbeiter (Max 13.11.2026) =====
+   Der Entwickler kann die Apps so sehen wie ein normaler Mitarbeiter: ohne Admin-, Büro- und Entwickler-Rechte in der Oberfläche.
+   Gilt für alle Apps auf diesem Gerät (localStorage), zurück über Einstellungen ganz oben. Nur Ansicht – Microsoft-Rechte bleiben, was gespeichert wird, ist echt. */
+const ANSICHT_KEY="irrgang_ansicht_ma";
+function echtEntwickler(){ try{ if(echteRollen().includes("Entwickler")) return true;
+  const T=typeof EINST!=="undefined"&&EINST.team||[], ich=String((typeof ME!=="undefined"&&ME.mail)||"").toLowerCase(); return !!ich&&T.some(m=>m.mail===ich&&m.entwickler&&m.status!=="weg"); }catch(e){ return false; } }
+function ansichtMaAktiv(){ try{ return localStorage.getItem(ANSICHT_KEY)==="1"&&echtEntwickler(); }catch(e){ return false; } }
+function ansichtMaAnwenden(){ if(typeof ME==="undefined"||!ME||!ansichtMaAktiv()) return; ME.admin=false; ME.buero=false; ME.ansichtMa=true; }
+function ansichtMaSetzen(an){ try{ an?localStorage.setItem(ANSICHT_KEY,"1"):localStorage.removeItem(ANSICHT_KEY); }catch(e){}
+  if(typeof toast==="function") toast(an?"Ansicht als Mitarbeiter – zurück unter Einstellungen":"Zurück in der Entwickler-Ansicht"); setTimeout(()=>location.reload(),600); }
+function ansichtZeile(an){ return `<div class="li" role="button" tabindex="0" data-act="ansichtMa"><span class="av">${icon("person")}</span><span class="lt"><span class="h">${an?"Zurück zur Entwickler-Ansicht":"Als Mitarbeiter ansehen"}</span><span class="s">${an?"Du siehst die Apps gerade wie ein Mitarbeiter – ohne Admin-, Büro- und Entwicklerfunktionen":"Zeigt alle Apps auf diesem Gerät so, wie ein normaler Mitarbeiter sie sieht"}</span></span><span class="st">${typeof pill==="function"?pill(an?"ok":"wip",an?"an":"aus"):""}</span></div>`; }
+/* oben auf der Einstellungsseite, solange die Mitarbeiter-Ansicht läuft */
+function ansichtKarte(){ return ansichtMaAktiv()?`<div class="sec-lbl">Ansicht als Mitarbeiter</div><div class="list">${ansichtZeile(true)}</div>`:""; }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="ansichtMa"]'); if(!b) return; e.stopImmediatePropagation(); e.preventDefault(); ansichtMaSetzen(!ansichtMaAktiv()); },true);
+/* beim Start einmal erinnern, damit die Ansicht nicht vergessen wird */
+addEventListener("load",()=>setTimeout(()=>{ if(ansichtMaAktiv()&&typeof toast==="function") toast("Ansicht als Mitarbeiter – zurück unter Einstellungen"); },2500));
+function meineRollen(){ const R=echteRollen(); return ansichtMaAktiv()?["Mitarbeiter"]:R; }
 function meineRolle(){ const R=meineRollen(); const k=["Admin","Entwickler","Buero","Mitarbeiter"].find(x=>R.includes(x)); return k?ROLLE_TXT[k]:ME.admin?ROLLE_TXT.Admin:ROLLE_TXT.Mitarbeiter; }
 const profilVon=mail=>mail&&DB.profile?DB.profile.get(String(mail).toLowerCase()):null;
 let msName=null;
@@ -285,7 +302,7 @@ function geraetZeilen(mitPush){ return (mitPush&&typeof mlGeraetZeile==="functio
 /* Konto-Seite – Reihenfolge für alle Apps gleich: Konto · Abgleich · Darstellung · Apps · Dieses Gerät · Verwaltung · App-Eigenes · Info · Entwickler (mit Präsentationsmodus) */
 function kontoSeite(o){ const sek=(t,z)=>{ z=(Array.isArray(z)?z.join(""):z||"").trim(); return z?`<div class="sec-lbl">${t}</div><div class="list">${z}</div>`:""; };
   const pcFuss=typeof KOPF_PC!=="undefined"&&KOPF_PC.matches; /* PC: Konto steht unten in der Seitenleiste – hier nicht doppelt */
-  return `<div class="narrow konto-s">${syncKarte()}${pcFuss?"":sek("Konto",o.konto)}${sek("Darstellung",o.darstellung)}${o.apps||""}${sek("Dieses Gerät",o.geraet)}${sek("Verwaltung",o.verwaltung)}${o.eigenes||""}${sek("Mitmachen",typeof wuZeile==="function"&&ME.mail?wuZeile():"")}${kontoInfoKarte(o.info||[])}${entwicklerBereich()}</div>`; }
+  return `<div class="narrow konto-s">${ansichtKarte()}${syncKarte()}${pcFuss?"":sek("Konto",o.konto)}${sek("Darstellung",o.darstellung)}${o.apps||""}${sek("Dieses Gerät",o.geraet)}${sek("Verwaltung",o.verwaltung)}${o.eigenes||""}${sek("Mitmachen",typeof wuZeile==="function"&&ME.mail?wuZeile():"")}${kontoInfoKarte(o.info||[])}${entwicklerBereich()}</div>`; }
 /* Info: eine Karte mit App-Symbol, Version und den Seiten als Chips (statt drei Listenzeilen) */
 function kontoInfoKarte(L){ const ic=(document.querySelector('link[rel="apple-touch-icon"]')||{}).href||"", app=document.title.split(" · ")[0];
   const zeilen=L.map(([act,i,t,sub])=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(i)}</span><span class="lt"><span class="h">${esc(t)}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}</span>${icon("chev")}</div>`).join("");
