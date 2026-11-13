@@ -1943,9 +1943,10 @@ function startView(){
   const kacheln=APPS.map(a=>a.geplant?`<div class="app-k geplant"><span class="app-ph">${icon("bulb")}</span><span class="app-t"><b>${a.name}</b><span>${a.text}</span></span>${pill("open","in Planung")}</div>`
     :`<a class="app-k" href="${a.href}"><img src="${a.ic}" alt=""><span class="app-t"><b>${a.name}</b><span>${a.text}</span></span>${icon("chev")}</a>`).join("");
   /* Begrüßung steht am iPad/PC oben im Kopf; am Handy (kein Seitenkopf) bleibt sie im Inhalt */
-  const anpK=anfVerw()&&ME.mail?(DB_ANP?`<button class="gruss-fertig" data-act="dbFertig">Fertig</button>`:`<button class="gruss-anp" data-act="dbAnpassen" aria-label="Startseite anpassen" title="Startseite anpassen">${icon("edit")}</button>`):"";
+  const anpK=ME.mail?(DB_ANP?`<button class="gruss-fertig" data-act="dbFertig">Fertig</button>`:`<button class="gruss-anp" data-act="dbAnpassen" aria-label="Startseite anpassen" title="Startseite anpassen">${icon("edit")}</button>`):"";
   const g=WIDE.matches?"":`<div class="gruss-z"><div class="gruss-t"><h2 class="gruss">${esc(startTitel())}</h2><p class="gruss-sub">${esc(startUnter())}</p></div>${anpK}</div>`;
-  if(anfVerw()) return `<div class="narrow">${g}${typeof bfStartZeile==="function"?bfStartZeile():""}${dashboard(kacheln)}</div>`;
+  /* 13.11.2026: auch Mitarbeiter bekommen die Kachel-Startseite (vorher nur „Team heute“ + Apps) – eigene Grundausstattung, selbst anpassbar */
+  return `<div class="narrow">${g}${typeof bfStartZeile==="function"?bfStartZeile():""}${anfVerw()?"":pinStart()+vgStartKarte()}${dashboard(kacheln)}</div>`;
   const gerZ=istHandy()?(()=>{ const G=live("geraete").filter(x=>!x.aus), f=G.map(gerKal).filter(k=>k&&k.s!=="ok").length;
     return `<div class="sec-lbl">Betrieb</div>${listOf([`<div class="li" role="button" tabindex="0" data-act="nav" data-v="geraete"><span class="av">${icon("geraet")}</span><span class="lt"><span class="h">Messgeräte</span><span class="s">${G.length} ${G.length===1?"Gerät":"Geräte"}${f?` · ${f} ${f===1?"braucht":"brauchen"} Kalibrierung`:""}</span></span>${icon("chev")}</div>`])}`; })():"";
   setTimeout(mstKopf,0);
@@ -1956,7 +1957,7 @@ const startTitel=()=>`${gruss()}${ME.ruf||ME.name?`, ${ME.ruf||ME.name}`:""}`;
 const startUnter=()=>new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"});
 /* Kopf rechts: auf der Startseite „Anpassen“ für Chef und Büro */
 function skRechts(){
-  if(nav.v!=="start"||!anfVerw()||!ME.mail) return "";
+  if(nav.v!=="start"||!ME.mail) return "";
   return DB_ANP?`<button class="sk-anp an" data-act="dbFertig">Fertig</button>`:`<button class="sk-stift" data-act="dbAnpassen" aria-label="Startseite anpassen" title="Startseite anpassen">${icon("edit")}</button>`; }
 
 /* ===== Startseite zum Zusammenklicken =====
@@ -2001,7 +2002,8 @@ const wIc=(k,cls="")=>{ const a=W_ART[k]||W_ART.cloudy; return `<svg class="ic w
 let wLaedt=false;
 async function wetterHolen(){
   META.wetter=META.wetter||null; if(wLaedt||(META.wetter&&Date.now()-META.wetter.t<30*60e3)) return; wLaedt=true;
-  try{ const q=`lat=${W_ORT.lat}&lon=${W_ORT.lon}&tz=Europe/Berlin`, heute=today(), bis=new Date(Date.now()+5*864e5).toISOString().slice(0,10);
+  try{ const pos=typeof standortJetzt==="function"?await standortJetzt():null, O=pos||W_ORT;
+    const q=`lat=${O.lat.toFixed(3)}&lon=${O.lon.toFixed(3)}&tz=Europe/Berlin`, heute=today(), bis=new Date(Date.now()+5*864e5).toISOString().slice(0,10);
     const [c,w]=await Promise.all([fetch(`https://api.brightsky.dev/current_weather?${q}`).then(r=>r.json()),fetch(`https://api.brightsky.dev/weather?${q}&date=${heute}&last_date=${bis}`).then(r=>r.json())]);
     const T={}; (w.weather||[]).forEach(h=>{ const d=String(h.timestamp).slice(0,10), st=+String(h.timestamp).slice(11,13); (T[d]=T[d]||[]).push(Object.assign({st},h)); });
     const tage=Object.keys(T).sort().slice(0,5).map(d=>{ const H=T[d], tagH=H.filter(x=>x.st>=7&&x.st<=19), B=tagH.length?tagH:H, temps=H.map(x=>x.temperature).filter(x=>x!=null);
@@ -2009,7 +2011,7 @@ async function wetterHolen(){
       let ic=W_RANG.find(r=>(zahl[r]||0)>=2)||Object.keys(zahl).sort((a,b)=>zahl[b]-zahl[a])[0]||"cloudy"; ic=ic.replace("-night","-day").replace("clear-day","clear-day");
       const pp=H.map(x=>x.precipitation_probability).filter(x=>x!=null);
       return {d,ic,max:temps.length?Math.round(Math.max(...temps)):null,min:temps.length?Math.round(Math.min(...temps)):null,mm:Math.round(H.reduce((a,x)=>a+(x.precipitation||0),0)*10)/10,pp:pp.length?Math.max(...pp):null}; });
-    const cw=c.weather||{}; META.wetter={t:Date.now(),jetzt:{temp:cw.temperature!=null?Math.round(cw.temperature):null,ic:cw.icon||"cloudy"},tage,
+    const cw=c.weather||{}; META.wetter={t:Date.now(),ort:pos?"hier":"Waldbröl",jetzt:{temp:cw.temperature!=null?Math.round(cw.temperature):null,ic:cw.icon||"cloudy"},tage,
       stdTag:heute,std:(T[heute]||[]).filter(x=>x.st>=6&&x.st<=18).map(x=>({st:x.st,ic:x.icon||"cloudy",t:x.temperature!=null?Math.round(x.temperature):null,mm:x.precipitation||0}))}; metaSave();
     if(nav.v==="start"&&!DB_ANP&&!document.querySelector("#app input:focus")) render();
   }catch(e){ /* offline oder Dienst nicht erreichbar – letzter Stand bleibt */ }
@@ -2050,10 +2052,11 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(b.dataset.act==="wvOrt"){ WV.ort=+b.dataset.i; WV.tag=""; wetterDlg(); return; }
   if(b.dataset.act==="wvTag"){ WV.tag=b.dataset.v; wetterDlg(); return; } },true);
 let DB_ANP=false;
-function dbLayout(){ const p=profilVon(ME.mail)||{}, L=(istHandy()&&p.startH)||p.start||dbFirma()||{}, o=(L.o||[]).filter(k=>DB_W[k]);
-  const aus=(L.o?(L.aus||[]).slice():DB_STD.aus.slice());
-  DB_STD.o.forEach(k=>{ if(!o.includes(k)){ o.push(k); if(L.o&&DB_NEU_AUS.includes(k)&&!aus.includes(k)) aus.push(k); } }); const gr={};
-  o.forEach(k=>{ const g=(L.gr||{})[k]||(L.o?"":DB_STD.gr[k]); gr[k]=DB_GR[k].includes(g)?g:DB_GR[k].includes("m")?"m":DB_GR[k][0]; if(istHandy()&&gr[k]==="b") gr[k]=DB_GR[k].includes("m")?"m":"l"; });
+const DB_STD_MA={o:["heute","termine","werwo","wetter","schnell","baustellen","material","pinn","handbuch","apps","auftraege","pruefungen","geraete","zahlen"],aus:["auftraege","pruefungen","geraete","zahlen"],gr:{heute:"b",termine:"l",werwo:"m",wetter:"m",schnell:"m",pinn:"m"}};
+function dbLayout(){ const p=profilVon(ME.mail)||{}, STD=anfVerw()?DB_STD:DB_STD_MA, L=(istHandy()&&p.startH)||p.start||dbFirma()||{}, o=(L.o||[]).filter(k=>DB_W[k]&&(k!=="zahlen"||ME.admin));
+  const aus=(L.o?(L.aus||[]).slice():STD.aus.slice());
+  STD.o.forEach(k=>{ if(k==="zahlen"&&!ME.admin) return; if(!o.includes(k)){ o.push(k); if(L.o&&DB_NEU_AUS.includes(k)&&!aus.includes(k)) aus.push(k); } }); const gr={};
+  o.forEach(k=>{ const g=(L.gr||{})[k]||(L.o?"":STD.gr[k]); gr[k]=DB_GR[k].includes(g)?g:DB_GR[k].includes("m")?"m":DB_GR[k][0]; if(istHandy()&&gr[k]==="b") gr[k]=DB_GR[k].includes("m")?"m":"l"; });
   return {o,aus:aus.filter(k=>DB_W[k]),gr}; }
 function dbLayoutSpeichern(L){ const id=String(ME.mail||"").toLowerCase(); if(!id) return; const alt=DB.profile.get(id), r=alt||{id};
   r[dbFeld()]={o:L.o,aus:L.aus,gr:L.gr}; saveRec("profile",r,!alt); }
@@ -2265,7 +2268,7 @@ function dashboard(kacheln){
     werwo:werwoKachel(zeile,leer,gross),
     wetter:(()=>{ const WT=META.wetter, J=WT&&WT.jetzt, T=(WT&&WT.tage)||[], tn=d=>d===t?"Heute":new Date(d+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short"}).replace(".","");
       const heute=T.find(x=>x.d===t)||T[0];
-      return {ic:"wetter",act:"wetterAuf",sub:J&&J.temp!=null?`${(W_ART[J.ic]||W_ART.cloudy)[1]}${heute&&heute.mm?` · heute ${wvZahl(heute.mm)} mm`:" · heute trocken"}`:"Betrieb Waldbröl",
+      return {ic:"wetter",act:"wetterAuf",sub:J&&J.temp!=null?`${(W_ART[J.ic]||W_ART.cloudy)[1]}${heute&&heute.mm?` · heute ${wvZahl(heute.mm)} mm`:" · heute trocken"} · ${META.wetter&&META.wetter.ort==="hier"?"hier":"Waldbröl"}`:"Betrieb Waldbröl",
         s:()=>J&&J.temp!=null?`<div class="wg-wj klein">${wIc(J.ic)}<b>${J.temp}°</b></div>${heute&&heute.max!=null?`<small class="wg-wh">Heute ${heute.max}° / ${heute.min}°${heute.mm>=0.1?` · ${wvZahl(heute.mm)} mm`:""}</small>`:""}`:leer("Lädt …"),
         m:g=>J&&J.temp!=null?`<div class="wg-wetter${g==="b"?" breit":""}"><div class="wg-wj">${wIc(J.ic)}<b>${J.temp}°</b></div><div class="wg-wt">${T.slice(g==="b"?0:1,g==="b"?5:5).map(x=>`<div class="wg-wd${x.mm>=1?" nass":""}"><small>${esc(tn(x.d))}</small>${wIc(x.ic)}<b>${x.max!=null?x.max:"–"}°</b>${g==="b"?`<small>${x.mm>=0.1?wvZahl(x.mm)+" mm":"trocken"}</small>`:""}</div>`).join("")}</div></div>`:leer("Wetter wird geladen …")}; })()
   };
