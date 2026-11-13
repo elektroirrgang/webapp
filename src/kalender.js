@@ -300,8 +300,9 @@ function kalDialog(e,vor,bisVor,ganzVor){ const neu=!e; const d=vor||kalTag(KAL.
   const buero=typeof istBuero==="function"&&istBuero(), demo=typeof demoAn==="function"&&demoAn();
   /* Kalender, in die man schreiben darf: Outlook (wenn verbunden), eigene Kalender, Firmentermine (Büro) */
   const outlookOk=demo||KAL.ok===true, eigene=kalKalListe().filter(kalKalMein);
-  const wahl=[...(outlookOk?[["outlook",demo?"Beispieltermine":"Mein Outlook","var(--primary)"]]:[]),...eigene.map(c=>[c.id,c.name,c.farbe]),...(eigene.length?[]:[["neu-ich","Mein Kalender",(KAL_PAL.find(([f])=>!kalFarbenBelegt("ich").has(f))||KAL_PAL[0])[0]]]),...(buero?[["firma","Firmentermine","#2e9b5b"]]:[])];
-  const vor0=e?(e.q==="eigen"?e.kal:e.q):KAL.neuArt, art=wahl.some(w=>w[0]===vor0)?vor0:(e?e.q:wahl[0][0]);
+  /* 13.11.2026: ist Outlook noch nicht verbunden, steht „Mein Outlook“ trotzdem da – Antippen verbindet (vorher fehlte die Auswahl einfach) */
+  const wahl=[...(outlookOk?[["outlook",demo?"Beispieltermine":"Mein Outlook","var(--primary)"]]:neu&&KAL.ebenen.outlook?[["outlook-verb",KAL.lade?"Mein Outlook (lädt …)":"Mein Outlook verbinden","var(--primary)"]]:[]),...eigene.map(c=>[c.id,c.name,c.farbe]),...(eigene.length?[]:[["neu-ich","Mein Kalender",(KAL_PAL.find(([f])=>!kalFarbenBelegt("ich").has(f))||KAL_PAL[0])[0]]]),...(buero?[["firma","Firmentermine","#2e9b5b"]]:[])];
+  const vor0=e?(e.q==="eigen"?e.kal:e.q):KAL.neuArt, art=wahl.some(w=>w[0]===vor0)?vor0:(e?e.q:(wahl.find(w=>w[0]!=="outlook-verb")||wahl[0])[0]);
   kalE={id:e&&e.id,ganz,art,mit:new Set((e&&e.mit||[]).map(m=>m.mail).filter(Boolean)),mitAlt:(e&&e.mit||[]).filter(m=>m.mail)};
   const T=(typeof team==="function"?team():[]).filter(m=>m.mail&&String(m.mail).toLowerCase()!==String(ME.mail||"").toLowerCase());
   const artWahl=neu&&wahl.length>1?`<div class="lbl" style="margin:0 4px 6px">Kalender</div><div class="chips kal-wahl">${wahl.map(([k,t,f])=>`<button type="button" class="chip kal-wc" data-act="kalArt" data-v="${esc(k)}" aria-pressed="${k===art}"><i class="kal-wd" style="background:${f}"></i>${esc(t)}</button>`).join("")}</div>`:"";
@@ -370,6 +371,7 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
   else if(a==="kalMit"){ const m=b.dataset.v; if(kalE.mit.has(m)) kalE.mit.delete(m); else kalE.mit.add(m); b.setAttribute("aria-pressed",String(kalE.mit.has(m))); }
   else if(a==="kalOk") kalSpeichern();
   else if(a==="kalDel") confirmDlg("Termin löschen?",kalE&&kalE.art==="firma"?"Der Firmentermin verschwindet bei allen aus dem Kalender.":kalE&&kalE.art!=="outlook"?"Der Termin wird aus dem Kalender gelöscht.":"Der Termin wird auch in Outlook gelöscht. Eingeladene bekommen eine Absage.","Löschen","kalDelJa");
+  else if(a==="kalArt"&&b.dataset.v==="outlook-verb"){ if(KAL.lade){ toast("Outlook lädt noch – gleich noch einmal versuchen"); return; } if(typeof closeOverlays==="function") closeOverlays(); kalVerbinden(); }
   else if(a==="kalArt"){ kalE.art=b.dataset.v; KAL.neuArt=kalE.art; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); const w=document.querySelector("#dlg .kal-dlg"), k=kalE.art==="outlook"?"outlook":kalE.art==="firma"?"firma":"eigen"; if(w){ ["outlook","firma","eigen"].forEach(x=>w.classList.toggle("kal-art-"+x,x===k)); } const h=document.querySelector("#dlg h2"); if(h) h.textContent=kalE.art==="firma"?"Neuer Firmentermin":"Neuer Termin"; }
   else if(a==="kalKalNeu"){ ev.stopPropagation(); kalKalDlg(null); }
   else if(a==="kalKalEdit"){ ev.stopPropagation(); const c=kalRec(b.dataset.id); if(c) kalKalDlg(c); }
