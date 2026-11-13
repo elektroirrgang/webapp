@@ -189,3 +189,8 @@ function loginSeite(app,inhalt){
     <div class="login-karte">${karte}${/login-ver/.test(inhalt)?"":`<p class="login-ver lv-pc">Version ${V}</p>`}</div>
     <div class="ls-apps" aria-hidden="true"><p>Ein Mitarbeiterkonto für alle Apps</p><div>${apps}</div></div></div>
     ${F?`<p class="ls-fuss">${F.name} · ${F.strasse} · ${F.ort}</p>`:""}</div>`; }
+
+/* Bedienart merken (Max 13.11.2026): nach Fingertipp kein „hängendes“ :hover (z. B. Kreis unter dem Zurück-Pfeil auf der nächsten Seite).
+   tools/build.py schreibt alle :hover-Regeln als „:where(html:not(.tipp)) …“ – mit der Maus ist die Klasse weg und Hover wirkt wie gewohnt. */
+(()=>{ const h=document.documentElement; addEventListener("pointerdown",e=>h.classList.toggle("tipp",e.pointerType!=="mouse"),{capture:true,passive:true});
+  try{ if(matchMedia("(pointer:coarse)").matches) h.classList.add("tipp"); }catch(e){} })();
