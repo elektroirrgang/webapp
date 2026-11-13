@@ -11,7 +11,7 @@ const frOrtName=ortId=>{ const id=String(ortId||""); if(id.startsWith("k:")){ co
 function frListe(){ const L=[];
   /* EVSE */
   if(typeof faellig==="function") faellig().forEach(p=>{ const s=standortOf(p.standortId), l=ladeparkOf(p.ladeparkId);
-    L.push({key:"evse|"+p.standortId+"|"+(p.ladeparkId||""),art:"evse",kundeId:p.kundeId,ort:[s&&s.name,l&&l.name].filter(Boolean).join(" › "),faellig:p.a.naechste,zuletzt:p.p&&p.p.datum||""}); });
+    L.push({key:"evse|"+p.standortId+"|"+(p.ladeparkId||""),art:"evse",kundeId:p.kundeId,ort:[s?s.name:(String(p.standortId).startsWith("k:")&&l?"Hauptsitz":""),l&&l.name].filter(Boolean).join(" › "),faellig:p.a.naechste,zuletzt:p.p&&p.p.datum||""}); });
   /* Gebäudetechnik */
   if(DB.echecks){ const M=new Map(), laeuft=new Set();
     for(const e of live("echecks")){ if(e.demo&&typeof demoDa==="function"&&!demoDa()) continue; const art=e.art||"anlage"; if(art==="netz") continue; const k=e.ortId+"|"+art;

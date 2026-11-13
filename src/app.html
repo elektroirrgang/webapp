@@ -1246,8 +1246,13 @@ function canEdit(rec){ if(!rec) return false; if(!SYNC_ON||rec.demo) return true
 const folgen=(M,id)=>{ let r=M.get(id), n=0; while(r&&r.mergedInto&&M.has(r.mergedInto)&&n++<5) r=M.get(r.mergedInto); return r; };
 const kundeOf=id=>folgen(DB.kunden,id), standortOf=id=>folgen(DB.standorte,id), ladeparkOf=id=>id?DB.ladeparks.get(id):null;
 const kOrt=sid=>typeof sid==="string"&&sid.startsWith("k:");
+/* Hauptsitz (Max 13.11.2026): die Adresse des Kunden ist ein vollwertiger Ort „Hauptsitz“ (Kennung „k:<Kunde>“) –
+   mit Ladeparks, Prüfverlauf und Geräten. Kein eigener Datensatz: Adresse wird nur beim Kunden gepflegt und gilt damit automatisch. */
+const ortKunde=sid=>kOrt(sid)?sid.slice(2):(standortOf(sid)||{}).kundeId;
+const ortName=sid=>kOrt(sid)?"Hauptsitz":(standortOf(sid)||{}).name||"";
+const hsZeigen=k=>!!k&&(standorteVon(k.id).length>0||ladeparksVon("k:"+k.id).length>0);
 function pfad(p){ return {k:kundeOf(p.kundeId), s:standortOf(p.standortId), l:ladeparkOf(p.ladeparkId)}; }
-function pfadText(p,sep=" › "){ const {k,s,l}=pfad(p); return [k&&k.name,s&&s.name,l&&l.name].filter(Boolean).join(sep); }
+function pfadText(p,sep=" › "){ const {k,s,l}=pfad(p); return [k&&k.name,s?s.name:(l&&kOrt(p.standortId)?"Hauptsitz":""),l&&l.name].filter(Boolean).join(sep); }
 const byDate=(a,b)=>(b.p.datum||"").localeCompare(a.p.datum||"")||(b.updated||0)-(a.updated||0);
 const pruefAt=(sid,lid)=>live("pruefungen").filter(p=>p.standortId===sid&&(p.ladeparkId||null)===(lid||null)).sort(byDate);
 const pruefUnter=(kind,id)=>live("pruefungen").filter(p=>kind==="kunden"?p.kundeId===id:kind==="standorte"?p.standortId===id:p.ladeparkId===id).sort(byDate);
@@ -1614,12 +1619,13 @@ function seitenKopf(t,s,f){ t=t||(f?KOPF_START:""); if(!t&&!f) return "";
 function backSetzen(){ const b=$("#backBtn"); if(!b) return; b.innerHTML=icon("back"); }
 function crumbGo(i){ const T=pfadTeile(); if(i>=T.length-1||!T[i][1]) return zurueck(); pfadVerlassen(); go(T[i][1]); }
 const kette=(kid,sid,lid)=>{ const r=[["Kunden",{v:"kunden"}]], k=kid&&kundeOf(kid), s=sid&&standortOf(sid), l=lid&&ladeparkOf(lid);
-  if(k) r.push([k.name||"Kunde",{v:"kunde",id:k.id}]); if(s) r.push([s.name||"Standort",{v:"standort",id:s.id}]); if(l) r.push([l.name||"Ladepark",{v:"ladepark",id:l.id}]); return r; };
+  if(k) r.push([k.name||"Kunde",{v:"kunde",id:k.id}]); if(k&&kOrt(sid)&&hsZeigen(k)) r.push(["Hauptsitz",{v:"hauptsitz",id:k.id}]); if(s) r.push([s.name||"Standort",{v:"standort",id:s.id}]); if(l) r.push([l.name||"Ladepark",{v:"ladepark",id:l.id}]); return r; };
 function pfadVerlassen(){ saveNow(); if(EDITOR.includes(nav.v)) cur=null; }
 function pfadTeile(){
   if(EDITOR.includes(nav.v)&&cur){ const s=standortOf(cur.standortId), r=kette(cur.kundeId||(s&&s.kundeId),cur.standortId,cur.ladeparkId);
     if(nav.v==="saeule") r.push(["Ladestationen",{v:"saeulen"}]); return r; }
-  if(nav.v==="ladepark"){ const l=ladeparkOf(nav.id), s=l&&standortOf(l.standortId); return kette(s&&s.kundeId,l&&l.standortId); }
+  if(nav.v==="ladepark"){ const l=ladeparkOf(nav.id); return kette(l&&ortKunde(l.standortId),l&&l.standortId); }
+  if(nav.v==="hauptsitz") return kette();
   if(nav.v==="standort"){ const s=standortOf(nav.id); return kette(s&&s.kundeId); }
   if(nav.v==="kunde") return kette();
   if(MEHR_SUB[nav.v]||(nav.v==="katalog"&&!WIDE.matches)) return [["Einstellungen",{v:"mehr"}]];
@@ -1889,9 +1895,11 @@ function render(){ profilAnwenden(); try{ stSnapSetzen(); }catch(e){}
   else if(nav.v==="team"){ title="Mitarbeiter und Mail"; body=teamView(); }
   else if(nav.v==="backup"){ title="Backup"; body=backupView(); }
   else if(nav.v==="geraet"){ const T=geraeteTreffer(nav.sn); title="Geräteakte"; sub=T.length?sName(T[0].s,T[0].i):""; body=akteView(nav.sn); }
+  else if(nav.v==="hauptsitz"){ const k=kundeOf(nav.id); if(!k||k.deleted){ nav={v:"kunden"}; return render(); }
+    title="Hauptsitz"; sub=k.name; body=hauptsitzView(k); fab=["newHere","Neue Prüfung","add"]; }
   else if(VIEW_KIND[nav.v]){ const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id);
     if(!r||r.deleted){ nav={v:"kunden"}; return render(); }
-    title=r.name; sub=kind==="kunden"?"Kunde":kind==="standorte"?(kundeOf(r.kundeId)||{}).name:[ (kundeOf((standortOf(r.standortId)||{}).kundeId)||{}).name,(standortOf(r.standortId)||{}).name ].filter(Boolean).join(" › ");
+    title=r.name; sub=kind==="kunden"?"Kunde":kind==="standorte"?(kundeOf(r.kundeId)||{}).name:[ (kundeOf(ortKunde(r.standortId))||{}).name,ortName(r.standortId) ].filter(Boolean).join(" › ");
     body=nav.v==="kunde"?kundeView(r):nav.v==="standort"?standortView(r):ladeparkView(r);
     fab=nav.v==="kunde"?null:["newHere","Neue Prüfung","add"]; }
   else { const {s,l}=pfad(cur); title=nav.v==="saeule"?sName(cur.s[nav.si],nav.si):(l?l.name:s?s.name:"Prüfung"); sub=nav.v==="saeule"?pfadText(cur):[deDate(cur.p.datum),cur.p.art].filter(Boolean).join(" · ");
@@ -1946,7 +1954,7 @@ function locItem(kind,r){
   let sub="";
   if(kind==="kunden"){ const n=standorteVon(r.id).length; sub=[r.kdnr&&`Kd.-Nr. ${r.kdnr}`,r.ort,n&&`${n} Standort${n===1?"":"e"}`].filter(Boolean).join(" · "); }
   else if(kind==="standorte"){ sub=r.ort||adrText(r)||(kundeOf(r.kundeId)||{}).name||""; }
-  else sub=nav.v==="standort"?(r.notiz||""):(standortOf(r.standortId)||{}).name||"";
+  else sub=nav.v==="standort"||nav.v==="hauptsitz"?(r.notiz||""):ortName(r.standortId);
   const last=pruefUnter(kind,r.id)[0];
   return `<div class="sw" data-id="${esc(r.id)}" data-kind="${kind}"><div class="sw-bg"><span class="l">${icon(pins?"pinOff":"pin")}${pins?"Lösen":"Anpinnen"}</span><span class="r">Löschen${icon("del")}</span></div>
     <div class="li" role="button" tabindex="0" data-act="nav" data-v="${view}" data-id="${esc(r.id)}"><span class="av">${icon(KIND_ICON[kind])}</span>
@@ -2044,8 +2052,19 @@ const ML_FREMD={auftraege:"../uebersicht/",materialanf:"../uebersicht/",geraete:
 function kundeView(k){
   const ss=standorteVon(k.id), sid="k:"+k.id, ps=pruefAt(sid,null);
   /* ohne eigene Standorte: geprüft wird an der Adresse des Kunden – Verlauf und Geräte direkt hier */
-  const block=!ss.length||ps.length?kdKopf(`Prüfverlauf${ss.length?" an der Kundenadresse":""}`,"newHere","Neue Prüfung")+verlaufKopf(sid,null)+(ps.length?listOf(ps.map(p=>pItem(p,false))):`<p class="meta">Noch keine Prüfung.</p>`)+(ps.length||geraeteOrt(sid,null).length?geraeteSektion(sid,null):""):"";
+  const block=!hsZeigen(k)?kdKopf(`Prüfverlauf`,"newHere","Neue Prüfung")+verlaufKopf(sid,null)+(ps.length?listOf(ps.map(p=>pItem(p,false))):`<p class="meta">Noch keine Prüfung.</p>`)+(ps.length||geraeteOrt(sid,null).length?geraeteSektion(sid,null):""):"";
   return kdSeite(k,"kunden",block); }
+/* Hauptsitz = Adresse des Kunden als Ort: Ladeparks, Prüfverlauf, Geräte. Adresse ändern nur beim Kunden („Kunde bearbeiten“). */
+function hauptsitzView(k){ const sid="k:"+k.id, lps=ladeparksVon(sid), ps=pruefAt(sid,null), adr=adrText(k);
+  let h=`<div class="narrow kd-seite"><div class="list"><div class="li" role="button" tabindex="0" data-act="nav" data-v="kunde" data-id="${esc(k.id)}"><span class="av">${icon("ort")}</span><span class="lt"><span class="h">${esc(adr||"Keine Adresse hinterlegt")}</span><span class="s">Adresse des Kunden – wird beim Kunden gepflegt und gilt hier automatisch</span></span>${icon("chev")}</div></div>`;
+  h+=kdKopf("Ladeparks","newLadepark","Ladepark hinzufügen");
+  h+=lps.length?listOf(lps.map(l=>locItem("ladeparks",l))):`<p class="meta">Optional – nur nötig, wenn es am Hauptsitz mehrere Parkplätze mit Ladestationen gibt.</p>`;
+  h+=`<div class="sec-lbl">Prüfverlauf${lps.length?" ohne Ladepark":""}</div>`+verlaufKopf(sid,null)+(ps.length?listOf(ps.map(p=>pItem(p,false))):`<p class="meta">Noch keine Prüfung – über „Neue Prüfung“ anlegen.</p>`);
+  return h+(lps.length&&!ps.length&&!geraeteOrt(sid,null).length?"":geraeteSektion(sid,null))+`</div>`; }
+/* Zeile „Hauptsitz“ oben in der Standortliste des Kunden (kunde.js ruft sie, wenn vorhanden) */
+function hsZeile(k){ if(!hsZeigen(k)) return ""; const sid="k:"+k.id, last=pruefAt(sid,null)[0]||live("pruefungen").filter(p=>p.standortId===sid).sort(byDate)[0], nl=ladeparksVon(sid).length;
+  const sub=[adrText(k)||"Adresse des Kunden",nl&&`${nl} Ladepark${nl===1?"":"s"}`,last&&`zuletzt ${deDate(last.p.datum)}`].filter(Boolean).join(" · ");
+  return `<div class="li" role="button" tabindex="0" data-act="nav" data-v="hauptsitz" data-id="${esc(k.id)}"><span class="av">${icon("firma")}</span><span class="lt"><span class="h">Hauptsitz</span><span class="s">${esc(sub)}</span>${last?`<span class="st">${pill(protoState(last))}</span>`:""}</span>${icon("chev")}</div>`; }
 function standortView(s){
   const _ak=geraeteSektion(s.id,null), _fz=verlaufKopf(s.id,null);
   const lps=ladeparksVon(s.id), ps=pruefAt(s.id,null);
@@ -2167,7 +2186,7 @@ function projektView(){
   return `<div class="cols">
     ${cur.s.length>1?`<section class="card wide"><h3>Umfang dieser Prüfung</h3><p class="sup" style="margin:-8px 0 12px">Heute geprüft werden ${umfangS(cur).length} von ${cur.s.length} Ladestationen. Nicht gewählte stehen im Protokoll als „nicht Bestandteil dieser Prüfung“.</p>${umfangChips()}</section>`:""}
     <section class="card"><h3>Auftrag</h3>
-      <div class="ort-zeile">${icon("ort")}<div><b>${esc(k?k.name:"Kein Kunde")}</b><span>${esc([s&&s.name,l&&l.name].filter(Boolean).join(" › ")||(kOrt(cur.standortId)?["Adresse des Kunden",k&&adrText(k)].filter(Boolean).join(": "):"Kein Standort"))}</span></div><button class="btn-text" data-act="move">Ändern</button></div>
+      <div class="ort-zeile">${icon("ort")}<div><b>${esc(k?k.name:"Kein Kunde")}</b><span>${esc([s?s.name:(l&&kOrt(cur.standortId)?"Hauptsitz":""),l&&l.name].filter(Boolean).join(" › ")||(kOrt(cur.standortId)?["Adresse des Kunden",k&&adrText(k)].filter(Boolean).join(": "):"Kein Standort"))}</span></div><button class="btn-text" data-act="move">Ändern</button></div>
       <div class="fg">
       ${tf("p.auftragsnr","Auftragsnr.",p.auftragsnr)}
       ${tf("p.datum","Prüfdatum",p.datum,{type:"date"})}
@@ -2220,7 +2239,7 @@ function saeuleView(){
         <div class="full"><div class="lbl">Bauart</div>${seg("bauart",BAUART(s),BAUARTEN.map(([v,t,z])=>[v,`${t} · ${z}`]))}</div>
         ${tf(b+"name","Bezeichnung",s.name)}
         ${tf(b+"ort","Stellplatz / Position",s.ort,{ph:"z. B. Stellplatz 12–13 oder Reihe B"})}
-        ${cur.standortId&&!cur.ladeparkId&&!kOrt(cur.standortId)?`${tf(b+"lpark","Ladepark (optional, gruppiert das Protokoll)",s.lpark||"",{list:"dl-lpark",ph:"z. B. Mitarbeiterparkplatz Mennekes",full:true})}${datalist("dl-lpark",lpNamen(cur.standortId,cur.s))}`:""}
+        ${cur.standortId&&!cur.ladeparkId?`${tf(b+"lpark","Ladepark (optional, gruppiert das Protokoll)",s.lpark||"",{list:"dl-lpark",ph:"z. B. Mitarbeiterparkplatz Mennekes",full:true})}${datalist("dl-lpark",lpNamen(cur.standortId,cur.s))}`:""}
         <div class="full">${katSelect("katWahl","Modell aus dem Katalog",s.katId&&DB.katalog.has(s.katId)?s.katId:"","– kein Katalogmodell –",true)}${katInfoHtml(s)}</div>
         ${tf(b+"typ","Hersteller / Typ",s.typ,{list:"dl-typ"})}${datalist("dl-typ",live("pruefungen").flatMap(p=>p.s.map(x=>x.typ)))}
         <div>${tf(b+"sn","Seriennummer",s.sn)}<div id="snWarn">${snWarnHtml(cur,si)}</div>${(()=>{ const n=geraeteTreffer(s.sn).filter(t=>t.p.id!==cur.id).length; return n?`<button type="button" class="btn-text akte-link" data-act="akte" data-sn="${esc(s.sn)}">${icon("wallbox")}Geräteakte · ${n} frühere Prüfung${n>1?"en":""}</button>`:""; })()}</div>
@@ -2611,6 +2630,7 @@ function openMenu(){
   } else if(kind){
     const r=DB[kind].get(nav.id), ok=canEdit(r), pinned=META.pins.includes(r.id);
     if(kind==="standorte") it.push(["newLadepark","Ladepark hinzufügen","add"]);
+    if(kind==="kunden") it.push(["newLadepark","Ladepark am Hauptsitz hinzufügen","add"]);
     it.push(["pinLocCur",pinned?"Nicht mehr anpinnen":"Anpinnen",pinned?"pinOff":"pin"]);
     if(ok) it.push(["delLocAsk",`${KIND_NAME[kind]} löschen`,"del","danger"]);
   } else if(E){
@@ -2650,13 +2670,13 @@ function locDialog(kind,rec,parentId){
 let pick=null;
 function pickDialog(){
   const P=pick, ks=live("kunden").sort((a,b)=>a.name.localeCompare(b.name,"de"));
-  const ss=P.k&&P.k!=="__neu"?standorteVon(P.k):[], ls=P.s&&P.s!=="__neu"?ladeparksVon(P.s):[];
+  const ss=P.k&&P.k!=="__neu"?standorteVon(P.k):[], ls=P.s&&P.s!=="__neu"?ladeparksVon(P.s):!P.s&&P.k&&P.k!=="__neu"?ladeparksVon("k:"+P.k):[];
   const body=`<div class="fg1">
     ${sf("k","Kunde",P.k||"",[["","Bitte wählen"],...ks.map(k=>[k.id,k.name]),["__neu","+ Neuer Kunde …"]],{form:true})}
     ${P.k==="__neu"?tf("kNeu","Name des neuen Kunden",P.kNeu||"",{form:true}):""}
-    ${P.k?sf("s","Standort",P.s||"",[["",P.k==="__neu"?"Adresse des Kunden":`Adresse des Kunden${adrText(kundeOf(P.k)||{})?` (${adrText(kundeOf(P.k))})`:""}`],...ss.map(s=>[s.id,s.name]),["__neu","+ Neuer Standort …"]],{form:true}):""}
+    ${P.k?sf("s","Standort",P.s||"",[["",P.k==="__neu"?"Adresse des Kunden":`${ss.length?"Hauptsitz":"Adresse des Kunden"}${adrText(kundeOf(P.k)||{})?` (${adrText(kundeOf(P.k))})`:""}`],...ss.map(s=>[s.id,s.name]),["__neu","+ Neuer Standort …"]],{form:true}):""}
     ${P.s==="__neu"?tf("sNeu","Name des neuen Standorts",P.sNeu||"",{form:true,ph:"z. B. Rheinbach"}):""}
-    ${P.s?sf("l","Ladepark (optional)",P.l||"",[["","– kein Ladepark –"],...ls.map(l=>[l.id,l.name]),["__neu","+ Neuer Ladepark …"]],{form:true}):""}
+    ${P.s||(P.k&&P.k!=="__neu")?sf("l","Ladepark (optional)",P.l||"",[["","– kein Ladepark –"],...ls.map(l=>[l.id,l.name]),["__neu","+ Neuer Ladepark …"]],{form:true}):""}
     ${P.l==="__neu"?tf("lNeu","Name des neuen Ladeparks",P.lNeu||"",{form:true,ph:"z. B. Parkplatz Nord"}):""}
   </div>`;
   dialog(P.mode==="move"?"Kunde / Standort ändern":"Neue Prüfung – wo?",body,`<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="pickOk">${P.mode==="move"?"Übernehmen":"Weiter"}</button>`);
@@ -2666,11 +2686,13 @@ function pickResolve(){
   const P=pick;
   if(!P.k||(P.k==="__neu"&&!P.kNeu)){ toast("Bitte einen Kunden wählen oder anlegen"); return null; }
   if(P.s==="__neu"&&!P.sNeu){ toast("Bitte einen Namen für den Standort eingeben"); return null; }
-  if(P.s&&P.l==="__neu"&&!P.lNeu){ toast("Bitte einen Namen für den Ladepark eingeben"); return null; }
+  if(P.l==="__neu"&&!P.lNeu){ toast("Bitte einen Namen für den Ladepark eingeben"); return null; }
   let k=P.k==="__neu"?saveRec("kunden",{id:uid(),name:P.kNeu,adresse:"",notiz:""},true):kundeOf(P.k);
   let s=P.s==="__neu"?saveRec("standorte",{id:uid(),kundeId:k.id,name:P.sNeu,adresse:""},true):P.s?standortOf(P.s):null;
-  let l=!s?null:P.l==="__neu"?saveRec("ladeparks",{id:uid(),standortId:s.id,name:P.lNeu,notiz:""},true):P.l?ladeparkOf(P.l):null;
-  return {k,s,l,sid:s?s.id:"k:"+k.id};
+  const sid=s?s.id:"k:"+k.id; /* ohne Standort: Ladepark am Hauptsitz (Adresse des Kunden) */
+  let l=P.l==="__neu"?saveRec("ladeparks",{id:uid(),standortId:sid,name:P.lNeu,notiz:""},true):P.l?ladeparkOf(P.l):null;
+  if(l&&l.standortId!==sid) l=null;
+  return {k,s,l,sid};
 }
 
 let nachName=null;
@@ -2716,7 +2738,7 @@ function katAnwenden(s,r){ if(!r) return; s.katId=r.id; s.typ=katVoll(r);
   const kw=num(r.leistung); if(kw&&s.phasen){ const A=kw*1000/(s.phasen*230); if(Math.abs(A-16)<1.5) s.inenn="16"; else if(Math.abs(A-32)<2.5) s.inenn="32"; } }
 function stLesen(){ const F=formVals(); stDlg.gr.forEach((g,i)=>{ if(F["typ_"+i]!==undefined) g.typ=F["typ_"+i]; if(F["n_"+i]!==undefined) g.n=F["n_"+i]; if(F["lp_"+i]!==undefined) g.lpark=F["lp_"+i]; }); }
 /* Standort ohne Ladepark: Säulen bekommen ein Feld „Ladepark“, das Standort-Protokoll gruppiert danach */
-function stOhneLp(D){ const sid=D.mode==="add"?cur&&cur.standortId:D.s, lid=D.mode==="add"?cur&&cur.ladeparkId:D.l; return !!sid&&!lid&&!kOrt(sid); }
+function stOhneLp(D){ const sid=D.mode==="add"?cur&&cur.standortId:D.s, lid=D.mode==="add"?cur&&cur.ladeparkId:D.l; return !!sid&&!lid; }
 function lpNamen(sid,L){ return [...ladeparksVon(sid).map(l=>l.name),...(L||[]).map(x=>x.lpark)]; }
 function stDialog(o){
   if(o){ const vorB=o.bauart||"Wallbox", L=o.mode==="add"?cur.s:o.mode==="ort"?geraeteOrt(o.s,o.l):[], vorT=((([...L].reverse().find(x=>BAUART(x)===vorB))||{}).typ||"");
@@ -2772,7 +2794,7 @@ function gtLesen(F,s){ if(F.gtBf==="rcbo") s.rcbo=true; else delete s.rcbo;
   setRcd(s,F.gtRcd||rcdInfo(s).t,F.gtRdc==="1"); if(F.gtIdn) s.idn=F.gtIdn;
   s.inenn=F.gtInenn||""; delete s.inennAnders; s.leitung=F.gtLeit||""; s.bmk=F.gtBmk||""; }
 function gtDlg(sid,lid,gids){ const o=ortFest(sid,lid); if(!o) return; const G=gids.map(id=>o.geraete.find(g=>g.gid===id)).filter(Boolean); if(!G.length) return;
-  gtD={sid,lid,gids:G.map(g=>g.gid)}; const g=G[0], viele=G.length>1, mitLp=!lid&&!kOrt(sid), lpGleich=G.every(x=>(x.lpark||"")===(g.lpark||""));
+  gtD={sid,lid,gids:G.map(g=>g.gid)}; const g=G[0], viele=G.length>1, mitLp=!lid, lpGleich=G.every(x=>(x.lpark||"")===(g.lpark||""));
   dialog(viele?`${G.length} Geräte · gemeinsame Werte`:(g.name||"Gerät"),`${viele?`<p class="sup" style="margin:0 0 12px">Gilt für ${esc(G.map(x=>x.name).join(", "))}. Seriennummer und Stellplatz trägst du später je Gerät ein – einfach antippen.</p>`:""}
     <div class="fg1">${viele?"":`<div class="row2 gt-r">${tf("gtName","Bezeichnung",g.name||"",{form:true})}${tf("gtSn","Seriennummer",g.sn||"",{form:true})}</div>${tf("gtOrt","Stellplatz / Position",g.ort||"",{form:true,ph:"z. B. P3"})}`}
       ${mitLp?`${tf("gtLp","Ladepark (für das Standort-Protokoll)",lpGleich?g.lpark||"":"",{form:true,list:"dl-gtlp",ph:"z. B. Mitarbeiterparkplatz Mennekes"})}${datalist("dl-gtlp",lpNamen(sid,o.geraete))}`:""}
@@ -2827,8 +2849,9 @@ function zurueck(){
   saveNow();
   if(nav.zur&&!EDITOR.includes(nav.v)){ go(nav.zur); return; }   /* nach einem Scan: zurück dorthin, wo gescannt wurde */
   if(nav.v==="saeule"){ go({v:"saeulen"}); return; }
-  if(EDITOR.includes(nav.v)){ const back=cur.ladeparkId&&ladeparkOf(cur.ladeparkId)?{v:"ladepark",id:cur.ladeparkId}:standortOf(cur.standortId)?{v:"standort",id:cur.standortId}:kOrt(cur.standortId)&&kundeOf(cur.kundeId)?{v:"kunde",id:cur.kundeId}:{v:"start"}; cur=null; go(back); return; }
-  if(nav.v==="ladepark"){ const l=ladeparkOf(nav.id); go(l?{v:"standort",id:l.standortId}:{v:"kunden"}); return; }
+  if(EDITOR.includes(nav.v)){ const back=cur.ladeparkId&&ladeparkOf(cur.ladeparkId)?{v:"ladepark",id:cur.ladeparkId}:standortOf(cur.standortId)?{v:"standort",id:cur.standortId}:kOrt(cur.standortId)&&kundeOf(cur.kundeId)?{v:hsZeigen(kundeOf(cur.kundeId))?"hauptsitz":"kunde",id:cur.kundeId}:{v:"start"}; cur=null; go(back); return; }
+  if(nav.v==="ladepark"){ const l=ladeparkOf(nav.id); go(!l?{v:"kunden"}:kOrt(l.standortId)?{v:"hauptsitz",id:ortKunde(l.standortId)}:{v:"standort",id:l.standortId}); return; }
+  if(nav.v==="hauptsitz"){ go(kundeOf(nav.id)?{v:"kunde",id:nav.id}:{v:"kunden"}); return; }
   if(nav.v==="standort"){ const s=standortOf(nav.id); go(s?{v:"kunde",id:s.kundeId}:{v:"kunden"}); return; }
   if(nav.v==="kunde"){ go({v:"kunden"}); return; }
   if(MEHR_SUB[nav.v]){ go({v:"mehr"}); return; }
@@ -3121,7 +3144,7 @@ document.addEventListener("click",ev=>{
   case "move": if(!canEdit(cur)) return; pick={mode:"move",k:cur.kundeId,s:kOrt(cur.standortId)?"":cur.standortId,l:cur.ladeparkId||""}; pickDialog(); return;
   case "newKunde": locDialog("kunden"); return;
   case "newStandort": locDialog("standorte",null,nav.id); return;
-  case "newLadepark": locDialog("ladeparks",null,nav.id); return;
+  case "newLadepark": locDialog("ladeparks",null,nav.v==="hauptsitz"?"k:"+nav.id:nav.v==="kunde"?"k:"+nav.id:nav.id); return;
   case "editLoc": locDialog(VIEW_KIND[nav.v],DB[VIEW_KIND[nav.v]].get(nav.id)); return;
   case "saveLoc": { const F=formVals(), L=locForm; if(!F.name){ toast("Bitte einen Namen eingeben"); return; }
     let r;
@@ -3133,9 +3156,9 @@ document.addEventListener("click",ev=>{
   case "pinLoc": case "pinLocCur": { const id=a==="pinLoc"?b.dataset.id:nav.id, i=META.pins.indexOf(id); if(i>=0) META.pins.splice(i,1); else META.pins.push(id); metaSave(); softRender(); toast(i<0?"Angepinnt – steht jetzt auf der Startseite":"Nicht mehr angepinnt"); return; }
   case "delLocAsk": locLoeschenFragen(VIEW_KIND[nav.v],nav.id); return;
   case "delLoc": { const t=delZiel; delZiel=null; closeOverlays(); if(!t) return; if(VIEW_KIND[nav.v]&&nav.id===t.id) zurueck(); locLoeschen(t.kind,t.id); return; }
-  case "newHere": { if(nameFehlt("newHere")) return; const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id);
+  case "newHere": { if(nameFehlt("newHere")) return; if(nav.v==="hauptsitz"){ neuePruefung(nav.id,"k:"+nav.id,null); return; } const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id);
     if(kind==="kunden"){ if(standorteVon(r.id).length){ pick={mode:"new",k:r.id,s:"",l:""}; pickDialog(); } else neuePruefung(r.id,"k:"+r.id,null); return; }
-    if(kind==="standorte") neuePruefung(r.kundeId,r.id,null); else { const s=standortOf(r.standortId); neuePruefung(s.kundeId,s.id,r.id); } return; }
+    if(kind==="standorte") neuePruefung(r.kundeId,r.id,null); else neuePruefung(ortKunde(r.standortId),r.standortId,r.id); return; }
   case "open": closeOverlays(); oeffne(b.dataset.id); return;
   case "akte": { closeOverlays(); if(cur&&EDITOR.includes(nav.v)) saveNow(); go({v:"geraet",sn:b.dataset.sn,von:{...nav}}); return; }
   case "pWdh": { const p=DB.pruefungen.get(b.dataset.id); closeOverlays(); if(p) neuePruefung(p.kundeId,p.standortId,p.ladeparkId,null,p); return; }
