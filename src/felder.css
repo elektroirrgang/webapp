@@ -998,7 +998,7 @@ body.tour-an .snackbar{display:none}
 .kal-kopf{display:flex;align-items:center;gap:12px;margin:4px 0 14px}
 .kal-nav{display:flex;align-items:center;height:48px;padding:4px;border-radius:24px;background:var(--sc-high);flex:none}
 .kal-np{height:40px;min-width:40px;border:0;border-radius:20px;background:transparent;color:var(--on-surface);display:grid;place-items:center;cursor:pointer;font:inherit;font-size:15px;font-weight:600;padding:0}
-.kal-np .ic{width:22px;height:22px}.kal-np.vor .ic{transform:rotate(180deg)}.kal-np.heute{padding:0 16px}
+.kal-np .ic{width:22px;height:22px}.kal-np.zur .ic{transform:rotate(180deg)} /* Chevrons statt Pfeile (Max 13.11.2026) */.kal-np.heute{padding:0 16px}
 @media (hover:hover){.kal-np:hover,.kal-filt:hover{background:var(--sc-highest)}}
 .kal-rechts{display:flex;align-items:center;gap:8px;margin-left:auto}
 .kal-filt{width:48px;height:48px;border:0;border-radius:50%;background:var(--sc-high);color:var(--on-sv);display:grid;place-items:center;cursor:pointer;position:relative}
@@ -1056,7 +1056,7 @@ body.kal-pc .fab{display:none!important}
 .kal-pt.an{color:var(--on-surface);background:var(--sc-high)}
 .kp-box{padding:6px 4px 10px}.kp-box+.kp-box{padding-top:14px}
 .kp-mk{display:flex;align-items:center;gap:2px;margin:0 0 6px 4px}.kp-mk b{flex:1;font-size:14px}
-.kp-r{width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--on-sv);display:grid;place-items:center;cursor:pointer}.kp-r .ic{width:18px;height:18px}.kp-r.vor .ic{transform:rotate(180deg)}
+.kp-r{width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--on-sv);display:grid;place-items:center;cursor:pointer}.kp-r .ic{width:18px;height:18px}.kp-r.zur .ic{transform:rotate(180deg)}
 .kp-g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}.kp-g>span{font-size:11px;font-weight:600;color:var(--on-sv);padding:2px 0 4px}
 .kp-t{position:relative;aspect-ratio:1;border:0;border-radius:50%;background:transparent;color:var(--on-surface);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;padding:0}
 .kp-t.fremd{color:var(--on-sv);opacity:.5}.kp-t.imb{background:var(--sc-high)}.kp-t.heute{background:var(--primary);color:var(--on-primary)}
