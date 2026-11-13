@@ -1477,6 +1477,8 @@ function softRender(){
 /* 13.11.2026: Typenschild und Prüfplakette sind Pflicht (4. Feld = pflicht), der Rest freiwillig */
 const FOTO_SLOTS=[["typ","Typenschild","gut lesbar",1],["plak","Prüfplakette","gut lesbar",1],["ueb","Ladestation außen","von weiter weg"],["offen","Anschlussraum","geöffnet"],["vtA","Verteiler außen","geschlossen"],["vert","Verteiler innen","LS und RCD"]];
 const FOTO_PFLICHT=FOTO_SLOTS.filter(x=>x[3]).map(x=>x[0]);
+/* Ladesäulen haben die Absicherung oft unten im Säulenfuß (Max 13.11.2026) – dann heißt es dort nicht „Verteiler“ */
+const fotoSlots=s=>BAUART(s)==="Ladesäule"?FOTO_SLOTS.map(x=>x[0]==="vtA"?["vtA","Absicherung außen","Verteiler oder Säulenfuß"]:x[0]==="vert"?["vert","Absicherung innen","LS und RCD, oft im Säulenfuß"]:x):FOTO_SLOTS;
 function fotoState(s){ if(!s.fotoPflicht) return "ok"; const n=FOTO_PFLICHT.filter(k=>(s.fotos||{})[k]).length; return n===FOTO_PFLICHT.length?"ok":n?"wip":"open"; }
 const fotoCache=new Map(); let fotoDB=null, fotoTarget=null;
 const fotoIds=s=>Object.values(s.fotos||{}).filter(Boolean);
@@ -2231,7 +2233,7 @@ function saeuleView(){
         ${tf(b+"laenge","Länge (ca.)",s.laenge,{im:"decimal",sfx:"m"})}
         <div class="full rc-zeile">${rcKnopf(evRcPre(s),"Spannungsfall und Zs rechnen")}</div>
       </div></section>
-      <section class="card wide"><div class="gh"><div><h3>Fotos</h3><p>Typenschild und Prüfplakette sind Pflicht</p></div>${s.fotoPflicht?pill(fotoState(s),fotoState(s)==="ok"?"vollständig":(n=>`${n} ${n===1?"fehlt":"fehlen"}`)(FOTO_PFLICHT.filter(k=>!(s.fotos||{})[k]).length)):""}</div><div class="fotos">${FOTO_SLOTS.map(([k,l,hint,pf])=>{ const id=(s.fotos||{})[k], src=id&&fotoCache.get(id); hint=pf&&s.fotoPflicht?`Pflicht · ${hint}`:hint;
+      <section class="card wide"><div class="gh"><div><h3>Fotos</h3><p>Typenschild und Prüfplakette sind Pflicht</p></div>${s.fotoPflicht?pill(fotoState(s),fotoState(s)==="ok"?"vollständig":(n=>`${n} ${n===1?"fehlt":"fehlen"}`)(FOTO_PFLICHT.filter(k=>!(s.fotos||{})[k]).length)):""}</div><div class="fotos">${fotoSlots(s).map(([k,l,hint,pf])=>{ const id=(s.fotos||{})[k], src=id&&fotoCache.get(id); hint=pf&&s.fotoPflicht?`Pflicht · ${hint}`:hint;
         return src?`<button class="foto" data-act="fotoShow" data-k="${k}" aria-label="Foto ${l} ansehen"><img src="${src}" alt=""><span class="fl">${l}</span></button>`
           :id?`<div class="foto leer">${icon("sync")}<span class="fl">${l}</span><span class="fh">wird geladen …</span></div>`
           :`<button class="foto leer" data-act="fotoAdd" data-k="${k}">${icon("cam")}<span class="fl">${l}</span><span class="fh">${hint}</span></button>`; }).join("")}</div></section>
@@ -3179,7 +3181,7 @@ document.addEventListener("click",ev=>{
   case "pdfStd": { const e=$("#f_fname"); if(e) e.value=pdfSchema(cur).name; return; }
   case "openS": closeOverlays(); saveNow(); go({v:"saeule",si:+b.dataset.si,st:"geraet"}); return;
   case "sub": saveNow(); nav={...nav,st:b.dataset.v}; render(); window.scrollTo(0,0); return;
-  case "fotoShow": { const k=b.dataset.k, sl=FOTO_SLOTS.find(x=>x[0]===k), src=fotoCache.get(cur.s[nav.si].fotos[k]), ok=canEdit(cur), pid=cur.id, si=nav.si;
+  case "fotoShow": { const k=b.dataset.k, sl=fotoSlots(cur.s[nav.si]).find(x=>x[0]===k), src=fotoCache.get(cur.s[nav.si].fotos[k]), ok=canEdit(cur), pid=cur.id, si=nav.si;
     dialog(sl[1],`<img class="dimg" src="${src}" alt="">`,`${ok?`<button class="btn-text danger" data-act="fotoDel" data-k="${k}">Löschen</button><span style="flex:1"></span>${fmKnopf(src,async data=>{ const P=DB.pruefungen.get(pid), s=cur&&cur.id===pid?cur.s[si]:P&&P.s[si]; if(!s||!s.fotos) return; const alt=s.fotos[k]; s.fotos[k]=await fmFotoNeu(data); if(alt) fotoDel([alt]);
       if(cur&&cur.id===pid){ commit(); if(nav.v==="saeule"&&nav.si===si){ const y=scrollY; render(); scrollTo(0,y); } } else saveRec("pruefungen",P); })}<button class="btn-text" data-act="fotoAdd" data-k="${k}">Ersetzen</button>`:""}<button class="btn-text" data-act="cancel">Schließen</button>`); return; }
   }
@@ -3555,7 +3557,7 @@ function buildPDF(P){
     const z=zsInfo(s); sec("Gerätedaten");
     kv([["Hersteller / Typ",s.typ],["Seriennummer",s.sn],["Stellplatz",[P._lp&&(s.lpark||"").trim(),s.ort].filter(Boolean).join(" · ")],["Firmware",s.fw],["Absicherung",s.absTyp==="manuell"?"Sicherung, Zs lt. Tabelle":s.rcbo?[`FI/LS (RCBO) ${s.absTyp.replace("LS ","")}${s.absIn} A, ${polRCBO(s)}`,s.lsIcn&&`${s.lsIcn} kA`,s.lsTyp].filter(Boolean).join(", "):[`${s.absTyp}${s.absIn} A, ${polLS(s)}`,s.lsIcn&&`${s.lsIcn} kA`,s.lsTyp].filter(Boolean).join(", ")],["Zs zulässig",isNaN(z.zul)?"-":`${fmt(z.zul,2)} Ohm`],
         ["RCD",s.rcbo?`Typ ${rcdInfo(s).t}, ${s.idn} mA, im FI/LS (RCBO)`:[`Typ ${rcdInfo(s).t}, ${s.idn} mA`,s.rcdIn&&`${s.rcdIn} A`,polRCD(s),s.rcdHT].filter(Boolean).join(", ")],["Im Verteiler",s.bmk],["DC 6 mA",rcdInfo(s).dc?"in der Wallbox (RDC-DD)":rcdInfo(s).t==="A-EV"?"im RCD (Typ A-EV)":rcdInfo(s).t==="B"?"RCD Typ B":rcdInfo(s).t==="B-EV"?"RCD Typ B-EV":"-"],["Zuleitung",[s.leitung,s.laenge&&`ca. ${s.laenge} m`].filter(Boolean).join(", ")],["Ladeleistung",s.inenn?`${s.inenn} A${num(s.inenn)?` (${fmt(Math.round(num(s.inenn)*230*(s.phasen===3?3:1)/100)/10,1)} kW)`:""}`:"-"],["Freigabe",s.freigabe],["Anschluss",s.phasen===3?"3-phasig":"1-phasig"]]);
-    const F=FOTO_SLOTS.map(([k,l,h])=>({l,h,id:(s.fotos||{})[k],data:fotoCache.get((s.fotos||{})[k])}));
+    const F=fotoSlots(s).map(([k,l,h])=>({l,h,id:(s.fotos||{})[k],data:fotoCache.get((s.fotos||{})[k])}));
     const hasF=F.some(f=>f.data);
     if(hasF){
       const nF=F.length, tw=(CW-6*(nF-1))/nF, th=26, ty=y-2, link={page:d.getNumberOfPages(),s,rects:[],ty:ty+th+8};
