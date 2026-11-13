@@ -279,6 +279,8 @@ function kdDlgErweitern(kind,rec){ const d=document.getElementById("dlg"), fg=d&
     kdArtAnwenden(art); }
   /* Gebäude, Ebenen, Verteiler und Maschinen pflegt jetzt die Seite „Anlagen“ (Übersicht) – ein Modell für alle Apps */
   if(kind==="kunden") telFelder(d,r);
+  /* Standort bearbeiten: „Zum Hauptsitz machen“ (Chef und Büro) */
+  if(kind==="standorte"&&rec&&rec.id&&(ME.admin||ME.buero)) fg.insertAdjacentHTML("beforeend",`<div class="list" style="margin-top:16px"><div class="li" role="button" tabindex="0" data-act="hsTauschAsk" data-id="${esc(rec.id)}"><span class="av">${icon("firma")}</span><span class="lt"><span class="h">Zum Hauptsitz machen</span><span class="s">Wenn die Firma ihre Zentrale hierher verlegt – der bisherige Hauptsitz wird ein Standort</span></span>${icon("chev")}</div></div>`);
   if(typeof parkDlgFelder==="function") parkDlgFelder(d,rec);
   adrHelfer(d);
 }
@@ -428,3 +430,69 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="kaStd"){ kaSpeichern(r=>{ ["radius","max","abstand","pin","arten","rang"].forEach(x=>delete r[x]); }); neu(); toast("Karte auf Standard"); return; }
   if(a==="kaNeu"){ if(META.poi2){ META.poi2={}; metaSave(); } toast("Wird beim nächsten Öffnen einer Kundenkarte neu gesucht"); return; }
   if(a==="kaAn"||a==="kaFarbe"||a==="kaArtStd"||a==="kaIcon"){ kaSpeichern(r=>{ r.arten=r.arten||{}; const o=r.arten[k]=r.arten[k]||{}; if(a==="kaAn") o.an=v==="1"; if(a==="kaFarbe") o.farbe=v; if(a==="kaIcon") o.icon=v; if(a==="kaArtStd"){ delete o.farbe; delete o.icon; } }); kaArtDlg(k); neu(); return; } },true);
+
+/* ===== Standort zum Hauptsitz machen (Max 13.11.2026) =====
+   Beispiel: Sarstedt verlegt die Zentrale von Rommelsdorf (Adresse des Kunden) nach Rheinbach (Standort).
+   1. Neuer Standort für den alten Hauptsitz (Name frei, z. B. „Rommelsdorf“) – bekommt Adresse, Geräte, Parken, Gebäude des Kunden.
+   2. Der Kunde bekommt Adresse, Geräte, Parken, Gebäude von Rheinbach; Ansprechpartner von Rheinbach kommen zum Kunden dazu.
+   3. Rheinbach als Standort wird gelöscht – alles, was dort hing (Prüfungen, Ladeparks, Baustellen, Aufträge, E-Checks, Anlagen …), hängt jetzt am Hauptsitz;
+      alles vom alten Hauptsitz hängt am neuen Standort.
+   Punkt 3 läuft über einen Umzugsauftrag in „einstellungen“ (typ "hsTausch"): jede App setzt ihn für ihre Daten um, auf jedem Gerät, auch später nach dem Abgleich.
+   Jeder umgestellte Datensatz merkt sich den Auftrag (hsT), damit nichts doppelt umgestellt wird. Dokumente im Kundenordner (SharePoint) bleiben, wo sie liegen. */
+const HST_ORT=["strasse","plz","ort","adresse","geraete","park","bauteile","ebenen","lat","lon","geo"];
+const HST_K=["pruefungen","ladeparks"]; /* EVSE: Adresse des Kunden = „k:<Kunde>“; sonst leer */
+function hsTauschAsk(sid){ const s=DB.standorte&&DB.standorte.get(sid), k=s&&DB.kunden.get(s.kundeId); if(!s||!k) return;
+  if(!(ME.admin||ME.buero)){ toast("Das dürfen Chef und Büro"); return; }
+  const alt=typeof adrText==="function"?adrText(k):"", neu=typeof adrText==="function"?adrText(s):"";
+  if(!neu){ toast("Bei diesem Standort ist keine Adresse hinterlegt"); return; }
+  dialog("Zum Hauptsitz machen?",`<p style="margin:0 0 12px"><b>${esc(s.name)}</b> wird der neue Hauptsitz von ${esc(k.name)}.</p>
+    <ul style="margin:0 0 12px;padding-left:20px;line-height:1.55"><li>Neue Adresse beim Kunden: ${esc(neu)}</li><li>Der bisherige Hauptsitz${alt?` (${esc(alt)})`:""} wird ein normaler Standort.</li><li>Prüfungen, Ladeparks, Geräte, Baustellen und Aufträge ziehen mit ihrem Ort mit – es geht nichts verloren.</li></ul>
+    <div class="fg1">${tf("hstName","Name für den bisherigen Hauptsitz",k.ort||"",{form:true,ph:"z. B. Rommelsdorf"})}</div>
+    <p class="sup" style="margin:12px 0 0">Dokumente und Fotos im Kundenordner bleiben, wo sie liegen.</p>`,
+    `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="hsTauschOk" data-id="${esc(sid)}">Hauptsitz wechseln</button>`); }
+function hsTauschAusfuehren(sid,name){ const s=DB.standorte.get(sid), k=s&&DB.kunden.get(s.kundeId); if(!s||!k) return;
+  const K=k.id, n={id:uid(),kundeId:K,name:name||"Bisheriger Hauptsitz",notiz:""};
+  HST_ORT.forEach(f=>{ if(k[f]!==undefined&&k[f]!=="") n[f]=JSON.parse(JSON.stringify(k[f])); });
+  saveRec("standorte",n,true);
+  HST_ORT.forEach(f=>{ if(s[f]!==undefined&&s[f]!=="") k[f]=JSON.parse(JSON.stringify(s[f])); else delete k[f]; });
+  const kt=(s.kontakte||[]).filter(x=>x&&(x.name||x.tel||x.mail)); if(kt.length) k.kontakte=[...(k.kontakte||[]),...kt.map(x=>Object.assign({},x,{id:uid()}))];
+  const vo=[!kt.length&&s.ansprech,s.tel,s.notiz].filter(Boolean).join(" · "); if(vo) k.notiz=[k.notiz,`Vor Ort (früher Standort ${s.name}): ${vo}`].filter(Boolean).join("\n");
+  saveRec("kunden",k,false);
+  s.deleted=true; s.hsNach=K; saveRec("standorte",s,false);
+  saveRec("einstellungen",{id:"hst-"+uid(),typ:"hsTausch",kundeId:K,alt:sid,neu:n.id,ts:Date.now()},true);
+  hsTauschLauf(); return n; }
+/* Umzugsaufträge für die Daten dieser App umsetzen */
+function hsTauschLauf(){ if(typeof DB==="undefined"||!DB.einstellungen||typeof KINDS==="undefined") return 0;
+  const T=live("einstellungen").filter(r=>r.typ==="hsTausch"&&r.kundeId&&r.alt&&r.neu).sort((a,b)=>(a.ts||0)-(b.ts||0)); if(!T.length) return 0; let n=0;
+  for(const t of T){ const HQ="k:"+t.kundeId;
+    /* Gebäude/Verteiler: feste ID je Ort („g-<ortId>“) – Datensätze tauschen statt nur ortId ändern */
+    if(DB.gebaeude){ const gid=o=>"g-"+String(o).replace(/[^A-Za-z0-9_-]/g,"_"), gHQ=DB.gebaeude.get(gid(HQ)), gS=DB.gebaeude.get(gid(t.alt));
+      const offen=g=>g&&!g.deleted&&!(g.hsT||[]).includes(t.id)&&((g.created||0)<t.ts||g.ortId===t.alt);
+      const kopie=(g,o)=>Object.assign(JSON.parse(JSON.stringify(g)),{id:gid(o),ortId:o,hsT:[...(g.hsT||[]),t.id]});
+      const aHQ=offen(gHQ)?kopie(gHQ,t.neu):null, aS=offen(gS)?kopie(gS,HQ):null;
+      if(aHQ){ delete aHQ._etag; delete aHQ._itemId; saveRec("gebaeude",aHQ,true); n++; }
+      if(aS){ const ziel=DB.gebaeude.get(aS.id); delete aS._etag; delete aS._itemId; if(ziel){ if(ziel._etag) aS._etag=ziel._etag; if(ziel._itemId) aS._itemId=ziel._itemId; } saveRec("gebaeude",aS,false); gS.deleted=true; gS.hsT=[...(gS.hsT||[]),t.id]; saveRec("gebaeude",gS,false); n++; }
+      else if(aHQ){ gHQ.deleted=true; gHQ.hsT=[...(gHQ.hsT||[]),t.id]; saveRec("gebaeude",gHQ,false); } }
+    for(const kind of KINDS){ if(["kunden","standorte","einstellungen","gebaeude"].includes(kind)||!DB[kind]) continue;
+      for(const r of DB[kind].values()){ if(!r||r.deleted||r.demo||(r.hsT||[]).includes(t.id)) continue;
+        const bezS=kind==="dateien"&&r.bezugKind==="standorte"&&r.bezugId===t.alt;
+        if(r.kundeId!==t.kundeId&&!(kind==="ladeparks"&&(r.standortId===t.alt||r.standortId===HQ))&&!bezS) continue;
+        const nutztAlt=r.standortId===t.alt||r.ortId===t.alt||bezS;
+        if((r.created||0)>=t.ts&&!nutztAlt) continue; /* nach dem Wechsel angelegt – gilt schon für den neuen Hauptsitz */
+        let ch=false; const set=(f,v)=>{ if(r[f]!==v){ r[f]=v; ch=true; } };
+        if("standortId" in r){ const v=r.standortId;
+          if(v===HQ) set("standortId",t.neu);
+          else if(v===t.alt) set("standortId",HST_K.includes(kind)?HQ:"");
+          else if(!v&&!HST_K.includes(kind)&&r.kundeId===t.kundeId&&!(r.ortId&&r.ortId!==HQ)) set("standortId",t.neu); }
+        if("ortId" in r){ if(r.ortId===HQ) set("ortId",t.neu); else if(r.ortId===t.alt) set("ortId",HQ); }
+        if(bezS){ r.bezugKind="kunden"; r.bezugId=t.kundeId; ch=true; }
+        if(ch){ r.hsT=[...(r.hsT||[]),t.id]; saveRec(kind,r,false); n++; } } } }
+  return n; }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="hsTauschAsk"],[data-act="hsTauschOk"]'); if(!b) return; e.stopImmediatePropagation(); e.preventDefault();
+  if(b.dataset.act==="hsTauschAsk"){ closeOverlays(); hsTauschAsk(b.dataset.id); return; }
+  const nm=(document.querySelector('#dlg [data-f="hstName"]')||{}).value||""; if(!nm.trim()){ toast("Bitte einen Namen für den bisherigen Hauptsitz eingeben"); return; }
+  const s=DB.standorte.get(b.dataset.id), K=s&&s.kundeId; closeOverlays(); const n=hsTauschAusfuehren(b.dataset.id,nm.trim()); if(!n) return;
+  toast(`${s.name} ist jetzt der Hauptsitz – „${n.name}“ ist ein Standort`);
+  if(typeof go==="function") go({v:"kunde",id:K}); else if(typeof render==="function") render(); },true);
+addEventListener("load",()=>setTimeout(()=>{ try{ if(hsTauschLauf()&&typeof render==="function") render(); }catch(e){} },4000));
+setInterval(()=>{ try{ if(hsTauschLauf()&&typeof softRender==="function") softRender(); }catch(e){} },30000);
