@@ -1209,7 +1209,7 @@ function saveRec(kind,rec,isNew){ stamp(rec,isNew); dbPut(kind,rec); syncSoon();
    Beim ersten Messwert automatisch: Standort per GPS (sonst Adresse), Wetter vom Deutschen Wetterdienst über Bright Sky. Von Hand änderbar. */
 const BED_WETTER={dry:"trocken",fog:"Nebel",rain:"Regen",sleet:"Schneeregen",snow:"Schnee",hail:"Hagel",thunderstorm:"Gewitter"};
 let bedLaeuft=false;
-async function bedOrt(){ const g=await new Promise(ok=>{ if(!navigator.geolocation) return ok(null); navigator.geolocation.getCurrentPosition(x=>ok({lat:x.coords.latitude,lon:x.coords.longitude}),()=>ok(null),{timeout:8000,maximumAge:600000}); });
+async function bedOrt(){ const g=typeof standortJetzt==="function"?await standortJetzt():null;   /* nur mit Erlaubnis (Abfrage beim ersten Start) */
   if(g) return g; const {k,s}=pfad(cur), a=adrText(s&&adrText(s)?s:k); if(!a||typeof karteGeo!=="function") return null; const x=await karteGeo(a); return x&&!x.nix?x:null; }
 async function bedErfassen(still){ if(!cur||bedLaeuft) return; bedLaeuft=true; const p=cur.p, id=cur.id;
   try{ const o=await bedOrt(); if(!o) throw 0;
