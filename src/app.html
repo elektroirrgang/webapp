@@ -345,6 +345,7 @@ details.optrows .mrow:first-of-type{border-top:0}
 .about .lg-e{height:52px;width:auto;border-radius:4px}
 .tb-row:has(#backBtn[hidden]) .tb-title{margin-left:16px}
 .row2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:12px}
+.iso-alle{display:block;margin:12px 0 0;width:100%}
 .row2.gt-r{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .iz{display:flex;gap:12px;padding:3px 0}
 .iz span{flex:none;width:118px;color:var(--on-sv);font-size:13px}
@@ -2255,6 +2256,7 @@ function saeuleView(){
       else h+=`<div class="mrow" data-dot="${path}" data-state="${e}">${txt}<div class="ctl"><div class="tf"><input id="${path}" data-bind="${path}" ${PL_ART[r.k]?`data-pl="${PL_ART[r.k]}"`:""} inputmode="decimal" value="${esc(val)}" placeholder=" " autocomplete="off" aria-label="${esc(r.l)} in ${esc(r.u)}"><span class="sfx">${esc(r.u)}</span></div></div></div>`;
     }
     h+=`</div>`; if(optOpen) h+=`</details>`;
+    if(g.id==="frei"&&rows.some(r=>r.iso&&r.k!=="risov")) h+=`<button type="button" class="btn-tonal iso-alle" data-act="isoAlle" data-lp="${li}">Isolation: alle leeren Felder &gt; 999 MΩ</button>`;
     h+=`</section>`;
   }
   h+=`<section class="card">${ta(`${lb}bem`,`Bemerkung Ladepunkt ${li+1}`,lp.bem,{ph:"z. B. Abdeckung beschädigt, Kabelhalterung lose"})}</section></div>`;
@@ -3227,6 +3229,12 @@ document.addEventListener("click",ev=>{
     nummeriere(); commit(); toast(`Auf ${ziel.length} Station${ziel.length>1?"en":""} übertragen`); return; }
   case "bauart": { const s=cur.s[nav.si]; s.bauart=b.dataset.v; nummeriere(); commit(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "lps": case "phasen": { const s=cur.s[nav.si]; s[a]=+b.dataset.v; while(s.lp.length<2) s.lp.push(newLP()); scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
+  case "isoAlle": { /* Max 13.11.2026: alle noch leeren Isolationsfelder dieses Ladepunkts auf „>999“ (MΩ) */
+    const s=cur.s[nav.si], li=+b.dataset.lp, lp=s&&s.lp[li]; if(!lp) return;
+    const K=GROUPS.find(g=>g.id==="frei").rows.filter(r=>r.iso&&r.k!=="risov"&&rowVisible(r,s)&&(lp.v[r.k]==null||lp.v[r.k]==="")).map(r=>r.k);
+    if(!K.length){ toast("Alle Isolationsfelder sind schon ausgefüllt"); return; }
+    K.forEach(k=>lp.v[k]=">999"); scheduleSave(); render();
+    toast(`${K.length} Feld${K.length>1?"er":""} auf > 999 MΩ gesetzt`,"Rückgängig",()=>{ K.forEach(k=>{ if(lp.v[k]===">999") lp.v[k]=""; }); scheduleSave(); render(); }); return; }
   case "chk": { const p=b.dataset.path, v=b.dataset.v; setPath(p,getPath(p)===v?"":v); scheduleSave(); b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",getPath(p)===x.dataset.v)); refresh(); sichtPill(); return; }
   case "sichtAlle": { const sx=cur.s[+b.dataset.si]; sx.sicht=Object.assign(sx.sicht||{},Object.fromEntries(SICHT.map(q=>[q.k,(sx.sicht||{})[q.k]==="nok"?"nok":"ok"]))); scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
   case "sigclear": { cur.a[b.dataset.k]=""; scheduleSave(); const y=scrollY; render(); scrollTo(0,y); return; }
