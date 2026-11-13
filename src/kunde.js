@@ -71,10 +71,11 @@ function karteOrte(r,ss){ const o=[]; const a=adrText(r); if(a) o.push({id:r.id,
   ss.forEach(x=>{ const b=adrText(x); if(b&&!o.some(y=>y.a===b)) o.push({id:x.id,t:x.name||"Standort",a:b}); }); return o; }
 function karteView(r,ss){
   const O=karteOrte(r,ss); if(!O.length) return `<div class="kd-karte leer"><span class="kd-lade">${icon("ort")}<span>Keine Adresse hinterlegt</span></span></div>`;
-  const w=O.find(x=>x.id===karteWahl[r.id])||O[0];
+  const w=O.find(x=>x.id===karteWahl[r.id])||O[0]; KARTE.orte=KARTE.orte||{}; KARTE.orte[r.id]=O;
   setTimeout(()=>karteLaden(w.a),0);
   return `<div class="kd-karte" id="kdKarte" data-a="${esc(w.a)}" data-id="${esc(w.id)}"><div class="kd-slot"></div><span class="kd-lade">${icon("ort")}</span><button class="kd-zentr" data-act="karteZentr" hidden title="Zurück zum Ort" aria-label="Zurück zum Ort"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg></button>
-    ${O.length>1?`<div class="kd-orte">${O.map(x=>`<button class="kd-ort" data-act="karteOrt" data-r="${esc(r.id)}" data-id="${esc(x.id)}" aria-pressed="${x===w}">${esc(x.t)}</button>`).join("")}</div>`:""}</div>`;
+    ${O.length>2?`<div class="kd-orte"><button class="kd-ort kd-ortwahl" data-act="karteOrtMenu" data-r="${esc(r.id)}" aria-pressed="true" aria-haspopup="menu" title="Standort wählen"><span>${esc(w.t)}</span><em>${O.indexOf(w)+1}/${O.length}</em><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button></div>`
+      :O.length>1?`<div class="kd-orte">${O.map(x=>`<button class="kd-ort" data-act="karteOrt" data-r="${esc(r.id)}" data-id="${esc(x.id)}" aria-pressed="${x===w}">${esc(x.t)}</button>`).join("")}</div>`:""}</div>`;
 }
 function karteLib(){
   if(window.maplibregl) return Promise.resolve();
@@ -226,7 +227,7 @@ const karteKopf=(t,act,label,extra)=>`<div class="card-kopf"><h3>${t}</h3>${act?
 const kdKopf=(t,act,label,extra)=>`<div class="sec-row"><div class="sec-lbl">${t}</div>${act?`<span class="ab-btns"><button class="ab-ic" data-act="${act}"${extra||""} aria-label="${esc(label)}" title="${esc(label)}">${icon("add")}</button></span>`:""}</div>`;
 
 /* Klicks der Kundenansicht – eigene Abfangung, die Apps brauchen dafür nichts im eigenen switch */
-document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="ktNeu"],[data-act="ktEdit"],[data-act="ktRolleWahl"],[data-act="ktSave"],[data-act="ktDel"],[data-act="karteZentr"],[data-act="karteOrt"]'); if(!b) return;
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="ktNeu"],[data-act="ktEdit"],[data-act="ktRolleWahl"],[data-act="ktSave"],[data-act="ktDel"],[data-act="karteZentr"],[data-act="karteOrt"],[data-act="karteOrtMenu"]'); if(!b) return;
   e.stopPropagation(); e.preventDefault(); const a=b.dataset.act;
   if(a==="ktNeu"||a==="ktEdit"){ const kind=b.dataset.kind, r=DB[kind]&&DB[kind].get(nav.id); if(!r||!kdDarf(r)) return; ktDialog(kind,r,b.dataset.k?kontakteVon(r).find(x=>x.id===b.dataset.k):null); }
   else if(a==="ktRolleWahl"){ const i=document.getElementById("f_ktRolle"); if(i){ i.value=b.dataset.v; i.dispatchEvent(new Event("input",{bubbles:true})); i.parentElement.classList.add("fl"); } }
@@ -234,6 +235,11 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="ktDel") ktSpeichern(true);
   else if(a==="karteZentr"){ if(KARTE.map&&KARTE.mk) KARTE.map.easeTo({center:KARTE.mk.getLngLat(),zoom:15.2,duration:500}); }
   else if(a==="karteOrt"){ karteWahl[b.dataset.r]=b.dataset.id; render(); }
+  /* ab 3 Standorten: Menü mit allen Orten (Name · Ort), aktueller markiert */
+  else if(a==="karteOrtMenu"&&typeof kontextMenu==="function"){ const rid=b.dataset.r, O=(KARTE.orte||{})[rid]; if(!O||!O.length) return;
+    const akt=O.find(x=>x.id===karteWahl[rid])||O[0], q=b.getBoundingClientRect();
+    const stadt=a=>{ const t=String(a).split(",").pop().trim().replace(/^\d{5}\s*/,""); return t; };
+    kontextMenu(q.left,q.bottom,O.map(x=>({t:x.t+(stadt(x.a)?" · "+stadt(x.a):""),ic:"ort",an:x===akt,fn:()=>{ karteWahl[rid]=x.id; render(); }}))); }
 },true);
 
 /* ===== Kundenart: Privat · Gewerbe · Industrie =====

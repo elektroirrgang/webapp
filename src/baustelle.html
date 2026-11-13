@@ -57,7 +57,8 @@ button{cursor:pointer}
 .tb-row{display:flex;align-items:center;gap:4px;height:64px;padding:0 max(4px,env(safe-area-inset-right,0px)) 0 max(4px,env(safe-area-inset-left,0px))}
 .tb-title{flex:1;min-width:0;margin:0 0 0 4px;font-size:20px;font-weight:700;letter-spacing:-.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .icon-btn{width:48px;height:48px;border-radius:50%;border:0;background:transparent;color:var(--on-sv);display:grid;place-items:center;flex:none;position:relative}
-.icon-btn:hover,.icon-btn:active{background:color-mix(in srgb,var(--on-surface) 8%,transparent)}
+.icon-btn:active{background:color-mix(in srgb,var(--on-surface) 8%,transparent)}
+@media (hover:hover){.icon-btn:hover{background:color-mix(in srgb,var(--on-surface) 8%,transparent)}} /* am Handy kein „hängender“ Kreis nach dem Antippen (Max 13.11.2026) */
 .logo{height:26px;width:auto;margin-left:12px;display:none}
 body.is-list .logo.l-hell{display:block}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) body.is-list .logo.l-hell{display:none}:root:not([data-theme="light"]) body.is-list .logo.l-dunkel{display:block}}
