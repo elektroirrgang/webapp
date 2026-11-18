@@ -41,6 +41,10 @@ function zsSlsGeraet(zs,z){ if(!z||!z.sls||z.sls==="keiner") return null; const 
 /* Ableiter mit eigenem, abgesichertem Spannungsabgriff für RfZ/APZ (Max 18.11.2026: „normalerweise greifen wir die Spannungsversorgung oben am Kombiableiter ab“)
    → dann keine eigene „Spannungsversorgung RfZ/APZ“ in der Materialliste */
 const ZS_USS_ABGRIFF=new Set(["7P.04.8.255.Z007","7P.94.8.255.Z007C08"]);
+/* Hauptschalter hinter dem Zähler (RheinNetz: je Messeinrichtung) – Auswahl wie beim Ableiter (Max 18.11.2026: „bei der Anlage den Hager SH363S“) */
+const ZS_HS=[["SH363S","Hager SH363S","63 A · 3-polig · plombierbar · 2,5 TE"],["SH463N","Hager SH463N","63 A · 4-polig · plombierbar · 3,5 TE"],["keiner","Ohne / nicht festgelegt",""]];
+const zsHsStd=()=>"SH363S";
+function zsHsGeraet(zs){ const k=zs.hs||zsHsStd(zs); if(k==="keiner") return null; const e=ZS_HS.find(x=>x[0]===k)||ZS_HS[0]; return {nr:e[0],name:e[1],info:e[2]}; }
 const zsUssStd=zs=>zs&&zs.hersteller==="sj"?"2CTB815799R2800":"SPA700Z";
 function zsUssGeraet(zs){ const k=zs.uss||zsUssStd(zs); if(k==="keiner") return null; const e=ZS_USS.find(x=>x[0]===k)||ZS_USS[0], i=MAT_INFO[e[0]];
   return {nr:e[0],name:e[1],info:e[2],bild:i&&i.bild||""}; }
@@ -231,6 +235,7 @@ function zsZpFenster(zs,i,weiterAct,weiterTxt){ const z=zs.zp[i]; if(!z) return 
       ${zsBelegt(z)?`${gr("Zählerart","zsArt",ZS_ART,z.art)}${gr("SLS im NAR","zsSls",ZS_SLS,z.sls)}
       ${z.sls&&z.sls!=="keiner"?gr("SLS-Hersteller","zsSlsH",ZS_SLS_HERST,zsSlsH(zs,z))+`<p class="aw-hinweis zs-geraet">${esc((zsSlsGeraet(zs,z)||{}).name||"")} · ${esc((zsSlsGeraet(zs,z)||{}).nr||"")}</p>`:""}
       <div class="aw-lbl">Überspannungsschutz · einmal im Schrank</div><div class="aw-liste zs-uss">${ZS_USS.map(([k,t,u])=>awKachel("zsUss",k,zsUssDaumen(k),t,u,(zs.uss||zsUssStd(zs))===k)).join("")}</div>
+      ${ZS_BEST.find(x=>x.k==="hs").p(zs)||zsBestHat(zs,z.feldId,"hs")?`<div class="aw-lbl">Hauptschalter · je Zähler</div><div class="aw-liste zs-uss">${ZS_HS.map(([k,t,u])=>awKachel("zsHs",k,zsUssDaumen(k),t,u,(zs.hs||zsHsStd(zs))===k)).join("")}</div>`:""}
       <div class="aw-lbl">Einspeisung · Hausanschlusskabel</div><div class="aw-wahl">${[["ja","Einspeiseadapter"],["nein","Ohne Adapter"]].map(([k,t])=>`<button type="button" data-act="zsEinsp" data-v="${k}" aria-pressed="${(zs.einspeis===false?"nein":"ja")===k}">${t}</button>`).join("")}</div>
       <div class="fg1 aw-eigen">${tf("zsBez","Bezeichnung (optional)",z.bez||"",{form:true,ph:"z. B. Wohnung EG"})}</div>
       <div class="fg1 aw-eigen">${tf("zsNr","Zählernummer (optional)",z.nr||"",{form:true,ph:"steht auf dem Zähler, z. B. 1EBZ01…"})}</div>`:`<p class="aw-hinweis zs-frei-t">Der Platz bleibt frei – z. B. für eine spätere Wärmepumpe oder Wallbox. Unbenutzte Zählerplätze berührungssicher abdecken.</p>`}</div></div>`,
@@ -301,7 +306,7 @@ function zsMaterialDaten(zs,reihen){ const M=new Map(), add=t=>M.set(t,(M.get(t)
   /* Bestückung: Pflichtpunkte immer (Planung), optionale nur wenn angehakt */
   const brauch=(wo,k)=>{ const b=ZS_BEST.find(x=>x.k===k); return b.p(zs)||zsBestHat(zs,wo,k); };
   zs.felder.filter(f=>f.typ==="z").forEach(f=>{ const n=zs.zp.filter(z=>z.feldId===f.id&&zsBelegt(z)).length;
-    if(brauch(f.id,"hs")) for(let i=0;i<n;i++) add("Hauptschalter 3-polig, plombierbar");
+    if(brauch(f.id,"hs")){ const h=zsHsGeraet(zs); for(let i=0;i<n;i++) add(h?`Hauptschalter ${h.name} (${h.nr})`:"Hauptschalter 3-polig, plombierbar – noch festlegen"); }
     if(brauch(f.id,"rj45")) add(zs.modell&&zs.modell.h==="hager"?"RJ45-Patchleitung WAN, blau, 1,5 m (ZZ45WAN150)":"RJ45-Buchse"); if(brauch(f.id,"ssk")) add("Steuersignalklemmleiste");
     if(brauch(f.id,"hlak")) add("Hauptleitungsabzweigklemme"); if(brauch(f.id,"relais")) add("Trennrelais §14a"); });
   if(zs.felder.some(f=>f.typ==="z")){ const u=zsUssGeraet(zs); add(u?`Überspannungsschutz ${u.name} (${u.nr})`:"Überspannungsschutz Typ 1 – noch festlegen"); if(!(u&&ZS_USS_ABGRIFF.has(u.nr))) add("Spannungsversorgung RfZ/APZ mit Absicherung"); if(zs.einspeis!==false) add("Einspeiseadapter Sammelschiene 5-polig (N, L1, L2, L3, PE)"); }
@@ -410,6 +415,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
       if(a==="zsSls"){ zsNeuZeichnen(); return; }
       b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)); zsZpBildNeu(); return; }
   case "zsUss": { zsZpLesen(zsAktZp()); zs.uss=b.dataset.v; zsNeuZeichnen(); return; }
+  case "zsHs": { zsZpLesen(zsAktZp()); zs.hs=b.dataset.v; zsNeuZeichnen(); return; }
   case "zsEinsp": { zs.einspeis=b.dataset.v==="ja"; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)); zsZpBildNeu(); return; }
   case "zsWeiter": zsZpLesen(zsAktZp()); AW.i++; zsZeigen(); return;
   case "zsSpeichern": zsSpeichern(); return;

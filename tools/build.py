@@ -147,7 +147,9 @@ def baue(quelle, ziel, icon):
 
 # Liste aller Bilddateien auf dem Server – für den einmaligen Umzug in den SharePoint (bilder-sp.js)
 _alle = sorted(str(p.relative_to(root / "bilder")) for p in (root / "bilder").rglob("*") if p.is_file() and p.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".svg"))
-if _alle: (root / "bilder" / "alle.json").write_text(json.dumps(_alle, ensure_ascii=False), encoding="utf-8")   # nach dem Löschen der Dateien bleibt die letzte Liste stehen
+# Nur ergänzen, nie verkleinern (Max 18.11.2026): Bilder, die schon im SharePoint liegen, bleiben in der Liste, auch wenn die Datei
+# hier gelöscht ist. Dateien, die gerade auf dem Server liegen, stehen vorn – bilder-sp.js prüft am ersten Eintrag, ob es etwas hochzuladen gibt.
+if _alle: (root / "bilder" / "alle.json").write_text(json.dumps(_alle + [n for n in sorted(_IM_SP) if n not in set(_alle)], ensure_ascii=False), encoding="utf-8")
 baue("src/start.html", "uebersicht/index.html", "uebersicht/icon-180.png")
 baue("src/app.html", "evse/index.html", "evse/icon-180.png")
 baue("src/baustelle.html", "baustelle/index.html", "baustelle/icon-180.png")
