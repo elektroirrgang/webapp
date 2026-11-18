@@ -96,7 +96,7 @@ function vmZs(L){ const zs=L.zs; if(!zs||!zs.felder||!zs.felder.length) return [
       return {titel:`Überspannungsschutz ${u.name.replace(/^\S+\s+(Contact\s+)?/,"")}`,unter:`${u.name.split(" ")[0]==="Phoenix"?"Phoenix Contact":u.name.split(" ")[0]} · ${u.nr}${typeof ZS_USS_ABGRIFF!=="undefined"&&ZS_USS_ABGRIFF.has(u.nr)?" · mit Spannungsabgriff für RfZ/APZ":""}`,bild:b?bildLokal(b):"",ic:"zsBlitz"}; }
     if(/\(ZZ45WAN150\)$/.test(t)) return {titel:"RJ45-Patchleitung WAN, blau, 1,5 m",unter:"Hager · ZZ45WAN150 · liegt dem Hager-Schrank bei",bild:MAT_INFO.ZZ45WAN150&&MAT_INFO.ZZ45WAN150.bild?bildLokal(MAT_INFO.ZZ45WAN150.bild):"",ic:"ecNetz"};
     { const m=t.match(/^Hauptleitungsabzweigklemme Pollmann (HLAK 35-1\/(\d)) M2, (\d) Abgänge$/); if(m){ const i=MAT_INFO["HLAK35-1/"+m[2]];
-      return {titel:`Hauptleitungsabzweigklemme ${m[1]} M2`,unter:`Pollmann · ${m[3]} Abgänge · je ein Stein für L1, L2, L3, N, PE`,bild:i&&i.bild?bildLokal(i.bild):"",ic:"zsBlitz"}; } }
+      return {titel:`Hauptleitungsabzweigklemme ${m[1]} M2`,unter:`Pollmann · ${m[3]} Abgänge · L1 braun · L2 schwarz · L3 grau · N blau · PE grün`,bild:i&&i.bild?bildLokal(i.bild):"",ic:"zsBlitz"}; } }
     if(/^Einspeiseadapter/.test(t)) return {titel:t,unter:"",bild:"../bilder/zs/einspeiseadapter.png",ic:"zsBlitz"};
     return null; };
   return zsMaterialDaten(zs,L.reihen).map(([t,n])=>{ const so=sonder(t); if(so) return Object.assign(so,{n});
