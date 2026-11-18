@@ -2363,3 +2363,13 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
 /* Kundenkarte: Hinweis, wenn nur die PLZ gefunden wurde (Max 18.11.2026) */
 #kdKarte{position:relative}
 .kd-ungenau{position:absolute;left:12px;bottom:12px;z-index:3;max-width:calc(100% - 24px);padding:6px 12px;border-radius:12px;background:color-mix(in srgb,var(--surface,#fff) 92%,transparent);color:var(--on-surface);font-size:13px;box-shadow:0 1px 3px rgba(0,0,0,.2);pointer-events:none}
+
+/* Große Vorschau für Bilder in Auswahl-Kacheln (Max 18.11.2026) */
+.aw-k .aw-kb:has(img){cursor:zoom-in}
+.aw-gross{position:fixed;inset:0;z-index:420;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.72)}
+.aw-gk{width:min(420px,100%);max-height:calc(100dvh - 32px);display:flex;flex-direction:column;border-radius:28px;background:var(--sc-high,#2b2b30);color:var(--on-surface);overflow:hidden}
+.aw-gb{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#fff;padding:16px}
+.aw-gb img{display:block;max-width:100%;max-height:62dvh;object-fit:contain}
+.aw-gt{padding:16px 24px 0}.aw-gt b{display:block;font-size:18px}.aw-gt small{display:block;margin-top:4px;color:var(--on-surface-var,#a3a3ab);font-size:14px;line-height:1.4}
+.aw-gf{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px 24px 20px}
+.aw-gan{color:var(--on-surface-var,#a3a3ab);font-size:14px;padding:0 8px}
