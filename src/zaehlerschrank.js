@@ -302,7 +302,7 @@ function zsMaterialDaten(zs,reihen){ const M=new Map(), add=t=>M.set(t,(M.get(t)
   const brauch=(wo,k)=>{ const b=ZS_BEST.find(x=>x.k===k); return b.p(zs)||zsBestHat(zs,wo,k); };
   zs.felder.filter(f=>f.typ==="z").forEach(f=>{ const n=zs.zp.filter(z=>z.feldId===f.id&&zsBelegt(z)).length;
     if(brauch(f.id,"hs")) for(let i=0;i<n;i++) add("Hauptschalter 3-polig, plombierbar");
-    if(brauch(f.id,"rj45")) add("RJ45-Buchse"); if(brauch(f.id,"ssk")) add("Steuersignalklemmleiste");
+    if(brauch(f.id,"rj45")) add(zs.modell&&zs.modell.h==="hager"?"RJ45-Patchleitung WAN, blau, 1,5 m (ZZ45WAN150)":"RJ45-Buchse"); if(brauch(f.id,"ssk")) add("Steuersignalklemmleiste");
     if(brauch(f.id,"hlak")) add("Hauptleitungsabzweigklemme"); if(brauch(f.id,"relais")) add("Trennrelais §14a"); });
   if(zs.felder.some(f=>f.typ==="z")){ const u=zsUssGeraet(zs); add(u?`Überspannungsschutz ${u.name} (${u.nr})`:"Überspannungsschutz Typ 1 – noch festlegen"); if(!(u&&ZS_USS_ABGRIFF.has(u.nr))) add("Spannungsversorgung RfZ/APZ mit Absicherung"); if(zs.einspeis!==false) add("Einspeiseadapter Sammelschiene 5-polig (N, L1, L2, L3, PE)"); }
   return [...M]; }
