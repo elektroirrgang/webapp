@@ -19,6 +19,7 @@ const MAT_INFO={
   "5096961":{bild:"../bilder/zs/uss-obo-mcf30-nar-tt.png",tech:{art:"uess"}},
   "1168940":{bild:"../bilder/zs/uss-phoenix-flt-sec-zp2.png",tech:{art:"uess"}},
   "7P.04.8.255.Z007":{bild:"../bilder/zs/uss-finder-7p04.png",tech:{art:"uess"}},
+  "7P.94.8.255.Z007C08":{tech:{art:"uess"}},
   A9L16482:{bild:"https://eshop-ae.se.com/media/catalog/product/cache/1e79a9177ab77655b8cab8582c25a9a3/a/9/a9l16482_2.jpg",tech:{art:"uess"}},
   MBS110:{bild:"https://assets.hager.com/step-content/P/HA_16255176/11/std.lang.all/MBS110.webp",tech:{art:"ls",char:"B",in:10,pole:1,te:1}},
   MBS116:{bild:"https://assets.hager.com/step-content/P/HA_16255195/11/std.lang.all/MBS116.webp",tech:{art:"ls",char:"B",in:16,pole:1,te:1}},
