@@ -391,7 +391,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   document.addEventListener("click",ev=>{ if(Date.now()-sperre<400&&ev.target.closest&&ev.target.closest(SEL)){ ev.stopPropagation(); ev.preventDefault(); } },true); })();
 
 /* ---- PDF ---- */
-async function legPdf(L){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",format:"a4"});
+async function legPdf(L,art){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",format:"a4"});
   const S=pdfStil(d,{titel:"Verteilerlegende",unter:`Stromkreisübersicht | ${L.titel||"Verteiler"}`,ehw:true,fuss:[L.kunde,L.titel,L.stand&&"Stand "+ecDatum(L.stand)].filter(Boolean).join(" | ")});
   const M=S.M, CW=S.CW, sp=[32,116,34];
   S.kopf(); S.abschnitt("Anlage");
@@ -406,25 +406,38 @@ async function legPdf(L){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",f
   d.setTextColor(20); d.setFont("helvetica","bold"); d.setFontSize(12); d.text("Elektro Irrgang",M,y); d.setTextColor(...[225,29,47]); d.text("Tel. 02291 4878",x2,y);
   d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),M,y+5.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x2,y+5.2);
   S.y=y+(qrC?29:13);
-  legPdfStromkreise(d,S,L);
+  legPdfStromkreise(d,S,L,art);
   return S.ende(); }
-/* Stromkreis-Tabelle – auch im Anlagenpass verwendet */
-function legPdfStromkreise(d,S,L){ const M=S.M, CW=S.CW, PL=legPlaetze(L), mitPl=Object.keys(PL).length>0, sp=mitPl?[28,CW-28-34-26,34,26]:[32,CW-66,34];
+/* Stromkreis-Tabelle – auch im Anlagenpass verwendet.
+   Lesbarkeit (Max 18.11.2026: „das müssen auch ältere Leute lesen können“): Darstellungen A1 (bisher), A2 (Mittelding), A3 (größer), LEG_PDF_ART legt fest, welche gilt.
+   fs = Schriftgröße (pt), zh = Zeilenhöhe (mm), kh = Kopfhöhe, kf = Kopfschrift, gf = Gruppenschrift, kzF/abF = Kennzeichnung/Absicherung fett, li = Trennlinien statt Zebra */
+const LEG_PDF_STILE={a1:{sp:[28,34,26],sp0:[32,34],ob:4,res:.6,fs:8,zh:6,kh:6,kf:8,gf:8.5,kzF:false,abF:false,li:false,farbe:20},
+  a2:{sp:[30,38,26],sp0:[33,38],fs:9.25,zh:7,kh:6.75,kf:8.75,gf:9.75,kzF:true,abF:false,li:false,farbe:15},
+  a3:{sp:[32,42,26],sp0:[34,42],fs:10.5,zh:8,kh:7.5,kf:9.5,gf:11,kzF:true,abF:false,li:false,farbe:10}};
+let LEG_PDF_ART="a1";
+function legPdfStromkreise(d,S,L,art){ const T=LEG_PDF_STILE[art||LEG_PDF_ART]||LEG_PDF_STILE.a1, M=S.M, CW=S.CW, PL=legPlaetze(L), mitPl=Object.keys(PL).length>0;
+  const q=mitPl?T.sp:T.sp0, sp=[q[0],0,...q.slice(1)]; sp[1]=CW-sp.reduce((x,y)=>x+y,0);
+  const ob=T.ob||T.zh*.62, lh=T.fs*.42, resY=T.res!=null?T.res:-lh*.3;   /* Grundlinie in der Zeile, Zeilenabstand bei Umbruch (mm) */
   const plK=p=>p?`R${p.r} · ${p.von===p.bis?p.von:`${p.von}–${p.bis}`}`:"";   /* kurz für die Spalte: „R1 · 5–7“ */
   S.abschnitt("Stromkreise");
-  const kz=()=>{ d.setFillColor(...S.NAVY); d.rect(M,S.y-4,CW,6,"F"); d.setTextColor(255); d.setFontSize(8); d.setFont("helvetica","bold"); let x=M+2; ["Kennzeichnung","Bezeichnung","Absicherung",...(mitPl?["Einbauplatz"]:[])].forEach((t,i)=>{ d.text(t,x,S.y); x+=sp[i]; }); S.y+=6; };
-  S.platz(14); kz(); let zz=0;
-  legE(L).forEach(e=>{ if(S.y>272){ S.seite(); kz(); }
-    if(e.art==="gr"){ if(S.y>266){ S.seite(); kz(); } d.setFont("helvetica","bold"); d.setFontSize(8.5); d.setTextColor(...S.NAVY); d.text(pdfT(e.bez),M+2,S.y+1); d.setDrawColor(...S.LINE); d.line(M,S.y+2.6,M+CW,S.y+2.6); S.y+=7; zz=0; return; }
-    const B=d.splitTextToSize(pdfT(e.bez||""),sp[1]-3).slice(0,2), ex=(B.length-1)*3.4; if(B.length>1&&S.y+ex>272){ S.seite(); kz(); }
-    if(zz++%2){ d.setFillColor(...S.SUNK); d.rect(M,S.y-4,CW,6+ex,"F"); }
-    d.setFontSize(8); d.setTextColor(20); d.setFont("helvetica",e.art==="rcd"?"bold":"normal");
+  const kz=()=>{ S.y+=T.kh*.66-4; d.setFillColor(...S.NAVY); d.rect(M,S.y-T.kh*.66,CW,T.kh,"F"); d.setTextColor(255); d.setFontSize(T.kf); d.setFont("helvetica","bold"); let x=M+2; ["Kennzeichnung","Bezeichnung","Absicherung",...(mitPl?["Einbauplatz"]:[])].forEach((t,i)=>{ d.text(t,x,S.y); x+=sp[i]; }); S.y+=T.kh; };
+  const unten=272-(T.zh-6);
+  S.platz(8+T.kh+T.zh); kz(); let zz=0;
+  legE(L).forEach(e=>{ if(S.y>unten){ S.seite(); kz(); }
+    if(e.art==="gr"){ if(S.y>unten-6){ S.seite(); kz(); } d.setFont("helvetica","bold"); d.setFontSize(T.gf); d.setTextColor(...S.NAVY); d.text(pdfT(e.bez),M+2,S.y+1+(T.zh-6)*.4); d.setDrawColor(...S.LINE); d.setLineWidth(T.li?.4:.2); d.line(M,S.y+2.6+(T.zh-6)*.6,M+CW,S.y+2.6+(T.zh-6)*.6); d.setLineWidth(.2); S.y+=7+(T.zh-6); zz=0; return; }
+    d.setFontSize(T.fs); d.setFont("helvetica","normal");
+    const B=d.splitTextToSize(pdfT(e.bez||""),sp[1]-3).slice(0,2), ex=(B.length-1)*lh; if(B.length>1&&S.y+ex>unten){ S.seite(); kz(); }
+    const oben=S.y-ob;
+    if(T.li){ d.setDrawColor(...S.LINE); d.setLineWidth(.3); d.line(M,oben+T.zh+ex,M+CW,oben+T.zh+ex); d.setLineWidth(.2); }
+    else if(zz%2){ d.setFillColor(...S.SUNK); d.rect(M,oben,CW,T.zh+ex,"F"); } zz++;
+    d.setTextColor(T.farbe); d.setFont("helvetica",T.kzF||e.art==="rcd"?"bold":"normal");
     d.text(pdfT(e.kz||""),M+2,S.y);
-    if(e.art==="res"){ d.setDrawColor(150); d.setLineWidth(.2); d.line(M+2+sp[0],S.y+.6,M+sp[0]+sp[1]-4,S.y+.6); }
+    d.setFont("helvetica",e.art==="rcd"?"bold":"normal");
+    if(e.art==="res"){ d.setDrawColor(150); d.setLineWidth(.2); d.line(M+2+sp[0],S.y+resY,M+sp[0]+sp[1]-4,S.y+resY); }
     else d.text(B,M+2+sp[0],S.y,{lineHeightFactor:1.2});
-    d.text(pdfT(legSchutz(e)),M+2+sp[0]+sp[1],S.y);
-    if(mitPl&&PL[e.id]){ d.setFont("helvetica","normal"); d.setTextColor(...S.GR); d.text(pdfT(plK(PL[e.id])),M+2+sp[0]+sp[1]+sp[2],S.y); }
-    S.y+=6+ex; });
+    d.setFont("helvetica",T.abF||e.art==="rcd"?"bold":"normal"); d.text(pdfT(legSchutz(e)),M+2+sp[0]+sp[1],S.y);
+    if(mitPl&&PL[e.id]){ d.setFont("helvetica","normal"); d.setTextColor(...(T.li?[60,60,60]:S.GR)); d.text(pdfT(plK(PL[e.id])),M+2+sp[0]+sp[1]+sp[2],S.y); }
+    S.y+=T.zh+ex; });
 }
 async function legPdfMachen(){ const L=legAkt(); if(!L) return; if(!legE(L).length){ toast("Erst Stromkreise anlegen"); return; }
   /* Pflicht: erst QR-Aufkleber, dann Legende – der Code steht dann auch auf dem Ausdruck */
