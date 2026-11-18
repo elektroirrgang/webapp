@@ -89,7 +89,15 @@ function vmGruppen(L){ const K=vmKatalog(), G=new Map();
   return [...G.values()].sort((a,b)=>a.ord-b.ord||a.titel.localeCompare(b.titel,"de",{numeric:true})); }
 /* Zählerschrank-Positionen: steht eine Artikelnummer in Klammern und kennt die Materialliste sie, gibt es das Foto dazu */
 function vmZs(L){ const zs=L.zs; if(!zs||!zs.felder||!zs.felder.length) return [];
-  return zsMaterialDaten(zs,L.reihen).map(([t,n])=>{ const h=(t.match(/\(([A-Z0-9]{5,})\)\s*$/)||[])[1], i=h&&MAT_INFO[h];
+  const u=typeof zsUssGeraet==="function"?zsUssGeraet(zs):null, mod=zs.modell&&typeof ZS_MODELLE!=="undefined"?ZS_MODELLE.find(m=>m.hnr===zs.modell.hnr):null, herst=h=>({hager:"Hager",abb:"ABB",sj:"ABB Striebel & John",schneider:"Schneider Electric"})[h]||(typeof zsHerstText==="function"?zsHerstText(h):h);
+  /* bekannte Positionen mit Bild (Max 18.11.2026): Schrank aus dem Modell, Ableiter aus der Ableiter-Liste, Einspeiseadapter aus den Feldgrafiken */
+  const sonder=t=>{ if(zs.modell&&/^Zählerschrank /.test(t)) return {titel:`Zählerschrank ${zs.modell.name||""}`.trim(),unter:`${herst(zs.modell.h)} · ${zs.modell.hnr}`,bild:mod&&mod.bild?bildLokal(mod.bild):"",ic:"zsSchrank"};
+    if(u&&t.startsWith("Überspannungsschutz ")&&t.includes(u.nr)){ const b=typeof ZS_USS_BILD!=="undefined"&&ZS_USS_BILD[u.nr]?`../bilder/zs/${ZS_USS_BILD[u.nr][0]}`:u.bild;
+      return {titel:`Überspannungsschutz ${u.name.replace(/^\S+\s+(Contact\s+)?/,"")}`,unter:`${u.name.split(" ")[0]==="Phoenix"?"Phoenix Contact":u.name.split(" ")[0]} · ${u.nr}${typeof ZS_USS_ABGRIFF!=="undefined"&&ZS_USS_ABGRIFF.has(u.nr)?" · mit Spannungsabgriff für RfZ/APZ":""}`,bild:b?bildLokal(b):"",ic:"zsBlitz"}; }
+    if(/^Einspeiseadapter/.test(t)) return {titel:t,unter:"",bild:"../bilder/zs/einspeiseadapter.png",ic:"zsBlitz"};
+    return null; };
+  return zsMaterialDaten(zs,L.reihen).map(([t,n])=>{ const so=sonder(t); if(so) return Object.assign(so,{n});
+    const h=(t.match(/\(([A-Z0-9][A-Z0-9.\-]{4,})\)\s*$/)||[])[1], i=h&&MAT_INFO[h];
     return {titel:h?t.replace(/\s*\([A-Z0-9]+\)\s*$/,"").replace(new RegExp("\\s*"+h+"$"),""):t,unter:h?`Hager · ${h}`.replace(/^Hager · (2C)/,"ABB · $1"):"",bild:i&&i.bild?bildLokal(i.bild):"",n,ic:/zähler/i.test(t)?"zsSchrank":/verteilerfeld/i.test(t)?"zsSchrank":/rj45|steuer/i.test(t)?"ecNetz":/apz|spannungsversorgung|einspeis|klemme/i.test(t)?"zsBlitz":"liste"}; }); }
 const vmZeile=x=>`<div class="vm-z"><span class="vm-b${x.bild?"":" ic"}">${x.bild?`<img src="${esc(x.bild)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('weg')">`:icon(x.ic||"liste")}</span>
   <span class="vm-t"><b>${esc(x.titel)}</b>${x.unter?`<small${x.offen?' class="offen"':""}>${esc(x.unter)}</small>`:""}</span><span class="vm-n">${x.n}×</span></div>`;
