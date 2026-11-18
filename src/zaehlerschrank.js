@@ -25,9 +25,15 @@ const ZS_USS=[["SPA700Z","Hager SPA700Z","Typ 1+2+3 · 3-polig · TN-C · Sammel
   ["2CTB815799R2800","ABB OVR ZP 3N 7.5-255","Typ 1+2+3 · mit integriertem LS · Sammelschiene"],["2CTB815799R1100","ABB OVR ZP+ 3N 7.5-255","Typ 1+2 · 4-polig · TT/TN-S"],
   ["5096961","OBO MCF30-NAR-TT","Typ 1+2 · TT · Sammelschiene NAR · Art.-Nr. 5096961"],["1168940","Phoenix Contact FLT-SEC-ZP2 3S-255/7.5","Typ 1+2+3 · Sammelschiene · Art.-Nr. 1168940"],
   ["7P.04.8.255.Z007","Finder 7P.04.8.255.Z007","Typ 1+2 · mit Abgang L/N 6,3 A"],
+  ["7P.94.8.255.Z007C08","Finder 7P.94.8.255.Z007C08","Typ 1+2+3 · TT/TN-S · Sammelschiene · 38 mm · Spannungsabgriff"],
   ["A9L16482","Schneider Acti9 iPRD1 12.5r 3P+N","Typ 1+2 · TT/TN-S · Hutschiene"],["keiner","Ohne / nicht festgelegt",""]];
 /* Eigene Gerätegrafiken (Frontansicht, transparent) für die Zeichnung: Datei, Breite, Höhe in Pixeln, Versatz nach oben/unten in mm (Sammelschienen N, L1, L2, L3, PE bei 803/843/883/923/963 mm, Abstand 40 mm; Hager: Frontkasten auf Hebelhöhe der SLS (Abdeckungsausschnitt), Gerät ragt nach unten über die PE-Schiene hinaus; 5. Wert = Höhe in mm (0 = Standard 200), 6. Wert = Lage der PE-Klemme im Bild von links (0…1, Standard Mitte) – sie kommt auf den PE-Leiter) */
 const ZS_USS_BILD={SPA701Z:["uss-hager-spa701z.png",181,1400,-7,0,.503],"5096961":["uss-obo-mcf30-nar-tt.png",153,700],"1168940":["uss-phoenix-flt-sec-zp2.png",67,700],"7P.04.8.255.Z007":["uss-finder-7p04.png",187,700]};
+/* Vorschaubild in der Auswahlliste (Max 18.11.2026): eigene Grafik, sonst Katalogbild, sonst Platzhalter – jede Zeile hat ein Bild, Texte stehen in einer Flucht */
+const ZS_USS_PH=`<svg class="zs-uss-ph" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 21h-1l1-7H7.5c-.88 0-.33-.75-.31-.78C8.48 10.94 10.42 7.54 13.01 3h1l-1 7h3.51c.4 0 .62.19.4.66C12.97 17.55 11 21 11 21z"/></svg>`;
+function zsUssDaumen(k){ if(k==="keiner") return `<svg class="zs-uss-ph" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13H5v-2h14v2z"/></svg>`;
+  const b=ZS_USS_BILD[k]?`../bilder/zs/${ZS_USS_BILD[k][0]}`:(MAT_INFO[k]&&MAT_INFO[k].bild)||"";
+  return b?`${ZS_USS_PH}<img class="zs-uss-b" src="${esc(b)}" alt="" loading="lazy" onerror="this.remove()">`:ZS_USS_PH; }
 const zsSlsStd=zs=>zs&&zs.hersteller==="sj"?"abb":"hager";
 const zsSlsH=(zs,z)=>z&&ZS_SLS_NR[z.slsH]?z.slsH:zsSlsStd(zs);
 function zsSlsGeraet(zs,z){ if(!z||!z.sls||z.sls==="keiner") return null; const h=zsSlsH(zs,z), a=z.sls.slice(1), nr=ZS_SLS_NR[h][z.sls];
@@ -221,7 +227,7 @@ function zsZpFenster(zs,i,weiterAct,weiterTxt){ const z=zs.zp[i]; if(!z) return 
     inhalt:`<div class="zs-vs"><div class="zs-bild">${zsSvg(zs,4,false,`${z.feldId}:${z.pos||0}`)}</div><div class="zs-vs-r">${gr("Wofür","zsZweck",ZS_ZWECK,z.zweck)}
       ${zsBelegt(z)?`${gr("Zählerart","zsArt",ZS_ART,z.art)}${gr("SLS im NAR","zsSls",ZS_SLS,z.sls)}
       ${z.sls&&z.sls!=="keiner"?gr("SLS-Hersteller","zsSlsH",ZS_SLS_HERST,zsSlsH(zs,z))+`<p class="aw-hinweis zs-geraet">${esc((zsSlsGeraet(zs,z)||{}).name||"")} · ${esc((zsSlsGeraet(zs,z)||{}).nr||"")}</p>`:""}
-      <div class="aw-lbl">Überspannungsschutz · einmal im Schrank</div><div class="aw-liste zs-uss">${ZS_USS.map(([k,t,u])=>awKachel("zsUss",k,ZS_USS_BILD[k]?`<img class="zs-uss-b" src="../bilder/zs/${ZS_USS_BILD[k][0]}" alt="">`:"",t,u,(zs.uss||zsUssStd(zs))===k)).join("")}</div>
+      <div class="aw-lbl">Überspannungsschutz · einmal im Schrank</div><div class="aw-liste zs-uss">${ZS_USS.map(([k,t,u])=>awKachel("zsUss",k,zsUssDaumen(k),t,u,(zs.uss||zsUssStd(zs))===k)).join("")}</div>
       <div class="aw-lbl">Einspeisung · Hausanschlusskabel</div><div class="aw-wahl">${[["ja","Einspeiseadapter"],["nein","Ohne Adapter"]].map(([k,t])=>`<button type="button" data-act="zsEinsp" data-v="${k}" aria-pressed="${(zs.einspeis===false?"nein":"ja")===k}">${t}</button>`).join("")}</div>
       <div class="fg1 aw-eigen">${tf("zsBez","Bezeichnung (optional)",z.bez||"",{form:true,ph:"z. B. Wohnung EG"})}</div>
       <div class="fg1 aw-eigen">${tf("zsNr","Zählernummer (optional)",z.nr||"",{form:true,ph:"steht auf dem Zähler, z. B. 1EBZ01…"})}</div>`:`<p class="aw-hinweis zs-frei-t">Der Platz bleibt frei – z. B. für eine spätere Wärmepumpe oder Wallbox. Unbenutzte Zählerplätze berührungssicher abdecken.</p>`}</div></div>`,
