@@ -38,6 +38,9 @@ const zsSlsStd=zs=>zs&&zs.hersteller==="sj"?"abb":"hager";
 const zsSlsH=(zs,z)=>z&&ZS_SLS_NR[z.slsH]?z.slsH:zsSlsStd(zs);
 function zsSlsGeraet(zs,z){ if(!z||!z.sls||z.sls==="keiner") return null; const h=zsSlsH(zs,z), a=z.sls.slice(1), nr=ZS_SLS_NR[h][z.sls];
   const i=MAT_INFO[nr]||MAT_INFO[h==="abb"?"2CDS781001R4352":""]||null; return {h,nr,name:ZS_SLS_TYP[h](a),bild:i&&i.bild||""}; }
+/* Ableiter mit eigenem, abgesichertem Spannungsabgriff für RfZ/APZ (Max 18.11.2026: „normalerweise greifen wir die Spannungsversorgung oben am Kombiableiter ab“)
+   → dann keine eigene „Spannungsversorgung RfZ/APZ“ in der Materialliste */
+const ZS_USS_ABGRIFF=new Set(["7P.04.8.255.Z007","7P.94.8.255.Z007C08"]);
 const zsUssStd=zs=>zs&&zs.hersteller==="sj"?"2CTB815799R2800":"SPA700Z";
 function zsUssGeraet(zs){ const k=zs.uss||zsUssStd(zs); if(k==="keiner") return null; const e=ZS_USS.find(x=>x[0]===k)||ZS_USS[0], i=MAT_INFO[e[0]];
   return {nr:e[0],name:e[1],info:e[2],bild:i&&i.bild||""}; }
@@ -301,7 +304,7 @@ function zsMaterialDaten(zs,reihen){ const M=new Map(), add=t=>M.set(t,(M.get(t)
     if(brauch(f.id,"hs")) for(let i=0;i<n;i++) add("Hauptschalter 3-polig, plombierbar");
     if(brauch(f.id,"rj45")) add("RJ45-Buchse"); if(brauch(f.id,"ssk")) add("Steuersignalklemmleiste");
     if(brauch(f.id,"hlak")) add("Hauptleitungsabzweigklemme"); if(brauch(f.id,"relais")) add("Trennrelais §14a"); });
-  if(zs.felder.some(f=>f.typ==="z")){ const u=zsUssGeraet(zs); add(u?`Überspannungsschutz ${u.name} (${u.nr})`:"Überspannungsschutz Typ 1 – noch festlegen"); add("Spannungsversorgung RfZ/APZ mit Absicherung"); if(zs.einspeis!==false) add("Einspeiseadapter Sammelschiene 5-polig (N, L1, L2, L3, PE)"); }
+  if(zs.felder.some(f=>f.typ==="z")){ const u=zsUssGeraet(zs); add(u?`Überspannungsschutz ${u.name} (${u.nr})`:"Überspannungsschutz Typ 1 – noch festlegen"); if(!(u&&ZS_USS_ABGRIFF.has(u.nr))) add("Spannungsversorgung RfZ/APZ mit Absicherung"); if(zs.einspeis!==false) add("Einspeiseadapter Sammelschiene 5-polig (N, L1, L2, L3, PE)"); }
   return [...M]; }
 /* Symbole für die Reiter der Verteilerseite */
 IC.zsSchrank=IC.zsSchrank||"M14.67 5v14H9.33V5h5.34zm1 14H21V5h-5.33v14zm-7.34 0V5H3v14h5.33z";
