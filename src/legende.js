@@ -162,7 +162,7 @@ function legListeView(L){ const E=legE(L), zu=L.fertig, B=[], PL=legPlaetze(L); 
     :b.z?`<div class="leg-grp solo">${zeile(b.z)}</div>`
     :`<div class="leg-grp"><button type="button" class="leg-gk" data-act="legEdit" data-id="${esc(b.rcd.id)}" ${zu?"disabled":""}><span class="kz">${esc(b.rcd.kz||"–")}</span><span class="bz">${esc(b.rcd.bez||"Fehlerstromschutzschalter")}<span class="leg-rcd">RCD</span>${pl(b.rcd)}</span>${b.rcd.schutz?`<span class="sc">${esc(b.rcd.schutz)}</span>`:""}</button>
       ${b.kids.map(k=>zeile(k," kind")).join("")}${zu?"":`<button type="button" class="leg-add" data-act="legNach" data-i="${b.last!=null?b.last:b.i}">${icon("add")}Stromkreis an ${esc(b.rcd.kz||"RCD")}</button>`}</div>`).join("")}
-    ${zu?"":`<div class="leg-neu"><button type="button" data-act="legNeuRcd">${icon("add")}Neuer RCD mit Stromkreisen</button></div>`}</div>`; }
+    ${zu?"":`<div class="leg-neu"><button type="button" data-act="legNeuRcd">${icon("add")}Neuer RCD mit Stromkreisen</button>${legReihen(L).length?`<button type="button" data-act="legRkDlg">${icon("copy")}Reihe kopieren</button>`:""}</div>`}</div>`; }
 /* Reihen bilden: Breite je Gerät in TE, „Neue Reihe ab hier“ bricht um */
 function legReihen(L){ const n=+L.teReihe||12, R=[]; let r=null;
   legE(L).forEach((e,i)=>{ if(e.art==="gr") return; const w=Math.min(legTE(e),n); if(!r||e.umbruch||r.te+w>n){ r={te:0,g:[]}; R.push(r); } r.g.push([e,i,w]); r.te+=w; });
@@ -334,6 +334,43 @@ function legKopien(L,i,n){ const E=legE(L), num=legSchemaNum(E), neu=[]; const q
   return neu; }
 function legDuplizieren(n){ const L=legAkt(); if(!L||!legDlg) return; const i=legSkOk("dupl"); if(i==null) return; legKopien(L,i,n);
   legSpeichern(L); closeOverlays(); render(); toast(n===1?"Kopie eingefügt":`${n} Kopien eingefügt`); }
+
+/* ---- Reihe kopieren (Max 18.11.2026): gleiche Reihen nicht Gerät für Gerät anlegen.
+   Ganze Reihe (RCD, Automaten, Klemmen, Leerplätze – mit Absicherung, Polen, Breite, Artikel) als neue Reihe einsetzen, 1–3×,
+   ans Ende oder hinter eine bestimmte Reihe. Nummern laufen weiter (gestuftes Schema: legNummern beim Speichern). Danach Abweichungen einzeln ändern. ---- */
+let LEG_RK=null;
+function legReiheText(r){ const G=new Map(); r.g.forEach(([e])=>{ if(e.art==="kl"){ const k=e.farbe==="pe"?"PE-Klemme":e.farbe==="n"?"N-Klemme":"Klemme"; G.set(k,(G.get(k)||0)+1); return; }
+    const k=e.art==="rcd"?`RCD ${e.schutz||""}`.trim():e.art==="res"?"Leerplatz":e.art==="ge"?(e.bez||"Gerät"):`${e.schutz||"?"}${+e.pole===3?" 3-polig":""}`; G.set(k,(G.get(k)||0)+1); });
+  return [...G].map(([k,n])=>n>1?`${n} × ${k}`:k).join(" · ")+` · ${r.te} TE`; }
+function legRkDlg(){ const L=legAkt(); if(!L) return; const R=legReihen(L); if(!R.length) return;
+  if(!LEG_RK||LEG_RK.q>=R.length) LEG_RK={q:0,z:"ende",n:1,bez:false}; const S=LEG_RK, frei=+L.reihen?(+L.reihen-R.length):null;
+  const chip=(act,v,t,an)=>`<button type="button" class="chip" data-act="${act}" data-v="${esc(v)}" aria-pressed="${an}">${esc(t)}</button>`;
+  dialog("Reihe kopieren",`<div class="lbl" style="margin:0 4px 6px">Welche Reihe?</div>
+    <div class="list wahl">${R.map((r,i)=>`<div class="li" role="button" tabindex="0" data-act="legRkQ" data-v="${i}"${S.q===i?' aria-current="true" style="background:var(--sc-highest)"':""}><span class="av">${icon(S.q===i?"check":"copy")}</span><span class="lt"><span class="h">Reihe ${i+1}${r.g[0]&&r.g[0][0].kz?` · ab ${esc(r.g[0][0].kz)}`:""}</span><span class="s">${esc(legReiheText(r))}</span></span></div>`).join("")}</div>
+    <div class="lbl" style="margin:16px 4px 6px">Wohin?</div><div class="chips ec-wahl">${chip("legRkZ","ende","Ans Ende",S.z==="ende")}${R.map((r,i)=>chip("legRkZ",String(i),`Nach Reihe ${i+1}`,S.z===String(i))).join("")}</div>
+    <div class="lbl" style="margin:16px 4px 6px">Wie oft?</div><div class="chips ec-wahl">${[1,2,3].map(n=>chip("legRkN",String(n),n+"×",S.n===n)).join("")}</div>
+    <button type="button" class="leg-schalt" data-act="legRkBez" aria-pressed="${S.bez}" style="margin-top:12px"><span>Bezeichnungen übernehmen</span><span class="schalter${S.bez?" an":""}"><i></i></span></button>
+    <p class="sup" style="margin:12px 4px 0">${S.bez?"Bezeichnungen werden mitkopiert.":"Stromkreise kommen als „? – noch unbekannt“, Absicherung, Pole, Breite und Artikel bleiben."}${frei!=null&&S.n>frei?` Achtung: Der Verteiler hat ${L.reihen} Reihen – danach sind es ${R.length+S.n}.`:""}</p>`,
+    `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="legRkOk">${S.n>1?S.n+" Reihen einsetzen":"Reihe einsetzen"}</button>`); }
+function legReiheKopieren(L,q,ziel,n,mitBez){ const E=legE(L), R=legReihen(L), src=(R[q]||{g:[]}).g.map(([e])=>e); if(!src.length) return 0; const num=legSchemaNum(E);
+  let pos=ziel==="ende"||!R[+ziel]?E.length:R[+ziel].g[R[+ziel].g.length-1][1]+1;
+  const nachher=E[pos]; let zahl=0;
+  for(let k=0;k<n;k++) src.forEach((e,j)=>{ const c={id:uid(),art:e.art,bez:e.art==="sk"&&!mitBez?"?":e.bez||"",schutz:e.schutz||"",pole:e.pole||1};
+    ["te","mat","sym","farbe"].forEach(f=>{ if(e[f]!=null&&e[f]!=="") c[f]=e[f]; });
+    if(j===0) c.umbruch=true;
+    c.kz=num||e.art==="kl"||e.art==="ge"?"":e.art==="rcd"?legRcdKz(E,pos-1,j===0):legNaechsteKz(E,pos-1);
+    E.splice(pos,0,c); pos++; zahl++; });
+  if(nachher&&nachher.art!=="gr") nachher.umbruch=true;
+  return zahl; }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="legRk"]'); if(!b) return; const a=b.dataset.act; if(!["legRkDlg","legRkQ","legRkZ","legRkN","legRkBez","legRkOk"].includes(a)) return;
+  e.stopImmediatePropagation(); e.preventDefault(); const L=legAkt(); if(!L||L.fertig) return;
+  if(a==="legRkDlg"){ LEG_RK=null; legRkDlg(); return; }
+  if(a==="legRkQ"){ LEG_RK.q=+b.dataset.v; legRkDlg(); return; }
+  if(a==="legRkZ"){ LEG_RK.z=b.dataset.v; legRkDlg(); return; }
+  if(a==="legRkN"){ LEG_RK.n=+b.dataset.v; legRkDlg(); return; }
+  if(a==="legRkBez"){ LEG_RK.bez=!LEG_RK.bez; legRkDlg(); return; }
+  const S=LEG_RK, n=legReiheKopieren(L,S.q,S.z,S.n,S.bez); LEG_RK=null; if(!n) return;
+  legSpeichern(L); closeOverlays(); render(); toast(S.n>1?`${S.n} Reihen eingesetzt – Abweichungen jetzt einzeln ändern`:"Reihe eingesetzt – Abweichungen jetzt einzeln ändern"); },true);
 
 /* ---- Wischen in der Liste: nach links = löschen, nach rechts = duplizieren (beides mit „Rückgängig“) ----
    Die Zeile bleibt stehen, nur ihr Inhalt gleitet; dahinter erscheint rot (Mülleimer) bzw. hellrot (Kopie). */
