@@ -99,6 +99,25 @@ function vmZs(L){ const zs=L.zs; if(!zs||!zs.felder||!zs.felder.length) return [
   return zsMaterialDaten(zs,L.reihen).map(([t,n])=>{ const so=sonder(t); if(so) return Object.assign(so,{n});
     const h=(t.match(/\(([A-Z0-9][A-Z0-9.\-]{4,})\)\s*$/)||[])[1], i=h&&MAT_INFO[h];
     return {titel:h?t.replace(/\s*\([A-Z0-9]+\)\s*$/,"").replace(new RegExp("\\s*"+h+"$"),""):t,unter:h?`Hager · ${h}`.replace(/^Hager · (2C)/,"ABB · $1"):"",bild:i&&i.bild?bildLokal(i.bild):"",n,ic:/zähler/i.test(t)?"zsSchrank":/verteilerfeld/i.test(t)?"zsSchrank":/rj45|steuer/i.test(t)?"ecNetz":/apz|spannungsversorgung|einspeis|klemme/i.test(t)?"zsBlitz":"liste"}; }); }
+/* Weiße bzw. durchsichtige Ränder eines Produktfotos abschneiden, damit das Gerät mittig und groß im Rahmen sitzt (Max 18.11.2026).
+   Nur für Bilder vom eigenen Server/Bilder-Cache (fremde Bilder darf die Seite nicht auslesen – die bleiben, wie sie sind). */
+function vmTrimmen(img){ if(img.dataset.trim||!img.naturalWidth) return; img.dataset.trim="1";
+  try{ const W=img.naturalWidth, H=img.naturalHeight, f=Math.min(1,600/Math.max(W,H)), w=Math.max(1,Math.round(W*f)), h=Math.max(1,Math.round(H*f));
+    const c=document.createElement("canvas"); c.width=w; c.height=h; const x=c.getContext("2d",{willReadFrequently:true}); x.drawImage(img,0,0,w,h);
+    const d=x.getImageData(0,0,w,h).data; let x0=w,y0=h,x1=-1,y1=-1;
+    for(let y=0;y<h;y++) for(let i=0;i<w;i++){ const k=(y*w+i)*4; if(d[k+3]>24&&(d[k]<236||d[k+1]<236||d[k+2]<236)){ if(i<x0)x0=i; if(i>x1)x1=i; if(y<y0)y0=y; if(y>y1)y1=y; } }
+    if(x1<0||((x1-x0+1)>w*.94&&(y1-y0+1)>h*.94)) return;
+    const r=Math.round(Math.max(x1-x0,y1-y0)*.04), ax=Math.max(0,x0-r), ay=Math.max(0,y0-r), bw=Math.min(w,x1+r+1)-ax, bh=Math.min(h,y1+r+1)-ay;
+    const s=Math.min(1,Math.max(W,H)/600)/f, c2=document.createElement("canvas"); c2.width=Math.round(bw/f); c2.height=Math.round(bh/f);
+    c2.getContext("2d").drawImage(img,ax/f,ay/f,bw/f,bh/f,0,0,c2.width,c2.height); img.src=c2.toDataURL("image/png"); }catch(e){} }
+document.addEventListener("load",e=>{ const t=e.target; if(t&&t.tagName==="IMG"&&t.closest&&t.closest(".vm-b")) vmTrimmen(t); },true);
+/* Bild in der Materialliste antippen → große Vorschau mit Name und Artikel (wie in der Geräteauswahl) */
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest(".vm-z .vm-b"); if(!b) return; const img=b.querySelector("img"); if(!img||!img.naturalWidth) return;
+  e.stopImmediatePropagation(); e.preventDefault(); const z=b.closest(".vm-z"), t=(z.querySelector(".vm-t b")||{}).textContent||"", u=(z.querySelector(".vm-t small")||{}).textContent||"", n=(z.querySelector(".vm-n")||{}).textContent||"";
+  const v=document.createElement("div"); v.className="aw-gross"; v.setAttribute("role","dialog"); v.setAttribute("aria-label",t||"Vorschau");
+  v.innerHTML=`<div class="aw-gk"><div class="aw-gb"><img src="${esc(img.currentSrc||img.src)}" alt=""></div><div class="aw-gt"><b>${esc(t)}</b>${u?`<small>${esc(u)}</small>`:""}</div>
+    <div class="aw-gf"><span class="aw-gan">${esc(n?n.replace("×"," Stück").trim():"")}</span><button type="button" class="btn-text" data-g="zu">Schließen</button></div></div>`;
+  v.addEventListener("click",x=>{ if(x.target.closest("button")||x.target===v) v.remove(); }); document.body.appendChild(v); },true);
 const vmZeile=x=>`<div class="vm-z"><span class="vm-b${x.bild?"":" ic"}">${x.bild?`<img src="${esc(x.bild)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('weg')">`:icon(x.ic||"liste")}</span>
   <span class="vm-t"><b>${esc(x.titel)}</b>${x.unter?`<small${x.offen?' class="offen"':""}>${esc(x.unter)}</small>`:""}</span><span class="vm-n">${x.n}×</span></div>`;
 function vmView(L){ const V=vmGruppen(L), Z=vmZs(L), alle=V.reduce((s,x)=>s+x.n,0)+Z.reduce((s,x)=>s+x.n,0), off=V.filter(x=>x.offen).length;
