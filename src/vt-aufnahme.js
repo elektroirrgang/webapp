@@ -110,18 +110,22 @@ function awNutzung(){ const z={}; const zaehl=x=>{ if(x&&x.mat) z[x.mat]=(z[x.ma
 function awBelegung(L){ const n=+L.teReihe||12, R=legReihen(L), r=R.length||1, te=R.length?R[R.length-1].te:0; return {n,r,frei:n-te,reihen:+L.reihen||0}; }
 function awBelegText(L){ const b=awBelegung(L); if(!legE(L).length) return `${b.reihen?b.reihen+"-reihig · ":""}noch leer`; return `Reihe ${b.r} · ${b.frei} von ${b.n} TE frei`; }
 /* Kennzeichnung für das nächste Gerät */
-function awKz(L,art){ const E=legE(L);
-  if(art==="rcd"){ if(!E.length) return {kz:"F 1.0",umbruch:false}; const b=awBelegung(L), neu=b.frei<4; return {kz:legRcdKz(E,E.length-1,neu),umbruch:neu}; }
-  const kz=legNaechsteKz(E,E.length-1); if(kz) return {kz,umbruch:false};
+/* Einsetzposition (Max 18.11.2026): „Stromkreis an -F2“ setzt hinter den letzten Kreis dieses RCD ein (AW.nach = Index), sonst hinten anhängen */
+const awEinfuegen=()=>typeof AW!=="undefined"&&AW&&AW.nach!=null;
+function awPos(L){ const E=legE(L); return awEinfuegen()?Math.min(AW.nach,E.length-1):E.length-1; }
+function awKz(L,art){ const E=legE(L), p=awPos(L);
+  if(art==="rcd"){ if(!E.length) return {kz:"F 1.0",umbruch:false}; const neu=!awEinfuegen()&&awBelegung(L).frei<4; return {kz:legRcdKz(E,p,neu),umbruch:neu}; }
+  const kz=legNaechsteKz(E,p); if(kz) return {kz,umbruch:false};
   return {kz:`F ${awBelegung(L).r}.${E.filter(e=>e.art!=="gr").length+1}`,umbruch:false}; }
-const awRcdVor=L=>{ const E=legE(L); for(let i=E.length-1;i>=0;i--){ if(E[i].art==="gr") return null; if(E[i].art==="rcd") return E[i]; } return null; };
-function awGeraetStart(){ const L=legAkt(); if(!L||L.fertig) return; const E=legE(L);
-  AW={typ:"geraet",tab:E.some(e=>e.art==="rcd")?"ls":"reihe",serie:(typeof META!=="undefined"&&META.lsSerie)||"",such:"",letzt:null,zuletzt:"",m:null,was:"",raum:"",bez:"",bezHand:false,mehr:false};
+const awRcdVor=L=>{ const E=legE(L); for(let i=awPos(L);i>=0;i--){ if(E[i].art==="gr") return null; if(E[i].art==="rcd") return E[i]; } return null; };
+function awGeraetStart(opt){ const L=legAkt(); if(!L||L.fertig) return; const E=legE(L); opt=opt||{};
+  AW={typ:"geraet",nach:opt.nach!=null?opt.nach:null,tab:opt.tab||(E.some(e=>e.art==="rcd")?"ls":"reihe"),serie:(typeof META!=="undefined"&&META.lsSerie)||"",such:"",letzt:null,zuletzt:"",m:null,was:"",raum:"",bez:"",bezHand:false,mehr:false};
   awKatalog(); }
 function awKatalog(){ const L=legAkt(); if(!L){ awZu(); return; } AW.m=null;
   $("#dlg").classList.add("aw");
   awRahmen({titel:L.titel||"Verteiler",unter:awBelegText(L),inhalt:`<div class="aw-such"><span class="aw-lupe">${icon("search")}</span><input id="awSuch" type="search" placeholder="B16, RCD, Typ A …" value="${esc(AW.such)}" autocomplete="off"></div>
-      <div class="aw-tabs" role="group">${[["reihe","Reihen"],["ls","Automaten"],["rcd","RCD"],["rcbo","FI/LS"],["sonst","Sonstiges"]].map(([k,t])=>`<button type="button" data-act="awTab" data-v="${k}" aria-pressed="${AW.tab===k}">${t}</button>`).join("")}</div>
+      ${awEinfuegen()?`<div class="aw-pos"><span>Wird eingesetzt nach <b>${esc((legE(L)[awPos(L)]||{}).kz||"")}</b></span><button type="button" class="btn-text" data-act="awFrei">Ohne Produkt eintragen</button></div>`:""}
+      <div class="aw-tabs" role="group">${[["reihe","Reihen"],["ls","Automaten"],["rcd","RCD"],["rcbo","FI/LS"],["sonst","Sonstiges"]].filter(([k])=>!(awEinfuegen()&&k==="reihe")).map(([k,t])=>`<button type="button" data-act="awTab" data-v="${k}" aria-pressed="${AW.tab===k}">${t}</button>`).join("")}</div>
       <div id="awSerie">${awSerieChips()}</div><div id="awGrid">${awGrid()}</div>`,
     fuss:`<button type="button" class="aw-fragen" data-act="awFragen" aria-pressed="${awFragen()}">Wofür gleich fragen</button><span class="aw-fuss-info">${esc(AW.zuletzt||(legE(L).length?`${legE(L).filter(e=>e.art!=="gr").length} Geräte im Verteiler`:""))}</span><button type="button" class="btn-tonal" data-act="awZu">${legE(L).length?"Fertig":"Später bestücken"}</button>`});
   const z=$("#dlg .aw-zur"); if(z) z.hidden=true; }
@@ -166,7 +170,9 @@ function awGrid(){ const q=AW.such.trim().toLowerCase(), z=awNutzung(), L=legAkt
   A.sort((a,b)=>(b.hnr===AW.letzt)-(a.hnr===AW.letzt)||(gh?(b.m.hersteller===gh)-(a.m.hersteller===gh):0)||(z[b.hnr]||0)-(z[a.hnr]||0)||(b.m.hersteller===herst)-(a.m.hersteller===herst)||(a.t.pole||0)-(b.t.pole||0)||String(a.t.char).localeCompare(String(b.t.char))||a.t.in-b.t.in||a.m.hersteller.localeCompare(b.m.hersteller));
   if(!A.length) return `<p class="aw-leer">Nichts gefunden. Unter „Sonstiges“ lässt sich ein Gerät frei eintragen.</p>`;
   return `<div class="aw-grid">${A.map(({m,t,hnr})=>`<button type="button" class="aw-g" data-act="awGeraet" data-v="${esc(hnr)}">${matFoto(m,"aw-gb")||awOhneFoto(t,m)}<b>${esc(awName(t))}</b><small>${esc(awUnter(m))}</small>${hnr===AW.letzt?`<span class="aw-nochmal">Nochmal</span>`:""}</button>`).join("")}</div>`; }
-function awEinsetzen(e){ const L=legAkt(); if(!L) return; legE(L).push(e); legSpeichern(L); render(); }
+function awEinsetzen(e){ const L=legAkt(); if(!L) return; const E=legE(L);
+  if(awEinfuegen()&&AW.nach<E.length-1){ E.splice(AW.nach+1,0,e); AW.nach++; } else { E.push(e); if(awEinfuegen()) AW.nach=E.length-1; }
+  legSpeichern(L); render(); }
 function awGeraetWahl(hnr){ const L=legAkt(), m=awGeraete().find(x=>matHnr(x.herstellerNr)===hnr); if(!L||!m) return; const t=matTech(m);
   if(t.art==="ge"){ const E=legE(L), n=E.filter(e=>e.art==="ge"&&new RegExp("^"+t.kb+"\\s*\\d").test(e.kz||"")).length, kz=`${t.kb}${n+1}`;
     awEinsetzen({id:uid(),art:"ge",kz,bez:t.name,schutz:"",pole:1,te:t.te,mat:hnr}); AW.letzt=hnr; AW.zuletzt=`${kz} ${t.name} eingesetzt`; awKatalog(); return; }
@@ -205,6 +211,7 @@ function awSonst(k){ const L=legAkt(); if(!L) return;
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="aw"]'); if(!b||b.disabled) return; e.stopPropagation(); const a=b.dataset.act;
   switch(a){
   case "awStart": awGeraetStart(); return;
+  case "awFrei": { const n=AW&&AW.nach!=null?AW.nach:null, art=AW&&AW.tab==="rcd"?"rcd":null; awZu(); setTimeout(()=>legSkDlg(null,n!=null?n:Math.max(0,legE(legAkt()).length-1),art),0); return; }
   case "awZu": awZu(); return;
   case "awZur": if(!AW||AW.typ==="produkt") return awZu(); if(AW.typ==="neu"){ if(AW.sub){ AW.sub=AW.sub==="reihen"?"hoehe":null; if(AW.d.zs) zsAbgleich(AW.d.zs); awNeuZeigen(); } else if(AW.i>0){ AW.i--; awNeuZeigen(); } else awZu(); }
     else if(AW.typ==="zs"){ if(AW.schritte&&AW.i>0){ const z=zsAktZp(); if(z) zsZpLesen(z); AW.i--; zsZeigen(); } else awZu(); } else if(AW.m) awKatalog(); else awZu(); return;

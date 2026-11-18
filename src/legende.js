@@ -429,8 +429,9 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "legNr": { legDlg.umbruch=!legDlg.umbruch; b.setAttribute("aria-pressed",legDlg.umbruch); const sw=b.querySelector(".schalter"); if(sw) sw.classList.toggle("an",legDlg.umbruch); return; }
   case "legSym": legDlg.sym=b.dataset.v; b.parentElement.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b)); return;
   case "legAnsicht": META.legAnsicht=b.dataset.v; metaSave(); render(); return;
-  case "legNach": legSkDlg(null,+b.dataset.i); return;
-  case "legNeuRcd": legSkDlg(null,legE(L).length-1,"rcd"); return;
+  /* Katalog mit Marken und Bildern statt nur Formular (Max 18.11.2026); „Ohne Produkt eintragen“ führt im Katalog zum Formular */
+  case "legNach": if(typeof awGeraetStart==="function"&&!L.fertig){ awGeraetStart({nach:+b.dataset.i,tab:"ls"}); return; } legSkDlg(null,+b.dataset.i); return;
+  case "legNeuRcd": if(typeof awGeraetStart==="function"&&!L.fertig){ awGeraetStart({tab:"rcd"}); return; } legSkDlg(null,legE(L).length-1,"rcd"); return;
   case "legOpt": { if(!L) return; L[b.dataset.k]=+b.dataset.v; legSave(L); render(); return; }
   case "legOptS": { if(!L) return; L[b.dataset.k]=b.dataset.v; legSave(L); render(); return; }
   case "legSetz": { const f=document.getElementById(b.dataset.ziel); if(f){ f.value=b.dataset.v; f.parentElement.classList.add("fl"); } return; }
