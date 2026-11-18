@@ -1271,8 +1271,10 @@ a.dz{color:inherit;text-decoration:none;border-radius:12px}
 .vm-teilen .ic{width:18px;height:18px;color:var(--primary)}
 .vm-liste{display:grid;gap:2px}
 .vm-z{display:flex;align-items:center;gap:14px;min-height:72px;padding:6px 0}
-.vm-b{flex:none;width:56px;height:60px;border-radius:12px;background:#fff;display:grid;place-items:center;overflow:hidden}
-.vm-b img{width:100%;height:100%;object-fit:contain;padding:4px;box-sizing:border-box;display:block}
+.vm-b{flex:none;position:relative;width:56px;height:60px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}
+/* fester Rahmen: Bild immer ganz sichtbar und mittig (Max 18.11.2026) */
+.vm-b img{position:absolute;inset:4px;width:calc(100% - 8px);height:calc(100% - 8px);object-fit:contain;object-position:center;display:block}
+.vm-b:has(img){cursor:zoom-in}
 .vm-b.ic,.vm-b.weg{background:var(--sc-high);color:var(--on-sv)}.vm-b.ic .ic{width:24px;height:24px}.vm-b.weg img{display:none}
 .vm-t{flex:1;min-width:0;display:flex;flex-direction:column}.vm-t b{font-size:15px;line-height:20px;font-weight:600;overflow-wrap:anywhere}.vm-t small{font-size:13px;line-height:18px;color:var(--on-sv);overflow-wrap:anywhere}.vm-t small.offen{color:var(--wip)}
 .vm-n{flex:none;min-width:44px;height:32px;padding:0 10px;border-radius:16px;background:var(--sc-high);display:grid;place-items:center;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
