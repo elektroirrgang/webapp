@@ -2359,3 +2359,7 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
 .ecq-mehr button{height:40px;border:0;border-radius:20px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-size:14px;font-weight:600;padding:0 16px;cursor:pointer}
 .ec-sp{margin:4px 0 8px}.ec-sp .chip{border:0;background:var(--sc-high);color:var(--on-surface);min-height:40px;border-radius:20px;padding:4px 16px}.ec-sp .chip .ic{display:none}
 .ec-sp .chip[aria-pressed="true"]{background:#1E7D3A;color:#fff}.ec-sp .chip.nok[aria-pressed="true"]{background:var(--fab);color:var(--on-fab)}
+
+/* Kundenkarte: Hinweis, wenn nur die PLZ gefunden wurde (Max 18.11.2026) */
+#kdKarte{position:relative}
+.kd-ungenau{position:absolute;left:12px;bottom:12px;z-index:3;max-width:calc(100% - 24px);padding:6px 12px;border-radius:12px;background:color-mix(in srgb,var(--surface,#fff) 92%,transparent);color:var(--on-surface);font-size:13px;box-shadow:0 1px 3px rgba(0,0,0,.2);pointer-events:none}

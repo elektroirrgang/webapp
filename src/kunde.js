@@ -84,10 +84,28 @@ function karteLib(){
     const j=document.createElement("script"); j.src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"; j.onload=ok; j.onerror=()=>{ KARTE.lib=null; no(); }; document.head.appendChild(j); });
   return KARTE.lib;
 }
-async function karteGeo(a){
-  META.geo=META.geo||{}; if(META.geo[a]) return META.geo[a];
-  const r=await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=de&accept-language=de&q="+encodeURIComponent(a)); const j=await r.json();
-  const g=j&&j[0]?{lat:+j[0].lat,lon:+j[0].lon}:{nix:1}; META.geo[a]=g; metaSave(); return g;
+/* Adresse → Koordinaten (OpenStreetMap/Nominatim), mehrstufig (Max 18.11.2026):
+   OSM kennt Orte oft unter anderem Namen („Forst (Sieg)“ statt „Forst“, Ortsteil statt Gemeinde) – dann scheitert die Suche mit dem ganzen Text.
+   1. ganzer Text  2. Straße + PLZ (strukturiert)  3. Straße + Ort  4. nur PLZ (ungefähr, Hinweis auf der Karte).
+   „Nicht gefunden“ wird nur 7 Tage gemerkt, damit spätere OSM-Ergänzungen greifen. */
+const GEO_V=2;
+async function geoFrage(par){ const r=await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=de&accept-language=de&"+par); if(!r.ok) throw new Error("geo "+r.status); const j=await r.json(); return j&&j[0]?{lat:+j[0].lat,lon:+j[0].lon}:null; }
+/* gleiche Adresse nicht doppelt gleichzeitig fragen (OSM blockt sonst gern) */
+const GEO_LAUF=new Map();
+function karteGeo(a){ if(GEO_LAUF.has(a)) return GEO_LAUF.get(a); const p=karteGeo0(a).finally(()=>GEO_LAUF.delete(a)); GEO_LAUF.set(a,p); return p; }
+async function karteGeo0(a){
+  META.geo=META.geo||{}; const alt=META.geo[a];
+  if(alt&&!alt.nix&&(alt.v===GEO_V||!alt.ungenau)) return alt;
+  if(alt&&alt.nix&&alt.v===GEO_V&&Date.now()-(alt.t||0)<7*864e5) return alt;
+  const q=encodeURIComponent, m=String(a).match(/^\s*(.*?)\s*,\s*(\d{5})\s*(.*?)\s*$/), str=m?m[1]:"", plz=m?m[2]:"", ort=m?m[3].replace(/\s*\(.*\)$/,""):"";
+  const stufen=[["q="+q(a),0]];
+  if(str&&plz) stufen.push(["street="+q(str)+"&postalcode="+plz+"&country=de",0],["q="+q(str+", "+plz),0]);
+  if(str&&ort) stufen.push(["street="+q(str)+"&city="+q(ort)+"&country=de",0]);
+  if(plz) stufen.push(["postalcode="+plz+"&country=de",1]);
+  let g=null;
+  for(const [par,ungenau] of stufen){ const t=await geoFrage(par); if(t){ g=Object.assign(t,{v:GEO_V},ungenau?{ungenau:1}:{}); break; } }
+  if(!g) g={nix:1,v:GEO_V,t:Date.now()};
+  META.geo[a]=g; metaSave(); return g;
 }
 const karteFehler=(el,t)=>{ const l=el.querySelector(".kd-lade"); if(l){ l.innerHTML=`${icon("ort")}<span>${esc(t)}</span>`; l.hidden=false; } };
 /* Kartenstile: hell = farbige Karte (OpenFreeMap „Liberty“), dunkel = Luftbild (Esri World Imagery) */
@@ -177,6 +195,7 @@ async function karteLaden(a){
   const el=document.getElementById("kdKarte"); if(!el||el.dataset.a!==a) return;
   let g; try{ g=await karteGeo(a); }catch(e){ return karteFehler(el,"Karte gerade nicht erreichbar"); }
   if(g.nix) return karteFehler(el,"Adresse auf der Karte nicht gefunden");
+  if(g.ungenau){ const h=el.querySelector(".kd-ungenau")||el.appendChild(Object.assign(document.createElement("div"),{className:"kd-ungenau"})); h.textContent="Straße nicht gefunden – Karte zeigt die Postleitzahl"; }
   try{ await karteLib(); }catch(e){ return karteFehler(el,"Karte gerade nicht erreichbar"); }
   const el2=document.getElementById("kdKarte"); if(!el2||el2.dataset.a!==a) return;
   const slot=el2.querySelector(".kd-slot"), stil=kDunkel()?"satellit":"liberty", c=[g.lon,g.lat];
