@@ -414,7 +414,7 @@ async function legPdf(L,art){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"m
 const LEG_PDF_STILE={a1:{sp:[28,34,26],sp0:[32,34],ob:4,res:.6,fs:8,zh:6,kh:6,kf:8,gf:8.5,kzF:false,abF:false,li:false,farbe:20},
   a2:{sp:[30,38,26],sp0:[33,38],fs:9.25,zh:7,kh:6.75,kf:8.75,gf:9.75,kzF:true,abF:false,li:false,farbe:15},
   a3:{sp:[32,42,26],sp0:[34,42],fs:10.5,zh:8,kh:7.5,kf:9.5,gf:11,kzF:true,abF:false,li:false,farbe:10}};
-let LEG_PDF_ART="a1";
+let LEG_PDF_ART="a2";   /* Max 18.11.2026: A2 gewählt */
 function legPdfStromkreise(d,S,L,art){ const T=LEG_PDF_STILE[art||LEG_PDF_ART]||LEG_PDF_STILE.a1, M=S.M, CW=S.CW, PL=legPlaetze(L), mitPl=Object.keys(PL).length>0;
   const q=mitPl?T.sp:T.sp0, sp=[q[0],0,...q.slice(1)]; sp[1]=CW-sp.reduce((x,y)=>x+y,0);
   const ob=T.ob||T.zh*.62, lh=T.fs*.42, resY=T.res!=null?T.res:-lh*.3;   /* Grundlinie in der Zeile, Zeilenabstand bei Umbruch (mm) */
