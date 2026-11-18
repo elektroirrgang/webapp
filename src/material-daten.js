@@ -26,11 +26,11 @@ const MAT_INFO={
   SH463N:{bild:"https://assets.hager.com/step-content/P/HA_93759111/11/std.lang.all/SH463N.webp",tech:{art:"hs"}},
   /* Hauptleitungsabzweigklemme Pollmann, Bild von zaehlerschrank24.de (Freigabe für die interne App) – für 35-1/2 noch kein passendes Foto */
   /* Einzelfotos je Farbe in groß – Rohmaterial für das Satzbild bilder/zs/hlak-35-1-4-satz (Max 18.11.2026: immer 5 Steine L1 braun, L2 schwarz, L3 grau, N blau, PE grün-gelb):
-     https://www.zaehlerschrank24.de/pub/media/catalog/product/p/o/pollmann-hauptleitungsabzweigklemme-hlak-35-1-4m2-grau-1polig-35qmm_1.jpg
-     https://www.zaehlerschrank24.de/pub/media/catalog/product/p/o/pollmann-hauptleitungsabzweigklemme-hlak-35-1-4m2-blau-1polig-35qmm.jpg
-     https://www.zaehlerschrank24.de/pub/media/catalog/product/p/o/pollmann-hauptleitungsabzweigklemme-hlak-35-1-4m2-gruen-gelb-1polig-35qmm.jpg
-     https://www.zaehlerschrank24.de/pub/media/catalog/product/cache/e5e5f169cf45d7fe32369499586660c4/p/o/pollmann-hauptleitungsabzweigklemme-hlak-35-1-4m2-grau-1polig-35qmm_1.jpg
-     https://www.zaehlerschrank24.de/pub/media/catalog/product/cache/e5e5f169cf45d7fe32369499586660c4/p/o/pollmann-hauptleitungsabzweigklemme-hlak-35-1-4m2-blau-1polig-35qmm.jpg
+     https://www.zaehlerschrank24.de/pub/media/catalog/product/p/o/pollmann-hauptleitungsabzweigklemme-hlak-35-1-4m2-grau-1polig-35qmm_1.jpg ,
+     https://www.zaehlerschrank24.de/pub/media/catalog/product/p/o/pollmann-hauptleitungsabzweigklemme-hlak-35-1-4m2-blau-1polig-35qmm.jpg ,
+     https://www.zaehlerschrank24.de/pub/media/catalog/product/p/o/pollmann-hauptleitungsabzweigklemme-hlak-35-1-4m2-gruen-gelb-1polig-35qmm.jpg ,
+     https://www.zaehlerschrank24.de/pub/media/catalog/product/cache/e5e5f169cf45d7fe32369499586660c4/p/o/pollmann-hauptleitungsabzweigklemme-hlak-35-1-4m2-grau-1polig-35qmm_1.jpg ,
+     https://www.zaehlerschrank24.de/pub/media/catalog/product/cache/e5e5f169cf45d7fe32369499586660c4/p/o/pollmann-hauptleitungsabzweigklemme-hlak-35-1-4m2-blau-1polig-35qmm.jpg ,
      https://www.zaehlerschrank24.de/pub/media/catalog/product/cache/e5e5f169cf45d7fe32369499586660c4/p/o/pollmann-hauptleitungsabzweigklemme-hlak-35-1-4m2-gruen-gelb-1polig-35qmm.jpg */
   "HLAK35-1/4":{bild:"https://www.zaehlerschrank24.de/pub/media/catalog/product/cache/23d977ff82ea963adb003e5b2ad5dacf/p/o/pollmann-hauptleitungsabzweigklemme-hlak-35-1-4m2-grau-1polig-35qmm_1.jpg",tech:{art:"zubehoer"}},
   ZZ45WAN150:{bild:"https://assets.hager.com/step-content/P/HA_16347736/11/std.lang.all/ZZ45WAN040.webp",tech:{art:"zubehoer"}},
