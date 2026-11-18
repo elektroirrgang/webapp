@@ -19,7 +19,7 @@ const MAT_INFO={
   "5096961":{bild:"../bilder/zs/uss-obo-mcf30-nar-tt.png",tech:{art:"uess"}},
   "1168940":{bild:"../bilder/zs/uss-phoenix-flt-sec-zp2.png",tech:{art:"uess"}},
   "7P.04.8.255.Z007":{bild:"../bilder/zs/uss-finder-7p04.png",tech:{art:"uess"}},
-  "7P.94.8.255.Z007C08":{bild:"../bilder/zs/uss-finder-7p94.png",tech:{art:"uess"}},   /* Foto aus dem Finder-Katalog S7P (Seite 10) */
+  "7P.94.8.255.Z007C08":{bild:"../bilder/zs/uss-finder-7p94-v2.png",tech:{art:"uess"}},   /* Foto aus dem Finder-Katalog S7P (Seite 10) */
   /* RJ45-Patchleitung für WAN, liegt Hager-Zählerschränken bei (Max 18.11.2026) – Bild wie bei Hager üblich aus dem Hager-Katalog */
   /* Hauptschalter je Zähler (Max 18.11.2026) */
   SH363S:{bild:"https://assets.hager.com/step-content/P/HA_93618334/11/std.lang.all/SH363S.webp",tech:{art:"hs"}},
