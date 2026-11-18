@@ -27,9 +27,12 @@ print(f"{len(liste)} Bild-Adressen")
 
 if "--holen" in sys.argv:
     ok = neu = fehler = 0
+    im_sp = set(json.loads((ziel / "alle.json").read_text(encoding="utf-8"))) if (ziel / "alle.json").exists() else set()
     for u, n in liste.items():
         d = ziel / n
         if d.exists() and d.stat().st_size > 0:
+            ok += 1; continue
+        if n in im_sp:   # liegt schon im SharePoint – nicht wieder auf den öffentlichen Server holen (Max 18.11.2026)
             ok += 1; continue
         try:
             r = urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36", "Accept": "image/avif,image/webp,image/*,*/*"})
