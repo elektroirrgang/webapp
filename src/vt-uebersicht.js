@@ -94,6 +94,7 @@ function vmZs(L){ const zs=L.zs; if(!zs||!zs.felder||!zs.felder.length) return [
   const sonder=t=>{ if(zs.modell&&/^Zählerschrank /.test(t)) return {titel:`Zählerschrank ${zs.modell.name||""}`.trim(),unter:`${herst(zs.modell.h)} · ${zs.modell.hnr}`,bild:mod&&mod.bild?bildLokal(mod.bild):"",ic:"zsSchrank"};
     if(u&&t.startsWith("Überspannungsschutz ")&&t.includes(u.nr)){ const b=typeof ZS_USS_BILD!=="undefined"&&ZS_USS_BILD[u.nr]?`../bilder/zs/${ZS_USS_BILD[u.nr][0]}`:u.bild;
       return {titel:`Überspannungsschutz ${u.name.replace(/^\S+\s+(Contact\s+)?/,"")}`,unter:`${u.name.split(" ")[0]==="Phoenix"?"Phoenix Contact":u.name.split(" ")[0]} · ${u.nr}${typeof ZS_USS_ABGRIFF!=="undefined"&&ZS_USS_ABGRIFF.has(u.nr)?" · mit Spannungsabgriff für RfZ/APZ":""}`,bild:b?bildLokal(b):"",ic:"zsBlitz"}; }
+    if(/\(ZZ45WAN150\)$/.test(t)) return {titel:"RJ45-Patchleitung WAN, blau, 1,5 m",unter:"Hager · ZZ45WAN150 · liegt dem Hager-Schrank bei",bild:MAT_INFO.ZZ45WAN150&&MAT_INFO.ZZ45WAN150.bild?bildLokal(MAT_INFO.ZZ45WAN150.bild):"",ic:"ecNetz"};
     if(/^Einspeiseadapter/.test(t)) return {titel:t,unter:"",bild:"../bilder/zs/einspeiseadapter.png",ic:"zsBlitz"};
     return null; };
   return zsMaterialDaten(zs,L.reihen).map(([t,n])=>{ const so=sonder(t); if(so) return Object.assign(so,{n});
