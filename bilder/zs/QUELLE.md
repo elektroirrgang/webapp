@@ -13,5 +13,5 @@ Gerätebilder im Ordner bilder/vt (rcd, ls1, ls3, fils1, fils3, blind1, trafo) s
 von zaehlerschrank24.de (Verteiler-Bestückung) und fallen unter dieselbe Freigabe vom 30.10.2026.
 Die Pollmann-Klemmen (pollmann-*.png) hat Max Pevec selbst erstellen lassen.
 
-uss-finder-7p94.png: Produktfoto Finder 7P.94.8.255.Zx07 aus dem Finder-Katalog „Serie 7P“ (S7PDE.pdf, Seite 10, cdn.findernet.com),
+uss-finder-7p94-v2.png: Produktfoto Finder 7P.94.8.255.Zx07 aus dem Finder-Katalog „Serie 7P“ (S7PDE.pdf, Seite 10, cdn.findernet.com),
 für die interne Geräteauswahl zugeschnitten (18.11.2026).
