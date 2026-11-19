@@ -159,6 +159,12 @@ async function kdPflege(){
   try{
     for(const k of [...DB.kunden.values()]){ if(k.deleted||k.demo||KD_FEHLT.has("k"+k.id)) continue; const r=kdoRec(k.id); if(r&&r.item&&r.soll===kdOrdName(k)) continue;
       if(!await schritt("k"+k.id,()=>kdOrdner(k.id))) return; }
+    /* bewusst gelöschte PDFs auch im Kundenordner wegräumen (SharePoint-Papierkorb) – nie, wenn ein lebender Eintrag dieselbe Datei nutzt */
+    const lebt=new Set([...DB.protokolle.values()].filter(r=>!r.deleted).flatMap(r=>[r.item,r.pfad]).filter(Boolean));
+    for(const r of [...DB.protokolle.values()]){ if(!r.deleted||!r.spLoeschen||r.spWeg||r.demo||r.bib!=="kd"||KD_FEHLT.has("w"+r.id)) continue;
+      if(lebt.has(r.pfad)||(r.item&&lebt.has(r.item))){ r.spWeg=true; saveRec("protokolle",r); continue; }
+      if(!await schritt("w"+r.id,async()=>{ const it=r.item?{id:r.item}:await kdItem(r.kundeId,kdRest(r.pfad)); if(!it){ r.spWeg=true; saveRec("protokolle",r); return; }
+        const x=await g(`/drives/${kdDrive()}/items/${it.id}`,{method:"DELETE"}); if(x.ok||x.status===404){ r.spWeg=true; saveRec("protokolle",r); } })) return; }
     for(const r of [...DB.protokolle.values()]){ if(r.deleted||r.demo||KD_FEHLT.has("p"+r.id)||wartet("protQueue",r.id)||!bbKunde(r.kundeId)) continue;
       if(r.bib==="kd"&&r.app==="legende"&&DB.gebaeude){   /* nur Apps, die die Verteiler kennen – sonst würde ein alter Name zurückverschieben */
         const soll=[...kdOrtProt(r),String(r.pfad||"").split("/").pop()]; if(kdRest(r.pfad).join("/")!==soll.join("/")){ if(!await schritt("p"+r.id,()=>kdLegUmhaengen(r,soll))) return; continue; } }

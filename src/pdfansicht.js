@@ -61,7 +61,7 @@ function pvGesten(){ const box=$("#pvSeiten"); let pinch=null, tap=0, letzte=1, 
 function pvScharf(){ if(!PV) return; clearTimeout(PV.zt); PV.zt=setTimeout(pvZeichnen,PV.pinch?400:120); }
 function pvZu(){ PV=null; $("#pv")?.remove(); document.body.classList.remove("pv-offen"); closeOverlays(); }
 function pvMenu(){ const x=PV&&PROT.find(y=>y.id===PV.id); if(!x) return;
-  const it=[PV_MODUS==="seiten"?["pvModus","Durchgehend scrollen","swapV"]:["pvModus","Seitenweise blättern","swapH"],"-",["pvMail","Per Mail senden","mail"],["pvSpeichern","Auf dem Gerät speichern","pdf"]].concat(typeof PV_EXTRA==="function"?PV_EXTRA(x):[]);
+  const it=[PV_MODUS==="seiten"?["pvModus","Durchgehend scrollen","swapV"]:["pvModus","Seitenweise blättern","swapH"],"-",["pvMail","Per Mail senden","mail"],["pvSpeichern","Auf dem Gerät speichern","pdf"]].concat(typeof PV_EXTRA==="function"?PV_EXTRA(x):[]); if(typeof bbPvExtra==="function") it.push(...bbPvExtra(x,it));
   $("#menu").innerHTML=it.map(m=>m==="-"?"<hr>":`<button class="mi ${m[3]||""}" role="menuitem" data-act="${m[0]}">${icon(m[2])}<span>${m[1]}</span></button>`).join("");
   $("#menu").hidden=false; $("#scrim").hidden=false; }
 async function pvAktion(a){ const x=PV&&PROT.find(y=>y.id===PV.id); if(!x) return; const blob=PV.blob||await protBlob(x.id); if(!blob){ toast("PDF nicht gefunden"); return; }
