@@ -32,7 +32,8 @@ function bbProtMelden(x,opt){ if(!bbSync()||!x||x.demo||x.ausShare||DB.protokoll
   if(typeof SYNC_ON!=="undefined"&&SYNC_ON){ META.sync.protQueue=[...new Set([...(META.sync.protQueue||[]),x.id])]; metaSave(); }
   if(nav&&nav.v==="bibliothek"){ const rs=document.getElementById("res"); if(rs) rs.innerHTML=bibListe(); } }
 function bbProtOben(id){ META.sync.protQueue=(META.sync.protQueue||[]).filter(x=>x!==id); metaSave(); }
-function bbProtWeg(id){ if(!bbSync()) return; const r=DB.protokolle.get(id); bbProtOben(id); if(r&&!r.deleted){ r.deleted=true; saveRec("protokolle",r); } }
+/* sp=true: bewusst gelöscht (Max 19.11.2026) – dann räumt kdPflege auch die Datei im Kundenordner weg; ohne sp (neuer Stand am selben Tag ersetzt den alten) bleibt die Datei, sie ist ja schon überschrieben */
+function bbProtWeg(id,sp){ if(!bbSync()) return; const r=DB.protokolle.get(id); bbProtOben(id); if(r&&(!r.deleted||(sp&&!r.spLoeschen))){ r.deleted=true; if(sp) r.spLoeschen=true; saveRec("protokolle",r); } }
 async function bbHoch(lib,pfad,blob){
   const i=pfad.lastIndexOf("/"), dir=pfad.slice(0,i), file=pfad.slice(i+1), fid=await folderId(dir,lib);
   if(blob.size<3.5*1048576){ const r=await g(`/drives/${fid}:/${encodeURIComponent(file)}:/content`,{method:"PUT",headers:{"Content-Type":"application/pdf"},body:blob}); if(!r.ok) throw new Error(`PDF hochladen fehlgeschlagen (${r.status})`); return; }
@@ -192,6 +193,51 @@ function bbEigenschaften(k,p){
       ${!p.length?z("Angelegt",kd&&[tag(kd.created),kd.createdBy&&kd.createdBy.name].filter(Boolean).join(" · ")):""}</div></div>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`);
 }
+/* ===== Dateien löschen (Max 19.11.2026: „veraltete Legenden aus der Bibliothek löschen geht gar nicht“) =====
+   Löschen dürfen alle, die den Kunden bearbeiten dürfen – aber nur Pläne (Verteilerlegende, Anlagenpass), eigene Dokumente/Fotos und Dateien, die nur in SharePoint liegen
+   (nicht in Prüfprotokolle/Baustellenberichte). Prüfprotokolle bleiben wegen der Aufbewahrungspflicht stehen. Gelöscht wird auf allen Geräten und im Kundenordner;
+   SharePoint legt die Datei in seinen Papierkorb (dort noch 93 Tage wiederherstellbar). */
+const bbRec=id=>BB_PROT.find(y=>y.id===id)||(DB.protokolle&&DB.protokolle.get(id))||null;
+const bbKdDarf=kid=>{ const k=bbKunde(kid); return !!(k&&(typeof kdDarf==="function"?kdDarf(k):ME.admin||(typeof canEdit==="function"&&canEdit(k)))); };
+function bbDarfWeg(act,id){
+  if(act==="bbOeffnen"||act==="bbFern"){ const x=bbRec(id); return !!(x&&!x.demo&&bbPlanApp(x.app)&&bbKdDarf(x.kundeId)); }
+  if(act==="dateiOeffnen"){ const d=DB.dateien&&DB.dateien.get(id); return !!(d&&!d.deleted&&(canEdit(d)||ME.admin)); }
+  if(act==="bbSp"){ const k=BB_ORT.k, kat=kdKatVon(BB_ORT.p[0]); return !!(k&&k!==BB_OHNE&&bbKdDarf(k)&&kat!=="prot"&&kat!=="berichte"&&bbSpDatei(id)); }
+  return false; }
+function bbWegFragen(act,id){
+  if(!bbDarfWeg(act,id)){ toast("Diese Datei kannst du hier nicht löschen"); return; }
+  if(act==="dateiOeffnen"){ const x=document.createElement("button"); x.hidden=true; x.dataset.act="dateiDelAsk"; x.dataset.id=id; document.body.appendChild(x); x.click(); x.remove(); return; }
+  const x=act==="bbSp"?bbSpDatei(id):bbRec(id), name=act==="bbSp"?x.name:(x.art||"Plan")+(x.datum?" vom "+bbDatum(x.datum):"");
+  closeOverlays(); if(typeof pvZu==="function"&&typeof PV!=="undefined"&&PV) pvZu();
+  dialog(`${act==="bbSp"?"Datei":x.app==="anlagenpass"?"Anlagenpass":"Legende"} löschen?`,`<p><b>${esc(name)}</b>${act!=="bbSp"&&x.titel?`<br>${esc(x.titel)}`:""}</p><p>Wird auf allen Geräten und im Kundenordner in SharePoint entfernt. In SharePoint liegt sie danach noch 93 Tage im Papierkorb.</p>`,
+    `<button class="btn-text danger" data-act="bbWegOk" data-v="${esc(act)}" data-id="${esc(id)}">Löschen</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button>`); }
+async function bbWeg(act,id){ closeOverlays(); if(!bbDarfWeg(act,id)) return;
+  if(act==="bbSp"){ if(!navigator.onLine){ toast("Kein Internet – die Datei liegt nur in SharePoint"); return; }
+    try{ await syncRoot(); const x=await g(`/drives/${kdDrive()}/items/${id}`,{method:"DELETE"}); if(!x.ok&&x.status!==404) throw x; }catch(e){ toast("Löschen in SharePoint hat nicht geklappt"); return; }
+    for(const c of BB_SP.values()) c.dateien=c.dateien.filter(f=>f.id!==id); }
+  else { const x=bbRec(id); if(DB.protokolle&&DB.protokolle.has(id)) bbProtWeg(id,true);
+    try{ const d=await new Promise((res,rej)=>{ const q=indexedDB.open("evse_protokolle"); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); });
+      if(d.objectStoreNames.contains("meta")){ const tx=d.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").delete(id); tx.objectStore("blob").delete(id); await new Promise(ok=>{ tx.oncomplete=ok; tx.onerror=ok; }); } d.close(); }catch(e){}
+    BB_PROT=BB_PROT.filter(y=>y.id!==id); if(typeof PROT!=="undefined") PROT=PROT.filter(y=>y.id!==id); BB_VORSCHAU.delete(id);
+    if(typeof kdPflege==="function") kdPflege().catch(()=>{}); if(typeof syncSoon==="function") syncSoon(); toast(`${x&&x.app==="anlagenpass"?"Anlagenpass":"Legende"} gelöscht`); }
+  if(act==="bbSp") toast("Datei gelöscht");
+  if(typeof nav!=="undefined"&&nav.v==="bibliothek"){ const rs=document.getElementById("res"); if(rs){ const y=scrollY; rs.innerHTML=bibListe(); scrollTo(0,y); } } else if(typeof render==="function") render(); }
+/* in der PDF-Vorschau: ⋯ › Löschen (nur wenn die App nicht schon selbst „Löschen“ anbietet) */
+function bbPvExtra(x,schon){ if(schon.some(m=>Array.isArray(m)&&m[0]==="pvLoesch")) return []; return bbDarfWeg("bbOeffnen",x.id)?["-",["bbPvWeg","Löschen","del","danger"]]:[]; }
+/* Datei-Menü: Rechtsklick (PC) oder lange drücken (iPad/Handy) auf einer Datei der Bibliothek */
+const BB_DSEL='#res .li[data-act="bbOeffnen"],#res .li[data-act="bbFern"],#res .li[data-act="bbSp"],#res .li[data-act="dateiOeffnen"],#res .bib-k[data-act="bbOeffnen"],#res .bib-k[data-act="bbFern"],#res .bib-k[data-act="dateiOeffnen"]';
+function bbDateiMenue(el,x,y){ const act=el.dataset.act, id=el.dataset.id; if(!id) return;
+  kontextMenu(x,y,[{t:"Öffnen",ic:"bbOffen",fn:()=>el.click()},
+    act==="bbSp"&&bbSpDatei(id)&&bbSpDatei(id).web&&{t:"In SharePoint öffnen",ic:"bbWeb",fn:()=>window.open(bbSpDatei(id).web,"_blank","noopener")},
+    bbDarfWeg(act,id)&&"-",bbDarfWeg(act,id)&&{t:"Löschen",ic:"del",gefahr:true,fn:()=>bbWegFragen(act,id)}].filter(Boolean)); }
+let bbDLp=null;
+document.addEventListener("contextmenu",e=>{ if(typeof nav==="undefined"||nav.v!=="bibliothek") return; const el=e.target.closest&&e.target.closest(BB_DSEL); if(!el) return; e.preventDefault(); if(Date.now()-bbLpZeit<1000) return; bbDateiMenue(el,e.clientX,e.clientY); });
+document.addEventListener("pointerdown",e=>{ if(e.pointerType==="mouse"||typeof nav==="undefined"||nav.v!=="bibliothek") return; const el=e.target.closest&&e.target.closest(BB_DSEL); if(!el) return;
+  const x=e.clientX, y=e.clientY; bbDLp={x,y,t:setTimeout(()=>{ bbDLp=null; bbLpZeit=Date.now(); if(navigator.vibrate) try{ navigator.vibrate(10); }catch(_){} bbDateiMenue(el,x,y); },480)}; });
+document.addEventListener("pointermove",e=>{ if(bbDLp&&Math.hypot(e.clientX-bbDLp.x,e.clientY-bbDLp.y)>10){ clearTimeout(bbDLp.t); bbDLp=null; } });
+["pointerup","pointercancel"].forEach(t=>document.addEventListener(t,()=>{ if(bbDLp){ clearTimeout(bbDLp.t); bbDLp=null; } },true));
+/* nach dem langen Drücken nicht zusätzlich öffnen */
+document.addEventListener("click",e=>{ if(Date.now()-bbLpZeit<700&&e.target.closest&&e.target.closest(BB_DSEL)){ e.stopPropagation(); e.preventDefault(); } },true);
 /* lange drücken (Finger/Stift) */
 let bbLp=null, bbLpZeit=0;
 document.addEventListener("pointerdown",e=>{ if(e.pointerType==="mouse") return; const m=e.target.closest&&e.target.closest(".bb-m[data-k]"); if(!m) return;
@@ -406,6 +452,8 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   else if(a==="bbOeffnen") bbOeffnen(b.dataset.id);
   else if(a==="bbShare") bbShare(b.dataset.id);
   else if(a==="bbFern") bbFern(b.dataset.id);
+  else if(a==="bbWegOk") bbWeg(b.dataset.v,b.dataset.id);
+  else if(a==="bbPvWeg"){ const id=typeof PV!=="undefined"&&PV&&PV.id; if(id) bbWegFragen("bbOeffnen",id); }
 },true);
 document.addEventListener("keydown",e=>{ if(e.key==="Enter"&&e.target.matches&&e.target.matches('#app [data-act="bbOeffnen"]')){ e.preventDefault(); bbOeffnen(e.target.dataset.id); } });
 document.addEventListener("input",e=>{ if(e.target&&e.target.id==="q"&&typeof nav!=="undefined"&&nav.v==="bibliothek"){ query=e.target.value; const r=document.getElementById("res"); if(r) r.innerHTML=bibListe(); } });

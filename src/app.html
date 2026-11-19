@@ -1685,7 +1685,7 @@ function protOpen(){ if(protDB) return Promise.resolve(protDB); return new Promi
 let protGeladen=false;
 async function protLaden(){ try{ const d=await protOpen(); PROT=(await idbReq(d.transaction("meta").objectStore("meta").getAll()))||[]; }catch(e){ PROT=[]; } protGeladen=true; }
 async function protBlob(id){ const d=await protOpen(); return idbReq(d.transaction("blob").objectStore("blob").get(id)); }
-async function protWeg(id){ bbProtWeg(id); const d=await protOpen(); const tx=d.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").delete(id); tx.objectStore("blob").delete(id); await new Promise(r=>{ tx.oncomplete=r; tx.onerror=r; }); PROT=PROT.filter(x=>x.id!==id); }
+async function protWeg(id){ bbProtWeg(id,true); const d=await protOpen(); const tx=d.transaction(["meta","blob"],"readwrite"); tx.objectStore("meta").delete(id); tx.objectStore("blob").delete(id); await new Promise(r=>{ tx.oncomplete=r; tx.onerror=r; }); PROT=PROT.filter(x=>x.id!==id); }
 const BFILTER=[["alle","Alle"],["ok","Bestanden"],["bad","Mit Mängeln"]];
 const protZeit=t=>{ const d=new Date(t); return `${d.toLocaleDateString("de-DE")}, ${d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}`; };
 /* PDFs, die vor der Microsoft-Anmeldung erstellt wurden, einmal in die Bibliothek „Prüfprotokolle“ nachreichen. */
