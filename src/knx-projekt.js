@@ -32,9 +32,16 @@ function kxPA(g,d){ if(d.nr==null||d.nr==="") return ""; const l=kxLinieVonRaum(
 const kxSort=(g,A)=>{ const R=kxRaeume(g).map(x=>x.r.id); return A.slice().sort((a,b)=>R.indexOf(a.raumId)-R.indexOf(b.raumId)||kxRang(a.typ)-kxRang(b.typ)||(a.created||0)-(b.created||0)); };
 const kxGeraete=(g,rid)=>kxSort(g,kxNorm(g).geraete.filter(d=>!rid||d.raumId===rid));
 const kxFertig=d=>d.prog&&d.einb&&d.pruef&&!d.problem;
-function kxZustandText(d){ if(d.problem) return d.problem.art==="defekt"?"defekt":"Problem"; if(kxFertig(d)) return "fertig";
+/* Stellantriebe (Max 20.11.2026, Merten): je Stück kurz prüfen – sa: "ok" (in Ordnung) | "adapter" (Ventiladapter muss dazwischen) | fehlt = noch nicht angeschaut */
+const kxStellTyp=()=>kxTypen().find(t=>t.id==="stell")||kxTypen().find(t=>/stellantrieb/i.test(t.name))||null;
+const kxIstStell=d=>{ const t=kxStellTyp(); return !!t&&d.typ===t.id; };
+const KX_SA=[["","offen"],["ok","in Ordnung"],["adapter","Adapter"]];   /* kurze Knopftexte – passen aufs Handy */
+const kxSaText=d=>d.sa==="ok"?"in Ordnung":d.sa==="adapter"?"Adapter nötig":"nicht geprüft";
+function kxSaZahl(D){ const S=D.filter(kxIstStell); return {n:S.length,ok:S.filter(d=>d.sa==="ok").length,ad:S.filter(d=>d.sa==="adapter").length,offen:S.filter(d=>!d.sa).length}; }
+const kxSaKurz=z=>z.n?[`${z.n} Stellantrieb${z.n===1?"":"e"}`,z.ad&&`${z.ad} Adapter`,z.offen&&`${z.offen} ungeprüft`].filter(Boolean).join(" · "):"";
+function kxZustandText(d){ if(d.problem) return d.problem.art==="defekt"?"defekt":"Problem"; if(kxIstStell(d)&&!kxFertig(d)) return kxSaText(d); if(kxFertig(d)) return "fertig";
   const T=[]; if(d.prog) T.push(d.einb?"programmiert":"vorprogrammiert"); if(d.einb) T.push("eingebaut"); if(d.pruef) T.push("überprüft"); return T.join(" · ")||"offen"; }
-const kxTon=d=>d.problem?(d.problem.art==="defekt"?"bad":"wip"):kxFertig(d)?"ok":"";
+const kxTon=d=>d.problem?(d.problem.art==="defekt"?"bad":"wip"):kxFertig(d)?"ok":kxIstStell(d)&&d.sa==="adapter"?"wip":kxIstStell(d)&&d.sa==="ok"?"ok":"";
 const kxWer=()=>({at:Date.now(),von:(typeof ME!=="undefined"&&(ME.name||ME.mail))||""});
 const kxSpeichern=g=>{ g.knx.updated=Date.now(); ecGebSpeichern(g); };
 const kxGebAkt=()=>{ const g=nav.g&&vtGeb(nav.g); return g&&g.knx&&g.knx.an?(kxNorm(g),g):null; };
@@ -107,17 +114,25 @@ function kxUebView(g){ const G=g.knx.geraete, bus=G.filter(d=>kxTyp(d.typ).bus),
       +`<div class="kx-knoepfe">${L.map(l=>`<button type="button" class="btn-tonal" data-act="kxAdr" data-id="${esc(l.id)}">${icon("kxListe")}Adressen ${esc(l.bereich+"."+l.linie)}</button><button type="button" class="btn-tonal" data-act="kxEti" data-id="${esc(l.id)}">${icon("tag")}Etiketten ${esc(l.bereich+"."+l.linie)}</button>`).join("")}</div>`
     :`<p class="meta">Noch keine Linie. Eine Linie gehört zu einer Gruppe von Räumen, z. B. Raum 403–407 = Linie 6.1. Unten rechts mit „Linie“ anlegen.</p>`}</section>`;
   const typ=`<section class="card">${ecListe([ecLi({lead:icon("kxListe"),kopf:"Gerätearten und Reihenfolge",text:esc(kxTypen().filter(t=>t.bus).slice(0,5).map(t=>t.name).join(" › ")+" …"),act:"kxTypen"})])}</section>`;
-  return `<div class="narrow ec-spalte">${prob}${zahlen}${lin}${typ}</div>`; }
+  const z=kxSaZahl(G), AD=new Map(); G.filter(d=>kxIstStell(d)&&d.sa==="adapter").forEach(d=>AD.set(d.raumId,(AD.get(d.raumId)||0)+1));
+  const stell=z.n?`<section class="card"><h3>Stellantriebe</h3><div class="vu-kacheln">${kachel(z.n,"gesamt","raeume")}${kachel(z.ok,"in Ordnung","raeume")}${kachel(z.ad,"Adapter nötig","raeume")}${kachel(z.offen,"nicht geprüft","raeume")}</div>
+    ${AD.size?`<div class="sec-lbl">Adapter nötig</div>${ecListe(kxRaeume(g).filter(x=>AD.has(x.r.id)).map(x=>ecLi({lead:icon("kxRaum"),ton:"wip",kopf:esc(x.r.name),text:esc(`${AD.get(x.r.id)} Adapter · ${kxGruppe(x)}`),act:"kxRaumAuf",id:x.r.id})))}`:""}</section>`:"";
+  return `<div class="narrow ec-spalte">${prob}${zahlen}${stell}${lin}${typ}</div>`; }
 /* ---- Räume ---- */
 function kxRaeumeView(g){ const R=kxRaeume(g); if(!R.length) return `<div class="narrow"><div class="empty">${icon("kxRaum")}<h2>Noch keine Räume</h2><p>Unten rechts „Räume“: Bauteil, Etage und Raumnummern als Bereich, z. B. 403–407 – in der Reihenfolge, in der du durchgehst.</p></div></div>`;
   const grp=new Map(); R.forEach(x=>{ const k=kxGruppe(x); if(!grp.has(k)) grp.set(k,[]); grp.get(k).push(x); });
   return `<div class="narrow">${[...grp].map(([k,L])=>`<div class="sec-lbl">${esc(k||"Ohne Etage")}</div>${ecListe(L.map(({r})=>{ const D=kxGeraete(g,r.id), l=kxLinieVonRaum(g,r.id), off=D.filter(d=>!kxFertig(d)).length, p=D.filter(d=>d.problem).length;
-      return ecLi({lead:typeof raIcon==="function"?raIcon(raVon(g,r,kxRaumInfo(g,r.id).e)):icon("kxRaum"),ton:p?"bad":D.length&&!off?"ok":"",kopf:esc(r.name),text:esc([D.length?`${D.length} Geräte`:"noch nichts erfasst",D.length?(off?`${off} offen`:"alles fertig"):"",p?`${p} mit Problem`:"",l?`Linie ${l.bereich}.${l.linie}`:""].filter(Boolean).join(" · ")),act:"kxRaumAuf",id:r.id}); }))}`).join("")}</div>`; }
+      return ecLi({lead:typeof raIcon==="function"?raIcon(raVon(g,r,kxRaumInfo(g,r.id).e)):icon("kxRaum"),ton:p?"bad":D.length&&!off?"ok":"",kopf:esc(r.name),text:esc([D.length?`${D.length} Geräte`:"noch nichts erfasst",D.length?(off?`${off} offen`:"alles fertig"):"",p?`${p} mit Problem`:"",kxSaKurz(kxSaZahl(D)),l?`Linie ${l.bereich}.${l.linie}`:""].filter(Boolean).join(" · ")),act:"kxRaumAuf",id:r.id}); }))}`).join("")}</div>`; }
 let KX_ZUSTAND="neu";
-function kxRaumView(g,rid){ const D=kxGeraete(g,rid), T=kxTypen();
+function kxStellKarte(g,rid,D){ const st=kxStellTyp(); if(!st) return ""; const S=D.filter(kxIstStell), z=kxSaZahl(D);
+  const zeile=(d,i)=>`<div class="kx-sa ${d.sa==="adapter"?"wip":d.sa==="ok"?"ok":""}"><button type="button" class="kx-sa-n" data-act="kxGer" data-id="${esc(d.id)}" aria-label="Stellantrieb ${i+1} bearbeiten"><b>${i+1}</b>${d.notiz?`<small>${esc(d.notiz)}</small>`:""}</button>
+    <div class="knx-seg kx-sa-w">${KX_SA.map(([v,t])=>`<button type="button" data-act="kxSa" data-id="${esc(d.id)}" data-v="${v}" aria-pressed="${(d.sa||"")===v}">${t}</button>`).join("")}</div></div>`;
+  return `<section class="card kx-sak"><div class="kx-z${S.length?" hat":""}"><span class="kx-zn"><b>Stellantriebe</b><small>${S.length?esc([z.ok&&`${z.ok} in Ordnung`,z.ad&&`${z.ad} Adapter nötig`,z.offen&&`${z.offen} nicht geprüft`].filter(Boolean).join(" · ")):"wie viele sind im Raum?"}</small></span><button type="button" class="kx-pm" data-act="kxMinus" data-v="${esc(st.id)}" aria-label="Stellantrieb entfernen" ${S.length?"":"disabled"}>−</button><b class="kx-n">${S.length}</b><button type="button" class="kx-pm plus" data-act="kxPlus" data-v="${esc(st.id)}" aria-label="Stellantrieb hinzufügen">+</button></div>
+    ${S.length?`<div class="kx-sal">${S.map(zeile).join("")}</div>${z.offen>1?`<div class="kx-knoepfe"><button type="button" class="btn-tonal" data-act="kxSaAlle">Restliche ${z.offen} in Ordnung</button></div>`:""}`:""}</section>`; }
+function kxRaumView(g,rid){ const D=kxGeraete(g,rid), T=kxTypen().filter(t=>t!==kxStellTyp());
   const zaehl=T.map(t=>{ const n=D.filter(d=>d.typ===t.id).length;
     return `<div class="kx-z${n?" hat":""}"><span class="kx-zn"><b>${esc(t.name)}</b>${t.bus?"":`<small>ohne Busanschluss</small>`}</span><button type="button" class="kx-pm" data-act="kxMinus" data-v="${esc(t.id)}" aria-label="${esc(t.name)} entfernen" ${n?"":"disabled"}>−</button><b class="kx-n">${n}</b><button type="button" class="kx-pm plus" data-act="kxPlus" data-v="${esc(t.id)}" aria-label="${esc(t.name)} hinzufügen">+</button></div>`; }).join("");
-  return `<div class="narrow ec-spalte"><section class="card"><h3>Begehung</h3><p class="meta" style="margin:0 0 10px">Zählen, was in den Raum kommt. Neue Geräte gelten als:</p>
+  return `<div class="narrow ec-spalte">${kxStellKarte(g,rid,D)}<section class="card"><h3>Begehung</h3><p class="meta" style="margin:0 0 10px">Zählen, was in den Raum kommt. Neue Geräte gelten als:</p>
     <div class="knx-seg kx-zst">${[["neu","neu"],["vorhanden","vorhanden"],["ersetzt","ersetzt"]].map(([v,t])=>`<button type="button" data-act="kxZst" data-v="${v}" aria-pressed="${KX_ZUSTAND===v}">${t}</button>`).join("")}</div>
     <div class="kx-zliste">${zaehl}</div></section>
     <section class="card"><h3>Geräte in diesem Raum</h3>${D.length?kxGerListe(g,D):`<p class="meta">Noch keine Geräte – oben zählen.</p>`}</section></div>`; }
@@ -461,9 +476,12 @@ document.addEventListener("click",async ev=>{ const b=ev.target.closest&&ev.targ
   if(a==="kxAdrOk"){ kxAdrOk(b.dataset.id,b.dataset.v==="alle"); return; }
   if(a==="kxEti"){ kxEtiketten(b.dataset.id); return; }
   if(a==="kxZst"){ KX_ZUSTAND=b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); return; }
+  if(a==="kxSa"||a==="kxSaAlle"){ const g=kxGebAkt(); if(!g) return; const L=a==="kxSa"?g.knx.geraete.filter(x=>x.id===b.dataset.id):g.knx.geraete.filter(x=>x.raumId===nav.raum&&kxIstStell(x)&&!x.sa);
+    L.forEach(d=>{ const v=a==="kxSa"?b.dataset.v:"ok"; if(v){ d.sa=v; d.saVon=kxWer(); } else { delete d.sa; delete d.saVon; } });
+    const y=scrollY; kxSpeichern(g); render(); scrollTo(0,y); return; }
   if(a==="kxPlus"||a==="kxMinus"){ const g=kxGebAkt(); if(!g||!nav.raum) return; const t=b.dataset.v;
     if(a==="kxPlus") g.knx.geraete.push({id:uid(),raumId:nav.raum,typ:t,zustand:KX_ZUSTAND,created:Date.now()});
-    else { const D=g.knx.geraete.filter(d=>d.raumId===nav.raum&&d.typ===t), weg=D.slice().reverse().find(d=>!d.prog&&!d.einb&&!d.pruef)||null; if(!weg){ toast("Nur noch bearbeitete Geräte – zum Löschen das Gerät antippen"); return; } g.knx.geraete=g.knx.geraete.filter(d=>d!==weg); }
+    else { const D=g.knx.geraete.filter(d=>d.raumId===nav.raum&&d.typ===t), weg=D.slice().reverse().find(d=>!d.prog&&!d.einb&&!d.pruef&&!d.sa)||D.slice().reverse().find(d=>!d.prog&&!d.einb&&!d.pruef)||null; if(!weg){ toast("Nur noch bearbeitete Geräte – zum Löschen das Gerät antippen"); return; } g.knx.geraete=g.knx.geraete.filter(d=>d!==weg); }
     const y=scrollY; kxSpeichern(g); render(); scrollTo(0,y); return; }
   if(a==="kxSt"){ const g=kxGebAkt(); if(!g) return; const d=g.knx.geraete.find(x=>x.id===b.dataset.id), k=b.dataset.k; if(!d) return; if(d[k]) delete d[k]; else d[k]=kxWer();
     const y=scrollY; kxSpeichern(g); if(b.dataset.dlg){ b.setAttribute("aria-pressed",String(!!d[k])); if(k==="prog"||k==="einb"){ const pb=b.parentElement.querySelector('[data-k="prog"]'); if(pb) pb.firstChild.textContent=d.einb?"programmiert":"vorprogrammiert"; } render(); return; } render(); scrollTo(0,y); return; }
