@@ -1798,6 +1798,16 @@ html body.sc-eng .navbar,html body.sc-eng.rail-open .navbar{transform:translateX
 .kb-seg button[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
 /* ===== KNX-Projekte (knx-projekt.js) ===== */
 .kx-zst{margin-bottom:12px}
+/* Stellantriebe prüfen (Raum) */
+.kx-sak>.kx-z{margin:0}
+.kx-sal{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.kx-sa{display:flex;align-items:center;gap:8px;padding:4px;border-radius:16px;background:var(--sc-high)}
+.kx-sa.ok{background:var(--ok-c)}.kx-sa.wip{background:var(--wip-c)}
+.kx-sa-n{flex:none;width:44px;min-height:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:0;border-radius:12px;background:var(--surface);color:var(--on-surface);font:700 16px var(--font);cursor:pointer;padding:2px}
+.kx-sa-n small{font:500 10px var(--font);color:var(--on-sv);max-width:40px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kx-sa-w{flex:1;min-width:0;background:var(--surface)}.kx-sa-w button{font-size:13px;padding:8px 4px;white-space:nowrap}
+.kx-sa-w button[data-v="ok"][aria-pressed="true"]{background:var(--ok);color:var(--surface)}.kx-sa-w button[data-v="adapter"][aria-pressed="true"]{background:var(--wip);color:#2B2000}
+.kx-sak .kx-knoepfe{margin-top:10px}
 .kx-zliste{display:flex;flex-direction:column;gap:6px}
 .kx-z{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 14px;border-radius:16px;background:var(--sc-high)}
 .kx-z.hat{background:var(--sec-c);color:var(--on-sec-c)}
