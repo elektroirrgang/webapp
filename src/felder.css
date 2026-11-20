@@ -2385,3 +2385,14 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
 .aw-gt{padding:16px 24px 0}.aw-gt b{display:block;font-size:18px}.aw-gt small{display:block;margin-top:4px;color:var(--on-surface-var,#a3a3ab);font-size:14px;line-height:1.4}
 .aw-gf{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px 24px 20px}
 .aw-gan{color:var(--on-surface-var,#a3a3ab);font-size:14px;padding:0 8px}
+
+/* ETS-Projekt lesen (Probe) */
+.ets-k{margin-bottom:4px}
+.ets-p{display:flex;flex-direction:column;gap:4px}.ets-p>div{display:flex;gap:10px;align-items:baseline;padding:8px 12px;border-radius:12px;background:var(--sc-high)}
+.ets-p b{min-width:34px;font-variant-numeric:tabular-nums}.ets-p small,.ets-g small{color:var(--on-sv);font-size:12px}
+.ets-o{border-radius:14px;background:var(--sc-high);margin:0 0 6px;padding:2px 4px}
+.ets-o>summary{display:flex;align-items:baseline;gap:10px;padding:10px 10px;cursor:pointer;list-style:none}.ets-o>summary::-webkit-details-marker{display:none}
+.ets-o>summary small{color:var(--on-sv);font-size:12px;margin-left:auto}
+.ets-g{display:flex;gap:10px;align-items:baseline;padding:7px 10px}
+.ets-g>b{flex:none;min-width:58px;font-variant-numeric:tabular-nums}.ets-g>span{flex:1;min-width:0}
+.ets-g>i{flex:none;font-style:normal;font-size:12px;color:var(--wip,#E0A100);font-weight:600}
