@@ -35,15 +35,19 @@ function awRahmen({titel,unter,schritt,schritte,frage,hinweis,inhalt,fuss}){
 const awKachel=(act,v,bild,t,s,an)=>`<button type="button" class="aw-k" data-act="${act}" data-v="${esc(v)}" aria-pressed="${!!an}">${bild?`<span class="aw-kb">${bild}</span>`:""}<span class="aw-kt"><b>${esc(t)}</b>${s?`<small>${esc(s)}</small>`:""}</span></button>`;
 /* Bild in einer Auswahl-Kachel antippen → große Vorschau (Max 18.11.2026): zum Erkennen des Geräts.
    Text antippen wählt wie bisher aus; in der Vorschau geht beides: „Auswählen“ oder schließen. */
-function awBildGross(kb){ const img=kb.querySelector("img"), k=kb.closest(".aw-k"); if(!img||!k) return;
-  const t=(k.querySelector(".aw-kt b")||{}).textContent||"", s=(k.querySelector(".aw-kt small")||{}).textContent||"", an=k.getAttribute("aria-pressed")==="true";
+function awBildGross(kb,kOpt,inhalt){ const img=kb.querySelector("img"), k=kOpt||kb.closest(".aw-k"); if(!img&&!inhalt||!k) return;
+  const t=(k.querySelector(".aw-kt b,b")||{}).textContent||"", s=[...k.querySelectorAll(kOpt?":scope>small":".aw-kt small")].map(x=>x.textContent).join(" · "), an=k.getAttribute("aria-pressed")==="true";
   const v=document.createElement("div"); v.className="aw-gross"; v.setAttribute("role","dialog"); v.setAttribute("aria-label",t||"Vorschau");
-  v.innerHTML=`<div class="aw-gk"><div class="aw-gb"><img src="${esc(img.currentSrc||img.src)}" alt=""></div><div class="aw-gt"><b>${esc(t)}</b>${s?`<small>${esc(s)}</small>`:""}</div>
+  v.innerHTML=`<div class="aw-gk"><div class="aw-gvb">${inhalt||`<img src="${esc(img.currentSrc||img.src)}" alt="">`}</div><div class="aw-gt"><b>${esc(t)}</b>${s?`<small>${esc(s)}</small>`:""}</div>
     <div class="aw-gf"><button type="button" class="btn-text" data-g="zu">Schließen</button>${an?`<span class="aw-gan">Ausgewählt</span>`:`<button type="button" class="btn-filled" data-g="ok">Auswählen</button>`}</div></div>`;
   v.addEventListener("click",e=>{ const b=e.target.closest("button"); if(b&&b.dataset.g==="ok"){ v.remove(); k.click(); return; } if(b||e.target===v) v.remove(); });
   document.body.appendChild(v); }
 document.addEventListener("click",e=>{ const kb=e.target.closest&&e.target.closest(".aw-k .aw-kb"); if(!kb) return; const img=kb.querySelector("img"); if(!img||!img.naturalWidth) return;
   e.stopImmediatePropagation(); e.preventDefault(); awBildGross(kb); },true);
+/* Schrank-Kachel: Lupe zeigt Foto und Skizze groß (Max 25.11.2026) */
+document.addEventListener("click",e=>{ const z=e.target.closest&&e.target.closest(".zs-mod-zoom"); if(!z) return; e.stopImmediatePropagation(); e.preventDefault();
+  const k=z.closest(".zs-mod"), box=k&&k.querySelector(".zs-mod-svg"); if(!box) return; const img=box.querySelector("img.zs-mod-gross"), sk=box.querySelector(".zs-svg");
+  awBildGross(box,k,`<div class="zs-mod-gv">${img?`<img src="${esc(img.currentSrc||img.src)}" alt="">`:""}${sk?sk.outerHTML:""}</div>`); },true);
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ const g=document.querySelector(".aw-gross"); if(g){ g.remove(); e.stopImmediatePropagation(); } } },true);
 function awZu(){ AW=null; $("#dlg").classList.remove("aw"); closeOverlays(); render(); }
 
