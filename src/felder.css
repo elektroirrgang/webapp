@@ -1356,9 +1356,10 @@ a.dz{color:inherit;text-decoration:none;border-radius:12px}
 /* Schrank-Auswahl: große Kacheln mit Produktfoto, Skizze klein darunter, Lupe für die Vorschau (Max 25.11.2026) */
 .aw-g.zs-mod .zs-mod-svg{position:relative;height:176px;background:#fff;padding:8px;overflow:hidden}
 .zs-mod-gross{max-width:100%;max-height:100%;object-fit:contain}
-.zs-mod-svg .zs-mod-skizze{position:absolute;left:6px;bottom:6px;width:46px;padding:3px;border-radius:8px;background:var(--sc-high)}.zs-mod-skizze .zs-svg.klein{width:40px!important}
-.zs-mod-zoom{position:absolute;right:6px;top:6px;width:36px;height:36px;display:grid;place-items:center;border-radius:18px;background:rgba(0,0,0,.55);color:#fff}.zs-mod-zoom .ic{width:20px;height:20px}
-.zs-mod-gv{display:flex;gap:12px;align-items:center;justify-content:center;max-width:100%}.zs-mod-gv img{max-width:62%;max-height:52dvh;object-fit:contain}.zs-mod-gv .zs-svg{height:min(44dvh,360px)!important;width:auto!important;max-width:36%!important;max-height:none!important}
+.aw-g.zs-mod .zs-mod-svg:has(img.zs-mod-gross){cursor:zoom-in}
+.zs-mod-gv{display:flex;gap:16px;align-items:flex-end;justify-content:center;max-width:100%}.zs-mod-gv figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
+.zs-mod-gv figcaption{font:600 13px var(--font);color:#555}.zs-mod-gv img{max-width:100%;max-height:48dvh;object-fit:contain}.zs-mod-gv figure:first-child{flex:1.6}.zs-mod-gv figure+figure{flex:1}
+.zs-mod-gv .zs-svg{height:min(40dvh,330px)!important;width:auto!important;max-width:100%!important;max-height:none!important}
 .zs-hw.zs-hw-frei{margin:0}.zs-hw.zs-hw-frei p{background:var(--wip-c);color:var(--on-wip-c)}
 .zs-neu-frei{margin-top:0}
 .leg-typ{margin:4px 0 10px;background:var(--sc-high)}
