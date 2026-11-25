@@ -115,7 +115,7 @@ function vmTrimmen(img){ if(img.dataset.trim||!img.naturalWidth) return; img.dat
     const r=Math.round(Math.max(x1-x0,y1-y0)*.04), ax=Math.max(0,x0-r), ay=Math.max(0,y0-r), bw=Math.min(w,x1+r+1)-ax, bh=Math.min(h,y1+r+1)-ay;
     const s=Math.min(1,Math.max(W,H)/600)/f, c2=document.createElement("canvas"); c2.width=Math.round(bw/f); c2.height=Math.round(bh/f);
     c2.getContext("2d").drawImage(img,ax/f,ay/f,bw/f,bh/f,0,0,c2.width,c2.height); img.src=c2.toDataURL("image/png"); }catch(e){} }
-document.addEventListener("load",e=>{ const t=e.target; if(t&&t.tagName==="IMG"&&t.closest&&t.closest(".vm-b")) vmTrimmen(t); },true);
+document.addEventListener("load",e=>{ const t=e.target; if(t&&t.tagName==="IMG"&&t.closest&&t.closest(".vm-b,.zs-mod-svg,.zs-kfoto")) vmTrimmen(t); },true);   /* auch Schrankfotos in der Auswahl und im Kopf der Zählerschrank-Karte (Max 25.11.2026: „mittig“) */
 /* Bild in der Materialliste antippen → große Vorschau mit Name und Artikel (wie in der Geräteauswahl) */
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest(".vm-z .vm-b"); if(!b) return; const img=b.querySelector("img"); if(!img||!img.naturalWidth) return;
   e.stopImmediatePropagation(); e.preventDefault(); const z=b.closest(".vm-z"), t=(z.querySelector(".vm-t b")||{}).textContent||"", u=(z.querySelector(".vm-t small")||{}).textContent||"", n=(z.querySelector(".vm-n")||{}).textContent||"";
