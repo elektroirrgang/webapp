@@ -67,7 +67,11 @@ function ktSpeichern(del){
 let karteWahl={};
 const KARTE={el:null,map:null,mk:null,stil:"",lib:null};
 const kDunkel=()=>{ const t=document.documentElement.dataset.theme; return t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches; };
-function karteOrte(r,ss){ const o=[]; const a=adrText(r); if(a) o.push({id:r.id,t:ss.length?"Hauptsitz":"Adresse",a});
+/* Hauptsitz heißt bei Privatkunden „Wohnsitz“ (Max 25.11.2026) – gleiches Geschlecht, die Sätze bleiben gleich */
+const hsW=k=>k&&k.art==="privat"?"Wohnsitz":"Hauptsitz";
+const hsWk=kid=>hsW(kid&&(typeof kundeOf==="function"?kundeOf(kid):DB.kunden&&DB.kunden.get(kid)));
+const hsWo=sid=>hsWk(typeof sid==="string"&&sid.startsWith("k:")?sid.slice(2):"");
+function karteOrte(r,ss){ const o=[]; const a=adrText(r); if(a) o.push({id:r.id,t:ss.length?hsW(r):"Adresse",a});
   ss.forEach(x=>{ const b=adrText(x); if(b&&!o.some(y=>y.a===b)) o.push({id:x.id,t:x.name||"Standort",a:b}); }); return o; }
 function karteView(r,ss){
   const O=karteOrte(r,ss); if(!O.length) return `<div class="kd-karte leer"><span class="kd-lade">${icon("ort")}<span>Keine Adresse hinterlegt</span></span></div>`;
@@ -301,7 +305,7 @@ function kdDlgErweitern(kind,rec){ const d=document.getElementById("dlg"), fg=d&
   /* Kunde bearbeiten: „Mit Kunde zusammenführen“ (Chef und Büro) */
   if(kind==="kunden"&&rec&&rec.id&&(ME.admin||ME.buero)) fg.insertAdjacentHTML("beforeend",`<div class="list" style="margin-top:16px"><div class="li" role="button" tabindex="0" data-act="kdmAsk" data-id="${esc(rec.id)}"><span class="av">${icon("move")}</span><span class="lt"><span class="h">Mit Kunde zusammenführen</span><span class="s">Doppelt angelegt? Beide werden zu einem – Standorte, Prüfungen und alle Daten bleiben</span></span>${icon("chev")}</div></div>`);
   /* Standort bearbeiten: „Zum Hauptsitz machen“ (Chef und Büro) */
-  if(kind==="standorte"&&rec&&rec.id&&(ME.admin||ME.buero)) fg.insertAdjacentHTML("beforeend",`<div class="list" style="margin-top:16px"><div class="li" role="button" tabindex="0" data-act="ortMergeAsk" data-id="${esc(rec.id)}"><span class="av">${icon("move")}</span><span class="lt"><span class="h">Zusammenführen</span><span class="s">Doppelt angelegt? In den Hauptsitz oder einen anderen Standort übernehmen – alle Daten bleiben</span></span>${icon("chev")}</div><div class="li" role="button" tabindex="0" data-act="hsTauschAsk" data-id="${esc(rec.id)}"><span class="av">${icon("firma")}</span><span class="lt"><span class="h">Zum Hauptsitz machen</span><span class="s">Wenn die Firma ihre Zentrale hierher verlegt – der bisherige Hauptsitz wird ein Standort</span></span>${icon("chev")}</div></div>`);
+  if(kind==="standorte"&&rec&&rec.id&&(ME.admin||ME.buero)) fg.insertAdjacentHTML("beforeend",`<div class="list" style="margin-top:16px"><div class="li" role="button" tabindex="0" data-act="ortMergeAsk" data-id="${esc(rec.id)}"><span class="av">${icon("move")}</span><span class="lt"><span class="h">Zusammenführen</span><span class="s">Doppelt angelegt? In den ${hsWk(rec.kundeId)} oder einen anderen Standort übernehmen – alle Daten bleiben</span></span>${icon("chev")}</div><div class="li" role="button" tabindex="0" data-act="hsTauschAsk" data-id="${esc(rec.id)}"><span class="av">${icon("firma")}</span><span class="lt"><span class="h">Zum ${hsWk(rec.kundeId)} machen</span><span class="s">${hsWk(rec.kundeId)==="Wohnsitz"?"Wenn der Kunde hierher umzieht – der bisherige Wohnsitz wird ein Standort":"Wenn die Firma ihre Zentrale hierher verlegt – der bisherige Hauptsitz wird ein Standort"}</span></span>${icon("chev")}</div></div>`);
   if(typeof parkDlgFelder==="function") parkDlgFelder(d,rec);
   adrHelfer(d);
 }
@@ -466,13 +470,13 @@ function hsTauschAsk(sid){ const s=DB.standorte&&DB.standorte.get(sid), k=s&&DB.
   if(!(ME.admin||ME.buero)){ toast("Das dürfen Chef und Büro"); return; }
   const alt=typeof adrText==="function"?adrText(k):"", neu=typeof adrText==="function"?adrText(s):"";
   if(!neu){ toast("Keine Adresse hinterlegt – doppelt angelegt? Dann „Zusammenführen“ nehmen"); return; }
-  dialog("Zum Hauptsitz machen?",`<p style="margin:0 0 12px"><b>${esc(s.name)}</b> wird der neue Hauptsitz von ${esc(k.name)}.</p>
-    <ul style="margin:0 0 12px;padding-left:20px;line-height:1.55"><li>Neue Adresse beim Kunden: ${esc(neu)}</li><li>Der bisherige Hauptsitz${alt?` (${esc(alt)})`:""} wird ein normaler Standort.</li><li>Prüfungen, Ladeparks, Geräte, Baustellen und Aufträge ziehen mit ihrem Ort mit – es geht nichts verloren.</li></ul>
-    <div class="fg1">${tf("hstName","Name für den bisherigen Hauptsitz",k.ort||"",{form:true,ph:"z. B. Rommelsdorf"})}</div>
+  dialog(`Zum ${hsW(k)} machen?`,`<p style="margin:0 0 12px"><b>${esc(s.name)}</b> wird der neue ${hsW(k)} von ${esc(k.name)}.</p>
+    <ul style="margin:0 0 12px;padding-left:20px;line-height:1.55"><li>Neue Adresse beim Kunden: ${esc(neu)}</li><li>Der bisherige ${hsW(k)}${alt?` (${esc(alt)})`:""} wird ein normaler Standort.</li><li>Prüfungen, Ladeparks, Geräte, Baustellen und Aufträge ziehen mit ihrem Ort mit – es geht nichts verloren.</li></ul>
+    <div class="fg1">${tf("hstName",`Name für den bisherigen ${hsW(k)}`,k.ort||"",{form:true,ph:"z. B. Rommelsdorf"})}</div>
     <p class="sup" style="margin:12px 0 0">Dokumente und Fotos im Kundenordner bleiben, wo sie liegen.</p>`,
-    `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="hsTauschOk" data-id="${esc(sid)}">Hauptsitz wechseln</button>`); }
+    `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="hsTauschOk" data-id="${esc(sid)}">${hsW(k)} wechseln</button>`); }
 function hsTauschAusfuehren(sid,name){ const s=DB.standorte.get(sid), k=s&&DB.kunden.get(s.kundeId); if(!s||!k) return;
-  const K=k.id, n={id:uid(),kundeId:K,name:name||"Bisheriger Hauptsitz",notiz:""};
+  const K=k.id, n={id:uid(),kundeId:K,name:name||"Bisheriger "+hsW(k),notiz:""};
   HST_ORT.forEach(f=>{ if(k[f]!==undefined&&k[f]!=="") n[f]=JSON.parse(JSON.stringify(k[f])); });
   saveRec("standorte",n,true);
   HST_ORT.forEach(f=>{ if(s[f]!==undefined&&s[f]!=="") k[f]=JSON.parse(JSON.stringify(s[f])); else delete k[f]; });
@@ -514,9 +518,9 @@ function hsTauschLauf(){ if(typeof DB==="undefined"||!DB.einstellungen||typeof K
   return n; }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="hsTauschAsk"],[data-act="hsTauschOk"]'); if(!b) return; e.stopImmediatePropagation(); e.preventDefault();
   if(b.dataset.act==="hsTauschAsk"){ closeOverlays(); hsTauschAsk(b.dataset.id); return; }
-  const nm=(document.querySelector('#dlg [data-f="hstName"]')||{}).value||""; if(!nm.trim()){ toast("Bitte einen Namen für den bisherigen Hauptsitz eingeben"); return; }
+  const nm=(document.querySelector('#dlg [data-f="hstName"]')||{}).value||""; if(!nm.trim()){ toast(`Bitte einen Namen für den bisherigen ${hsWk((DB.standorte.get(b.dataset.id)||{}).kundeId)} eingeben`); return; }
   const s=DB.standorte.get(b.dataset.id), K=s&&s.kundeId; closeOverlays(); const n=hsTauschAusfuehren(b.dataset.id,nm.trim()); if(!n) return;
-  toast(`${s.name} ist jetzt der Hauptsitz – „${n.name}“ ist ein Standort`);
+  toast(`${s.name} ist jetzt der ${hsWk(K)} – „${n.name}“ ist ein Standort`);
   if(typeof go==="function") go({v:"kunde",id:K}); else if(typeof render==="function") render(); },true);
 addEventListener("load",()=>setTimeout(()=>{ try{ if(hsTauschLauf()&&typeof render==="function") render(); }catch(e){} },4000));
 setInterval(()=>{ try{ if(hsTauschLauf()&&typeof softRender==="function") softRender(); }catch(e){} },30000);
@@ -527,7 +531,7 @@ setInterval(()=>{ try{ if(hsTauschLauf()&&typeof softRender==="function") softRe
    Alles, was am Standort hing, hängt danach am Ziel – über einen Auftrag in „einstellungen“ (typ "ortMerge"), den jede App für ihre Daten umsetzt. */
 function ortMergeAsk(sid){ const s=DB.standorte&&DB.standorte.get(sid), k=s&&DB.kunden.get(s.kundeId); if(!s||!k) return;
   if(!(ME.admin||ME.buero)){ toast("Das dürfen Chef und Büro"); return; }
-  const Z=[["k:"+k.id,"Hauptsitz",adrText(k)||"Adresse des Kunden"],...live("standorte").filter(x=>x.kundeId===k.id&&x.id!==sid).sort((a,b)=>String(a.name).localeCompare(String(b.name),"de")).map(x=>[x.id,x.name||"Standort",adrText(x)||""])];
+  const Z=[["k:"+k.id,hsW(k),adrText(k)||"Adresse des Kunden"],...live("standorte").filter(x=>x.kundeId===k.id&&x.id!==sid).sort((a,b)=>String(a.name).localeCompare(String(b.name),"de")).map(x=>[x.id,x.name||"Standort",adrText(x)||""])];
   dialog("Zusammenführen",`<p style="margin:0 0 12px"><b>${esc(s.name)}</b> wird übernommen von …</p>
     <div class="list wahl">${Z.map(([id,n,a])=>`<div class="li" role="button" tabindex="0" data-act="ortMergeOk" data-von="${esc(sid)}" data-nach="${esc(id)}"><span class="av">${icon(id.startsWith("k:")?"firma":"ort")}</span><span class="lt"><span class="h">${esc(n)}</span>${a?`<span class="s">${esc(a)}</span>`:""}</span></div>`).join("")}</div>
     <p class="sup" style="margin:12px 0 0">Prüfungen, Ladeparks, Geräte, Ansprechpartner, Baustellen, Aufträge, E-Checks und Anlagen kommen mit. „${esc(s.name)}“ verschwindet danach aus der Liste. Dokumente im Kundenordner bleiben, wo sie liegen.</p>`,
@@ -561,7 +565,7 @@ function ortMergeEin(t){ const HQ="k:"+t.kundeId, hq=t.nach===HQ; let n=0;
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="ortMergeAsk"],[data-act="ortMergeOk"]'); if(!b) return; e.stopImmediatePropagation(); e.preventDefault();
   if(b.dataset.act==="ortMergeAsk"){ closeOverlays(); ortMergeAsk(b.dataset.id); return; }
   const s=DB.standorte.get(b.dataset.von), K=s&&s.kundeId, nach=b.dataset.nach; closeOverlays(); const z=ortMergeAusfuehren(b.dataset.von,nach); if(!z) return;
-  toast(`„${s.name}“ ist jetzt Teil von ${nach.startsWith("k:")?"Hauptsitz":"„"+(z.name||"Standort")+"“"}`);
+  toast(`„${s.name}“ ist jetzt Teil von ${nach.startsWith("k:")?hsWk(K):"„"+(z.name||"Standort")+"“"}`);
   if(typeof go==="function") go({v:"kunde",id:K}); else if(typeof render==="function") render(); },true);
 
 /* Gebäude/Verteiler eines Orts in einen anderen übernehmen (feste ID „g-<ortId>“): fehlt das Ziel, wird verschoben, sonst Listen zusammengelegt */
@@ -598,7 +602,7 @@ function kdMergeBestaetigen(a,b,bleibt){ const A=DB.kunden.get(a), B=DB.kunden.g
   dialog("Kunden zusammenführen",`<div class="lbl" style="margin:0 4px 6px">Welcher Eintrag bleibt (Name)?</div>
     <div class="list wahl">${[A,B].map(x=>`<div class="li" role="button" tabindex="0" data-act="kdmBleibt" data-a="${esc(a)}" data-b="${esc(b)}" data-bleibt="${esc(x.id)}"${x===Z?' aria-current="true" style="background:var(--sc-highest)"':""}><span class="av">${icon(x===Z?"check":"firma")}</span><span class="lt"><span class="h">${esc(x.name)}${x===Z?" · bleibt":""}</span><span class="s">${info(x)}</span></span></div>`).join("")}</div>
     <ul style="margin:12px 0 0;padding-left:20px;line-height:1.55;font-size:14px"><li>Fehlende Angaben werden ergänzt, Telefonnummern, Ansprechpartner und Geräte zusammengelegt.</li>
-      <li>${gleich?"Gleicher Hauptsitz – wird zu einem.":`Verschiedene Adressen – der Sitz von „${esc(W.name)}“ (${esc(adrText(W))}) wird ein Standort.`}</li>
+      <li>${gleich?`Gleicher ${hsW(Z)} – wird zu einem.`:`Verschiedene Adressen – der Sitz von „${esc(W.name)}“ (${esc(adrText(W))}) wird ein Standort.`}</li>
       <li>Standorte, Prüfungen, Ladeparks, Baustellen, Aufträge, E-Checks, Anlagen und Dateien ziehen alle mit. Gleich benannte Standorte werden zusammengelegt.</li></ul>`,
     `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="kdmOk" data-z="${esc(Z.id)}" data-w="${esc(W.id)}">Zusammenführen</button>`); }
 function kdMergeAusfuehren(zid,wid){ const z=DB.kunden.get(zid), w=DB.kunden.get(wid); if(!z||!w||zid===wid||w.deleted) return null;
