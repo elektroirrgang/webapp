@@ -94,6 +94,8 @@ function vmZs(L){ const zs=L.zs; if(!zs||!zs.felder||!zs.felder.length) return [
   const sonder=t=>{ if(zs.modell&&/^Zählerschrank /.test(t)) return {titel:`Zählerschrank ${zs.modell.name||""}`.trim(),unter:`${herst(zs.modell.h)} · ${zs.modell.hnr}`,bild:mod&&mod.bild?bildLokal(mod.bild):"",ic:"zsSchrank"};
     if(u&&t.startsWith("Überspannungsschutz ")&&t.includes(u.nr)){ const b=typeof ZS_USS_BILD!=="undefined"&&ZS_USS_BILD[u.nr]?`../bilder/zs/${ZS_USS_BILD[u.nr][0]}`:u.bild;
       return {titel:`Überspannungsschutz ${u.name.replace(/^\S+\s+(Contact\s+)?/,"")}`,unter:`${u.name.split(" ")[0]==="Phoenix"?"Phoenix Contact":u.name.split(" ")[0]} · ${u.nr}${typeof ZS_USS_ABGRIFF!=="undefined"&&ZS_USS_ABGRIFF.has(u.nr)?" · mit Spannungsabgriff für RfZ/APZ":""}`,bild:b?bildLokal(b):"",ic:"zsBlitz"}; }
+    { const m=t.match(/^Hauptschalter (.+) \(([^)]+)\)$/); if(m){ const i=MAT_INFO[m[2]], e=typeof ZS_HS!=="undefined"&&ZS_HS.find(x=>x[0]===m[2]);
+      return {titel:`Hauptschalter ${m[1].replace(/^\S+\s+/,"")}`,unter:[m[1].split(" ")[0],m[2],e&&e[2]].filter(Boolean).join(" · "),bild:i&&i.bild?bildLokal(i.bild):"",ic:"zsSchrank"}; } }
     if(/\(ZZ45WAN150\)$/.test(t)) return {titel:"RJ45-Patchleitung WAN, blau, 1,5 m",unter:"Hager · ZZ45WAN150 · liegt dem Hager-Schrank bei",bild:MAT_INFO.ZZ45WAN150&&MAT_INFO.ZZ45WAN150.bild?bildLokal(MAT_INFO.ZZ45WAN150.bild):"",ic:"ecNetz"};
     { const m=t.match(/^Hauptleitungsabzweigklemme Pollmann (HLAK 35-1\/(\d)) M2, (\d) Abgänge$/); if(m){ const i=MAT_INFO["HLAK35-1/"+m[2]];
       return {titel:`Hauptleitungsabzweigklemme ${m[1]} M2`,unter:`Pollmann · ${m[3]} Abgänge · L1 braun · L2 schwarz · L3 grau · N blau · PE grün`,bild:i&&i.bild?bildLokal(i.bild):"",ic:"zsBlitz"}; } }
