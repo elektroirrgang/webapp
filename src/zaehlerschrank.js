@@ -151,12 +151,15 @@ function zsAusModell(m,b,alt){ const felder=m.felder.map(x=>x.typ==="z"?{id:uid(
   const zs={felder,apz:{feldId:af.id,lage:ai>=0?m.felder[ai].apz:"unten"},zp:[],hoehe:m.hoehe||1100,nb:alt&&alt.nb,hersteller:m.h,steuerbar:zsBedarfSteuer(b),bedarf:{...b},modell:{h:m.h,hnr:m.hnr,name:m.name,bild:m.bild||""}};
   zsZpAusBedarf(zs,b); return zs; }
 const zsModAnz=(m,t)=>m.felder.filter(f=>f.typ===t).length;
+/* Kachel für ein Schrankmodell: Produktfoto groß, Skizze klein, Lupe → Vorschau */
+function zsModKarte(m,zsB,b,act,an){ const foto=m.bild?(typeof bildLokal==="function"?bildLokal(m.bild):m.bild):"", sk=zsSvg(zsAusModell(m,b,zsB),0,true);
+  return `<button type="button" class="aw-g zs-mod" data-act="${act}" data-v="${esc(m.hnr)}"${an?' aria-pressed="true"':""}><span class="aw-gb zs-mod-svg">${foto?`<img class="zs-mod-gross" src="${esc(foto)}" alt="" loading="lazy" onerror="this.remove()"><span class="zs-mod-skizze">${sk}</span>`:sk}<span class="zs-mod-zoom" role="button" aria-label="Vorschau">${icon("search")}</span></span><b>${esc(m.name)}</b><small>${esc(zsModText(m))}</small><small class="zs-mod-nr">${esc(zsHerstText(m.h).split(" ")[0])} ${esc(m.hnr)}</small></button>`; }
 function zsModellFenster(d){ const b=d.bedarf, need=Math.max(1,zsBedarfZp(b)), vf=Math.max(1,+b.vf||1), mm=+b.mm||0, A=ZS_MODELLE.filter(m=>m.h===d.hersteller);
   const ueber=m=>(zsModPlaetze(m)-need)+(zsModAnz(m,"v")-vf)*2+(zsModAnz(m,"m")-mm)*2;
   const passt=A.filter(m=>zsModPlaetze(m)>=need&&zsModAnz(m,"v")>=vf&&zsModAnz(m,"m")>=mm).sort((a,c)=>ueber(a)-ueber(c)||(a.hoehe||0)-(c.hoehe||0)||(a.breite||0)-(c.breite||0));
   const genau=passt.filter(m=>zsModPlaetze(m)===need&&zsModAnz(m,"v")===vf&&zsModAnz(m,"m")===mm), groesser=passt.filter(m=>!genau.includes(m));
   const was=zsBedarfSumText(b).split(" · ").filter(x=>!/Zählerfeld/.test(x)).join(", ");
-  const karte=m=>`<button type="button" class="aw-g zs-mod" data-act="awModell" data-v="${esc(m.hnr)}"${d.zs&&d.zs.modell&&d.zs.modell.hnr===m.hnr?' aria-pressed="true"':""}><span class="aw-gb zs-mod-svg">${zsSvg(zsAusModell(m,b,d.zs),0,true)}${m.bild?`<img class="zs-mod-foto" src="${esc(typeof bildLokal==="function"?bildLokal(m.bild):m.bild)}" alt="" loading="lazy" onerror="this.remove()">`:""}</span><b>${esc(m.name)}</b><small>${esc(zsModText(m))}</small><small class="zs-mod-nr">${esc(zsHerstText(m.h).split(" ")[0])} ${esc(m.hnr)}</small></button>`;
+  const karte=m=>zsModKarte(m,d.zs,b,"awModell",d.zs&&d.zs.modell&&d.zs.modell.hnr===m.hnr);
   /* Immer zuerst: Schrank aus Leergehäuse und Feldern, genau nach Bedarf – wie im Konfigurator von zaehlerschrank24.de */
   const eig=zsAusBedarf(b,null), gg=zsGeo(eig), ft=eig.felder.map(f=>ZS_TYP_KURZ[f.typ]).join(" · ");
   const frei=`<button type="button" class="aw-g zs-mod" data-act="awModell" data-v=""${d.ohneModell?' aria-pressed="true"':""}><span class="aw-gb zs-mod-svg">${zsSvg(eig,0,true)}</span><b>Aus Feldern zusammengestellt</b><small>${gg.schr.map(c=>c.B).join(" + ")} × ${gg.H} mm${gg.schr.length>1?` · ${gg.schr.length} Schränke`:""}</small><small class="zs-mod-nr">${esc(ft)}</small></button>`;
@@ -165,7 +168,7 @@ function zsModellFenster(d){ const b=d.bedarf, need=Math.max(1,zsBedarfZp(b)), v
       ${groesser.length?`<div class="aw-lbl">Fertige Modelle · größer</div><div class="aw-grid">${groesser.map(karte).join("")}</div>`:""}`}; }
 /* Schrank wechseln: Hersteller wählen, Modell antippen – Zählerplätze (Zweck, Art, SLS, Nummer), Bestand, HAK, NB, Geräte bleiben, Felder kommen vom Modell */
 function zsWechselFenster(zs){ const h=AW.mh||zs.hersteller||(zs.modell&&zs.modell.h)||"hager", A=ZS_MODELLE.filter(m=>m.h===h), cur=zs.modell&&zs.modell.hnr;
-  const karte=m=>`<button type="button" class="aw-g zs-mod" data-act="zsModW" data-v="${esc(m.hnr)}"${cur===m.hnr?' aria-pressed="true"':""}><span class="aw-gb zs-mod-svg">${zsSvg(zsAusModell(m,zs.bedarf||zsBedarfStd(),zs),0,true)}${m.bild?`<img class="zs-mod-foto" src="${esc(typeof bildLokal==="function"?bildLokal(m.bild):m.bild)}" alt="" loading="lazy" onerror="this.remove()">`:""}</span><b>${esc(m.name)}</b><small>${esc(zsModText(m))}</small><small class="zs-mod-nr">${esc(zsHerstText(m.h).split(" ")[0])} ${esc(m.hnr)}</small></button>`;
+  const karte=m=>zsModKarte(m,zs,zs.bedarf||zsBedarfStd(),"zsModW",cur===m.hnr);
   return {frage:"Welcher Schrank?",hinweis:"Antippen übernimmt Felder, Höhe und APZ des Modells. Zählerplätze, Bestand, HAK und Netzbetreiber bleiben.",
     inhalt:`<div class="knx-seg zs-hseg">${ZS_HERST.filter(x=>x[0]!=="andere").map(([k,t])=>`<button type="button" data-act="zsModH" data-v="${k}" aria-pressed="${h===k}">${esc(t)}</button>`).join("")}</div>
       <div class="aw-grid" style="margin-top:12px"><button type="button" class="aw-g zs-mod" data-act="zsModW" data-v=""${cur?"":' aria-pressed="true"'}><span class="aw-gb zs-mod-svg">${zsSvg(zs,0,true)}</span><b>Kein Komplettschrank</b><small>Felder bleiben wie sie sind – eigener Aufbau oder unbekannt</small></button>${A.map(karte).join("")}</div>`}; }

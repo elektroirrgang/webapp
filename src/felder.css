@@ -1353,6 +1353,12 @@ a.dz{color:inherit;text-decoration:none;border-radius:12px}
 .zs-knoepfe{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.zs-knoepfe .btn-tonal{flex:1 1 150px;display:inline-flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 12px;white-space:nowrap}.zs-knoepfe .btn-tonal .ic{width:20px;height:20px;margin:0}
 .zs-k-schrank .zs-bild-tg{margin:4px 0 0}
 .zs-kr{font-size:13px;font-weight:600;color:var(--on-sv)}
+/* Schrank-Auswahl: große Kacheln mit Produktfoto, Skizze klein darunter, Lupe für die Vorschau (Max 25.11.2026) */
+.aw-g.zs-mod .zs-mod-svg{position:relative;height:176px;background:#fff;padding:8px;overflow:hidden}
+.zs-mod-gross{max-width:100%;max-height:100%;object-fit:contain}
+.zs-mod-svg .zs-mod-skizze{position:absolute;left:6px;bottom:6px;width:46px;padding:3px;border-radius:8px;background:var(--sc-high)}.zs-mod-skizze .zs-svg.klein{width:40px!important}
+.zs-mod-zoom{position:absolute;right:6px;top:6px;width:36px;height:36px;display:grid;place-items:center;border-radius:18px;background:rgba(0,0,0,.55);color:#fff}.zs-mod-zoom .ic{width:20px;height:20px}
+.zs-mod-gv{display:flex;gap:12px;align-items:center;justify-content:center;max-width:100%}.zs-mod-gv img{max-width:62%;max-height:52dvh;object-fit:contain}.zs-mod-gv .zs-svg{height:min(44dvh,360px)!important;width:auto!important;max-width:36%!important;max-height:none!important}
 .zs-hw.zs-hw-frei{margin:0}.zs-hw.zs-hw-frei p{background:var(--wip-c);color:var(--on-wip-c)}
 .zs-neu-frei{margin-top:0}
 .leg-typ{margin:4px 0 10px;background:var(--sc-high)}
@@ -2395,8 +2401,9 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
 .aw-k .aw-kb:has(img){cursor:zoom-in}
 .aw-gross{position:fixed;inset:0;z-index:420;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.72)}
 .aw-gk{width:min(420px,100%);max-height:calc(100dvh - 32px);display:flex;flex-direction:column;border-radius:28px;background:var(--sc-high,#2b2b30);color:var(--on-surface);overflow:hidden}
-.aw-gb{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#fff;padding:16px}
-.aw-gb img{display:block;max-width:100%;max-height:62dvh;object-fit:contain}
+.aw-gvb{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#fff;padding:16px}
+.aw-gvb img{display:block;max-width:100%;max-height:62dvh;object-fit:contain}
+.aw-gvb .zs-svg{width:auto!important;height:min(52dvh,420px)!important;max-width:100%!important;max-height:none!important}
 .aw-gt{padding:16px 24px 0}.aw-gt b{display:block;font-size:18px}.aw-gt small{display:block;margin-top:4px;color:var(--on-surface-var,#a3a3ab);font-size:14px;line-height:1.4}
 .aw-gf{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px 24px 20px}
 .aw-gan{color:var(--on-surface-var,#a3a3ab);font-size:14px;padding:0 8px}
