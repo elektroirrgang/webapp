@@ -163,6 +163,19 @@ function zsModellFenster(d){ const b=d.bedarf, need=Math.max(1,zsBedarfZp(b)), v
   return {frage:"Welcher Schrank?",hinweis:`Für ${was}. Antippen übernimmt Felder, Höhe und APZ.`,
     inhalt:`<div class="aw-lbl">Passt genau</div><div class="aw-grid">${frei}${genau.map(karte).join("")}</div>
       ${groesser.length?`<div class="aw-lbl">Fertige Modelle · größer</div><div class="aw-grid">${groesser.map(karte).join("")}</div>`:""}`}; }
+/* Schrank wechseln: Hersteller wählen, Modell antippen – Zählerplätze (Zweck, Art, SLS, Nummer), Bestand, HAK, NB, Geräte bleiben, Felder kommen vom Modell */
+function zsWechselFenster(zs){ const h=AW.mh||zs.hersteller||(zs.modell&&zs.modell.h)||"hager", A=ZS_MODELLE.filter(m=>m.h===h), cur=zs.modell&&zs.modell.hnr;
+  const karte=m=>`<button type="button" class="aw-g zs-mod" data-act="zsModW" data-v="${esc(m.hnr)}"${cur===m.hnr?' aria-pressed="true"':""}><span class="aw-gb zs-mod-svg">${zsSvg(zsAusModell(m,zs.bedarf||zsBedarfStd(),zs),0,true)}${m.bild?`<img class="zs-mod-foto" src="${esc(typeof bildLokal==="function"?bildLokal(m.bild):m.bild)}" alt="" loading="lazy" onerror="this.remove()">`:""}</span><b>${esc(m.name)}</b><small>${esc(zsModText(m))}</small><small class="zs-mod-nr">${esc(zsHerstText(m.h).split(" ")[0])} ${esc(m.hnr)}</small></button>`;
+  return {frage:"Welcher Schrank?",hinweis:"Antippen übernimmt Felder, Höhe und APZ des Modells. Zählerplätze, Bestand, HAK und Netzbetreiber bleiben.",
+    inhalt:`<div class="knx-seg zs-hseg">${ZS_HERST.filter(x=>x[0]!=="andere").map(([k,t])=>`<button type="button" data-act="zsModH" data-v="${k}" aria-pressed="${h===k}">${esc(t)}</button>`).join("")}</div>
+      <div class="aw-grid" style="margin-top:12px"><button type="button" class="aw-g zs-mod" data-act="zsModW" data-v=""${cur?"":' aria-pressed="true"'}><span class="aw-gb zs-mod-svg">${zsSvg(zs,0,true)}</span><b>Kein Komplettschrank</b><small>Felder bleiben wie sie sind – eigener Aufbau oder unbekannt</small></button>${A.map(karte).join("")}</div>`}; }
+function zsModellAnwenden(alt,m){ if(!m){ const zs=zsKopie(alt); delete zs.modell; return zs; }
+  const zs=zsAusModell(m,alt.bedarf||zsBedarfStd(),alt), zF=f=>f.typ==="z";
+  zs.zp.forEach((z,i)=>{ const o=alt.zp[i]; if(o) ["zweck","art","sls","slsH","nr","bez"].forEach(k=>{ if(o[k]!==undefined) z[k]=o[k]; }); });
+  ["bestand","baujahr","arbeiten","arbeitenText","hak","nb","hs","uss","hlak","einspeis","steuerbar"].forEach(k=>{ if(alt[k]!==undefined) zs[k]=alt[k]; });
+  /* Bestückung hängt an Feld-IDs: Zählerfelder der Reihe nach übertragen, APZ und Schrank wie gehabt */
+  if(alt.best){ const aZ=alt.felder.filter(zF), nZ=zs.felder.filter(zF); zs.best={}; Object.entries(alt.best).forEach(([w,v])=>{ const i=aZ.findIndex(f=>f.id===w); const nw=i>=0?(nZ[i]||{}).id:w; if(nw) zs.best[nw]=v; }); }
+  return zsAbgleich(zs); }
 function zsBedarfFenster(b){ const st=(k,t,u)=>`<div class="zs-st"><span class="zs-stt"><b>${esc(t)}</b>${u?`<small>${esc(u)}</small>`:""}</span><button type="button" class="zs-stb" data-act="awBed" data-k="${k}" data-d="-1" aria-label="weniger">−</button><span class="zs-stn" id="awBed_${k}">${+b[k]||0}</span><button type="button" class="zs-stb" data-act="awBed" data-k="${k}" data-d="1" aria-label="mehr">+</button></div>`;
   return {frage:"Was soll dran?",hinweis:"Daraus stellt die App den Schrank zusammen – Felder, Höhe, APZ und Zählerplätze.",
     inhalt:`<div class="zs-vs zs-bed"><div class="zs-bild" id="awBedBild">${zsSvg(zsAusBedarf(b,null),0)}</div><div class="zs-vs-r">
@@ -384,33 +397,39 @@ const zsBildAn=()=>!!(typeof META!=="undefined"&&META.zsBild);
 function zsKarteInnen(L,ohneMaterial){ const zs=L.zs, zu=L.fertig;
   if(!zs||!zs.felder||!zs.felder.length) return `<section class="card zs-karte"><h3>Zählerschrank</h3><p class="meta">Zählerplätze, Zählerart, SLS, Zählernummern und APZ – Aufbau per Vorlage.</p>${zu?"":`<button type="button" class="btn-tonal" data-act="zsEinrichten">Zählerschrank einrichten</button>`}</section>`;
   const off=zsBestOffenGesamt(zs), H=zsHinweise(zs).filter(h=>!/^Bestückung:/.test(h)), bp=zsBestPlatz(L); if(bp) H.unshift(bp);
-  const nZ=zs.zp.length, belegt=zs.zp.filter(zsBelegt).length, bild=zsBildAn();
-  const kurz=[zs.modell?`${zsHerstText(zs.modell.h).split(" ")[0]} ${zs.modell.hnr}`:zs.hersteller&&zsHerstText(zs.hersteller),`${zs.felder.length} Felder`,`${nZ} Zählerpl${nZ===1?"atz":"ätze"}${belegt<nZ?` (${belegt} belegt)`:""}`,+zs.hoehe?`${zs.hoehe} mm`:""].filter(Boolean).join(" · ");
+  const nZ=zs.zp.length, belegt=zs.zp.filter(zsBelegt).length, bild=zsBildAn(), mod=zs.modell, mb=mod&&(mod.bild||((ZS_MODELLE.find(m=>m.hnr===mod.hnr)||{}).bild));
+  const schrankName=mod?`${zsHerstText(mod.h).split(" ")[0]} ${mod.hnr}`:zs.hersteller&&zsHerstText(zs.hersteller)?`${zsHerstText(zs.hersteller)} · eigener Aufbau`:"Eigener Aufbau";
+  const kurz=[mod&&mod.name,`${zs.felder.length} Felder`,`${nZ} Zählerpl${nZ===1?"atz":"ätze"}${belegt<nZ?` (${belegt} belegt)`:""}`,+zs.hoehe?`${zs.hoehe} mm`:""].filter(Boolean).join(" · ");
   const ersterOffen=[...zs.felder.filter(f=>f.typ==="z").map(f=>f.id),...(zs.apz?["a"]:[])].find(z=>zsBestOffen(zs,z));
   const zeile=(act,extra,lead,leadKl,titel,unter,rechts)=>`<button type="button" class="zs-zp" data-act="${act}"${extra} ${zu?"disabled":""}>${lead!=null?`<span class="zs-zn${leadKl?" "+leadKl:""}">${lead}</span>`:""}<span class="zs-zt"><b>${titel}</b>${unter?`<small>${unter}</small>`:""}</span>${rechts||""}${icon("chev")}</button>`;
   const best=(ziel)=>{ const o=zsBestOffen(zs,ziel); return zeile("zsBestAuf",` data-v="${esc(ziel)}"`,icon("liste"),"zs-bst","Bestückung",ziel==="a"?"APZ · Pflichtpunkte und Zubehör":"AAR · RfZ · NAR",`<span class="zs-bs${o?" offen":""}">${zs.bestand?"Bestand":o?`${o} offen`:"vollständig"}</span>`); };
-  const felder=zs.felder.map(f=>{ const nr=zsFeldNr(zs,f.id), tit=`${ZS_TYP[f.typ]||"Feld"} ${nr}`;
-    if(f.typ==="z"){ const Z=zs.zp.map((z,i)=>[z,i]).filter(([z])=>z.feldId===f.id);
-      return `<div class="zsg-feld"><div class="zsg-fk">${esc(tit)}</div>${Z.map(([z,i])=>zsBelegt(z)
-          ?zeile("zsZpAuf",` data-i="${i}"`,`Z${i+1}`,z.zweck?"":"leer",esc(z.bez||zsTxt(ZS_ZWECK,z.zweck)||"Noch offen"),esc(zsZpText(z)))
-          :`<button type="button" class="zs-zp zs-frei" data-act="zsZpAuf" data-i="${i}" ${zu?"disabled":""}><span class="zs-zn leer">Z${i+1}</span><span class="zs-zt"><b>frei</b></span>${icon("chev")}</button>`).join("")}${best(f.id)}</div>`; }
-    const apz=zs.apz&&zs.apz.feldId===f.id;
-    return `<div class="zsg-feld"><div class="zsg-fk">${esc(tit)}${f.typ==="v"?`<span>${esc(zsReihenFeld(zs,f,L.reihen))} Reihen</span>`:""}</div>
-      ${apz?zeile("zsApzAuf","","APZ","zs-apzn","Abschlusspunkt Zählerplatz",esc(zs.apz.lage==="oben"?"oben im Feld":"unten im Feld"))+best("a"):f.typ==="v"?"":`<p class="meta zs-leer">ohne Zählerplatz</p>`}</div>`; }).join("");
-  return `<section class="card zs-karte"><h3>Zählerschrank</h3>
-    <p class="zs-kurz">${esc(kurz)}</p>
+  /* 1 · Schrank: Foto, Modell, Zustand, Knöpfe */
+  const k1=`<section class="card zs-karte zs-k-schrank"><h3>Zählerschrank</h3>
+    <div class="zs-kopf">${mb?`<span class="zs-kfoto"><img src="${esc(typeof bildLokal==="function"?bildLokal(mb):mb)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></span>`:""}<span class="zs-kt"><b>${esc(schrankName)}</b><small>${esc(kurz)}</small>
+      <span class="zs-chip${zs.bestand?" bst":""}">${zs.bestand?`Bestand${zs.baujahr?" · "+esc(zs.baujahr):""}`:"Neu aufgebaut"}</span></span></div>
+    ${zu?"":`<div class="zs-knoepfe"><button type="button" class="btn-tonal" data-act="zsWechsel">${icon("zsSchrank")}Schrank wechseln</button><button type="button" class="btn-tonal" data-act="zsAufbau">${icon("edit")}Felder bearbeiten</button></div>`}
     ${bild?`<div class="zs-bild">${zu?zsSvg(zs,L.reihen):zsKlick(zs,L.reihen,null,{feld:()=>'data-act="zsAufbau"',zp:k=>`data-act="zsZpAuf" data-i="${k}"`,apz:()=>'data-act="zsApzAuf"'})}</div>`:""}
-    <button type="button" class="zs-bild-tg" data-act="zsBildUm" aria-expanded="${bild}">${icon(bild?"chev":"zsSchrank")}<span>${bild?"Schrankbild ausblenden":"Schrankbild anzeigen"}</span></button>
-    ${zeile("zsBestandAuf","",icon(zs.bestand?"zsSchrank":"add"),"zs-bst",zs.bestand?`Bestand${zs.baujahr?" · "+esc(zs.baujahr):""}`:"Neu aufgebaut",zs.bestand?esc(zsArbListe(zs).join(" · ")||"Noch nichts als erneuert eingetragen"):"Pflichtpunkte und Material nach VDE-AR-N 4100 – bei einem vorhandenen Schrank auf „Bestand“ stellen")}
+    <button type="button" class="zs-bild-tg" data-act="zsBildUm" aria-expanded="${bild}">${icon(bild?"chev":"zsSchrank")}<span>${bild?"Schrankbild ausblenden":"Schrankbild anzeigen"}</span></button></section>`;
+  /* 2 · Anschluss und Zustand */
+  const k2=`<section class="card zs-karte"><h3>Anschluss und Zustand</h3>
+    ${zeile("zsBestandAuf","",icon(zs.bestand?"zsSchrank":"add"),"zs-bst",zs.bestand?"Bestand – was erneuert wurde":"Neu aufgebaut",zs.bestand?esc(zsArbListe(zs).join(" · ")||"Noch nichts als erneuert eingetragen"):"Bei einem vorhandenen Schrank auf „Bestand“ stellen")}
     ${zeile("zsNbAuf","","NB","zs-apzn",esc(zsTxt(ZS_NB,zsNb(zs))),`Netzbetreiber${zs.nb?"":" – angenommen, bitte prüfen"}`)}
     ${zeile("zsHakAuf","","HAK","zs-apzn",zs.hak?esc(zsHakText({...zs.hak,zustand:zs.hak.zustand==="alt"?"":zs.hak.zustand})||"Hausanschlusskasten"):"Hausanschlusskasten",zs.hak?esc(zs.hak.notiz||"Hausanschlusskasten"):"Wo, welche Sicherung, Zustand – noch nicht eingetragen",zs.hak&&zs.hak.zustand==="alt"?`<span class="zs-bs offen">alt</span>`:"")}
-    ${typeof legVonFeld==="function"?legVonFeld(L):""}
-    ${off&&ersterOffen?`<button type="button" class="zs-offen" data-act="zsBestAuf" data-v="${esc(ersterOffen)}" ${zu?"disabled":""}>${icon("warn")}<span>${off} Pflichtpunkt${off===1?"":"e"} der Bestückung offen</span>${icon("chev")}</button>`:""}
-    ${H.length?`<div class="zs-hw">${H.map(h=>`<p>${icon("warn")}<span>${esc(h)}</span></p>`).join("")}</div>`:""}
-    <div class="zsg-felder">${felder}</div>
-    ${zu?"":`<div class="zs-ende"><button type="button" class="zs-neu" data-act="zsZpNeu">${icon("add")}Zählerplatz hinzufügen</button>
-      <button type="button" class="zs-zp zs-umbau" data-act="zsAufbau"><span class="zs-zn zs-bst">${icon("edit")}</span><span class="zs-zt"><b>Felder und Schrank bearbeiten</b><small>Zählerfelder, Verteilerfelder, Höhe, Hersteller</small></span>${icon("chev")}</button></div>`}
-    ${ohneMaterial?"":`<div class="aw-lbl">${zs.bestand?"Erneuert / Material":"Material"}</div><div class="zs-mats">${zsMaterial(zs,L.reihen)||`<p class="meta">Noch nichts als erneuert eingetragen.</p>`}</div>`}</section>`; }
+    ${typeof legVonFeld==="function"?legVonFeld(L):""}</section>`;
+  /* 3 · Hinweise */
+  const k3=(off&&ersterOffen?`<button type="button" class="zs-offen" data-act="zsBestAuf" data-v="${esc(ersterOffen)}" ${zu?"disabled":""}>${icon("warn")}<span>${off} Pflichtpunkt${off===1?"":"e"} der Bestückung offen</span>${icon("chev")}</button>`:"")
+    +(H.length?`<div class="zs-hw zs-hw-frei">${H.map(h=>`<p>${icon("warn")}<span>${esc(h)}</span></p>`).join("")}</div>`:"");
+  /* 4 · je Feld eine Karte */
+  const felder=zs.felder.map(f=>{ const nr=zsFeldNr(zs,f.id), tit=`${ZS_TYP[f.typ]||"Feld"} ${nr}`, rechts=f.typ==="v"?`${zsReihenFeld(zs,f,L.reihen)} Reihen`:f.typ==="z"?(zs.zp.filter(x=>x.feldId===f.id).some(z=>z.art==="3pkt")?"3-Punkt":"eHZ"):"";
+    let inh="";
+    if(f.typ==="z"){ inh=zs.zp.map((z,i)=>[z,i]).filter(([z])=>z.feldId===f.id).map(([z,i])=>zsBelegt(z)
+          ?zeile("zsZpAuf",` data-i="${i}"`,`Z${i+1}`,z.zweck?"":"leer",esc(z.bez||zsTxt(ZS_ZWECK,z.zweck)||"Noch offen"),esc(zsZpText(z)))
+          :`<button type="button" class="zs-zp zs-frei" data-act="zsZpAuf" data-i="${i}" ${zu?"disabled":""}><span class="zs-zn leer">Z${i+1}</span><span class="zs-zt"><b>frei</b></span>${icon("chev")}</button>`).join("")+best(f.id); }
+    else { const apz=zs.apz&&zs.apz.feldId===f.id; inh=apz?zeile("zsApzAuf","","APZ","zs-apzn","Abschlusspunkt Zählerplatz",esc(zs.apz.lage==="oben"?"oben im Feld":"unten im Feld"))+best("a"):`<p class="meta zs-leer">${f.typ==="v"?"Stromkreise im Reiter „Stromkreise“":"ohne Zählerplatz"}</p>`; }
+    return `<section class="card zs-karte zs-k-feld"><div class="card-kopf"><h3>${esc(tit)}</h3>${rechts?`<span class="zs-kr">${esc(rechts)}</span>`:""}</div>${inh}</section>`; }).join("");
+  const k5=zu?"":`<button type="button" class="zs-neu zs-neu-frei" data-act="zsZpNeu">${icon("add")}Zählerplatz hinzufügen</button>`;
+  const k6=ohneMaterial?"":`<section class="card zs-karte"><h3>${zs.bestand?"Erneuert / Material":"Material"}</h3><div class="zs-mats">${zsMaterial(zs,L.reihen)||`<p class="meta">Noch nichts als erneuert eingetragen.</p>`}</div></section>`;
+  return k1+k3+k2+felder+k5+k6; }
 
 /* ---- Bearbeiten von der Karte aus ---- */
 function zsBearbeiten(modus,i){ const L=legAkt(); if(!L) return;
@@ -423,6 +442,7 @@ function zsZeigen(){ const L=legAkt(); if(!L||!AW) return; const R={titel:"Zähl
   if(AW.modus==="apz") return awRahmen({...R,...zsApzFenster(AW.zs)});
   if(AW.modus==="best") return awRahmen({...R,...zsBestFenster(AW.zs,AW.ziel)});
   if(AW.modus==="nb") return awRahmen({...R,...zsNbFenster(AW.zs)});
+  if(AW.modus==="modell") return awRahmen({...R,...zsWechselFenster(AW.zs)});
   const S=AW.schritte, sk=S[AW.i], R2={...R,schritt:AW.i,schritte:S.length}, letzt=AW.i===S.length-1;
   if(sk==="aufbau") return awRahmen({...R2,...zsAufbauFenster()});
   if(sk==="felder") return awRahmen({...R2,...zsFelderFenster(AW.zs,AW.reihen,"zsWeiter","Weiter")});
@@ -446,6 +466,9 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="zsBestAuf"){ zsBearbeiten("best"); if(AW){ AW.ziel=b.dataset.v; zsZeigen(); } return; }
   if(a==="zsNbAuf"){ zsBearbeiten("nb"); return; }
   if(a==="zsBestandAuf"){ zsBestandDlg(); return; }
+  if(a==="zsWechsel"){ zsBearbeiten("modell"); return; }
+  if(a==="zsModH"){ if(AW){ AW.mh=b.dataset.v; zsZeigen(); } return; }
+  if(a==="zsModW"){ if(!AW) return; const m=ZS_MODELLE.find(x=>x.hnr===b.dataset.v)||null; AW.zs=zsModellAnwenden(AW.zs,m); zsSpeichern(); return; }
   if(a==="zsBestandOk"){ zsBestandOk(); return; }
   if(a==="zsZstW"){ b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); const t=document.getElementById("zsBstTeil"); if(t) t.hidden=b.dataset.v!=="bestand"; return; }
   if(a==="zsArbW"){ b.setAttribute("aria-pressed",String(b.getAttribute("aria-pressed")!=="true")); return; }
