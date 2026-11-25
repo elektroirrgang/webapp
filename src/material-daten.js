@@ -28,6 +28,7 @@ const MAT_INFO={
      Satzbild selbst zusammengesetzt aus den Produktfotos von zaehlerschrank24.de (Freigabe für die interne App; braun/schwarz/grau aus dem blauen Stein umgefärbt).
      Für 35-1/2 noch kein passendes Foto. */
   "HLAK35-1/4":{bild:"../bilder/zs/hlak-35-1-4-satz.png",tech:{art:"zubehoer"}},
+  L73M:{bild:"https://assets.hager.com/step-content/P/HA_81838078/11/std.lang.all/L73M.webp",tech:{art:"hs"}},   /* Lasttrennschalter D02 als Hauptschalter (Max 25.11.2026) */
   ZZ45WAN150:{bild:"https://assets.hager.com/step-content/P/HA_16347736/11/std.lang.all/ZZ45WAN040.webp",tech:{art:"zubehoer"}},
   A9L16482:{bild:"https://eshop-ae.se.com/media/catalog/product/cache/1e79a9177ab77655b8cab8582c25a9a3/a/9/a9l16482_2.jpg",tech:{art:"uess"}},
   MBS110:{bild:"https://assets.hager.com/step-content/P/HA_16255176/11/std.lang.all/MBS110.webp",tech:{art:"ls",char:"B",in:10,pole:1,te:1}},

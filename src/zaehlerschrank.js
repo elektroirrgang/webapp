@@ -42,7 +42,7 @@ function zsSlsGeraet(zs,z){ if(!z||!z.sls||z.sls==="keiner") return null; const 
    → dann keine eigene „Spannungsversorgung RfZ/APZ“ in der Materialliste */
 const ZS_USS_ABGRIFF=new Set(["7P.04.8.255.Z007","7P.94.8.255.Z007C08"]);
 /* Hauptschalter hinter dem Zähler (RheinNetz: je Messeinrichtung) – Auswahl wie beim Ableiter (Max 18.11.2026: „bei der Anlage den Hager SH363S“) */
-const ZS_HS=[["SH363S","Hager SH363S","63 A · 3-polig · plombierbar · 2,5 TE"],["SH463N","Hager SH463N","63 A · 4-polig · plombierbar · 3,5 TE"],["keiner","Ohne / nicht festgelegt",""]];
+const ZS_HS=[["SH363S","Hager SH363S","63 A · 3-polig · plombierbar · 2,5 TE"],["SH463N","Hager SH463N","63 A · 4-polig · plombierbar · 3,5 TE"],["L73M","Hager L73M","Lasttrennschalter für D02-Sicherungen · 63 A · 3-polig · plombierbar"],["keiner","Ohne / nicht festgelegt",""]];
 const zsHsStd=()=>"SH363S";
 /* Hauptleitungsabzweigklemme (Max 18.11.2026): Pollmann-Klemmsteine, 1-polig und anreihbar – je Zählerfeld ein Satz aus 5 Steinen (L1, L2, L3, N, PE); meist 4 Abgänge.
    Ob sie drin ist, steht in der Bestückung (zs.best[feldId].hlak) – die Auswahl im Zählerplatz setzt das mit. */
