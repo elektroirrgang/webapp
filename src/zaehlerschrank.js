@@ -151,9 +151,9 @@ function zsAusModell(m,b,alt){ const felder=m.felder.map(x=>x.typ==="z"?{id:uid(
   const zs={felder,apz:{feldId:af.id,lage:ai>=0?m.felder[ai].apz:"unten"},zp:[],hoehe:m.hoehe||1100,nb:alt&&alt.nb,hersteller:m.h,steuerbar:zsBedarfSteuer(b),bedarf:{...b},modell:{h:m.h,hnr:m.hnr,name:m.name,bild:m.bild||""}};
   zsZpAusBedarf(zs,b); return zs; }
 const zsModAnz=(m,t)=>m.felder.filter(f=>f.typ===t).length;
-/* Kachel für ein Schrankmodell: Produktfoto groß, Skizze klein, Lupe → Vorschau */
+/* Kachel für ein Schrankmodell: Produktfoto groß (Max 25.11.2026: keine Lupe, keine Mini-Skizze – Foto antippen = Vorschau mit Foto und Feldaufteilung, Text antippen = auswählen) */
 function zsModKarte(m,zsB,b,act,an){ const foto=m.bild?(typeof bildLokal==="function"?bildLokal(m.bild):m.bild):"", sk=zsSvg(zsAusModell(m,b,zsB),0,true);
-  return `<button type="button" class="aw-g zs-mod" data-act="${act}" data-v="${esc(m.hnr)}"${an?' aria-pressed="true"':""}><span class="aw-gb zs-mod-svg">${foto?`<img class="zs-mod-gross" src="${esc(foto)}" alt="" loading="lazy" onerror="this.remove()"><span class="zs-mod-skizze">${sk}</span>`:sk}<span class="zs-mod-zoom" role="button" aria-label="Vorschau">${icon("search")}</span></span><b>${esc(m.name)}</b><small>${esc(zsModText(m))}</small><small class="zs-mod-nr">${esc(zsHerstText(m.h).split(" ")[0])} ${esc(m.hnr)}</small></button>`; }
+  return `<button type="button" class="aw-g zs-mod" data-act="${act}" data-v="${esc(m.hnr)}"${an?' aria-pressed="true"':""}><span class="aw-gb zs-mod-svg">${foto?`<img class="zs-mod-gross" src="${esc(foto)}" alt="" loading="lazy" onerror="this.nextElementSibling.hidden=false;this.remove()"><span class="zs-mod-skizze" hidden>${sk}</span>`:sk}</span><b>${esc(m.name)}</b><small>${esc(zsModText(m))}</small><small class="zs-mod-nr">${esc(zsHerstText(m.h).split(" ")[0])} ${esc(m.hnr)}</small></button>`; }
 function zsModellFenster(d){ const b=d.bedarf, need=Math.max(1,zsBedarfZp(b)), vf=Math.max(1,+b.vf||1), mm=+b.mm||0, A=ZS_MODELLE.filter(m=>m.h===d.hersteller);
   const ueber=m=>(zsModPlaetze(m)-need)+(zsModAnz(m,"v")-vf)*2+(zsModAnz(m,"m")-mm)*2;
   const passt=A.filter(m=>zsModPlaetze(m)>=need&&zsModAnz(m,"v")>=vf&&zsModAnz(m,"m")>=mm).sort((a,c)=>ueber(a)-ueber(c)||(a.hoehe||0)-(c.hoehe||0)||(a.breite||0)-(c.breite||0));

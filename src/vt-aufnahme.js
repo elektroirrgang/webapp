@@ -45,9 +45,9 @@ function awBildGross(kb,kOpt,inhalt){ const img=kb.querySelector("img"), k=kOpt|
 document.addEventListener("click",e=>{ const kb=e.target.closest&&e.target.closest(".aw-k .aw-kb"); if(!kb) return; const img=kb.querySelector("img"); if(!img||!img.naturalWidth) return;
   e.stopImmediatePropagation(); e.preventDefault(); awBildGross(kb); },true);
 /* Schrank-Kachel: Lupe zeigt Foto und Skizze groß (Max 25.11.2026) */
-document.addEventListener("click",e=>{ const z=e.target.closest&&e.target.closest(".zs-mod-zoom"); if(!z) return; e.stopImmediatePropagation(); e.preventDefault();
-  const k=z.closest(".zs-mod"), box=k&&k.querySelector(".zs-mod-svg"); if(!box) return; const img=box.querySelector("img.zs-mod-gross"), sk=box.querySelector(".zs-svg");
-  awBildGross(box,k,`<div class="zs-mod-gv">${img?`<img src="${esc(img.currentSrc||img.src)}" alt="">`:""}${sk?sk.outerHTML:""}</div>`); },true);
+document.addEventListener("click",e=>{ const box=e.target.closest&&e.target.closest(".zs-mod .zs-mod-svg"); if(!box) return; const img=box.querySelector("img.zs-mod-gross"); if(!img||!img.naturalWidth) return;
+  e.stopImmediatePropagation(); e.preventDefault(); const k=box.closest(".zs-mod"), sk=box.querySelector(".zs-svg");
+  awBildGross(box,k,`<div class="zs-mod-gv"><figure><img src="${esc(img.currentSrc||img.src)}" alt=""><figcaption>So sieht er aus</figcaption></figure>${sk?`<figure>${sk.outerHTML}<figcaption>Feldaufteilung</figcaption></figure>`:""}</div>`); },true);
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ const g=document.querySelector(".aw-gross"); if(g){ g.remove(); e.stopImmediatePropagation(); } } },true);
 function awZu(){ AW=null; $("#dlg").classList.remove("aw"); closeOverlays(); render(); }
 
