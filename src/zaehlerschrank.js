@@ -133,6 +133,8 @@ const ZS_MODELLE=[
   {h:"abn",hnr:"ABNRS307E0022",name:"Zählerschrank 2Z 2R 1V 1APZ mit sperrbarem Hauptschalter",hoehe:1100,breite:800,felder:[{typ:"z",n:2},{typ:"z",n:2},{typ:"v",reihen:5,apz:"unten"}],bild:"https://www.elektroland24.de/media/fb/d3/d9/1742896348/61276b2d3dba84c1d2a58db2ec02392733bcd9d4.jpeg?ts=1771017218"},
   {h:"abn",hnr:"ABNRS307E0131",name:"Zählerschrank 1Z 1R 1V 1APZ mit Multimedia",hoehe:1100,breite:800,felder:[{typ:"z",n:2},{typ:"m"},{typ:"v",reihen:5,apz:"unten"}],bild:"https://www.smartgoods.de/abn-zaehlerschrank-ehz-1z-1r-1v-1apz-hlak-okk-media.1056750_highres.webp"},
   /* Hager univers Z – Komplettschränke eHZ 1100 mm; 3–4 Zähler und 1400 mm gibt es nur als Zusammenstellung Leerschrank + Komplettfeld + Verteilerfeld (Recherche 30.10.2026) */
+  /* Leergehäuse univers (Max 25.11.2026, Bestandsschrank): Felder wie verbaut – hier Zählerfeld links, Verteilerfeld rechts mit APZ unten */
+  {h:"hager",hnr:"FP72TN2",name:"Schrank univers 2-feldig, leer – eigener Ausbau",hoehe:1100,breite:550,leer:true,felder:[{typ:"z",n:1},{typ:"v",reihen:5,apz:"unten"}],bild:"https://assets.hager.com/step-content/P/HA_16208757/11/std.lang.all/FP72TN2.webp"},
   {h:"hager",hnr:"ZB32SEF15",name:"Komplettschrank 1 ZP, APZ, VT5, 2-feldig",hoehe:1100,breite:550,felder:[{typ:"z",n:1},{typ:"v",reihen:5,apz:"unten"}],bild:"https://www.zaehlerschrank24.de/pub/media/catalog/product/cache/e5e5f169cf45d7fe32369499586660c4/z/b/zb32sef15.jpg"},
   {h:"hager",hnr:"ZB32ET215W1",name:"Komplettschrank 1 ZP, APZ, VT5, 2-feldig",hoehe:1100,breite:550,felder:[{typ:"z",n:1},{typ:"v",reihen:5,apz:"unten"}],bild:"https://emax24.b-cdn.net/media/image/60/5e/d3/Hager-Komplettschrank-ZB32ET215W1-1ZP-BKE-I-APZ.jpg"},
   {h:"hager",hnr:"ZB32SET25LK",name:"Komplettschrank 2 ZP in einem Feld, APZ, VT5",hoehe:1100,breite:550,felder:[{typ:"z",n:2},{typ:"v",reihen:5,apz:"unten"}],bild:""},
@@ -142,7 +144,7 @@ const ZS_MODELLE=[
   {h:"hager",hnr:"ZB34APZ2 + ZH3EH22",name:"Systemschrank 4-feldig mit Multimedia + Komplettfeld 2 ZP",hoehe:1100,breite:1050,felder:[{typ:"z",n:2},{typ:"m"},{typ:"m"},{typ:"v",reihen:5,apz:"unten"}],bild:""},
   {h:"hager",hnr:"ZB53S + ZK5EH24 + ZU59VT7APZ2",name:"Leerschrank 1400 mm + Komplettfeld 4 ZP + Verteilerfeld 7-reihig mit APZ",hoehe:1400,breite:800,felder:[{typ:"z",n:2},{typ:"z",n:2},{typ:"v",reihen:7,apz:"unten"}],bild:"https://assets.hager.com/step-content/P/HA_86078552/11/std.lang.all/ZB53S00.webp"}];
 const zsModPlaetze=m=>m.felder.filter(f=>f.typ==="z").reduce((a,f)=>a+(f.n||1),0);
-const zsModText=m=>[`${zsModPlaetze(m)} eHZ`,...m.felder.filter(f=>f.typ==="v").map(f=>`Verteiler${f.reihen?" "+f.reihen+"-reihig":""}${f.apz?" mit APZ":""}`),m.felder.some(f=>f.typ==="m")?"Multimedia":"",m.hoehe?m.hoehe+" mm":""].filter(Boolean).join(" · ");
+const zsModText=m=>[`${zsModPlaetze(m)} ${m.leer?"Zählerplatz":"eHZ"}`,...m.felder.filter(f=>f.typ==="v").map(f=>`Verteiler${f.reihen?" "+f.reihen+"-reihig":""}${f.apz?" mit APZ":""}`),m.felder.some(f=>f.typ==="m")?"Multimedia":"",m.hoehe?m.hoehe+" mm":""].filter(Boolean).join(" · ");
 function zsAusModell(m,b,alt){ const felder=m.felder.map(x=>x.typ==="z"?{id:uid(),typ:"z",n:x.n===2?2:1}:x.typ==="v"?{id:uid(),typ:"v",...(x.reihen?{reihen:x.reihen}:{})}:{id:uid(),typ:x.typ==="t"?"t":"m"});
   if(!felder.some(f=>f.typ==="v")) felder.push({id:uid(),typ:"v"});
   const ai=m.felder.findIndex(x=>x.typ==="v"&&x.apz), af=ai>=0?felder[ai]:felder.find(f=>f.typ==="v");
@@ -276,22 +278,57 @@ const ZS_BEST=[
   {k:"apzRouter",ort:"a",zone:"APZ",t:"Platz für Router des Netzbetreibers",s:"Kommunikation des Messstellenbetreibers – seit 2026 darf auch die Steuerbox hinein",p:()=>true}];
 const zsBestText=(zs,b)=>b.k==="ant"?(zsNb(zs)==="rheinnetz"?"25-mm-Verschraubung, 32-mm-Rohr oder Koax mit Fakra-Stecker (Mobilfunk)":zsNb(zs)==="westnetz"?"Leerrohr vom HÜP zum APZ, mindestens 25 mm":"Antenne oder Leerrohr nach Vorgabe des Netzbetreibers"):b.s;
 const zsBestHat=(zs,ort,k)=>!!((zs.best||{})[ort]||{})[k];
+/* ===== Bestand (Max 25.11.2026): Schrank bleibt, nur Teile werden erneuert =====
+   zs.bestand = true, zs.baujahr (frei, z. B. „ca. 2020“), zs.arbeiten {k:true} + zs.arbeitenText, zs.hak {ort,art,in,zustand,notiz}.
+   Pflichtpunkte der VDE-AR-N 4100 gelten für neue Zählerplätze – im Bestand wird nur festgehalten, was da ist; nichts zählt als „fehlt“.
+   Material sind nur die erledigten Arbeiten (Hauptschalter, SLS, Überspannungsschutz mit Artikel, der Rest als Text). */
+const ZS_ARB=[["zuleitung","Zuleitung / Hausanschlusskabel erneuert"],["erdung","Erdung / Potentialausgleich erneuert"],["klemmen","Klemmen im Anschlussraum erneuert"],
+  ["hs","Hauptschalter eingebaut"],["sls","SLS eingebaut"],["uss","Überspannungsschutz eingebaut"],["rfz","RfZ nachgerüstet"],["apz","APZ nachgerüstet"],["vt","Verteilerfeld neu bestückt"]];
+const ZS_HAK_ART=[["NH00","NH00"],["NH1","NH1"],["NH2","NH2"],["D02","D02 / Neozed"],["DII","D-System (Diazed)"],["?","weiß nicht"]];
+const ZS_HAK_ZST=[["ok","in Ordnung"],["alt","alt – Austausch anregen"],["neu","vom NB erneuert"]];
+const zsHakText=h=>h?[h.art&&h.art!=="?"?h.art+(h.in?` ${h.in} A`:""):(h.in?`${h.in} A`:""),h.ort,(ZS_HAK_ZST.find(x=>x[0]===h.zustand)||[])[1]].filter(Boolean).join(" · "):"";
+const zsArbListe=zs=>[...ZS_ARB.filter(([k])=>(zs.arbeiten||{})[k]).map(x=>x[1]),...String(zs.arbeitenText||"").split(/\n|;/).map(t=>t.trim()).filter(Boolean)];
+function zsBestandDlg(){ const L=legAkt(), zs=L&&L.zs; if(!zs) return; const A=zs.arbeiten||{};
+  dialog("Neu oder Bestand?",`<div class="knx-seg zs-zst">${[["neu","Neu aufgebaut"],["bestand","Bestand"]].map(([v,t])=>`<button type="button" data-act="zsZstW" data-v="${v}" aria-pressed="${(zs.bestand?"bestand":"neu")===v}">${t}</button>`).join("")}</div>
+    <div id="zsBstTeil"${zs.bestand?"":" hidden"}><p class="sup" style="margin:12px 0">Der Schrank bleibt – Pflichtpunkte für neue Zählerplätze zählen hier nicht als „fehlt“. Material ist nur, was ihr erneuert habt.</p>
+      <div class="fg1">${tf("zsBj","Baujahr / Stand des Schranks",zs.baujahr||"",{form:true,ph:"z. B. ca. 2020, vor § 14a"})}</div>
+      <div class="aw-lbl" style="margin-top:14px">Was haben wir gemacht?</div><div class="zs-arb">${ZS_ARB.map(([k,t])=>`<button type="button" data-act="zsArbW" data-k="${k}" aria-pressed="${!!A[k]}">${esc(t)}</button>`).join("")}</div>
+      <div class="fg1" style="margin-top:12px">${tf("zsArbT","Sonstiges (mit ; trennen)",zs.arbeitenText||"",{form:true,ph:"z. B. Phasenschienen abgedeckt"})}</div></div>`,
+    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="zsBestandOk">Speichern</button>`,{breit:true}); }
+function zsBestandOk(){ const L=legAkt(), zs=L&&L.zs; if(!zs) return; const F=formVals(), b=document.querySelector('#dlg [data-act="zsZstW"][aria-pressed="true"]');
+  zs.bestand=!!b&&b.dataset.v==="bestand"; if(zs.bestand){ zs.baujahr=F.zsBj||""; zs.arbeitenText=F.zsArbT||""; zs.arbeiten={}; document.querySelectorAll('#dlg [data-act="zsArbW"][aria-pressed="true"]').forEach(x=>zs.arbeiten[x.dataset.k]=true); }
+  legSpeichern(L); closeOverlays(); render(); toast(zs.bestand?"Als Bestand gespeichert":"Als Neuanlage gespeichert"); }
+function zsHakDlg(){ const L=legAkt(), zs=L&&L.zs; if(!zs) return; const h=zs.hak||{}, seg=(act,Lst,cur)=>`<div class="knx-seg zs-hseg">${Lst.map(([v,t])=>`<button type="button" data-act="${act}" data-v="${v}" aria-pressed="${cur===v}">${esc(t)}</button>`).join("")}</div>`;
+  dialog("Hausanschlusskasten",`<div class="fg1">${tf("zsHakOrt","Wo sitzt er?",h.ort||"",{form:true,ph:"z. B. Dachboden, Keller"})}</div>
+    <div class="aw-lbl" style="margin-top:14px">Sicherung</div>${seg("zsHakArt",ZS_HAK_ART,h.art||"")}
+    <div class="fg1" style="margin-top:10px">${tf("zsHakIn","Nennstrom",h.in||"",{form:true,im:"numeric",sfx:"A",ph:"z. B. 63"})}</div>
+    <div class="aw-lbl" style="margin-top:14px">Zustand</div>${seg("zsHakZst",ZS_HAK_ZST,h.zustand||"")}
+    <div class="fg1" style="margin-top:12px">${tf("zsHakNo","Notiz",h.notiz||"",{form:true,ph:"z. B. Bakelit, NH-Trenner ohne Berührungsschutz"})}</div>`,
+    `${zs.hak?`<button class="btn-text danger" data-act="zsHakWeg">Entfernen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="zsHakOk">Speichern</button>`,{breit:true}); }
+function zsHakOk(){ const L=legAkt(), zs=L&&L.zs; if(!zs) return; const F=formVals(), w=a=>{ const b=document.querySelector(`#dlg [data-act="${a}"][aria-pressed="true"]`); return b?b.dataset.v:""; };
+  zs.hak={ort:F.zsHakOrt||"",art:w("zsHakArt"),in:String(F.zsHakIn||"").replace(/\D/g,""),zustand:w("zsHakZst"),notiz:F.zsHakNo||""}; legSpeichern(L); closeOverlays(); render(); }
 /* Punkte eines Ziels (Zählerfeld-ID oder "a"); schrankweite Punkte erscheinen in jedem Zählerfeld */
 const zsBestPunkte=(zs,ziel)=>ZS_BEST.filter(b=>ziel==="a"?b.ort==="a":b.ort!=="a").map(b=>({...b,wo:b.ort==="s"?"s":ziel}));
-function zsBestOffen(zs,ziel){ return zsBestPunkte(zs,ziel).filter(b=>b.p(zs)&&!zsBestHat(zs,b.wo,b.k)).length; }
+function zsBestOffen(zs,ziel){ if(zs.bestand) return 0; return zsBestPunkte(zs,ziel).filter(b=>b.p(zs)&&!zsBestHat(zs,b.wo,b.k)).length; }
 function zsBestOffenGesamt(zs){ const ziele=[...zs.felder.filter(f=>f.typ==="z").map(f=>f.id),...(zs.apz?["a"]:[])], gez=new Set();
-  let n=0; ziele.forEach(z=>zsBestPunkte(zs,z).forEach(b=>{ const key=b.wo+":"+b.k; if(gez.has(key)) return; gez.add(key); if(b.p(zs)&&!zsBestHat(zs,b.wo,b.k)) n++; })); return n; }
+  if(zs.bestand) return 0; let n=0; ziele.forEach(z=>zsBestPunkte(zs,z).forEach(b=>{ const key=b.wo+":"+b.k; if(gez.has(key)) return; gez.add(key); if(b.p(zs)&&!zsBestHat(zs,b.wo,b.k)) n++; })); return n; }
 function zsBestFenster(zs,ziel){ const P=zsBestPunkte(zs,ziel), zonen=[...new Set(P.map(b=>b.zone))];
   const titel=ziel==="a"?"APZ":`Zählerfeld ${zsFeldNr(zs,ziel)}`;
-  return {frage:`Was ist drin? · ${titel}`,hinweis:`Pflicht nach VDE-AR-N 4100:2026${zsNb(zs)!=="anderer"?" und "+zsTxt(ZS_NB,zsNb(zs)):""}. Antippen = vorhanden.`,
-    inhalt:`<div class="zs-vs"><div class="zs-bild">${zsSvg(zs,0)}</div><div class="zs-vs-r">`+zonen.map(zo=>`<div class="aw-lbl">${zo==="AAR"?"AAR · oben":zo==="NAR"?"NAR · unten":zo==="RfZ"?"RfZ · über dem Zähler":"APZ"}</div><div class="zs-best">${P.filter(b=>b.zone===zo).map(b=>{ const hat=zsBestHat(zs,b.wo,b.k), pf=b.p(zs), s=zsBestText(zs,b);
-      return `<button type="button" class="zs-bp" data-act="zsBest" data-wo="${esc(b.wo)}" data-k="${b.k}" aria-pressed="${hat}"><span class="zs-bt"><b>${esc(b.t)}</b>${s?`<small>${esc(s)}</small>`:""}</span><span class="zs-bs${!hat&&pf?" offen":""}">${hat?"vorhanden":pf?"fehlt":"optional"}</span></button>`; }).join("")}</div>`).join("")+`</div></div>`,
+  return {frage:`Was ist drin? · ${titel}`,hinweis:zs.bestand?"Bestand – nur festhalten, was im Schrank ist. Antippen = vorhanden.":`Pflicht nach VDE-AR-N 4100:2026${zsNb(zs)!=="anderer"?" und "+zsTxt(ZS_NB,zsNb(zs)):""}. Antippen = vorhanden.`,
+    inhalt:`<div class="zs-vs"><div class="zs-bild">${zsSvg(zs,0)}</div><div class="zs-vs-r">`+zonen.map(zo=>`<div class="aw-lbl">${zo==="AAR"?"AAR · oben":zo==="NAR"?"NAR · unten":zo==="RfZ"?"RfZ · über dem Zähler":"APZ"}</div><div class="zs-best">${P.filter(b=>b.zone===zo).map(b=>{ const hat=zsBestHat(zs,b.wo,b.k), pf=b.p(zs)&&!zs.bestand, s=zsBestText(zs,b);
+      return `<button type="button" class="zs-bp" data-act="zsBest" data-wo="${esc(b.wo)}" data-k="${b.k}" aria-pressed="${hat}"><span class="zs-bt"><b>${esc(b.t)}</b>${s?`<small>${esc(s)}</small>`:""}</span><span class="zs-bs${!hat&&pf?" offen":""}">${hat?"vorhanden":zs.bestand?"nicht da":pf?"fehlt":"optional"}</span></button>`; }).join("")}</div>`).join("")+`</div></div>`,
     fuss:`<span style="flex:1"></span><button type="button" class="btn-filled" data-act="zsSpeichern">Speichern</button>`}; }
 function zsNbFenster(zs){ return {frage:"Welcher Netzbetreiber?",hinweis:"Danach richten sich die Pflichtpunkte der Bestückung.",
   inhalt:`<div class="aw-liste">${ZS_NB.map(([k,t,s])=>awKachel("zsNb",k,"",t,s,zsNb(zs)===k)).join("")}</div>`}; }
 
 /* ---- Karte auf der Verteilerseite ---- */
-function zsHinweise(zs){ const H=[], nb=zsNb(zs), off=zsBestOffenGesamt(zs);
+function zsHinweise(zs){ if(zs.bestand){ const H=[], fehlt=new Set();
+    zs.felder.filter(f=>f.typ==="z").forEach(f=>zsBestPunkte(zs,f.id).forEach(b=>{ if(b.p({...zs,bestand:false})&&!zsBestHat(zs,b.wo,b.k)) fehlt.add(b.k==="rfzV"||b.k==="rfzFrei"?"RfZ":b.k==="hs"?"Hauptschalter":b.k==="spd"?"Überspannungsschutz":b.k==="rj45"?"RJ45":b.k==="ssk"?"Steuersignalklemmleiste":b.k==="abgriff"?"abgesicherter Spannungsabgriff":b.k==="schiene"?"Sammelschiene":b.t); }));
+    if(!zs.apz) fehlt.add("APZ"); if(zs.zp.some(z=>zsBelegt(z)&&z.zweck&&(!z.sls||z.sls==="keiner"))) fehlt.add("SLS");
+    if(fehlt.size) H.push(`Bestand${zs.baujahr?` (${zs.baujahr})`:""} ohne ${[...fehlt].join(", ")} – nach heutiger VDE-AR-N 4100 bei Neuanlagen Pflicht; im Bestand Hinweis fürs Angebot, kein Mangel der Arbeit.`);
+    if(zs.hak&&zs.hak.zustand==="alt") H.push(`Hausanschlusskasten alt${zs.hak.ort?` (${zs.hak.ort})`:""} – Austausch beim Netzbetreiber anregen.`);
+    return H; }
+  const H=[], nb=zsNb(zs), off=zsBestOffenGesamt(zs);
   if(nb==="gwn"){ if(zs.zp.some(z=>zsBelegt(z)&&z.art!=="3pkt")) H.push("GWN: Zählerplätze in 3-Punkt-Ausführung vorgesehen – bei der Zusage des Netzbetreibers bestätigen."); }
   else if(nb!=="anderer"&&zs.zp.some(z=>z.art==="3pkt")) H.push(`${zsTxt(ZS_NB,nb)}: grundsätzlich eHZ auf BKE-I – 3-Punkt nur bei Wandler- oder Lastgangmessung.`);
   if(off) H.push(`Bestückung: ${off} Pflichtpunkt${off===1?"":"e"} noch nicht als vorhanden markiert.`);
@@ -303,6 +340,14 @@ function zsHinweise(zs){ const H=[], nb=zsNb(zs), off=zsBestOffenGesamt(zs);
 function zsMaterial(zs,reihen){ return zsMaterialDaten(zs,reihen).map(([t,n])=>`<div class="zs-mat"><b>${n}×</b><span>${esc(t)}</span></div>`).join(""); }
 /* Material des Zählerschranks als [[Text, Anzahl], …] */
 function zsMaterialDaten(zs,reihen){ const M=new Map(), add=t=>M.set(t,(M.get(t)||0)+1);
+  if(zs.bestand){ const A=zs.arbeiten||{}, n=zs.zp.filter(zsBelegt).length||1;
+    if(A.hs){ const h=zsHsGeraet(zs); for(let i=0;i<n;i++) add(h?`Hauptschalter ${h.name} (${h.nr})`:"Hauptschalter 3-polig, plombierbar – noch festlegen"); }
+    if(A.sls) zs.zp.forEach(z=>{ const g=zsBelegt(z)&&zsSlsGeraet(zs,z); if(g) add(`SLS ${g.name} (${g.nr})`); });
+    if(A.uss){ const u=zsUssGeraet(zs); add(u?`Überspannungsschutz ${u.name} (${u.nr})`:"Überspannungsschutz Typ 1 – noch festlegen"); }
+    if(A.apz) add("APZ-Einbau 300 mm");
+    ZS_ARB.filter(([k])=>A[k]&&!["hs","sls","uss","apz"].includes(k)).forEach(([,t])=>add(t));
+    String(zs.arbeitenText||"").split(/\n|;/).map(t=>t.trim()).filter(Boolean).forEach(add);
+    return [...M]; }
   if(zs.modell) add(`Zählerschrank ${zsHerstText(zs.modell.h).split(" ")[0]} ${zs.modell.hnr} (${zs.modell.name})`);
   zs.felder.forEach(f=>{ if(zs.modell){ if(f.typ==="z") zs.zp.filter(x=>x.feldId===f.id).forEach(z=>{ const g=zsBelegt(z)&&zsSlsGeraet(zs,z); if(g) add(`SLS ${g.name} (${g.nr})`); }); return; }
     if(f.typ==="z"){ const Z=zs.zp.filter(x=>x.feldId===f.id), art=Z.some(z=>z.art==="3pkt")?"3-Punkt":"eHZ";
@@ -343,7 +388,7 @@ function zsKarteInnen(L,ohneMaterial){ const zs=L.zs, zu=L.fertig;
   const kurz=[zs.modell?`${zsHerstText(zs.modell.h).split(" ")[0]} ${zs.modell.hnr}`:zs.hersteller&&zsHerstText(zs.hersteller),`${zs.felder.length} Felder`,`${nZ} Zählerpl${nZ===1?"atz":"ätze"}${belegt<nZ?` (${belegt} belegt)`:""}`,+zs.hoehe?`${zs.hoehe} mm`:""].filter(Boolean).join(" · ");
   const ersterOffen=[...zs.felder.filter(f=>f.typ==="z").map(f=>f.id),...(zs.apz?["a"]:[])].find(z=>zsBestOffen(zs,z));
   const zeile=(act,extra,lead,leadKl,titel,unter,rechts)=>`<button type="button" class="zs-zp" data-act="${act}"${extra} ${zu?"disabled":""}>${lead!=null?`<span class="zs-zn${leadKl?" "+leadKl:""}">${lead}</span>`:""}<span class="zs-zt"><b>${titel}</b>${unter?`<small>${unter}</small>`:""}</span>${rechts||""}${icon("chev")}</button>`;
-  const best=(ziel)=>{ const o=zsBestOffen(zs,ziel); return zeile("zsBestAuf",` data-v="${esc(ziel)}"`,icon("liste"),"zs-bst","Bestückung",ziel==="a"?"APZ · Pflichtpunkte und Zubehör":"AAR · RfZ · NAR",`<span class="zs-bs${o?" offen":""}">${o?`${o} offen`:"vollständig"}</span>`); };
+  const best=(ziel)=>{ const o=zsBestOffen(zs,ziel); return zeile("zsBestAuf",` data-v="${esc(ziel)}"`,icon("liste"),"zs-bst","Bestückung",ziel==="a"?"APZ · Pflichtpunkte und Zubehör":"AAR · RfZ · NAR",`<span class="zs-bs${o?" offen":""}">${zs.bestand?"Bestand":o?`${o} offen`:"vollständig"}</span>`); };
   const felder=zs.felder.map(f=>{ const nr=zsFeldNr(zs,f.id), tit=`${ZS_TYP[f.typ]||"Feld"} ${nr}`;
     if(f.typ==="z"){ const Z=zs.zp.map((z,i)=>[z,i]).filter(([z])=>z.feldId===f.id);
       return `<div class="zsg-feld"><div class="zsg-fk">${esc(tit)}</div>${Z.map(([z,i])=>zsBelegt(z)
@@ -356,14 +401,16 @@ function zsKarteInnen(L,ohneMaterial){ const zs=L.zs, zu=L.fertig;
     <p class="zs-kurz">${esc(kurz)}</p>
     ${bild?`<div class="zs-bild">${zu?zsSvg(zs,L.reihen):zsKlick(zs,L.reihen,null,{feld:()=>'data-act="zsAufbau"',zp:k=>`data-act="zsZpAuf" data-i="${k}"`,apz:()=>'data-act="zsApzAuf"'})}</div>`:""}
     <button type="button" class="zs-bild-tg" data-act="zsBildUm" aria-expanded="${bild}">${icon(bild?"chev":"zsSchrank")}<span>${bild?"Schrankbild ausblenden":"Schrankbild anzeigen"}</span></button>
+    ${zeile("zsBestandAuf","",icon(zs.bestand?"zsSchrank":"add"),"zs-bst",zs.bestand?`Bestand${zs.baujahr?" · "+esc(zs.baujahr):""}`:"Neu aufgebaut",zs.bestand?esc(zsArbListe(zs).join(" · ")||"Noch nichts als erneuert eingetragen"):"Pflichtpunkte und Material nach VDE-AR-N 4100 – bei einem vorhandenen Schrank auf „Bestand“ stellen")}
     ${zeile("zsNbAuf","","NB","zs-apzn",esc(zsTxt(ZS_NB,zsNb(zs))),`Netzbetreiber${zs.nb?"":" – angenommen, bitte prüfen"}`)}
+    ${zeile("zsHakAuf","","HAK","zs-apzn",zs.hak?esc(zsHakText({...zs.hak,zustand:zs.hak.zustand==="alt"?"":zs.hak.zustand})||"Hausanschlusskasten"):"Hausanschlusskasten",zs.hak?esc(zs.hak.notiz||"Hausanschlusskasten"):"Wo, welche Sicherung, Zustand – noch nicht eingetragen",zs.hak&&zs.hak.zustand==="alt"?`<span class="zs-bs offen">alt</span>`:"")}
     ${typeof legVonFeld==="function"?legVonFeld(L):""}
     ${off&&ersterOffen?`<button type="button" class="zs-offen" data-act="zsBestAuf" data-v="${esc(ersterOffen)}" ${zu?"disabled":""}>${icon("warn")}<span>${off} Pflichtpunkt${off===1?"":"e"} der Bestückung offen</span>${icon("chev")}</button>`:""}
     ${H.length?`<div class="zs-hw">${H.map(h=>`<p>${icon("warn")}<span>${esc(h)}</span></p>`).join("")}</div>`:""}
     <div class="zsg-felder">${felder}</div>
     ${zu?"":`<div class="zs-ende"><button type="button" class="zs-neu" data-act="zsZpNeu">${icon("add")}Zählerplatz hinzufügen</button>
       <button type="button" class="zs-zp zs-umbau" data-act="zsAufbau"><span class="zs-zn zs-bst">${icon("edit")}</span><span class="zs-zt"><b>Felder und Schrank bearbeiten</b><small>Zählerfelder, Verteilerfelder, Höhe, Hersteller</small></span>${icon("chev")}</button></div>`}
-    ${ohneMaterial?"":`<div class="aw-lbl">Material</div><div class="zs-mats">${zsMaterial(zs,L.reihen)}</div>`}</section>`; }
+    ${ohneMaterial?"":`<div class="aw-lbl">${zs.bestand?"Erneuert / Material":"Material"}</div><div class="zs-mats">${zsMaterial(zs,L.reihen)||`<p class="meta">Noch nichts als erneuert eingetragen.</p>`}</div>`}</section>`; }
 
 /* ---- Bearbeiten von der Karte aus ---- */
 function zsBearbeiten(modus,i){ const L=legAkt(); if(!L) return;
@@ -398,6 +445,14 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="zsApzAuf"){ zsBearbeiten("apz"); return; }
   if(a==="zsBestAuf"){ zsBearbeiten("best"); if(AW){ AW.ziel=b.dataset.v; zsZeigen(); } return; }
   if(a==="zsNbAuf"){ zsBearbeiten("nb"); return; }
+  if(a==="zsBestandAuf"){ zsBestandDlg(); return; }
+  if(a==="zsBestandOk"){ zsBestandOk(); return; }
+  if(a==="zsZstW"){ b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); const t=document.getElementById("zsBstTeil"); if(t) t.hidden=b.dataset.v!=="bestand"; return; }
+  if(a==="zsArbW"){ b.setAttribute("aria-pressed",String(b.getAttribute("aria-pressed")!=="true")); return; }
+  if(a==="zsHakAuf"){ zsHakDlg(); return; }
+  if(a==="zsHakOk"){ zsHakOk(); return; }
+  if(a==="zsHakWeg"){ const L=legAkt(); if(L&&L.zs){ delete L.zs.hak; legSpeichern(L); } closeOverlays(); render(); return; }
+  if(a==="zsHakArt"||a==="zsHakZst"){ const an=b.getAttribute("aria-pressed")==="true"; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b&&!an))); return; }
   const zs=zsAkt(); if(!zs) return;
   switch(a){
   case "zsVorl": { const k=b.dataset.v, eigen=k==="eigen", neu=eigen?(zs.felder.length?zs:zsAusVorlage("1z")):zsAusVorlage(k);
@@ -428,6 +483,6 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "zsWeiter": zsZpLesen(zsAktZp()); AW.i++; zsZeigen(); return;
   case "zsSpeichern": zsSpeichern(); return;
   case "zsBest": { const wo=b.dataset.wo, k=b.dataset.k; zs.best=zs.best||{}; zs.best[wo]=zs.best[wo]||{}; zs.best[wo][k]=!zs.best[wo][k]; if(!zs.best[wo][k]) delete zs.best[wo][k];
-      const B=ZS_BEST.find(x=>x.k===k), hat=!!zs.best[wo][k]; document.querySelectorAll(`#dlg [data-act="zsBest"][data-wo="${wo}"][data-k="${k}"]`).forEach(x=>{ x.setAttribute("aria-pressed",hat); const st=x.querySelector(".zs-bs"); st.textContent=hat?"vorhanden":B.p(zs)?"fehlt":"optional"; st.classList.toggle("offen",!hat&&B.p(zs)); }); return; }
+      const B=ZS_BEST.find(x=>x.k===k), hat=!!zs.best[wo][k]; document.querySelectorAll(`#dlg [data-act="zsBest"][data-wo="${wo}"][data-k="${k}"]`).forEach(x=>{ x.setAttribute("aria-pressed",hat); const st=x.querySelector(".zs-bs"); st.textContent=hat?"vorhanden":zs.bestand?"nicht da":B.p(zs)?"fehlt":"optional"; st.classList.toggle("offen",!hat&&B.p(zs)&&!zs.bestand); }); return; }
   case "zsNb": zsNbSetzen(zs,b.dataset.v); if(AW.typ==="neu"){ AW.d.nbAuto=false; AW.sub=null; awNeuZeigen(); } else zsSpeichern(); return;
   } },true);

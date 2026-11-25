@@ -1798,6 +1798,10 @@ html body.sc-eng .navbar,html body.sc-eng.rail-open .navbar{transform:translateX
 .kb-seg button[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
 /* ===== KNX-Projekte (knx-projekt.js) ===== */
 .kx-zst{margin-bottom:12px}
+/* Zählerschrank Bestand / HAK (Dialoge) */
+.zs-arb{display:flex;flex-wrap:wrap;gap:6px}.zs-arb button{border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);font:500 14px var(--font);padding:9px 12px;cursor:pointer;text-align:left}
+.zs-arb button[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
+.zs-hseg{flex-wrap:wrap;border-radius:18px}.zs-hseg button{flex:1 1 auto;white-space:nowrap}
 /* Stellantriebe prüfen (Raum) */
 .kx-sak>.kx-z{margin:0}
 .kx-sal{display:flex;flex-direction:column;gap:6px;margin-top:8px}

@@ -53,7 +53,7 @@ function awNeuStart(kind,id){ const s=kind==="standorte"&&standortOf(id), k=kind
   AW={typ:"neu",kid:k?k.id:"",ort:s?s.id:k&&!ss.length?"k:"+k.id:"",ortWahl:ss.length>0,i:0,d:{art:"",montage:"",reihen:0,name:"",netz:null},unter:k?(s?[k.name,s.name].filter(Boolean).join(" · "):k.name):"Ohne Kunde"};
   awNeuZeigen(); }
 function awNeuSchritte(){ const hv=AW.d.art==="hv";
-  if(hv) return ["art","hersteller","geraete","bedarf",...(ZS_MODELLE.some(m=>m.h===AW.d.hersteller)?["modell"]:[]),...(AW.ortWahl?["ort"]:[]),"vorschlag"];
+  if(hv) return ["art","zustand","hersteller","geraete","bedarf",...(ZS_MODELLE.some(m=>m.h===AW.d.hersteller)?["modell"]:[]),...(AW.ortWahl?["ort"]:[]),"vorschlag"];
   return ["art","montage","reihen",...(AW.ortWahl?["ort"]:[]),"name",...(awVonListe().length?["von"]:[]),"netz"]; }
 /* Verteiler, die am gewählten Ort schon da sind – daraus kann der neue gespeist werden (HV → UV) */
 const awVonListe=()=>{ if(!AW||!AW.kid||!AW.ort&&AW.ortWahl) return []; const g=ecGeb(AW.ort||"k:"+AW.kid); return (g.verteiler||[]).filter(v=>v&&!v.deleted); };
@@ -68,6 +68,8 @@ function awNeuZeigen(){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d, R={
   if(sk==="apz") return awRahmen({...R,...zsApzFenster(d.zs)});
   if(sk==="hoehe") return awRahmen({...R,...zsHoeheFenster(d.zs)});
   if(sk==="nb") return awRahmen({...R,...zsNbFenster(d.zs)});
+  if(sk==="zustand") return awRahmen({...R,frage:"Neu oder Bestand?",hinweis:"Bestand: Der Schrank bleibt – Pflichtpunkte für neue Zählerplätze zählen dann nicht als „fehlt“, Material ist nur, was ihr erneuert.",
+    inhalt:`<div class="aw-liste">${awKachel("awNeuW","neu",awSvg("hv"),"Neu aufbauen","Zählerschrank wird neu gesetzt",d.bestand===false)}${awKachel("awNeuW","bestand","","Bestand aufnehmen","Schrank ist schon da und bleibt – z. B. nur Zuleitung oder Erdung neu",d.bestand===true)}</div>`});
   if(sk==="art") return awRahmen({...R,frage:"Was für ein Verteiler?",hinweis:"Antippen – es geht sofort weiter.",inhalt:`<div class="aw-liste">${AW_ART.map(([v,t,s])=>awKachel("awNeuW",v,awSvg(v),t,s,d.art===v)).join("")}</div>`});
   if(sk==="montage") return awRahmen({...R,frage:"Wie ist er montiert?",inhalt:`<div class="aw-liste">${awKachel("awNeuW","up",awSvg("up"),"Unterputz","in der Wand oder Hohlwand",d.montage==="up")}${awKachel("awNeuW","ap",awSvg("ap"),"Aufputz","auf der Wand",d.montage==="ap")}</div>`});
   if(sk==="reihen") return awRahmen({...R,frage:d.art==="hv"?"Wie viele Reihen im Verteilerfeld?":"Wie viele Reihen?",hinweis:"12 Teilungseinheiten (TE) je Reihe – das ist der Normalfall.",
@@ -85,13 +87,14 @@ function awNeuZeigen(){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d, R={
   if(sk==="netz") return awRahmen({...R,frage:"Welche Netzform?",inhalt:`<div class="aw-liste">${AW_NETZ.map(([v,t,s])=>awKachel("awNeuW",v,"",t,s,d.netz===v)).join("")}</div>`}); }
 function awNeuWahl(v){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d;
   if(sk==="art"){ if(d.art!==v){ d.zs=null; if(v==="hv"){ Object.assign(d,{bedarf:zsBedarfStd(),montage:"up",name:"HV",netz:"TN-C-S | 230/400 V",hersteller:d.hersteller||""}); } } d.art=v; }
+  else if(sk==="zustand") d.bestand=v==="bestand";
   else if(sk==="hersteller"){ d.hersteller=v; if(d.zs) d.zs.hersteller=v; if(d.gerHerst==null) d.gerHerst=v==="hager"?"Hager":v==="sj"?"ABB":null; }
   else if(sk==="geraete") d.gerHerst=v;
   else if(sk==="montage") d.montage=v; else if(sk==="reihen") d.reihen=+v; else if(sk==="ort"){ AW.ort=v; if(d.zs&&d.nbAuto){ zsNbSetzen(d.zs,null); d.nbAuto=false; } } else if(sk==="name") d.name=v; else if(sk==="netz") d.netz=v;
   else if(sk==="von"){ d.vonVId=v==="-"?"":v; const q=awVonListe().find(x=>x.id===d.vonVId); if(q&&q.netz&&d.netz==null) d.netz=q.netz; }
   if(AW.sub){ AW.sub=null; awNeuZeigen(); return; }
   if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); }
-function awNeuAnlegen(){ const d=AW.d, wer=(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""), extra={art:d.art,...(d.gerHerst?{gerHerst:d.gerHerst}:{}),montage:d.montage,reihen:d.art==="hv"&&d.zs&&+d.zs.hoehe?zsReihenSumme(d.zs,0):(d.reihen||(d.art==="hv"?5:3)),teReihe:12,...(d.art==="hv"&&d.zs?{zs:zsAbgleich(d.zs)}:{})};
+function awNeuAnlegen(){ const d=AW.d, wer=(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""), extra={art:d.art,...(d.gerHerst?{gerHerst:d.gerHerst}:{}),montage:d.montage,reihen:d.art==="hv"&&d.zs&&+d.zs.hoehe?zsReihenSumme(d.zs,0):(d.reihen||(d.art==="hv"?5:3)),teReihe:12,...(d.art==="hv"&&d.zs?{zs:Object.assign(zsAbgleich(d.zs),d.bestand?{bestand:true}:{})}:{})};
   if(AW.kid){ const g=ecGeb(AW.ort||"k:"+AW.kid), id=uid();
     g.verteiler.push({id,name:d.name||"Verteiler",netz:d.netz||"",stand:ecHeute(),ersteller:wer,...extra,...(d.vonVId&&g.verteiler.some(x=>x.id===d.vonVId)?{vonVId:d.vonVId}:{})}); ecGebSpeichern(g);
     AW=null; $("#dlg").classList.remove("aw"); closeOverlays(); go({v:"vt",g:g.id,id}); }
