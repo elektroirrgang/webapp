@@ -9,11 +9,15 @@
 /* Gemeinsam für alle Apps (tools/build.py setzt es ans Ende der Styles):
    Eingabefelder sind immer deutlich unterlegt – etwas dunkler als die Fläche darunter (hell) bzw. heller (dunkel).
    Dialoge bekommen dafür eine eigene, ruhige Fläche. Dazu eigene, schmale Scrollleisten am PC. */
-:root{--feld:#DFE2E8;--dlg-bg:#FFFFFF;--feld-dlg:#DFE2E8;--feld-karte:#FFFFFF}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--feld:#2E2E31;--dlg-bg:#222225;--feld-dlg:#37373B;--feld-karte:#36363A}}
-:root[data-theme="dark"]{--feld:#2E2E31;--dlg-bg:#222225;--feld-dlg:#37373B;--feld-karte:#36363A}
+/* Flächen-System (Max 26.11.2026, Variante A) – in allen vier Apps gleich:
+   1 Seite (--surface) · 2 Karten/Listenzeilen (--sc) · 3 Bedienflächen: Suche, Umschalter, Eingabefelder (--bedien) · 4 Dock (--dock) hebt sich ab: hell mit weichem Schatten, dunkel über einen helleren Ton – keine feinen Linien */
+:root{--bedien:#E3E4E9;--dock:#FCFCFD;--dock-schatten:0 -2px 12px rgba(20,20,40,.08);--feld:var(--bedien);--dlg-bg:#FFFFFF;--feld-dlg:#DFE2E8;--feld-karte:#FFFFFF}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bedien:#2E2E31;--dock:#2A2A2D;--dock-schatten:none;--feld:var(--bedien);--dlg-bg:#222225;--feld-dlg:#37373B;--feld-karte:#36363A}}
+:root[data-theme="dark"]{--bedien:#2E2E31;--dock:#2A2A2D;--dock-schatten:none;--feld:var(--bedien);--dlg-bg:#222225;--feld-dlg:#37373B;--feld-karte:#36363A}
 /* auf grauen Karten: helle Felder (hell) bzw. angehobene Felder (dunkel) */
 .card{--feld:var(--feld-karte)}
+body .search,body .ec-seg,body .kb-seg{background:var(--bedien)}
+@media (max-width:743px){html body nav.navbar{background:var(--dock);box-shadow:var(--dock-schatten)}}
 .dlg{background:var(--dlg-bg)!important;--feld:var(--feld-dlg)!important;--fbg:var(--dlg-bg)!important}
 .tf input:hover:not(:focus):not(:disabled),.tf select:hover:not(:focus):not(:disabled),.tf textarea:hover:not(:focus):not(:disabled){background:color-mix(in srgb,var(--on-surface) 5%,var(--feld))!important}
 /* breiter Dialog mit Feldern nebeneinander (z. B. Gerät) */
@@ -2151,7 +2155,7 @@ body.has-nav .bsp-karte{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
   @media (max-width:743px){
     html{--dock-u:max(10px,calc(env(safe-area-inset-bottom,0px) - 12px))}
     html body nav.navbar{left:max(16px,calc(env(safe-area-inset-left,0px) + 16px))!important;right:max(16px,calc(env(safe-area-inset-right,0px) + 16px))!important;bottom:var(--dock-u)!important;
-      height:64px;padding:5px!important;gap:0;border-radius:32px!important;background:var(--sc-high)!important;box-shadow:0 8px 24px rgba(0,0,0,.22),0 1px 4px rgba(0,0,0,.14);box-sizing:border-box}
+      height:64px;padding:5px!important;gap:0;border-radius:32px!important;background:var(--dock)!important;box-shadow:0 8px 24px rgba(0,0,0,.22),0 1px 4px rgba(0,0,0,.14);box-sizing:border-box}
     html body nav.navbar .nav-item{flex:1 1 0;min-width:0;height:54px;padding:0 2px;border-radius:27px;gap:1px;font-size:10px;letter-spacing:0;position:relative;z-index:1;background:transparent!important;-webkit-tap-highlight-color:transparent;transition:color .2s}
     html body nav.navbar .nav-item .ind{width:auto;height:28px;background:transparent!important}
     html body nav.navbar .nav-item[aria-current="page"]{color:var(--on-sec-c)}
