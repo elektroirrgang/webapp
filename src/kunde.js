@@ -277,6 +277,9 @@ const KD_ARTEN=[["privat","Privat"],["gewerbe","Gewerbe"],["industrie","Industri
 const KD_ART_LANG={privat:"Privatkunde",gewerbe:"Gewerbekunde",industrie:"Industriekunde"};
 const KD_FIRMA_RE=/(\bgmbh|\bag\b|\bkg\b|\bohg\b|\bug\b|\bgbr\b|mbh\b|\be\.\s?k\b|\be\.\s?v\b|\bco\.|\bltd\b|\binc\b|\bse\b|kgaa|stiftung|apotheke|praxis|gemeinde|stadt |schule|kirche|klinik|hotel|gaststätte|autohaus|bäckerei|metzgerei|verwaltung|werk\b|werke\b|\bgruppe\b)/i;
 const kdArt=k=>k&&KD_ARTEN.some(x=>x[0]===k.art)?k.art:(KD_FIRMA_RE.test(String(k&&k.name||""))?"gewerbe":"privat");
+/* Symbol je Kundenart (26.11.2026): Privat = Haus, Gewerbe = Laden, Industrie = Fabrik – überall, wo ein Kunde als Zeile/Kachel steht */
+Object.assign(IC,{kdPriv:"M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z",kdGew:"M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z",kdInd:"M2 22V10l7-3v2l5-2v3h3.3l.9-8h2.6l.9 8H22v12H2zm5-4h2v-4H7v4zm4 0h2v-4h-2v4zm4 0h2v-4h-2v4z"});
+const kdIc=k=>k?({privat:"kdPriv",gewerbe:"kdGew",industrie:"kdInd"})[kdArt(k)]||"firma":"firma";
 const kdListe=t=>Array.isArray(t)?t:String(t||"").split(/\s*[,;\n]\s*/).map(x=>x.trim()).filter(Boolean);
 const kdOrteTitel=k=>kdArt(k)==="privat"?"Weitere Objekte":"Standorte";
 const kdKeinOrt=k=>kdArt(k)==="privat"?"Das Objekt ist die Adresse des Kunden. Ein weiteres nur, wenn er z. B. ein zweites Haus hat.":"";
@@ -590,7 +593,7 @@ const kdRefZahl=id=>["pruefungen","baustellen","vorgaenge","echecks","anlagen"].
 function kdMergeAsk(kid){ const k=DB.kunden.get(kid); if(!k) return; if(!(ME.admin||ME.buero)){ toast("Das dürfen Chef und Büro"); return; }
   const n=kdNorm(k.name), alle=live("kunden").filter(x=>x.id!==kid&&!x.mergedInto), aehnl=alle.filter(x=>{ const m=kdNorm(x.name); return m&&n&&(m===n||m.startsWith(n.slice(0,6))||n.startsWith(m.slice(0,6))); });
   const rest=alle.filter(x=>!aehnl.includes(x)).sort((a,b)=>String(a.name).localeCompare(String(b.name),"de"));
-  const z=x=>`<div class="li" role="button" tabindex="0" data-act="kdmWahl" data-a="${esc(kid)}" data-b="${esc(x.id)}"><span class="av">${icon("firma")}</span><span class="lt"><span class="h">${esc(x.name)}</span><span class="s">${esc([x.kdnr&&`Kd.-Nr. ${x.kdnr}`,adrText(x)||x.ort].filter(Boolean).join(" · ")||"ohne Adresse")}</span></span></div>`;
+  const z=x=>`<div class="li" role="button" tabindex="0" data-act="kdmWahl" data-a="${esc(kid)}" data-b="${esc(x.id)}"><span class="av">${icon(kdIc(x))}</span><span class="lt"><span class="h">${esc(x.name)}</span><span class="s">${esc([x.kdnr&&`Kd.-Nr. ${x.kdnr}`,adrText(x)||x.ort].filter(Boolean).join(" · ")||"ohne Adresse")}</span></span></div>`;
   dialog("Mit Kunde zusammenführen",`<p style="margin:0 0 12px"><b>${esc(k.name)}</b> zusammenführen mit …</p>
     ${aehnl.length?`<div class="lbl" style="margin:0 4px 6px">Ähnlicher Name</div><div class="list wahl">${aehnl.map(z).join("")}</div>`:""}
     ${rest.length?`<div class="lbl" style="margin:${aehnl.length?16:0}px 4px 6px">Alle Kunden</div><div class="list wahl" style="max-height:40vh;overflow:auto">${rest.map(z).join("")}</div>`:""}`,
@@ -600,7 +603,7 @@ function kdMergeBestaetigen(a,b,bleibt){ const A=DB.kunden.get(a), B=DB.kunden.g
   const Z=bleibt===a?A:B, W=bleibt===a?B:A, gleich=!adrNorm(W)||!adrNorm(Z)||adrNorm(W)===adrNorm(Z);
   const info=x=>esc([x.kdnr&&`Kd.-Nr. ${x.kdnr}`,adrText(x)||"ohne Adresse",`${live("standorte").filter(s=>s.kundeId===x.id).length} Standorte`,`${kdRefZahl(x.id)} Einträge`].filter(Boolean).join(" · "));
   dialog("Kunden zusammenführen",`<div class="lbl" style="margin:0 4px 6px">Welcher Eintrag bleibt (Name)?</div>
-    <div class="list wahl">${[A,B].map(x=>`<div class="li" role="button" tabindex="0" data-act="kdmBleibt" data-a="${esc(a)}" data-b="${esc(b)}" data-bleibt="${esc(x.id)}"${x===Z?' aria-current="true" style="background:var(--sc-highest)"':""}><span class="av">${icon(x===Z?"check":"firma")}</span><span class="lt"><span class="h">${esc(x.name)}${x===Z?" · bleibt":""}</span><span class="s">${info(x)}</span></span></div>`).join("")}</div>
+    <div class="list wahl">${[A,B].map(x=>`<div class="li" role="button" tabindex="0" data-act="kdmBleibt" data-a="${esc(a)}" data-b="${esc(b)}" data-bleibt="${esc(x.id)}"${x===Z?' aria-current="true" style="background:var(--sc-highest)"':""}><span class="av">${icon(x===Z?"check":kdIc(x))}</span><span class="lt"><span class="h">${esc(x.name)}${x===Z?" · bleibt":""}</span><span class="s">${info(x)}</span></span></div>`).join("")}</div>
     <ul style="margin:12px 0 0;padding-left:20px;line-height:1.55;font-size:14px"><li>Fehlende Angaben werden ergänzt, Telefonnummern, Ansprechpartner und Geräte zusammengelegt.</li>
       <li>${gleich?`Gleicher ${hsW(Z)} – wird zu einem.`:`Verschiedene Adressen – der Sitz von „${esc(W.name)}“ (${esc(adrText(W))}) wird ein Standort.`}</li>
       <li>Standorte, Prüfungen, Ladeparks, Baustellen, Aufträge, E-Checks, Anlagen und Dateien ziehen alle mit. Gleich benannte Standorte werden zusammengelegt.</li></ul>`,

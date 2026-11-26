@@ -1957,7 +1957,7 @@ function locItem(kind,r){
   else sub=nav.v==="standort"||nav.v==="hauptsitz"?(r.notiz||""):ortName(r.standortId);
   const last=pruefUnter(kind,r.id)[0];
   return `<div class="sw" data-id="${esc(r.id)}" data-kind="${kind}"><div class="sw-bg"><span class="l">${icon(pins?"pinOff":"pin")}${pins?"Lösen":"Anpinnen"}</span><span class="r">Löschen${icon("del")}</span></div>
-    <div class="li" role="button" tabindex="0" data-act="nav" data-v="${view}" data-id="${esc(r.id)}"><span class="av">${icon(KIND_ICON[kind])}</span>
+    <div class="li" role="button" tabindex="0" data-act="nav" data-v="${view}" data-id="${esc(r.id)}"><span class="av">${icon(kind==="kunden"?kdIc(r):KIND_ICON[kind])}</span>
     <span class="lt"><span class="h">${esc(r.name)}</span><span class="s">${esc([sub,last&&`zuletzt ${deDate(last.p.datum)}`].filter(Boolean).join(" · ")||"noch keine Prüfung")}</span>${last?`<span class="st">${pill(protoState(last))}</span>`:""}</span>
     <button class="pin" data-act="pinLoc" data-kind="${kind}" data-id="${esc(r.id)}" aria-pressed="${pins}" aria-label="${pins?"Nicht mehr anpinnen":"Anpinnen"}">${icon(pins?"pin":"pinOff")}</button></div></div>`;
 }

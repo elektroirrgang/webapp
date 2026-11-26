@@ -2242,7 +2242,7 @@ function kundenKacheln(){ const q=query.toLowerCase(), H=v=>suPasst(q,v);
   const ks=live("kunden").map(k=>({k,B:live("baustellen").filter(b=>b.kundeId===k.id)})).filter(x=>x.B.length&&(!q||H(x.k.name)||x.B.some(b=>H(b.name)))).sort((a,b)=>a.k.name.localeCompare(b.k.name,"de"));
   if(!ks.length) return `<p class="meta" style="text-align:center;margin-top:24px">${q?`Nichts gefunden für „${esc(query)}“.`:"Noch keine Kunden mit Baustellen."}</p>`;
   return `<div class="k-kacheln">${ks.map(({k,B})=>{ const z=STATUS.map(([v,t])=>[v,t,B.filter(b=>(b.status||"aktiv")===v).length]).filter(x=>x[2]);
-    return `<button class="k-kachel" data-act="nav" data-v="kunde" data-id="${esc(k.id)}"><span class="kk-av">${icon("firma")}</span><span class="kk-n">${esc(k.name)}</span><span class="kk-o">${esc(k.ort||"")}</span>
+    return `<button class="k-kachel" data-act="nav" data-v="kunde" data-id="${esc(k.id)}"><span class="kk-av">${icon(kdIc(k))}</span><span class="kk-n">${esc(k.name)}</span><span class="kk-o">${esc(k.ort||"")}</span>
       <span class="kk-z">${z.map(([v,t,c])=>`<span class="kk-s"><i class="bs-dot ${v}"></i>${c} ${esc(t)}</span>`).join("")}</span></button>`; }).join("")}</div>`; }
 function baustellenListe(){
   if(META.filter==="kunden") return kundenKacheln();
@@ -2300,7 +2300,7 @@ function baustelleView(b){
   let h=`<div class="narrow">`;
   /* Kopf: Kachel zum Kunden (antippen ⇒ Kunde), darunter Aufnahme/Übergaben und Status in einer Zeile */
   const kdB=kundeOf(b.kundeId), adr=adrText(s)||adrText(kdB);
-  if(kdB||s) h+=`<button class="bk-karte" data-act="bKunde" data-id="${esc((kdB||{}).id||"")}" data-s="${esc((s||{}).id||"")}"><span class="bkk-ic">${icon("firma")}</span>
+  if(kdB||s) h+=`<button class="bk-karte" data-act="bKunde" data-id="${esc((kdB||{}).id||"")}" data-s="${esc((s||{}).id||"")}"><span class="bkk-ic">${icon(kdB?kdIc(kdB):"firma")}</span>
     <span class="bkk-t"><b>${esc(kdB?kdB.name:s.name)}</b><small>${esc([s&&kdB?s.name:"",adr].filter(Boolean).join(" · ")||"Kunde öffnen")}</small></span>${icon("chev")}</button>`;
   const [an,am]=afGesamt(b);
   h+=`<div class="b-zeile"><div class="b-tabs">${seg("bTab",nav.tab||"uebergaben",[["aufnahme",`Aufnahme${an?` · ${Math.round(an/am*100)} %`:""}`],["uebergaben",`Übergaben${E.length?` · ${E.length}`:""}`],["abnahme","Abnahme"]])}</div>
@@ -2418,7 +2418,7 @@ async function teilen(e){
 function locItem(kind,r){
   const n=live("baustellen").filter(b=>kind==="kunden"?b.kundeId===r.id:b.standortId===r.id).length;
   const sub=kind==="kunden"?[r.kdnr&&`Kd.-Nr. ${r.kdnr}`,r.ort,standorteVon(r.id).length&&`${standorteVon(r.id).length} Standort${standorteVon(r.id).length===1?"":"e"}`].filter(Boolean).join(" · "):(adrText(r)||"");
-  return `<div class="li" role="button" tabindex="0" data-act="nav" data-v="${kind==="kunden"?"kunde":"standort"}" data-id="${esc(r.id)}"><span class="av">${icon(kind==="kunden"?"firma":"ort")}</span>
+  return `<div class="li" role="button" tabindex="0" data-act="nav" data-v="${kind==="kunden"?"kunde":"standort"}" data-id="${esc(r.id)}"><span class="av">${icon(kind==="kunden"?kdIc(r):"ort")}</span>
     <span class="lt"><span class="h">${esc(r.name)}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}${n?`<span class="st">${pill("open",`${n} Baustelle${n>1?"n":""}`)}</span>`:""}</span>${icon("chev")}</div>`;
 }
 function kundenListe(){
