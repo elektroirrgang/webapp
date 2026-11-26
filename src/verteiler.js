@@ -200,7 +200,7 @@ function vtImpDlg(kind,id,vorwahl){ const s=kind==="standorte"&&standortOf(id), 
         </div>
       </section>
       <section class="vti-s" data-s="2" hidden>
-        <div class="vti-wege">${vtiSR()?`<button type="button" class="vti-weg vti-mic" data-act="vtiDiktat">${icon("mic")}<span>Diktieren</span></button>`:""}${typeof kiAn==="function"&&kiAn()?`<button type="button" class="vti-weg vti-ki" data-act="vtiFoto">${icon("cam")}<span>Foto</span></button>`:""}<button type="button" class="vti-weg" data-act="vtImpDatei">${icon("ecImport")}<span>Datei laden</span></button></div>
+        <div class="vti-wege">${vtiSR()?`<button type="button" class="vti-weg vti-mic" data-act="vtiDiktat">${icon("mic")}<span>Diktieren</span></button>`:""}${typeof kiAn==="function"&&kiAn()?`<button type="button" class="vti-weg vti-ki" data-act="vtiFoto">${icon("cam")}<span>Foto</span></button>`:""}<button type="button" class="vti-weg" data-act="vtImpDatei">${icon("ecImport")}<span>Datei / Word</span></button></div>
         <div class="vti-rec" id="vtiRec" hidden>
           <div class="vti-rec-kreis" id="vtiRecKreis"><span class="w1"></span><span class="w2"></span><span class="kern">${icon("mic")}</span></div>
           <div class="vti-rec-zeit" id="vtiRecZeit">0:00</div><div class="vti-rec-txt" id="vtiRecTxt">Ich höre zu</div>
@@ -209,7 +209,7 @@ function vtImpDlg(kind,id,vorwahl){ const s=kind==="standorte"&&standortOf(id), 
           <div class="vti-rec-k"><button type="button" class="btn-text" data-act="vtiRecAbbr">Verwerfen</button><button type="button" class="btn-filled vti-rec-ok" data-act="vtiRecOk">Fertig</button></div>
         </div>
         <div class="tf vti-text"><textarea id="vtiText" spellcheck="false" placeholder="${esc(VTI_BSP)}" aria-label="Liste, eine Zeile pro Gerät"></textarea></div>
-        <p class="vti-tipp">Eine Zeile pro Gerät. Spalten mit ; oder Tab – direkt aus Excel kopierbar. <code>---</code> = neue Reihe, „# Text“ = Überschrift.</p>
+        <p class="vti-tipp">Eine Zeile pro Gerät. Spalten mit ; oder Tab – direkt aus Excel kopierbar, alte Word-Legenden (.docx) über „Datei / Word“. <code>---</code> = neue Reihe, „# Text“ = Überschrift.</p>
       </section>
       <section class="vti-s" data-s="3" hidden>
         <div class="vti-nach" id="vtiNach" hidden><button type="button" class="vti-weg" data-act="vtiDiktat">${icon("mic")}<span>Weiter diktieren</span></button><button type="button" class="vti-weg" data-act="vtiSchritt" data-s="2">${icon("edit")}<span>Text ändern</span></button></div>
@@ -247,8 +247,12 @@ function vtImpVorschau(){ const box=document.getElementById("vtiVorschau"); if(!
    +(E.some(e=>e._auto)?`<p class="meta" style="margin:8px 4px 0">* Kennzeichen von der App vergeben</p>`:""); }
 document.addEventListener("input",e=>{ if(e.target&&e.target.id==="vtiText") vtImpVorschau(); });
 document.addEventListener("change",e=>{ if(e.target&&e.target.id==="f_vtiZiel") vtImpVorschau(); });
-function vtImpDatei(){ const i=document.createElement("input"); i.type="file"; i.accept=".txt,.csv,.tsv,text/plain,text/csv"; i.style.display="none"; document.body.appendChild(i);
-  i.onchange=async()=>{ const f=i.files&&i.files[0]; i.remove(); if(!f) return; const buf=await f.arrayBuffer(); let t=new TextDecoder("utf-8").decode(buf); if(t.includes("�")) t=new TextDecoder("windows-1252").decode(buf);
+function vtImpDatei(){ const i=document.createElement("input"); i.type="file"; i.accept=".txt,.csv,.tsv,.docx,text/plain,text/csv,application/vnd.openxmlformats-officedocument.wordprocessingml.document"; i.style.display="none"; document.body.appendChild(i);
+  i.onchange=async()=>{ const f=i.files&&i.files[0]; i.remove(); if(!f) return; const buf=await f.arrayBuffer();
+    if(/\.docx$/i.test(f.name)){ try{ const r=await docxLesen(buf), ta=document.getElementById("vtiText"); if(!r.zeilen.length){ toast("In der Word-Datei keine Stromkreis-Tabelle gefunden"); return; }
+        if(ta){ ta.value=(ta.value.trim()?ta.value.trim()+"\n":"")+docxZeilenText(r.zeilen); vtImpVorschau(); } const n=document.getElementById("f_vtiName"); if(n&&!n.value.trim()&&r.name) n.value=r.name; toast(`${r.zeilen.length} Zeilen aus der Word-Datei`); }
+      catch(e){ toast(e.message||"Word-Datei ließ sich nicht lesen"); } return; }
+    if(/\.doc$/i.test(f.name)){ toast("Altes Word-Format (.doc) – in Word als .docx speichern"); return; } let t=new TextDecoder("utf-8").decode(buf); if(t.includes("�")) t=new TextDecoder("windows-1252").decode(buf);
     const ta=document.getElementById("vtiText"); if(ta){ ta.value=t.replace(/^﻿/,""); vtImpVorschau(); } }; i.click(); }
 function vtImpAnlegen(){ const B=vtImp; if(!B) return; const t=(document.getElementById("vtiText")||{}).value||""; const {E}=vtImpLesen(t);
   if(!E.length){ toast("Die Liste ist leer"); return; }
@@ -478,3 +482,114 @@ async function vtiFoto(){ if(!kiAn()){ toast("KI ist nicht eingerichtet"); retur
     vtiKiFertig(); vtiKiUebernehmen(j,`Vom Foto (${B.length} Bild${B.length>1?"er":""}) abgelesen`); }
   catch(e){ vtiKiFertig(); toast(e.message||"KI nicht erreichbar"); } }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('#dlg [data-act="vtiFoto"]'); if(!b) return; e.stopPropagation(); vtiFoto(); },true);
+
+/* ===== Word-Legenden lesen (26.11.2026) =====
+   Alte Legenden aus Word (.docx): ZIP öffnen, word/document.xml lesen (DecompressionStream, keine Bibliothek nötig),
+   Tabellen Zeile für Zeile in Zellen zerlegen. Erkannt wird am Inhalt wie bei „Liste einfügen“ (Kennzeichen, Schutz, Leitung, Rest = Bezeichnung).
+   Kopfzeilen fallen raus; stehen zwei Legenden-Spalten nebeneinander (Nr | Bezeichnung | Nr | Bezeichnung), werden sie nacheinander gelesen.
+   .doc (altes Word-Format) geht nicht – in Word „Speichern unter … .docx“. */
+async function docxXml(buf,name){ const u=new Uint8Array(buf), dv=new DataView(buf); let e=u.length-22;
+  while(e>=0&&dv.getUint32(e,true)!==0x06054b50) e--; if(e<0) throw new Error("Das ist keine Word-Datei (.docx).");
+  const n=dv.getUint16(e+10,true); let p=dv.getUint32(e+16,true); const td=new TextDecoder();
+  for(let i=0;i<n&&dv.getUint32(p,true)===0x02014b50;i++){ const meth=dv.getUint16(p+10,true), cs=dv.getUint32(p+20,true), fl=dv.getUint16(p+28,true), xl=dv.getUint16(p+30,true), kl=dv.getUint16(p+32,true), lo=dv.getUint32(p+42,true);
+    if(td.decode(u.subarray(p+46,p+46+fl))===name){ const st=lo+30+dv.getUint16(lo+26,true)+dv.getUint16(lo+28,true), d=u.subarray(st,st+cs);
+      if(meth===0) return td.decode(d); if(typeof DecompressionStream==="undefined") throw new Error("Dieser Browser kann Word-Dateien nicht entpacken – bitte aktuellen Browser nehmen.");
+      return td.decode(await new Response(new Blob([d]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer()); }
+    p+=46+fl+xl+kl; }
+  return null; }
+const DOCX_KOPF=/^(nr\.?|nummer|lfd\.?\s*nr\.?|pos\.?|stromkreis\w*|sk|bezeichnung|verbraucher|raum|räume|anschluss|sicherung|absicherung|schutz\w*|ls|fi|rcd|kennz\w*|bmk|leitung|querschnitt|kabel|mm²|bemerkung\w*|funktion|klemme\w*|typ|a|in)$/i;
+function docxText(el){ let t=""; const lauf=n=>{ for(const c of n.childNodes){ const l=c.localName; if(l==="t") t+=c.textContent; else if(l==="tab"||l==="br") t+=" "; else if(l==="p"){ if(t&&!/\s$/.test(t)) t+=" "; lauf(c); } else if(c.childNodes&&c.childNodes.length) lauf(c); } };
+  lauf(el); return t.replace(/\s+/g," ").trim(); }
+async function docxLesen(buf){ const xml=await docxXml(buf,"word/document.xml"); if(!xml) throw new Error("In der Datei steht kein Word-Text.");
+  const doc=new DOMParser().parseFromString(xml,"application/xml"), body=doc.getElementsByTagNameNS("*","body")[0]; if(!body) throw new Error("Word-Datei ließ sich nicht lesen.");
+  const absaetze=[], zeilen=[];
+  for(const k of body.childNodes){
+    if(k.localName==="p"){ const t=docxText(k); if(t) absaetze.push(t); }
+    if(k.localName!=="tbl") continue;
+    const R=[...k.childNodes].filter(x=>x.localName==="tr").map(tr=>[...tr.childNodes].filter(x=>x.localName==="tc").map(docxText)).filter(r=>r.some(Boolean));
+    if(!R.length) continue;
+    /* Kopfzeile: mehr als die Hälfte der gefüllten Zellen sind Spaltenüberschriften */
+    const istKopf=r=>{ const f=r.filter(Boolean); return f.length>0&&f.filter(c=>DOCX_KOPF.test(c.replace(/[:.]$/,""))).length*2>f.length; };
+    const kopf=istKopf(R[0])?R[0]:null; let gruppen=[[0,Infinity]];
+    if(kopf){ const w=kopf.map(c=>c.toLowerCase().replace(/[^a-zäöü]/g,"")), z=w.findIndex((c,i)=>i>0&&c&&c===w[0]); if(z>0){ gruppen=[]; for(let s=0;s<w.length;s+=z) gruppen.push([s,s+z]); } }
+    const daten=R.filter(r=>!istKopf(r));
+    gruppen.forEach(([a,b])=>daten.forEach(r=>{ const c=r.slice(a,b).filter(Boolean); if(c.length) zeilen.push(c); })); }
+  /* Ohne Tabelle: Absätze, die nach Stromkreis aussehen */
+  if(!zeilen.length) absaetze.forEach(t=>{ if(vtiLs(t)||vtiRcd(t)||/^\s*-?F?\s?\d+[\s.)]/i.test(t)) zeilen.push(t.split(/\s{2,}|\t/).map(x=>x.trim()).filter(Boolean)); });
+  const name=(absaetze.find(t=>/\b(unter|haupt|klein|zähler)?verteil\w*|^\s*(UV|HV)\b|zählerschrank/i.test(t)&&t.length<60)||"").replace(/^(legende|stromkreis\w*|beschriftung)\s*[:–-]?\s*/i,"").trim();
+  return {name,zeilen}; }
+/* Zellen einer Zeile → {nr, sc, bz, lt} (wie vtImpLesen: am Inhalt erkannt, Reihenfolge egal) */
+function docxZeile(c){ const o={nr:"",sc:"",bz:"",lt:""}, rest=[];
+  c.forEach(f=>{ if(!o.nr&&vtiKz(f)) o.nr=f; else if(!o.sc&&(vtiRcd(f)||vtiRcbo(f)||vtiLs(f))) o.sc=f; else if(!o.lt&&vtiLeitung(f)&&!vtiLs(f)) o.lt=f; else rest.push(f); });
+  o.bz=rest.join(" ").replace(/\s+/g," ").trim(); return o; }
+const docxZeilenText=Z=>Z.map(docxZeile).map(o=>[o.nr,o.sc,o.bz,o.lt].filter(Boolean).join("; ")).filter(Boolean).join("\n");
+function docxWaehlen(fertig){ const i=document.createElement("input"); i.type="file"; i.accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"; i.style.display="none"; document.body.appendChild(i);
+  i.onchange=async()=>{ const f=i.files&&i.files[0]; i.remove(); if(!f) return;
+    if(/\.doc$/i.test(f.name)){ toast("Altes Word-Format (.doc) – in Word „Speichern unter“ als .docx, dann geht es"); return; }
+    try{ const r=await docxLesen(await f.arrayBuffer()); if(!r.zeilen.length){ toast("In der Word-Datei keine Stromkreis-Tabelle gefunden"); return; } r.datei=f.name.replace(/\.docx$/i,""); fertig(r); }
+    catch(e){ console.error(e); toast(e.message||"Word-Datei ließ sich nicht lesen"); } }; i.click(); }
+
+/* ===== Schnell-Legende (26.11.2026) =====
+   Für den Chef: so schnell wie in Word. Eine Tabelle Nr | Schutz | Bezeichnung, Enter = nächste Zeile, leerer Schutz = wie oben.
+   Reihen, Geräte und Einbauplätze sind nicht nötig (die App verteilt auf Reihen à 12 TE, später im Verteiler änderbar).
+   Optional zuerst eine alte Word-Legende laden – die Zeilen stehen dann schon drin. Mit oder ohne Kunde. */
+let QL=null;
+function qlZeileHtml(z,i){ const fi=vtiRcd(z.sc||"")&&!vtiRcbo(z.sc||"");
+  return `<div class="ql-z${fi?" ql-fi":""}" data-i="${i}"><input class="ql-nr" value="${esc(z.nr||"")}" placeholder="auto" aria-label="Nummer" autocomplete="off"><input class="ql-sc" value="${esc(z.sc||"")}" placeholder="${esc(i?"wie oben":"B16")}" aria-label="Schutz" autocomplete="off" autocapitalize="characters"><input class="ql-bz" value="${esc(z.bz||"")}" placeholder="${fi?"Bezeichnung (optional)":i?"":"z. B. Küche"}" aria-label="Bezeichnung" autocomplete="off"><button type="button" class="ql-weg" data-act="qlWeg" aria-label="Zeile löschen">${icon("close")}</button></div>`; }
+function qlLesen(){ const T=document.getElementById("qlTab"); if(!T||!QL) return; QL.zeilen=[...T.querySelectorAll(".ql-z")].map((r,i)=>({nr:r.querySelector(".ql-nr").value.trim(),sc:r.querySelector(".ql-sc").value.trim(),bz:r.querySelector(".ql-bz").value.trim(),lt:(QL.zeilen[i]||{}).lt||""})); }
+function qlZeichnen(fokus){ const T=document.getElementById("qlTab"); if(!T) return; T.innerHTML=QL.zeilen.map(qlZeileHtml).join(""); qlZaehler();
+  if(fokus) { const [i,k]=fokus, el=T.querySelector(`.ql-z[data-i="${i}"] .${k}`); if(el) el.focus(); } }
+function qlZaehler(){ const n=QL.zeilen.filter(z=>z.bz||z.sc).length, el=document.getElementById("qlAnz"); if(el) el.textContent=n?`${n} ${n===1?"Zeile":"Zeilen"}`:""; }
+function qlDlg(o){ const k=o.kid&&kundeOf(o.kid), ss=k&&!o.ort?standorteVon(k.id):[];
+  QL={kid:k?k.id:"",ort:o.ort||"",zeilen:Array.from({length:6},()=>({nr:"",sc:"",bz:""}))};
+  dialog("Schnell-Legende",`<div class="fg1 ql">
+    <p class="sup ql-wer">${icon(k?kdIc(k):"vtKasten")}<span>${esc(k?k.name:"Ohne Kunde – lässt sich später zuordnen")}</span></p>
+    ${tf("qlName","Name des Verteilers","",{form:true,ph:"z. B. UV EG"})}
+    <div class="vti-chips">${LEG_VT.map(v=>`<button type="button" class="chip" data-act="legSetz" data-ziel="f_qlName" data-v="${esc(v)}">${esc(v)}</button>`).join("")}</div>
+    ${ss.length?ecOrtFeld(k.id):""}
+    <button type="button" class="ql-word" data-act="qlWord">${icon("ecImport")}<span><b>Alte Word-Legende laden</b><small>.docx wählen – die Stromkreise stehen dann unten drin</small></span></button>
+    <div class="ql-kopf"><span>Nr.</span><span>Schutz</span><span>Bezeichnung</span><b id="qlAnz"></b></div>
+    <div class="ql-tab" id="qlTab"></div>
+    <button type="button" class="btn-text ql-plus" data-act="qlPlus">${icon("add")}Zeile</button>
+    <p class="vti-tipp">Enter springt in die nächste Zeile. Leerer Schutz = wie die Zeile darüber. FI als eigene Zeile (z. B. „FI 40A 30mA“) – die Stromkreise darunter gehören dazu. Nr. leer lassen, dann nummeriert die App.</p>
+  </div>`,`<button class="btn-text" data-act="cancel">Abbrechen</button><span style="flex:1"></span><button class="btn-tonal" data-act="qlOk" data-pdf="">Anlegen</button><button class="btn-filled" data-act="qlOk" data-pdf="1">Anlegen + PDF</button>`,{breit:true});
+  document.getElementById("dlg").classList.add("ql-dlg"); qlZeichnen(); if(o.word) setTimeout(qlWord,150); }
+function qlWord(){ docxWaehlen(r=>{ if(!QL) return; qlLesen(); const neu=r.zeilen.map(docxZeile).filter(z=>z.bz||z.sc||z.nr);
+  const voll=QL.zeilen.filter(z=>z.bz||z.sc||z.nr); QL.zeilen=[...voll,...neu,{nr:"",sc:"",bz:""}];
+  const n=document.getElementById("f_qlName"); if(n&&!n.value.trim()) n.value=r.name||r.datei||"";
+  qlZeichnen(); toast(`${neu.length} Zeilen aus „${r.datei}“ übernommen – bitte kurz prüfen`); }); }
+function qlText(){ qlLesen(); let letzt=""; const out=[];
+  QL.zeilen.forEach(z=>{ if(!z.bz&&!z.sc&&!z.nr) return; let sc=z.sc;
+    const fi=sc&&vtiRcd(sc)&&!vtiRcbo(sc);
+    if(!sc&&z.bz&&letzt&&!/^(leer|frei|---)$/i.test(z.bz)) sc=letzt;
+    if(sc&&!fi&&(vtiLs(sc)||vtiRcbo(sc))) letzt=sc;
+    if(/^(-{2,}|neue reihe)$/i.test(z.bz)){ out.push("---"); return; }
+    out.push([z.nr,sc,z.bz,z.lt].filter(Boolean).join("; ")); });
+  return out.join("\n"); }
+function qlAnlegen(pdf){ if(!QL) return; const t=qlText(), {E}=vtImpLesen(t);
+  if(!E.length){ toast("Noch keine Stromkreise eingetragen"); return; }
+  const F=formVals(), name=F.qlName||"Verteiler", wer=(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||"");
+  const sauber=X=>X.map(e=>{ const o={...e}; ["_auto","_ref","_nr","_te","_anz","leitung"].forEach(k=>delete o[k]); if(o.art==="rcd"&&+o.te===1) delete o.te; return o; });
+  const RW=vtiReihen(E,12), reihen=Math.max(1,...RW), nSk=E.filter(e=>e.art==="sk").length;
+  vtiKzVergeben([],E);
+  if(QL.kid){ const ortId=QL.ort||F.ecOrt||"k:"+QL.kid, g=ecGeb(ortId), vId=uid();
+    g.verteiler.push({id:vId,name,stand:ecHeute(),ersteller:wer,teReihe:12,reihen}); ecGebSpeichern(g);
+    const L=vtL(g.id,vId); if(!L){ toast("Verteiler nicht gefunden"); return; } L.reihen=reihen; L.eintraege=sauber(E); legNummern(L.eintraege); vtSchreiben(L);
+    const g2=vtGeb(g.id); if(g2&&E.some(e=>e.leitung)){ E.forEach(e=>{ if(!e.leitung) return; const s=g2.stromkreise.find(x=>x.id===e.id); if(s) s.leitung=e.leitung; }); ecGebSpeichern(g2); }
+    QL=null; closeOverlays(); go({v:"vt",g:g.id,id:vId}); }
+  else { const L={id:uid(),titel:name,kunde:"",anschrift:"",kundeId:"",standortId:"",ortId:"",netz:"",ersteller:wer,stand:ecHeute(),reihen,teReihe:12,eintraege:sauber(E)};
+    legNummern(L.eintraege); saveRec("legenden",L,true); QL=null; closeOverlays(); go({v:"legende",id:L.id}); }
+  toast(`Legende angelegt: ${nSk} Stromkreise`); if(pdf) setTimeout(()=>{ try{ legPdfMachen(); }catch(e){ console.error(e); } },450); }
+document.addEventListener("keydown",e=>{ const inp=e.target; if(e.key!=="Enter"||!inp||!inp.closest||!inp.closest("#qlTab")) return; e.preventDefault();
+  qlLesen(); const r=inp.closest(".ql-z"), i=+r.dataset.i, k=inp.className.split(" ")[0];
+  if(i>=QL.zeilen.length-1){ QL.zeilen.push({nr:"",sc:"",bz:""}); qlZeichnen([i+1,k]); } else { const el=document.querySelector(`#qlTab .ql-z[data-i="${i+1}"] .${k}`); if(el) el.focus(); } });
+document.addEventListener("input",e=>{ const inp=e.target; if(!inp||!inp.closest||!inp.closest("#qlTab")||!QL) return; qlLesen(); qlZaehler();
+  if(inp.classList.contains("ql-sc")){ const r=inp.closest(".ql-z"); r.classList.toggle("ql-fi",vtiRcd(inp.value)&&!vtiRcbo(inp.value)); } });
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="qlWord"],[data-act="qlPlus"],[data-act="qlWeg"],[data-act="qlOk"],[data-act="qlStart"],[data-act="qlStartWord"]'); if(!b) return; e.preventDefault(); e.stopPropagation();
+  const a=b.dataset.act;
+  if(a==="qlStart"||a==="qlStartWord"){ const o={kid:b.dataset.kid||"",ort:b.dataset.ort||"",word:a==="qlStartWord"}; if(typeof AW!=="undefined"&&AW){ o.kid=o.kid||AW.kid||""; o.ort=o.ort||AW.ort||""; AW=null; } $("#dlg").classList.remove("aw"); closeOverlays(); qlDlg(o); return; }
+  if(!QL) return;
+  if(a==="qlWord"){ qlWord(); return; }
+  if(a==="qlPlus"){ qlLesen(); QL.zeilen.push({nr:"",sc:"",bz:""}); qlZeichnen([QL.zeilen.length-1,"ql-bz"]); return; }
+  if(a==="qlWeg"){ qlLesen(); const i=+b.closest(".ql-z").dataset.i; QL.zeilen.splice(i,1); if(!QL.zeilen.length) QL.zeilen.push({nr:"",sc:"",bz:""}); qlZeichnen(); return; }
+  if(a==="qlOk"){ qlAnlegen(!!b.dataset.pdf); return; } },true);
