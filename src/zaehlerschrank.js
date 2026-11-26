@@ -425,9 +425,8 @@ function zsKarteInnen(L,ohneMaterial){ const zs=L.zs, zu=L.fertig;
   const k1=`<section class="card zs-karte zs-k-schrank"><h3>Zählerschrank</h3>
     <div class="zs-kopf">${mb?`<span class="zs-kfoto"><img src="${esc(typeof bildLokal==="function"?bildLokal(mb):mb)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></span>`:""}<span class="zs-kt"><b>${esc(schrankName)}</b><small>${esc(kurz)}</small>
       <span class="zs-chip${zs.bestand?" bst":""}">${zs.bestand?`Bestand${zs.baujahr?" · "+esc(zs.baujahr):""}`:"Neu aufgebaut"}</span></span></div>
-    ${zu?"":`<div class="zs-knoepfe"><button type="button" class="btn-tonal" data-act="zsWechsel">${icon("zsSchrank")}Schrank wechseln</button><button type="button" class="btn-tonal" data-act="zsAufbau">${icon("edit")}Felder bearbeiten</button></div>`}
-    ${bild?`<div class="zs-bild">${zu?zsSvg(zs,L.reihen):zsKlick(zs,L.reihen,null,{feld:()=>'data-act="zsAufbau"',zp:k=>`data-act="zsZpAuf" data-i="${k}"`,apz:()=>'data-act="zsApzAuf"'})}</div>`:""}
-    <button type="button" class="zs-bild-tg" data-act="zsBildUm" aria-expanded="${bild}">${icon(bild?"chev":"zsSchrank")}<span>${bild?"Schrankbild ausblenden":"Schrankbild anzeigen"}</span></button></section>`;
+    <div class="qa-row zs-qa">${zu?"":`<button type="button" class="qa" data-act="zsWechsel"><span class="qa-ic">${icon("zsSchrank")}</span><span>Schrank wechseln</span></button><button type="button" class="qa" data-act="zsAufbau"><span class="qa-ic">${icon("edit")}</span><span>Felder</span></button>`}<button type="button" class="qa${bild?" an":""}" data-act="zsBildUm" aria-expanded="${bild}"><span class="qa-ic">${icon(bild?"close":"zsSchrank")}</span><span>${bild?"Bild zu":"Schrankbild"}</span></button></div>
+    ${bild?`<div class="zs-bild zs-bildbox">${zu?zsSvg(zs,L.reihen):zsKlick(zs,L.reihen,null,{feld:()=>'data-act="zsAufbau"',zp:k=>`data-act="zsZpAuf" data-i="${k}"`,apz:()=>'data-act="zsApzAuf"'})}</div>`:""}</section>`;
   /* 2 · Anschluss und Zustand */
   const k2=`<section class="card zs-karte"><h3>Anschluss und Zustand</h3>
     ${zeile("zsBestandAuf","",icon(zs.bestand?"zsSchrank":"add"),"zs-bst",zs.bestand?"Bestand – was erneuert wurde":"Neu aufgebaut",zs.bestand?esc(zsArbListe(zs).join(" · ")||"Noch nichts als erneuert eingetragen"):"Bei einem vorhandenen Schrank auf „Bestand“ stellen")}
