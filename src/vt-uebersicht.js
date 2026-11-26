@@ -88,6 +88,7 @@ function vmGruppen(L){ const K=vmKatalog(), G=new Map();
     x.n++; });
   /* Unterverteiler-Gehäuse (26.11.2026): neues Hager-volta-Modell als erste Position – im Bestand nicht (der Verteiler bleibt) */
   if(L.art==="uv"&&!(L.bst&&L.bst.bestand)&&!L.typFrei&&typeof uvMasse==="function"){ const M=uvMasse(L); if(M.modell) G.set("uv:"+M.modell,{titel:`Kleinverteiler Hager volta ${M.n}-reihig, ${uvMontText(L.montage)}`,unter:`Hager ${M.modell} · ${M.n*12} TE`,bild:uvFotoUrl(M.modell),n:1,ord:-1,offen:false,nr:"",hnr:M.modell}); }
+  if(L.art==="gw"&&!(L.bst&&L.bst.bestand)&&typeof gwMod==="function"){ const m=gwMod(L.gw); if(m) G.set("gw:"+m.hnr,{titel:gwName(L.gw),unter:gwKurz(L.gw),bild:gwBild(m),n:1,ord:-1,offen:false,nr:"",hnr:m.hnr}); }
   return [...G.values()].sort((a,b)=>a.ord-b.ord||a.titel.localeCompare(b.titel,"de",{numeric:true})); }
 /* Zählerschrank-Positionen: steht eine Artikelnummer in Klammern und kennt die Materialliste sie, gibt es das Foto dazu */
 function vmZs(L){ const zs=L.zs; if(!zs||!zs.felder||!zs.felder.length) return [];

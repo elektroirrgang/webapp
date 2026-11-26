@@ -2457,3 +2457,9 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
 .uvt-seg{margin:0 0 14px}.uvt-inhalt .aw-lbl{margin-top:14px}.uvt-inhalt .aw-lbl:first-child{margin-top:0}
 .aw-nv-namen{margin:0 0 10px}
 .bj-seg{margin:0 0 10px}.bj-seg button{flex:1}.bj-tipp{margin:6px 2px 0;font-size:12px}
+/* Gewerbe-/Industrieschrank (26.11.2026) */
+.gw-mass{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.gw-daten .aw-lbl{margin-top:12px}
+.gw-daten-l{display:flex;flex-direction:column;gap:6px;margin:10px 0 4px}.gw-daten-l:empty{display:none}
+.gw-z{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;border-radius:14px;background:var(--sc-high);font-size:14px}.gw-z span{color:var(--on-sv)}
+.gw-daten .vti-chips{flex-wrap:wrap;overflow:visible;margin-right:0;padding-right:0}

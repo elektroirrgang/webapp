@@ -100,7 +100,7 @@ function legZeile(e,zu){ const t=e.art==="gr";
   return `<button type="button" class="leg-z z-${e.art}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}>${t?`<span class="bz">${esc(e.bez||"Überschrift")}</span>`
     :`<span class="kz">${esc(e.kz||"–")}</span><span class="bz">${e.art==="res"?`<i>Reserve</i>`:esc(e.bez||"–")}${e.art==="rcd"?` <span class="leg-rcd">RCD</span>`:""}</span><span class="sc">${esc(legSchutz(e))}</span>`}</button>`; }
 /* Reiter der Verteilerseite – wie die Schritte einer Prüfung in EVSE unten in der Leiste */
-function legTabs(L){ const T=L&&(L.art==="hv"||L.zs)?[["zs","Zählerschrank","zsSchrank","Zähler"],["sk","Stromkreise","zsBlitz"],["mat","Material","liste"],["ab","Abschluss","done"]]:L&&L.art==="gw"?[["sk","Stromkreise","zsBlitz"],["ab","Abschluss","done"]]:[["uv","Verteiler","zsSchrank"],["sk","Stromkreise","zsBlitz"],["ab","Abschluss","done"]];
+function legTabs(L){ const T=L&&(L.art==="hv"||L.zs)?[["zs","Zählerschrank","zsSchrank","Zähler"],["sk","Stromkreise","zsBlitz"],["mat","Material","liste"],["ab","Abschluss","done"]]:L&&L.art==="gw"?[["gw","Schrank","zsSchrank"],["sk","Stromkreise","zsBlitz"],["ab","Abschluss","done"]]:[["uv","Verteiler","zsSchrank"],["sk","Stromkreise","zsBlitz"],["ab","Abschluss","done"]];
   if(L&&L._geb&&!T.some(x=>x[0]==="mat")) T.splice(T.length-1,0,["mat","Material","liste"]);   /* Material auch beim Unterverteiler */
   return L&&L._geb&&typeof vuView==="function"?[["info","Übersicht","info"],...T]:T; }
 /* Ohne gewählten Reiter: fertig aufgenommene Verteiler öffnen mit der Übersicht, neue/leere mit dem Aufbau */
@@ -109,6 +109,7 @@ function legFab(L){ if(!L||L.fertig) return null; const t=legTab(L); return t===
 function legView(L){ const E=legE(L), tab=legTab(L);
   if(tab==="info") return vuView(L);
   if(tab==="zs") return `<div class="narrow ec-spalte leg">${typeof zsKarte==="function"?zsKarte(L,true):""}</div>`;
+  if(tab==="gw") return `<div class="narrow ec-spalte leg">${gwKarte(L)}</div>`;
   if(tab==="uv") return `<div class="narrow ec-spalte leg">${legUvKarte(L)}${typeof hbLink==="function"?`<div class="leg-hb">${hbLink("hb-verteiler","So bauen und beschriften wir Verteiler")}</div>`:""}</div>`; /* Handbuch gehört zum Aufbauen, nicht in die Übersicht */
   if(tab==="mat") return typeof vmView==="function"?vmView(L):`<div class="narrow ec-spalte leg">${typeof zsMaterialKarte==="function"?zsMaterialKarte(L):""}</div>`;
   if(tab==="sk") return `<div class="narrow ec-spalte leg">${legSkKarte(L,E)}</div>`;
@@ -542,6 +543,26 @@ document.addEventListener("change",ev=>{ const s=ev.target; if(!s||s.id!=="f_leg
   if(neu) v.vonVId=neu; else delete v.vonVId; v.updated=Date.now(); ecGebSpeichern(g); toast(neu?`Eingespeist aus ${(g.verteiler.find(y=>y.id===neu)||{}).name||"Verteiler"}`:"Direkt eingespeist"); });
 
 /* Verteilertyp wählen (Unterverteiler): Hager volta UP (VU…NC) / AP (VA…CN) mit 1–5 Reihen à 12 TE, sonst „anderer Typ“ */
+/* Gewerbe-/Industrieschrank-Karte (26.11.2026): Foto/Modell oder freie Daten, Zustand, Einspeisung und Sammelschiene */
+function gwKarte(L){ const g=L.gw||{}, m=typeof gwMod==="function"?gwMod(g):null, u=m?gwBild(m):"", zu=L.fertig, B=L.bst||{};
+  const zst=B.bestand?`Bestand${bjText(B.baujahr)?" · "+bjText(B.baujahr):""}`:"Neu gesetzt";
+  const zeile=(t,w)=>w?`<div class="gw-z"><span>${esc(t)}</span><b>${esc(w)}</b></div>`:"";
+  return `<section class="card zs-karte zs-k-schrank"><h3>Schrank</h3>
+    <div class="zs-kopf">${u?`<span class="zs-kfoto"><img src="${esc(u)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></span>`:""}<span class="zs-kt"><b>${esc(gwName(g))}</b><small>${esc(gwKurz(g)||"Noch keine Maße eingetragen")}</small><span class="zs-chip${B.bestand?" bst":""}">${esc(zst)}</span></span></div>
+    <div class="qa-row zs-qa">${zu?"":`<button type="button" class="qa" data-act="gwDaten"><span class="qa-ic">${icon("edit")}</span><span>Daten</span></button><button type="button" class="qa" data-act="uvBestand"><span class="qa-ic">${icon(B.bestand?"zsSchrank":"add")}</span><span>${B.bestand?"Bestand":"Neu / Bestand"}</span></button>`}</div>
+    <div class="gw-daten-l">${zeile("Einspeisung",g.einsp)}${zeile("Sammelschiene",g.schiene&&g.schiene!=="keine"?g.schiene:g.schiene)}${zeile("Reihen",g.reihen||(m&&m.n)?`${g.reihen||m.n} à 12 TE`:"")}</div>
+    ${B.bestand?`<button type="button" class="zs-zp" data-act="uvBestand" ${zu?"disabled":""}><span class="zs-zn zs-bst">${icon("zsSchrank")}</span><span class="zs-zt"><b>Bestand – was erneuert wurde</b><small>${esc(uvArbListe(B).join(" · ")||"Noch nichts als erneuert eingetragen")}</small></span>${icon("chev")}</button>`:""}
+    ${legVonFeld(L)}</section>`; }
+function gwDatenDlg(){ const L=legAkt(); if(!L) return; const g=L.gw||{}, m=gwMod(g);
+  dialog("Daten zum Schrank",`<div class="fg1 gw-daten">${m?`<p class="sup" style="margin:0">${esc(gwName(g))} · ${esc(gwKurz(g))}</p>`:""}${gwDatenHtml(g)}</div>`,
+    `${m?`<button class="btn-text" data-act="gwFrei">Maße frei eintragen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="gwDatenOk">Speichern</button>`,{breit:true}); }
+document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act="gwDaten"],[data-act="gwDatenOk"],[data-act="gwFrei"]'); if(!b||b.disabled) return; ev.stopPropagation(); ev.preventDefault();
+  const L=legAkt(); if(!L) return; const a=b.dataset.act;
+  if(a==="gwDaten"){ gwDatenDlg(); return; }
+  if(a==="gwFrei"){ const g=L.gw||{}; L.gw={...g,typ:"frei",hnr:""}; gwDatenDlg(); return; }
+  const g=gwDatenLesen({...(L.gw||{})}); ["einsp","schiene","ip","reihen"].forEach(k=>{ const an=document.querySelector(`#dlg [data-act="gwChip"][data-k="${k}"][aria-pressed="true"]`); if(!an&&document.querySelector(`#dlg [data-act="gwChip"][data-k="${k}"]`)) delete g[k]; });
+  L.gw=Object.fromEntries(Object.entries(g).filter(([k,v])=>v!==""&&v!=null)); if(g.reihen) L.reihen=+g.reihen; legSave(L); closeOverlays(); render(); toast("Gespeichert"); },true);
+
 /* Modell wechseln: Montage oben umschalten, Modell als Foto-Kachel antippen (wie „Schrank wechseln“) */
 let UVT_MO=null;
 function uvTypDlg(){ const L=legAkt(); if(!L) return; const M=uvMasse(L), frei=!M.modell||L.typFrei, mo=UVT_MO||L.montage||"up";
