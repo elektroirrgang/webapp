@@ -308,6 +308,11 @@ const ZS_HAK_ART=[["NH00","NH00","NH-Sicherung mit Messerkontakten, Größe 00 �
   ["DII","Diazed (D-System)","Schraubsicherung mit Passschraube, Porzellan · DII bis 25 A, DIII bis 63 A · sehr alte Anlagen","https://assets.hager.com/step-content/P/HA_94502433/11/std.lang.all/LE3335.webp"],
   ["?","weiß nicht","Kasten nicht offen oder nicht erkennbar",""]];
 const ZS_HAK_ZST=[["ok","in Ordnung","in Ordnung"],["alt","alt","alt – Austausch anregen"],["neu","erneuert","vom NB erneuert"]];
+/* übliche Nennströme je Sicherungsart zum Antippen (Max 26.11.2026) – „Andere“ öffnet das Feld */
+const ZS_HAK_IN={NH00:[35,50,63,80,100,125,160],NH1:[100,125,160,200,224,250],NH2:[224,250,315,355,400],D02:[20,25,35,50,63],DII:[16,20,25,35,50,63],"?":[35,50,63,80,100]};
+function zsHakInHtml(art,wert){ const L=ZS_HAK_IN[art]||ZS_HAK_IN["?"], w=String(wert||""), anders=!!w&&!L.includes(+w);
+  return `<div class="zs-arb zs-hak-in">${L.map(a=>`<button type="button" data-act="zsHakInW" data-v="${a}" aria-pressed="${w===String(a)}">${a} A</button>`).join("")}<button type="button" data-act="zsHakInW" data-v="" aria-pressed="${anders}">Andere</button></div>
+    <div class="fg1" id="zsHakInFeld" style="margin-top:8px"${anders?"":" hidden"}>${tf("zsHakIn","Nennstrom",w,{form:true,im:"numeric",sfx:"A",ph:"z. B. 63"})}</div>`; }
 const zsHakArtKurz=k=>(ZS_HAK_ART.find(x=>x[0]===k)||[])[1]||"";
 const zsHakText=h=>h?[h.art&&h.art!=="?"?zsHakArtKurz(h.art).split(" ")[0]+(h.in?` ${h.in} A`:""):(h.in?`${h.in} A`:""),h.ort,(ZS_HAK_ZST.find(x=>x[0]===h.zustand)||[])[2]].filter(Boolean).join(" · "):"";
 const zsHakBild=e=>e&&e[3]?`<img src="${esc(typeof bildLokal==="function"?bildLokal(e[3]):e[3])}" alt="" onerror="this.remove()">`:"";
@@ -327,7 +332,7 @@ function zsHakDlg(){ const L=legAkt(), zs=L&&L.zs; if(!zs) return; const h=zs.ha
     <div class="aw-lbl" style="margin-top:14px">Sicherung</div>
     <button type="button" class="zs-hak-w" data-act="zsHakAuswahl" aria-expanded="false"><span class="zs-hak-wb">${zsHakBild(art)||icon("zsBlitz")}</span><span class="zs-hak-wt"><b id="zsHakArtT">${esc(art?art[1]:"Auswählen")}</b><small>${esc(art?art[2]:"NH00, NH1, NH2, Neozed, Diazed – mit Bild zum Vergleichen")}</small></span>${icon("drop")}</button>
     <div class="aw-liste zs-hak-liste" id="zsHakListe" hidden>${ZS_HAK_ART.map(e=>awKachel("zsHakArt",e[0],zsHakBild(e),e[1],e[2],h.art===e[0])).join("")}</div>
-    <div class="fg1" style="margin-top:10px">${tf("zsHakIn","Nennstrom",h.in||"",{form:true,im:"numeric",sfx:"A",ph:"z. B. 63"})}</div>
+    <div class="aw-lbl" style="margin-top:14px">Nennstrom</div><div id="zsHakInBox">${zsHakInHtml(h.art||"?",h.in)}</div>
     <div class="aw-lbl" style="margin-top:14px">Zustand</div><div class="knx-seg zs-hseg">${ZS_HAK_ZST.map(([v,t])=>`<button type="button" data-act="zsHakZst" data-v="${v}" aria-pressed="${h.zustand===v}">${esc(t)}</button>`).join("")}</div>
     <div class="fg1" style="margin-top:12px">${tf("zsHakNo","Notiz",h.notiz||"",{form:true,ph:"z. B. Bakelit, ohne Berührungsschutz"})}</div>`,
     `${zs.hak?`<button class="btn-text danger" data-act="zsHakWeg">Entfernen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="zsHakOk">Speichern</button>`,{breit:true}); }
@@ -491,7 +496,10 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="zsHakAuswahl"){ const l=document.getElementById("zsHakListe"); if(l){ l.hidden=!l.hidden; b.setAttribute("aria-expanded",String(!l.hidden)); } return; }
   if(a==="zsHakArt"){ b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); const e=ZS_HAK_ART.find(x=>x[0]===b.dataset.v), w=document.querySelector('#dlg [data-act="zsHakAuswahl"]');
     if(w&&e){ w.querySelector(".zs-hak-wb").innerHTML=zsHakBild(e)||icon("zsBlitz"); w.querySelector("b").textContent=e[1]; w.querySelector("small").textContent=e[2]; w.setAttribute("aria-expanded","false"); }
-    const l=document.getElementById("zsHakListe"); if(l) l.hidden=true; return; }
+    const l=document.getElementById("zsHakListe"); if(l) l.hidden=true;
+    const box=document.getElementById("zsHakInBox"); if(box){ const alt=(document.getElementById("f_zsHakIn")||{}).value||""; box.innerHTML=zsHakInHtml(b.dataset.v,alt); } return; }
+  if(a==="zsHakInW"){ b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); const f=document.getElementById("zsHakInFeld"), i=document.getElementById("f_zsHakIn");
+    if(b.dataset.v){ if(i) i.value=b.dataset.v; if(f) f.hidden=true; } else { if(f) f.hidden=false; if(i){ i.value=""; i.focus(); } } return; }
   if(a==="zsHakZst"){ const an=b.getAttribute("aria-pressed")==="true"; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b&&!an))); return; }
   const zs=zsAkt(); if(!zs) return;
   switch(a){

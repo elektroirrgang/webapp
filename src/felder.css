@@ -1365,7 +1365,7 @@ a.dz{color:inherit;text-decoration:none;border-radius:12px}
 .zs-hak-wb{flex:none;width:56px;height:56px;border-radius:12px;background:#fff;display:grid;place-items:center;overflow:hidden}.zs-hak-wb img{max-width:90%;max-height:90%;object-fit:contain}.zs-hak-wb .ic{width:26px;height:26px;color:var(--on-sv)}
 .zs-hak-wt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.zs-hak-wt b{font-size:16px}.zs-hak-wt small{font-size:12.5px;color:var(--on-sv);line-height:1.35}
 .zs-hak-w[aria-expanded="true"]>.ic{transform:rotate(180deg)}
-.zs-hak-liste{margin-top:8px}.zs-hak-liste .aw-kb{background:#fff}
+.zs-hak-liste{margin-top:8px}.zs-hak-in button{min-width:64px;text-align:center}.zs-hak-liste .aw-kb{background:#fff}
 .zs-hw.zs-hw-frei{margin:0}.zs-hw.zs-hw-frei p{background:var(--wip-c);color:var(--on-wip-c)}
 .zs-neu-frei{margin-top:0}
 .leg-typ{margin:4px 0 10px;background:var(--sc-high)}
