@@ -559,7 +559,7 @@ function mlPos(z){ z=String(z||"").replace(/^[\s\-–•*]+/,"").trim(); const m
   if(!m) return {t:z,q:1,u:"Stück"}; const u=String(m[2]||"").toLowerCase(), U=/^(m|meter)$/.test(u)?"m":/^p(ck|ackung)/.test(u)?"Packung":/^rolle/.test(u)?"Rolle":u==="satz"?"Satz":u==="paar"?"Paar":"Stück";
   return {t:m[3].trim(),q:parseFloat(m[1].replace(",","."))||1,u:U}; }
 /* „Mitbringen“ wird eine Materialanforderung – erscheint beim Büro unter Material (angefordert → bestellt → da) */
-function mlAnfSync(m){ if(!DB.anforderungen) return; const txt=m.mitLager?"":String(m.mitbringen||"").trim(); /* aus dem Lager: keine Anforderung */
+function mlAnfSync(m){ if(!DB.anforderungen||(typeof fnAn==="function"&&!fnAn("materialanf"))) return; const txt=m.mitLager?"":String(m.mitbringen||"").trim(); /* aus dem Lager: keine Anforderung */
   const pos=!txt?[]:(typeof matAusText==="function"?matAusText(txt):txt.split(/\n+/).map(mlPos)).filter(x=>String(x.t||"").trim()).map(x=>({t:String(x.t).trim(),q:x.q,u:x.u}));
   const a=mlAnf(m);
   if(a){ if(a.status!=="angefordert"||JSON.stringify(a.pos)===JSON.stringify(pos)) return; if(!pos.length) a.deleted=true; a.pos=pos; saveRec("anforderungen",a); return; }

@@ -197,8 +197,8 @@ function materialView(){ matStammSeed();
   const f=MAT_F(), {z}=matNutzung(), A=matAlle(), anz=k=>A.filter(m=>k==="neu"?m.neu:k==="haeufig"?z[matNorm(m.name)]:m.kategorie===k).length;
   const chips=[["alle","Alle"],["haeufig","Häufig benutzt"],["neu","Neu"],...MAT_KAT].map(([k,t])=>{ const n=k==="alle"?0:anz(k); return k!=="alle"&&!n&&f!==k?"":`<button class="chip${MAT_KAT_TXT[k]?" mat-kc":""}" data-act="matF" data-v="${k}" aria-pressed="${f===k}">${MAT_KAT_TXT[k]?matKatIc(k):""}${esc(t)}${k==="alle"?"":`<small>${n}</small>`}</button>`; }).join("");
   const AO=typeof anfOffen==="function"?anfOffen():[], an=AO.filter(a=>a.status==="angefordert").length, be=AO.filter(a=>a.status==="bestellt").length;
-  return `<div class="narrow mat-st"><button class="vg-start af-start" data-act="nav" data-v="materialanf"><span class="vg-si">${icon("lager")}</span><span class="vg-st"><b>Materialanforderungen</b>
-    <span>${AO.length?[an&&`${an} angefordert`,be&&`${be} bestellt`].filter(Boolean).join(" · "):"Material anfordern oder Stand ansehen"}</span></span>${icon("chev")}</button>
+  return `<div class="narrow mat-st">${typeof fnAn==="function"&&!fnAn("materialanf")?"":`<button class="vg-start af-start" data-act="nav" data-v="materialanf"><span class="vg-si">${icon("lager")}</span><span class="vg-st"><b>Materialanforderungen</b>
+    <span>${AO.length?[an&&`${an} angefordert`,be&&`${be} bestellt`].filter(Boolean).join(" · "):"Material anfordern oder Stand ansehen"}</span></span>${icon("chev")}</button>`}
     ${searchBar("Teil oder Nummer")}
     <div class="chips filt mat-chips">${chips}</div>
     <div class="mat-opt"><div class="mat-sortw">${f==="haeufig"?"":seg("matSort",MAT_SORT(),[["kat","Kategorie"],["az","A–Z"],["haeufig","Häufig"]])}</div><div class="seg mat-ans" role="group">${[["liste","ansListe","Liste"],["kacheln","ansKachel","Kacheln"]].map(([v,ic,l])=>`<button type="button" data-act="matAns" data-v="${v}" aria-pressed="${MAT_ANS()===v}" aria-label="${l}" title="${l}">${icon(ic)}</button>`).join("")}</div></div>

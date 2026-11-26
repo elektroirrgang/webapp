@@ -1915,7 +1915,7 @@ function render(){ profilAnwenden(); setTimeout(()=>{ if(typeof kalPaneKlasse===
   else if(nav.v==="mldg"){ title="Meldungen"; body=mlUebersicht(); }
   else if(nav.v==="anl"){ title="Anlagen"; sub=anOrtInfo(nav.id).titel; body=anSeite(nav.id); fab=(META.anTab||"masch")==="masch"?["anMNeu","Maschine","add"]:null; }
   else if(nav.v==="masch"){ const m=DB.anlagen.get(nav.id); if(!m||m.deleted){ nav={v:"kunden"}; return render(); } title=anMName(m); sub=anOrtInfo(m.ortId).titel; body=anMSeite(m); }
-  else if(nav.v==="materialanf"){ title="Materialanforderungen"; body=`<div class="narrow">${searchBar("Teil, Baustelle, Person")}<div id="res">${anfListeView()}</div></div>`; fab=["afNeu","Anfordern","add"]; }
+  else if(nav.v==="materialanf"){ title="Materialanforderungen"; body=`<div class="narrow">${searchBar("Teil, Baustelle, Person")}<div id="res">${anfListeView()}</div></div>`; fab=fnAn("materialanf")?["afNeu","Anfordern","add"]:null; }
   else if(nav.v==="mehr"){ title="Einstellungen"; body=mehrView(); }
   else if(nav.v==="ma"){ if(!ME.admin){ nav={v:"mehr"}; return render(); } const m=nav.id?teamAlle().find(x=>x.mail===nav.id):null; title=m?m.name:"Mitarbeiter hinzufügen"; body=maView(m); }
   else if(KONTO_SEITEN[nav.v]){ title=KONTO_SEITEN[nav.v][0]; body=KONTO_SEITEN[nav.v][1](); }
@@ -2055,9 +2055,9 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(b.dataset.act==="wvTag"){ WV.tag=b.dataset.v; wetterDlg(); return; } },true);
 let DB_ANP=false;
 const DB_STD_MA={o:["heute","termine","werwo","wetter","schnell","baustellen","material","pinn","handbuch","apps","auftraege","pruefungen","geraete","zahlen"],aus:["auftraege","pruefungen","geraete","zahlen"],gr:{heute:"b",termine:"l",werwo:"m",wetter:"m",schnell:"m",pinn:"m"}};
-function dbLayout(){ const p=profilVon(ME.mail)||{}, STD=anfVerw()?DB_STD:DB_STD_MA, L=(istHandy()&&p.startH)||p.start||dbFirma()||{}, o=(L.o||[]).filter(k=>DB_W[k]&&(k!=="zahlen"||ME.admin));
+function dbLayout(){ const p=profilVon(ME.mail)||{}, STD=anfVerw()?DB_STD:DB_STD_MA, L=(istHandy()&&p.startH)||p.start||dbFirma()||{}, o=(L.o||[]).filter(k=>DB_W[k]&&(k!=="zahlen"||ME.admin)&&(k!=="material"||fnAn("materialanf")));
   const aus=(L.o?(L.aus||[]).slice():STD.aus.slice());
-  STD.o.forEach(k=>{ if(k==="zahlen"&&!ME.admin) return; if(!o.includes(k)){ o.push(k); if(L.o&&DB_NEU_AUS.includes(k)&&!aus.includes(k)) aus.push(k); } }); const gr={};
+  STD.o.forEach(k=>{ if(k==="zahlen"&&!ME.admin) return; if(k==="material"&&!fnAn("materialanf")) return; if(!o.includes(k)){ o.push(k); if(L.o&&DB_NEU_AUS.includes(k)&&!aus.includes(k)) aus.push(k); } }); const gr={};
   o.forEach(k=>{ const g=(L.gr||{})[k]||(L.o?"":STD.gr[k]); gr[k]=DB_GR[k].includes(g)?g:DB_GR[k].includes("m")?"m":DB_GR[k][0]; if(istHandy()&&gr[k]==="b") gr[k]=DB_GR[k].includes("m")?"m":"l"; });
   return {o,aus:aus.filter(k=>DB_W[k]),gr}; }
 function dbLayoutSpeichern(L){ const id=String(ME.mail||"").toLowerCase(); if(!id) return; const alt=DB.profile.get(id), r=alt||{id};
@@ -2262,7 +2262,7 @@ function dashboard(kacheln){
         s:()=>gross(P.length,"Kalibrierung offen",rot),
         m:g=>P.length?P.slice(0,anz(g)).map(({g:x,k})=>zeile(gerLabel(x),k.t)).join(""):leer("Alle Geräte kalibriert."),}; })(),
     apps:{ic:"home",app:true,m:g=>`<div class="wg-apps${g==="l"||g==="b"?" gross":""}${g==="b"?" reihe":""}">${APPS.map(a=>a.geplant?"":`<a class="wg-app" href="${a.href}"><img src="${a.ic}" alt=""><span>${esc(a.name)}</span>${g!=="m"?`<small>${esc(a.text)}</small>`:""}</a>`).join("")}</div>`},
-    schnell:{ic:"add",app:true,m:g=>`<div class="wg-schnell${g==="b"?" breit":""}">${[["vgNeu","board","Vorgang"],["afNeu","lager","Material"],["kalNeu","kal","Termin"],...(ME.admin?[["newKunde","firma","Kunde"]]:[])].map(([a,ic,t])=>`<button type="button" class="wg-sb" data-act="${a}">${icon(ic)}<span>${t}</span></button>`).join("")}</div>`},
+    schnell:{ic:"add",app:true,m:g=>`<div class="wg-schnell${g==="b"?" breit":""}">${[["vgNeu","board","Vorgang"],...(fnAn("materialanf")?[["afNeu","lager","Material"]]:[]),["kalNeu","kal","Termin"],...(ME.admin?[["newKunde","firma","Kunde"]]:[])].map(([a,ic,t])=>`<button type="button" class="wg-sb" data-act="${a}">${icon(ic)}<span>${t}</span></button>`).join("")}</div>`},
     heute:heuteKachel(),
     pinn:(()=>{ const P=pinListe(); return {ic:"pinnadel",sub:P.length?`${P.length} ${P.length===1?"Notiz":"Notizen"}`:"Für alle sichtbar",plus:["pinNeu","Notiz anheften"],app:true,
       m:g=>P.length?`<div class="pnw-raster pnw-${g}">${P.slice(0,g==="l"?6:g==="b"?4:2).map(pinKarte).join("")}</div>${P.length>(g==="l"?6:g==="b"?4:2)?`<button class="wg-mehr" data-act="pinAlle">Alle ${P.length} Notizen</button>`:""}`

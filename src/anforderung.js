@@ -18,7 +18,7 @@ const anfPill=a=>pill(a.status==="da"?"ok":a.status==="bestellt"?"wip":"open",AN
 
 /* Übergabe gespeichert ⇒ offene Positionen als Anforderung (solange noch nicht bestellt, wird sie mitgeändert) */
 function anfAusUebergabe(e){
-  if(!e||!DB.anforderungen) return;
+  if(!e||!DB.anforderungen||(typeof fnAn==="function"&&!fnAn("materialanf"))) return;
   const pos=(e.mat||[]).filter(x=>!x.ok&&String(x.t||"").trim()).map(x=>({t:String(x.t).trim(),q:x.q,u:x.u}));
   const a=[...DB.anforderungen.values()].find(x=>x.eintragId===e.id&&!x.deleted);
   if(a){ if(a.status!=="angefordert"||JSON.stringify(a.pos)===JSON.stringify(pos)) return; if(!pos.length) a.deleted=true; a.pos=pos; saveRec("anforderungen",a); return; }
@@ -43,6 +43,7 @@ function anfZeile(a,knapp){
     ${knapp?"":a.notiz?`<span class="s">${esc(a.notiz)}</span>`:""}<span class="st">${anfPill(a)}<span class="af-m">${esc([wer,t&&wann(t)].filter(Boolean).join(" · "))}</span></span></span>${knopf}</div>`;
 }
 function anfListeView(){
+  if(typeof fnAn==="function"&&!fnAn("materialanf")) return `<div class="empty">${icon("lager")}<h2>Materialanforderungen sind ausgeschaltet</h2><p>Der Entwickler hat sie für alle ausgeschaltet. Vorhandene Anforderungen bleiben gespeichert.</p></div>`;
   const q=typeof nav!=="undefined"&&nav.v==="materialanf"&&typeof query!=="undefined"?String(query).trim():"";
   const A=anfAlle().filter(a=>!q||suPasst(q,anfPosText(a),anfOrt(a),a.notiz,(a.von||a.createdBy||{}).name)).sort((x,y)=>(y.statusAm||y.created||0)-(x.statusAm||x.created||0)), zwei=Date.now()-14*864e5;
   const g=st=>A.filter(a=>a.status===st&&(st!=="da"||(a.statusAm||0)>=zwei));
@@ -52,6 +53,7 @@ function anfListeView(){
     ${teil("angefordert","Angefordert")}${teil("bestellt","Bestellt")}${teil("da","Da (letzte 14 Tage)")}</div>`;
 }
 function anfDialog(baustelleId){
+  if(typeof fnAn==="function"&&!fnAn("materialanf")){ toast("Materialanforderungen sind ausgeschaltet"); return; }
   const B=(DB.baustellen?[...DB.baustellen.values()]:[]).filter(b=>!b.deleted&&(b.status||"aktiv")!=="fertig").sort((a,b)=>String(a.name).localeCompare(String(b.name),"de"));
   dialog("Material anfordern",`<div class="fg1">${sf("bs","Wofür?",baustelleId||"",[["","Allgemein (Lager / Werkstatt)"],...B.map(b=>[b.id,b.name])],{form:true})}
     ${ta("pos","Was wird gebraucht? (eine Zeile pro Teil)","",{form:true,ph:"z. B.\n50 m NYM-J 3×1,5\n2 Pck Wago 221-413\n1 Rolle Isolierband"})}
