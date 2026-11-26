@@ -130,8 +130,16 @@ function zsKlick(zs,reihen,aktiv,akt){ const g=zsGeo(zs,false), F=zs.felder, FW=
 const UVZ_H={ap:[245,370,515,640,765],up:[356,505.5,630.5,755.5,880.5]};
 function uvMasse(L){ const n=Math.max(1,Math.min(9,+L.reihen||3)), up=L.montage!=="ap", te=+L.teReihe||12, ext=Math.max(0,te-12)*18;
   const tab=UVZ_H[up?"up":"ap"], H=n<=5?tab[n-1]:tab[4]+125*(n-5), W=(up?348:305)+ext;
-  const modell=te===12&&n<=5?`${up?"VU":"VA"}${n*12}${up?"NC":"CN"}`:"";
+  const modell=te===12&&n<=5?uvNr(L.montage,n):"";
   return {n,up,te,ext,H,W,modell}; }
+/* Hager volta: Unterputz VU..NC, Hohlwand VH..NC (gleiche Maße wie Unterputz), Aufputz VA..CN – Fotos aus dem Hager-Katalog (26.11.2026) */
+const uvNr=(mo,n)=>mo==="ap"?`VA${n*12}CN`:`${mo==="hw"?"VH":"VU"}${n*12}NC`;
+const UV_FOTO={VU12NC:"https://assets.hager.com/step-content/P/HA_22410201/11/std.lang.all/VU12NC.webp",VU24NC:"https://assets.hager.com/step-content/P/HA_22410214/11/std.lang.all/VU24NC.webp",VU36NC:"https://assets.hager.com/step-content/P/HA_22410232/11/std.lang.all/VU36NC.webp",VU48NC:"https://assets.hager.com/step-content/P/HA_22410255/11/std.lang.all/VU48NC.webp",VU60NC:"https://assets.hager.com/step-content/P/HA_22410271/11/std.lang.all/VU60NC.webp",
+  VA12CN:"https://assets.hager.com/step-content/P/HA_22409647/11/std.lang.all/VA12CN.webp",VA24CN:"https://assets.hager.com/step-content/P/HA_22409654/11/std.lang.all/VA24CN.webp",VA36CN:"https://assets.hager.com/step-content/P/HA_22409661/11/std.lang.all/VA36CN.webp",VA48CN:"https://assets.hager.com/step-content/P/HA_22409666/11/std.lang.all/VA48CN.webp",VA60CN:"https://assets.hager.com/step-content/P/HA_16279010/11/std.lang.all/VA60CN.webp",
+  VH12NC:"https://assets.hager.com/step-content/P/HA_22409888/11/std.lang.all/VH12NC.webp",VH24NC:"https://assets.hager.com/step-content/P/HA_22409894/11/std.lang.all/VH24NC.webp",VH36NC:"https://assets.hager.com/step-content/P/HA_22409898/11/std.lang.all/VH36NC.webp",VH48NC:"https://assets.hager.com/step-content/P/HA_22409904/11/std.lang.all/VH48NC.webp",VH60NC:"https://assets.hager.com/step-content/P/HA_22409912/11/std.lang.all/VH60NC.webp" };
+const uvFotoUrl=nr=>{ const u=UV_FOTO[nr]; return u?(typeof bildLokal==="function"?bildLokal(u):u):""; };
+const UV_MONT={up:"Unterputz",hw:"Hohlwand",ap:"Aufputz"};
+const uvMontText=m=>UV_MONT[m]||"Unterputz";
 const uvModellText=L=>{ const M=uvMasse(L); return M.modell&&!L.typFrei?`Hager volta ${M.modell}`:`${M.n}-reihig · ${M.te} TE je Reihe`; };
 function uvZeichnung(L){ const M=uvMasse(L), s=250/400 /* mm je Pixel im Feldbild */, k1=v=>(+v).toFixed(1), B="../bilder/zs/", C=ZSZ_F;
   /* Feldstücke (Pixel im Feldbild): Kopf mit Klemmleiste und 1. Schiene, je weitere Reihe ein Stück mit Schiene, Fuß mit Eckhaltern */
@@ -184,7 +192,7 @@ function uvZeichnung(L){ const M=uvMasse(L), s=250/400 /* mm je Pixel im Feldbil
     geh+=R(x0+W-fr/2-2,y0+H/2-15,4,30,"#B5B5B5",D,1,2)+R(x0+W/2-12,y0+fr/2-1.5,24,3,"#B5B5B5",null,0,1.5)+R(x0+W/2-12,y0+H-fr/2-1.5,24,3,"#B5B5B5",null,0,1.5); }
   const masse=L_(x0+2,y0-38,x0+2,y0-10,C.grau,1.2)+T(x0+16,y0-18,`Breite ${String(M.W).replace(".",",")} mm  →`,{s:22,w:400,f:C.grau,a:"start"})
     +L_(x0-40,y0+2,x0-12,y0+2,C.grau,1.2)+T(0,0,`Höhe ${String(M.H).replace(".",",")} mm`,{s:22,w:400,f:C.grau,a:"end",ex:` transform="translate(${x0-20} ${y0+16}) rotate(-90)"`});
-  const fuss=T(x0,vh-34,esc(uvModellText(L)+" · "+(M.up?"Unterputz":"Aufputz")),{s:18,w:600,f:"#9A9A9A",a:"start"})+T(vw-MR,vh-12,"Feldgrafiken: zaehlerschrank24.de",{s:14,w:400,f:"#9A9A9A",a:"end"});
+  const fuss=T(x0,vh-34,esc(uvModellText(L)+" · "+uvMontText(L.montage)),{s:18,w:600,f:"#9A9A9A",a:"start"})+T(vw-MR,vh-12,"Feldgrafiken: zaehlerschrank24.de",{s:14,w:400,f:"#9A9A9A",a:"end"});
   return {svg:`<svg class="zs-svg zs-z uv-svg" viewBox="0 0 ${k1(vw)} ${k1(vh)}" style="max-width:${Math.round(vw*1.1)}px" font-family="'Open Sans',Manrope,system-ui,sans-serif" role="img" aria-label="Unterverteiler">`
     +`<defs><linearGradient id="zsSchatten" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D0D0D0" stop-opacity="0"/><stop offset="1" stop-color="#C4C4C4" stop-opacity=".95"/></linearGradient></defs>`
     +masse+geh+g+fuss+`</svg>`,ueber}; }
