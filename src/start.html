@@ -2426,7 +2426,7 @@ function vtUebersicht(kind,r){ if(!DB.gebaeude) return ""; const orte=kind==="ku
   live("gebaeude").filter(g=>orte.includes(String(g.ortId))).forEach(g=>(g.verteiler||[]).forEach(v=>L.push({g,v})));
   if(!L.length) return "";
   return `<div class="sec-lbl">Verteiler</div>${listOf(L.map(({g,v})=>{ const n=(g.stromkreise||[]).filter(s=>s.vId===v.id).length, von=v.vonVId&&(g.verteiler||[]).find(x=>x.id===v.vonVId);
-    return `<a class="li weiter" href="../echeck/${v.qr?"#qr="+esc(v.qr):""}" style="text-decoration:none;color:inherit"><span class="av">${icon("ecMess")}</span><span class="lt"><span class="h">${esc(v.name||"Verteiler")}</span><span class="s">${esc([von&&"aus "+(von.name||"Verteiler"),n+" Stromkreis"+(n===1?"":"e"),v.stand&&"Stand "+deDate(v.stand)].filter(Boolean).join(" · "))}</span></span>${icon("chev")}</a>`; }))}`; }
+    return `<a class="li weiter" href="../echeck/${v.qr?"#qr="+esc(v.qr):""}" style="text-decoration:none;color:inherit"><span class="av">${icon("vtKasten")}</span><span class="lt"><span class="h">${esc(v.name||"Verteiler")}</span><span class="s">${esc([von&&"aus "+(von.name||"Verteiler"),n+" Stromkreis"+(n===1?"":"e"),v.stand&&"Stand "+deDate(v.stand)].filter(Boolean).join(" · "))}</span></span>${icon("chev")}</a>`; }))}`; }
 
 /* Baustelle direkt aus der Übersicht anlegen (nur Chef/Admin) – landet in der Baustelle-App */
 let bauForm=null;

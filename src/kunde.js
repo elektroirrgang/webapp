@@ -279,6 +279,8 @@ const KD_FIRMA_RE=/(\bgmbh|\bag\b|\bkg\b|\bohg\b|\bug\b|\bgbr\b|mbh\b|\be\.\s?k\
 const kdArt=k=>k&&KD_ARTEN.some(x=>x[0]===k.art)?k.art:(KD_FIRMA_RE.test(String(k&&k.name||""))?"gewerbe":"privat");
 /* Symbol je Kundenart (26.11.2026): Privat = Haus, Gewerbe = Laden, Industrie = Fabrik – überall, wo ein Kunde als Zeile/Kachel steht */
 Object.assign(IC,{kdPriv:"M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z",kdGew:"M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z",kdInd:"M2 22V10l7-3v2l5-2v3h3.3l.9-8h2.6l.9 8H22v12H2zm5-4h2v-4H7v4zm4 0h2v-4h-2v4zm4 0h2v-4h-2v4z"});
+/* Verteiler-Symbol (26.11.2026): Kasten mit Hutschienen und Automaten – statt des Messgeräts */
+IC.vtKasten="M5 2h14a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm0 2v16h14V4zM6 6h12v1H6zm0 7h12v1H6zM7 7.5h2.5v4H7zm3.75 0h2.5v4h-2.5zm3.75 0H17v4h-2.5zM7 14.5h2.5v4H7zm3.75 0h2.5v4h-2.5z";
 const kdIc=k=>k?({privat:"kdPriv",gewerbe:"kdGew",industrie:"kdInd"})[kdArt(k)]||"firma":"firma";
 const kdListe=t=>Array.isArray(t)?t:String(t||"").split(/\s*[,;\n]\s*/).map(x=>x.trim()).filter(Boolean);
 const kdOrteTitel=k=>kdArt(k)==="privat"?"Weitere Objekte":"Standorte";
