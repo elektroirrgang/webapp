@@ -2436,3 +2436,19 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
 .ets-g{display:flex;gap:10px;align-items:baseline;padding:7px 10px}
 .ets-g>b{flex:none;min-width:58px;font-variant-numeric:tabular-nums}.ets-g>span{flex:1;min-width:0}
 .ets-g>i{flex:none;font-style:normal;font-size:12px;color:var(--wip,#E0A100);font-weight:600}
+/* ===== Schnell-Legende (26.11.2026) – Tabelle wie in Word, gefüllte Felder ohne Rahmen ===== */
+.ql-wer{display:flex;align-items:center;gap:8px;margin:0}.ql-wer .ic{width:20px;height:20px;fill:var(--primary)}
+.ql-word{display:flex;align-items:center;gap:14px;width:100%;border:0;border-radius:16px;background:var(--feld);color:var(--on-surface);padding:12px 16px;font:inherit;text-align:left;cursor:pointer}
+.ql-word .ic{width:24px;height:24px;flex:none;fill:var(--primary)}.ql-word span{display:flex;flex-direction:column;gap:2px}.ql-word small{color:var(--on-sv);font-size:13px}
+.ql-kopf,.ql-z{display:grid;grid-template-columns:64px 104px minmax(0,1fr) 36px;gap:6px;align-items:center}
+.ql-kopf{font-size:12px;font-weight:700;color:var(--on-sv);padding:0 4px;margin-top:4px}.ql-kopf b{justify-self:end;font-weight:600;grid-column:4/5;white-space:nowrap;font-size:11px}
+.ql-tab{display:flex;flex-direction:column;gap:6px}
+.ql-z input{min-width:0;height:44px;border:0;border-radius:12px;background:var(--feld);color:var(--on-surface);padding:0 10px;font:inherit;font-size:15px;outline:none}
+.ql-z input:focus{box-shadow:0 0 0 2px var(--primary)}
+.ql-z input::placeholder{color:var(--on-sv);opacity:.6}
+.ql-z.ql-fi input{background:var(--pc);color:var(--on-pc);font-weight:700}
+.ql-weg{width:36px;height:36px;border:0;border-radius:18px;background:transparent;color:var(--on-sv);display:grid;place-items:center;cursor:pointer}.ql-weg .ic{width:18px;height:18px;fill:currentColor}
+.ql-plus{align-self:flex-start}
+@media (max-width:520px){.ql-kopf,.ql-z{grid-template-columns:50px 78px minmax(0,1fr) 30px;gap:4px}.ql-z input{padding:0 8px;font-size:14px}}
+.aw-schnell-l{font-size:13px;font-weight:700;color:var(--on-sv);margin:18px 4px 8px}
+.ql-z.ql-fi .ql-nr{display:none}.ql-z.ql-fi .ql-sc{grid-column:1/3}
