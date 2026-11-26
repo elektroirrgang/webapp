@@ -26,8 +26,7 @@ const AW_NETZ=[["TN-C-S | 230/400 V","TN-C-S","am häufigsten im Haus"],["TN-S |
 function awRahmen({titel,unter,schritt,schritte,frage,hinweis,inhalt,fuss}){
   $("#dlg").classList.remove("breit"); $("#dlg").classList.add("aw");
   $("#dlg").innerHTML=`<div class="aw-kopf"><button type="button" class="icon-btn aw-zur" data-act="awZur" aria-label="Zurück">${icon("back")}</button>
-      <div class="aw-tt"><b>${esc(titel)}</b>${unter?`<small>${esc(unter)}</small>`:""}</div><button type="button" class="icon-btn" data-act="awZu" aria-label="Schließen">${icon("close")}</button></div>
-    ${schritte?`<div class="aw-fort">${Array.from({length:schritte},(_,i)=>`<span${i<=schritt?' class="an"':""}></span>`).join("")}</div>`:""}
+      <div class="aw-tt"><b>${esc(titel)}</b>${unter||schritte?`<small>${esc([unter,schritte>1?`Schritt ${Math.min(schritt+1,schritte)} von ${schritte}`:""].filter(Boolean).join(" · "))}</small>`:""}</div><button type="button" class="icon-btn" data-act="awZu" aria-label="Schließen">${icon("close")}</button></div>
     <div class="aw-inhalt">${frage?`<h2 class="aw-frage">${esc(frage)}</h2>`:""}${hinweis?`<p class="aw-hinweis">${esc(hinweis)}</p>`:""}${inhalt}</div>
     ${fuss?`<div class="aw-fuss">${fuss}</div>`:""}`;
   $("#menu").hidden=true; $("#dlg").hidden=false; $("#scrim").hidden=false; $("#scrim").classList.add("dim");
