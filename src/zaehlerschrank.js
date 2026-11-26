@@ -315,7 +315,7 @@ function zsHakInHtml(art,wert){ const L=ZS_HAK_IN[art]||ZS_HAK_IN["?"], w=String
     <div class="fg1" id="zsHakInFeld" style="margin-top:8px"${anders?"":" hidden"}>${tf("zsHakIn","Nennstrom",w,{form:true,im:"numeric",sfx:"A",ph:"z. B. 63"})}</div>`; }
 const zsHakArtKurz=k=>(ZS_HAK_ART.find(x=>x[0]===k)||[])[1]||"";
 const zsHakText=h=>h?[h.art&&h.art!=="?"?zsHakArtKurz(h.art).split(" ")[0]+(h.in?` ${h.in} A`:""):(h.in?`${h.in} A`:""),h.ort,(ZS_HAK_ZST.find(x=>x[0]===h.zustand)||[])[2]].filter(Boolean).join(" · "):"";
-const zsHakBild=e=>e&&e[3]?`<img src="${esc(typeof bildLokal==="function"?bildLokal(e[3]):e[3])}" alt="" onerror="this.remove()">`:"";
+const zsHakBild=(e,kl)=>e&&e[3]?`<img${kl?` class="${kl}"`:""} src="${esc(typeof bildLokal==="function"?bildLokal(e[3]):e[3])}" alt="" onerror="this.remove()">`:"";
 const zsArbListe=zs=>[...ZS_ARB.filter(([k])=>(zs.arbeiten||{})[k]).map(x=>x[1]),...String(zs.arbeitenText||"").split(/\n|;/).map(t=>t.trim()).filter(Boolean)];
 function zsBestandDlg(){ const L=legAkt(), zs=L&&L.zs; if(!zs) return; const A=zs.arbeiten||{};
   dialog("Neu oder Bestand?",`<div class="knx-seg zs-zst">${[["neu","Neu aufgebaut"],["bestand","Bestand"]].map(([v,t])=>`<button type="button" data-act="zsZstW" data-v="${v}" aria-pressed="${(zs.bestand?"bestand":"neu")===v}">${t}</button>`).join("")}</div>
@@ -331,7 +331,7 @@ function zsHakDlg(){ const L=legAkt(), zs=L&&L.zs; if(!zs) return; const h=zs.ha
   dialog("Hausanschlusskasten",`<div class="fg1">${tf("zsHakOrt","Wo sitzt er?",h.ort||"",{form:true,ph:"z. B. Dachboden, Keller"})}</div>
     <div class="aw-lbl" style="margin-top:14px">Sicherung</div>
     <button type="button" class="zs-hak-w" data-act="zsHakAuswahl" aria-expanded="false"><span class="zs-hak-wb">${zsHakBild(art)||icon("zsBlitz")}</span><span class="zs-hak-wt"><b id="zsHakArtT">${esc(art?art[1]:"Auswählen")}</b><small>${esc(art?art[2]:"NH00, NH1, NH2, Neozed, Diazed – mit Bild zum Vergleichen")}</small></span>${icon("drop")}</button>
-    <div class="aw-liste zs-hak-liste" id="zsHakListe" hidden>${ZS_HAK_ART.map(e=>awKachel("zsHakArt",e[0],zsHakBild(e),e[1],e[2],h.art===e[0])).join("")}</div>
+    <div class="aw-liste zs-uss zs-hak-liste" id="zsHakListe" hidden>${ZS_HAK_ART.map(e=>awKachel("zsHakArt",e[0],zsHakBild(e,"zs-uss-b")||`<svg class="zs-uss-ph" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>`,e[1],e[2],h.art===e[0])).join("")}</div>
     <div class="aw-lbl" style="margin-top:14px">Nennstrom</div><div id="zsHakInBox">${zsHakInHtml(h.art||"?",h.in)}</div>
     <div class="aw-lbl" style="margin-top:14px">Zustand</div><div class="knx-seg zs-hseg">${ZS_HAK_ZST.map(([v,t])=>`<button type="button" data-act="zsHakZst" data-v="${v}" aria-pressed="${h.zustand===v}">${esc(t)}</button>`).join("")}</div>
     <div class="fg1" style="margin-top:12px">${tf("zsHakNo","Notiz",h.notiz||"",{form:true,ph:"z. B. Bakelit, ohne Berührungsschutz"})}</div>`,
