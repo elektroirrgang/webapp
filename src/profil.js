@@ -251,8 +251,24 @@ function navZurueckholen(){ try{ let s=null; try{ s=JSON.parse(sessionStorage.ge
 addEventListener("pagehide",navMerken); document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden") navMerken(); });
 setInterval(()=>{ if(document.visibilityState==="visible") navMerken(); },4000);
 const ZUL_IC={kunde:"firma",standort:"ort",geb:"gvGeb",vt:"ra_verteil",legende:"ra_verteil",kx:"knx",ec:"doc"};
+/* Kachel-Inhalt live aus den Daten (26.11.2026): Name, wozu es gehört (Kunde · Standort) und das Symbol der Art –
+   statt des beim Öffnen gemerkten Seitentitels („HV / Verteiler“ sagte nicht, wessen Verteiler). Gelöschtes fällt raus. */
+function zulInfo(x){ const n=x.nav||{}, f=(ic,t,s)=>({ic,t,s});
+  try{
+    const ortTxt=o=>o?[o.kunde&&o.kunde.name,o.standort&&o.standort.name].filter(Boolean).join(" · "):"";
+    if(n.v==="kunde"&&typeof kundeOf==="function"){ const k=kundeOf(n.id); if(!k||k.deleted) return null;
+      return f(typeof kdIc==="function"?kdIc(k):"firma",k.name,[typeof kdArt==="function"?({privat:"Privatkunde",gewerbe:"Gewerbekunde",industrie:"Industriekunde"})[kdArt(k)]:"Kunde",k.ort].filter(Boolean).join(" · ")); }
+    if(n.v==="standort"&&typeof standortOf==="function"){ const s=standortOf(n.id); if(!s||s.deleted) return null; const k=typeof kundeOf==="function"&&kundeOf(s.kundeId);
+      return f("ort",s.name||"Standort",k?k.name:"Standort"); }
+    if(n.v==="vt"&&typeof vtGeb==="function"){ const g=vtGeb(n.g), v=g&&g.verteiler.find(y=>y.id===n.id); if(!v) return null;
+      return f("vtKasten",v.name||"Verteiler",ortTxt(typeof ecOrt==="function"&&ecOrt(g.ortId))||"Verteiler"); }
+    if(n.v==="legende"&&typeof DB!=="undefined"&&DB.legenden){ const L=DB.legenden.get(n.id); if(!L||L.deleted) return null;
+      const k=L.kundeId&&typeof kundeOf==="function"&&kundeOf(L.kundeId); return f("vtKasten",L.titel||"Verteiler",k?k.name:"Ohne Kunde"); }
+  }catch(e){}
+  return f(ZUL_IC[n.v]||"chev",x.t,x.s||""); }
 function zuletztHtml(){ let L=[]; try{ L=JSON.parse(localStorage.getItem(NAV_ZUL)||"[]"); }catch(e){} if(!L.length) return "";
-  return `<div class="sec-lbl" style="margin-top:4px">Zuletzt geöffnet</div><div class="zul">${L.map((x,i)=>`<button type="button" class="zul-k" data-act="zulAuf" data-i="${i}"><span class="av">${icon(typeof IC!=="undefined"&&IC[ZUL_IC[x.nav.v]]?ZUL_IC[x.nav.v]:"chev")}</span><b>${esc(x.t)}</b><small>${esc(x.s||"")}</small></button>`).join("")}</div>`; }
+  const Z=L.map((x,i)=>({i,z:zulInfo(x)})).filter(y=>y.z); if(!Z.length) return "";
+  return `<div class="sec-lbl" style="margin-top:4px">Zuletzt geöffnet</div><div class="zul">${Z.map(({i,z})=>`<button type="button" class="zul-k" data-act="zulAuf" data-i="${i}"><span class="av">${icon(typeof IC!=="undefined"&&IC[z.ic]?z.ic:"chev")}</span><b>${esc(z.t)}</b><small>${esc(z.s)}</small></button>`).join("")}</div>`; }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="zulAuf"]'); if(!b) return; e.stopPropagation(); let L=[]; try{ L=JSON.parse(localStorage.getItem(NAV_ZUL)||"[]"); }catch(x){} const z=L[+b.dataset.i]; if(!z) return;
   if(z.cur&&typeof oeffne==="function"){ oeffne(z.cur); nav=z.nav; render(); return; } if(typeof query!=="undefined") query=""; go(z.nav); },true);
 function startBereich(){ if(navZurueckholen()) return; const v=META.startV; if(v&&einTop().some(x=>x[0]===v)) nav={v}; }
