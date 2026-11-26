@@ -56,7 +56,10 @@ function awNeuStart(kind,id){ const s=kind==="standorte"&&standortOf(id), k=kind
   AW={typ:"neu",kid:k?k.id:"",ort:s?s.id:k&&!ss.length?"k:"+k.id:"",ortWahl:ss.length>0,i:0,d:{art:"",montage:"",reihen:0,name:"",netz:null},unter:k?(s?[k.name,s.name].filter(Boolean).join(" · "):k.name):"Ohne Kunde"};
   awNeuZeigen(); }
 function awNeuSchritte(){ const hv=AW.d.art==="hv";
-  if(hv) return ["art","zustand","hersteller","geraete","bedarf",...(ZS_MODELLE.some(m=>m.h===AW.d.hersteller)?["modell"]:[]),...(AW.ortWahl?["ort"]:[]),"vorschlag"];
+  /* Zählerschrank gestrafft (26.11.2026): Hersteller als Umschalter auf der Modell-Seite (kein eigener Schritt).
+     Neu: Bedarf → passende Modelle. Bestand: gleich „Welcher Schrank hängt da?“ – nur bei „weiß nicht“ danach die Felder. */
+  if(hv) return AW.d.bestand?["art","zustand","geraete","modell",...(AW.d.ohneModell?["bedarf"]:[]),...(AW.ortWahl?["ort"]:[]),"vorschlag"]
+    :["art","zustand","geraete","bedarf","modell",...(AW.ortWahl?["ort"]:[]),"vorschlag"];
   /* Unterverteiler (26.11.2026): Neu/Bestand · Montage mit Foto · Einbaugeräte · Modell (bringt Reihen und TE mit) · Name + Einspeisung auf einer Seite */
   if(AW.d.art==="uv") return ["art","zustand","montage","geraete","modell",...(AW.d.typFrei?["reihen"]:[]),...(AW.ortWahl?["ort"]:[]),"namevon"];
   return ["art","montage","reihen",...(AW.ortWahl?["ort"]:[]),"name",...(awVonListe().length?["von"]:[]),"netz"]; }
@@ -66,8 +69,9 @@ const awOrtPlz=()=>{ if(!AW.kid) return ""; const o=ecOrt(AW.ort||"k:"+AW.kid); 
 function awNeuZeigen(){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d, R={titel:"Neuer Verteiler",unter:AW.unter,schritt:AW.i,schritte:S.length};
   if(sk==="hersteller") return awRahmen({...R,frage:"Welcher Hersteller?",hinweis:"Höhe, Reihen und Felder sind genormt – der Hersteller zählt für Material und Artikelnummern.",inhalt:`<div class="aw-liste">${ZS_HERST.map(([k,t,u])=>awKachel("awNeuW",k,"",t,u,d.hersteller===k)).join("")}</div>`});
   if(sk==="geraete") return awRahmen({...R,frage:"Einbaugeräte von?",hinweis:"LS, FI und FI/LS dieses Herstellers stehen beim Bestücken vorne.",inhalt:`<div class="aw-liste">${ZS_GERHERST.map(([k,t,u])=>awKachel("awNeuW",k,"",t,u,d.gerHerst===k&&d.gerHerst!=null)).join("")}</div>`});
-  if(sk==="bedarf") return awRahmen({...R,...zsBedarfFenster(d.bedarf)});
-  if(sk==="modell"&&d.art!=="uv") return awRahmen({...R,...zsModellFenster(d)});
+  if(sk==="bedarf") return awRahmen({...R,...zsBedarfFenster(d.bedarf),...(d.bestand?{frage:"Was ist im Schrank?",hinweis:"So, wie er jetzt hängt – Zählerplätze, Verteilerfelder, Multimedia."}:{})});
+  if(sk==="modell"&&d.art!=="uv"){ const F=d.bestand?zsModellFensterBestand(d):zsModellFenster(d), hs=`<div class="knx-seg zs-hseg aw-hseg">${ZS_HERST.filter(x=>x[0]!=="andere").map(([k,t])=>`<button type="button" data-act="awHerstW" data-v="${k}" aria-pressed="${d.hersteller===k}">${esc(t)}</button>`).join("")}</div>`;
+    return awRahmen({...R,...F,inhalt:hs+F.inhalt}); }
   if(sk==="vorschlag"){ const plz=awOrtPlz(); if(d.zs.nb==null&&ZS_PLZ_NB[plz]){ zsNbSetzen(d.zs,ZS_PLZ_NB[plz]); d.nbAuto=true; } return awRahmen({...R,...zsVorschlagFenster(d,plz)}); }
   if(sk==="felder") return awRahmen({...R,...zsFelderFenster(d.zs,d.reihen,"awSubZu","Fertig")});
   if(sk==="apz") return awRahmen({...R,...zsApzFenster(d.zs)});
@@ -117,7 +121,7 @@ function awNameVonFenster(){ const d=AW.d, N=AW_NAMEN[d.art]||AW_NAMEN.uv, L=awV
       ${netzVon?"":`<div class="aw-lbl">Netzform</div><div class="vti-chips">${AW_NETZ.map(([v,t])=>`<button type="button" class="chip" data-act="awNvNetz" data-v="${esc(v)}" aria-pressed="${(d.netz||"")===v&&d.netz!=null}">${esc(t)}</button>`).join("")}</div>`}`,
     fuss:`<span style="flex:1"></span><button type="button" class="btn-filled" data-act="awNvOk">Anlegen</button>`}; }
 function awNeuWahl(v){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d;
-  if(sk==="art"){ if(d.art!==v){ d.zs=null; if(v==="uv"&&d.gerHerst==null) d.gerHerst="Hager"; if(v==="hv"){ Object.assign(d,{bedarf:zsBedarfStd(),montage:"up",name:"HV",netz:"TN-C-S | 230/400 V",hersteller:d.hersteller||""}); } } d.art=v; }
+  if(sk==="art"){ if(d.art!==v){ d.zs=null; if(v==="uv"&&d.gerHerst==null) d.gerHerst="Hager"; if(v==="hv"){ Object.assign(d,{bedarf:zsBedarfStd(),montage:"up",name:"HV",netz:"TN-C-S | 230/400 V",hersteller:d.hersteller||"hager"}); if(d.gerHerst==null) d.gerHerst="Hager"; } } d.art=v; }
   else if(sk==="zustand") d.bestand=v==="bestand";
   else if(sk==="modell"&&d.art==="uv"){ if(v==="frei"){ d.typFrei=true; d.reihen=d.reihen||3; } else { d.typFrei=false; d.reihen=+v; d.teReihe=12; } }
   else if(sk==="hersteller"){ d.hersteller=v; if(d.zs) d.zs.hersteller=v; if(d.gerHerst==null) d.gerHerst=v==="hager"?"Hager":v==="sj"?"ABB":null; }
@@ -251,6 +255,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "awZur": if(!AW||AW.typ==="produkt") return awZu(); if(AW.typ==="neu"){ if(AW.sub){ AW.sub=AW.sub==="reihen"?"hoehe":null; if(AW.d.zs) zsAbgleich(AW.d.zs); awNeuZeigen(); } else if(AW.i>0){ AW.i--; awNeuZeigen(); } else awZu(); }
     else if(AW.typ==="zs"){ if(AW.schritte&&AW.i>0){ const z=zsAktZp(); if(z) zsZpLesen(z); AW.i--; zsZeigen(); } else awZu(); } else if(AW.m) awKatalog(); else awZu(); return;
   case "awNeuW": awNeuWahl(b.dataset.v); return;
+  case "awHerstW": { const d=AW.d; d.hersteller=b.dataset.v; if(d.zs) d.zs.hersteller=b.dataset.v; awNeuZeigen(); return; }
   case "awNvName": { AW.d.name=b.dataset.v; const i=document.getElementById("f_awName"); if(i) i.value=b.dataset.v; document.querySelectorAll('#dlg [data-act="awNvName"]').forEach(x=>x.setAttribute("aria-pressed",x===b)); return; }
   case "awNvVon": { const d=AW.d, i=document.getElementById("f_awName"); if(i) d.name=i.value.trim()||d.name; d.vonVId=b.dataset.v==="-"?"":b.dataset.v; const q=awVonListe().find(x=>x.id===d.vonVId); if(q&&q.netz) d.netz=q.netz; awNeuZeigen(); return; }
   case "awNvNetz": { const d=AW.d, i=document.getElementById("f_awName"); if(i) d.name=i.value.trim()||d.name; d.netz=b.dataset.v; document.querySelectorAll('#dlg [data-act="awNvNetz"]').forEach(x=>x.setAttribute("aria-pressed",x===b)); return; }

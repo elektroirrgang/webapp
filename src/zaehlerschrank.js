@@ -166,6 +166,12 @@ function zsModellFenster(d){ const b=d.bedarf, need=Math.max(1,zsBedarfZp(b)), v
   return {frage:"Welcher Schrank?",hinweis:`Für ${was}. Antippen übernimmt Felder, Höhe und APZ.`,
     inhalt:`<div class="aw-lbl">Passt genau</div><div class="aw-grid">${frei}${genau.map(karte).join("")}</div>
       ${groesser.length?`<div class="aw-lbl">Fertige Modelle · größer</div><div class="aw-grid">${groesser.map(karte).join("")}</div>`:""}`}; }
+/* Bestand im Assistenten: alle Modelle des Herstellers (ohne Bedarf), dazu „weiß nicht / eigener Aufbau“ – dann folgen die Felder */
+function zsModellFensterBestand(d){ const A=ZS_MODELLE.filter(m=>m.h===d.hersteller), b=d.bedarf||zsBedarfStd(), cur=d.zs&&d.zs.modell&&d.zs.modell.hnr;
+  const karte=m=>zsModKarte(m,d.zs,b,"awModell",cur===m.hnr);
+  return {frage:"Welcher Schrank hängt da?",hinweis:"Steht meist innen auf dem Typenschild. Antippen übernimmt Felder, Höhe und APZ.",
+    inhalt:`<div class="aw-grid">${A.map(karte).join("")}</div>
+      <div class="aw-lbl">Nicht dabei</div><div class="aw-liste">${awKachel("awModell","","","Weiß nicht / eigener Aufbau","Felder im nächsten Schritt selbst angeben",d.ohneModell)}</div>`}; }
 /* Schrank wechseln: Hersteller wählen, Modell antippen – Zählerplätze (Zweck, Art, SLS, Nummer), Bestand, HAK, NB, Geräte bleiben, Felder kommen vom Modell */
 function zsWechselFenster(zs){ const h=AW.mh||zs.hersteller||(zs.modell&&zs.modell.h)||"hager", A=ZS_MODELLE.filter(m=>m.h===h), cur=zs.modell&&zs.modell.hnr;
   const karte=m=>zsModKarte(m,zs,zs.bedarf||zsBedarfStd(),"zsModW",cur===m.hnr);
