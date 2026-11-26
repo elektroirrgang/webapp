@@ -2201,7 +2201,7 @@ function locItem(kind,r){
   const nd=kind==="kunden"?live("dateien").filter(d=>(d.bezugKind==="kunden"&&d.bezugId===r.id)||(d.bezugKind==="standorte"&&(standortOf(d.bezugId)||{}).kundeId===r.id)).length:dateienVon("standorte",r.id).length;
   const sub=kind==="kunden"?[r.kdnr&&`Kd.-Nr. ${r.kdnr}`,r.ort,`${standorteVon(r.id).length} Standort${standorteVon(r.id).length===1?"":"e"}`].filter(Boolean).join(" · "):(adrText(r)||"");
   const pills=[na&&pill("open",`${na} Anlagenprüfung${na>1?"en":""}`),ng&&pill("open",`${ng} Geräteprüfung${ng>1?"en":""}`),nn&&pill("open",`${nn} Netzwerkprüfung${nn>1?"en":""}`),nb&&pill("open",`${nb} Gerät${nb>1?"e":""}`),nd&&pill("open",`${nd} Datei${nd>1?"en":""}`)].filter(Boolean).join("");
-  return `<div class="li" role="button" tabindex="0" data-act="nav" data-v="${kind==="kunden"?"kunde":"standort"}" data-id="${esc(r.id)}"><span class="av">${icon(kind==="kunden"?"firma":"ort")}</span>
+  return `<div class="li" role="button" tabindex="0" data-act="nav" data-v="${kind==="kunden"?"kunde":"standort"}" data-id="${esc(r.id)}"><span class="av">${icon(kind==="kunden"?kdIc(r):"ort")}</span>
     <span class="lt"><span class="h">${esc(r.name)}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}${pills?`<span class="st">${pills}</span>`:""}</span>${icon("chev")}</div>`;
 }
 FDEF.kunden={std:{sort:"az"},sort:[["az","Name A–Z"],["za","Name Z–A"],["kdnr","Kundennummer"],["neu","Zuletzt angelegt"]],gruppen:[],liste:()=>kundenListe()};

@@ -23,7 +23,7 @@ function vuView(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v)
   /* Kopf: Anlage, Kunde, Schnellaktionen */
   const chips=[v.art==="hv"||L.zs?"Hauptverteilung":v.art==="gw"?"Gewerbe":"Unterverteilung",L.netz,von&&`gespeist aus ${von.name||"Verteiler"}`].filter(Boolean);
   const kopf=`<section class="card vu-kopf">
-    <div class="vu-titel"><span class="vu-ic">${icon(k&&kdArt(k)!=="privat"?"firma":"person")}</span><div><b>${esc(k?k.name:"Ohne Kunde")}</b>${adr?`<span>${esc(adr)}</span>`:""}<small class="vu-meta">${esc([...chips,v.qr&&`QR ${qrZeig(v.qr)}`].filter(Boolean).join(" · "))}</small></div></div>
+    <div class="vu-titel"><span class="vu-ic">${icon(k?kdIc(k):"person")}</span><div><b>${esc(k?k.name:"Ohne Kunde")}</b>${adr?`<span>${esc(adr)}</span>`:""}<small class="vu-meta">${esc([...chips,v.qr&&`QR ${qrZeig(v.qr)}`].filter(Boolean).join(" · "))}</small></div></div>
     <div class="vu-aktionen">
       ${tel[0]?`<a class="vu-a" href="${esc(vuTel(tel[0].nr))}">${icon("phone")}<span>Anrufen</span></a>`:""}
       ${adr?`<a class="vu-a" href="${esc(mapsHref(adr))}" target="_blank" rel="noopener">${icon("route")}<span>Route</span></a>`:""}
