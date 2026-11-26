@@ -86,6 +86,8 @@ function vmGruppen(L){ const K=vmKatalog(), G=new Map();
       const f=legBildFuer(e)[0], bild=m&&matBild(m)?bildLokal(matBild(m)):e.art==="kl"?`../bilder/vt/pollmann-${kl==="pe"?"pe":kl==="a"?"a":"n"}14s.png`:`../bilder/vt/${f}`;
       x={titel,unter,bild,n:0,ord:{rcd:0,sk:rb?2:1,ge:3,kl:4}[e.art]??5,offen:!m&&e.art!=="kl",nr:m?matNr(m):"",hnr:m?hnr:""}; G.set(key,x); }
     x.n++; });
+  /* Unterverteiler-Gehäuse (26.11.2026): neues Hager-volta-Modell als erste Position – im Bestand nicht (der Verteiler bleibt) */
+  if(L.art==="uv"&&!(L.bst&&L.bst.bestand)&&!L.typFrei&&typeof uvMasse==="function"){ const M=uvMasse(L); if(M.modell) G.set("uv:"+M.modell,{titel:`Kleinverteiler Hager volta ${M.n}-reihig, ${uvMontText(L.montage)}`,unter:`Hager ${M.modell} · ${M.n*12} TE`,bild:uvFotoUrl(M.modell),n:1,ord:-1,offen:false,nr:"",hnr:M.modell}); }
   return [...G.values()].sort((a,b)=>a.ord-b.ord||a.titel.localeCompare(b.titel,"de",{numeric:true})); }
 /* Zählerschrank-Positionen: steht eine Artikelnummer in Klammern und kennt die Materialliste sie, gibt es das Foto dazu */
 function vmZs(L){ const zs=L.zs; if(!zs||!zs.felder||!zs.felder.length) return [];

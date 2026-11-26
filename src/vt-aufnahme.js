@@ -57,6 +57,8 @@ function awNeuStart(kind,id){ const s=kind==="standorte"&&standortOf(id), k=kind
   awNeuZeigen(); }
 function awNeuSchritte(){ const hv=AW.d.art==="hv";
   if(hv) return ["art","zustand","hersteller","geraete","bedarf",...(ZS_MODELLE.some(m=>m.h===AW.d.hersteller)?["modell"]:[]),...(AW.ortWahl?["ort"]:[]),"vorschlag"];
+  /* Unterverteiler (26.11.2026): Neu/Bestand · Montage mit Foto · Einbaugeräte · Modell (bringt Reihen und TE mit) · Name + Einspeisung auf einer Seite */
+  if(AW.d.art==="uv") return ["art","zustand","montage","geraete","modell",...(AW.d.typFrei?["reihen"]:[]),...(AW.ortWahl?["ort"]:[]),"namevon"];
   return ["art","montage","reihen",...(AW.ortWahl?["ort"]:[]),"name",...(awVonListe().length?["von"]:[]),"netz"]; }
 /* Verteiler, die am gewählten Ort schon da sind – daraus kann der neue gespeist werden (HV → UV) */
 const awVonListe=()=>{ if(!AW||!AW.kid||!AW.ort&&AW.ortWahl) return []; const g=ecGeb(AW.ort||"k:"+AW.kid); return (g.verteiler||[]).filter(v=>v&&!v.deleted); };
@@ -65,19 +67,26 @@ function awNeuZeigen(){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d, R={
   if(sk==="hersteller") return awRahmen({...R,frage:"Welcher Hersteller?",hinweis:"Höhe, Reihen und Felder sind genormt – der Hersteller zählt für Material und Artikelnummern.",inhalt:`<div class="aw-liste">${ZS_HERST.map(([k,t,u])=>awKachel("awNeuW",k,"",t,u,d.hersteller===k)).join("")}</div>`});
   if(sk==="geraete") return awRahmen({...R,frage:"Einbaugeräte von?",hinweis:"LS, FI und FI/LS dieses Herstellers stehen beim Bestücken vorne.",inhalt:`<div class="aw-liste">${ZS_GERHERST.map(([k,t,u])=>awKachel("awNeuW",k,"",t,u,d.gerHerst===k&&d.gerHerst!=null)).join("")}</div>`});
   if(sk==="bedarf") return awRahmen({...R,...zsBedarfFenster(d.bedarf)});
-  if(sk==="modell") return awRahmen({...R,...zsModellFenster(d)});
+  if(sk==="modell"&&d.art!=="uv") return awRahmen({...R,...zsModellFenster(d)});
   if(sk==="vorschlag"){ const plz=awOrtPlz(); if(d.zs.nb==null&&ZS_PLZ_NB[plz]){ zsNbSetzen(d.zs,ZS_PLZ_NB[plz]); d.nbAuto=true; } return awRahmen({...R,...zsVorschlagFenster(d,plz)}); }
   if(sk==="felder") return awRahmen({...R,...zsFelderFenster(d.zs,d.reihen,"awSubZu","Fertig")});
   if(sk==="apz") return awRahmen({...R,...zsApzFenster(d.zs)});
   if(sk==="hoehe") return awRahmen({...R,...zsHoeheFenster(d.zs)});
   if(sk==="nb") return awRahmen({...R,...zsNbFenster(d.zs)});
+  if(sk==="zustand"&&d.art==="uv") return awRahmen({...R,frage:"Neu oder Bestand?",hinweis:"Bestand: Der Verteiler bleibt – Baujahr (wenn bekannt) und was erneuert wurde, trägst du danach auf der Karte ein. Material ist nur, was ihr erneuert.",
+    inhalt:`<div class="aw-liste">${awKachel("awNeuW","neu",awSvg("uv"),"Neu setzen","Verteiler wird neu montiert",d.bestand===false)}${awKachel("awNeuW","bestand","","Bestand aufnehmen","Verteiler ist schon da und bleibt",d.bestand===true)}</div>`});
   if(sk==="zustand") return awRahmen({...R,frage:"Neu oder Bestand?",hinweis:"Bestand: Der Schrank bleibt – Pflichtpunkte für neue Zählerplätze zählen dann nicht als „fehlt“, Material ist nur, was ihr erneuert.",
     inhalt:`<div class="aw-liste">${awKachel("awNeuW","neu",awSvg("hv"),"Neu aufbauen","Zählerschrank wird neu gesetzt",d.bestand===false)}${awKachel("awNeuW","bestand","","Bestand aufnehmen","Schrank ist schon da und bleibt – z. B. nur Zuleitung oder Erdung neu",d.bestand===true)}</div>`});
   if(sk==="art") return awRahmen({...R,frage:"Was für ein Verteiler?",hinweis:"Antippen – es geht sofort weiter.",inhalt:`<div class="aw-liste">${AW_ART.map(([v,t,s])=>awKachel("awNeuW",v,awSvg(v),t,s,d.art===v)).join("")}</div>
     ${typeof qlDlg==="function"?`<div class="aw-schnell-l">Nur die Legende, schnell</div><div class="aw-liste">${awKachel("qlStart","",icon("vtListe"),"Schnell-Legende","Nr · Schutz · Bezeichnung abtippen wie in Word – ohne Reihen und Geräte",false)}${awKachel("qlStartWord","",icon("ecImport"),"Alte Word-Legende laden",".docx wählen – die Stromkreise werden übernommen und sind danach hier bearbeitbar",false)}</div>`:""}`});
+  if(sk==="montage"&&d.art==="uv"){ const ft=nr=>{ const u=uvFotoUrl(nr); return u?`<img class="aw-foto" src="${esc(u)}" alt="" loading="lazy" onerror="this.remove()">`:awSvg("uv"); };
+    return awRahmen({...R,frage:d.bestand?"Wie ist er montiert?":"Wie wird er montiert?",hinweis:"Antippen – es geht sofort weiter.",
+      inhalt:`<div class="aw-liste">${awKachel("awNeuW","up",ft("VU24NC"),"Unterputz","in der gemauerten Wand",d.montage==="up")}${awKachel("awNeuW","hw",ft("VH24NC"),"Hohlwand","Trockenbau / Ständerwand",d.montage==="hw")}${awKachel("awNeuW","ap",ft("VA24CN"),"Aufputz","auf der Wand, z. B. im Keller",d.montage==="ap")}</div>`}); }
   if(sk==="montage") return awRahmen({...R,frage:"Wie ist er montiert?",inhalt:`<div class="aw-liste">${awKachel("awNeuW","up",awSvg("up"),"Unterputz","in der Wand oder Hohlwand",d.montage==="up")}${awKachel("awNeuW","ap",awSvg("ap"),"Aufputz","auf der Wand",d.montage==="ap")}</div>`});
   if(sk==="reihen") return awRahmen({...R,frage:d.art==="hv"?"Wie viele Reihen im Verteilerfeld?":"Wie viele Reihen?",hinweis:"12 Teilungseinheiten (TE) je Reihe – das ist der Normalfall.",
     inhalt:`<div class="aw-liste aw-2sp">${[1,2,3,4,5,6,7,9].map(n=>awKachel("awNeuW",n,awReihenSvg(Math.min(n,6)),`${n}-reihig`,`${n*12} TE`,d.reihen===n)).join("")}</div>`});
+  if(sk==="modell"&&d.art==="uv") return awRahmen({...R,...uvModellFenster(d.montage,d.typFrei?"frei":d.reihen,"awNeuW",d.bestand)});
+  if(sk==="namevon") return awRahmen({...R,...awNameVonFenster()});
   if(sk==="ort"){ const k=kundeOf(AW.kid), ss=standorteVon(AW.kid);
     return awRahmen({...R,frage:"Wo steht der Verteiler?",inhalt:`<div class="aw-liste">${awKachel("awNeuW","k:"+k.id,"","Adresse des Kunden",adrText(k)||k.name,AW.ort==="k:"+k.id)}${ss.map(s=>awKachel("awNeuW",s.id,"",s.name||"Standort",[adrText(s)].filter(Boolean).join(""),AW.ort===s.id)).join("")}</div>`}); }
   if(sk==="name"){ const N=AW_NAMEN[d.art]||AW_NAMEN.uv;
@@ -89,16 +98,35 @@ function awNeuZeigen(){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d, R={
     return awRahmen({...R,frage:"Woher kommt die Zuleitung?",hinweis:"Dann steht der Verteiler in der Anlage unter seiner Einspeisung, z. B. HV → UV EG.",
       inhalt:`<div class="aw-liste">${L.map(v=>awKachel("awNeuW",v.id,awSvg(v.art==="hv"?"hv":"uv"),v.name||"Verteiler",v.art==="hv"?"Zählerschrank / HV":v.art==="gw"?"Gewerbe / Standverteiler":"Unterverteiler",d.vonVId===v.id)).join("")}${awKachel("awNeuW","-","","Direkt vom Hausanschluss","oder weiß ich noch nicht",d.vonVId==="")}</div>`}); }
   if(sk==="netz") return awRahmen({...R,frage:"Welche Netzform?",inhalt:`<div class="aw-liste">${AW_NETZ.map(([v,t,s])=>awKachel("awNeuW",v,"",t,s,d.netz===v)).join("")}</div>`}); }
+/* Modell-Kacheln Hager volta (auch für „Modell wechseln“ auf der Karte) */
+function uvModellFenster(mo,akt,act,bestand){ mo=mo||"up";
+  const karte=n=>{ const nr=uvNr(mo,n), u=uvFotoUrl(nr), M=uvMasse({reihen:n,montage:mo,teReihe:12});
+    return `<button type="button" class="aw-g zs-mod" data-act="${act}" data-v="${n}" data-mo="${mo}"${+akt===n?' aria-pressed="true"':""}><span class="aw-gb zs-mod-svg">${u?`<img class="zs-mod-gross" src="${esc(u)}" alt="" loading="lazy" onerror="this.remove()">`:awSvg("uv")}</span><b>volta ${n}-reihig</b><small>${n*12} TE · ${String(M.H).replace(".",",")} × ${M.W} mm</small><small class="zs-mod-nr">Hager ${nr}</small></button>`; };
+  return {frage:bestand?"Welcher Verteiler hängt da?":"Welcher Verteiler?",hinweis:`Hager volta · ${uvMontText(mo)}. Antippen übernimmt Reihen, TE und Maße.`,
+    inhalt:`<div class="aw-lbl">Hager volta ${uvMontText(mo)}</div><div class="aw-grid">${[1,2,3,4,5].map(karte).join("")}</div>
+      <div class="aw-lbl">Anderes Fabrikat</div><div class="aw-liste">${awKachel(act,"frei","",bestand?"Anderer / weiß nicht":"Anderer Verteiler","Reihen und TE je Reihe selbst angeben",akt==="frei")}</div>`}; }
+/* Name, Einspeisung und Netzform auf einer Seite – Netzform kommt von der Einspeisung */
+function awNameVonFenster(){ const d=AW.d, N=AW_NAMEN[d.art]||AW_NAMEN.uv, L=awVonListe();
+  if(d.vonVId===undefined){ const hv=L.filter(v=>v.art==="hv"); d.vonVId=hv.length===1?hv[0].id:L.length===1?L[0].id:""; const q=L.find(x=>x.id===d.vonVId); if(q&&q.netz&&d.netz==null) d.netz=q.netz; }
+  if(!d.name) d.name=N[0];
+  const q=L.find(x=>x.id===d.vonVId), netzVon=q&&q.netz;
+  return {frage:"Name und Einspeisung",hinweis:netzVon?"Die Netzform kommt vom speisenden Verteiler.":"So steht er in der Liste und auf der Legende.",
+    inhalt:`<div class="vti-chips aw-nv-namen">${N.map(n=>`<button type="button" class="chip" data-act="awNvName" data-v="${esc(n)}" aria-pressed="${d.name===n}">${esc(n)}</button>`).join("")}</div>
+      <div class="fg1 aw-eigen">${tf("awName","Name des Verteilers",d.name||"",{form:true,ph:"z. B. UV Anbau"})}</div>
+      ${L.length?`<div class="aw-lbl">Gespeist aus</div><div class="aw-liste">${L.map(v=>awKachel("awNvVon",v.id,awSvg(v.art==="hv"?"hv":"uv"),v.name||"Verteiler",[v.art==="hv"?"Zählerschrank / HV":v.art==="gw"?"Gewerbe / Standverteiler":"Unterverteiler",v.netz&&v.netz.split(" |")[0]].filter(Boolean).join(" · "),d.vonVId===v.id)).join("")}${awKachel("awNvVon","-","","Direkt vom Hausanschluss","oder weiß ich noch nicht",d.vonVId==="")}</div>`:""}
+      ${netzVon?"":`<div class="aw-lbl">Netzform</div><div class="vti-chips">${AW_NETZ.map(([v,t])=>`<button type="button" class="chip" data-act="awNvNetz" data-v="${esc(v)}" aria-pressed="${(d.netz||"")===v&&d.netz!=null}">${esc(t)}</button>`).join("")}</div>`}`,
+    fuss:`<span style="flex:1"></span><button type="button" class="btn-filled" data-act="awNvOk">Anlegen</button>`}; }
 function awNeuWahl(v){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d;
-  if(sk==="art"){ if(d.art!==v){ d.zs=null; if(v==="hv"){ Object.assign(d,{bedarf:zsBedarfStd(),montage:"up",name:"HV",netz:"TN-C-S | 230/400 V",hersteller:d.hersteller||""}); } } d.art=v; }
+  if(sk==="art"){ if(d.art!==v){ d.zs=null; if(v==="uv"&&d.gerHerst==null) d.gerHerst="Hager"; if(v==="hv"){ Object.assign(d,{bedarf:zsBedarfStd(),montage:"up",name:"HV",netz:"TN-C-S | 230/400 V",hersteller:d.hersteller||""}); } } d.art=v; }
   else if(sk==="zustand") d.bestand=v==="bestand";
+  else if(sk==="modell"&&d.art==="uv"){ if(v==="frei"){ d.typFrei=true; d.reihen=d.reihen||3; } else { d.typFrei=false; d.reihen=+v; d.teReihe=12; } }
   else if(sk==="hersteller"){ d.hersteller=v; if(d.zs) d.zs.hersteller=v; if(d.gerHerst==null) d.gerHerst=v==="hager"?"Hager":v==="sj"?"ABB":null; }
   else if(sk==="geraete") d.gerHerst=v;
   else if(sk==="montage") d.montage=v; else if(sk==="reihen") d.reihen=+v; else if(sk==="ort"){ AW.ort=v; if(d.zs&&d.nbAuto){ zsNbSetzen(d.zs,null); d.nbAuto=false; } } else if(sk==="name") d.name=v; else if(sk==="netz") d.netz=v;
   else if(sk==="von"){ d.vonVId=v==="-"?"":v; const q=awVonListe().find(x=>x.id===d.vonVId); if(q&&q.netz&&d.netz==null) d.netz=q.netz; }
   if(AW.sub){ AW.sub=null; awNeuZeigen(); return; }
   if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); }
-function awNeuAnlegen(){ const d=AW.d, wer=(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""), extra={art:d.art,...(d.gerHerst?{gerHerst:d.gerHerst}:{}),montage:d.montage,reihen:d.art==="hv"&&d.zs&&+d.zs.hoehe?zsReihenSumme(d.zs,0):(d.reihen||(d.art==="hv"?5:3)),teReihe:12,...(d.art==="hv"&&d.zs?{zs:Object.assign(zsAbgleich(d.zs),d.bestand?{bestand:true}:{})}:{})};
+function awNeuAnlegen(){ const d=AW.d, wer=(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""), extra={art:d.art,...(d.gerHerst?{gerHerst:d.gerHerst}:{}),montage:d.montage,reihen:d.art==="hv"&&d.zs&&+d.zs.hoehe?zsReihenSumme(d.zs,0):(d.reihen||(d.art==="hv"?5:3)),teReihe:12,...(d.art==="uv"&&d.typFrei?{typFrei:true}:{}),...(d.art==="uv"&&d.bestand?{bst:{bestand:true}}:{}),...(d.art==="hv"&&d.zs?{zs:Object.assign(zsAbgleich(d.zs),d.bestand?{bestand:true}:{})}:{})};
   if(AW.kid){ const g=ecGeb(AW.ort||"k:"+AW.kid), id=uid();
     g.verteiler.push({id,name:d.name||"Verteiler",netz:d.netz||"",stand:ecHeute(),ersteller:wer,...extra,...(d.vonVId&&g.verteiler.some(x=>x.id===d.vonVId)?{vonVId:d.vonVId}:{})}); ecGebSpeichern(g);
     AW=null; $("#dlg").classList.remove("aw"); closeOverlays(); go({v:"vt",g:g.id,id}); }
@@ -223,6 +251,10 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "awZur": if(!AW||AW.typ==="produkt") return awZu(); if(AW.typ==="neu"){ if(AW.sub){ AW.sub=AW.sub==="reihen"?"hoehe":null; if(AW.d.zs) zsAbgleich(AW.d.zs); awNeuZeigen(); } else if(AW.i>0){ AW.i--; awNeuZeigen(); } else awZu(); }
     else if(AW.typ==="zs"){ if(AW.schritte&&AW.i>0){ const z=zsAktZp(); if(z) zsZpLesen(z); AW.i--; zsZeigen(); } else awZu(); } else if(AW.m) awKatalog(); else awZu(); return;
   case "awNeuW": awNeuWahl(b.dataset.v); return;
+  case "awNvName": { AW.d.name=b.dataset.v; const i=document.getElementById("f_awName"); if(i) i.value=b.dataset.v; document.querySelectorAll('#dlg [data-act="awNvName"]').forEach(x=>x.setAttribute("aria-pressed",x===b)); return; }
+  case "awNvVon": { const d=AW.d, i=document.getElementById("f_awName"); if(i) d.name=i.value.trim()||d.name; d.vonVId=b.dataset.v==="-"?"":b.dataset.v; const q=awVonListe().find(x=>x.id===d.vonVId); if(q&&q.netz) d.netz=q.netz; awNeuZeigen(); return; }
+  case "awNvNetz": { const d=AW.d, i=document.getElementById("f_awName"); if(i) d.name=i.value.trim()||d.name; d.netz=b.dataset.v; document.querySelectorAll('#dlg [data-act="awNvNetz"]').forEach(x=>x.setAttribute("aria-pressed",x===b)); return; }
+  case "awNvOk": { const d=AW.d, i=document.getElementById("f_awName"), n=i&&i.value.trim(); if(n) d.name=n; if(!d.name){ toast("Bitte einen Namen eingeben"); return; } if(d.netz==null) d.netz=""; awNeuAnlegen(); return; }
   case "awNeuWeiter": { const S=awNeuSchritte(), sk=S[AW.i]||"", d=AW.d;
       if(sk==="bedarf"){ if(zsBedarfZp(d.bedarf)<1){ toast("Mindestens einen Zählerplatz angeben"); return; } d.zs=zsAusBedarf(d.bedarf,d.zs); d.zs.hersteller=d.hersteller; }
       if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); return; }

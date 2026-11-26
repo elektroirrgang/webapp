@@ -2452,3 +2452,8 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
 @media (max-width:520px){.ql-kopf,.ql-z{grid-template-columns:50px 78px minmax(0,1fr) 30px;gap:4px}.ql-z input{padding:0 8px;font-size:14px}}
 .aw-schnell-l{font-size:13px;font-weight:700;color:var(--on-sv);margin:18px 4px 8px}
 .ql-z.ql-fi .ql-nr{display:none}.ql-z.ql-fi .ql-sc{grid-column:1/3}
+/* Unterverteiler-Assistent (26.11.2026): Produktfotos in den Montage-Kacheln, Modell wechseln mit Montage-Umschalter, Baujahr-Auswahl */
+.aw-k .aw-kb:has(.aw-foto){background:#fff;padding:4px;box-sizing:border-box;overflow:hidden}.aw-foto{width:100%;height:100%;object-fit:contain}
+.uvt-seg{margin:0 0 14px}.uvt-inhalt .aw-lbl{margin-top:14px}.uvt-inhalt .aw-lbl:first-child{margin-top:0}
+.aw-nv-namen{margin:0 0 10px}
+.bj-seg{margin:0 0 10px}.bj-seg button{flex:1}.bj-tipp{margin:6px 2px 0;font-size:12px}

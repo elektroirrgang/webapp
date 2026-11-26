@@ -127,17 +127,23 @@ function legView(L){ const E=legE(L), tab=legTab(L);
   </div>`; }
 
 /* Karte „Verteiler“ beim Unterverteiler: Zeichnung mit der Bestückung, darunter Reihen und Montage direkt umstellbar */
-function legUvKarte(L){ if(typeof uvZeichnung!=="function") return ""; const Z=uvZeichnung(L), n=+L.reihen||3, zu=L.fertig;
+/* Unterverteiler-Karte (26.11.2026) wie beim Zählerschrank: Foto und Modell oben, Zustand als Plakette, drei Knöpfe – darunter Bild und Einstellungen */
+const UV_ARB=[["zuleitung","Zuleitung erneuert"],["pe","Schutzleiter / Potentialausgleich erneuert"],["fi","FI nachgerüstet / getauscht"],["ls","LS getauscht"],["klemmen","N/PE-Klemmen erneuert"],["uss","Überspannungsschutz eingebaut"],["gehaeuse","Gehäuse / Tür erneuert"],["beschr","Beschriftung / Legende neu"]];
+const uvArbListe=b=>[...UV_ARB.filter(([k])=>b&&b.arbeiten&&b.arbeiten[k]).map(x=>x[1]),...String(b&&b.arbeitenText||"").split(";").map(x=>x.trim()).filter(Boolean)];
+function legUvKarte(L){ if(typeof uvZeichnung!=="function") return ""; const Z=uvZeichnung(L), n=+L.reihen||3, zu=L.fertig, bild=legBildAn();
   const chip=(act,k,v,t,an)=>`<button type="button" class="chip" data-act="${act}" data-k="${k}" data-v="${v}" aria-pressed="${an}" ${zu?"disabled":""}>${t}</button>`;
-  return `<section class="card zs-karte"><div class="card-kopf"><h3>Verteiler</h3><span class="zs-kopf-r">${legBildKnopf()}</span></div>
-    <div class="zs-bild"${legBildAn()?"":" hidden"}>${Z.svg}</div>
-    ${Z.ueber?`<p class="ec-hinweis">${icon("warn")}<span>${Z.ueber===1?"Eine Reihe passt":`${Z.ueber} Reihen passen`} nicht mehr in den Verteiler – mehr Reihen wählen.</span></p>`:""}
-    ${(()=>{ /* Verteilertyp: genormte Hager-volta-Größen legen Reihen, Montage und TE fest – frei einstellen nur bei „anderer Typ“ */
-      const M=uvMasse(L), frei=!M.modell||L.typFrei, mo=M.up?"Unterputz":"Aufputz";
-      return `<button type="button" class="zs-zp leg-typ" data-act="uvTyp" ${zu?"disabled":""}><span class="zs-zn zs-bst">${icon("zsSchrank")}</span><span class="zs-zt"><b>${esc(frei?"Anderer Verteilertyp":`Hager volta ${M.modell}`)}</b><small>${esc(`${M.n}-reihig · ${mo} · ${frei?`${M.te} TE je Reihe`:`${M.n*M.te} TE`}`)}</small></span>${icon("chev")}</button>
-      ${frei?`<div class="leg-vopt"><span class="leg-o"><span>Reihen</span>${[1,2,3,4,5,6,7,...(n>7?[n]:[])].map(v=>chip("legOpt","reihen",v,v,n===v)).join("")}</span>
-        <span class="leg-o"><span>Montage</span>${chip("legOptS","montage","ap","Aufputz",L.montage==="ap")}${chip("legOptS","montage","up","Unterputz",L.montage!=="ap")}</span>
-        <span class="leg-o"><span>TE je Reihe</span>${[12,18,24].map(v=>chip("legOpt","teReihe",v,v,(+L.teReihe||12)===v)).join("")}</span></div>`:""}`; })()}
+  const M=uvMasse(L), frei=!M.modell||L.typFrei, foto=frei?"":uvFotoUrl(M.modell), B=L.bst||{};
+  const name=frei?"Anderer Verteilertyp":`Hager volta ${M.modell}`, kurz=[`${M.n}-reihig`,uvMontText(L.montage),frei?`${M.te} TE je Reihe`:`${M.n*M.te} TE`,L.gerHerst&&`Geräte: ${L.gerHerst}`].filter(Boolean).join(" · ");
+  const zst=B.bestand?`Bestand${bjText(B.baujahr)?" · "+bjText(B.baujahr):""}`:"Neu gesetzt";
+  return `<section class="card zs-karte zs-k-schrank"><h3>Verteiler</h3>
+    <div class="zs-kopf">${foto?`<span class="zs-kfoto"><img src="${esc(foto)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></span>`:""}<span class="zs-kt"><b>${esc(name)}</b><small>${esc(kurz)}</small><span class="zs-chip${B.bestand?" bst":""}">${esc(zst)}</span></span></div>
+    <div class="qa-row zs-qa">${zu?"":`<button type="button" class="qa" data-act="uvTyp"><span class="qa-ic">${icon("vtKasten")}</span><span>Modell wechseln</span></button><button type="button" class="qa" data-act="uvBestand"><span class="qa-ic">${icon(B.bestand?"edit":"add")}</span><span>${B.bestand?"Bestand":"Neu / Bestand"}</span></button>`}<button type="button" class="qa${bild?" an":""}" data-act="legBildUm" aria-expanded="${bild}"><span class="qa-ic">${icon(bild?"close":"zsSchrank")}</span><span>${bild?"Bild zu":"Verteilerbild"}</span></button></div>
+    ${bild?`<div class="zs-bild zs-bildbox">${Z.svg}</div>`:""}
+    ${Z.ueber?`<p class="ec-hinweis">${icon("warn")}<span>${Z.ueber===1?"Eine Reihe passt":`${Z.ueber} Reihen passen`} nicht mehr in den Verteiler – größeres Modell wählen.</span></p>`:""}
+    ${frei?`<div class="leg-vopt"><span class="leg-o"><span>Reihen</span>${[1,2,3,4,5,6,7,...(n>7?[n]:[])].map(v=>chip("legOpt","reihen",v,v,n===v)).join("")}</span>
+      <span class="leg-o"><span>Montage</span>${chip("legOptS","montage","up","Unterputz",(L.montage||"up")==="up")}${chip("legOptS","montage","hw","Hohlwand",L.montage==="hw")}${chip("legOptS","montage","ap","Aufputz",L.montage==="ap")}</span>
+      <span class="leg-o"><span>TE je Reihe</span>${[12,18,24].map(v=>chip("legOpt","teReihe",v,v,(+L.teReihe||12)===v)).join("")}</span></div>`:""}
+    ${B.bestand?`<button type="button" class="zs-zp" data-act="uvBestand" ${zu?"disabled":""}><span class="zs-zn zs-bst">${icon("zsSchrank")}</span><span class="zs-zt"><b>Bestand – was erneuert wurde</b><small>${esc(uvArbListe(B).join(" · ")||"Noch nichts als erneuert eingetragen")}</small></span>${icon("chev")}</button>`:""}
     ${legVonFeld(L)}
     ${legE(L).length?"":`<p class="meta">Noch keine Geräte. Unten rechts über „Gerät“ einsetzen – Reihen-Vorlagen wie RCD + 6 × B16 gehen in einem Rutsch.</p>`}</section>`; }
 /* Karte „Stromkreise“ (Reiter Stromkreise) */
@@ -148,7 +154,7 @@ function legSkKarte(L,E){ return `<section class="card"><div class="card-kopf le
 `; }
 /* ===== Ansichten der Stromkreise: Liste (je RCD eine Gruppe) und Verteiler (Reihen, Breite in TE) ===== */
 const legAnsicht=()=>META.legAnsicht==="verteiler"?"verteiler":"liste";
-const legBauart=L=>[{hv:"Zählerschrank / HV",uv:"Unterverteiler",gw:"Gewerbe / Standverteiler"}[L.art],L.zs&&typeof zsHerstText==="function"?zsHerstText(L.zs.hersteller):"",{ap:"Aufputz",up:"Unterputz"}[L.montage],L.zs&&+L.zs.hoehe?L.zs.hoehe+" mm":"",L.reihen&&`${L.reihen}-reihig · ${L.reihen*(+L.teReihe||12)} TE`].filter(Boolean).join(" · ");
+const legBauart=L=>[{hv:"Zählerschrank / HV",uv:"Unterverteiler",gw:"Gewerbe / Standverteiler"}[L.art],L.zs&&typeof zsHerstText==="function"?zsHerstText(L.zs.hersteller):"",{ap:"Aufputz",up:"Unterputz",hw:"Hohlwand"}[L.montage],L.zs&&+L.zs.hoehe?L.zs.hoehe+" mm":"",L.reihen&&`${L.reihen}-reihig · ${L.reihen*(+L.teReihe||12)} TE`].filter(Boolean).join(" · ");
 /* Breite in TE. Dreipolige LS sind mindestens 3 TE breit – auch wenn aus der Aufnahme noch die Breite eines 1-poligen Artikels (1 TE) gespeichert ist */
 const legTE=e=>e.art==="kl"?1:e.art==="sk"&&+e.pole===3?Math.max(3,+e.te||3):+e.te||(e.art==="rcd"?4:1);
 /* FI/LS (RCBO) hat seinen eigenen Fehlerstromschutz: gehört NIE unter den RCD davor und beendet dessen Gruppe */
@@ -536,17 +542,29 @@ document.addEventListener("change",ev=>{ const s=ev.target; if(!s||s.id!=="f_leg
   if(neu) v.vonVId=neu; else delete v.vonVId; v.updated=Date.now(); ecGebSpeichern(g); toast(neu?`Eingespeist aus ${(g.verteiler.find(y=>y.id===neu)||{}).name||"Verteiler"}`:"Direkt eingespeist"); });
 
 /* Verteilertyp wählen (Unterverteiler): Hager volta UP (VU…NC) / AP (VA…CN) mit 1–5 Reihen à 12 TE, sonst „anderer Typ“ */
-function uvTypDlg(){ const L=legAkt(); if(!L) return; const M=uvMasse(L), frei=!M.modell||L.typFrei;
-  const zeile=(up,n)=>{ const nr=`${up?"VU":"VA"}${n*12}${up?"NC":"CN"}`, an=!frei&&M.modell===nr;
-    return `<button type="button" class="li${an?" an":""}" data-act="uvTypOk" data-up="${up?1:0}" data-n="${n}"><span class="av">${n}</span><span class="lt"><span class="h">Hager volta ${nr}</span><span class="s">${n}-reihig · ${n*12} TE</span></span>${an?`<span class="m3-st ok">gewählt</span>`:icon("chev")}</button>`; };
-  dialog("Verteilertyp",`<div class="sec-lbl">Unterputz</div>${listOf([1,2,3,4,5].map(n=>zeile(true,n)))}
-    <div class="sec-lbl">Aufputz</div>${listOf([1,2,3,4,5].map(n=>zeile(false,n)))}
-    <div class="sec-lbl">Sonstiges</div>${listOf([`<button type="button" class="li${frei?" an":""}" data-act="uvTypOk" data-frei="1"><span class="av">${icon("edit")}</span><span class="lt"><span class="h">Anderer Verteilertyp</span><span class="s">Reihen, Montage und TE je Reihe selbst einstellen</span></span>${frei?`<span class="m3-st ok">gewählt</span>`:icon("chev")}</button>`])}`,
+/* Modell wechseln: Montage oben umschalten, Modell als Foto-Kachel antippen (wie „Schrank wechseln“) */
+let UVT_MO=null;
+function uvTypDlg(){ const L=legAkt(); if(!L) return; const M=uvMasse(L), frei=!M.modell||L.typFrei, mo=UVT_MO||L.montage||"up";
+  const F=uvModellFenster(mo,frei?"frei":(mo===(L.montage||"up")?M.n:0),"uvTypOk",!!(L.bst&&L.bst.bestand));
+  dialog("Modell wechseln",`<div class="knx-seg uvt-seg">${Object.entries(UV_MONT).map(([k,t])=>`<button type="button" data-act="uvTypMo" data-v="${k}" aria-pressed="${mo===k}">${t}</button>`).join("")}</div><div class="uvt-inhalt">${F.inhalt}</div>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`,{breit:true}); }
-document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act="uvTyp"],[data-act="uvTypOk"]'); if(!b||b.disabled) return; ev.stopPropagation();
-  if(b.dataset.act==="uvTyp"){ uvTypDlg(); return; } const L=legAkt(); if(!L) return;
-  if(b.dataset.frei){ L.typFrei=true; } else { L.typFrei=false; L.reihen=+b.dataset.n; L.montage=b.dataset.up==="1"?"up":"ap"; L.teReihe=12; }
-  legSave(L); closeOverlays(); render(); },true);
+function uvBestandDlg(){ const L=legAkt(); if(!L) return; const B=L.bst||{}, A=B.arbeiten||{};
+  dialog("Neu oder Bestand?",`<div class="knx-seg zs-zst">${[["neu","Neu gesetzt"],["bestand","Bestand"]].map(([v,t])=>`<button type="button" data-act="zsZstW" data-v="${v}" aria-pressed="${(B.bestand?"bestand":"neu")===v}">${t}</button>`).join("")}</div>
+    <div id="zsBstTeil"${B.bestand?"":" hidden"}><p class="sup" style="margin:12px 0">Der Verteiler bleibt – Material ist nur, was ihr erneuert habt.</p>
+      ${bjFeld("uvBj",B.baujahr)}
+      <div class="aw-lbl" style="margin-top:14px">Was haben wir gemacht?</div><div class="zs-arb">${UV_ARB.map(([k,t])=>`<button type="button" data-act="zsArbW" data-k="${k}" aria-pressed="${!!A[k]}">${esc(t)}</button>`).join("")}</div>
+      <div class="fg1" style="margin-top:12px">${tf("uvArbT","Sonstiges (mit ; trennen)",B.arbeitenText||"",{form:true,ph:"z. B. Hutschiene ergänzt"})}</div></div>`,
+    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="uvBestandOk">Speichern</button>`,{breit:true}); }
+function uvBestandOk(){ const L=legAkt(); if(!L) return; const F=formVals(), b=document.querySelector('#dlg [data-act="zsZstW"][aria-pressed="true"]'), best=!!b&&b.dataset.v==="bestand";
+  if(best){ const A={}; document.querySelectorAll('#dlg [data-act="zsArbW"][aria-pressed="true"]').forEach(x=>A[x.dataset.k]=true); L.bst={bestand:true,baujahr:bjWert("uvBj"),arbeiten:A,arbeitenText:F.uvArbT||""}; }
+  else delete L.bst;
+  legSave(L); closeOverlays(); render(); toast(best?"Als Bestand gespeichert":"Als neu gesetzt gespeichert"); }
+document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act="uvTyp"],[data-act="uvTypOk"],[data-act="uvTypMo"],[data-act="uvBestand"],[data-act="uvBestandOk"]'); if(!b||b.disabled) return; ev.stopPropagation(); ev.preventDefault();
+  const a=b.dataset.act; if(a==="uvTyp"){ UVT_MO=null; uvTypDlg(); return; } if(a==="uvTypMo"){ UVT_MO=b.dataset.v; uvTypDlg(); return; }
+  if(a==="uvBestand"){ uvBestandDlg(); return; } if(a==="uvBestandOk"){ uvBestandOk(); return; }
+  const L=legAkt(); if(!L) return;
+  if(b.dataset.v==="frei"){ L.typFrei=true; if(UVT_MO) L.montage=UVT_MO; } else { L.typFrei=false; L.reihen=+b.dataset.v; L.montage=b.dataset.mo||UVT_MO||L.montage||"up"; L.teReihe=12; }
+  UVT_MO=null; legSave(L); closeOverlays(); render(); toast("Modell übernommen"); },true);
 
 /* ===== Beschriftungsstreifen für den Brother P-touch: je Reihe ein Streifen, je Gerät ein Block so breit wie das Gerät =====
    Nutzt die Vorlage „Verteiler“ der Pro Label Tool-App (wie die Patchfeld-Streifen in der Netzwerkprüfung: ecLbxs, ecEtiSvg). */

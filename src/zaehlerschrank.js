@@ -317,15 +317,31 @@ const zsHakArtKurz=k=>(ZS_HAK_ART.find(x=>x[0]===k)||[])[1]||"";
 const zsHakText=h=>h?[h.art&&h.art!=="?"?zsHakArtKurz(h.art).split(" ")[0]+(h.in?` ${h.in} A`:""):(h.in?`${h.in} A`:""),h.ort,(ZS_HAK_ZST.find(x=>x[0]===h.zustand)||[])[2]].filter(Boolean).join(" · "):"";
 const zsHakBild=(e,kl)=>e&&e[3]?`<img${kl?` class="${kl}"`:""} src="${esc(typeof bildLokal==="function"?bildLokal(e[3]):e[3])}" alt="" onerror="this.remove()">`:"";
 const zsArbListe=zs=>[...ZS_ARB.filter(([k])=>(zs.arbeiten||{})[k]).map(x=>x[1]),...String(zs.arbeitenText||"").split(/\n|;/).map(t=>t.trim()).filter(Boolean)];
+/* ===== Baujahr im Bestand (Max 26.11.2026): oft lässt sich nichts sagen – „Unbekannt“ ist eine echte Angabe, „laut Legende“ nimmt das Datum
+   einer vorhandenen Legende (sagt nicht viel, aber immerhin), „ca.“ für geschätzt. Gespeichert als Text, alte freie Einträge bleiben lesbar. */
+const BJ_ARTEN=[["unbekannt","Unbekannt"],["jahr","Jahr"],["ca","ca."],["legende","Legende"]];
+function bjLesen(t){ t=String(t||"").trim(); if(!t) return {a:"",w:""}; if(/^(baujahr\s+)?unbekannt$/i.test(t)) return {a:"unbekannt",w:""};
+  let m=t.match(/^ca\.?\s*(.*)$/i); if(m) return {a:"ca",w:m[1]}; m=t.match(/^(?:laut\s+)?legende(?:\s+vom)?\s*(.*)$/i); if(m) return {a:"legende",w:m[1]}; return {a:"jahr",w:t}; }
+function bjFeld(id,t){ const B=bjLesen(t), ph=B.a==="legende"?"Datum auf der Legende, z. B. 03/2012":"z. B. 2009";
+  return `<div class="aw-lbl">Baujahr</div><div class="knx-seg bj-seg" data-bj="${id}">${BJ_ARTEN.map(([v,x])=>`<button type="button" data-act="bjArt" data-v="${v}" aria-pressed="${B.a===v}">${x}</button>`).join("")}</div>
+    <div class="fg1 bj-w" id="bjW_${id}"${!B.a||B.a==="unbekannt"?" hidden":""}>${tf(id,"Jahr bzw. Datum",B.w,{form:true,ph})}</div>
+    <p class="sup bj-tipp">Nichts gewählt = nicht angegeben. „Unbekannt“, wenn sich beim alten Verteiler nichts sagen lässt.</p>`; }
+function bjWert(id){ const b=document.querySelector(`#dlg [data-bj="${id}"] [aria-pressed="true"]`), a=b&&b.dataset.v, w=((document.getElementById("f_"+id)||{}).value||"").trim();
+  if(!a) return ""; if(a==="unbekannt") return "unbekannt"; if(!w) return a==="legende"?"laut Legende":""; return a==="ca"?"ca. "+w:a==="legende"?"Legende vom "+w:w; }
+function bjText(t){ const B=bjLesen(t); return !B.a?"":B.a==="unbekannt"?"Baujahr unbekannt":B.a==="ca"?`ca. ${B.w}`:B.a==="legende"?(B.w?`Legende vom ${B.w}`:"laut Legende"):B.w; }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="bjArt"]'); if(!b) return; e.preventDefault(); e.stopPropagation();
+  const g=b.closest("[data-bj]"), id=g.dataset.bj, an=b.getAttribute("aria-pressed")!=="true"; g.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b&&an));
+  const w=document.getElementById("bjW_"+id); if(w) w.hidden=!an||b.dataset.v==="unbekannt"; const i=document.getElementById("f_"+id);
+  if(i){ i.placeholder=b.dataset.v==="legende"?"Datum auf der Legende, z. B. 03/2012":"z. B. 2009"; if(an&&!w.hidden) setTimeout(()=>i.focus(),30); } },true);
 function zsBestandDlg(){ const L=legAkt(), zs=L&&L.zs; if(!zs) return; const A=zs.arbeiten||{};
   dialog("Neu oder Bestand?",`<div class="knx-seg zs-zst">${[["neu","Neu aufgebaut"],["bestand","Bestand"]].map(([v,t])=>`<button type="button" data-act="zsZstW" data-v="${v}" aria-pressed="${(zs.bestand?"bestand":"neu")===v}">${t}</button>`).join("")}</div>
     <div id="zsBstTeil"${zs.bestand?"":" hidden"}><p class="sup" style="margin:12px 0">Der Schrank bleibt – Pflichtpunkte für neue Zählerplätze zählen hier nicht als „fehlt“. Material ist nur, was ihr erneuert habt.</p>
-      <div class="fg1">${tf("zsBj","Baujahr / Stand des Schranks",zs.baujahr||"",{form:true,ph:"z. B. ca. 2020, vor § 14a"})}</div>
+      ${bjFeld("zsBj",zs.baujahr)}
       <div class="aw-lbl" style="margin-top:14px">Was haben wir gemacht?</div><div class="zs-arb">${ZS_ARB.map(([k,t])=>`<button type="button" data-act="zsArbW" data-k="${k}" aria-pressed="${!!A[k]}">${esc(t)}</button>`).join("")}</div>
       <div class="fg1" style="margin-top:12px">${tf("zsArbT","Sonstiges (mit ; trennen)",zs.arbeitenText||"",{form:true,ph:"z. B. Phasenschienen abgedeckt"})}</div></div>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="zsBestandOk">Speichern</button>`,{breit:true}); }
 function zsBestandOk(){ const L=legAkt(), zs=L&&L.zs; if(!zs) return; const F=formVals(), b=document.querySelector('#dlg [data-act="zsZstW"][aria-pressed="true"]');
-  zs.bestand=!!b&&b.dataset.v==="bestand"; if(zs.bestand){ zs.baujahr=F.zsBj||""; zs.arbeitenText=F.zsArbT||""; zs.arbeiten={}; document.querySelectorAll('#dlg [data-act="zsArbW"][aria-pressed="true"]').forEach(x=>zs.arbeiten[x.dataset.k]=true); }
+  zs.bestand=!!b&&b.dataset.v==="bestand"; if(zs.bestand){ zs.baujahr=bjWert("zsBj"); zs.arbeitenText=F.zsArbT||""; zs.arbeiten={}; document.querySelectorAll('#dlg [data-act="zsArbW"][aria-pressed="true"]').forEach(x=>zs.arbeiten[x.dataset.k]=true); }
   legSpeichern(L); closeOverlays(); render(); toast(zs.bestand?"Als Bestand gespeichert":"Als Neuanlage gespeichert"); }
 function zsHakDlg(){ const L=legAkt(), zs=L&&L.zs; if(!zs) return; const h=zs.hak||{}, art=ZS_HAK_ART.find(x=>x[0]===h.art);
   dialog("Hausanschlusskasten",`<div class="fg1">${tf("zsHakOrt","Wo sitzt er?",h.ort||"",{form:true,ph:"z. B. Dachboden, Keller"})}</div>
@@ -356,7 +372,7 @@ function zsNbFenster(zs){ return {frage:"Welcher Netzbetreiber?",hinweis:"Danach
 function zsHinweise(zs){ if(zs.bestand){ const H=[], fehlt=new Set();
     zs.felder.filter(f=>f.typ==="z").forEach(f=>zsBestPunkte(zs,f.id).forEach(b=>{ if(b.p({...zs,bestand:false})&&!zsBestHat(zs,b.wo,b.k)) fehlt.add(b.k==="rfzV"||b.k==="rfzFrei"?"RfZ":b.k==="hs"?"Hauptschalter":b.k==="spd"?"Überspannungsschutz":b.k==="rj45"?"RJ45":b.k==="ssk"?"Steuersignalklemmleiste":b.k==="abgriff"?"abgesicherter Spannungsabgriff":b.k==="schiene"?"Sammelschiene":b.t); }));
     if(!zs.apz) fehlt.add("APZ"); if(zs.zp.some(z=>zsBelegt(z)&&z.zweck&&(!z.sls||z.sls==="keiner"))) fehlt.add("SLS");
-    if(fehlt.size) H.push(`Bestand${zs.baujahr?` (${zs.baujahr})`:""} ohne ${[...fehlt].join(", ")} – nach heutiger VDE-AR-N 4100 bei Neuanlagen Pflicht; im Bestand Hinweis fürs Angebot, kein Mangel der Arbeit.`);
+    if(fehlt.size) H.push(`Bestand${bjText(zs.baujahr)?` (${bjText(zs.baujahr)})`:""} ohne ${[...fehlt].join(", ")} – nach heutiger VDE-AR-N 4100 bei Neuanlagen Pflicht; im Bestand Hinweis fürs Angebot, kein Mangel der Arbeit.`);
     if(zs.hak&&zs.hak.zustand==="alt") H.push(`Hausanschlusskasten alt${zs.hak.ort?` (${zs.hak.ort})`:""} – Austausch beim Netzbetreiber anregen.`);
     return H; }
   const H=[], nb=zsNb(zs), off=zsBestOffenGesamt(zs);
@@ -424,7 +440,7 @@ function zsKarteInnen(L,ohneMaterial){ const zs=L.zs, zu=L.fertig;
   /* 1 · Schrank: Foto, Modell, Zustand, Knöpfe */
   const k1=`<section class="card zs-karte zs-k-schrank"><h3>Zählerschrank</h3>
     <div class="zs-kopf">${mb?`<span class="zs-kfoto"><img src="${esc(typeof bildLokal==="function"?bildLokal(mb):mb)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></span>`:""}<span class="zs-kt"><b>${esc(schrankName)}</b><small>${esc(kurz)}</small>
-      <span class="zs-chip${zs.bestand?" bst":""}">${zs.bestand?`Bestand${zs.baujahr?" · "+esc(zs.baujahr):""}`:"Neu aufgebaut"}</span></span></div>
+      <span class="zs-chip${zs.bestand?" bst":""}">${zs.bestand?`Bestand${bjText(zs.baujahr)?" · "+esc(bjText(zs.baujahr)):""}`:"Neu aufgebaut"}</span></span></div>
     <div class="qa-row zs-qa">${zu?"":`<button type="button" class="qa" data-act="zsWechsel"><span class="qa-ic">${icon("zsSchrank")}</span><span>Schrank wechseln</span></button><button type="button" class="qa" data-act="zsAufbau"><span class="qa-ic">${icon("edit")}</span><span>Felder</span></button>`}<button type="button" class="qa${bild?" an":""}" data-act="zsBildUm" aria-expanded="${bild}"><span class="qa-ic">${icon(bild?"close":"zsSchrank")}</span><span>${bild?"Bild zu":"Schrankbild"}</span></button></div>
     ${bild?`<div class="zs-bild zs-bildbox">${zu?zsSvg(zs,L.reihen):zsKlick(zs,L.reihen,null,{feld:()=>'data-act="zsAufbau"',zp:k=>`data-act="zsZpAuf" data-i="${k}"`,apz:()=>'data-act="zsApzAuf"'})}</div>`:""}</section>`;
   /* 2 · Anschluss und Zustand */
