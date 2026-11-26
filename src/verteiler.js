@@ -22,10 +22,10 @@ function vtEintraege(g,vId){ const R=g.rcds.filter(r=>r.vId===vId), S=g.stromkre
 /* Virtuelle Legende: alles, was der Editor braucht, aus dem Gebäude */
 function vtL(gid,vId){ const g=vtGeb(gid), v=g&&g.verteiler.find(x=>x.id===vId); if(!v) return null; const o=ecOrt(g.ortId), k=o.kunde;
   return {_geb:gid,_v:vId,id:"vt-"+vId,titel:v.name||"Verteiler",kunde:k?k.name:"",anschrift:adrText(o.standort)||adrText(k)||"",kundeId:k?k.id:"",standortId:o.standort?o.standort.id:"",ortId:g.ortId,
-    netz:v.netz||"",ersteller:v.ersteller||"",stand:v.stand||"",fertig:!!v.fertig,art:v.art,montage:v.montage,reihen:v.reihen,zs:v.zs,gerHerst:v.gerHerst,typFrei:!!v.typFrei,bst:v.bst,teReihe:v.teReihe,teMm:v.teMm,eti:v.eti,eintraege:(E=>{ if(!v.fertig) legNummern(E); return E; })(vtEintraege(g,vId)),updated:v.updated,createdBy:v.createdBy}; }
+    netz:v.netz||"",ersteller:v.ersteller||"",stand:v.stand||"",fertig:!!v.fertig,art:v.art,montage:v.montage,reihen:v.reihen,zs:v.zs,gerHerst:v.gerHerst,typFrei:!!v.typFrei,bst:v.bst,gw:v.gw,teReihe:v.teReihe,teMm:v.teMm,eti:v.eti,eintraege:(E=>{ if(!v.fertig) legNummern(E); return E; })(vtEintraege(g,vId)),updated:v.updated,createdBy:v.createdBy}; }
 /* Zurückschreiben in das Gebäude (vorhandene Felder der Prüfung wie Leitung oder Messwerte bleiben erhalten) */
 function vtSchreiben(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(!v) return;
-  Object.assign(v,{name:L.titel||v.name,netz:L.netz||"",ersteller:L.ersteller||"",stand:L.stand||"",fertig:!!L.fertig,teReihe:L.teReihe,teMm:L.teMm,montage:L.montage,reihen:L.reihen,updated:Date.now()}); if(L.typFrei) v.typFrei=true; else delete v.typFrei; if(L.bst&&L.bst.bestand) v.bst=L.bst; else delete v.bst; if(L.eti&&Object.keys(L.eti).length) v.eti=L.eti; else delete v.eti; if(L.zs) v.zs=L.zs;
+  Object.assign(v,{name:L.titel||v.name,netz:L.netz||"",ersteller:L.ersteller||"",stand:L.stand||"",fertig:!!L.fertig,teReihe:L.teReihe,teMm:L.teMm,montage:L.montage,reihen:L.reihen,updated:Date.now()}); if(L.typFrei) v.typFrei=true; else delete v.typFrei; if(L.bst&&L.bst.bestand) v.bst=L.bst; else delete v.bst; if(L.gw) v.gw=L.gw; if(L.eti&&Object.keys(L.eti).length) v.eti=L.eti; else delete v.eti; if(L.zs) v.zs=L.zs;
   ["teReihe","teMm","montage","reihen"].forEach(k=>{ if(v[k]==null) delete v[k]; });
   const E=legE(L), ids=new Set(E.map(e=>e.id)), opt=(o,e)=>{ ["te","umbruch","sym","mat"].forEach(k=>{ if(e[k]) o[k]=e[k]; else delete o[k]; }); };
   g.vtTeile=(g.vtTeile||[]).filter(t=>t.vId!==L._v||ids.has(t.id));
@@ -43,9 +43,9 @@ function vtSchreiben(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===
   ecGebSpeichern(g); }
 /* Legende ohne Kunde → Verteiler im Gebäude des gewählten Orts */
 function vtAusLegende(L,ortId){ const g=ecGeb(ortId), vId=uid();
-  g.verteiler.push({id:vId,name:L.titel||"Verteiler",netz:L.netz||"",ersteller:L.ersteller||"",stand:L.stand||ecHeute(),fertig:!!L.fertig,...(L.teReihe?{teReihe:L.teReihe}:{}),...(L.teMm?{teMm:L.teMm}:{}),...(L.art?{art:L.art}:{}),...(L.montage?{montage:L.montage}:{}),...(L.reihen?{reihen:L.reihen}:{}),...(L.zs?{zs:L.zs}:{}),...(L.typFrei?{typFrei:true}:{}),...(L.bst?{bst:L.bst}:{}),...(L.gerHerst?{gerHerst:L.gerHerst}:{})});
+  g.verteiler.push({id:vId,name:L.titel||"Verteiler",netz:L.netz||"",ersteller:L.ersteller||"",stand:L.stand||ecHeute(),fertig:!!L.fertig,...(L.teReihe?{teReihe:L.teReihe}:{}),...(L.teMm?{teMm:L.teMm}:{}),...(L.art?{art:L.art}:{}),...(L.montage?{montage:L.montage}:{}),...(L.reihen?{reihen:L.reihen}:{}),...(L.zs?{zs:L.zs}:{}),...(L.typFrei?{typFrei:true}:{}),...(L.bst?{bst:L.bst}:{}),...(L.gw?{gw:L.gw}:{}),...(L.gerHerst?{gerHerst:L.gerHerst}:{})});
   ecGebSpeichern(g);
-  const V={_geb:g.id,_v:vId,titel:L.titel,netz:L.netz,ersteller:L.ersteller,stand:L.stand,fertig:L.fertig,teReihe:L.teReihe,teMm:L.teMm,montage:L.montage,reihen:L.reihen,typFrei:L.typFrei,bst:L.bst,eintraege:legE(L).map(e=>({...e}))};
+  const V={_geb:g.id,_v:vId,titel:L.titel,netz:L.netz,ersteller:L.ersteller,stand:L.stand,fertig:L.fertig,teReihe:L.teReihe,teMm:L.teMm,montage:L.montage,reihen:L.reihen,typFrei:L.typFrei,bst:L.bst,gw:L.gw,eintraege:legE(L).map(e=>({...e}))};
   vtSchreiben(V); L.deleted=true; L.movedTo=g.id+"/"+vId; saveRec("legenden",L); return {g:g.id,id:vId}; }
 
 /* ---- Verteiler eines Kunden / Standorts ---- */

@@ -62,7 +62,40 @@ function awNeuSchritte(){ const hv=AW.d.art==="hv";
     :["art","zustand","geraete","bedarf","modell",...(AW.ortWahl?["ort"]:[]),"vorschlag"];
   /* Unterverteiler (26.11.2026): Neu/Bestand · Montage mit Foto · Einbaugeräte · Modell (bringt Reihen und TE mit) · Name + Einspeisung auf einer Seite */
   if(AW.d.art==="uv") return ["art","zustand","montage","geraete","modell",...(AW.d.typFrei?["reihen"]:[]),...(AW.ortWahl?["ort"]:[]),"namevon"];
+  /* Gewerbe / Industrie (26.11.2026): Typ (vector, univers Stand, Rittal, frei, alt) · Modell · Daten auf einer Seite (alles optional) · Name + Einspeisung */
+  if(AW.d.art==="gw"){ const t=(AW.d.gw||{}).typ; return ["art","zustand","gwtyp",...(t&&GW_MOD[t]?["gwmodell"]:[]),"gwdaten",...(AW.ortWahl?["ort"]:[]),"namevon"]; }
   return ["art","montage","reihen",...(AW.ortWahl?["ort"]:[]),"name",...(awVonListe().length?["von"]:[]),"netz"]; }
+/* ===== Gewerbe- und Industrieschränke ===== */
+const GW_TYP={vector:["Hager vector IP65","Wandverteiler aus Kunststoff – Baustrom, Maschine, außen geschützt"],univers:["Hager univers Stand IP55","Standschrank mit Sockel, Felder à 250 mm"],rittal:["Rittal VX25","Schaltschrank mit Montageplatte, anreihbar"],alt:["Schneider / ABN (alt)","älterer Schrank – Maße und Daten frei"],frei:["Frei konfigurieren","beliebiger Hersteller, Maße, Schutzart"]};
+const GW_MOD={
+  vector:[{hnr:"VE112DN",n:1,h:302,b:310,t:151,ip:"IP65",bild:"https://assets.hager.com/step-content/P/HA_16279747/11/std.lang.all/VE112DN.webp"},{hnr:"VE212DN",n:2,h:427,b:310,t:151,ip:"IP65",bild:"https://assets.hager.com/step-content/P/HA_16279809/11/std.lang.all/VE212DN.webp"},{hnr:"VE312DN",n:3,h:552,b:310,t:151,ip:"IP65",bild:"https://assets.hager.com/step-content/P/HA_16279876/11/std.lang.all/VE312DN.webp"}],
+  univers:[{hnr:"FR22S2",felder:2,h:2050,b:550,t:275,ip:"IP55",bild:"https://assets.hager.com/step-content/P/HA_16209342/11/std.lang.all/FR22S2.webp"},{hnr:"FR23S2",felder:3,h:2050,b:800,t:275,ip:"IP55",bild:"https://assets.hager.com/step-content/P/HA_16209391/11/std.lang.all/FR23S2.webp"},{hnr:"FR24S2",felder:4,h:2050,b:1050,t:275,ip:"IP55",bild:"https://assets.hager.com/step-content/P/HA_16209448/11/std.lang.all/FR24S2.webp"},{hnr:"FR25S2",felder:5,h:2050,b:1300,t:275,ip:"IP55",bild:"https://assets.hager.com/step-content/P/HA_16209464/11/std.lang.all/FR25S2.webp"}],
+  rittal:[{hnr:"8606.000",h:2000,b:600,t:600,ip:"IP55"},{hnr:"8806.000",h:2000,b:800,t:600,ip:"IP55"}]};
+const GW_HERST={vector:"Hager",univers:"Hager",rittal:"Rittal"};
+const GW_EINSP=["Direkt auf Klemmen","Lasttrennschalter","NH-Lasttrenner 160 A","NH-Lasttrenner 250 A","NH-Lasttrenner 400 A","Leistungsschalter"], GW_SCHIENE=["keine","250 A","400 A","630 A"], GW_IP=["IP30","IP44","IP54","IP55","IP65"];
+const gwMod=g=>g&&GW_MOD[g.typ]&&GW_MOD[g.typ].find(m=>m.hnr===g.hnr)||null;
+const gwBild=m=>m&&m.bild?(typeof bildLokal==="function"?bildLokal(m.bild):m.bild):"";
+function gwName(g){ g=g||{}; const m=gwMod(g); if(m) return g.typ==="rittal"?`Rittal VX25 ${m.hnr}`:g.typ==="vector"?`Hager vector ${m.hnr}`:`Hager univers ${m.hnr}`;
+  return [g.hersteller||(g.typ==="alt"?"Schneider / ABN":""),g.typ==="frei"||g.typ==="alt"?"Schrank":(GW_TYP[g.typ]||["Schrank"])[0]].filter(Boolean).join(" ")||"Schrank"; }
+function gwKurz(g){ g=g||{}; const m=gwMod(g)||{}, b=g.b||m.b, h=g.h||m.h, t=g.t||m.t;
+  return [b&&h?`${b} × ${h}${t?" × "+t:""} mm`:"",g.ip||m.ip,m.n?`${m.n}-reihig · ${m.n*12} TE`:(m.felder||g.felder)?`${m.felder||g.felder} Felder`:g.reihen?`${g.reihen} Reihen`:""].filter(Boolean).join(" · "); }
+function gwModellFenster(d){ const g=d.gw||{}, L=GW_MOD[g.typ]||[];
+  const karte=m=>{ const u=gwBild(m); return `<button type="button" class="aw-g zs-mod" data-act="awGwMod" data-v="${esc(m.hnr)}"${g.hnr===m.hnr?' aria-pressed="true"':""}><span class="aw-gb zs-mod-svg">${u?`<img class="zs-mod-gross" src="${esc(u)}" alt="" loading="lazy" onerror="this.remove()">`:awSvg("gw")}</span><b>${esc(m.n?`${m.n}-reihig · ${m.n*12} TE`:m.felder?`${m.felder} Felder`:`${m.b} mm breit`)}</b><small>${esc(`${m.b} × ${m.h} × ${m.t} mm · ${m.ip}`)}</small><small class="zs-mod-nr">${esc((GW_HERST[g.typ]||"")+" "+m.hnr)}</small></button>`; };
+  return {frage:d.bestand?"Welcher hängt / steht da?":"Welche Größe?",hinweis:`${(GW_TYP[g.typ]||[""])[0]}. Antippen übernimmt Maße und Schutzart.`,
+    inhalt:`<div class="aw-grid">${L.map(karte).join("")}</div><div class="aw-lbl">Nicht dabei</div><div class="aw-liste">${awKachel("awGwMod","","","Andere Größe","Maße im nächsten Schritt eintragen",g.typ&&!g.hnr&&g.frei)}</div>`}; }
+/* Daten auf einer Seite – alles optional. Bei Modell sind Maße und Schutzart schon gesetzt. */
+function gwDatenHtml(g){ g=g||{}; const m=gwMod(g), chips=(k,L)=>`<div class="vti-chips">${L.map(v=>`<button type="button" class="chip" data-act="gwChip" data-k="${k}" data-v="${esc(v)}" aria-pressed="${g[k]===v}">${esc(v)}</button>`).join("")}</div>`;
+  return `${m?"":`<div class="aw-lbl">Hersteller</div><div class="vti-chips">${["Hager","Rittal","Schneider","ABN","Spelsberg"].map(v=>`<button type="button" class="chip" data-act="gwHerstChip" data-v="${v}" aria-pressed="${g.hersteller===v}">${v}</button>`).join("")}</div>
+      <div class="fg1">${tf("gwHerst","Hersteller / Typ (frei)",g.hersteller||"",{form:true,ph:"z. B. Schneider Prisma"})}</div>
+      <div class="aw-lbl">Maße in mm</div><div class="gw-mass">${tf("gwB","Breite",g.b||"",{form:true,ph:"800"})}${tf("gwH","Höhe",g.h||"",{form:true,ph:"2000"})}${tf("gwT","Tiefe",g.t||"",{form:true,ph:"400"})}</div>
+      <div class="aw-lbl">Schutzart</div>${chips("ip",GW_IP)}
+      <div class="aw-lbl">Reihen für Einbaugeräte (je 12 TE)</div>${chips("reihen",["1","2","3","4","5","6","8","10"])}`}
+    <div class="aw-lbl">Einspeisung</div>${chips("einsp",GW_EINSP)}
+    <div class="aw-lbl">Sammelschiene</div>${chips("schiene",GW_SCHIENE)}`; }
+function gwDatenLesen(g){ const v=id=>((document.getElementById("f_"+id)||{}).value||"").trim();
+  if(document.getElementById("f_gwB")){ g.hersteller=v("gwHerst"); g.b=+v("gwB")||""; g.h=+v("gwH")||""; g.t=+v("gwT")||""; }
+  document.querySelectorAll('#dlg [data-act="gwChip"]').forEach(x=>{ if(x.getAttribute("aria-pressed")==="true") g[x.dataset.k]=x.dataset.v; });
+  return g; }
 /* Verteiler, die am gewählten Ort schon da sind – daraus kann der neue gespeist werden (HV → UV) */
 const awVonListe=()=>{ if(!AW||!AW.kid||!AW.ort&&AW.ortWahl) return []; const g=ecGeb(AW.ort||"k:"+AW.kid); return (g.verteiler||[]).filter(v=>v&&!v.deleted); };
 const awOrtPlz=()=>{ if(!AW.kid) return ""; const o=ecOrt(AW.ort||"k:"+AW.kid); return String(((o.standort&&o.standort.plz)?o.standort:o.kunde||{}).plz||"").trim(); };
@@ -91,6 +124,11 @@ function awNeuZeigen(){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d, R={
     inhalt:`<div class="aw-liste aw-2sp">${[1,2,3,4,5,6,7,9].map(n=>awKachel("awNeuW",n,awReihenSvg(Math.min(n,6)),`${n}-reihig`,`${n*12} TE`,d.reihen===n)).join("")}</div>`});
   if(sk==="modell"&&d.art==="uv") return awRahmen({...R,...uvModellFenster(d.montage,d.typFrei?"frei":d.reihen,"awNeuW",d.bestand)});
   if(sk==="namevon") return awRahmen({...R,...awNameVonFenster()});
+  if(sk==="gwtyp"){ const ft=u=>`<img class="aw-foto" src="${esc(typeof bildLokal==="function"?bildLokal(u):u)}" alt="" loading="lazy" onerror="this.remove()">`, g=d.gw||{};
+    const T=[["vector",ft(GW_MOD.vector[1].bild)],["univers",ft(GW_MOD.univers[1].bild)],["rittal",awSvg("gw")],...(d.bestand?[["alt",awSvg("gw")]]:[]),["frei",awSvg("uv")]];
+    return awRahmen({...R,frage:d.bestand?"Was für ein Schrank ist da?":"Was für ein Schrank?",hinweis:"Antippen – es geht sofort weiter.",inhalt:`<div class="aw-liste">${T.map(([k,b])=>awKachel("awNeuW",k,b,GW_TYP[k][0],GW_TYP[k][1],g.typ===k)).join("")}</div>`}); }
+  if(sk==="gwmodell") return awRahmen({...R,...gwModellFenster(d)});
+  if(sk==="gwdaten") return awRahmen({...R,frage:"Daten zum Schrank",hinweis:"Alles optional – je mehr du angibst, desto genauer die Doku. Später auf der Karte änderbar.",inhalt:`<div class="fg1 gw-daten">${gwDatenHtml(d.gw)}</div>`,fuss:`<span style="flex:1"></span><button type="button" class="btn-filled" data-act="awGwWeiter">Weiter</button>`});
   if(sk==="ort"){ const k=kundeOf(AW.kid), ss=standorteVon(AW.kid);
     return awRahmen({...R,frage:"Wo steht der Verteiler?",inhalt:`<div class="aw-liste">${awKachel("awNeuW","k:"+k.id,"","Adresse des Kunden",adrText(k)||k.name,AW.ort==="k:"+k.id)}${ss.map(s=>awKachel("awNeuW",s.id,"",s.name||"Standort",[adrText(s)].filter(Boolean).join(""),AW.ort===s.id)).join("")}</div>`}); }
   if(sk==="name"){ const N=AW_NAMEN[d.art]||AW_NAMEN.uv;
@@ -123,6 +161,7 @@ function awNameVonFenster(){ const d=AW.d, N=AW_NAMEN[d.art]||AW_NAMEN.uv, L=awV
 function awNeuWahl(v){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d;
   if(sk==="art"){ if(d.art!==v){ d.zs=null; if(v==="uv"&&d.gerHerst==null) d.gerHerst="Hager"; if(v==="hv"){ Object.assign(d,{bedarf:zsBedarfStd(),montage:"up",name:"HV",netz:"TN-C-S | 230/400 V",hersteller:d.hersteller||"hager"}); if(d.gerHerst==null) d.gerHerst="Hager"; } } d.art=v; }
   else if(sk==="zustand") d.bestand=v==="bestand";
+  else if(sk==="gwtyp"){ const alt=d.gw||{}; d.gw=alt.typ===v?alt:{typ:v,...(v==="alt"?{hersteller:"Schneider / ABN"}:{})}; }
   else if(sk==="modell"&&d.art==="uv"){ if(v==="frei"){ d.typFrei=true; d.reihen=d.reihen||3; } else { d.typFrei=false; d.reihen=+v; d.teReihe=12; } }
   else if(sk==="hersteller"){ d.hersteller=v; if(d.zs) d.zs.hersteller=v; if(d.gerHerst==null) d.gerHerst=v==="hager"?"Hager":v==="sj"?"ABB":null; }
   else if(sk==="geraete") d.gerHerst=v;
@@ -130,7 +169,7 @@ function awNeuWahl(v){ const S=awNeuSchritte(), sk=AW.sub||S[AW.i], d=AW.d;
   else if(sk==="von"){ d.vonVId=v==="-"?"":v; const q=awVonListe().find(x=>x.id===d.vonVId); if(q&&q.netz&&d.netz==null) d.netz=q.netz; }
   if(AW.sub){ AW.sub=null; awNeuZeigen(); return; }
   if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); }
-function awNeuAnlegen(){ const d=AW.d, wer=(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""), extra={art:d.art,...(d.gerHerst?{gerHerst:d.gerHerst}:{}),montage:d.montage,reihen:d.art==="hv"&&d.zs&&+d.zs.hoehe?zsReihenSumme(d.zs,0):(d.reihen||(d.art==="hv"?5:3)),teReihe:12,...(d.art==="uv"&&d.typFrei?{typFrei:true}:{}),...(d.art==="uv"&&d.bestand?{bst:{bestand:true}}:{}),...(d.art==="hv"&&d.zs?{zs:Object.assign(zsAbgleich(d.zs),d.bestand?{bestand:true}:{})}:{})};
+function awNeuAnlegen(){ const d=AW.d, wer=(n=>legTeam().includes(n)?n:"")(ME.name||(META.profil&&META.profil.name)||""), extra={art:d.art,...(d.gerHerst?{gerHerst:d.gerHerst}:{}),montage:d.montage,reihen:d.art==="hv"&&d.zs&&+d.zs.hoehe?zsReihenSumme(d.zs,0):(d.reihen||(d.art==="hv"?5:3)),teReihe:12,...(d.art==="uv"&&d.typFrei?{typFrei:true}:{}),...((d.art==="uv"||d.art==="gw")&&d.bestand?{bst:{bestand:true}}:{}),...(d.art==="gw"&&d.gw?{gw:Object.fromEntries(Object.entries(d.gw).filter(([k,v])=>v!==""&&v!=null&&k!=="frei"))}:{}),...(d.art==="hv"&&d.zs?{zs:Object.assign(zsAbgleich(d.zs),d.bestand?{bestand:true}:{})}:{})};
   if(AW.kid){ const g=ecGeb(AW.ort||"k:"+AW.kid), id=uid();
     g.verteiler.push({id,name:d.name||"Verteiler",netz:d.netz||"",stand:ecHeute(),ersteller:wer,...extra,...(d.vonVId&&g.verteiler.some(x=>x.id===d.vonVId)?{vonVId:d.vonVId}:{})}); ecGebSpeichern(g);
     AW=null; $("#dlg").classList.remove("aw"); closeOverlays(); go({v:"vt",g:g.id,id}); }
@@ -255,6 +294,10 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "awZur": if(!AW||AW.typ==="produkt") return awZu(); if(AW.typ==="neu"){ if(AW.sub){ AW.sub=AW.sub==="reihen"?"hoehe":null; if(AW.d.zs) zsAbgleich(AW.d.zs); awNeuZeigen(); } else if(AW.i>0){ AW.i--; awNeuZeigen(); } else awZu(); }
     else if(AW.typ==="zs"){ if(AW.schritte&&AW.i>0){ const z=zsAktZp(); if(z) zsZpLesen(z); AW.i--; zsZeigen(); } else awZu(); } else if(AW.m) awKatalog(); else awZu(); return;
   case "awNeuW": awNeuWahl(b.dataset.v); return;
+  case "awGwMod": { const d=AW.d, g=d.gw||(d.gw={}), m=GW_MOD[g.typ]&&GW_MOD[g.typ].find(x=>x.hnr===b.dataset.v);
+      if(m){ Object.assign(g,{hnr:m.hnr,b:m.b,h:m.h,t:m.t,ip:m.ip,hersteller:GW_HERST[g.typ],frei:false}); if(m.n){ d.reihen=m.n; d.teReihe=12; } } else { Object.assign(g,{hnr:"",frei:true}); }
+      const S=awNeuSchritte(); if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); return; }
+  case "awGwWeiter": { const d=AW.d; d.gw=gwDatenLesen(d.gw||{}); if(d.gw.reihen) d.reihen=+d.gw.reihen; const S=awNeuSchritte(); if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); return; }
   case "awHerstW": { const d=AW.d; d.hersteller=b.dataset.v; if(d.zs) d.zs.hersteller=b.dataset.v; awNeuZeigen(); return; }
   case "awNvName": { AW.d.name=b.dataset.v; const i=document.getElementById("f_awName"); if(i) i.value=b.dataset.v; document.querySelectorAll('#dlg [data-act="awNvName"]').forEach(x=>x.setAttribute("aria-pressed",x===b)); return; }
   case "awNvVon": { const d=AW.d, i=document.getElementById("f_awName"); if(i) d.name=i.value.trim()||d.name; d.vonVId=b.dataset.v==="-"?"":b.dataset.v; const q=awVonListe().find(x=>x.id===d.vonVId); if(q&&q.netz) d.netz=q.netz; awNeuZeigen(); return; }
@@ -310,3 +353,8 @@ function awProduktOk(hnr){ const L=legAkt(); if(!L||!AW||AW.typ!=="produkt") ret
   legSpeichern(L); awZu(); toast(`${e.kz||"Gerät"}: ${m.hersteller} ${m.herstellerNr}`); }
 document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act="legProdukt"],[data-act="awProduktOk"]'); if(!b) return; ev.stopPropagation();
   if(b.dataset.act==="legProdukt") awProdukt(b.dataset.id); else awProduktOk(b.dataset.v); },true);
+/* Chips der Schrank-Daten: je Gruppe eins, nochmal antippen nimmt es weg; Hersteller-Chip füllt das Textfeld */
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="gwChip"],[data-act="gwHerstChip"]'); if(!b) return; e.preventDefault(); e.stopPropagation();
+  if(b.dataset.act==="gwHerstChip"){ const i=document.getElementById("f_gwHerst"); if(i) i.value=b.dataset.v; document.querySelectorAll('#dlg [data-act="gwHerstChip"]').forEach(x=>x.setAttribute("aria-pressed",x===b)); return; }
+  const an=b.getAttribute("aria-pressed")!=="true"; document.querySelectorAll(`#dlg [data-act="gwChip"][data-k="${b.dataset.k}"]`).forEach(x=>x.setAttribute("aria-pressed",x===b&&an));
+  if(!an&&AW&&AW.d&&AW.d.gw) delete AW.d.gw[b.dataset.k]; },true);
