@@ -300,9 +300,17 @@ const zsBestHat=(zs,ort,k)=>!!((zs.best||{})[ort]||{})[k];
    Material sind nur die erledigten Arbeiten (Hauptschalter, SLS, Überspannungsschutz mit Artikel, der Rest als Text). */
 const ZS_ARB=[["zuleitung","Zuleitung / Hausanschlusskabel erneuert"],["erdung","Erdung / Potentialausgleich erneuert"],["klemmen","Klemmen im Anschlussraum erneuert"],
   ["hs","Hauptschalter eingebaut"],["sls","SLS eingebaut"],["uss","Überspannungsschutz eingebaut"],["rfz","RfZ nachgerüstet"],["apz","APZ nachgerüstet"],["vt","Verteilerfeld neu bestückt"]];
-const ZS_HAK_ART=[["NH00","NH00"],["NH1","NH1"],["NH2","NH2"],["D02","D02 / Neozed"],["DII","D-System (Diazed)"],["?","weiß nicht"]];
-const ZS_HAK_ZST=[["ok","in Ordnung"],["alt","alt – Austausch anregen"],["neu","vom NB erneuert"]];
-const zsHakText=h=>h?[h.art&&h.art!=="?"?h.art+(h.in?` ${h.in} A`:""):(h.in?`${h.in} A`:""),h.ort,(ZS_HAK_ZST.find(x=>x[0]===h.zustand)||[])[1]].filter(Boolean).join(" · "):"";
+/* Sicherungen im HAK mit Referenzbild (Hager-Katalog) und kurzer Erklärung – Auswahl als Kacheln, Bild antippen = groß (Max 26.11.2026) */
+const ZS_HAK_ART=[["NH00","NH00","NH-Sicherung mit Messerkontakten, Größe 00 · bis 160 A · im Einfamilienhaus der Normalfall","https://assets.hager.com/step-content/P/HA_16249351/11/std.lang.all/LNH0160M.webp"],
+  ["NH1","NH1","NH-Sicherung, Größe 1 – deutlich größer · bis 250 A · Mehrfamilienhaus, Gewerbe","https://assets.hager.com/step-content/P/HA_16249557/11/std.lang.all/LNH1250M.webp"],
+  ["NH2","NH2","NH-Sicherung, Größe 2 · bis 400 A · große Anschlüsse","https://assets.hager.com/step-content/P/HA_16249755/11/std.lang.all/LNH2400M.webp"],
+  ["D02","D02 / Neozed","D0-System mit Schraubkappe, klein · D02 bis 63 A · im HAK selten, eher bei kleinen oder älteren Anschlüssen","https://assets.hager.com/step-content/P/HA_32106793/11/std.lang.all/LE1863B.webp"],
+  ["DII","Diazed (D-System)","Schraubsicherung mit Passschraube, Porzellan · DII bis 25 A, DIII bis 63 A · sehr alte Anlagen","https://assets.hager.com/step-content/P/HA_94502433/11/std.lang.all/LE3335.webp"],
+  ["?","weiß nicht","Kasten nicht offen oder nicht erkennbar",""]];
+const ZS_HAK_ZST=[["ok","in Ordnung","in Ordnung"],["alt","alt","alt – Austausch anregen"],["neu","erneuert","vom NB erneuert"]];
+const zsHakArtKurz=k=>(ZS_HAK_ART.find(x=>x[0]===k)||[])[1]||"";
+const zsHakText=h=>h?[h.art&&h.art!=="?"?zsHakArtKurz(h.art).split(" ")[0]+(h.in?` ${h.in} A`:""):(h.in?`${h.in} A`:""),h.ort,(ZS_HAK_ZST.find(x=>x[0]===h.zustand)||[])[2]].filter(Boolean).join(" · "):"";
+const zsHakBild=e=>e&&e[3]?`<img src="${esc(typeof bildLokal==="function"?bildLokal(e[3]):e[3])}" alt="" onerror="this.remove()">`:"";
 const zsArbListe=zs=>[...ZS_ARB.filter(([k])=>(zs.arbeiten||{})[k]).map(x=>x[1]),...String(zs.arbeitenText||"").split(/\n|;/).map(t=>t.trim()).filter(Boolean)];
 function zsBestandDlg(){ const L=legAkt(), zs=L&&L.zs; if(!zs) return; const A=zs.arbeiten||{};
   dialog("Neu oder Bestand?",`<div class="knx-seg zs-zst">${[["neu","Neu aufgebaut"],["bestand","Bestand"]].map(([v,t])=>`<button type="button" data-act="zsZstW" data-v="${v}" aria-pressed="${(zs.bestand?"bestand":"neu")===v}">${t}</button>`).join("")}</div>
@@ -314,12 +322,14 @@ function zsBestandDlg(){ const L=legAkt(), zs=L&&L.zs; if(!zs) return; const A=z
 function zsBestandOk(){ const L=legAkt(), zs=L&&L.zs; if(!zs) return; const F=formVals(), b=document.querySelector('#dlg [data-act="zsZstW"][aria-pressed="true"]');
   zs.bestand=!!b&&b.dataset.v==="bestand"; if(zs.bestand){ zs.baujahr=F.zsBj||""; zs.arbeitenText=F.zsArbT||""; zs.arbeiten={}; document.querySelectorAll('#dlg [data-act="zsArbW"][aria-pressed="true"]').forEach(x=>zs.arbeiten[x.dataset.k]=true); }
   legSpeichern(L); closeOverlays(); render(); toast(zs.bestand?"Als Bestand gespeichert":"Als Neuanlage gespeichert"); }
-function zsHakDlg(){ const L=legAkt(), zs=L&&L.zs; if(!zs) return; const h=zs.hak||{}, seg=(act,Lst,cur)=>`<div class="knx-seg zs-hseg">${Lst.map(([v,t])=>`<button type="button" data-act="${act}" data-v="${v}" aria-pressed="${cur===v}">${esc(t)}</button>`).join("")}</div>`;
+function zsHakDlg(){ const L=legAkt(), zs=L&&L.zs; if(!zs) return; const h=zs.hak||{}, art=ZS_HAK_ART.find(x=>x[0]===h.art);
   dialog("Hausanschlusskasten",`<div class="fg1">${tf("zsHakOrt","Wo sitzt er?",h.ort||"",{form:true,ph:"z. B. Dachboden, Keller"})}</div>
-    <div class="aw-lbl" style="margin-top:14px">Sicherung</div>${seg("zsHakArt",ZS_HAK_ART,h.art||"")}
+    <div class="aw-lbl" style="margin-top:14px">Sicherung</div>
+    <button type="button" class="zs-hak-w" data-act="zsHakAuswahl" aria-expanded="false"><span class="zs-hak-wb">${zsHakBild(art)||icon("zsBlitz")}</span><span class="zs-hak-wt"><b id="zsHakArtT">${esc(art?art[1]:"Auswählen")}</b><small>${esc(art?art[2]:"NH00, NH1, NH2, Neozed, Diazed – mit Bild zum Vergleichen")}</small></span>${icon("drop")}</button>
+    <div class="aw-liste zs-hak-liste" id="zsHakListe" hidden>${ZS_HAK_ART.map(e=>awKachel("zsHakArt",e[0],zsHakBild(e),e[1],e[2],h.art===e[0])).join("")}</div>
     <div class="fg1" style="margin-top:10px">${tf("zsHakIn","Nennstrom",h.in||"",{form:true,im:"numeric",sfx:"A",ph:"z. B. 63"})}</div>
-    <div class="aw-lbl" style="margin-top:14px">Zustand</div>${seg("zsHakZst",ZS_HAK_ZST,h.zustand||"")}
-    <div class="fg1" style="margin-top:12px">${tf("zsHakNo","Notiz",h.notiz||"",{form:true,ph:"z. B. Bakelit, NH-Trenner ohne Berührungsschutz"})}</div>`,
+    <div class="aw-lbl" style="margin-top:14px">Zustand</div><div class="knx-seg zs-hseg">${ZS_HAK_ZST.map(([v,t])=>`<button type="button" data-act="zsHakZst" data-v="${v}" aria-pressed="${h.zustand===v}">${esc(t)}</button>`).join("")}</div>
+    <div class="fg1" style="margin-top:12px">${tf("zsHakNo","Notiz",h.notiz||"",{form:true,ph:"z. B. Bakelit, ohne Berührungsschutz"})}</div>`,
     `${zs.hak?`<button class="btn-text danger" data-act="zsHakWeg">Entfernen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="zsHakOk">Speichern</button>`,{breit:true}); }
 function zsHakOk(){ const L=legAkt(), zs=L&&L.zs; if(!zs) return; const F=formVals(), w=a=>{ const b=document.querySelector(`#dlg [data-act="${a}"][aria-pressed="true"]`); return b?b.dataset.v:""; };
   zs.hak={ort:F.zsHakOrt||"",art:w("zsHakArt"),in:String(F.zsHakIn||"").replace(/\D/g,""),zustand:w("zsHakZst"),notiz:F.zsHakNo||""}; legSpeichern(L); closeOverlays(); render(); }
@@ -478,7 +488,11 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="zsHakAuf"){ zsHakDlg(); return; }
   if(a==="zsHakOk"){ zsHakOk(); return; }
   if(a==="zsHakWeg"){ const L=legAkt(); if(L&&L.zs){ delete L.zs.hak; legSpeichern(L); } closeOverlays(); render(); return; }
-  if(a==="zsHakArt"||a==="zsHakZst"){ const an=b.getAttribute("aria-pressed")==="true"; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b&&!an))); return; }
+  if(a==="zsHakAuswahl"){ const l=document.getElementById("zsHakListe"); if(l){ l.hidden=!l.hidden; b.setAttribute("aria-expanded",String(!l.hidden)); } return; }
+  if(a==="zsHakArt"){ b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); const e=ZS_HAK_ART.find(x=>x[0]===b.dataset.v), w=document.querySelector('#dlg [data-act="zsHakAuswahl"]');
+    if(w&&e){ w.querySelector(".zs-hak-wb").innerHTML=zsHakBild(e)||icon("zsBlitz"); w.querySelector("b").textContent=e[1]; w.querySelector("small").textContent=e[2]; w.setAttribute("aria-expanded","false"); }
+    const l=document.getElementById("zsHakListe"); if(l) l.hidden=true; return; }
+  if(a==="zsHakZst"){ const an=b.getAttribute("aria-pressed")==="true"; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b&&!an))); return; }
   const zs=zsAkt(); if(!zs) return;
   switch(a){
   case "zsVorl": { const k=b.dataset.v, eigen=k==="eigen", neu=eigen?(zs.felder.length?zs:zsAusVorlage("1z")):zsAusVorlage(k);

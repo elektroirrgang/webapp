@@ -1360,6 +1360,12 @@ a.dz{color:inherit;text-decoration:none;border-radius:12px}
 .zs-mod-gv{display:flex;gap:16px;align-items:flex-end;justify-content:center;max-width:100%}.zs-mod-gv figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
 .zs-mod-gv figcaption{font:600 13px var(--font);color:#555}.zs-mod-gv img{max-width:100%;max-height:48dvh;object-fit:contain}.zs-mod-gv figure:first-child{flex:1.6}.zs-mod-gv figure+figure{flex:1}
 .zs-mod-gv .zs-svg{height:min(40dvh,330px)!important;width:auto!important;max-width:100%!important;max-height:none!important}
+/* HAK: Sicherung als Auswahlfeld, aufgeklappt Kacheln mit Bild */
+.zs-hak-w{display:flex;align-items:center;gap:12px;width:100%;padding:8px 14px 8px 8px;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);font:inherit;text-align:left;cursor:pointer}
+.zs-hak-wb{flex:none;width:56px;height:56px;border-radius:12px;background:#fff;display:grid;place-items:center;overflow:hidden}.zs-hak-wb img{max-width:90%;max-height:90%;object-fit:contain}.zs-hak-wb .ic{width:26px;height:26px;color:var(--on-sv)}
+.zs-hak-wt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.zs-hak-wt b{font-size:16px}.zs-hak-wt small{font-size:12.5px;color:var(--on-sv);line-height:1.35}
+.zs-hak-w[aria-expanded="true"]>.ic{transform:rotate(180deg)}
+.zs-hak-liste{margin-top:8px}.zs-hak-liste .aw-kb{background:#fff}
 .zs-hw.zs-hw-frei{margin:0}.zs-hw.zs-hw-frei p{background:var(--wip-c);color:var(--on-wip-c)}
 .zs-neu-frei{margin-top:0}
 .leg-typ{margin:4px 0 10px;background:var(--sc-high)}
@@ -2154,7 +2160,10 @@ body.has-nav .bsp-karte{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
     html body nav.navbar.zieht .nav-item[aria-current="page"]{color:var(--on-sv)}
     html body nav.navbar.zieht .nav-item.nav-ziel{color:var(--on-sec-c)}
     /* Prüfungs-Knopf: kompakter, als Kapsel wie das Dock, 10 pt darüber (body.has-nav .fab der App ist stärker – deshalb hier gleich stark plus html) */
-    html body.has-nav .fab,html body .fab{bottom:calc(var(--dock-u) + 64px + 10px);height:50px;border-radius:25px;padding:0 18px 0 14px;gap:8px;font-size:15px}
+    /* so hoch wie das Dock (64 pt), rund bzw. als Kapsel – Max 26.11.2026: „so groß wie die Pille“ */
+    html body.has-nav .fab,html body .fab{bottom:calc(var(--dock-u) + 64px + 10px);height:64px;border-radius:32px;padding:0 22px 0 18px;gap:8px;font-size:16px}
+    html body .fab.fab-rund,html body.fab-klein .fab:not(.fab-rund){width:64px;padding:0}
+    html body .fab .ic{width:28px;height:28px}
   }
 }
 
