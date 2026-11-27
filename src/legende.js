@@ -40,7 +40,13 @@ function legNummern(E){ if(!legSchemaNum(E)) return false; const z={}; let ch=fa
 /* Einbauplatz je Gerät aus der Anordnung: Reihe und TE-Platz (wie in der Zeichnung) */
 function legPlaetze(L){ const M={}; legReihen(L).forEach((r,ri)=>{ let t=0; r.g.forEach(([e,i,w])=>{ M[e.id]={r:ri+1,von:t+1,bis:t+w}; t+=w; }); }); return M; }
 const legPlatzText=p=>p?`R${p.r} · ${p.von===p.bis?"Platz "+p.von:`Platz ${p.von}–${p.bis}`}`:"";
-function legSave(L){ legNummern(legE(L)); if(L._geb) vtSchreiben(L); else saveRec("legenden",L); }
+/* Hager volta (27.11.2026): Die Platznummern sind auf die Abdeckung gedruckt und laufen durch (Reihe 1: 1–12, Reihe 2: 13–24 …).
+   Deshalb ist die Nummer eines Geräts die aufgedruckte Zahl über seinem ersten Platz – nichts muss überklebt werden,
+   der Brother-Streifen trägt nur die Bezeichnung und kommt ins Feld unter der Reihe. Abschaltbar je Verteiler (L.nrAbdeckung=false). */
+function legVoltaNr(L){ return !!L&&L.art==="uv"&&!L.typFrei&&L.nrAbdeckung!==false&&(+L.teReihe||12)===12&&typeof uvMasse==="function"&&!!uvMasse(L).modell; }
+function legNummernVolta(L){ const P=legPlaetze(L), n=+L.teReihe||12; legE(L).forEach(e=>{ if(!legBmkArt(e)) return; const p=P[e.id]; if(p) e.kz=String((p.r-1)*n+p.von); }); }
+function legNummernAlle(L){ if(legVoltaNr(L)) legNummernVolta(L); else legNummern(legE(L)); }
+function legSave(L){ legNummernAlle(L); if(L._geb) vtSchreiben(L); else saveRec("legenden",L); }
 function legSpeichern(L){ L.stand=ecHeute(); legSave(L); }
 
 /* ---- Ablage: beim Kunden/Standort, sonst im Ablageort „Ohne Kunde“ (Seite unter Kunden) ---- */
@@ -145,6 +151,7 @@ function legUvKarte(L){ if(typeof uvZeichnung!=="function") return ""; const Z=u
       <span class="leg-o"><span>Montage</span>${chip("legOptS","montage","up","Unterputz",(L.montage||"up")==="up")}${chip("legOptS","montage","hw","Hohlwand",L.montage==="hw")}${chip("legOptS","montage","ap","Aufputz",L.montage==="ap")}</span>
       <span class="leg-o"><span>TE je Reihe</span>${[12,18,24].map(v=>chip("legOpt","teReihe",v,v,(+L.teReihe||12)===v)).join("")}</span></div>`:""}
     ${B.bestand?`<button type="button" class="zs-zp" data-act="uvBestand" ${zu?"disabled":""}><span class="zs-zn zs-bst">${icon("zsSchrank")}</span><span class="zs-zt"><b>Bestand – was erneuert wurde</b><small>${esc(uvArbListe(B).join(" · ")||"Noch nichts als erneuert eingetragen")}</small></span>${icon("chev")}</button>`:""}
+    ${!frei&&(+L.teReihe||12)===12?`<button type="button" class="zs-zp" data-act="legNrAbd" ${zu?"disabled":""}><span class="zs-zn">${icon("vtListe")}</span><span class="zs-zt"><b>Nummern wie auf der Abdeckung</b><small>${L.nrAbdeckung===false?"Aus – eigenes Schema (-F1, -F1.1 …)":"An – Reihe 1: 1–12, Reihe 2: 13–24 … Streifen nur mit Bezeichnung ins Feld unter der Reihe"}</small></span><span class="schalter${L.nrAbdeckung===false?"":" an"}" aria-hidden="true"><i></i></span></button>`:""}
     ${legVonFeld(L)}
     ${legE(L).length?"":`<p class="meta">Noch keine Geräte. Unten rechts über „Gerät“ einsetzen – Reihen-Vorlagen wie RCD + 6 × B16 gehen in einem Rutsch.</p>`}</section>`; }
 /* Karte „Stromkreise“ (Reiter Stromkreise) */
@@ -580,6 +587,10 @@ function uvBestandOk(){ const L=legAkt(); if(!L) return; const F=formVals(), b=d
   if(best){ const A={}; document.querySelectorAll('#dlg [data-act="zsArbW"][aria-pressed="true"]').forEach(x=>A[x.dataset.k]=true); L.bst={bestand:true,baujahr:bjWert("uvBj"),arbeiten:A,arbeitenText:F.uvArbT||""}; }
   else delete L.bst;
   legSave(L); closeOverlays(); render(); toast(best?"Als Bestand gespeichert":"Als neu gesetzt gespeichert"); }
+document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act="legNrAbd"]'); if(!b||b.disabled) return; ev.stopPropagation(); ev.preventDefault();
+  const L=legAkt(); if(!L) return; const an=L.nrAbdeckung===false; if(an) delete L.nrAbdeckung; else L.nrAbdeckung=false;
+  if(!an) legE(L).forEach(e=>{ if(legBmkArt(e)&&LEG_NUM.test(String(e.kz||""))) e.kz=""; });
+  legSave(L); render(); toast(an?"Nummern wie auf der Abdeckung":"Eigenes Nummernschema"); },true);
 document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act="uvTyp"],[data-act="uvTypOk"],[data-act="uvTypMo"],[data-act="uvBestand"],[data-act="uvBestandOk"]'); if(!b||b.disabled) return; ev.stopPropagation(); ev.preventDefault();
   const a=b.dataset.act; if(a==="uvTyp"){ UVT_MO=null; uvTypDlg(); return; } if(a==="uvTypMo"){ UVT_MO=b.dataset.v; uvTypDlg(); return; }
   if(a==="uvBestand"){ uvBestandDlg(); return; } if(a==="uvBestandOk"){ uvBestandOk(); return; }
@@ -617,7 +628,7 @@ function legEtiKarte(L){ if(typeof ecLbxs!=="function"||!legE(L).some(e=>e.art!=
   return `<section class="card leg-eti-k"><h3>Beschriftungsstreifen</h3>
     <div class="leg-eti-v">${ecEtiSvg(ST[0].p,ST[0].T,true)}</div>
     ${legEtiWahl()}
-    <p class="meta">${ST.length===1?"Ein Streifen":`${ST.length} Streifen, je Reihe einer`} für den Brother P-touch · jedes Feld so breit wie das Gerät darunter. Gilt für diese Anlage.</p>
+    <p class="meta">${ST.length===1?"Ein Streifen":`${ST.length} Streifen, je Reihe einer`} für den Brother P-touch · jedes Feld so breit wie das Gerät darunter. Gilt für diese Anlage.${legVoltaNr(L)?" Die Nummern stehen schon auf der volta-Abdeckung – Streifen mit Bezeichnung ins freie Feld unter der Reihe kleben.":""}</p>
     <button type="button" class="leg-eti-b" data-act="legEti">${icon("tag")}<span>Streifen drucken</span></button></section>`; }
 function legEtiDlg(){ const L=legAkt(); if(!L) return; const ST=legEtiStreifen(L);
   dialog("Beschriftungsstreifen",`<p class="ec-sub">Für die <b>Brother Pro Label Tool</b>-App (P-touch, z. B. PT-E560BT), Vorlage „Verteiler“.</p>
