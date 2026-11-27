@@ -41,10 +41,10 @@ function legNummern(E){ if(!legSchemaNum(E)) return false; const z={}; let ch=fa
 function legPlaetze(L){ const M={}; legReihen(L).forEach((r,ri)=>{ let t=0; r.g.forEach(([e,i,w])=>{ M[e.id]={r:ri+1,von:t+1,bis:t+w}; t+=w; }); }); return M; }
 const legPlatzText=p=>p?`R${p.r} · ${p.von===p.bis?"Platz "+p.von:`Platz ${p.von}–${p.bis}`}`:"";
 /* Hager volta (27.11.2026): Die Platznummern sind auf die Abdeckung gedruckt und laufen durch (Reihe 1: 1–12, Reihe 2: 13–24 …).
-   Deshalb ist die Nummer eines Geräts die aufgedruckte Zahl über seinem ersten Platz – nichts muss überklebt werden,
+   Deshalb ist die Nummer eines Geräts die aufgedruckte Zahl über seinem Platz, bei mehreren Plätzen von–bis („1-4“, Max 27.11.2026) – nichts muss überklebt werden,
    der Brother-Streifen trägt nur die Bezeichnung und kommt ins Feld unter der Reihe. Abschaltbar je Verteiler (L.nrAbdeckung=false). */
 function legVoltaNr(L){ return !!L&&L.art==="uv"&&!L.typFrei&&L.nrAbdeckung!==false&&(+L.teReihe||12)===12&&typeof uvMasse==="function"&&!!uvMasse(L).modell; }
-function legNummernVolta(L){ const P=legPlaetze(L), n=+L.teReihe||12; legE(L).forEach(e=>{ if(!legBmkArt(e)) return; const p=P[e.id]; if(p) e.kz=String((p.r-1)*n+p.von); }); }
+function legNummernVolta(L){ const P=legPlaetze(L), n=+L.teReihe||12; legE(L).forEach(e=>{ if(!legBmkArt(e)) return; const p=P[e.id]; if(p){ const a=(p.r-1)*n+p.von, z=(p.r-1)*n+p.bis; e.kz=a===z?String(a):`${a}-${z}`; } }); }
 function legNummernAlle(L){ if(legVoltaNr(L)) legNummernVolta(L); else legNummern(legE(L)); }
 function legSave(L){ legNummernAlle(L); if(L._geb) vtSchreiben(L); else saveRec("legenden",L); }
 function legSpeichern(L){ L.stand=ecHeute(); legSave(L); }
@@ -151,7 +151,7 @@ function legUvKarte(L){ if(typeof uvZeichnung!=="function") return ""; const Z=u
       <span class="leg-o"><span>Montage</span>${chip("legOptS","montage","up","Unterputz",(L.montage||"up")==="up")}${chip("legOptS","montage","hw","Hohlwand",L.montage==="hw")}${chip("legOptS","montage","ap","Aufputz",L.montage==="ap")}</span>
       <span class="leg-o"><span>TE je Reihe</span>${[12,18,24].map(v=>chip("legOpt","teReihe",v,v,(+L.teReihe||12)===v)).join("")}</span></div>`:""}
     ${B.bestand?`<button type="button" class="zs-zp" data-act="uvBestand" ${zu?"disabled":""}><span class="zs-zn zs-bst">${icon("zsSchrank")}</span><span class="zs-zt"><b>Bestand – was erneuert wurde</b><small>${esc(uvArbListe(B).join(" · ")||"Noch nichts als erneuert eingetragen")}</small></span>${icon("chev")}</button>`:""}
-    ${!frei&&(+L.teReihe||12)===12?`<button type="button" class="zs-zp" data-act="legNrAbd" ${zu?"disabled":""}><span class="zs-zn">${icon("vtListe")}</span><span class="zs-zt"><b>Nummern wie auf der Abdeckung</b><small>${L.nrAbdeckung===false?"Aus – eigenes Schema (-F1, -F1.1 …)":"An – Reihe 1: 1–12, Reihe 2: 13–24 … Streifen nur mit Bezeichnung ins Feld unter der Reihe"}</small></span><span class="schalter${L.nrAbdeckung===false?"":" an"}" aria-hidden="true"><i></i></span></button>`:""}
+    ${!frei&&(+L.teReihe||12)===12?`<button type="button" class="zs-zp" data-act="legNrAbd" ${zu?"disabled":""}><span class="zs-zn">${icon("vtListe")}</span><span class="zs-zt"><b>Nummern wie auf der Abdeckung</b><small>${L.nrAbdeckung===false?"Aus – eigenes Schema (-F1, -F1.1 …)":"An – Reihe 1: 1–12, Reihe 2: 13–24 …, FI auf 1–4 heißt „1-4“. Streifen nur mit Bezeichnung ins Feld unter der Reihe"}</small></span><span class="schalter${L.nrAbdeckung===false?"":" an"}" aria-hidden="true"><i></i></span></button>`:""}
     ${legVonFeld(L)}
     ${legE(L).length?"":`<p class="meta">Noch keine Geräte. Unten rechts über „Gerät“ einsetzen – Reihen-Vorlagen wie RCD + 6 × B16 gehen in einem Rutsch.</p>`}</section>`; }
 /* Karte „Stromkreise“ (Reiter Stromkreise) */
