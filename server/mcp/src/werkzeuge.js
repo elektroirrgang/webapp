@@ -3,6 +3,7 @@
    kein freies Ändern beliebiger Datensätze. So bleiben die Daten so aufgebaut, wie die Apps sie erwarten.
    Jede Änderung: Datensatz mit createdBy/updatedBy (quelle "mcp") + Eintrag im MCP-Protokoll. */
 import { z } from "zod";
+import { rechtAuf, RECHTE } from "./zugriff.js";
 
 const T = 864e5;
 const heute = () => new Date().toISOString().slice(0, 10);
@@ -173,6 +174,29 @@ export function werkzeugeAnmelden(server, S, ich) {
     return antwort(L.map(a => ({ id: a.id, baustelle: a.baustelleId ? (B.get(a.baustelleId) || {}).name || a.baustelleId : "Lager", status: a.status, positionen: a.pos || [], notiz: a.notiz || "", von: a.createdBy && a.createdBy.name || "" })), `${L.length} Anforderungen`);
   });
 
+
+  /* ---------------- Ordner (Rechte: zugriff.js) ---------------- */
+  const ordnerAlle = async () => new Map((await S.alle("ordner")).map(o => [o.id, o]));
+  const ordnerPfad = (o, O) => { const t = []; const g = new Set(); while (o && !g.has(o.id)) { g.add(o.id); t.unshift(o.name); o = o.elternId ? O.get(o.elternId) : null; } return t.join(" / "); };
+  lesen("ordner_auflisten", {
+    title: "Ordner auflisten", description: "Alle Ordner, die du sehen darfst – mit Pfad, deinem Recht (lesen/schreiben/verwalten) und ob der Ordner nur für bestimmte Personen ist."
+  }, async () => {
+    const O = await ordnerAlle(), D = await S.alle("dateien");
+    const L = [...O.values()].map(o => ({ id: o.id, pfad: ordnerPfad(o, O), dein_recht: rechtAuf(ich, o.id, O), eingeschraenkt: !!(o.zugriff && o.zugriff.length), dateien: D.filter(d => d.ordnerId === o.id).length }))
+      .sort((a, b) => a.pfad.localeCompare(b.pfad, "de"));
+    return antwort(L, `${L.length} Ordner`);
+  });
+  lesen("ordner_inhalt", {
+    title: "Ordnerinhalt", description: "Unterordner und Dateien eines Ordners. Bei Ordnern mit eigener Liste steht dabei, wer Zugriff hat (nur sichtbar mit Recht „verwalten“).",
+    inputSchema: { ordner_id: z.string() }
+  }, async ({ ordner_id }) => {
+    const O = await ordnerAlle(), o = O.get(ordner_id); if (!o) return fehler("Ordner nicht gefunden");
+    const r = rechtAuf(ich, o.id, O);
+    return antwort({ id: o.id, pfad: ordnerPfad(o, O), dein_recht: r, zugriff: r === "verwalten" ? (o.zugriff || "geerbt") : undefined,
+      unterordner: [...O.values()].filter(x => x.elternId === o.id).map(x => ({ id: x.id, name: x.name })),
+      dateien: (await S.alle("dateien")).filter(d => d.ordnerId === o.id).map(d => ({ id: d.id, name: d.name, typ: d.type || d.typ || "", groesse: d.size || null, von: d.createdBy && d.createdBy.name || "" })) });
+  });
+
   /* ---------------- Schreiben ---------------- */
   schreiben("vorgang_anlegen", {
     title: "Vorgang anlegen", description: "Legt einen neuen Vorgang an (Stufe „Anruf“), z. B. aus einem Telefonat oder einer Mail. Entweder kunde_id eines bestehenden Kunden oder kunde_name für Neukunden.",
@@ -231,5 +255,22 @@ export function werkzeugeAnmelden(server, S, ich) {
     r.vorschlaege = [...(r.vorschlaege || []).filter(x => !x.erledigt), { id: uid(), von: wer.name, mail: wer.mail, am: heute(), titel: r.titel, kapitel: r.kapitel, inhalt: a.neuer_text, checkliste: r.checkliste || [], fotos: r.fotos || [], notiz: a.begruendung }];
     await speichern("handbuch_vorschlag", "handbuch", r, { artikel_id: a.artikel_id, begruendung: a.begruendung }, false);
     return antwort({ id: r.id }, "Vorschlag gespeichert – wartet auf Freigabe.");
+  });
+
+  schreiben("ordner_anlegen", {
+    title: "Ordner anlegen", description: "Legt einen Ordner an. Ohne zugriff erbt er die Rechte des Elternordners (oberste Ordner ohne Liste: alle Mitarbeiter). Mit zugriff sehen ihn NUR die eingetragenen Personen – mindestens eine braucht „verwalten“.",
+    inputSchema: { name: z.string().min(1).max(80), eltern_id: z.string().optional(), zugriff: z.array(z.object({ wer: z.string().describe("Mail-Adresse, rolle:admin, rolle:buero, rolle:monteur, dienst:<Name> oder alle"), recht: z.enum(RECHTE) })).optional() }
+  }, async a => {
+    const r = { id: uid(), name: a.name.trim(), ...(a.eltern_id ? { elternId: a.eltern_id } : {}), ...(a.zugriff && a.zugriff.length ? { zugriff: a.zugriff.map(z => ({ wer: z.wer.trim().toLowerCase(), recht: z.recht })) } : {}) };
+    await speichern("ordner_anlegen", "ordner", r, a, true); return antwort({ id: r.id }, "Ordner angelegt.");
+  });
+
+  schreiben("ordner_zugriff_setzen", {
+    title: "Wer darf in den Ordner?", description: "Setzt die Zugriffsliste eines Ordners neu (nur mit Recht „verwalten“). Leere Liste = wieder vom Elternordner erben.",
+    inputSchema: { ordner_id: z.string(), zugriff: z.array(z.object({ wer: z.string().describe("Mail-Adresse, rolle:admin, rolle:buero, rolle:monteur, dienst:<Name> oder alle"), recht: z.enum(RECHTE) })) }
+  }, async a => {
+    const o = await S.lesen("ordner", a.ordner_id); if (!o) return fehler("Ordner nicht gefunden");
+    if (a.zugriff.length) o.zugriff = a.zugriff.map(z => ({ wer: z.wer.trim().toLowerCase(), recht: z.recht })); else delete o.zugriff;
+    await speichern("ordner_zugriff_setzen", "ordner", o, a, false); return antwort({ id: o.id, zugriff: o.zugriff || "geerbt" }, "Zugriff geändert.");
   });
 }
