@@ -449,23 +449,24 @@ async function legPdf(L,art){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"m
   const M=S.M, CW=S.CW, sp=[32,116,34];
   S.kopf(); S.abschnitt("Anlage");
   S.werte([["Kunde",L.kunde],["Verteiler",L.titel],["Anschrift",L.anschrift],["Stand",ecDatum(L.stand)],...(L.netz?[["Netzform",L.netz]]:[])]);   /* „Erstellt von“ bleibt intern in der App, gehört nicht auf den Aushang beim Kunden */
-  S.abschnitt("Hinweis für den Betreiber");
-  S.text("Fehlerstromschutzschalter (RCD) alle 6 Monate über die Prüftaste „T“ auslösen. Schaltet der RCD dabei nicht ab, könnte er defekt sein. In diesem Fall bitte Elektro Irrgang informieren.");
-  /* Kontakt groß wie im alten Verteilerplan – mit Prüfplakette links daneben, wenn ein nächster E-Check bekannt ist */
-  const qrC=L._geb&&typeof qrMatrix==="function"&&((vtGeb(L._geb)||{verteiler:[]}).verteiler.find(x=>x.id===L._v)||{}).qr;
+  /* Hinweis für den Betreiber – mit E-CHECK-Plakette rechts, wenn ein nächster Termin bekannt ist (Max 27.11.2026: getrennt vom Kontaktblock) */
   const PE=legEcheckDaten(L), pl=!!(PE&&/^\d{4}-\d{2}/.test(PE.naechste||""));
-  S.platz(pl?33:qrC?30:19); const y=S.y+1;
+  S.abschnitt("Hinweis für den Betreiber");
+  const RCD="Fehlerstromschutzschalter (RCD) alle 6 Monate über die Prüftaste „T“ auslösen. Schaltet der RCD dabei nicht ab, könnte er defekt sein. In diesem Fall bitte Elektro Irrgang informieren.";
+  if(pl){ const D=31, tw=CW-D-8; S.platz(D+4); const y0=S.y; legPlakette(d,M+CW-D/2,y0-3+D/2,PE.naechste,PE.zuletzt,D);
+    d.setFont("helvetica","normal"); d.setFontSize(8.5); d.setTextColor(30); const l=d.splitTextToSize(pdfT(RCD),tw); d.text(l,M,y0); let y=y0+l.length*4+3.5;
+    d.setFont("helvetica","bold"); d.setFontSize(10); d.setTextColor(...S.NAVY); d.text(pdfT(`Nächster E-Check: ${LEG_MONATE[+PE.naechste.slice(5,7)-1]} ${PE.naechste.slice(0,4)}`),M,y); y+=4.6;
+    d.setFont("helvetica","normal"); d.setFontSize(8.5); d.setTextColor(30); const l2=d.splitTextToSize(pdfT(`Die Plakette rechts zeigt den Termin. Bitte rechtzeitig einen Termin mit Elektro Irrgang vereinbaren.${PE.zuletzt?` Letzte Prüfung am ${ecDatum(PE.zuletzt)}.`:""}`),tw); d.text(l2,M,y); y+=l2.length*4;
+    S.y=Math.max(y+4,y0-3+D+5); }
+  else S.text(RCD);
+  /* Kontakt groß wie im alten Verteilerplan */
+  const qrC=L._geb&&typeof qrMatrix==="function"&&((vtGeb(L._geb)||{verteiler:[]}).verteiler.find(x=>x.id===L._v)||{}).qr;
+  S.platz(qrC?30:19); const y=S.y+1, x2=qrC?M+68:M+CW/2;
   if(qrC){ const Mx=qrMatrix(qrC), n=Mx.length, gr=21, z=gr/n, qx=M+CW-gr, qy=y-4; d.setFillColor(0,0,0); Mx.forEach((r,yy)=>r.forEach((on,xx)=>{ if(on) d.rect(qx+xx*z,qy+yy*z,z+0.02,z+0.02,"F"); }));
     d.setFont("helvetica","bold"); d.setFontSize(9); d.setTextColor(20); d.text("Anlage "+qrZeig(qrC),qx+gr/2,qy+gr+4,{align:"center"}); }
-  if(pl){ legPlakette(d,M+16,y+10,PE.naechste,PE.zuletzt); const x0=M+37;
-    d.setTextColor(20); d.setFont("helvetica","bold"); d.setFontSize(12); d.text("Elektro Irrgang",x0,y); d.setTextColor(225,29,47); d.text("Tel. 02291 4878",x0+38,y);
-    d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),x0,y+5.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x0,y+10.2); d.text(pdfT("Inh. Joachim Irrgang"),x0,y+15.2);
-    d.setFontSize(8.5); d.setTextColor(93,107,123); d.text(pdfT(`Nächster E-Check: ${LEG_MONATE[+PE.naechste.slice(5,7)-1]} ${PE.naechste.slice(0,4)}${PE.zuletzt?` | zuletzt geprüft am ${ecDatum(PE.zuletzt)}`:""}`),x0,y+20.6);
-    S.y=y+31; }
-  else { const x2=qrC?M+68:M+CW/2;
-    d.setTextColor(20); d.setFont("helvetica","bold"); d.setFontSize(12); d.text("Elektro Irrgang",M,y); d.setTextColor(...[225,29,47]); d.text("Tel. 02291 4878",x2,y);
-    d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),M,y+5.2); d.text(pdfT("Inh. Joachim Irrgang"),M,y+10.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x2,y+5.2);
-    S.y=y+(qrC?29:18); }
+  d.setTextColor(20); d.setFont("helvetica","bold"); d.setFontSize(12); d.text("Elektro Irrgang",M,y); d.setTextColor(...[225,29,47]); d.text("Tel. 02291 4878",x2,y);
+  d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),M,y+5.2); d.text(pdfT("Inh. Joachim Irrgang"),M,y+10.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x2,y+5.2);
+  S.y=y+(qrC?29:18);
   legPdfStromkreise(d,S,L,art);
   return S.ende(); }
 /* Prüfplakette „Nächste Prüfung“ (27.11.2026, Wunsch Chef): auf Seite 1 der Legende, Monat und Jahr digital markiert wie beim Aufkleber.
