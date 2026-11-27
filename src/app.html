@@ -3500,7 +3500,7 @@ function sigExport(c){ const o=document.createElement("canvas"); o.width=Math.mi
   const x=o.getContext("2d"); x.drawImage(c,0,0,o.width,o.height); const d=x.getImageData(0,0,o.width,o.height);
   for(let i=0;i<d.data.length;i+=4){ if(d.data[i+3]>0){ d.data[i]=20; d.data[i+1]=28; d.data[i+2]=40; } } x.putImageData(d,0,0); return o.toDataURL("image/png"); }
 
-const LOGO_PDF="<!--LOGO_HELL-->";
+const LOGO_PDF="<!--LOGO_PDF-->";
 const EHW_PDF="<!--EHANDWERK-->";
 const PDFMAP={"²":"2","³":"3","≈":"ca.","Ω":"Ohm","≤":"<=","≥":">=","→":"->","↔":"<->","–":"-","Δ":"d","…":"...","·":"|","„":"\"","“":"\""};
 const pt=s=>String(s??"").replace(/[²³≈Ω≤≥→↔–Δ…·„“]/g,c=>PDFMAP[c]);
