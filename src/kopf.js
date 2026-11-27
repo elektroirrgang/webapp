@@ -191,6 +191,8 @@ function loginSeite(app,inhalt){
     ${F?`<p class="ls-fuss">${F.name} · ${F.strasse} · ${F.ort}</p>`:""}</div>`; }
 
 /* Bedienart merken (Max 13.11.2026): nach Fingertipp kein „hängendes“ :hover (z. B. Kreis unter dem Zurück-Pfeil auf der nächsten Seite).
-   tools/build.py schreibt alle :hover-Regeln als „:where(html:not(.tipp)) …“ – mit der Maus ist die Klasse weg und Hover wirkt wie gewohnt. */
-(()=>{ const h=document.documentElement; addEventListener("pointerdown",e=>h.classList.toggle("tipp",e.pointerType!=="mouse"),{capture:true,passive:true});
-  try{ if(matchMedia("(pointer:coarse)").matches) h.classList.add("tipp"); }catch(e){} })();
+   tools/build.py schreibt alle :hover-Regeln als „:where(html:not(.per-finger)) …“ – mit der Maus ist die Klasse weg und Hover wirkt wie gewohnt.
+   Klasse heißt „per-finger“ (bis 27.11.2026 „tipp“ – die gab es auch als Hinweis-Baustein, dessen „.tipp b{display:flex}“
+   am Handy jedes fette Wort in eine eigene Zeile gesetzt hat, z. B. „**38 Stunden**“ und der Punkt darunter). */
+(()=>{ const h=document.documentElement; addEventListener("pointerdown",e=>h.classList.toggle("per-finger",e.pointerType!=="mouse"),{capture:true,passive:true});
+  try{ if(matchMedia("(pointer:coarse)").matches) h.classList.add("per-finger"); }catch(e){} })();
