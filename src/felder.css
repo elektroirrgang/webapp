@@ -2516,23 +2516,23 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
 .hb-af-l>*{padding:8px 0;border-top:1px solid color-mix(in srgb,var(--on-surface) 8%,transparent)}
 .hb-af-l .hb-dots{justify-content:flex-end;margin:0}.hb-af-l .hb-af-f{grid-column:1/-1;padding:0 0 8px;margin-top:-4px;border:0;font-size:12.5px;color:var(--on-sv)}
 .hb-af-h{margin:10px 0 2px;font-size:14px;line-height:1.45;color:var(--on-sv)}
-.hb5{margin:6px 0 14px}
-.hb5-schritte{display:flex;justify-content:space-between;align-items:center;margin:4px 6px 12px;position:relative}
-.hb5-schritte::before{content:"";position:absolute;left:20px;right:20px;top:50%;height:2px;background:var(--sc-highest)}
-.hb5-schritte button{position:relative;width:40px;height:40px;border:0;border-radius:50%;background:var(--sc-highest);color:var(--on-sv);font:inherit;font-size:16px;font-weight:800;cursor:pointer}
-.hb5-schritte button.fertig{background:var(--sec-c);color:var(--on-sec-c)}
-.hb5-schritte button[aria-selected="true"]{background:var(--primary);color:var(--on-primary)}
-.hb5-karte{padding:12px 14px 6px;border-radius:20px;background:var(--sc)}
-.hb5-bild{border-radius:14px;background:var(--sc-low);padding:6px}.hb5-bild svg{display:block;width:100%;height:auto;max-height:180px}
-.hb5-bild.nach svg{opacity:.85}
-.hb5-nr{margin:12px 0 2px;font-size:12px;font-weight:700;color:var(--primary)}
-.hb5-karte h4{margin:0;font-size:18px;font-weight:800;line-height:1.25}
-.hb5-k{margin:6px 0 4px;font-size:15px;font-weight:600}
-.hb5-karte ul{margin:6px 0 8px;padding-left:20px;font-size:14.5px;line-height:1.45}.hb5-karte li{margin:4px 0}
-.hb5-nav{display:flex;align-items:center;gap:8px;margin:10px 0}.hb5-nav button[disabled]{opacity:.38}
-.hb5-nav button{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}.hb5-nav .ic{width:20px;height:20px}
-.hb5.druck .hb5-karte{display:grid;grid-template-columns:42mm 1fr;gap:0 5mm;margin-bottom:3mm;padding:3mm 4mm}
-.hb5.druck .hb5-bild{grid-row:1/5;align-self:start}.hb5.druck .hb5-nr{margin-top:0}.hb5.druck h4{font-size:11pt}.hb5.druck .hb5-k,.hb5.druck ul{font-size:9.5pt}
+.hb5{--c1:#1565C0;--c2:#2E7D32;--c3:#D35400;--c4:#6A1B9A;--c5:#C62828;margin:4px 0 18px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hb5{--c1:#8AB8F2;--c2:#82C98A;--c3:#F5A85A;--c4:#CFA0E6;--c5:#F28B82}}
+:root[data-theme="dark"] .hb5{--c1:#8AB8F2;--c2:#82C98A;--c3:#F5A85A;--c4:#CFA0E6;--c5:#F28B82}
+.hb5-kopf{margin:0 4px 8px;font-size:13px;font-weight:800;letter-spacing:.02em;color:var(--on-sv)}
+.hb5-r{--c:var(--c1);display:grid;grid-template-columns:52% 1fr;grid-template-areas:"t t" "b k" "h h";gap:8px 12px;align-items:center;padding:12px;margin-bottom:8px;border-radius:20px;background:var(--sc)}
+.hb5-c2{--c:var(--c2)}.hb5-c3{--c:var(--c3)}.hb5-c4{--c:var(--c4)}.hb5-c5{--c:var(--c5)}
+.hb5-bild{position:relative;border-radius:14px;background:var(--sc-low);padding:4px}.hb5-bild svg{display:block;width:100%;height:auto}
+.hb5-n{position:absolute;left:-6px;top:-6px;width:28px;height:28px;border-radius:50%;background:var(--c);color:var(--surface);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800}
+.hb5-bild{grid-area:b}
+.hb5-t{grid-area:t;display:flex;align-items:center;gap:10px;margin:0;font-size:16.5px;font-weight:800;line-height:1.2;color:var(--c)}
+.hb5-k{grid-area:k;margin:0;font-size:14px;line-height:1.38}
+.hb5-h{grid-area:h;display:flex;gap:8px;align-items:flex-start;margin:2px 0 0;padding:8px 10px;border-radius:12px;background:color-mix(in srgb,var(--c) 12%,transparent);font-size:13px;line-height:1.35}
+.hb5-h .ic{flex:none;width:18px;height:18px;color:var(--c)}
+.hb5-fuss{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:16px;background:var(--wip-c,var(--sc-high));color:var(--on-wip-c,inherit);font-size:14px;line-height:1.4}.hb5-fuss p{margin:0}.hb5-fuss .ic{flex:none;width:20px;height:20px}
+@media (min-width:900px){.hb5:not(.druck){display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.hb5:not(.druck) .hb5-kopf,.hb5:not(.druck) .hb5-fuss{grid-column:1/-1}
+  .hb5:not(.druck) .hb5-r{grid-template-columns:1fr;grid-template-areas:"b" "t" "k" "h";align-content:start;align-items:start;margin:0}}
+.hb5.druck .hb5-r{grid-template-columns:48mm 1fr;grid-template-areas:"b t" "b k" "b h";padding:2.5mm 3mm;margin-bottom:2mm}.hb5.druck .hb5-t{font-size:11pt}.hb5.druck .hb5-k,.hb5.druck .hb5-h{font-size:9.5pt}
 .hb-aktionen{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 4px}.hb-aktionen button{display:inline-flex;align-items:center;gap:8px}.hb-aktionen .ic{width:20px;height:20px}
 #hbDruck{display:none}
 @media print{
@@ -2547,7 +2547,7 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
   .hb-d-art{margin:0 0 14pt}.hb-d-art h2{font-size:13pt;margin:12pt 0 6pt;break-after:avoid}
   .hb-d .hb-text{font-size:10.5pt;line-height:1.45}.hb-d .hb-text h3{font-size:11pt;margin:10pt 0 4pt;break-after:avoid}
   .hb-d .hb-text p,.hb-d .hb-text li{orphans:3;widows:3}
-  .hb-d .hb-gr,.hb-d .hb-af-zeit,.hb-d .hb5-karte,.hb-d .hb-hinweis,.hb-d tr,.hb-d .hb-d-ck{break-inside:avoid}
+  .hb-d .hb-gr,.hb-d .hb-af-zeit,.hb-d .hb5-r,.hb-d .hb-hinweis,.hb-d tr,.hb-d .hb-d-ck{break-inside:avoid}
   .hb-d .hb-tab-w{overflow:visible}.hb-d .hb-tab{font-size:9.5pt}.hb-d .hb-gr-t,.hb-d .hb-af-l{font-size:9.5pt}
   .hb-d .hb-af-f{display:block;grid-column:1/-1;padding-top:0;border:0;color:#555;font-size:8.5pt}.hb-d .hb-af-l{grid-template-columns:1fr auto}
   .hb-d .hb-tel{display:block;padding:0;margin:2pt 0;background:none;color:#111}.hb-d .hb-tel .ic{display:none}
@@ -2556,5 +2556,5 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
   .hb-d-ck{margin:6pt 0;padding:8pt 10pt;border-radius:8pt;background:#f3f3f5;-webkit-print-color-adjust:exact;print-color-adjust:exact}.hb-d-ck p{margin:3pt 0;display:flex;gap:8pt;align-items:center}
   .hb-d-box{width:9pt;height:9pt;border:1pt solid #555;border-radius:2pt;flex:none}
   .hb-d-stand{font-size:8pt;color:#777;margin:4pt 0 0}
-  .hb-d .hb-gr,.hb-d .hb-af-zeit,.hb-d .hb5-karte,.hb-d .hb-tab-w,.hb-d .hb-hinweis{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .hb-d .hb-gr,.hb-d .hb-af-zeit,.hb-d .hb5-r,.hb-d .hb-tab-w,.hb-d .hb-hinweis{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
