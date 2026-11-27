@@ -127,8 +127,18 @@ function hbMitSchaubild(a){ let t=String(a.inhalt||"");
   if(t.includes("[[sicherheitsregeln]]")||!(a.id==="hb-5sr"||/f(ü|ue)nf sicherheitsregeln|5 sicherheitsregeln/i.test(a.titel||""))) return t;
   t=t.replace(/(^|\n)(##[^\n]*\n)?\s*1\.\s*Freischalten[^\n]*(\n\s*[2-5]\.[^\n]*){4}/i,"\n");
   return "[[sicherheitsregeln]]\n\n"+t.trim(); }
+/* Einmalige Korrekturen am eingespielten Text (Max 27.11.2026, von ihm freigegeben) – laufen beim Öffnen des Handbuchs
+   auf dem Gerät von jemandem mit Recht dazu, nur wenn der alte Text noch drinsteht. Stand bleibt gleich (keine „geändert“-Markierung). */
+let HB_KORR=false;
+function hbKorrekturen(){ if(HB_KORR||!hbEinspielDarf()||!DB.handbuch) return; HB_KORR=true;
+  const r=DB.handbuch.get("hb-arbeitszeit"); if(!r||r.deleted) return; let t=String(r.inhalt||""); const vorher=t;
+  /* Pause Mo–Do ist 09:00–09:15 → Arbeit 07:30–09:00 und 09:15–12:00 */
+  t=t.replace("07:30 – 09:15 Uhr<br>09:30 – 12:00 Uhr<br>12:30 – 16:30 Uhr","07:30 – 09:00 Uhr<br>09:15 – 12:00 Uhr<br>12:30 – 16:30 Uhr");
+  /* geklärte offene Punkte: Zeiten Mo–Do und 38 / 38,25 h (SCC rechnet 7:36 h pro Tag = 38 h) */
+  t=t.split("\n").filter(z=>!/^\s*\?\?\s*(Montag bis Donnerstag passt nicht|Selbst mit diesen Zeiten)/.test(z)).join("\n").replace(/\n{3,}/g,"\n\n").trim();
+  if(t!==vorher){ r.inhalt=t; saveRec("handbuch",r,false); } }
 let HB_Q="", HB_F="alle";
-function hbUebersicht(){ const A=hbAlle(), q=HB_Q.trim().toLowerCase();
+function hbUebersicht(){ hbKorrekturen(); const A=hbAlle(), q=HB_Q.trim().toLowerCase();
   const ung=hbKuerzlich(), entw=A.filter(a=>!hbGilt(a)), vor=A.filter(a=>a.vorschlaege.length);
   const off=hbDarf()?A.filter(hbOffen):[];
   let L=A; if(HB_F==="neu") L=ung; else if(HB_F==="entwurf") L=entw; else if(HB_F==="vorschlag") L=vor; else if(HB_F==="offen") L=off;
@@ -148,7 +158,7 @@ const ecDatumKurz=iso=>iso?String(iso).slice(0,10).split("-").reverse().join("."
 /* Checklisten: abgehakt wird auf diesem Gerät (je Artikel), „Neu beginnen“ setzt zurück */
 const hbCkKey=id=>"irrgang_hbck|"+id;
 const hbCk=id=>{ try{ return JSON.parse(localStorage.getItem(hbCkKey(id))||"{}"); }catch(e){ return {}; } };
-function hbArtikel(id){ const a=hbArt(id); if(!a) return `<div class="narrow"><p class="meta">Artikel nicht gefunden.</p></div>`; const ck=hbCk(a.id), n=a.checkliste.filter((_,i)=>ck[i]).length;
+function hbArtikel(id){ hbKorrekturen(); const a=hbArt(id); if(!a) return `<div class="narrow"><p class="meta">Artikel nicht gefunden.</p></div>`; const ck=hbCk(a.id), n=a.checkliste.filter((_,i)=>ck[i]).length;
   const kap=(HB_KAPITEL.find(([k])=>k===a.kapitel)||[,""])[1];
   return `<div class="narrow hb hb-art">
     ${hbGilt(a)?"":`<div class="hb-entwurf">${icon("warn")}<span><b>Entwurf – noch nicht freigegeben.</b>${a.neu?" Vorschlag als Grundlage; bitte prüfen und an eure Praxis anpassen.":""}</span></div>`}
