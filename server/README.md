@@ -1,5 +1,7 @@
 # KI für die Irrgang-Apps
 
+> **Neu (27.11.2026):** Der MCP-Server für fremde KI-Systeme (z. B. Nexilo) liegt in [`mcp/`](mcp/README.md).
+
 Die Apps sind vorbereitet (`src/ki.js`). Ohne Zugang bleibt alles wie bisher. Eingeschaltet wird in der **Übersicht › Einstellungen › KI** (nur Admin).
 
 Was die KI dann kann:
