@@ -5,7 +5,8 @@
    verfasser = wer den Text geschrieben hat (eingespieltes Handbuch: Joachim Irrgang), ausgabe = Stand der Vorlage („05.2026“) –
    gilt, solange der Artikel unverändert ist; jede neue Freigabe nimmt „ausgabe“ weg.
    Ein Entwurf aus der Vorlage existiert nur im Code, bis er bearbeitet oder freigegeben wird. stand>0 = gültig.
-   Gelesen: am eigenen Profil (profile.hbGelesen = {id: stand}) – so überschreiben sich zwei Leute nicht gegenseitig. */
+   Keine Lesepflicht (Max 27.11.2026: „gezwungenes Gelesen macht keinen Sinn“) – stattdessen werden kürzlich neue oder
+   geänderte Artikel 14 Tage lang markiert. Alte profile.hbGelesen-Einträge bleiben liegen, werden aber nicht mehr benutzt. */
 const hbDarf=()=>typeof anfVerw==="function"?anfVerw():!!ME.admin;
 function hbAlle(){ const R=new Map(live("handbuch").map(r=>[r.id,r])), out=[];
   HB_VORLAGE.forEach(v=>{ const r=R.get(v.id); out.push(r?{...v,...r,vorlage:true}:{...v,vorlage:true,neu:true}); R.delete(v.id); });
@@ -19,11 +20,12 @@ const hbGilt=a=>+a.stand>0;
 const HB_VERFASSER="Joachim Irrgang";
 /* „Ausgabe 05.2026“ (eingespielt, unverändert) oder „Stand 2 vom 03.12.2026“ */
 const hbStandText=(a,lang)=>a.ausgabe?`Ausgabe ${a.ausgabe}`:lang?`Stand ${a.stand} vom ${ecDatumKurz(a.frei&&a.frei.am)}`:`Stand ${a.stand} · ${ecDatumKurz(a.frei&&a.frei.am)}`;
-function hbGelesenMap(mail){ const p=DB.profile&&DB.profile.get(String(mail||ME.mail||"").toLowerCase()); return p&&p.hbGelesen||{}; }
-const hbUngelesen=()=>{ const G=hbGelesenMap(); return hbAlle().filter(a=>hbGilt(a)&&+G[a.id]!==+a.stand); };
+/* neu oder geändert in den letzten 14 Tagen – eingespielte, unveränderte Artikel (mit „ausgabe“) zählen nicht */
+const hbKuerzlich=()=>{ const ab=new Date(Date.now()-14*864e5).toISOString().slice(0,10); return hbAlle().filter(a=>hbGilt(a)&&!a.ausgabe&&String(a.frei&&a.frei.am||"")>=ab); };
+const hbNeuText=a=>+a.stand>1?"geändert":"neu";
 /* einfacher Text → HTML: ## Überschrift, - Liste, 1. Liste, **fett**, Leerzeile = Absatz.
    27.11.2026 dazu: [Text](https://…) Link, [Text](tel:…) Anruf-Knopf, „> “ Hinweis, „?? “ noch offen (nur Chef/Büro sehen es),
-   „| a | b |“ Tabelle (leere erste Zelle = gehört zur Gruppe darüber → Karten), [[aderfarben]] Aderfarben nach Baujahr, <br> in Zellen. */
+   „| a | b |“ Tabelle (leere erste Zelle = gehört zur Gruppe darüber → Karten), [[aderfarben]] Aderfarben nach Baujahr, [[sicherheitsregeln]] Schaubild 5 Sicherheitsregeln, <br> in Zellen. */
 const HB_FARBE={"grün-gelb":"gg","gr/gb":"gg","grüngelb":"gg",hellgrau:"#cfd0d6",hellblau:"#62aee8",schwarz:"#202124",braun:"#8a5a2b",grau:"#8e9096",blau:"#2a6fdb",rot:"#d93025"};
 const hbAder=f=>{ const c=HB_FARBE[String(f).toLowerCase()]; return c==="gg"?`<i class="hb-ader gg" title="grün-gelb"></i>`:c?`<i class="hb-ader" style="--f:${c}" title="${esc(f)}"></i>`:""; };
 const hbAdern=t=>String(t).split(/\s+/).map(hbAder).join("");
@@ -46,6 +48,7 @@ function hbMd(t,o={}){ const Z=String(t||"").replace(/\r/g,"").split("\n"); let 
     if(s.startsWith("|")){ const c=s.replace(/^\||\|$/g,"").split("|").map(x=>x.trim()); if(/^[-:\s|]+$/.test(s)) return; if(!tab){ zu(); tab=[]; } tab.push(c); return; }
     if(!s){ zu(); return; }
     if(s==="[[aderfarben]]"){ zu(); h+=hbAderfarben(o.druck); return; }
+    if(s==="[[sicherheitsregeln]]"){ zu(); h+=hbSicherheitsregeln(o.druck); return; }
     if((m=s.match(/^>\s*(.+)/))){ zu(); h+=`<div class="hb-hinweis">${icon("info")}<p>${hbInl(m[1])}</p></div>`; return; }
     if((m=s.match(/^##\s+(.+)/))){ zu(); h+=`<h3>${hbInl(m[1])}</h3>`; return; }
     if((m=s.match(/^[-•·]\s+(.+)/))){ if(liste!=="ul"){ zu(); h+="<ul>"; liste="ul"; } h+=`<li>${hbInl(m[1])}</li>`; return; }
@@ -66,20 +69,78 @@ function hbAderfarben(druck){ if(druck) return `<div class="hb-af">${HB_AF.map(h
   const e=HB_AF.find(x=>x.k===HB_AFK)||HB_AF[HB_AF.length-1];
   return `<div class="hb-af"><div class="hb-af-lbl">Baujahr der Anlage</div><div class="hb-af-seg" role="tablist">${HB_AF.map(x=>`<button type="button" role="tab" data-act="hbAf" data-k="${x.k}" aria-selected="${x===e}">${esc(x.t)}</button>`).join("")}</div>${hbAfZeit(e)}
     <div class="hb-hinweis warn">${icon("warn")}<p>Farben in Altanlagen nie trauen – vor dem Anklemmen messen.</p></div></div>`; }
+/* Die fünf Sicherheitsregeln als Schaubild (DIN VDE 0105-100) – [[sicherheitsregeln]] oder automatisch im Artikel „Die fünf Sicherheitsregeln“.
+   Zwei Richtungen: „Vor der Arbeit“ 1 → 5, „Nach der Arbeit“ in umgekehrter Reihenfolge 5 → 1. */
+const HB5_SVG=(()=>{ const K="var(--on-surface)", F="var(--sc-highest)", R="var(--primary)", G="var(--ok)", W="var(--surface)";
+  const ls=(x,an,lbl)=>`<g transform="translate(${x} 18)"><rect width="34" height="92" rx="5" fill="${W}" stroke="${K}" stroke-width="2"/><rect x="9" y="30" width="16" height="32" rx="3" fill="${F}"/><rect x="11" y="${an?32:46}" width="12" height="14" rx="2" fill="${an?R:K}"/><text x="17" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="${K}">${lbl}</text><text x="17" y="82" text-anchor="middle" font-size="10" font-weight="700" fill="${an?R:K}">${an?"I":"0"}</text></g>`;
+  const schloss=(x,y)=>`<g transform="translate(${x} ${y})"><path d="M6 14V9a8 8 0 0 1 16 0v5" fill="none" stroke="${K}" stroke-width="3"/><rect x="2" y="13" width="24" height="19" rx="4" fill="${R}"/><circle cx="14" cy="22" r="3" fill="${W}"/></g>`;
+  const schild=(x,y)=>`<g transform="translate(${x} ${y})"><rect width="112" height="70" rx="6" fill="${W}" stroke="${R}" stroke-width="4"/><circle cx="22" cy="24" r="12" fill="none" stroke="${R}" stroke-width="3"/><path d="M14 32l16-16" stroke="${R}" stroke-width="3"/><text x="42" y="22" font-size="11" font-weight="800" fill="${K}">Nicht</text><text x="42" y="35" font-size="11" font-weight="800" fill="${K}">schalten!</text><text x="10" y="54" font-size="8.5" fill="${K}">Es wird gearbeitet</text><text x="10" y="64" font-size="7.5" fill="${K}">Ort · Datum · Name</text></g>`;
+  const blitz=(x,y,s=1,f=R)=>`<path transform="translate(${x} ${y}) scale(${s})" d="M12 0L0 18h9l-3 14 13-19h-9z" fill="${f}"/>`;
+  const leiter=y0=>[0,1,2].map(i=>`<rect x="20" y="${y0+i*26}" width="250" height="10" rx="5" fill="${["#8d5a3b","#2b2b2b","#9aa0a6"][i]}"/><text x="10" y="${y0+i*26+9}" font-size="10" font-weight="700" fill="${K}" text-anchor="middle">L${i+1}</text>`).join("");
+  return [
+    /* 1 Freischalten */
+    `${ls(40,false,"L1")}${ls(84,false,"L2")}${ls(128,false,"L3")}<g transform="translate(196 34)"><circle cx="32" cy="32" r="30" fill="${F}"/>${blitz(22,16,1,K)}<path d="M8 56L56 8" stroke="${R}" stroke-width="5" stroke-linecap="round"/></g>`,
+    /* 2 Sichern */
+    `${ls(30,false,"L1")}${schloss(33,94)}<path d="M47 70v26" stroke="${K}" stroke-width="3"/>${schild(96,30)}<text x="230" y="30" font-size="10" fill="${K}">Schlüssel</text><text x="230" y="42" font-size="10" fill="${K}">bleibt bei dir</text><g transform="translate(236 52)"><circle cx="9" cy="9" r="8" fill="none" stroke="${K}" stroke-width="3"/><path d="M17 9h20m-6 0v8m-6-8v6" stroke="${K}" stroke-width="3" fill="none"/></g>`,
+    /* 3 Spannungsfreiheit feststellen */
+    `<rect x="40" y="20" width="70" height="96" rx="12" fill="${W}" stroke="${K}" stroke-width="2"/><rect x="50" y="32" width="50" height="34" rx="5" fill="${F}"/><text x="75" y="55" text-anchor="middle" font-size="16" font-weight="800" fill="${G}">0 V</text><circle cx="75" cy="88" r="11" fill="${G}"/><path d="M69 88l4 4 8-8" stroke="${W}" stroke-width="3" fill="none"/>
+     <path d="M110 70C150 70 150 40 172 40M110 90C150 90 160 100 192 100" stroke="${K}" stroke-width="3" fill="none"/>
+     <rect x="170" y="32" width="38" height="14" rx="7" fill="${R}"/><rect x="208" y="37" width="20" height="4" fill="${K}"/><rect x="190" y="92" width="38" height="14" rx="7" fill="${K}"/><rect x="228" y="97" width="20" height="4" fill="${K}"/>
+     <text x="256" y="44" font-size="10" font-weight="700" fill="${K}">L</text><text x="256" y="104" font-size="10" font-weight="700" fill="${K}">N / PE</text>`,
+    /* 4 Erden und kurzschließen */
+    `${leiter(22)}<rect x="170" y="14" width="14" height="76" rx="4" fill="${K}"/>${[0,1,2].map(i=>`<rect x="160" y="${18+i*26}" width="34" height="18" rx="4" fill="${R}"/>`).join("")}<path d="M177 90v18" stroke="${K}" stroke-width="4"/><path d="M159 110h36M165 117h24M171 124h12" stroke="${K}" stroke-width="3"/><text x="206" y="118" font-size="10" font-weight="700" fill="${K}">zuerst Erde</text>`,
+    /* 5 Abdecken oder abschranken */
+    `${leiter(24)}<rect x="132" y="12" width="150" height="86" rx="10" fill="#f2b705" opacity=".9"/><path d="M140 20l20 0M140 90l20 0" stroke="#7a5b00" stroke-width="2"/><text x="207" y="50" text-anchor="middle" font-size="11" font-weight="800" fill="#3d2e00">Isolierende</text><text x="207" y="64" text-anchor="middle" font-size="11" font-weight="800" fill="#3d2e00">Abdeckung</text>
+     <g transform="translate(20 104)">${[0,1,2,3,4,5,6].map(i=>`<rect x="${i*16}" width="16" height="10" fill="${i%2?W:R}"/>`).join("")}</g><g transform="translate(140 102)"><path d="M14 0l14 24H0z" fill="#f2b705" stroke="${K}" stroke-width="2"/>${blitz(9.5,6,.45,K)}</g>`
+  ].map(x=>`<svg viewBox="0 0 300 130" role="img" aria-hidden="true">${x}</svg>`); })();
+const HB5=[
+  {t:"Freischalten",k:"Anlage allpolig und allseitig von allen Einspeisungen trennen.",p:["LS-Schalter, Hauptschalter oder Sicherungen ausschalten bzw. herausnehmen – alle Außenleiter.","An Rückspeisung denken: PV-Anlage, Batteriespeicher, USV, Notstromaggregat.","Richtigen Stromkreis erwischt? Beschriftung und Legende nicht blind vertrauen."],
+   z:{t:"Wieder einschalten",k:"Erst einschalten, wenn alle Bescheid wissen.",p:["Nur nach Absprache mit dem, der die Arbeit verantwortet.","Alle Personen außerhalb des Gefahrenbereichs."]}},
+  {t:"Gegen Wiedereinschalten sichern",k:"Niemand darf versehentlich wieder einschalten.",p:["LS mit Sperrelement und Vorhängeschloss sperren – der Schlüssel bleibt bei dir.","Schraubsicherungen herausnehmen und mitnehmen, Sperreinsatz einsetzen.","Schild „Nicht schalten! Es wird gearbeitet“ mit Ort, Datum und Namen anbringen."],
+   z:{t:"Sperre und Schild entfernen",k:"Nur wer gesperrt hat, entsperrt.",p:["Schloss, Sperrelement und Schild abnehmen.","Herausgenommene Sicherungen wieder einsetzen."]}},
+  {t:"Spannungsfreiheit feststellen",k:"Erst messen, dann anfassen – an der Arbeitsstelle, allpolig.",p:["Nur mit zweipoligem Spannungsprüfer – kein Phasenprüfer, kein Multimeter.","Prüfer vorher und nachher an einer bekannten Spannung testen.","Alle Kombinationen: L1–L2, L2–L3, L1–L3, L–N, L–PE, N–PE."],
+   z:{t:"Arbeitsstelle räumen",k:"Bevor wieder Spannung kommt.",p:["Werkzeug, Material und Reste aus der Anlage nehmen.","Alle Beteiligten informieren, dass gleich eingeschaltet wird."]}},
+  {t:"Erden und kurzschließen",k:"Schützt, falls doch Spannung zurückkommt.",p:["Immer zuerst mit der Erde verbinden, dann an die Leiter.","Erdung von der Arbeitsstelle aus sichtbar anbringen.","Niederspannung: darf entfallen, wenn keine Spannung zurückkommen kann – bei PV, Freileitung oder Einspeisern ist sie Pflicht."],
+   z:{t:"Kurzschluss und Erdung aufheben",k:"Umgekehrt wie beim Anbringen.",p:["Zuerst von den Leitern abnehmen, zuletzt von der Erde."]}},
+  {t:"Benachbarte, unter Spannung stehende Teile abdecken oder abschranken",k:"Was in der Nähe unter Spannung bleibt, wird abgedeckt.",p:["Isolierende Tücher, Matten oder Abdeckungen – z. B. über Sammelschienen oder dem Zählerfeld.","Abschranken und kennzeichnen, wenn Abdecken nicht geht.","Gilt auch in der Niederspannung."],
+   z:{t:"Abdeckungen entfernen",k:"Der erste Schritt nach der Arbeit.",p:["Abdeckungen und Abschrankungen abbauen.","Prüfen, ob nichts in der Anlage liegen geblieben ist."]}}];
+let HB5_I=0, HB5_M="vor";
+function hb5Karte(i,m,druck){ const r=HB5[i], e=m==="nach"?r.z:r;
+  return `<div class="hb5-karte"><div class="hb5-bild${m==="nach"?" nach":""}">${HB5_SVG[i]}</div>
+    <div class="hb5-nr">${m==="nach"?`Schritt ${5-i} von 5 · rückgängig zu Regel ${i+1}`:`Regel ${i+1} von 5`}</div><h4>${esc(e.t)}</h4><p class="hb5-k">${esc(e.k)}</p>
+    <ul>${e.p.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`; }
+function hbSicherheitsregeln(druck){
+  if(druck) return `<div class="hb5 druck">${HB5.map((_,i)=>hb5Karte(i,"vor",true)).join("")}<div class="hb-hinweis">${icon("info")}<p>Nach der Arbeit in umgekehrter Reihenfolge: 5 → 1.</p></div></div>`;
+  const nach=HB5_M==="nach", reihe=nach?[4,3,2,1,0]:[0,1,2,3,4], pos=reihe.indexOf(HB5_I);
+  return `<div class="hb5">
+    <div class="hb-af-seg" role="tablist"><button type="button" role="tab" data-act="hb5m" data-k="vor" aria-selected="${!nach}">Vor der Arbeit</button><button type="button" role="tab" data-act="hb5m" data-k="nach" aria-selected="${nach}">Nach der Arbeit</button></div>
+    <div class="hb5-schritte" role="tablist">${reihe.map((i,j)=>`<button type="button" role="tab" data-act="hb5" data-i="${i}" aria-selected="${i===HB5_I}" class="${j<pos?"fertig":""}" aria-label="Regel ${i+1}">${i+1}</button>`).join("")}</div>
+    ${hb5Karte(HB5_I,HB5_M)}
+    <div class="hb5-nav"><button type="button" class="btn-text" data-act="hb5" data-i="${reihe[pos-1]??""}" ${pos>0?"":"disabled"}>${icon("back")}Zurück</button><span style="flex:1"></span>
+      <button type="button" class="btn-tonal" data-act="hb5" data-i="${reihe[pos+1]??""}" ${pos<4?"":"disabled"}>Weiter${icon("chev")}</button></div>
+    ${nach?"":`<div class="hb-hinweis">${icon("info")}<p>Immer in dieser Reihenfolge. Nach der Arbeit geht es rückwärts: 5 → 1.</p></div>`}</div>`; }
+/* Artikel zu den Sicherheitsregeln bekommt das Schaubild auch ohne [[sicherheitsregeln]] im Text –
+   die Liste „1. Freischalten … 5. …“ unter „Immer in dieser Reihenfolge“ wird dann durch das Schaubild ersetzt. */
+function hbMitSchaubild(a){ let t=String(a.inhalt||"");
+  if(t.includes("[[sicherheitsregeln]]")||!(a.id==="hb-5sr"||/f(ü|ue)nf sicherheitsregeln|5 sicherheitsregeln/i.test(a.titel||""))) return t;
+  const m=t.match(/(\n\s*1\.\s*Freischalten[^\n]*(?:\n\s*[2-5]\.[^\n]*){4})/i);
+  if(m) return t.replace(m[1],"\n[[sicherheitsregeln]]");
+  const z=t.split("\n\n"); z.splice(1,0,"[[sicherheitsregeln]]"); return z.join("\n\n"); }
+
 let HB_Q="", HB_F="alle";
-function hbUebersicht(){ const A=hbAlle(), G=hbGelesenMap(), q=HB_Q.trim().toLowerCase();
-  const ung=A.filter(a=>hbGilt(a)&&+G[a.id]!==+a.stand), entw=A.filter(a=>!hbGilt(a)), vor=A.filter(a=>a.vorschlaege.length);
+function hbUebersicht(){ const A=hbAlle(), q=HB_Q.trim().toLowerCase();
+  const ung=hbKuerzlich(), entw=A.filter(a=>!hbGilt(a)), vor=A.filter(a=>a.vorschlaege.length);
   const off=hbDarf()?A.filter(hbOffen):[];
   let L=A; if(HB_F==="neu") L=ung; else if(HB_F==="entwurf") L=entw; else if(HB_F==="vorschlag") L=vor; else if(HB_F==="offen") L=off;
   if(q) L=L.filter(a=>suPasst(q,a.titel,a.inhalt,a.checkliste));
   const chip=(v,t,n)=>`<button type="button" class="chip" data-act="hbFilter" data-v="${v}" aria-pressed="${HB_F===v}">${t}${n!=null?` · ${n}`:""}</button>`;
-  const item=a=>{ const gel=hbGilt(a)&&+G[a.id]===+a.stand, st=!hbGilt(a)?pill("open","Entwurf"):gel?"":pill("wip",G[a.id]?"geändert":"neu");
+  const item=a=>{ const st=!hbGilt(a)?pill("open","Entwurf"):ung.includes(a)?pill("wip",hbNeuText(a)):"";
     return `<div class="li" role="button" tabindex="0" data-act="hbAuf" data-id="${esc(a.id)}"><span class="av">${icon(a.checkliste.length?"check":"book")}</span><span class="lt"><span class="h">${esc(a.titel)}</span>
       <span class="s">${esc(hbGilt(a)?hbStandText(a):"noch nicht freigegeben")}${a.vorschlaege.length?` · ${a.vorschlaege.length} Vorschlag${a.vorschlaege.length===1?"":"e"}`:""}</span><span class="st">${st}</span></span>${icon("chev")}</div>`; };
   const nachKap=HB_KAPITEL.map(([k,t])=>[t,L.filter(a=>a.kapitel===k)]).concat([["Weitere",L.filter(a=>!HB_KAPITEL.some(([k])=>k===a.kapitel))]]).filter(([,X])=>X.length);
   return `<div class="narrow hb">
     <div class="search">${icon("search")}<input id="hbQ" type="search" value="${esc(HB_Q)}" placeholder="Im Handbuch suchen" autocomplete="off" aria-label="Im Handbuch suchen"></div>
-    <div class="chips ec-wahl hb-filter">${chip("alle","Alle")}${chip("neu","Zu lesen",ung.length)}${chip("entwurf","Entwürfe",entw.length)}${hbDarf()||vor.length?chip("vorschlag","Vorschläge",vor.length):""}${off.length?chip("offen","Offen",off.length):""}</div>
+    <div class="chips ec-wahl hb-filter">${chip("alle","Alle")}${ung.length?chip("neu","Kürzlich geändert",ung.length):""}${chip("entwurf","Entwürfe",entw.length)}${hbDarf()||vor.length?chip("vorschlag","Vorschläge",vor.length):""}${off.length?chip("offen","Offen",off.length):""}</div>
     ${nachKap.length?nachKap.map(([t,X])=>`<div class="sec-lbl">${esc(t)}</div>${listOf(X.map(item))}`).join(""):`<p class="meta" style="margin:16px 4px">${q?"Nichts gefunden.":"Hier ist gerade nichts."}</p>`}
     <div class="hb-aktionen"><button type="button" class="btn-tonal" data-act="hbDruck">${icon("druck")}Drucken oder als PDF</button>${hbEinspielDarf()?`<button type="button" class="btn-text" data-act="hbEinspielen">${icon("upload")}Handbuch einspielen</button>${hbEingespielt().length?`<button type="button" class="btn-text" data-act="hbVfDlg">${icon("person")}Verfasser und Ausgabe</button>`:""}`:""}</div>
     <p class="hint">${hbDarf()?"Entwürfe sind Vorschläge – erst nach deiner Freigabe gelten sie. Änderungsvorschläge der Kollegen landen unter „Vorschläge“.":"Fehlt etwas oder stimmt etwas nicht? Im Artikel „Änderung vorschlagen“ – der Chef gibt frei."}</p></div>`; }
@@ -87,18 +148,15 @@ const ecDatumKurz=iso=>iso?String(iso).slice(0,10).split("-").reverse().join("."
 /* Checklisten: abgehakt wird auf diesem Gerät (je Artikel), „Neu beginnen“ setzt zurück */
 const hbCkKey=id=>"irrgang_hbck|"+id;
 const hbCk=id=>{ try{ return JSON.parse(localStorage.getItem(hbCkKey(id))||"{}"); }catch(e){ return {}; } };
-function hbArtikel(id){ const a=hbArt(id); if(!a) return `<div class="narrow"><p class="meta">Artikel nicht gefunden.</p></div>`; const G=hbGelesenMap(), gel=hbGilt(a)&&+G[a.id]===+a.stand, ck=hbCk(a.id), n=a.checkliste.filter((_,i)=>ck[i]).length;
+function hbArtikel(id){ const a=hbArt(id); if(!a) return `<div class="narrow"><p class="meta">Artikel nicht gefunden.</p></div>`; const ck=hbCk(a.id), n=a.checkliste.filter((_,i)=>ck[i]).length;
   const kap=(HB_KAPITEL.find(([k])=>k===a.kapitel)||[,""])[1];
-  const leser=hbDarf()&&hbGilt(a)?(()=>{ const T=team(); const ja=T.filter(m=>+hbGelesenMap(m.mail)[a.id]===+a.stand); return `<details class="hb-leser"><summary>Gelesen von ${ja.length} von ${T.length}</summary><div>${T.map(m=>`<span class="${ja.includes(m)?"ja":"nein"}">${esc(m.name||m.mail)}</span>`).join("")}</div></details>`; })():"";
   return `<div class="narrow hb hb-art">
     <p class="hb-meta">${esc([kap,a.verfasser?`von ${a.verfasser}`:"",hbGilt(a)?hbStandText(a,true)+(a.frei&&a.frei.von&&a.frei.von!==a.verfasser?`, freigegeben von ${a.frei.von}`:""):""].filter(Boolean).join(" · "))}</p>
     ${hbGilt(a)?"":`<div class="hb-entwurf">${icon("warn")}<span><b>Entwurf – noch nicht freigegeben.</b>${a.neu?" Vorschlag als Grundlage; bitte prüfen und an eure Praxis anpassen.":""}</span></div>`}
-    <article class="hb-text">${hbMd(a.inhalt)}</article>
+    <article class="hb-text">${hbMd(hbMitSchaubild(a))}</article>
     ${a.fotos.length?`<div class="hb-fotos">${a.fotos.map((f,i)=>`<button type="button" data-act="hbFoto" data-id="${esc(a.id)}" data-i="${i}"><img src="${esc(f)}" alt=""></button>`).join("")}</div>`:""}
     ${a.checkliste.length?`<section class="hb-ck"><div class="hb-ck-kopf"><b>Checkliste</b><span>${n} von ${a.checkliste.length}</span>${n?`<button type="button" class="btn-text" data-act="hbCkNeu" data-id="${esc(a.id)}">Neu beginnen</button>`:""}</div>
       ${a.checkliste.map((t,i)=>`<button type="button" class="hb-ck-z${ck[i]?" an":""}" data-act="hbCk" data-id="${esc(a.id)}" data-i="${i}" aria-pressed="${!!ck[i]}"><span class="hb-box"></span><span>${esc(t)}</span></button>`).join("")}</section>`:""}
-    ${hbGilt(a)?(gel?`<p class="hb-gelesen">${icon("check")}Gelesen</p>`:`<button type="button" class="hb-lesen" data-act="hbGelesen" data-id="${esc(a.id)}">${icon("check")}Gelesen und verstanden</button>`):""}
-    ${leser}
     ${a.vorschlaege.length&&hbDarf()?`<div class="sec-lbl">Vorschläge</div>${a.vorschlaege.map(v=>`<section class="hb-vor"><p><b>${esc(v.von||"Jemand")}</b> · ${esc(ecDatumKurz(v.am))}${v.notiz?`<br>${esc(v.notiz)}`:""}</p>
       <details><summary>Vorgeschlagener Text ansehen</summary><div class="hb-text">${hbMd(v.inhalt)}</div>${(v.checkliste||[]).length?`<ul>${v.checkliste.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}</details>
       <div class="hb-vor-k"><button type="button" class="btn-text" data-act="hbVorWeg" data-id="${esc(a.id)}" data-v="${esc(v.id)}">Ablehnen</button><button type="button" class="btn-tonal" data-act="hbVorOk" data-id="${esc(a.id)}" data-v="${esc(v.id)}">Übernehmen und freigeben</button></div></section>`).join("")}`
@@ -130,7 +188,7 @@ function hbEdOk(){ if(!HB_ED) return; const F=formVals(), t=(F.hbTitel||"").trim
   const w={titel:t,kapitel:F.hbKap||HB_KAPITEL[0][0],inhalt:F.hbInhalt||"",checkliste:String(F.hbCk||"").split("\n").map(x=>x.trim()).filter(Boolean),fotos:HB_ED.fotos};
   const a=HB_ED.neu?{id:HB_ED.id,...w,stand:0}:hbArt(HB_ED.id); if(!a) return;
   if(hbDarf()){ if(HB_ED.neu){ saveRec("handbuch",{id:a.id,...w,apps:[],stand:1,frei:{von:ME.name||"",am:today()},vorschlaege:[]},true); } else hbFreigeben(a.id,w);
-    const id=a.id; HB_ED=null; closeOverlays(); go({v:"hb",id}); toast("Gespeichert und freigegeben – alle sehen den Artikel als neu"); return; }
+    const id=a.id; HB_ED=null; closeOverlays(); go({v:"hb",id}); toast("Gespeichert und freigegeben"); return; }
   const {r,neu}=hbRec(a); r.vorschlaege=(r.vorschlaege||[]).filter(x=>!x.erledigt); r.vorschlaege.push({id:uid(),von:ME.name||"",mail:ME.mail||"",am:today(),...w,notiz:(F.hbNotiz||"").trim()});
   saveRec("handbuch",r,neu); HB_ED=null; closeOverlays(); render(); toast("Vorschlag gesendet – Chef oder Büro geben frei"); }
 function hbFotoDazu(){ const i=document.createElement("input"); i.type="file"; i.accept="image/*"; i.style.display="none"; document.body.appendChild(i);
@@ -144,7 +202,7 @@ function hbEinspielen(){ const i=document.createElement("input"); i.type="file";
   i.onchange=async()=>{ const f=i.files&&i.files[0]; i.remove(); if(!f) return; let d=null; try{ d=JSON.parse(await f.text()); }catch(e){}
     if(!d||d.art!=="irrgang-betriebshandbuch"||!Array.isArray(d.artikel)||!d.artikel.length){ toast("Das ist keine Handbuch-Datei"); return; }
     const L=d.artikel.filter(x=>x&&x.id&&x.titel), alt=L.filter(x=>DB.handbuch.get(x.id)), frei=alt.filter(x=>+DB.handbuch.get(x.id).stand>0);
-    HB_EIN=L; dialog("Handbuch einspielen",`<p class="sup" style="margin:0 0 12px">${L.length} Artikel aus „${esc(f.name)}“${d.stand?` (Stand ${esc(d.stand)})`:""}. Sie gelten danach sofort für alle und erscheinen bei jedem als „zu lesen“.</p>
+    HB_EIN=L; dialog("Handbuch einspielen",`<p class="sup" style="margin:0 0 12px">${L.length} Artikel aus „${esc(f.name)}“${d.stand?` (Stand ${esc(d.stand)})`:""}. Sie gelten danach sofort für alle.</p>
       ${listOf(HB_KAPITEL.map(([k,t])=>{ const n=L.filter(x=>x.kapitel===k).length; return n?`<div class="li"><span class="lt"><span class="h">${esc(t)}</span><span class="s">${n} Artikel</span></span></div>`:""; }).filter(Boolean))}
       <div class="fg1" style="margin-top:12px">${tf("hbEinVon","Verfasst von",d.verfasser||HB_VERFASSER,{form:true})}${tf("hbEinAusg","Ausgabe",d.stand||"",{form:true,ph:"z. B. 05.2026"})}</div>
       ${alt.length?`<p class="sup" style="margin:12px 0 0">${alt.length} davon ersetzen vorhandene Artikel${frei.length?`, ${frei.length} davon schon freigegeben – Fotos und Vorschläge bleiben erhalten`:" (bisher nur Entwürfe)"}.</p>`:""}`,
@@ -177,7 +235,7 @@ function hbDrucken(){ const A=hbAlle().filter(a=>hbGilt(a)&&hbDruckbar(a)); if(!
   const box=document.createElement("div"); box.id="hbDruck"; box.className="hb-d";
   box.innerHTML=`<section class="hb-d-titel">${typeof LOGO_PDF!=="undefined"&&/^data:/.test(LOGO_PDF)?`<img class="hb-d-logo" src="${LOGO_PDF}" alt="Elektro Irrgang">`:`<p class="hb-d-firma">Elektro Irrgang</p>`}<h1>Betriebshandbuch</h1>${(v=>v.length===1?`<p>${esc(v[0])}</p>`:"")([...new Set(A.map(a=>a.verfasser).filter(Boolean))])}<p>Stand ${esc(ecDatumKurz(today()))}</p></section>
     <section class="hb-d-inhalt"><h1>Inhalt</h1><ol class="hb-d-inh">${K.map(([t,X],i)=>`<li><b>${i+1} ${esc(t)}</b><ol>${X.map((a,j)=>`<li>${i+1}.${j+1} ${esc(a.titel)}</li>`).join("")}</ol></li>`).join("")}</ol></section>
-    ${K.map(([t,X],i)=>`<section class="hb-d-kap"><h1>${i+1} ${esc(t)}</h1>${X.map((a,j)=>`<article class="hb-d-art"><h2>${i+1}.${j+1} ${esc(a.titel)}</h2><div class="hb-text">${hbMd(a.inhalt,{druck:true})}</div>
+    ${K.map(([t,X],i)=>`<section class="hb-d-kap"><h1>${i+1} ${esc(t)}</h1>${X.map((a,j)=>`<article class="hb-d-art"><h2>${i+1}.${j+1} ${esc(a.titel)}</h2><div class="hb-text">${hbMd(hbMitSchaubild(a),{druck:true})}</div>
       ${a.checkliste.length?`<div class="hb-d-ck"><b>Checkliste</b>${a.checkliste.map(c=>`<p><span class="hb-d-box"></span>${esc(c)}</p>`).join("")}</div>`:""}
       <p class="hb-d-stand">${esc([hbStandText(a,true),a.verfasser?`von ${a.verfasser}`:""].filter(Boolean).join(" · "))}</p></article>`).join("")}</section>`).join("")}`;
   const st=document.createElement("style"); st.id="hbDruckSeite"; st.textContent="@page{size:A4 portrait;margin:16mm 16mm 18mm}";
@@ -187,6 +245,8 @@ function hbDrucken(){ const A=hbAlle().filter(a=>hbGilt(a)&&hbDruckbar(a)); if(!
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="hb"]'); if(!b||b.disabled) return; e.stopPropagation(); const a=b.dataset.act, id=b.dataset.id;
   if(a==="hbAuf"){ go({v:"hb",id}); return; }
   if(a==="hbAf"){ HB_AFK=b.dataset.k; render(); return; }
+  if(a==="hb5"){ if(b.dataset.i==="") return; HB5_I=+b.dataset.i; render(); return; }
+  if(a==="hb5m"){ HB5_M=b.dataset.k; HB5_I=HB5_M==="nach"?4:0; render(); return; }
   if(a==="hbDruck"){ hbDrucken(); return; }
   if(a==="hbEinspielen"){ if(hbEinspielDarf()) hbEinspielen(); return; }
   if(a==="hbEinOk"){ hbEinOk(); return; }
@@ -195,9 +255,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="hbFilter"){ HB_F=b.dataset.v; render(); return; }
   if(a==="hbCk"){ const c=hbCk(id); c[b.dataset.i]=!c[b.dataset.i]; try{ localStorage.setItem(hbCkKey(id),JSON.stringify(c)); }catch(x){} render(); return; }
   if(a==="hbCkNeu"){ try{ localStorage.removeItem(hbCkKey(id)); }catch(x){} render(); return; }
-  if(a==="hbGelesen"){ const art=hbArt(id), pid=String(ME.mail||"").toLowerCase(); if(!art||!pid) return; const alt=DB.profile.get(pid), r=alt||{id:pid};
-    r.hbGelesen={...(r.hbGelesen||{}),[id]:+art.stand}; saveRec("profile",r,!alt); render(); toast("Als gelesen bestätigt"); return; }
-  if(a==="hbFrei"){ hbFreigeben(id); render(); toast("Freigegeben – alle sehen den Artikel als neu"); return; }
+  if(a==="hbFrei"){ hbFreigeben(id); render(); toast("Freigegeben"); return; }
   if(a==="hbEdit"){ hbEditor(id); return; }
   if(a==="hbNeu"){ hbEditor(null); return; }
   if(a==="hbEdOk"){ hbEdOk(); return; }
@@ -211,6 +269,6 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     render(); return; } },true);
 document.addEventListener("input",e=>{ if(e.target&&e.target.id==="hbQ"){ HB_Q=e.target.value; const pos=e.target.selectionStart; render(); const q=document.getElementById("hbQ"); if(q){ q.focus(); try{ q.setSelectionRange(pos,pos); }catch(x){} } } });
 /* Startseite der Monteure (ohne Kachel-Dashboard): eine Zeile zum Handbuch */
-function hbStartZeile(){ const n=hbUngelesen().length;
-  return listOf([`<div class="li" role="button" tabindex="0" data-act="nav" data-v="hb"><span class="av">${icon("book")}</span><span class="lt"><span class="h">Betriebshandbuch</span><span class="s">${n?`${n} Artikel zu lesen`:"Wie wir arbeiten – zum Nachschlagen"}</span>${n?`<span class="st">${pill("wip","neu")}</span>`:""}</span>${icon("chev")}</div>`]); }
+function hbStartZeile(){ const n=hbKuerzlich().length;
+  return listOf([`<div class="li" role="button" tabindex="0" data-act="nav" data-v="hb"><span class="av">${icon("book")}</span><span class="lt"><span class="h">Betriebshandbuch</span><span class="s">${n?`${n} Artikel neu oder geändert`:"Wie wir arbeiten – zum Nachschlagen"}</span>${n?`<span class="st">${pill("wip","neu")}</span>`:""}</span>${icon("chev")}</div>`]); }
 window.addEventListener("hashchange",()=>{ if(/^#hb=/.test(location.hash)&&typeof nav!=="undefined"&&nav.v!=="login"){ const id=decodeURIComponent(location.hash.slice(4)); history.replaceState(null,"",location.pathname); go({v:"hb",id}); } });

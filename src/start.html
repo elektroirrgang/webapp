@@ -2236,11 +2236,11 @@ function dashboard(kacheln){
   const MO=live("vorgaenge").filter(m=>m.typ==="meldung"&&(m.status||"offen")==="offen"&&!m.deleted).length;
   const inArbeit=echt("pruefungen").filter(p=>["wip","open"].includes(pStand(p))).length;
   /* Inhalt je Kachel: s = nur die wichtigste Zahl, m/l = Liste (2 bzw. 5 Einträge) */
-  const HU=hbUngelesen(), BZ=typeof bfZahlen==="function"?bfZahlen():{ueber:0,bald:0};
+  const HU=hbKuerzlich(), BZ=typeof bfZahlen==="function"?bfZahlen():{ueber:0,bald:0};
   const W={
-    handbuch:{ic:"book",v:"hb",sub:HU.length?`${HU.length} Artikel zu lesen`:"Keine neuen Artikel",warn:HU.length>0,
-      s:()=>gross(HU.length,"zu lesen",HU.length>0),
-      m:g=>HU.length?HU.slice(0,anz(g)).map(a=>zeile(a.titel,(HB_KAPITEL.find(([k])=>k===a.kapitel)||[,""])[1])).join(""):leer("Keine neuen Artikel.",true)},
+    handbuch:{ic:"book",v:"hb",sub:HU.length?`${HU.length} neu oder geändert`:"Wie wir arbeiten",
+      s:()=>gross(HU.length,"neu oder geändert"),
+      m:g=>HU.length?HU.slice(0,anz(g)).map(a=>zeile(a.titel,(HB_KAPITEL.find(([k])=>k===a.kapitel)||[,""])[1])).join(""):leer("Nichts geändert in den letzten 14 Tagen.",true)},
     termine:typeof kalKachel==="function"?kalKachel(anz,zeile,leer,gross):{ic:"home",m:()=>""},
     material:{ic:"lager",v:"materialanf",sub:A.length?`${an} angefordert · ${A.length-an} bestellt`:"Nichts offen",plus:["afNeu","Material anfordern"],
       s:()=>gross(an,"angefordert"),
@@ -2644,7 +2644,7 @@ function mehrView(){
     darstellung:[row("theme","theme","Darstellung",TH_LABEL[theme]),darstellungZeilen()],
     apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div>${listOf(APPS.filter(a=>!a.geplant).map(a=>`<a class="li" href="${a.href}" style="text-decoration:none;color:inherit"><img class="app-mini" src="${a.ic}" alt=""><span class="lt"><span class="h">${a.name}</span><span class="s">${a.text}</span></span>${icon("chev")}</a>`))}</div>`,
     geraet:[geraetZeilen(true)],
-    verwaltung:[ME.admin?row("nav:team","person","Mitarbeiter und Rechte",`${team().length} aktiv · Protokolle an ${esc(mailAn())}`):"",row("nav:hb","book","Betriebshandbuch",(n=>n?`${n} Artikel zu lesen`:"Wie wir arbeiten")(hbUngelesen().length)),ME.admin?row("nav:ki","bulb","KI",kiAn()?"eingeschaltet":"vorbereitet, noch kein Zugang"):"",anfVerw()?row("nav:aufbewahrung","kal","Aufbewahrung","Prüfprotokolle und Pläne 10 Jahre – was abläuft"):"",bkZeile(),kdoZeile(),meineRollen().includes("Entwickler")?bspZeile():"",meineRollen().includes("Entwickler")?row("nav:karteEinst","ort","Karte beim Kunden","Farben, Umkreis und Anzahl der Anhaltspunkte"):""],
+    verwaltung:[ME.admin?row("nav:team","person","Mitarbeiter und Rechte",`${team().length} aktiv · Protokolle an ${esc(mailAn())}`):"",row("nav:hb","book","Betriebshandbuch",(n=>n?`${n} Artikel neu oder geändert`:"Wie wir arbeiten")(hbKuerzlich().length)),ME.admin?row("nav:ki","bulb","KI",kiAn()?"eingeschaltet":"vorbereitet, noch kein Zugang"):"",anfVerw()?row("nav:aufbewahrung","kal","Aufbewahrung","Prüfprotokolle und Pläne 10 Jahre – was abläuft"):"",bkZeile(),kdoZeile(),meineRollen().includes("Entwickler")?bspZeile():"",meineRollen().includes("Entwickler")?row("nav:karteEinst","ort","Karte beim Kunden","Farben, Umkreis und Anzahl der Anhaltspunkte"):""],
     info:[["nav:entwicklung","bulb","Entwicklung der Apps",`Stand ${ENTW_STAND}`],["nav:impressum","paragraph","Impressum",""],["nav:datenschutz","shield","Datenschutz",""]]});
 }
 function entwicklungView(){
