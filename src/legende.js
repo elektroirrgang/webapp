@@ -137,6 +137,10 @@ function legView(L){ const E=legE(L), tab=legTab(L);
   </div>`; }
 /* Abschluss-Karte (27.11.2026): oben klar, was noch fehlt und was „Abschließen“ tut – statt zweier Knöpfe ohne Erklärung */
 function legPdfLetzte(L){ const id=L._v||L.id; return DB.protokolle?[...DB.protokolle.values()].filter(r=>!r.deleted&&r.app==="legende"&&r.vtId===id&&!r.archiv).sort((a,b)=>(b.created||0)-(a.created||0))[0]:null; }
+/* E-CHECK-Plakette: Zeile in der Abschluss-Karte + Dialog zum Eintragen von Hand */
+function legEcZeile(L){ const P=legEcheckDaten(L), hand=!!L.echeckNaechste;
+  const t=P?`${LEG_MONATE[+P.naechste.slice(5,7)-1]} ${P.naechste.slice(0,4)} – ${hand?"von Hand eingetragen":"aus dem E-Check"+(P.zuletzt?` vom ${ecDatum(P.zuletzt)}`:"")}`:"Kein Termin – die Legende kommt ohne Plakette";
+  return `<div class="leg-ab-s${P?" ok":""}"><span class="leg-ab-p" aria-hidden="true"></span><span class="lt"><b>E-CHECK-Plakette</b><small>${esc(t)}</small></span>${L.fertig?"":`<button type="button" class="btn-text" data-act="legEcDlg">${P?"Ändern":"Eintragen"}</button>`}</div>`; }
 function legAbschlussKarte(L){ const E=legE(L), nSk=E.filter(e=>e.art==="sk").length, offen=E.filter(e=>legOffen(e)).length;
   const v=L._geb&&(vtGeb(L._geb)||{verteiler:[]}).verteiler.find(x=>x.id===L._v), qrOk=!L._geb||!!(v&&v.qr), pdf=legPdfLetzte(L);
   const schritt=(ok,t,s,act,kt,attr)=>`<div class="leg-ab-s${ok?" ok":""}"><span class="leg-ab-p" aria-hidden="true"></span><span class="lt"><b>${t}</b><small>${s}</small></span>${act&&!ok?`<button type="button" class="btn-text" data-act="${act}"${attr||""}>${kt}</button>`:""}</div>`;
@@ -148,6 +152,7 @@ function legAbschlussKarte(L){ const E=legE(L), nSk=E.filter(e=>e.art==="sk").le
       ${schritt(nSk>0&&!offen,"Stromkreise",nSk?(offen?`${offen} ${offen===1?"Eintrag ist":"Einträge sind"} noch offen`:`${nSk} Stromkreis${nSk===1?"":"e"} eingetragen`):"Noch keine Stromkreise","legTab","Ansehen",' data-v="sk"')}
       ${L._geb?schritt(qrOk,"QR-Aufkleber",qrOk?`Anlagen-Nr. ${esc(typeof qrZeig==="function"?qrZeig(v.qr):v.qr)}`:"Pflicht – steht später auf der Legende","qrScanZu","Zuordnen"):""}
       ${schritt(!!pdf,"Legende als PDF",pdf?`Zuletzt am ${esc(ecDatum(pdf.datum))} – wird beim Abschließen neu erstellt`:"Wird beim Abschließen erstellt")}
+      ${legEcZeile(L)}
     </div>
     <p class="meta">„Abschließen“ erstellt die Legende als PDF, legt sie beim Kunden in der Bibliothek ab (Pläne und Schaltpläne) und sperrt den Verteiler gegen versehentliches Ändern. Wieder öffnen geht jederzeit.</p>
     <div class="leg-ab-kn"><button type="button" class="btn-text" data-act="legPdf">${icon("pdf")}Nur PDF</button><span style="flex:1"></span><button type="button" class="btn-filled" data-act="legAbschliessen" ${nSk&&qrOk?"":"disabled"}>${icon("done")}Abschließen</button></div></section>`; }
@@ -578,6 +583,13 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   /* Katalog mit Marken und Bildern statt nur Formular (Max 18.11.2026); „Ohne Produkt eintragen“ führt im Katalog zum Formular */
   case "legNach": if(typeof awGeraetStart==="function"&&!L.fertig){ awGeraetStart({nach:+b.dataset.i,tab:"ls"}); return; } legSkDlg(null,+b.dataset.i); return;
   case "legNeuRcd": if(typeof awGeraetStart==="function"&&!L.fertig){ awGeraetStart({tab:"rcd"}); return; } legSkDlg(null,legE(L).length-1,"rcd"); return;
+  case "legEcDlg": { if(!L||L.fertig) return; const auto=legEcheckDaten({...L,echeckNaechste:""}), cur=(L.echeckNaechste||(auto?auto.naechste:"")).slice(0,7);
+    dialog("Nächster E-Check",`<p class="sup" style="margin:0 0 12px">Steht als Termin auf der E-CHECK-Plakette der Legende (Monat und Jahr werden markiert).${auto?` Aus dem letzten E-Check der Anlage: ${esc(LEG_MONATE[+auto.naechste.slice(5,7)-1])} ${esc(auto.naechste.slice(0,4))}.`:""}</p>
+      <div class="fg1">${tf("legEcM","Monat und Jahr",cur,{form:true,type:"month",ph:"JJJJ-MM"})}</div>`,
+      `${L.echeckNaechste?`<button class="btn-text" data-act="legEcWeg">${auto?"E-Check-Termin nehmen":"Entfernen"}</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-filled" data-act="legEcOk">Übernehmen</button>`); return; }
+  case "legEcOk": { if(!L) return; const v=String(formVals().legEcM||"").trim(), m=v.match(/^(\d{4})-(\d{2})/);
+    if(!m||+m[2]<1||+m[2]>12){ toast("Bitte Monat und Jahr wählen"); return; } L.echeckNaechste=`${m[1]}-${m[2]}-01`; legSave(L); closeOverlays(); render(); toast("Termin für die Plakette gespeichert"); return; }
+  case "legEcWeg": { if(!L) return; L.echeckNaechste=""; legSave(L); closeOverlays(); render(); return; }
   case "legOpt": { if(!L) return; L[b.dataset.k]=+b.dataset.v; legSave(L); render(); return; }
   case "legOptS": { if(!L) return; L[b.dataset.k]=b.dataset.v; legSave(L); render(); return; }
   case "legSetz": { const f=document.getElementById(b.dataset.ziel); if(f){ f.value=b.dataset.v; f.parentElement.classList.add("fl"); } return; }
