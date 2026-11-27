@@ -9,8 +9,9 @@ import { KONFIG } from "./konfig.js";
 import { anmelden } from "./anmeldung.js";
 import { speicherOeffnen } from "./speicher/index.js";
 import { werkzeugeAnmelden } from "./werkzeuge.js";
+import { entwicklerWerkzeuge } from "./entwickler.js";
 
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 const S = await speicherOeffnen();
 
 function json(res, code, obj, kopf = {}) { res.writeHead(code, { "Content-Type": "application/json; charset=utf-8", ...kopf }); res.end(JSON.stringify(obj)); }
@@ -30,8 +31,9 @@ const server = http.createServer(async (req, res) => {
     if (!ich) return json(res, 401, { fehler: "Nicht angemeldet" }, { "WWW-Authenticate": 'Bearer realm="irrgang-mcp"' });
     const body = await koerper(req);
     const mcp = new McpServer({ name: "irrgang", title: "Elektro Irrgang", version: VERSION },
-      { instructions: "Daten der Irrgang-Apps (Elektro Irrgang, Waldbröl): Kunden, Vorgänge, Baustellen mit Tagesständen, Prüffristen, Betriebshandbuch, Firmentermine, Materialanforderungen. Antworte auf Deutsch. Vor dem Schreiben kurz zusammenfassen, was angelegt wird. Kundendaten nur für die Arbeit verwenden." });
+      { instructions: "Daten der Irrgang-Apps (Elektro Irrgang, Waldbröl): Kunden, Vorgänge, Baustellen mit Tagesständen, Prüffristen, Betriebshandbuch, Firmentermine, Materialanforderungen. Antworte auf Deutsch. Vor dem Schreiben kurz zusammenfassen, was angelegt wird. Kundendaten nur für die Arbeit verwenden. Entwickler-Werkzeuge (dev_…): vor Änderungen mit dev_felder/dev_lesen den Aufbau prüfen, Änderungen klein halten, Sicherungs-ID nennen." });
     werkzeugeAnmelden(mcp, S, ich);
+    entwicklerWerkzeuge(mcp, S, ich);
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
     res.on("close", () => { transport.close(); mcp.close(); });
     await mcp.connect(transport);

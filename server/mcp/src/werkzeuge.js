@@ -21,7 +21,7 @@ const antwort = (daten, text) => ({ content: [{ type: "text", text: (text ? text
 const fehler = text => ({ isError: true, content: [{ type: "text", text }] });
 
 export function werkzeugeAnmelden(server, S, ich) {
-  const darfSchreiben = ich.rechte === "schreiben";
+  const darfSchreiben = ich.rechte === "schreiben" || ich.rechte === "entwickler";
   const wer = { name: ich.name + (ich.ki ? " (KI)" : ""), mail: ich.mail || "" };
   const kundenMap = async () => new Map((await S.alle("kunden")).map(k => [k.id, k]));
 

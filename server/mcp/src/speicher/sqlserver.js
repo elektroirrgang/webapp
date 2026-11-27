@@ -35,15 +35,20 @@ export async function sqlSpeicher() {
   await pool.request().batch(SCHEMA);
   return {
     name: "sqlserver",
-    async alle(art) {
+    async arten() { return (await pool.request().query("SELECT DISTINCT art FROM dbo.datensatz")).recordset.map(x => x.art); },
+    async protokollLesen(n = 50) {
+      const r = await pool.request().input("n", sql.Int, Math.min(+n || 50, 500)).query("SELECT TOP (@n) nr, zeit, wer, quelle, werkzeug, art, datensatz_id AS id, eingabe FROM dbo.mcp_protokoll ORDER BY nr DESC");
+      return r.recordset.map(x => ({ ...x, eingabe: (() => { try { return JSON.parse(x.eingabe); } catch { return x.eingabe; } })() }));
+    },
+    async alle(art, { geloeschte = false } = {}) {
       if (!sicher(art)) return [];
-      const r = await pool.request().input("art", sql.NVarChar(40), art).query("SELECT daten FROM dbo.datensatz WHERE art=@art AND geloescht=0");
+      const r = await pool.request().input("art", sql.NVarChar(40), art).query(`SELECT daten FROM dbo.datensatz WHERE art=@art${geloeschte ? "" : " AND geloescht=0"}`);
       return r.recordset.map(x => { try { return JSON.parse(x.daten); } catch { return null; } }).filter(Boolean);
     },
-    async lesen(art, id) {
+    async lesen(art, id, { geloeschte = false } = {}) {
       if (!sicher(art) || !sicher(id)) return null;
       const r = await pool.request().input("art", sql.NVarChar(40), art).input("id", sql.NVarChar(120), id)
-        .query("SELECT daten FROM dbo.datensatz WHERE art=@art AND id=@id AND geloescht=0");
+        .query(`SELECT daten FROM dbo.datensatz WHERE art=@art AND id=@id${geloeschte ? "" : " AND geloescht=0"}`);
       return r.recordset[0] ? JSON.parse(r.recordset[0].daten) : null;
     },
     async schreiben(art, rec) {

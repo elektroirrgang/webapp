@@ -46,23 +46,30 @@ export function sharepointSpeicher() {
   }
   return {
     name: "sharepoint",
-    async alle(art) {
+    async arten() {
+      const D = await bibliotheken(), out = new Set();
+      for (const d of Object.values(D)) { const r = await g(`/drives/${d}/root:/${encodeURIComponent(KONFIG.spDatenOrdner)}:/children?$top=200&$select=name,folder`);
+        if (r.ok) for (const x of (await r.json()).value || []) if (x.folder && sicher(x.name)) out.add(x.name); }
+      return [...out];
+    },
+    async protokollLesen(n = 50) { return (await this.alle("mcp_protokoll")).sort((a, b) => (b.updated || 0) - (a.updated || 0)).slice(0, n); },
+    async alle(art, { geloeschte = false } = {}) {
       if (!sicher(art)) return [];
-      const c = cache.get(art); if (c && Date.now() - c.zeit < 30000) return c.liste;
+      const ck = art + (geloeschte ? "|alle" : ""), c = cache.get(ck); if (c && Date.now() - c.zeit < 30000) return c.liste;
       let url = `${await ordner(art)}:/children?$top=200&$select=name,id,@microsoft.graph.downloadUrl`, out = [];
       const dateien = [];
       while (url) { const r = await g(url); if (r.status === 404) break; const j = await r.json(); dateien.push(...(j.value || [])); url = j["@odata.nextLink"] || null; }
       for (let i = 0; i < dateien.length; i += 8) {
         const teil = await Promise.all(dateien.slice(i, i + 8).filter(f => f.name.endsWith(".json")).map(async f => {
           try { const r = await fetch(f["@microsoft.graph.downloadUrl"]); return r.ok ? await r.json() : null; } catch { return null; } }));
-        out.push(...teil.filter(r => r && !r.deleted && !r.demo));
+        out.push(...teil.filter(r => r && (geloeschte || !r.deleted) && !r.demo));
       }
-      cache.set(art, { zeit: Date.now(), liste: out }); return out;
+      cache.set(ck, { zeit: Date.now(), liste: out }); return out;
     },
-    async lesen(art, id) {
+    async lesen(art, id, { geloeschte = false } = {}) {
       if (!sicher(art) || !sicher(id)) return null;
       const r = await g(`${await ordner(art)}/${encodeURIComponent(id)}.json:/content`);
-      if (!r.ok) return null; const rec = await r.json(); return rec && !rec.deleted ? rec : null;
+      if (!r.ok) return null; const rec = await r.json(); return rec && (geloeschte || !rec.deleted) ? rec : null;
     },
     async schreiben(art, rec) {
       if (!sicher(art) || !sicher(rec.id)) throw new Error("Ungültige Datenart oder ID");
@@ -73,7 +80,7 @@ export function sharepointSpeicher() {
       const r = await g(`${pfad}:/content`, { method: "PUT", headers: kopf, body: JSON.stringify(rec) });
       if (r.status === 412) throw new Error("Der Datensatz wurde gerade woanders geändert – bitte noch einmal versuchen");
       if (!r.ok) throw new Error(`Speichern in SharePoint fehlgeschlagen (${r.status})`);
-      cache.delete(art); return rec;
+      cache.delete(art); cache.delete(art + "|alle"); return rec;
     },
     async protokoll(e) {
       const id = `${new Date().toISOString().slice(0, 10)}-${Date.now().toString(36)}`;

@@ -9,19 +9,25 @@ export function dateiSpeicher(ordner) {
   const pfad = (art, id) => path.join(ordner, art, `${id}.json`);
   return {
     name: "datei",
-    async alle(art) {
+    async arten() {
+      try { return (await fs.readdir(ordner, { withFileTypes: true })).filter(d => d.isDirectory() && sicher(d.name)).map(d => d.name); } catch { return []; }
+    },
+    async protokollLesen(n = 50) {
+      try { return (await fs.readFile(path.join(ordner, "mcp-protokoll.jsonl"), "utf8")).trim().split("\n").filter(Boolean).slice(-n).map(z => JSON.parse(z)).reverse(); } catch { return []; }
+    },
+    async alle(art, { geloeschte = false } = {}) {
       if (!sicher(art)) return [];
       let namen = [];
       try { namen = await fs.readdir(path.join(ordner, art)); } catch { return []; }
       const out = [];
       for (const n of namen) if (n.endsWith(".json")) {
-        try { const r = JSON.parse(await fs.readFile(path.join(ordner, art, n), "utf8")); if (r && !r.deleted) out.push(r); } catch { /* kaputte Datei überspringen */ }
+        try { const r = JSON.parse(await fs.readFile(path.join(ordner, art, n), "utf8")); if (r && (geloeschte || !r.deleted)) out.push(r); } catch { /* kaputte Datei überspringen */ }
       }
       return out;
     },
-    async lesen(art, id) {
+    async lesen(art, id, { geloeschte = false } = {}) {
       if (!sicher(art) || !sicher(id)) return null;
-      try { const r = JSON.parse(await fs.readFile(pfad(art, id), "utf8")); return r && !r.deleted ? r : null; } catch { return null; }
+      try { const r = JSON.parse(await fs.readFile(pfad(art, id), "utf8")); return r && (geloeschte || !r.deleted) ? r : null; } catch { return null; }
     },
     async schreiben(art, rec) {
       if (!sicher(art) || !sicher(rec.id)) throw new Error("Ungültige Datenart oder ID");

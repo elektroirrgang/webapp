@@ -26,11 +26,11 @@ fs.writeFileSync(path.join(ordner, "handbuch", "hb-test.json"), JSON.stringify({
 ok(n > 30, `${n} Demodatensätze angelegt`);
 
 /* 2) Server starten */
-const schl = "irr_test_" + crypto.randomBytes(8).toString("hex"), lese = "irr_lese_" + crypto.randomBytes(8).toString("hex");
+const schl = "irr_test_" + crypto.randomBytes(8).toString("hex"), lese = "irr_lese_" + crypto.randomBytes(8).toString("hex"), dev = "irr_dev_" + crypto.randomBytes(8).toString("hex");
 const h = s => crypto.createHash("sha256").update(s).digest("hex");
 const port = 8799;
 const srv = spawn(process.execPath, [path.join(hier, "..", "src", "start.js")], { env: { ...process.env, PORT: String(port), SPEICHER: "datei", DATEI_ORDNER: ordner,
-  MCP_SCHLUESSEL: JSON.stringify([{ name: "Test-KI", hash: h(schl), rechte: "schreiben" }, { name: "Nur-Lesen", hash: h(lese), rechte: "lesen" }]) }, stdio: ["ignore", "pipe", "inherit"] });
+  MCP_SCHLUESSEL: JSON.stringify([{ name: "Test-KI", hash: h(schl), rechte: "schreiben" }, { name: "Nur-Lesen", hash: h(lese), rechte: "lesen" }, { name: "Max", hash: h(dev), rechte: "entwickler" }]) }, stdio: ["ignore", "pipe", "inherit"] });
 await new Promise(r => srv.stdout.once("data", r));
 const url = new URL(`http://127.0.0.1:${port}/mcp`);
 const verbinden = async key => { const c = new Client({ name: "test", version: "1" }); await c.connect(new StreamableHTTPClientTransport(url, { requestInit: { headers: { Authorization: "Bearer " + key } } })); return c; };
@@ -61,6 +61,35 @@ try {
 
   const l = await verbinden(lese); const LW = (await l.listTools()).tools.map(t => t.name);
   ok(!LW.includes("vorgang_anlegen") && LW.includes("kunden_suchen"), "Nur-Lesen-Schlüssel sieht keine Schreib-Werkzeuge");
+  ok(!W.includes("dev_aendern"), "KI-Schlüssel sieht keine Entwickler-Werkzeuge");
   await l.close();
+
+  /* Entwickler */
+  const d = await verbinden(dev); const DW = (await d.listTools()).tools.map(t => t.name);
+  ok(DW.filter(x => x.startsWith("dev_")).length === 11, `${DW.length} Werkzeuge für Entwickler, davon ${DW.filter(x => x.startsWith("dev_")).length} dev_`);
+  const J = r => JSON.parse(text(r).split("\n\n").slice(1).join("\n\n") || text(r));
+  const da = await d.callTool({ name: "dev_datenarten", arguments: {} }); ok(/"kunden"/.test(text(da)) && /aktiv/.test(text(da)), "dev_datenarten");
+  const df = await d.callTool({ name: "dev_felder", arguments: { art: "pruefungen" } }); ok(/a\.naechste/.test(text(df)), "dev_felder findet verschachtelte Felder");
+  const dq = await d.callTool({ name: "dev_abfragen", arguments: { art: "baustellen", wo: [{ feld: "status", op: "gleich", wert: "aktiv" }], felder: ["name"] } }); ok(/Ladeinfrastruktur/.test(text(dq)) && !/Treppenhaus/.test(text(dq)), "dev_abfragen mit Bedingung");
+  const ds = await d.callTool({ name: "dev_suche_alles", arguments: { text: "A-24121" } }); ok(/baustellen/.test(text(ds)), "dev_suche_alles findet Auftragsnummer");
+  const dp = await d.callTool({ name: "dev_pruefen", arguments: {} }); ok(/tote Verweise/.test(text(dp)), "dev_pruefen: " + text(dp).split("\n")[0]);
+  const vorher = JSON.parse(fs.readFileSync(path.join(ordner, "baustellen", "demo-b3.json"), "utf8"));
+  const de = await d.callTool({ name: "dev_aendern", arguments: { art: "baustellen", id: "demo-b3", setzen: { status: "aktiv", "extra.notiz": "test" }, grund: "Test Status" } });
+  const sid = J(de).sicherung, nach = JSON.parse(fs.readFileSync(path.join(ordner, "baustellen", "demo-b3.json"), "utf8"));
+  ok(nach.status === "aktiv" && nach.extra.notiz === "test" && nach.updated > vorher.updated && nach.updatedBy.name === "Max", "dev_aendern mit Pfad und neuem updated");
+  const dr = await d.callTool({ name: "dev_rueckgaengig", arguments: { sicherung_id: sid } });
+  const zurueck = JSON.parse(fs.readFileSync(path.join(ordner, "baustellen", "demo-b3.json"), "utf8"));
+  ok(!dr.isError && zurueck.status === "pausiert" && !zurueck.extra && zurueck.updated > nach.updated, "dev_rueckgaengig stellt alte Fassung her (mit neuerem updated)");
+  const dl = await d.callTool({ name: "dev_loeschen", arguments: { art: "kunden", id: "demo-k3", grund: "Test" } });
+  ok(JSON.parse(fs.readFileSync(path.join(ordner, "kunden", "demo-k3.json"), "utf8")).deleted === true, "dev_loeschen markiert nur als gelöscht");
+  await d.callTool({ name: "dev_rueckgaengig", arguments: { sicherung_id: J(dl).sicherung } });
+  ok(!JSON.parse(fs.readFileSync(path.join(ordner, "kunden", "demo-k3.json"), "utf8")).deleted, "gelöschter Kunde wiederhergestellt");
+  const dn = await d.callTool({ name: "dev_anlegen", arguments: { art: "notizen", daten: { text: "Testnotiz" }, grund: "Test" } });
+  const nid = J(dn).id; await d.callTool({ name: "dev_rueckgaengig", arguments: { sicherung_id: J(dn).sicherung } });
+  ok(JSON.parse(fs.readFileSync(path.join(ordner, "notizen", nid + ".json"), "utf8")).deleted === true, "Anlegen rückgängig → gelöscht");
+  const bad = await d.callTool({ name: "dev_aendern", arguments: { art: "kunden", id: "demo-k1", setzen: { "__proto__.x": 1 }, grund: "Angriff" } }); ok(bad.isError, "__proto__-Pfad abgewiesen");
+  const pi = await d.callTool({ name: "dev_aendern", arguments: { art: "mcp_sicherung", id: sid, setzen: { x: 1 }, grund: "nein" } }); ok(pi.isError, "Sicherungen nicht änderbar");
+  const pr2 = await d.callTool({ name: "dev_protokoll", arguments: { anzahl: 5 } }); ok(/dev_rueckgaengig/.test(text(pr2)), "dev_protokoll");
+  await d.close();
 } finally { srv.kill(); }
 console.log(fehler ? `\n${fehler} Fehler` : "\nAlles grün"); process.exit(fehler ? 1 : 0);
