@@ -131,9 +131,40 @@ function hbOrganigramm(){ const T=(typeof team==="function"?team():[]).filter(m=
     ${rest.map(([k,t])=>{ const X=G(k); return X.length?`<div class="hb-og-k">${t}</div><div class="hb-og-g">${X.map(P).join("")}</div>`:""; }).join("")}
     ${G("ohne").length&&typeof hbDarf==="function"&&hbDarf()?`<p class="hbx-unter">Die Aufgabe (z. B. Geselle, Azubi, Büro) trägst du in Einstellungen › Team beim Mitarbeiter ein.</p>`:""}</div>`; }
 
+
+/* ---------- Müll im Betrieb (Max 27.11.2026: kein Wirtschaftshof – Tonnen, Rollcontainer, Kupferkisten) ---------- */
+const hbTonne=(f,d)=>`<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="9" width="36" height="6" rx="2" fill="${d}"/><path d="M9 16h30l-3 26a3 3 0 0 1-3 2H15a3 3 0 0 1-3-2z" fill="${f}"/>${[14,22.5,31].map(x=>`<rect x="${x}" y="21" width="3" height="17" rx="1.5" fill="#fff" opacity=".25"/>`).join("")}</svg>`;
+const HB_MUELL_BILD={
+  gruen:()=>hbTonne("#2E8B3E","#1F6B2D"), grau:()=>hbTonne("#7D7F86","#5E6066"),
+  sack:()=>`<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M17 6c2 3 4 4 7 4s5-1 7-4l2 4c-1 2-3 3-4 4 6 3 11 11 11 20 0 6-6 10-16 10S8 40 8 34c0-9 5-17 11-20-1-1-3-2-4-4z" fill="#F2C200"/><path d="M19 14c3 1 7 1 10 0" stroke="#C49800" stroke-width="2" fill="none"/></svg>`,
+  roll:()=>`<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="3" y="10" width="42" height="6" rx="2" fill="#5E6066"/><path d="M5 17h38l-2 20a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z" fill="#7D7F86"/>${[11,19,27,35].map(x=>`<rect x="${x}" y="21" width="2.5" height="13" rx="1.2" fill="#fff" opacity=".25"/>`).join("")}${[10,19,29,38].map(x=>`<circle cx="${x}" cy="42.5" r="3" fill="#333"/>`).join("")}</svg>`,
+  kiste:()=>`<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 18c4-5 10-3 14-6 3 4 9 2 12 6 2-3 5-2 6 0z" fill="#B4682E"/><path d="M5 18h38l-3 24H8z" fill="#6E7078"/><path d="M5 18h38" stroke="#55575E" stroke-width="3"/>${[13,21,29,37].map(x=>`<rect x="${x-1}" y="23" width="3" height="14" rx="1.5" fill="#fff" opacity=".2"/>`).join("")}</svg>`,
+  container:()=>`<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="3" y="12" width="42" height="28" rx="2" fill="#4F6B57"/>${[9,15,21,27,33,39].map(x=>`<rect x="${x-1}" y="15" width="2.5" height="22" rx="1" fill="#fff" opacity=".18"/>`).join("")}<rect x="3" y="12" width="42" height="3" fill="#3C5243"/></svg>`,
+  bigpack:()=>`<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 16l5-8h22l5 8v24a3 3 0 0 1-3 3H11a3 3 0 0 1-3-3z" fill="#ECEAE2"/><path d="M8 16h32M13 8l-3 8M35 8l3 8" stroke="#B9B5A6" stroke-width="2"/><path d="M12 24h24M12 31h24" stroke="#D3CFC1" stroke-width="1.5"/></svg>`,
+  mulde:()=>`<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M3 18h42l-6 20H10z" fill="#3F6FB0"/><path d="M3 18h42" stroke="#2C548A" stroke-width="3"/><path d="M14 18c2-5 6-7 10-6 3-3 7-2 9 1 2-1 5 0 6 5z" fill="#A59C8C"/><rect x="8" y="38" width="32" height="4" rx="2" fill="#555"/></svg>`,
+  sonst:()=>hbTonne("#2A2A2D","#141416") };
+function hbMuellArt(w){ const t=String(w).toLowerCase(); return /big-?pack|buhck/.test(t)?"bigpack":/offen|baustelle/.test(t)?"mulde":/grün/.test(t)?"gruen":/rollcontainer/.test(t)?"roll":/grau/.test(t)?"grau":/gelb|sack/.test(t)?"sack":/kiste/.test(t)?"kiste":/materialcontainer|container/.test(t)?"container":"sonst"; }
+function hbMuell(T,o){ if(o.druck) return hbTabelle(T); const R=T.slice(1).filter(r=>r[0]); if(!R.length) return hbTabelle(T);
+  return `<div class="hbx hb-mu">${R.map(r=>`<div class="hb-mu-k"><span class="hb-mu-b">${HB_MUELL_BILD[hbMuellArt(r[1])]()}</span><div><span class="hb-mu-w">${hbInl(r[1]||"")}</span><b>${hbInl(r[0])}</b>${r[2]?`<small>${hbInl(r[2])}</small>`:""}</div></div>`).join("")}</div>`; }
+/* Kreislauf: 1-2-3-4 im Kreis (z. B. Kupferkisten). Andere Anzahl → untereinander mit Pfeil zurück. */
+function hbKreislauf(L,o){ if(o.druck) return `<ol>${L.map(x=>`<li>${hbInl(x)}</li>`).join("")}</ol>`;
+  const art=x=>/schrotthändler|abhol/i.test(x)?["hbAuto",""]:/materialcontainer|oben/i.test(x)?["",HB_MUELL_BILD.container()]:/leer/i.test(x)?["",HB_MUELL_BILD.kiste().replace(/<path d="M8 18c4[^>]*>/,"")]:["",HB_MUELL_BILD.kiste()];
+  const K=(x,i)=>{ const [ic,svg]=art(x); return `<div class="hb-kr-s"><span class="hb-kr-b">${ic?icon(ic):svg}<b>${i+1}</b></span><p>${hbInl(x)}</p></div>`; };
+  if(L.length!==4) return `<div class="hbx hb-kr lang">${L.map(K).join("")}<p class="hbx-unter">Danach beginnt es wieder von vorn.</p></div>`;
+  const P=(r)=>`<svg class="hb-kr-p ${r}" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h13M12 6l6 6-6 6" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  return `<div class="hbx hb-kr">${K(L[0],0)}${P("r")}${K(L[1],1)}${P("u1")}<span></span>${P("u2")}${K(L[3],3)}${P("l")}${K(L[2],2)}</div>`; }
+/* Darf rein / darf nicht rein – aus den beiden Listen unter „## Darf … / ## Darf NICHT …“ */
+let HB_JN=null;
+function hbJaNein(){ const d=HB_JN; if(!d) return "";
+  return `<div class="hb-jn"><div class="ja"><div class="hb-jn-k">Darf rein</div>${d.ja.map(x=>`<span>${hbInl(x)}</span>`).join("")}</div><div class="nein"><div class="hb-jn-k">Darf nicht rein</div>${d.nein.map(x=>`<span>${hbInl(x)}</span>`).join("")}</div></div>`; }
+function hbJaNeinLesen(t){ const re=/(^|\n)##\s*(Darf (?!nicht)[^\n]*)\n((?:\s*[-•·]\s+[^\n]*\n?)+)\s*\n*##\s*Darf\s+NICHT[^\n]*\n((?:\s*[-•·]\s+[^\n]*\n?)+)/i, m=t.match(re); if(!m) return t;
+  const L=x=>x.split("\n").map(z=>z.trim().replace(/^[-•·]\s+/,"")).filter(Boolean);
+  HB_JN={ja:L(m[3]),nein:L(m[4])}; const titel=m[2].replace(/^Darf in den\s*/i,"Was darf in den ").replace(/\s*$/,"?");
+  return t.replace(m[0],`${m[1]}## ${titel}\n[[janein]]\n\n`); }
+
 /* Welche Schaubilder eine Tabelle oder Liste darunter übernehmen */
-const HB_FANG={klemmen:{art:"tab",f:hbKlemmen},fahrzeuge:{art:"tab",f:hbFahrzeuge},baustellentag:{art:"ol",f:hbBaustellentag}};
-const HB_BILD={datendose:hbDatendose,krankmeldung:hbKrankmeldung,ladung:hbLadung,organigramm:hbOrganigramm};
+const HB_FANG={muell:{art:"tab",f:hbMuell},kreislauf:{art:"ol",f:hbKreislauf},klemmen:{art:"tab",f:hbKlemmen},fahrzeuge:{art:"tab",f:hbFahrzeuge},baustellentag:{art:"ol",f:hbBaustellentag}};
+const HB_BILD={janein:hbJaNein,datendose:hbDatendose,krankmeldung:hbKrankmeldung,ladung:hbLadung,organigramm:hbOrganigramm};
 
 /* Automatisch in die passenden Artikel – Joachims Text bleibt, wie er ist */
 function hbMitBildern(a,t,druck){ const id=a.id, ti=String(a.titel||"");
@@ -145,6 +176,10 @@ function hbMitBildern(a,t,druck){ const id=a.id, ti=String(a.titel||"");
   if((id==="hb-bs-alltag"||/^baustellenalltag$/i.test(ti))&&!hat("baustellentag")) t=t.replace(/(\n##\s*Ablauf eines Baustellentags[^\n]*\n)(\s*\n)?(\s*1\.\s)/i,"$1[[baustellentag]]\n$3");
   if((id==="hb-krank"||/arbeitsunfähigkeit|krankmeldung/i.test(ti))&&!druck&&!hat("krankmeldung")){ const k=hbKrankLesen(t);
     if(k){ HB_KM=k.d; const Z=k.rest.split("\n"); const e=Z.findIndex(z=>z.trim()); t=(e>=0?Z.slice(0,e+1).join("\n"):"")+"\n\n[[krankmeldung]]\n\n"+Z.slice(e+1).join("\n"); } }
+  if((id==="hb-muell"||/^müll/i.test(ti))&&!druck&&!hat("janein")) t=hbJaNeinLesen(t);
   if((id==="hb-ladung"||/^ladungssicherung$/i.test(ti))&&!hat("ladung")){ const i=t.search(/\n>\s*Hat jemand anders/i); t=i>=0?t.slice(0,i)+"\n\n[[ladung]]\n"+t.slice(i):t.trim()+"\n\n[[ladung]]"; }
   if((id==="hb-organigramm"||/^organigramm$/i.test(ti))&&!hat("organigramm")){ const Z=t.split("\n"); t=Z[0]+"\n\n[[organigramm]]\n"+Z.slice(1).join("\n"); }
   return t; }
+
+/* Müll-Artikel neu (Max 27.11.2026): Behälter so, wie sie im Betrieb wirklich stehen – ersetzt einmalig den eingespielten Text */
+const HB_MUELL_TEXT="Müll wird bei uns getrennt. Einen eigenen Wirtschaftshof haben wir nicht – im Betrieb gibt es diese Behälter:\n\n[[muell]]\n| Abfall | Wohin | Hinweis |\n|---|---|---|\n| Kleine Pappe, Papier aus dem Büro, Kartons vom Auspacken | Grüne Tonne | |\n| Große Pappe | Pappe-Rollcontainer oben | Wird von der Müllabfuhr extra abgeholt |\n| Restmüll | Große graue Tonne | |\n| Verpackung, Folie, Kunststoff | Gelber Sack | |\n| Kabelreste, Kupferschrott | Kupferkiste im Lager | Der Schrotthändler holt ab |\n| Große Kupferreste (z. B. 5×35) | Materialcontainer oben | Unser verschlossener Lagercontainer |\n\n## Kupferkisten\n[[kreislauf]]\n1. Kabelreste und Kupferschrott kommen in die Kupferkiste im Lager.\n2. Ist die Kiste voll, kommt sie oben in den Materialcontainer (unser verschlossener Lagercontainer).\n3. Eine leere Kiste wieder runter ins Lager stellen.\n4. Der Schrotthändler holt die vollen Kisten ab.\n\n## Auf der Baustelle\n[[muell]]\n| Abfall | Wohin | Hinweis |\n|---|---|---|\n| Bauschutt | Big-Pack beim Kunden | Weißer Sack, den wir zum Kunden bestellen |\n| Größere Mengen Bauschutt | Offener Container beim Kunden | Wird zum Kunden bestellt |\n| Große Mengen Pappe | Container auf der Baustelle | Nur, wenn der Kunde das erlaubt |\n\n> **Tipp:** Bei Bad- und Wohnungssanierungen, bei denen der Kunde auch die Entsorgung beauftragt, stellen wir ein Buhck-Pack direkt an die Baustelle.\n\n## Was ist „reiner Bauschutt“?\nAlle mineralischen („steinernen“) Abfälle aus Neubau, Umbau, Sanierung und Abbruch – unbelastet: Steine, Putz, Mörtel, Estrich, Fliesen, Keramik, Dachpfannen, Beton.\n\n## Darf in den Bauschutt-Big-Pack\n- Beton, Estrich, zementgebundene Materialien\n- Dachziegel, Fliesen, Keramik, Porzellan\n\n## Darf NICHT in den Bauschutt\n- Bimssteine, Porenbetonsteine (Ytong)\n- Gipsabfälle, Gipskarton (Rigips)\n- Dämmstoffe, Holz\n- Bauschutt mit Anhaftungen von Bodenbelag (Laminat, Holz, Teppich) oder Tapete\n\n?? Baumischabfälle, Dämmstoff und Holz: Wohin genau? Im alten Text standen dafür eigene Behälter, die es im Betrieb nicht gibt.";

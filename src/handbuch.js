@@ -135,12 +135,16 @@ function hbMitSchaubild(a,druck){ let t=String(a.inhalt||""); if(typeof hbMitBil
    auf dem Gerät von jemandem mit Recht dazu, nur wenn der alte Text noch drinsteht. Stand bleibt gleich (keine „geändert“-Markierung). */
 let HB_KORR=false;
 function hbKorrekturen(){ if(HB_KORR||!hbEinspielDarf()||!DB.handbuch) return; HB_KORR=true;
-  const r=DB.handbuch.get("hb-arbeitszeit"); if(!r||r.deleted) return; let t=String(r.inhalt||""); const vorher=t;
+  const r=DB.handbuch.get("hb-arbeitszeit"); if(r&&!r.deleted){ let t=String(r.inhalt||""); const vorher=t;
   /* Pause Mo–Do ist 09:00–09:15 → Arbeit 07:30–09:00 und 09:15–12:00 */
   t=t.replace("07:30 – 09:15 Uhr<br>09:30 – 12:00 Uhr<br>12:30 – 16:30 Uhr","07:30 – 09:00 Uhr<br>09:15 – 12:00 Uhr<br>12:30 – 16:30 Uhr");
   /* geklärte offene Punkte: Zeiten Mo–Do und 38 / 38,25 h (SCC rechnet 7:36 h pro Tag = 38 h) */
   t=t.split("\n").filter(z=>!/^\s*\?\?\s*(Montag bis Donnerstag passt nicht|Selbst mit diesen Zeiten)/.test(z)).join("\n").replace(/\n{3,}/g,"\n\n").trim();
   if(t!==vorher){ r.inhalt=t; saveRec("handbuch",r,false); } }
+  /* Müll: kein Wirtschaftshof – Behälter, Kupferkisten, Baustelle neu (Max 27.11.2026). Nur wenn noch der eingespielte Text drinsteht. */
+  const m=DB.handbuch.get("hb-muell");
+  if(m&&!m.deleted&&typeof HB_MUELL_TEXT==="string"&&/\|\s*Reiner Bauschutt\s*\|\s*Bauschutt-Big-Pack/.test(String(m.inhalt||""))){
+    m.inhalt=HB_MUELL_TEXT; m.stand=(+m.stand||1)+1; m.frei={von:"Maximillian Pevec",am:today()}; delete m.ausgabe; saveRec("handbuch",m,false); } }
 let HB_Q="", HB_F="alle";
 function hbUebersicht(){ hbKorrekturen(); const A=hbAlle(), q=HB_Q.trim().toLowerCase();
   const ung=hbKuerzlich(), entw=A.filter(a=>!hbGilt(a)), vor=A.filter(a=>a.vorschlaege.length);
