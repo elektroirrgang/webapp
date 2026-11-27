@@ -75,12 +75,41 @@ function ztView(){ const d=ztLaden(), ei=ztEinst(d), j=ztJetzt();
     ${zeilen.length?listOf(zeilen):`<p class="meta" style="margin:16px 4px">In diesem Zeitraum ist nichts eingetragen.</p>`}
     <div class="zt-aktionen"><button type="button" class="btn-tonal" data-act="ztCsv">${icon("doc")}Als Tabelle (CSV)</button><button type="button" class="btn-text" data-act="ztSichern">${icon("backup")}Sichern</button><button type="button" class="btn-text" data-act="ztLaden">${icon("upload")}Wiederherstellen</button><button type="button" class="btn-text" data-act="ztEinst">${icon("edit")}Einstellungen</button></div>
     <p class="hint">Soll ${String(ei.soll).replace(".",",")} h pro Woche. Urlaub, Krank und Feiertag zählen mit einem Fünftel davon. Pausen laut Handbuch werden abgezogen, soweit sie in deine Zeit fallen – über 6 h mindestens 30 min. Eigene Pause im Eintrag geht vor.</p></div>`; }
-/* Eintrag anlegen/ändern – ein Tag kann mehrere Einträge haben */
-function ztDlg(e){ const neu=!e; e=e||{id:"z"+Date.now().toString(36),datum:ztJetzt().datum,art:"arbeit",von:"07:30",bis:"16:30",pause:"",notiz:""}; ZT_E=e.id;
-  dialog(neu?"Zeit eintragen":"Eintrag ändern",`<div class="fg1">${tf("ztDat","Datum",e.datum,{form:true,type:"date"})}${sf("ztArt","Art",e.art||"arbeit",Object.entries(ZT_ART),{form:true})}</div>
-    <div class="fg2" style="margin-top:12px">${tf("ztVon","Beginn",e.von||"",{form:true,type:"time",ph:"07:30"})}${tf("ztBis","Ende",e.bis||"",{form:true,type:"time",ph:"16:30"})}</div>
-    <div class="fg1" style="margin-top:12px">${tf("ztPause","Pause in Minuten",e.pause??"",{form:true,im:"numeric",ph:"leer = automatisch laut Handbuch"})}${tf("ztNotiz","Notiz",e.notiz||"",{form:true,ph:"z. B. Baustelle, Überstunden"})}</div>`,
-    `${neu?"":`<button class="btn-text danger" data-act="ztWeg">Löschen</button>`}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-filled" data-act="ztOk">${neu?"Eintragen":"Speichern"}</button>`); }
+/* Eintrag anlegen/ändern – ein Tag kann mehrere Einträge haben.
+   Eigene Auswahl statt System-Picker (Max 27.11.2026): Datum als Wochenleiste, Uhrzeit als zwei Drehräder (Stunde, Minute). */
+let ZT_PF="von", ZT_DW=null;
+const ZT_RH=40; /* Zeilenhöhe der Drehräder in px */
+function ztWoche(sel){ const mo=ZT_DW||ztMontag(sel), heute=ztJetzt().datum, m=ztTagD(mo), so=ztPlus(mo,6), m2=ztTagD(so);
+  const titel=m.getMonth()===m2.getMonth()?`${ZT_MON[m.getMonth()]} ${m.getFullYear()}`:`${ZT_MON[m.getMonth()].slice(0,3)} – ${ZT_MON[m2.getMonth()].slice(0,3)} ${m2.getFullYear()}`;
+  return `<div class="zt-wk"><button type="button" class="icon-btn" data-act="ztDwN" data-n="-1" aria-label="Woche zurück">${icon("back")}</button><b>${titel}</b><button type="button" class="icon-btn zt-weiter" data-act="ztDwN" data-n="1" aria-label="Woche weiter">${icon("chev")}</button></div>
+    <div class="zt-tage">${[0,1,2,3,4,5,6].map(i=>{ const iso=ztPlus(mo,i), d=ztTagD(iso); return `<button type="button" data-act="ztDw" data-d="${iso}" aria-pressed="${iso===sel}" class="${iso===heute?"heute":""}"><span>${ZT_WT[d.getDay()]}</span><b>${d.getDate()}</b></button>`; }).join("")}</div>`; }
+const ztRad=(name,max)=>`<div class="zt-rad" data-rad="${name}" data-max="${max}"><div class="zt-rad-pad"></div>${Array.from({length:max},(_,i)=>`<div class="zt-rad-i" data-i="${i}">${String(i).padStart(2,"0")}</div>`).join("")}<div class="zt-rad-pad"></div></div>`;
+function ztDlg(e){ const neu=!e; e=e||{id:"z"+Date.now().toString(36),datum:ztJetzt().datum,art:"arbeit",von:"07:30",bis:"16:30",pause:"",notiz:""}; ZT_E=e.id; ZT_PF="von"; ZT_DW=null;
+  const arb=(e.art||"arbeit")==="arbeit";
+  dialog(neu?"Zeit eintragen":"Eintrag ändern",`<input type="hidden" data-f="ztDat" value="${esc(e.datum)}"><input type="hidden" data-f="ztVon" value="${esc(e.von||"07:30")}"><input type="hidden" data-f="ztBis" value="${esc(e.bis||"16:30")}">
+    <div class="zt-dat">${ztWoche(e.datum)}</div>
+    <div class="fg1">${sf("ztArt","Art",e.art||"arbeit",Object.entries(ZT_ART),{form:true})}</div>
+    <div class="zt-zeitwahl"${arb?"":" hidden"}>
+      <div class="zt-felder"><button type="button" class="zt-feld" data-act="ztPf" data-k="von" aria-pressed="true"><span>Beginn</span><b>${esc(e.von||"07:30")}</b></button>
+        <button type="button" class="zt-feld" data-act="ztPf" data-k="bis" aria-pressed="false"><span>Ende</span><b>${esc(e.bis||"16:30")}</b></button></div>
+      <div class="zt-raeder"><div class="zt-band"></div>${ztRad("h",24)}<span class="zt-dp">:</span>${ztRad("m",60)}</div>
+      <div class="zt-schnell"><button type="button" class="chip" data-act="ztJetztW">Jetzt</button>${["07:30","09:00","12:00","13:00","16:30"].map(t=>`<button type="button" class="chip" data-act="ztSetzW" data-t="${t}">${t}</button>`).join("")}</div>
+      <div class="fg1" style="margin-top:14px">${tf("ztPause","Pause in Minuten",e.pause??"",{form:true,im:"numeric",ph:"leer = automatisch laut Handbuch"})}</div></div>
+    <div class="fg1" style="margin-top:14px">${tf("ztNotiz","Notiz",e.notiz||"",{form:true,ph:"z. B. Baustelle, Überstunden"})}</div>`,
+    `${neu?"":`<button class="btn-text danger" data-act="ztWeg">Löschen</button>`}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-filled" data-act="ztOk">${neu?"Eintragen":"Speichern"}</button>`);
+  setTimeout(()=>{ if(document.activeElement&&document.activeElement.blur) document.activeElement.blur(); ztRaederAuf(); },80);
+  const art=$("#dlg").querySelector('[data-f="ztArt"]'); if(art) art.onchange=()=>{ const w=$("#dlg").querySelector(".zt-zeitwahl"); if(w){ w.hidden=art.value!=="arbeit"; if(!w.hidden) ztRaederAuf(); } }; }
+const ztHid=n=>$("#dlg").querySelector(`[data-f="${n}"]`);
+/* Räder auf den Wert des aktiven Feldes stellen und beim Drehen den Wert übernehmen */
+function ztRaederAuf(){ const v=ztMin((ztHid(ZT_PF==="von"?"ztVon":"ztBis")||{}).value)??0;
+  $("#dlg").querySelectorAll(".zt-rad").forEach(r=>{ const w=r.dataset.rad==="h"?Math.floor(v/60):v%60; r.scrollTop=w*ZT_RH; ztRadMarke(r,w);
+    if(!r._an){ r._an=true; let t=null; r.addEventListener("scroll",()=>{ clearTimeout(t); ztRadMarke(r,Math.round(r.scrollTop/ZT_RH)); t=setTimeout(()=>ztRadFertig(r),90); },{passive:true}); } }); }
+function ztRadMarke(r,i){ r.querySelectorAll(".zt-rad-i").forEach(x=>x.classList.toggle("an",+x.dataset.i===i)); }
+function ztRadFertig(r){ const max=+r.dataset.max, i=Math.max(0,Math.min(max-1,Math.round(r.scrollTop/ZT_RH)));
+  const h=ztHid(ZT_PF==="von"?"ztVon":"ztBis"); if(!h) return; const v=ztMin(h.value)??0;
+  const neu=r.dataset.rad==="h"?i*60+v%60:Math.floor(v/60)*60+i; ztWertSetzen(ztUhr(neu),false); }
+function ztWertSetzen(t,raeder){ const h=ztHid(ZT_PF==="von"?"ztVon":"ztBis"); if(!h) return; h.value=t;
+  const f=$("#dlg").querySelector(`.zt-feld[data-k="${ZT_PF}"] b`); if(f) f.textContent=t; if(raeder) ztRaederAuf(); }
 function ztTagDlg(iso){ const d=ztLaden(), E=d.e.filter(e=>e.datum===iso);
   if(E.length===1) return ztDlg(E[0]);
   dialog(ztKurz(iso),listOf(E.map(e=>`<div class="li" role="button" tabindex="0" data-act="ztEdit" data-id="${e.id}"><span class="lt"><span class="h">${e.art&&e.art!=="arbeit"?ZT_ART[e.art]:`${e.von}–${e.bis}`}</span>${e.notiz?`<span class="s">${esc(e.notiz)}</span>`:""}</span>${icon("chev")}</div>`)),
@@ -120,6 +149,11 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="ztTab"){ ZT_TAB=b.dataset.k; ZT_AB=null; render(); return; }
   if(a==="ztVor"){ const n=+b.dataset.n; if(ZT_TAB==="woche") ZT_AB=ztPlus(ZT_AB,7*n); else { const m=ztTagD(ZT_AB); m.setDate(1); m.setMonth(m.getMonth()+n); ZT_AB=ztIso(m); } render(); return; }
   if(a==="ztNeu"){ ztDlg(null); return; }
+  if(a==="ztPf"){ ZT_PF=b.dataset.k; $("#dlg").querySelectorAll(".zt-feld").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.k===ZT_PF))); ztRaederAuf(); return; }
+  if(a==="ztDw"){ const h=ztHid("ztDat"); if(h) h.value=b.dataset.d; $("#dlg").querySelector(".zt-dat").innerHTML=ztWoche(b.dataset.d); return; }
+  if(a==="ztDwN"){ const h=ztHid("ztDat"); ZT_DW=ztPlus(ZT_DW||ztMontag(h.value),7*+b.dataset.n); $("#dlg").querySelector(".zt-dat").innerHTML=ztWoche(h.value); return; }
+  if(a==="ztJetztW"){ ztWertSetzen(ztJetzt().uhr,true); return; }
+  if(a==="ztSetzW"){ ztWertSetzen(b.dataset.t,true); return; }
   if(a==="ztTag"){ ztTagDlg(b.dataset.id); return; }
   if(a==="ztEdit"){ const r=ztLaden().e.find(x=>x.id===b.dataset.id); if(r) ztDlg(r); return; }
   if(a==="ztOk"){ ztOk(); return; }
