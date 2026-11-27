@@ -12,7 +12,7 @@ KI (Nexilo …) ──MCP──► Irrgang MCP-Server ──► Speicher
 Der Speicher ist austauschbar (`SPEICHER=` in `.env`). Die Werkzeuge bleiben gleich, wenn die Apps später
 von SharePoint auf den SQL Server umziehen.
 
-## Werkzeuge (Stand 0.2)
+## Werkzeuge (Stand 0.3)
 
 | Lesen | Schreiben (nur mit Recht „schreiben“) |
 |---|---|
@@ -22,10 +22,26 @@ von SharePoint auf den SQL Server umziehen.
 | `baustellen_auflisten`, `baustelle_lesen` | `material_anfordern` |
 | `pruefungen_faellig` (Ladeeinrichtungen, Maschinen/Anlagen) | `termin_anlegen` – Firmentermin |
 | `handbuch_suchen`, `handbuch_artikel_lesen` | `handbuch_vorschlag` – gilt erst nach Freigabe in der App |
-| `termine_auflisten`, `material_anforderungen` | |
+| `termine_auflisten`, `material_anforderungen` | `ordner_anlegen`, `ordner_zugriff_setzen` |
+| `ordner_auflisten`, `ordner_inhalt` | |
 
 Für Dienste wie Nexilo **bewusst nicht dabei:** Löschen, freies Ändern beliebiger Datensätze, Prüfprotokolle verändern.
 Jede Änderung steht im Datensatz (`updatedBy` = Name + „(KI)“, `quelle: "mcp"`) und im MCP-Protokoll.
+
+### Ordner mit Zugriffsrechten (seit 0.3, Vorbereitung für die eigene Datenbank)
+
+Für Firmensachen, die nur bestimmte Personen sehen dürfen – z. B. „Firma“ (Logos, Verträge) nur für Joachim und Max.
+Datenarten wie in den Apps: `ordner` `{ id, name, elternId?, zugriff?: [{ wer, recht }] }`, Dateien bekommen `ordnerId`.
+
+- `wer`: Mail-Adresse, `rolle:admin`, `rolle:buero`, `rolle:monteur`, `dienst:<Schlüsselname>` (z. B. Nexilo) oder `alle`
+- `recht`: `lesen` < `schreiben` < `verwalten` (Rechte ändern, verschieben, löschen)
+- Ohne eigene Liste erbt ein Ordner vom Elternordner; oberste Ordner ohne Liste sind für alle Mitarbeiter.
+- Hat ein Ordner eine Liste, gilt **nur** sie – auch Admins und Entwickler ohne Eintrag sehen ihn nicht.
+  Jede Liste braucht mindestens einen Eintrag mit `verwalten`; sich selbst aussperren geht nicht.
+- Durchgesetzt im Server (`src/zugriff.js`, Hülle um den Speicher) – für alle Werkzeuge, auch `dev_…` und die Suche über alles.
+- **Keine Kennwörter für Ordner:** ein Kennwort versteckt nur die Anzeige; die Rechte hängen an der Anmeldung.
+- Noch offen: Dateiinhalt selbst (heute in SharePoint; auf dem Firmenserver als Datei auf der Platte + Eintrag in der Datenbank),
+  Anzeige in der Bibliothek der Apps, Ordnernamen im MCP-Protokoll (für Entwickler sichtbar).
 
 ### Entwickler-Werkzeuge (nur Recht „entwickler“)
 
@@ -66,6 +82,7 @@ claude mcp add --transport http irrgang https://mcp.elektro-irrgang.de/mcp --hea
   In `.env` stehen nur SHA-256-Hashes der Schlüssel.
 - Jeder Schlüssel hat „lesen“, „schreiben“ oder „entwickler“. Werkzeuge außerhalb der eigenen Rechte sind gar nicht sichtbar.
 - Microsoft-Anmeldung: Rolle Admin/Entwickler → „entwickler“, alle anderen → „schreiben“.
+- Ordner mit Zugriffsliste sieht nur, wer drinsteht (siehe oben) – unabhängig von „entwickler“.
 - Keine Geheimnisse im Repo: `.env` steht in `.gitignore`.
 
 ## Einrichten auf dem Windows-Server (Kurzfassung)

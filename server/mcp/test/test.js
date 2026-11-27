@@ -24,13 +24,20 @@ for (const [art, liste] of Object.entries(D)) if (Array.isArray(liste)) for (con
 fs.mkdirSync(path.join(ordner, "handbuch"), { recursive: true });
 fs.writeFileSync(path.join(ordner, "handbuch", "hb-test.json"), JSON.stringify({ id: "hb-test", kapitel: "allgemein", titel: "Kaffee und Getränke", inhalt: "Getränke sind frei.\n?? interner Hinweis", stand: 1, updated: Date.now() }));
 ok(n > 30, `${n} Demodatensätze angelegt`);
+/* Ordner mit Rechten: „Firma“ nur für Max und Joachim, darin „Logos“ (erbt), „Allgemein“ für alle */
+const leg = (art, r) => { fs.mkdirSync(path.join(ordner, art), { recursive: true }); fs.writeFileSync(path.join(ordner, art, r.id + ".json"), JSON.stringify({ updated: Date.now(), ...r })); };
+leg("ordner", { id: "o-firma", name: "Firma", zugriff: [{ wer: "m.pevec@elektro-irrgang.de", recht: "verwalten" }, { wer: "joachim@beispiel.de", recht: "verwalten" }] });
+leg("ordner", { id: "o-logos", name: "Logos", elternId: "o-firma" });
+leg("ordner", { id: "o-allg", name: "Allgemein" });
+leg("dateien", { id: "f-logo", name: "elektro-irrgang-logo.svg", ordnerId: "o-logos" });
+leg("dateien", { id: "f-plan", name: "Notfallplan.pdf", ordnerId: "o-allg" });
 
 /* 2) Server starten */
-const schl = "irr_test_" + crypto.randomBytes(8).toString("hex"), lese = "irr_lese_" + crypto.randomBytes(8).toString("hex"), dev = "irr_dev_" + crypto.randomBytes(8).toString("hex");
+const dev2 = "irr_dev2_" + crypto.randomBytes(8).toString("hex"), schl = "irr_test_" + crypto.randomBytes(8).toString("hex"), lese = "irr_lese_" + crypto.randomBytes(8).toString("hex"), dev = "irr_dev_" + crypto.randomBytes(8).toString("hex");
 const h = s => crypto.createHash("sha256").update(s).digest("hex");
 const port = 8799;
 const srv = spawn(process.execPath, [path.join(hier, "..", "src", "start.js")], { env: { ...process.env, PORT: String(port), SPEICHER: "datei", DATEI_ORDNER: ordner,
-  MCP_SCHLUESSEL: JSON.stringify([{ name: "Test-KI", hash: h(schl), rechte: "schreiben" }, { name: "Nur-Lesen", hash: h(lese), rechte: "lesen" }, { name: "Max", hash: h(dev), rechte: "entwickler" }]) }, stdio: ["ignore", "pipe", "inherit"] });
+  MCP_SCHLUESSEL: JSON.stringify([{ name: "Test-KI", hash: h(schl), rechte: "schreiben" }, { name: "Nur-Lesen", hash: h(lese), rechte: "lesen" }, { name: "Max", mail: "m.pevec@elektro-irrgang.de", hash: h(dev), rechte: "entwickler" }, { name: "Dev2", hash: h(dev2), rechte: "entwickler" }]) }, stdio: ["ignore", "pipe", "inherit"] });
 await new Promise(r => srv.stdout.once("data", r));
 const url = new URL(`http://127.0.0.1:${port}/mcp`);
 const verbinden = async key => { const c = new Client({ name: "test", version: "1" }); await c.connect(new StreamableHTTPClientTransport(url, { requestInit: { headers: { Authorization: "Bearer " + key } } })); return c; };
@@ -91,5 +98,24 @@ try {
   const pi = await d.callTool({ name: "dev_aendern", arguments: { art: "mcp_sicherung", id: sid, setzen: { x: 1 }, grund: "nein" } }); ok(pi.isError, "Sicherungen nicht änderbar");
   const pr2 = await d.callTool({ name: "dev_protokoll", arguments: { anzahl: 5 } }); ok(/dev_rueckgaengig/.test(text(pr2)), "dev_protokoll");
   await d.close();
+
+  /* Ordnerrechte */
+  const ki = await verbinden(schl), mx = await verbinden(dev), d2 = await verbinden(dev2), le = await verbinden(lese);
+  const oKi = text(await ki.callTool({ name: "ordner_auflisten", arguments: {} }));
+  ok(/Allgemein/.test(oKi) && !/Firma|Logos/.test(oKi), "KI sieht „Firma“ nicht, „Allgemein“ schon");
+  const oLe = text(await le.callTool({ name: "ordner_auflisten", arguments: {} })); ok(!/Firma/.test(oLe), "Nur-Lesen sieht „Firma“ nicht");
+  const oMx = JSON.parse(text(await mx.callTool({ name: "ordner_auflisten", arguments: {} })).split("\n\n").pop());
+  ok(oMx.some(o => o.pfad === "Firma / Logos" && o.dein_recht === "verwalten" && o.dateien === 1), "Max sieht Firma / Logos mit „verwalten“ (geerbt)");
+  ok((await d2.callTool({ name: "dev_lesen", arguments: { art: "dateien", id: "f-logo" } })).isError, "anderer Entwickler ohne Eintrag kommt nicht an die Datei (kein Admin-Durchgriff)");
+  ok(!/elektro-irrgang-logo/.test(text(await d2.callTool({ name: "dev_suche_alles", arguments: { text: "elektro-irrgang-logo" } }))), "Suche über alles zeigt geschützte Datei nicht");
+  ok(!(await mx.callTool({ name: "dev_lesen", arguments: { art: "dateien", id: "f-logo" } })).isError, "Max kommt an die Datei");
+  ok((await ki.callTool({ name: "ordner_anlegen", arguments: { name: "Heimlich", eltern_id: "o-firma" } })).isError, "KI kann in „Firma“ nichts anlegen");
+  ok((await ki.callTool({ name: "ordner_anlegen", arguments: { name: "Oben" } })).isError, "oberste Ordner nur für Admins");
+  ok((await mx.callTool({ name: "ordner_zugriff_setzen", arguments: { ordner_id: "o-firma", zugriff: [{ wer: "joachim@beispiel.de", recht: "lesen" }] } })).isError, "Liste ohne „verwalten“ abgewiesen");
+  ok((await mx.callTool({ name: "ordner_zugriff_setzen", arguments: { ordner_id: "o-firma", zugriff: [{ wer: "joachim@beispiel.de", recht: "verwalten" }] } })).isError, "Selbst aussperren abgewiesen");
+  const neuO = await mx.callTool({ name: "ordner_anlegen", arguments: { name: "Verträge", eltern_id: "o-firma" } }); ok(!neuO.isError, "Max legt Unterordner in „Firma“ an");
+  ok(!/Verträge/.test(text(await ki.callTool({ name: "ordner_auflisten", arguments: {} }))), "neuer Unterordner erbt: KI sieht ihn nicht");
+  ok((await ki.callTool({ name: "ordner_inhalt", arguments: { ordner_id: "o-firma" } })).isError, "KI: Ordnerinhalt „Firma“ → nicht gefunden");
+  for (const x of [ki, mx, d2, le]) await x.close();
 } finally { srv.kill(); }
 console.log(fehler ? `\n${fehler} Fehler` : "\nAlles grün"); process.exit(fehler ? 1 : 0);
