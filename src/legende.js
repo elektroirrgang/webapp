@@ -122,6 +122,7 @@ function legView(L){ const E=legE(L), tab=legTab(L);
   if(tab==="mat") return typeof vmView==="function"?vmView(L):`<div class="narrow ec-spalte leg">${typeof zsMaterialKarte==="function"?zsMaterialKarte(L):""}</div>`;
   if(tab==="sk") return `<div class="narrow ec-spalte leg">${legSkKarte(L,E)}</div>`;
   return `<div class="narrow ec-spalte leg">
+    ${legAbschlussKarte(L)}
     <section class="card"><h3>${L._geb?"Angaben":"Anlage"}</h3>${(()=>{ const o=kundeOf(L.kundeId)?ecOrt(L.ortId||"k:"+L.kundeId):null;
       return `<div class="ec-hinweis leg-zu">${icon(o?"firma":"folder")}<span>${o?`Gehört zu <b>${esc(o.titel)}</b>${L.anschrift?` · ${esc(L.anschrift)}`:""}`:"Liegt unter „Ohne Kunde“"}</span>${L._geb?"":`<button type="button" class="btn-tonal" data-act="legZu">Kunde zuordnen</button>`}</div>`; })()}<div class="ec-fg">
       ${legBauart(L)?`<p class="leg-bauart">${esc(legBauart(L))}</p>`:""}
@@ -132,8 +133,24 @@ function legView(L){ const E=legE(L), tab=legTab(L);
     </div></section>
     ${L._geb&&typeof qrKarte==="function"?qrKarte(L):""}
     ${legEtiKarte(L)}
-        <div class="leg-fuss">${canEdit(L)?`<button type="button" class="btn-tonal leg-del" data-act="legDelAsk">${icon("del")}Löschen</button>`:""}<span style="flex:1"></span>${L.fertig?`<button type="button" class="btn-tonal" data-act="legFertig" data-v="0">${icon("edit")}Bearbeiten</button>`:""}<button type="button" class="btn-tonal leg-pdf" data-act="legPdf">${icon("pdf")}PDF erstellen</button></div>
+    ${canEdit(L)?`<section class="card leg-weg-k"><h3>${L._geb?"Verteiler löschen":"Legende löschen"}</h3><p class="meta">Löscht ${L._geb?"den Verteiler mit allen RCDs und Stromkreisen":"die Legende mit allen Zeilen"}. Schon erstellte PDFs bleiben in der Bibliothek.</p><button type="button" class="leg-weg-b" data-act="legDelAsk">${icon("del")}<span>${L._geb?"Verteiler löschen":"Legende löschen"}</span></button></section>`:""}
   </div>`; }
+/* Abschluss-Karte (27.11.2026): oben klar, was noch fehlt und was „Abschließen“ tut – statt zweier Knöpfe ohne Erklärung */
+function legPdfLetzte(L){ const id=L._v||L.id; return DB.protokolle?[...DB.protokolle.values()].filter(r=>!r.deleted&&r.app==="legende"&&r.vtId===id&&!r.archiv).sort((a,b)=>(b.created||0)-(a.created||0))[0]:null; }
+function legAbschlussKarte(L){ const E=legE(L), nSk=E.filter(e=>e.art==="sk").length, offen=E.filter(e=>legOffen(e)).length;
+  const v=L._geb&&(vtGeb(L._geb)||{verteiler:[]}).verteiler.find(x=>x.id===L._v), qrOk=!L._geb||!!(v&&v.qr), pdf=legPdfLetzte(L);
+  const schritt=(ok,t,s,act,kt,attr)=>`<div class="leg-ab-s${ok?" ok":""}"><span class="leg-ab-p" aria-hidden="true"></span><span class="lt"><b>${t}</b><small>${s}</small></span>${act&&!ok?`<button type="button" class="btn-text" data-act="${act}"${attr||""}>${kt}</button>`:""}</div>`;
+  if(L.fertig) return `<section class="card leg-ab-k fertig"><h3>Abgeschlossen</h3>
+      <p class="meta">${pdf?`Legende als PDF vom ${esc(ecDatum(pdf.datum))} liegt in der Bibliothek beim Kunden.`:"Noch keine PDF in der Bibliothek."} Der Verteiler ist gegen versehentliches Ändern gesperrt.</p>
+      <div class="leg-ab-kn">${pdf&&typeof bbOeffnen==="function"?`<button type="button" class="btn-tonal" data-act="legPdfAuf" data-id="${esc(pdf.id)}">${icon("pdf")}PDF öffnen</button>`:""}<button type="button" class="btn-tonal" data-act="legPdf">${icon("pdf")}PDF neu erstellen</button><button type="button" class="btn-text" data-act="legFertig" data-v="0">${icon("edit")}Wieder bearbeiten</button></div></section>`;
+  return `<section class="card leg-ab-k"><h3>Abschließen</h3>
+    <div class="leg-ab-l">
+      ${schritt(nSk>0&&!offen,"Stromkreise",nSk?(offen?`${offen} ${offen===1?"Eintrag ist":"Einträge sind"} noch offen`:`${nSk} Stromkreis${nSk===1?"":"e"} eingetragen`):"Noch keine Stromkreise","legTab","Ansehen",' data-v="sk"')}
+      ${L._geb?schritt(qrOk,"QR-Aufkleber",qrOk?`Anlagen-Nr. ${esc(typeof qrZeig==="function"?qrZeig(v.qr):v.qr)}`:"Pflicht – steht später auf der Legende","qrScanZu","Zuordnen"):""}
+      ${schritt(!!pdf,"Legende als PDF",pdf?`Zuletzt am ${esc(ecDatum(pdf.datum))} – wird beim Abschließen neu erstellt`:"Wird beim Abschließen erstellt")}
+    </div>
+    <p class="meta">„Abschließen“ erstellt die Legende als PDF, legt sie beim Kunden in der Bibliothek ab (Pläne und Schaltpläne) und sperrt den Verteiler gegen versehentliches Ändern. Wieder öffnen geht jederzeit.</p>
+    <div class="leg-ab-kn"><button type="button" class="btn-text" data-act="legPdf">${icon("pdf")}Nur PDF</button><span style="flex:1"></span><button type="button" class="btn-filled" data-act="legAbschliessen" ${nSk&&qrOk?"":"disabled"}>${icon("done")}Abschließen</button></div></section>`; }
 
 /* Karte „Verteiler“ beim Unterverteiler: Zeichnung mit der Bestückung, darunter Reihen und Montage direkt umstellbar */
 /* Unterverteiler-Karte (26.11.2026) wie beim Zählerschrank: Foto und Modell oben, Zustand als Plakette, drei Knöpfe – darunter Bild und Einstellungen */
@@ -487,7 +504,7 @@ async function legPdfMachen(){ const L=legAkt(); if(!L) return; if(!legE(L).leng
     const alt=BB_PROT.filter(y=>y.app==="legende"&&y.vtId===vtId&&y.datum===datum); alt.forEach(y=>{ if(typeof bbProtWeg==="function") bbProtWeg(y.id); });
     BB_PROT=BB_PROT.filter(y=>!alt.includes(y)); BB_PROT.push(x); }
   if(typeof bbProtMelden==="function") bbProtMelden(x);
-  toast(typeof bbSync==="function"&&bbSync()?"PDF in der Bibliothek abgelegt":"PDF erstellt","Öffnen",()=>bbOeffnen(x.id)); }
+  toast(typeof bbSync==="function"&&bbSync()?"PDF in der Bibliothek abgelegt":"PDF erstellt","Öffnen",()=>bbOeffnen(x.id)); if(DB.protokolle&&!DB.protokolle.has(x.id)) try{ DB.protokolle.set(x.id,{...x}); }catch(e){} render(); return x; }
 
 /* ---- Klicks und Eingaben ---- */
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="leg"]'); if(!b||b.disabled) return; e.stopPropagation(); const a=b.dataset.act, L=legAkt();
@@ -532,6 +549,8 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "legRechZur": { const id=LR&&LR.id; LR=null; if(id) legSkDlg(id); return; }
   case "legEtiW": { if(!L) return; const k=b.dataset.k, w=k==="inh"?b.dataset.v:+b.dataset.v; L.eti={...legEtiSauber(L.eti),[k]:w}; if(k!=="te"){ LEG_ETI[k]=w; legEtiMerken(); } legSave(L); if(b.closest("#dlg")) legEtiDlg(); else render(); return; }
   case "legEtiTeilen": case "legEtiLaden": if(L) legEtiAusgeben(L,a==="legEtiTeilen"); return;
+  case "legAbschliessen": { if(!L) return; (async()=>{ const x=await legPdfMachen(); if(!x) return; const L2=legAkt(); if(!L2) return; L2.fertig=true; legSave(L2); render(); toast("Abgeschlossen – PDF liegt beim Kunden","Öffnen",()=>bbOeffnen(x.id)); })(); return; }
+  case "legPdfAuf": if(typeof bbOeffnen==="function") bbOeffnen(b.dataset.id); return;
   case "legFertig": { if(!L) return;
     if(b.dataset.v==="1"&&L._geb&&typeof qrPflicht==="function"){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(v&&!v.qr){ qrPflicht([{g,x:v,art:"vt"}],"der Verteiler nicht abgeschlossen werden"); return; } }
     L.fertig=b.dataset.v==="1"; legSave(L); render(); toast(L.fertig?"Abgeschlossen":"Wieder in Arbeit"); return; }

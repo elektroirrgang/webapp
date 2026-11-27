@@ -2472,3 +2472,15 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
 .leg-sym-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px;padding:4px 0 8px}
 .leg-sym-w{display:flex;flex-direction:column;align-items:center;gap:4px;border:0;border-radius:12px;background:var(--sc);color:var(--on-surface);padding:10px 4px;font:inherit;cursor:pointer}.leg-sym-w small{font-size:11px;text-align:center;line-height:1.2}
 .leg-sym-w[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}.leg-sym-w[aria-pressed="true"] .leg-sym-ic{color:var(--on-pc)}.leg-sym-w .ic{width:24px;height:24px;fill:currentColor}
+/* Abschluss-Seite (27.11.2026): oben die Abschluss-Karte mit Schritten, Löschen als eigene Karte unten */
+.leg-ab-l{display:flex;flex-direction:column;gap:6px;margin:4px 0 10px}
+.leg-ab-s{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:var(--sc-high)}
+.leg-ab-s .lt{flex:1;min-width:0;display:flex;flex-direction:column}.leg-ab-s small{color:var(--on-sv);font-size:13px}
+.leg-ab-p{flex:none;width:12px;height:12px;border-radius:6px;background:#E3A008}.leg-ab-s.ok .leg-ab-p{background:#2E7D32}
+.leg-ab-kn{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+.leg-ab-k.fertig .leg-ab-kn{justify-content:flex-start}
+.leg-weg-k .meta{margin:0 0 12px}
+.leg-weg-b{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:12px;background:#C62828;color:#fff;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer}.leg-weg-b .ic{width:18px;height:18px;fill:#fff}
+.leg-ab-kn{flex-wrap:wrap}.leg-ab-kn .btn-filled{margin-left:auto}
+.leg-ab-kn>button{display:inline-flex;flex-direction:row;align-items:center;gap:8px;white-space:nowrap}.leg-ab-kn>button .ic{width:18px;height:18px;flex:none}
+.leg-ab-kn .btn-filled:disabled{opacity:.42;cursor:default}
