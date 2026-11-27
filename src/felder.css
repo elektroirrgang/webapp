@@ -2463,3 +2463,12 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
 .gw-daten-l{display:flex;flex-direction:column;gap:6px;margin:10px 0 4px}.gw-daten-l:empty{display:none}
 .gw-z{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;border-radius:14px;background:var(--sc-high);font-size:14px}.gw-z span{color:var(--on-sv)}
 .gw-daten .vti-chips{flex-wrap:wrap;overflow:visible;margin-right:0;padding-right:0}
+/* Symbole auf dem Beschriftungsstreifen (27.11.2026) */
+.leg-sym-b{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:14px;background:var(--feld);color:var(--on-surface);padding:10px 14px;font:inherit;font-size:14px;cursor:pointer;margin:4px 0 2px}.leg-sym-b .ic{width:18px;height:18px;fill:var(--primary)}
+.leg-sym-l{display:flex;flex-direction:column;gap:6px}
+.leg-sym-z{display:flex;align-items:center;gap:12px;width:100%;border:0;border-radius:14px;background:var(--feld);color:var(--on-surface);padding:10px 12px;font:inherit;text-align:left;cursor:pointer}
+.leg-sym-z .lt{flex:1;min-width:0;display:flex;flex-direction:column}.leg-sym-z small{color:var(--on-sv);font-size:12px}.leg-sym-z>.ic{width:20px;height:20px;fill:var(--on-sv)}
+.leg-sym-ic{width:26px;height:26px;flex:none;color:var(--on-surface);display:inline-grid;place-items:center}.leg-sym-ic svg{width:26px;height:26px}.leg-sym-ic.leer{display:inline-block;border-radius:6px;background:var(--sc-high)}
+.leg-sym-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px;padding:4px 0 8px}
+.leg-sym-w{display:flex;flex-direction:column;align-items:center;gap:4px;border:0;border-radius:12px;background:var(--sc);color:var(--on-surface);padding:10px 4px;font:inherit;cursor:pointer}.leg-sym-w small{font-size:11px;text-align:center;line-height:1.2}
+.leg-sym-w[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}.leg-sym-w[aria-pressed="true"] .leg-sym-ic{color:var(--on-pc)}.leg-sym-w .ic{width:24px;height:24px;fill:currentColor}

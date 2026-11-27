@@ -603,35 +603,65 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
 /* 27.11.2026 (Max): Band nur 12/18/24 mm, Standard 18 mm; Text entweder Bezeichnung oder Kennzeichnung (beides zusammen sah schlecht aus);
    Breite je TE folgt den Einbaugeräten: Schneider 18 mm, Hager/ABB 17,5 mm – von Hand je Anlage änderbar. */
 const LEG_BAENDER=[12,18,24];
-const legEtiSauber=v=>{ const o={...(v||{})}; if(o.band!=null&&!LEG_BAENDER.includes(+o.band)) delete o.band; if(o.inh&&!["bez","kz"].includes(o.inh)) delete o.inh; return o; };
+const legEtiSauber=v=>{ const o={...(v||{})}; if(o.band!=null&&!LEG_BAENDER.includes(+o.band)) delete o.band; if(o.inh&&!["bez","kz","symbez","sym"].includes(o.inh)) delete o.inh; return o; };
+/* Symbole auf dem Streifen (27.11.2026): „Symbol + Text“ (ab 18 mm) oder „Nur Symbol“ – dieselben Piktogramme wie in der Zeichnung (LEG_SYM, e.sym, geraten aus der Bezeichnung).
+   Ohne Symbol (z. B. FI) steht im Feld die Bezeichnung. */
+const legSym=e=>legSymFuer(e);
 const LEG_ETI={inh:"bez",band:18};
 try{ const v=legEtiSauber(JSON.parse(localStorage.getItem("irrgang_legeti")||"null")); delete v.te; Object.assign(LEG_ETI,v); }catch(e){}
 const legGerTe=L=>/schneider/i.test(String(L&&L.gerHerst||""))?18:17.5;
 /* Einstellungen je Anlage (v.eti), sonst die zuletzt gewählten dieses Geräts; Breite je TE folgt dem Verteiler (teMm), wenn dort gesetzt */
 let LE=LEG_ETI;
-const legEtiCfg=L=>(LE={...LEG_ETI,te:legGerTe(L),...(L&&[17.5,18].includes(+L.teMm)?{te:+L.teMm}:{}),...legEtiSauber(L&&L.eti)});
+const legEtiCfg=L=>{ LE={...LEG_ETI,te:legGerTe(L),...(L&&[17.5,18].includes(+L.teMm)?{te:+L.teMm}:{}),...legEtiSauber(L&&L.eti)}; if(LE.inh==="symbez"&&+LE.band<18) LE.inh="sym"; return LE; };
+const legSymModus=()=>LE.inh==="sym"||LE.inh==="symbez";
 const legEtiMerken=()=>{ try{ localStorage.setItem("irrgang_legeti",JSON.stringify({inh:LEG_ETI.inh,band:LEG_ETI.band})); }catch(e){} };
 /* Text eines Geräts auf dem Streifen – ohne Sonderzeichen, die nicht jede Druckerschrift hat */
 function legEtiText(e){ if(e.art==="kl") return ""; if(e.art==="res") return LE.inh==="kz"?String(e.kz||"").trim():"Reserve";
   const kz=String(e.kz||"").trim();
   const bez=e.art==="rcd"?(e.bez&&!/^fehlerstrom/i.test(e.bez)?e.bez:("FI "+String(e.schutz||"").replace(/\s*Typ.*$/i,"").replace(/\s*\/\s*/," ")).trim())
     :legOffen(e)?"":String(e.bez||"").trim();
-  const t=LE.inh==="kz"?kz:LE.inh==="beide"?[kz,bez].filter(Boolean).join(" "):bez;
+  if(legSymModus()) return "";
+  const t=LE.inh==="kz"?kz:bez;
   return t.replace(/\s*·\s*/g," ").replace(/[→–]/g,"-").replace(/\s+/g," ").trim(); }
 /* Streifen je Reihe: Blöcke = Geräte (Breite in TE), freie Plätze am Ende als ein leerer Block, damit der Streifen über die ganze Reihe geht */
 function legEtiStreifen(L){ legEtiCfg(L); const n=+L.teReihe||12;
-  return legReihen(L).map((r,ri)=>{ const T=[], M=[]; r.g.forEach(([e,,w])=>{ T.push(legEtiText(e)); M.push(w); });
-    let frei=n-r.te; while(frei>0){ const w=Math.min(frei,9); T.push(""); M.push(w); frei-=w; }
+  return legReihen(L).map((r,ri)=>{ const T=[], M=[], S=[]; r.g.forEach(([e,,w])=>{ T.push(legEtiText(e)); M.push(w);
+      S.push(legSymModus()?(k=>({id:e.id,sym:k,text:LE.inh==="symbez"||!k?legEtiTextBez(e):""}))(legSym(e)):null); });
+    let frei=n-r.te; while(frei>0){ const w=Math.min(frei,9); T.push(""); M.push(w); S.push(null); frei-=w; }
     const p={band:LE.band,block:LE.te,anzahl:T.length,mult:M,trenn:"LINE",vertikal:false,umkehren:false,drucker:"PT-E560BT"};
-    return {nr:ri+1,te:n,p,T,mm:n*LE.te}; }).filter(st=>st.T.length<=50); }
+    return {nr:ri+1,te:n,p,T,S,mm:n*LE.te}; }).filter(st=>st.T.length<=50); }
+function legEtiTextBez(e){ const i=LE.inh; LE.inh="bez"; const t=legEtiText(e); LE.inh=i; return t; }
+/* Ein Feld als SVG (Symbol oben, Text unten bzw. nur Symbol oder nur Text) – für Vorschau und Druckbild gleich */
+function legEtiFeldSvg(s,x,w,H,fsMax){ if(!s||(!s.sym&&!s.text)) return ""; const mitT=!!s.text, gr=s.sym?Math.min(mitT?H*.5:H*.72,w*.8):0, cy=mitT?H*.06:(H-gr)/2;
+  const sym=s.sym?`<svg x="${(x+w/2-gr/2).toFixed(2)}" y="${(s.text?cy:cy).toFixed(2)}" width="${gr.toFixed(2)}" height="${gr.toFixed(2)}" viewBox="0 0 24 24"><g fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${LEG_SYM[s.sym].replace(/class="f"/g,'fill="#000"')}</g></svg>`:"";
+  const fs=Math.min(fsMax,(w*.94)/Math.max(2,s.text.length)*1.8), ty=s.sym?H*.93:H/2+fs*.36;
+  return sym+(mitT?`<text x="${(x+w/2).toFixed(2)}" y="${ty.toFixed(2)}" font-size="${fs.toFixed(2)}" font-weight="700" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" fill="#000">${esc(s.text)}</text>`:""); }
+function legEtiSymSvg(st,klein){ const p=st.p, m=p.mult, H=+p.band, W=m.reduce((a,x)=>a+x*p.block,0); let x=0, g="";
+  st.S.forEach((s,i)=>{ const w=m[i]*p.block; if(i) g+=`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="#222" stroke-width=".25"/>`; g+=legEtiFeldSvg(s,x,w,H,H*.2); x+=w; });
+  return `<svg class="ec-eti-svg" viewBox="-.5 -.5 ${W+1} ${H+1}" width="100%" style="max-width:${klein?"100%":Math.round(W*3.2)+"px"}"><rect x="0" y="0" width="${W}" height="${H}" fill="#fff" stroke="#222" stroke-width=".35"/>${g}</svg>`; }
+const legEtiVorschau=(st,klein)=>legSymModus()?legEtiSymSvg(st,klein):ecEtiSvg(st.p,st.T,klein);
+/* Druckbild je Feld: SVG → Canvas (300 dpi) → Schwarz/Weiß → BMP; Größe exakt wie das Zellenfeld der Brother-Vorlage */
+function legEtiBmp(s,wPt,hPt){ return new Promise(ok=>{ const k=300/72, W=Math.max(8,Math.round(wPt*k)), H=Math.max(8,Math.round(hPt*k));
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="#fff"/>${legEtiFeldSvg(s,0,W,H,H*.25)}</svg>`;
+  const img=new Image(); img.onload=img.onerror=()=>{ const c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,W,H); try{ x.drawImage(img,0,0); }catch(e){}
+    /* 1-Bit-BMP (Palette schwarz/weiß) – klein und genau das, was der Drucker kann */
+    const d=x.getImageData(0,0,W,H).data, zeile=Math.ceil(W/32)*4, off=62, gr=off+zeile*H, b=new Uint8Array(gr), v=new DataView(b.buffer);
+    b[0]=66; b[1]=77; v.setUint32(2,gr,true); v.setUint32(10,off,true); v.setUint32(14,40,true); v.setInt32(18,W,true); v.setInt32(22,H,true); v.setUint16(26,1,true); v.setUint16(28,1,true); v.setUint32(34,zeile*H,true); v.setInt32(38,11811,true); v.setInt32(42,11811,true); v.setUint32(46,2,true);
+    b[58]=b[59]=b[60]=255; /* Farbe 0 = schwarz (54–57), Farbe 1 = weiß */
+    for(let yy=0;yy<H;yy++){ const o=off+(H-1-yy)*zeile; for(let xx=0;xx<W;xx++){ const i=(yy*W+xx)*4; if((d[i]+d[i+1]+d[i+2])/3>=160) b[o+(xx>>3)]|=0x80>>(xx&7); } }
+    ok(b); };
+  img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); }); }
+async function legEtiBilder(st){ if(!legSymModus()||!st.S) return []; const B=[];
+  for(let i=0;i<st.S.length;i++){ const s=st.S[i]; if(!s||(!s.sym&&!s.text)) continue; const M=ecLbxBildMass(st.p,i); B.push({i,datei:`Object${B.length+1}.bmp`,daten:await legEtiBmp(s,M.w,M.h)}); } return B; }
 const legEtiChip=(k,v,t)=>`<button type="button" class="chip" data-act="legEtiW" data-k="${k}" data-v="${v}" aria-pressed="${String(LE[k])===String(v)}">${t}</button>`;
 const legEtiWahl=()=>`<div class="leg-eti-opt">
-    <div class="leg-eti-z"><span class="lbl">Text</span><div class="chips">${legEtiChip("inh","bez","Bezeichnung")}${legEtiChip("inh","kz","Kennzeichnung")}</div></div>
+    <div class="leg-eti-z"><span class="lbl">Text</span><div class="chips">${legEtiChip("inh","bez","Bezeichnung")}${legEtiChip("inh","kz","Kennzeichnung")}${+LE.band<18?`<button type="button" class="chip" disabled title="Erst ab 18 mm Band">Symbol + Text</button>`:legEtiChip("inh","symbez","Symbol + Text")}${legEtiChip("inh","sym","Nur Symbol")}</div></div>
+    ${legSymModus()?`<button type="button" class="leg-sym-b" data-act="legSymDlg">${icon("edit")}<span>Symbole je Stromkreis anpassen</span></button>`:""}
     <div class="leg-eti-z"><span class="lbl">Band</span><div class="chips">${LEG_BAENDER.map(b=>legEtiChip("band",b,b+" mm")).join("")}</div></div>
     <div class="leg-eti-z"><span class="lbl">Breite je TE</span><div class="chips">${legEtiChip("te",17.5,"17,5 mm · Hager / ABB")}${legEtiChip("te",18,"18 mm · Schneider")}</div></div></div>`;
 function legEtiKarte(L){ if(typeof ecLbxs!=="function"||!legE(L).some(e=>e.art!=="gr")) return ""; const ST=legEtiStreifen(L); if(!ST.length) return "";
   return `<section class="card leg-eti-k"><h3>Beschriftungsstreifen</h3>
-    <div class="leg-eti-v">${ecEtiSvg(ST[0].p,ST[0].T,true)}</div>
+    <div class="leg-eti-v">${legEtiVorschau(ST[0],true)}</div>
     ${legEtiWahl()}
     <p class="meta">${ST.length===1?"Ein Streifen":`${ST.length} Streifen, je Reihe einer`} für den Brother P-touch · jedes Feld so breit wie das Gerät darunter. Gilt für diese Anlage.${legVoltaNr(L)?" Die Nummern stehen schon auf der volta-Abdeckung – Streifen mit Bezeichnung ins freie Feld unter der Reihe kleben.":""}</p>
     <button type="button" class="leg-eti-b" data-act="legEti">${icon("tag")}<span>Streifen drucken</span></button></section>`; }
@@ -639,17 +669,32 @@ function legEtiDlg(){ const L=legAkt(); if(!L) return; const ST=legEtiStreifen(L
   dialog("Beschriftungsstreifen",`<p class="ec-sub">Für die <b>Brother Pro Label Tool</b>-App (P-touch, z. B. PT-E560BT), Vorlage „Verteiler“.</p>
     ${legEtiWahl()}
     <div class="lbl" style="margin-top:14px">Vorschau · ${ST.length} Streifen</div>
-    <div class="ec-baender leg-eti-l">${ST.map(st=>`<div class="ec-bd"><div class="ec-bd-k">Reihe ${st.nr} · ${st.te} TE · ${ecEtiMm(st.p,st.mm)} × ${st.p.band} mm</div><div class="leg-eti-v">${ecEtiSvg(st.p,st.T)}</div></div>`).join("")}</div>
+    <div class="ec-baender leg-eti-l">${ST.map(st=>`<div class="ec-bd"><div class="ec-bd-k">Reihe ${st.nr} · ${st.te} TE · ${ecEtiMm(st.p,st.mm)} × ${st.p.band} mm</div><div class="leg-eti-v">${legEtiVorschau(st)}</div></div>`).join("")}</div>
     ${(()=>{ const z=90/((EC_BAND[LE.band]||EC_BAND[9]).schrift), lang=ST.reduce((a,st)=>a+st.T.filter((t,i)=>t.length>z*st.p.mult[i]*LE.te/17.5).length,0);
       return lang?`<p class="ec-hinweis">${icon("warn")}<span>${lang===1?"Ein Text ist":`${lang} Texte sind`} zu lang für das Feld und ${lang===1?"wird":"werden"} sehr klein gedruckt. Kürzere Bezeichnung wählen oder „Kennzeichnung“ drucken.</span></p>`:""; })()}
     <p class="meta" style="margin:8px 4px 0">Lange Texte verkleinert die App automatisch. Je Reihe kommt eine Datei.</p>
     <details class="ec-eti-hilfe"><summary>So druckst du in der App</summary><ol><li>„Teilen“ tippen und „Pro Label Tool“ wählen – oder herunterladen und in der App unter „Öffnen“ laden.</li><li>Blöcke, Breiten und Texte sind schon eingestellt, nur noch drucken.</li><li>Streifen am Anfang der Reihe ansetzen – freie Plätze am Ende bleiben leer.</li></ol></details>`,
     `${/android/i.test(navigator.userAgent)?`<button class="btn-text" data-act="ecEtiApp">App öffnen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button><button class="btn-text" data-act="legEtiLaden">Herunterladen</button><button class="btn-text" data-act="legEtiTeilen">Teilen</button>`,{breit:true}); }
 async function legEtiAusgeben(L,teilen){ const ST=legEtiStreifen(L); if(!ST.length){ toast("Nichts zu beschriften"); return; }
-  const F=ST.map(st=>{ const name=bbFs(`${L.titel||"Verteiler"} Reihe ${st.nr}`); return new File([ecLbxs(name,st.p,st.T)],name+".lbxs",{type:"application/octet-stream"}); });
+  const F=await Promise.all(ST.map(async st=>{ const name=bbFs(`${L.titel||"Verteiler"} Reihe ${st.nr}`); return new File([ecLbxs(name,st.p,st.T,await legEtiBilder(st))],name+".lbxs",{type:"application/octet-stream"}); }));
   if(teilen&&navigator.canShare&&navigator.canShare({files:F})){ try{ await navigator.share({files:F,title:F.length===1?F[0].name:`Beschriftung ${L.titel||""}`.trim()}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
   F.forEach((f,i)=>setTimeout(()=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(f); a.download=f.name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500); },i*400));
   const was=F.length===1?"Brother-Datei":`${F.length} Brother-Dateien`; toast(teilen?`Teilen geht hier nicht – ${was} heruntergeladen`:`${was} heruntergeladen`); }
+
+/* Symbole je Stromkreis: Zeile antippen klappt die Auswahl auf; „Raten“ nimmt wieder den Vorschlag aus der Bezeichnung */
+let LSYM_OFFEN="";
+function legSymDlg(){ const L=legAkt(); if(!L) return; legEtiCfg(L); const E=legE(L).filter(e=>e.art==="sk");
+  const ic=k=>k?legSymSvg(k,26,true):`<span class="leg-sym-ic leer"></span>`;
+  dialog("Symbole",`<div class="leg-sym-l">${E.map(e=>{ const k=legSym(e), auf=LSYM_OFFEN===e.id;
+    return `<button type="button" class="leg-sym-z${auf?" auf":""}" data-act="legSymZ" data-id="${esc(e.id)}"><span class="leg-sym-ic">${ic(k)}</span><span class="lt"><b>${esc([String(e.kz||"").trim(),legEtiTextBez(e)||"Stromkreis"].filter(Boolean).join(" · "))}</b><small>${esc(k?(LEG_SYM_LISTE.find(x=>x[0]===k)||[,k])[1]:"kein Symbol")}${e.sym?"":" · automatisch"}</small></span>${icon(auf?"close":"chev")}</button>
+      ${auf?`<div class="leg-sym-g">${LEG_SYM_LISTE.map(([s,t])=>`<button type="button" class="leg-sym-w" data-act="legSymW" data-id="${esc(e.id)}" data-v="${s}" aria-pressed="${k===s}"><span class="leg-sym-ic">${ic(s)}</span><small>${esc(t)}</small></button>`).join("")}<button type="button" class="leg-sym-w" data-act="legSymW" data-id="${esc(e.id)}" data-v="keins" aria-pressed="${e.sym==="keins"}"><span class="leg-sym-ic">${ic("")}</span><small>Keins</small></button><button type="button" class="leg-sym-w" data-act="legSymW" data-id="${esc(e.id)}" data-v="" aria-pressed="false"><span class="leg-sym-ic">${icon("refresh")}</span><small>Automatisch</small></button></div>`:""}`; }).join("")}</div>`,
+    `<span style="flex:1"></span><button class="btn-text" data-act="legSymFertig">Fertig</button>`,{breit:true}); }
+document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act="legSymDlg"],[data-act="legSymZ"],[data-act="legSymW"],[data-act="legSymFertig"]'); if(!b) return; ev.stopPropagation(); ev.preventDefault();
+  const L=legAkt(); if(!L) return; const a=b.dataset.act;
+  if(a==="legSymDlg"){ LSYM_OFFEN=""; legSymDlg(); return; }
+  if(a==="legSymFertig"){ closeOverlays(); render(); return; }
+  if(a==="legSymZ"){ LSYM_OFFEN=LSYM_OFFEN===b.dataset.id?"":b.dataset.id; legSymDlg(); return; }
+  const e=legE(L).find(x=>x.id===b.dataset.id); if(!e) return; if(b.dataset.v) e.sym=b.dataset.v; else delete e.sym; LSYM_OFFEN=""; legSave(L); legSymDlg(); },true);
 
 /* ===== Stromkreis-Rechner: Spannungsfall, Abschaltbedingung (Zs), max. Länge, Belastbarkeit – und Vergleich mit dem letzten Messwert =====
    Vereinfachte Rechnung wie in der Ausbildung: Kupfer κ = 56 m/(Ω·mm²) bei 20 °C, cos φ = 1, Schutzleiter gleicher Querschnitt.
