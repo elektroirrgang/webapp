@@ -1,0 +1,19 @@
+{
+  "name": "irrgang-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP-Server für die Irrgang-Apps (Übersicht, EVSE, Gebäudetechnik, Baustelle) – KI-Zugriff zum Lesen und Schreiben",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/start.js",
+    "test": "node test/test.js",
+    "schluessel": "node src/schluessel.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "jose": "6.2.18",
+    "mssql": "12.8.1",
+    "zod": "4.6.7"
+  }
+}
