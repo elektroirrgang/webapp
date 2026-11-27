@@ -54,6 +54,7 @@ function hbMd(t,o={}){ const Z=String(t||"").replace(/\r/g,"").split("\n"); let 
     if(s==="[[aderfarben]]"){ zu(); h+=hbAderfarben(o.druck); return; }
     if(s==="[[arbeitstag]]"){ zu(); h+=hbArbeitstag(); return; }
     if(s==="[[sicherheitsregeln]]"){ zu(); h+=hbSicherheitsregeln(o.druck); return; }
+    if((m=s.match(/^>\s*!\s*(.+)/))){ zu(); h+=`<div class="hb-hinweis warn">${icon("warn")}<p>${hbInl(m[1])}</p></div>`; return; }
     if((m=s.match(/^>\s*(.+)/))){ zu(); h+=`<div class="hb-hinweis">${icon("info")}<p>${hbInl(m[1])}</p></div>`; return; }
     if((m=s.match(/^##\s+(.+)/))){ zu(); h+=`<h3>${hbInl(m[1])}</h3>`; return; }
     if((m=s.match(/^[-•·]\s+(.+)/))){ if(liste!=="ul"){ zu(); h+="<ul>"; liste="ul"; } h+=`<li>${hbInl(m[1])}</li>`; return; }
@@ -170,7 +171,7 @@ function hbArtikel(id){ hbKorrekturen(); const a=hbArt(id); if(!a) return `<div 
       <details><summary>Vorgeschlagener Text ansehen</summary><div class="hb-text">${hbMd(v.inhalt)}</div>${(v.checkliste||[]).length?`<ul>${v.checkliste.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}</details>
       <div class="hb-vor-k"><button type="button" class="btn-text" data-act="hbVorWeg" data-id="${esc(a.id)}" data-v="${esc(v.id)}">Ablehnen</button><button type="button" class="btn-tonal" data-act="hbVorOk" data-id="${esc(a.id)}" data-v="${esc(v.id)}">Übernehmen und freigeben</button></div></section>`).join("")}`
       :a.vorschlaege.length?`<p class="meta">${a.vorschlaege.length} Vorschlag${a.vorschlaege.length===1?"":"e"} wartet auf Freigabe.</p>`:""}
-    <div class="hb-fuss">${hbDarf()?`<button type="button" class="btn-tonal" data-act="hbEdit" data-id="${esc(a.id)}">${icon("edit")}Bearbeiten</button>${hbGilt(a)?"":`<button type="button" class="btn-filled" data-act="hbFrei" data-id="${esc(a.id)}">Freigeben</button>`}`
+    <div class="hb-fuss">${!hbGrossGenug()?`<p class="hb-handy">${icon("edit")}Bearbeiten und Änderungen vorschlagen gehen am PC oder iPad.</p>`:hbDarf()?`<button type="button" class="btn-tonal" data-act="hbEdit" data-id="${esc(a.id)}">${icon("edit")}Bearbeiten</button>${hbGilt(a)?"":`<button type="button" class="btn-filled" data-act="hbFrei" data-id="${esc(a.id)}">Freigeben</button>`}`
       :`<button type="button" class="btn-tonal" data-act="hbEdit" data-id="${esc(a.id)}">${icon("edit")}Änderung vorschlagen</button>`}</div>
     <div class="hb-info">${icon("info")}<span>${esc([kap,a.verfasser?`von ${a.verfasser}`:"",hbGilt(a)?hbStandText(a,true)+(a.frei&&a.frei.von&&a.frei.von!==a.verfasser?`, freigegeben von ${a.frei.von}`:""):""].filter(Boolean).join(" · "))}</span></div></div>`; }
 /* ---- Speichern ---- */
@@ -180,22 +181,24 @@ function hbFreigeben(id,w){ const a=hbArt(id); if(!a||!hbDarf()) return; const {
 /* ---- Editor ---- */
 let HB_ED=null;
 function hbEditor(id){ const a=id?hbArt(id):{id:"hb-"+uid(),kapitel:HB_KAPITEL[0][0],titel:"",inhalt:"",checkliste:[],fotos:[],stand:0}; if(!a) return;
+  if(!hbGrossGenug()){ toast("Artikel bearbeiten geht am PC oder iPad"); return; }
   HB_ED={id:a.id,neu:!id,fotos:[...(a.fotos||[])]}; const chef=hbDarf();
+  HB_BL=hbBauLesen(a.inhalt); if(!HB_BL.length) HB_BL=[hbBauNeu("text")]; HB_BAU_PLUS=null; HB_BAU_MODUS="bau"; HB_BAU_VORHER=null;
   dialog(id?(chef?"Artikel bearbeiten":"Änderung vorschlagen"):"Neuer Artikel",`<div class="fg1 hb-ed">
       ${tf("hbTitel","Titel",a.titel,{form:true,ph:"z. B. Verteiler bauen und beschriften"})}
       ${sf("hbKap","Kapitel",a.kapitel,HB_KAPITEL,{form:true})}
-      ${ta("hbInhalt","Text",a.inhalt,{form:true,ph:"## Zwischenüberschrift\n- Aufzählung\n**fett**"})}
+      <input type="hidden" data-f="hbInhalt" value="${esc(a.inhalt||"")}"><div id="hbBau" class="hbb-wrap"></div>
       ${ta("hbCk","Checkliste – ein Punkt pro Zeile (optional)",(a.checkliste||[]).join("\n"),{form:true})}
       <div class="hb-ed-fotos" id="hbEdFotos"></div>
       ${chef?"":ta("hbNotiz","Was hast du geändert und warum?","",{form:true,ph:"z. B. Steckdosenhöhe Küche bei uns 110 cm"})}
     </div>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-filled" data-act="hbEdOk">${chef?"Speichern und freigeben":"Vorschlag senden"}</button>`,{breit:true});
-  hbEdFotos(); }
+  hbEdFotos(); hbBauZeigen(); }
 function hbEdFotos(){ const el=document.getElementById("hbEdFotos"); if(!el||!HB_ED) return;
   el.innerHTML=`<div class="lbl">Fotos (${HB_ED.fotos.length} von 4)</div><div class="hb-fotos">${HB_ED.fotos.map((f,i)=>`<span class="hb-ed-f"><img src="${esc(f)}" alt=""><button type="button" data-act="hbEdFotoWeg" data-i="${i}" aria-label="Foto entfernen">${icon("close")}</button></span>`).join("")}
     ${HB_ED.fotos.length<4?`<button type="button" class="hb-ed-plus" data-act="hbEdFotoNeu" aria-label="Foto hinzufügen">${icon("cam")}</button>`:""}</div>`; }
 function hbEdOk(){ if(!HB_ED) return; const F=formVals(), t=(F.hbTitel||"").trim(); if(!t){ toast("Bitte einen Titel eingeben"); return; }
-  const w={titel:t,kapitel:F.hbKap||HB_KAPITEL[0][0],inhalt:F.hbInhalt||"",checkliste:String(F.hbCk||"").split("\n").map(x=>x.trim()).filter(Boolean),fotos:HB_ED.fotos};
+  const w={titel:t,kapitel:F.hbKap||HB_KAPITEL[0][0],inhalt:document.getElementById("hbBau")?hbBauText(HB_BL):(F.hbInhalt||""),checkliste:String(F.hbCk||"").split("\n").map(x=>x.trim()).filter(Boolean),fotos:HB_ED.fotos};
   const a=HB_ED.neu?{id:HB_ED.id,...w,stand:0}:hbArt(HB_ED.id); if(!a) return;
   if(hbDarf()){ if(HB_ED.neu){ saveRec("handbuch",{id:a.id,...w,apps:[],stand:1,frei:{von:ME.name||"",am:today()},vorschlaege:[]},true); } else hbFreigeben(a.id,w);
     const id=a.id; HB_ED=null; closeOverlays(); go({v:"hb",id}); toast("Gespeichert und freigegeben"); return; }

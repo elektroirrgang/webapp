@@ -1906,7 +1906,7 @@ function render(){ profilAnwenden(); setTimeout(()=>{ if(typeof kalPaneKlasse===
   if(login) body=loginSeite("Übersicht",loginView());
   else if(nav.v==="start"){ title=startTitel(); sub=startUnter(); body=startView(); }
   else if(nav.v==="fristen"){ title="Prüffristen"; body=fristenView(); if(FR_TAB!=="kunden"&&typeof bfDarf==="function"&&bfDarf()) fab=["frPlus",FR_TAB==="betrieb"?"Frist":"Neu","add"]; }
-  else if(nav.v==="hb"){ if(nav.id){ const a=hbArt(nav.id); title=a?a.titel:"Handbuch"; sub="Betriebshandbuch"; body=hbArtikel(nav.id); } else { title="Betriebshandbuch"; body=hbUebersicht(); fab=hbDarf()?["hbNeu","Artikel","add"]:null; } }
+  else if(nav.v==="hb"){ if(nav.id){ const a=hbArt(nav.id); title=a?a.titel:"Handbuch"; sub="Betriebshandbuch"; body=hbArtikel(nav.id); } else { title="Betriebshandbuch"; body=hbUebersicht(); fab=hbDarf()&&hbGrossGenug()?["hbNeu","Artikel","add"]:null; } }
   else if(nav.v==="uebersicht"){ title="Statistik"; body=uebersichtView()+(SYNC_ON?"":`<p class="hint">Daten auf diesem Gerät – mit der Microsoft-Anbindung kommen die Daten aller Mitarbeiter dazu.</p>`); }
   else if(nav.v==="kalender"){ title=kalTitel(); body=kalenderView(); fab=["kalNeu","Termin","add"]; }
   else if(nav.v==="geraete"){ title="Messgeräte"; gerVorlagen(); body=geraeteView(); fab=ME.admin?["gerNeu","Messgerät","add"]:null; }
