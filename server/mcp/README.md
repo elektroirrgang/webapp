@@ -12,7 +12,7 @@ KI (Nexilo …) ──MCP──► Irrgang MCP-Server ──► Speicher
 Der Speicher ist austauschbar (`SPEICHER=` in `.env`). Die Werkzeuge bleiben gleich, wenn die Apps später
 von SharePoint auf den SQL Server umziehen.
 
-## Werkzeuge (Stand 0.1)
+## Werkzeuge (Stand 0.2)
 
 | Lesen | Schreiben (nur mit Recht „schreiben“) |
 |---|---|
@@ -24,15 +24,48 @@ von SharePoint auf den SQL Server umziehen.
 | `handbuch_suchen`, `handbuch_artikel_lesen` | `handbuch_vorschlag` – gilt erst nach Freigabe in der App |
 | `termine_auflisten`, `material_anforderungen` | |
 
-**Bewusst nicht dabei:** Löschen, freies Ändern beliebiger Datensätze, Prüfprotokolle verändern.
+Für Dienste wie Nexilo **bewusst nicht dabei:** Löschen, freies Ändern beliebiger Datensätze, Prüfprotokolle verändern.
 Jede Änderung steht im Datensatz (`updatedBy` = Name + „(KI)“, `quelle: "mcp"`) und im MCP-Protokoll.
+
+### Entwickler-Werkzeuge (nur Recht „entwickler“)
+
+Für die Arbeit an den Apps mit Claude: alles sehen, Fehler finden, reparieren – nichts geht verloren.
+
+| Werkzeug | Wofür |
+|---|---|
+| `dev_datenarten` | alle Datenarten mit Anzahl aktiv/gelöscht und letzter Änderung |
+| `dev_felder` | Aufbau einer Datenart aus den echten Daten (Felder, Typen, Häufigkeit, Beispiel) |
+| `dev_abfragen` | Bedingungen auf Felder (`a.naechste kleiner 2026-12-31`), Volltext, Sortierung, nur bestimmte Felder, Anzahl |
+| `dev_lesen` | Datensatz roh, auch gelöschte |
+| `dev_suche_alles` | ein Begriff über alle Datenarten (Auftragsnummer, Name, ID) |
+| `dev_pruefen` | Datenqualität: Verweise ins Leere, doppelte Kunden, fehlende id/updated |
+| `dev_aendern` | Felder setzen/entfernen (Pfade mit Punkt), Grund ist Pflicht |
+| `dev_anlegen` | Datensatz in beliebiger Datenart |
+| `dev_loeschen` | nur `deleted: true` wie in den Apps – wiederherstellbar |
+| `dev_rueckgaengig` | holt die Fassung aus der Sicherung zurück (auch Anlegen/Löschen) |
+| `dev_protokoll` | wer hat wann was über MCP geändert |
+
+Vor jeder Änderung wird die alte Fassung in `mcp_sicherung` abgelegt. Geänderte Datensätze bekommen ein neues
+`updated`, damit die Apps sie beim nächsten Abgleich übernehmen.
+
+### Mit Claude verbinden (Entwickler)
+
+Schlüssel erzeugen: `npm run schluessel -- "Max" entwickler`. Dann in **Claude Code**:
+
+```
+claude mcp add --transport http irrgang https://mcp.elektro-irrgang.de/mcp --header "Authorization: Bearer irr_…"
+```
+
+> Datenschutz: Was Claude über MCP abfragt, geht an Anthropic (USA). Für Firmen- und Kundendaten vorher mit
+> Joachim klären und ein Geschäftskonto mit Auftragsverarbeitungsvertrag nutzen.
 
 ## Sicherheit
 
 - Der Server lauscht nur auf `127.0.0.1`. Von außen geht es ausschließlich über den **Cloudflare Tunnel** (kein offener Port am Router).
 - Zugang nur mit **Schlüssel** (`Authorization: Bearer irr_…`) oder **Microsoft-Token** der Firma.
   In `.env` stehen nur SHA-256-Hashes der Schlüssel.
-- Jeder Schlüssel hat entweder „lesen“ oder „schreiben“. Ein Lese-Schlüssel sieht die Schreib-Werkzeuge gar nicht.
+- Jeder Schlüssel hat „lesen“, „schreiben“ oder „entwickler“. Werkzeuge außerhalb der eigenen Rechte sind gar nicht sichtbar.
+- Microsoft-Anmeldung: Rolle Admin/Entwickler → „entwickler“, alle anderen → „schreiben“.
 - Keine Geheimnisse im Repo: `.env` steht in `.gitignore`.
 
 ## Einrichten auf dem Windows-Server (Kurzfassung)
@@ -42,7 +75,7 @@ Jede Änderung steht im Datensatz (`updatedBy` = Name + „(KI)“, `quelle: "mc
 1. **Node.js 22 LTS** installieren (nodejs.org, Windows-Installer).
 2. Diesen Ordner nach `C:\Irrgang\mcp` kopieren, dort `npm install --omit=dev` ausführen.
 3. `.env.beispiel` nach `.env` kopieren und ausfüllen.
-4. Schlüssel für Nexilo erzeugen: `npm run schluessel -- "Nexilo" schreiben` – Hash in `.env`, Schlüssel an Nexilo.
+4. Schlüssel erzeugen: `npm run schluessel -- "Nexilo" schreiben` bzw. `npm run schluessel -- "Max" entwickler` – Hash in `.env`, Schlüssel an Nexilo bzw. in Claude.
 5. Testlauf: `npm start` → im Browser `http://127.0.0.1:8787/gesund` muss `{"ok":true…}` zeigen.
 6. Als Windows-Dienst einrichten (startet nach Neustart von selbst), z. B. mit NSSM: `nssm install IrrgangMCP "C:\Program Files\nodejs\node.exe" "C:\Irrgang\mcp\src\start.js"`.
 7. Cloudflare Tunnel: `mcp.elektro-irrgang.de` → `http://127.0.0.1:8787`.
