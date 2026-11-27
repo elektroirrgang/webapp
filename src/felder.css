@@ -2516,22 +2516,22 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
 .hb-af-l>*{padding:8px 0;border-top:1px solid color-mix(in srgb,var(--on-surface) 8%,transparent)}
 .hb-af-l .hb-dots{justify-content:flex-end;margin:0}.hb-af-l .hb-af-f{grid-column:1/-1;padding:0 0 8px;margin-top:-4px;border:0;font-size:12.5px;color:var(--on-sv)}
 .hb-af-h{margin:10px 0 2px;font-size:14px;line-height:1.45;color:var(--on-sv)}
-.hb5{--c1:#1565C0;--c2:#2E7D32;--c3:#D35400;--c4:#6A1B9A;--c5:#C62828;margin:4px 0 18px}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hb5{--c1:#8AB8F2;--c2:#82C98A;--c3:#F5A85A;--c4:#CFA0E6;--c5:#F28B82}}
-:root[data-theme="dark"] .hb5{--c1:#8AB8F2;--c2:#82C98A;--c3:#F5A85A;--c4:#CFA0E6;--c5:#F28B82}
-.hb5-kopf{margin:0 4px 8px;font-size:13px;font-weight:800;letter-spacing:.02em;color:var(--on-sv)}
+.hb5{--c1:#1A4FA8;--c2:#2E7D32;--c3:#E67E10;--c4:#6A3FA0;--c5:#1A4FA8;margin:4px 0 18px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hb5{--c1:#8AB8F2;--c2:#82C98A;--c3:#F5A85A;--c4:#CFA0E6;--c5:#8AB8F2}}
+:root[data-theme="dark"] .hb5{--c1:#8AB8F2;--c2:#82C98A;--c3:#F5A85A;--c4:#CFA0E6;--c5:#8AB8F2}
+.hb5-kopf{margin:0 4px 10px;font-size:14px;font-weight:700;line-height:1.35;color:var(--on-sv)}
 .hb5-r{--c:var(--c1);display:grid;grid-template-columns:52% 1fr;grid-template-areas:"t t" "b k" "h h";gap:8px 12px;align-items:center;padding:12px;margin-bottom:8px;border-radius:20px;background:var(--sc)}
 .hb5-c2{--c:var(--c2)}.hb5-c3{--c:var(--c3)}.hb5-c4{--c:var(--c4)}.hb5-c5{--c:var(--c5)}
-.hb5-bild{position:relative;border-radius:14px;background:var(--sc-low);padding:4px}.hb5-bild svg{display:block;width:100%;height:auto}
+.hb5-bild{position:relative;border-radius:14px;background:#fff;padding:4px;display:flex;justify-content:center}.hb5-bild img{display:block;width:100%;max-height:170px;object-fit:contain}
 .hb5-n{position:absolute;left:-6px;top:-6px;width:28px;height:28px;border-radius:50%;background:var(--c);color:var(--surface);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800}
 .hb5-bild{grid-area:b}
 .hb5-t{grid-area:t;display:flex;align-items:center;gap:10px;margin:0;font-size:16.5px;font-weight:800;line-height:1.2;color:var(--c)}
 .hb5-k{grid-area:k;margin:0;font-size:14px;line-height:1.38}
 .hb5-h{grid-area:h;display:flex;gap:8px;align-items:flex-start;margin:2px 0 0;padding:8px 10px;border-radius:12px;background:color-mix(in srgb,var(--c) 12%,transparent);font-size:13px;line-height:1.35}
 .hb5-h .ic{flex:none;width:18px;height:18px;color:var(--c)}
-.hb5-fuss{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:16px;background:var(--wip-c,var(--sc-high));color:var(--on-wip-c,inherit);font-size:14px;line-height:1.4}.hb5-fuss p{margin:0}.hb5-fuss .ic{flex:none;width:20px;height:20px}
-@media (min-width:900px){.hb5:not(.druck){display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.hb5:not(.druck) .hb5-kopf,.hb5:not(.druck) .hb5-fuss{grid-column:1/-1}
-  .hb5:not(.druck) .hb5-r{grid-template-columns:1fr;grid-template-areas:"b" "t" "k" "h";align-content:start;align-items:start;margin:0}}
+.hb5-fuss{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:16px;background:color-mix(in srgb,var(--c1) 12%,var(--sc));color:inherit;font-size:14px;line-height:1.4}.hb5-fuss p{margin:0}.hb5-fuss .ic{flex:none;width:22px;height:22px;color:var(--c1)}
+@media (min-width:900px){.hb5:not(.druck){display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.hb5:not(.druck) .hb5-bild{height:170px}.hb5:not(.druck) .hb5-t{hyphens:manual}.hb5:not(.druck) .hb5-bild img{height:100%;max-height:none}.hb5:not(.druck) .hb5-kopf,.hb5:not(.druck) .hb5-fuss{grid-column:1/-1}
+  .hb5:not(.druck) .hb5-r{min-width:0;grid-template-columns:minmax(0,1fr);hyphens:auto;overflow-wrap:break-word;grid-template-areas:"b" "t" "k" "h";align-content:start;align-items:start;margin:0}}
 .hb5.druck .hb5-r{grid-template-columns:48mm 1fr;grid-template-areas:"b t" "b k" "b h";padding:2.5mm 3mm;margin-bottom:2mm}.hb5.druck .hb5-t{font-size:11pt}.hb5.druck .hb5-k,.hb5.druck .hb5-h{font-size:9.5pt}
 .hb-aktionen{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 4px}.hb-aktionen button{display:inline-flex;align-items:center;gap:8px}.hb-aktionen .ic{width:20px;height:20px}
 #hbDruck{display:none}

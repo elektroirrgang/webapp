@@ -71,71 +71,20 @@ function hbAderfarben(druck){ if(druck) return `<div class="hb-af">${HB_AF.map(h
     <div class="hb-hinweis warn">${icon("warn")}<p>Farben in Altanlagen nie trauen – vor dem Anklemmen messen.</p></div></div>`; }
 /* Die fünf Sicherheitsregeln als Schaubild (DIN VDE 0105-100) – [[sicherheitsregeln]] oder automatisch im Artikel „Die fünf Sicherheitsregeln“.
    Zwei Richtungen: „Vor der Arbeit“ 1 → 5, „Nach der Arbeit“ in umgekehrter Reihenfolge 5 → 1. */
-const HB5_SVG=(()=>{ const K="var(--on-surface)";
-  /* gemeinsame Verläufe – realistische Farben, unabhängig vom Hell-/Dunkelmodus */
-  const defs=`<defs>
-    <linearGradient id="h5ls" x1="0" x2="1"><stop offset="0" stop-color="#d9dbde"/><stop offset=".18" stop-color="#f7f7f8"/><stop offset=".85" stop-color="#eceef0"/><stop offset="1" stop-color="#c9ccd0"/></linearGradient>
-    <linearGradient id="h5cu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0b183"/><stop offset=".45" stop-color="#c8743f"/><stop offset="1" stop-color="#8a4a22"/></linearGradient>
-    <linearGradient id="h5gelb" x1="0" x2="1"><stop offset="0" stop-color="#e3a400"/><stop offset=".35" stop-color="#ffd23f"/><stop offset="1" stop-color="#d99a00"/></linearGradient>
-    <linearGradient id="h5sw" x1="0" x2="1"><stop offset="0" stop-color="#111"/><stop offset=".4" stop-color="#3a3a3a"/><stop offset="1" stop-color="#151515"/></linearGradient>
-    <linearGradient id="h5rail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c7cbcf"/><stop offset=".5" stop-color="#eef0f2"/><stop offset="1" stop-color="#9ea3a8"/></linearGradient>
-    <linearGradient id="h5matte" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb21a"/><stop offset="1" stop-color="#e88a00"/></linearGradient>
-    <pattern id="h5riefen" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0 6L6 0" stroke="#c46f00" stroke-width="1" opacity=".55"/></pattern></defs>`;
-  /* 1-poliger LS (18 mm) auf Hutschiene: Klemmschrauben, Typschild, Kipphebel unten = AUS */
-  const ls=(x,y,an,lbl="B16")=>`<g transform="translate(${x} ${y})">
-    <rect width="30" height="86" rx="3" fill="url(#h5ls)" stroke="#9aa0a6"/><rect x="3" y="4" width="24" height="12" rx="2" fill="#dfe2e5"/><circle cx="15" cy="10" r="4" fill="#b8bcc0" stroke="#7d8287"/><path d="M12 10h6M15 7v6" stroke="#6b7075" stroke-width="1.2"/>
-    <rect x="3" y="70" width="24" height="12" rx="2" fill="#dfe2e5"/><circle cx="15" cy="76" r="4" fill="#b8bcc0" stroke="#7d8287"/><path d="M12 76h6M15 73v6" stroke="#6b7075" stroke-width="1.2"/>
-    <rect x="6" y="22" width="18" height="30" rx="3" fill="#c4c8cc"/><rect x="8" y="${an?23:36}" width="14" height="15" rx="2.5" fill="${an?"#2b2b2b":"#3a3a3a"}"/><rect x="8" y="${an?23:36}" width="14" height="3" rx="1.5" fill="#5a5a5a"/>
-    <text x="15" y="62" text-anchor="middle" font-size="7.5" font-weight="800" fill="#333">${lbl}</text><text x="25" y="${an?28:50}" font-size="6" font-weight="800" fill="${an?"#c62828":"#2e7d32"}">${an?"I":"0"}</text></g>`;
-  const schiene=(x,y,w)=>`<rect x="${x}" y="${y}" width="${w}" height="10" fill="url(#h5rail)"/>${Array.from({length:Math.floor(w/14)},(_,i)=>`<rect x="${x+5+i*14}" y="${y+3}" width="6" height="4" rx="1" fill="#8d9297"/>`).join("")}`;
-  const blitzAus=(x,y)=>`<g transform="translate(${x} ${y})"><circle cx="26" cy="26" r="25" fill="#fff" stroke="#c62828" stroke-width="4"/><path d="M30 8L16 29h9l-4 16 15-22h-9z" fill="#f2b705" stroke="#5a4500" stroke-width="1"/><path d="M8 44L44 8" stroke="#c62828" stroke-width="5" stroke-linecap="round"/></g>`;
-  const schloss=(x,y)=>`<g transform="translate(${x} ${y})"><path d="M7 16V10a8 8 0 0 1 16 0v6" fill="none" stroke="#b9bec3" stroke-width="3.5"/><rect x="2" y="15" width="26" height="22" rx="4" fill="#d32f2f"/><rect x="2" y="15" width="26" height="5" rx="2" fill="#ef5350"/><circle cx="15" cy="25" r="3" fill="#222"/><path d="M15 26v5" stroke="#222" stroke-width="2"/></g>`;
-  const schild=(x,y)=>`<g transform="translate(${x} ${y})"><rect width="104" height="70" rx="4" fill="#fff" stroke="#c62828" stroke-width="4"/><circle cx="22" cy="24" r="13" fill="#fff" stroke="#c62828" stroke-width="3.5"/><path d="M13 33l18-18" stroke="#c62828" stroke-width="3.5"/><path d="M24 15l-6 9h5l-2 8 7-10h-5z" fill="#222"/>
-    <text x="41" y="21" font-size="11.5" font-weight="900" fill="#222">Nicht</text><text x="41" y="34" font-size="11.5" font-weight="900" fill="#222">schalten!</text><text x="8" y="56" font-size="10" font-weight="700" fill="#222">Es wird gearbeitet</text></g>`;
-  /* Sammelschienen / Leiter */
-  const schienen=(x,y,w)=>[0,1,2].map(i=>`<rect x="${x}" y="${y+i*26}" width="${w}" height="12" rx="2" fill="url(#h5cu)"/><text x="${x-6}" y="${y+i*26+10}" text-anchor="end" font-size="10" font-weight="800" fill="${K}">L${i+1}</text>`).join("");
-  return [
-    /* 1 Freischalten: drei LS auf Hutschiene, alle auf 0 */
-    `${defs}${schiene(24,52,124)}${ls(28,14,false)}${ls(66,14,false)}${ls(104,14,false)}
-     <path d="M156 34v40" stroke="#1565c0" stroke-width="5" stroke-linecap="round"/><path d="M147 66l9 12 9-12" fill="#1565c0"/><text x="156" y="94" text-anchor="middle" font-size="10" font-weight="800" fill="${K}">AUS</text>${blitzAus(206,30)}`,
-    /* 2 Sichern: LS mit Sperrelement + Vorhängeschloss, Verbotsschild */
-    `${defs}${schiene(20,52,60)}${ls(34,14,false)}<rect x="37" y="48" width="24" height="12" rx="3" fill="#d32f2f"/><circle cx="49" cy="54" r="3" fill="#7a1212"/>${schloss(34,62)}
-     ${schild(150,40)}`,
-    /* 3 Spannungsfreiheit: zweipoliger Spannungsprüfer (gelb/schwarz, Anzeige, LED-Skala, Spiralkabel, zweiter Griff) an Klemmen L und N */
-    `${defs}<g transform="rotate(-8 70 70)"><rect x="40" y="14" width="56" height="104" rx="14" fill="url(#h5gelb)" stroke="#8a6200"/><rect x="44" y="70" width="48" height="44" rx="10" fill="url(#h5sw)"/>
-       <rect x="50" y="22" width="36" height="20" rx="3" fill="#cfe3c8" stroke="#555"/><text x="68" y="37" text-anchor="middle" font-size="13" font-weight="900" font-family="monospace" fill="#1d3b16">0 V</text>
-       ${["12","24","50","120","230","400"].map((v,i)=>`<circle cx="${52+i*6.4}" cy="50" r="2.4" fill="${i?"#7a8a80":"#43a047"}"/>`).join("")}<text x="68" y="62" text-anchor="middle" font-size="6.5" font-weight="700" fill="#5a4500">12 · 50 · 120 · 230 · 400</text>
-       <rect x="62" y="0" width="12" height="16" rx="3" fill="#222"/><rect x="66" y="-14" width="4" height="16" fill="#c0c4c8"/>
-       <circle cx="58" cy="92" r="6" fill="#444"/><circle cx="78" cy="92" r="6" fill="#444"/></g>
-     <path d="M84 118c8 12 16-4 24 6s16-8 24 4 16-8 24 2 12-6 40-12" stroke="#1a1a1a" stroke-width="4" fill="none" stroke-linecap="round"/>
-     <g transform="rotate(14 190 70)"><rect x="176" y="40" width="26" height="76" rx="11" fill="url(#h5sw)"/><rect x="176" y="40" width="26" height="22" rx="10" fill="url(#h5gelb)"/><rect x="185" y="22" width="8" height="20" rx="2" fill="#222"/><rect x="187.5" y="8" width="3" height="16" fill="#c0c4c8"/></g>
-     <g transform="translate(232 18)"><rect width="56" height="58" rx="6" fill="#e9ebed" stroke="#9aa0a6"/>${["L","N","PE"].map((t,i)=>`<rect x="${6+i*17}" y="10" width="13" height="30" rx="2" fill="${["#8d5a3b","#1e88e5","#9ccc65"][i]}"/><circle cx="${12.5+i*17}" cy="18" r="3.5" fill="#b8bcc0" stroke="#666"/><text x="${12.5+i*17}" y="52" text-anchor="middle" font-size="8" font-weight="800" fill="#333">${t}</text>`).join("")}</g>
-     <circle cx="276" cy="120" r="9" fill="#2e7d32"/><path d="M271 120l3.5 3.5 6.5-7" stroke="#fff" stroke-width="2.6" fill="none"/>`,
-    /* 4 Erden und kurzschließen: Kupferschienen, Erdungsklemmen, Kurzschlussseil, grün-gelbes Erdungsseil zum Erder */
-    `${defs}${schienen(30,14,250)}
-     ${[0,1,2].map(i=>`<g transform="translate(150 ${8+i*26})"><rect x="-2" y="0" width="22" height="24" rx="3" fill="#5f6368"/><rect x="2" y="4" width="14" height="16" rx="2" fill="#80868b"/><rect x="6" y="-8" width="6" height="10" rx="1" fill="#3c4043"/></g>`).join("")}
-     <path d="M168 18C188 26 188 38 168 44C188 52 188 64 168 70" stroke="#b0b0b0" stroke-width="5" fill="none"/><path d="M168 18C188 26 188 38 168 44C188 52 188 64 168 70" stroke="#d58a50" stroke-width="2" fill="none"/>
-     <path d="M178 72C190 92 214 96 226 104" stroke="#2e7d32" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M178 72C190 92 214 96 226 104" stroke="#fdd835" stroke-width="6" stroke-dasharray="7 7" fill="none" stroke-linecap="round"/>
-     <rect x="222" y="98" width="20" height="14" rx="3" fill="#5f6368"/><path d="M232 112v8M218 120h28M223 125h18M228 130h8" stroke="${K}" stroke-width="2.5"/>`,
-    /* 5 Abdecken oder abschranken: isolierende Matte über Schienen, Absperrkette mit Pfosten und Warnzeichen */
-    `${defs}${schienen(30,12,250)}
-     <path d="M126 4h150a6 6 0 0 1 6 6v72a6 6 0 0 1-6 6H126z" fill="url(#h5matte)"/><path d="M126 4h150a6 6 0 0 1 6 6v72a6 6 0 0 1-6 6H126z" fill="url(#h5riefen)"/><rect x="126" y="4" width="6" height="84" fill="#c46f00"/>
-     <g transform="translate(206 22)"><path d="M0 34L20 0l20 34z" fill="#f2b705" stroke="#222" stroke-width="2.5" stroke-linejoin="round"/><path d="M22 8l-7 13h6l-3 10 9-14h-6z" fill="#222"/></g>
-     ${[34,108].map(x=>`<g transform="translate(${x} 86)"><rect x="-4" y="0" width="8" height="40" rx="2" fill="#fff" stroke="#b0b0b0"/>${[0,1,2].map(j=>`<rect x="-4" y="${4+j*12}" width="8" height="6" fill="#d32f2f"/>`).join("")}<ellipse cx="0" cy="40" rx="11" ry="3.5" fill="#d32f2f"/></g>`).join("")}
-     <path d="M34 92Q71 110 108 92" stroke="#d32f2f" stroke-width="3" fill="none" stroke-dasharray="6 4"/><path d="M34 92Q71 110 108 92" stroke="#fff" stroke-width="3" fill="none" stroke-dasharray="6 4" stroke-dashoffset="5"/>`
-  ].map(x=>`<svg viewBox="0 0 300 130" role="img" aria-hidden="true">${x}</svg>`); })();
+/* Die 5 Sicherheitsregeln – Bilder und Texte aus Max' Vorlage (selbst mit ChatGPT erstellt, 27.11.2026), Bilder 3-fach hochgerechnet */
+const HB5_BILD=n=>`../brand/handbuch/5sr-${n}.webp`;
 const HB5=[
-  {t:"Freischalten",k:"Anlage allpolig von allen Einspeisungen trennen – auch PV, Speicher, USV, Notstrom."},
-  {t:"Gegen Wiedereinschalten sichern",k:"Abschließen, Sicherungen mitnehmen, Schild „Nicht schalten!“ mit Name und Datum."},
-  {t:"Spannungsfreiheit feststellen",k:"An der Arbeitsstelle, allpolig – nur mit zweipoligem Spannungsprüfer.",h:"Prüfen – messen – prüfen: Prüfer vorher und nachher an einer bekannten Spannung testen. Kein Phasenprüfer, kein Multimeter."},
-  {t:"Erden und kurzschließen",k:"Erst erden, dann kurzschließen – schützt, falls doch Spannung zurückkommt.",h:"Niederspannung: darf entfallen, wenn keine Spannung zurückkommen kann. Bei PV, Freileitung, Einspeisern und über 1.000 V immer."},
-  {t:"Benachbarte, unter Spannung stehende Teile abdecken oder abschranken",k:"Was in der Nähe unter Spannung bleibt, isolierend abdecken oder abschranken."}];
-/* Alle fünf auf einen Blick, untereinander – kein Durchklicken (Max 27.11.2026: „die Jungs haben keinen Bock, sich durchzuklicken“) */
+  {t:"Freischalten",k:"Anlage oder Anlagenteil vollständig von allen Spannungsquellen trennen."},
+  {t:"Gegen Wiedereinschalten sichern",k:"Wiedereinschalten verhindern, z. B. durch Abschließen, Warnschild, Entfernen von Sicherungen oder Verriegeln."},
+  {t:"Spannungsfreiheit feststellen",k:"Unmittelbar vor Arbeitsbeginn die Spannungsfreiheit mit einem zweipoligen Spannungsprüfer feststellen.",h:"Vor und nach der Messung Gerät an einer bekannten Spannungsquelle prüfen: Prüfen – Messen – Prüfen."},
+  {t:"Erden und Kurzschließen",k:"Bei Bedarf freigeschaltete Anlagenteile erden und kurzschließen, um Induktionsspannungen zu vermeiden.",h:"In Niederspannungsanlagen häufig nicht erforderlich, in Mittel- und Hochspannung immer beachten."},
+  {t:"Benachbarte, unter Spannung stehende Teile abdecken oder abschranken",k:"Spannungsführende Teile in der Nähe abdecken oder abschranken, um versehentlichen Kontakt zu verhindern."}];
+/* Alle fünf auf einen Blick, untereinander (PC: nebeneinander) – kein Durchklicken */
 function hbSicherheitsregeln(druck){
-  return `<div class="hb5${druck?" druck":""}"><div class="hb5-kopf">Immer in dieser Reihenfolge</div>
-    ${HB5.map((r,i)=>`<div class="hb5-r hb5-c${i+1}"><div class="hb5-bild">${HB5_SVG[i]}<span class="hb5-n">${i+1}</span></div>
+  return `<div class="hb5${druck?" druck":""}"><div class="hb5-kopf">Immer in dieser Reihenfolge anwenden – für sicheres Arbeiten an elektrischen Anlagen.</div>
+    ${HB5.map((r,i)=>`<div class="hb5-r hb5-c${i+1}"><div class="hb5-bild"><img src="${HB5_BILD(i+1)}" alt="" loading="lazy"><span class="hb5-n">${i+1}</span></div>
       <h4 class="hb5-t">${esc(r.t)}</h4><p class="hb5-k">${esc(r.k)}</p>${r.h?`<p class="hb5-h">${icon("info")}<span>${esc(r.h)}</span></p>`:""}</div>`).join("")}
-    <div class="hb5-fuss">${icon("warn")}<p><b>Keine Regel auslassen, Reihenfolge nicht ändern.</b> Nach der Arbeit geht es rückwärts: 5&nbsp;→&nbsp;1.</p></div></div>`; }
+    <div class="hb5-fuss">${icon("bulb")}<p><b>Grundprinzip:</b> Nur wenn alle fünf Regeln in der richtigen Reihenfolge beachtet werden, ist sicheres Arbeiten gewährleistet. <b>Keine Regel auslassen. Keine Reihenfolge ändern.</b></p></div></div>`; }
 /* Artikel zu den Sicherheitsregeln bekommt das Schaubild auch ohne [[sicherheitsregeln]] im Text – ganz oben,
    die Erklärtexte darunter. Die nummerierte Liste „1. Freischalten … 5. …“ (samt Überschrift) entfällt dann. */
 function hbMitSchaubild(a){ let t=String(a.inhalt||"");
