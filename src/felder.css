@@ -2614,3 +2614,11 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
 .hb-at-klein{margin:0 4px 10px;font-size:13px;color:var(--on-sv)}
 .hb-d .hb-at-tab{break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .zt-pause{margin-top:14px}.zt-pl{margin:0 4px 6px;font-size:12.5px;font-weight:700;color:var(--on-sv)}.zt-pause .hb-af-seg{margin-bottom:8px}.zt-pe{margin-bottom:8px}.zt-ph{margin:2px 4px 0;font-size:13px;line-height:1.4;color:var(--on-sv)}
+/* Handbuch: Info ganz unten statt Meta-Zeile oben; Tabellen mit 3+ Spalten am Handy als Karten */
+.hb-info{display:flex;gap:8px;align-items:flex-start;margin:18px 0 4px;padding:10px 12px;border-radius:14px;background:var(--sc);font-size:12.5px;line-height:1.4;color:var(--on-sv)}.hb-info .ic{flex:none;width:16px;height:16px;margin-top:1px}
+.hb-tk{display:none}
+@media (max-width:600px){.hb-tk{display:block;margin:4px 0 14px}.hb-tab-w.mit-karten{display:none}}
+.hb-tk-r{padding:12px 14px;margin-bottom:8px;border-radius:18px;background:var(--sc)}.hb-tk-r h4{margin:0 0 6px;font-size:16px;font-weight:800}
+.hb-tk-z{display:grid;grid-template-columns:96px 1fr;gap:10px;padding:6px 0;border-top:1px solid color-mix(in srgb,var(--on-surface) 8%,transparent);font-size:15px;line-height:1.45}
+.hb-tk-z>span{font-size:12.5px;font-weight:700;color:var(--on-sv);padding-top:2px}
+.hb-d .hb-tk{display:none!important}.hb-d .hb-tab-w.mit-karten{display:block!important}

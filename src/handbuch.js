@@ -8,12 +8,15 @@
    Keine Lesepflicht (Max 27.11.2026: „gezwungenes Gelesen macht keinen Sinn“) – stattdessen werden kürzlich neue oder
    geänderte Artikel 14 Tage lang markiert. Alte profile.hbGelesen-Einträge bleiben liegen, werden aber nicht mehr benutzt. */
 const hbDarf=()=>typeof anfVerw==="function"?anfVerw():!!ME.admin;
-function hbAlle(){ const R=new Map(live("handbuch").map(r=>[r.id,r])), out=[];
+function hbAlle(){ const R=new Map(live("handbuch").map(r=>[r.id,r])), R0=new Set(R.keys()), out=[];
   HB_VORLAGE.forEach(v=>{ const r=R.get(v.id); out.push(r?{...v,...r,vorlage:true}:{...v,vorlage:true,neu:true}); R.delete(v.id); });
   R.forEach(r=>out.push({...r}));
   const ord=Object.fromEntries(HB_KAPITEL.map(([k],i)=>[k,i]));
   out.forEach(a=>{ if(HB_KAP_ALT[a.kapitel]) a.kapitel=HB_KAP_ALT[a.kapitel]; });
-  return out.map(a=>({...a,checkliste:a.checkliste||[],fotos:a.fotos||[],vorschlaege:(a.vorschlaege||[]).filter(x=>!x.erledigt)}))
+  /* Eingespieltes Handbuch (hat „ord“), unverändert seit dem Einspielen, noch ohne Verfasser: Joachim ist der Verfasser,
+     nicht wer es eingespielt hat (Max 27.11.2026) – gilt für die Anzeige, bis jemand „Verfasser und Ausgabe“ speichert */
+  const alt=a=>a.ord!=null&&+a.stand===1&&!a.verfasser&&R0.has(a.id)?{...a,verfasser:HB_VERFASSER,ausgabe:a.ausgabe||"05.2026",frei:{...(a.frei||{}),von:HB_VERFASSER}}:a;
+  return out.map(alt).map(a=>({...a,checkliste:a.checkliste||[],fotos:a.fotos||[],vorschlaege:(a.vorschlaege||[]).filter(x=>!x.erledigt)}))
     .sort((a,b)=>(ord[a.kapitel]??99)-(ord[b.kapitel]??99)||(a.ord??500)-(b.ord??500)); }
 const hbArt=id=>hbAlle().find(a=>a.id===id)||null;
 const hbGilt=a=>+a.stand>0;
@@ -39,7 +42,8 @@ function hbTabelle(T){ const K=T[0], R=T.slice(1); if(!R.length) return "";
   if(R.some(r=>!r[0])){ const G=[]; R.forEach(r=>{ if(r[0]||!G.length) G.push({t:r[0],z:[]}); if(r.slice(1).some(Boolean)) G[G.length-1].z.push(r.slice(1)); });
     const n=K.length-1;
     return `<div class="hb-gruppen">${G.map(g=>`<section class="hb-gr"><h4>${hbInl(g.t)}</h4><div class="hb-gr-t" style="--n:${n}">${K.slice(1).map(k=>`<span class="hb-gr-k">${esc(k)}</span>`).join("")}${g.z.map(z=>K.slice(1).map((_,i)=>`<span class="hb-gr-c">${hbZelle(z[i]||"")}</span>`).join("")).join("")}</div></section>`).join("")}</div>`; }
-  return `<div class="hb-tab-w"><table class="hb-tab"><thead><tr>${K.map(k=>`<th>${hbInl(k)}</th>`).join("")}</tr></thead><tbody>${R.map(r=>`<tr>${K.map((_,i)=>`<td>${hbZelle(r[i]||"")}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`; }
+  const karten=K.length>=3?`<div class="hb-tk">${R.map(r=>`<section class="hb-tk-r"><h4>${hbInl(r[0]||"")}</h4>${K.slice(1).map((k,i)=>r[i+1]?`<div class="hb-tk-z"><span>${hbInl(k)}</span><div>${hbZelle(r[i+1])}</div></div>`:"").join("")}</section>`).join("")}</div>`:"";
+  return karten+`<div class="hb-tab-w${karten?" mit-karten":""}"><table class="hb-tab"><thead><tr>${K.map(k=>`<th>${hbInl(k)}</th>`).join("")}</tr></thead><tbody>${R.map(r=>`<tr>${K.map((_,i)=>`<td>${hbZelle(r[i]||"")}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`; }
 function hbMd(t,o={}){ const Z=String(t||"").replace(/\r/g,"").split("\n"); let h="", liste="", tab=null, offen=null;
   const zu=()=>{ if(liste){ h+=`</${liste}>`; liste=""; } if(tab){ h+=hbTabelle(tab); tab=null; }
     if(offen){ if(!o.druck&&hbDarf()) h+=`<div class="hb-offen">${icon("warn")}<div><b>Noch offen – nur für Chef und Büro sichtbar</b>${offen.map(x=>`<p>${hbInl(x)}</p>`).join("")}</div></div>`; offen=null; } };
@@ -147,7 +151,6 @@ const hbCk=id=>{ try{ return JSON.parse(localStorage.getItem(hbCkKey(id))||"{}")
 function hbArtikel(id){ const a=hbArt(id); if(!a) return `<div class="narrow"><p class="meta">Artikel nicht gefunden.</p></div>`; const ck=hbCk(a.id), n=a.checkliste.filter((_,i)=>ck[i]).length;
   const kap=(HB_KAPITEL.find(([k])=>k===a.kapitel)||[,""])[1];
   return `<div class="narrow hb hb-art">
-    <p class="hb-meta">${esc([kap,a.verfasser?`von ${a.verfasser}`:"",hbGilt(a)?hbStandText(a,true)+(a.frei&&a.frei.von&&a.frei.von!==a.verfasser?`, freigegeben von ${a.frei.von}`:""):""].filter(Boolean).join(" · "))}</p>
     ${hbGilt(a)?"":`<div class="hb-entwurf">${icon("warn")}<span><b>Entwurf – noch nicht freigegeben.</b>${a.neu?" Vorschlag als Grundlage; bitte prüfen und an eure Praxis anpassen.":""}</span></div>`}
     <article class="hb-text">${hbMd(hbMitSchaubild(a))}</article>
     ${a.fotos.length?`<div class="hb-fotos">${a.fotos.map((f,i)=>`<button type="button" data-act="hbFoto" data-id="${esc(a.id)}" data-i="${i}"><img src="${esc(f)}" alt=""></button>`).join("")}</div>`:""}
@@ -158,7 +161,8 @@ function hbArtikel(id){ const a=hbArt(id); if(!a) return `<div class="narrow"><p
       <div class="hb-vor-k"><button type="button" class="btn-text" data-act="hbVorWeg" data-id="${esc(a.id)}" data-v="${esc(v.id)}">Ablehnen</button><button type="button" class="btn-tonal" data-act="hbVorOk" data-id="${esc(a.id)}" data-v="${esc(v.id)}">Übernehmen und freigeben</button></div></section>`).join("")}`
       :a.vorschlaege.length?`<p class="meta">${a.vorschlaege.length} Vorschlag${a.vorschlaege.length===1?"":"e"} wartet auf Freigabe.</p>`:""}
     <div class="hb-fuss">${hbDarf()?`<button type="button" class="btn-tonal" data-act="hbEdit" data-id="${esc(a.id)}">${icon("edit")}Bearbeiten</button>${hbGilt(a)?"":`<button type="button" class="btn-filled" data-act="hbFrei" data-id="${esc(a.id)}">Freigeben</button>`}`
-      :`<button type="button" class="btn-tonal" data-act="hbEdit" data-id="${esc(a.id)}">${icon("edit")}Änderung vorschlagen</button>`}</div></div>`; }
+      :`<button type="button" class="btn-tonal" data-act="hbEdit" data-id="${esc(a.id)}">${icon("edit")}Änderung vorschlagen</button>`}</div>
+    <div class="hb-info">${icon("info")}<span>${esc([kap,a.verfasser?`von ${a.verfasser}`:"",hbGilt(a)?hbStandText(a,true)+(a.frei&&a.frei.von&&a.frei.von!==a.verfasser?`, freigegeben von ${a.frei.von}`:""):""].filter(Boolean).join(" · "))}</span></div></div>`; }
 /* ---- Speichern ---- */
 function hbRec(a){ const alt=DB.handbuch.get(a.id); return {r:alt||{id:a.id,kapitel:a.kapitel,titel:a.titel,inhalt:a.inhalt,checkliste:a.checkliste||[],fotos:a.fotos||[],apps:a.apps||[],stand:0,vorschlaege:[]},neu:!alt}; }
 function hbFreigeben(id,w){ const a=hbArt(id); if(!a||!hbDarf()) return; const {r,neu}=hbRec(a); if(w) Object.assign(r,w);

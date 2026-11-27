@@ -48,10 +48,10 @@ def _block_ende(css, j):
             if tiefe == 0: return i
         i += 1
     return n - 1
-# zusätzlich: nach Bedienung mit dem Finger (Klasse "tipp" an <html>, setzt kopf.js) gilt kein :hover – auch wenn das Gerät "Maus" meldet.
+# zusätzlich: nach Bedienung mit dem Finger (Klasse "per-finger" an <html>, setzt kopf.js) gilt kein :hover – auch wenn das Gerät "Maus" meldet.
 # :where() hält die Spezifität gleich, die Reihenfolge der Regeln bleibt.
 def _tipp(sel):
-    return sel if re.match(r"^(:root|html)\b", sel) else ":where(html:not(.tipp)) " + sel
+    return sel if re.match(r"^(:root|html)\b", sel) else ":where(html:not(.per-finger)) " + sel
 def hover_maus(css, in_hover=False, nur_tipp=False):
     out, i, n = [], 0, len(css)
     while i < n:
