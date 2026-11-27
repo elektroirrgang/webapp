@@ -505,10 +505,14 @@ function legPlakette(d,cx,cy,iso,zuletzt,D=32){ const s=D/1614, rm=720*s, mo=+is
   const tm=LEG_PL_MON[mo-1]; d.setFillColor(...rot); d.circle(cx+rm*Math.cos(rad(tm)),cy+rm*Math.sin(rad(tm)),(mo>9?66:52)*s,"F"); bogen(String(mo),tm,true,5.2,[255,255,255]);
   /* Jahre: fünf ab dem Prüfjahr (wie beim Aufkleber), Termin rot hinterlegt */
   const j0=Math.min(Math.max(zuletzt?+String(zuletzt).slice(0,4):jr-4,jr-4),jr);
-  LEG_PL_JAHR.forEach((th,i)=>{ const y=j0+i; if(y===jr){ d.setFontSize(6.6); const w=[...String(y)].reduce((a,c)=>a+d.getTextWidth(c),0)+3*0.15*6.6*0.3528/10; band(th,w/2+34*s,62*s); }
-    bogen(String(y),th,false,6.6,[255,255,255]); });
+  /* Band nur so lang, dass zu den roten Trennstrichen (halber Jahresabstand) Luft bleibt */
+  const FJ=6, maxH=rm*rad(13.75)-46*s;
+  LEG_PL_JAHR.forEach((th,i)=>{ const y=j0+i; if(y===jr){ d.setFont("helvetica","normal"); d.setFontSize(FJ); const w=[...String(y)].reduce((a,c)=>a+d.getTextWidth(c),0)+3*0.15*FJ*0.3528/10; band(th,Math.min(w/2+16*s,maxH),60*s); }
+    bogen(String(y),th,false,FJ,[255,255,255]); });
   /* Termin auf die Linie „Nächster Prüftermin“ */
-  d.setFont("helvetica","bold"); d.setFontSize(8.2); d.setTextColor(48,48,48); d.text(pdfT(`${LEG_MONATE[mo-1]} ${jr}`),cx,cy-218*s,{align:"center"}); }
+  /* höchstens so breit wie der Strich darunter (591 px der Vorlage) */
+  const tt=pdfT(`${LEG_MONATE[mo-1]} ${jr}`), lw=591*s; d.setFont("helvetica","bold"); d.setFontSize(10); const fs=Math.min(10,10*lw/d.getTextWidth(tt));
+  d.setFontSize(fs); d.setTextColor(48,48,48); d.text(tt,cx,cy-218*s,{align:"center"}); }
 /* Stromkreis-Tabelle – auch im Anlagenpass verwendet.
    Lesbarkeit (Max 18.11.2026: „das müssen auch ältere Leute lesen können“): Darstellungen A1 (bisher), A2 (Mittelding), A3 (größer), LEG_PDF_ART legt fest, welche gilt.
    fs = Schriftgröße (pt), zh = Zeilenhöhe (mm), kh = Kopfhöhe, kf = Kopfschrift, gf = Gruppenschrift, kzF/abF = Kennzeichnung/Absicherung fett, li = Trennlinien statt Zebra */
