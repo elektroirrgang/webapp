@@ -269,9 +269,24 @@ const LEG_SYM={
   klingel:'<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
   rollladen:'<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M4 7h16M4 10.5h16M4 14h16"/>',
   aussen:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/>',
-  motor:'<circle cx="12" cy="12" r="8.5"/><path d="M8 15.5V8.5l4 4.5 4-4.5v7"/>' };
-const LEG_SYM_LISTE=[["steckdose","Steckdose"],["licht","Licht"],["herd","Herd/Kochfeld"],["backofen","Backofen"],["spuelmaschine","Spülmaschine"],["waschmaschine","Waschmaschine"],["trockner","Trockner"],["kuehl","Kühlschrank"],["wasser","Durchlauferhitzer"],["heizung","Heizung"],["wp","Wärmepumpe"],["wallbox","Wallbox"],["pv","PV-Anlage"],["edv","EDV"],["netzwerk","Netzwerk"],["klingel","Klingel"],["rollladen","Rollladen"],["aussen","Außen/Allgemein"],["motor","Motor/Pumpe"]];
-const LEG_SYM_WORT=[[/durchlauf|boiler|warmwasser/,"wasser"],[/wärmepumpe|\bwp\b/,"wp"],[/wallbox|ladest|ladesäule|ladepunkt/,"wallbox"],[/\bpv\b|photovolt|solar|wechselrichter/,"pv"],[/spül/,"spuelmaschine"],[/wasch/,"waschmaschine"],[/trockn/,"trockner"],[/kühl|gefrier/,"kuehl"],[/backofen|ofen/,"backofen"],[/herd|kochfeld/,"herd"],[/heiz/,"heizung"],[/edv|server|computer|\bpc\b/,"edv"],[/netzwerk|router|switch|knx|sat/,"netzwerk"],[/klingel|sprech/,"klingel"],[/roll|jalous|markise/,"rollladen"],[/pumpe|motor|garagentor|tor\b/,"motor"],[/licht|beleucht|lampe/,"licht"],[/steckd|dose|brüstung/,"steckdose"],[/außen|aussen|garten|allgemein|treppenhaus/,"aussen"]];
+  motor:'<circle cx="12" cy="12" r="8.5"/><path d="M8 15.5V8.5l4 4.5 4-4.5v7"/>',
+  /* 27.11.2026: weitere Symbole für Streifen und Zeichnung */
+  aussenlicht:'<path d="M9.5 18h5M10.5 21h3M12 7a4.5 4.5 0 0 0-2.7 8.1c.4.3.7.8.7 1.3V18h4v-1.6c0-.5.3-1 .7-1.3A4.5 4.5 0 0 0 12 7z"/><path d="M12 2.5v2M5 5l1.4 1.4M19 5l-1.4 1.4M3 11.5h2M19 11.5h2"/>',
+  boden:'<path d="M2.5 20h19"/><rect x="5" y="9" width="14" height="8" rx="1.5"/><circle cx="10" cy="13" r="1.1" class="f"/><circle cx="14" cy="13" r="1.1" class="f"/>',
+  mikrowelle:'<rect x="2.5" y="5" width="19" height="14" rx="2"/><rect x="5" y="8" width="10" height="8" rx="1"/><path d="M18 8.5v1M18 12v4"/>',
+  kaffee:'<path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16M8.5 3.5v3M12.5 3.5v3"/>',
+  tv:'<rect x="3" y="7" width="18" height="12" rx="1.5"/><path d="M8.5 3l3.5 4 3.5-4"/>',
+  lueftung:'<circle cx="12" cy="12" r="1.8"/><path d="M12 10.2c0-3.2.9-6.7 3.6-6.7 2.3 0 2.6 3.4-1.6 5.6M13.8 12c3.2 0 6.7.9 6.7 3.6 0 2.3-3.4 2.6-5.6-1.6M12 13.8c0 3.2-.9 6.7-3.6 6.7-2.3 0-2.6-3.4 1.6-5.6M10.2 12c-3.2 0-6.7-.9-6.7-3.6 0-2.3 3.4-2.6 5.6 1.6"/>',
+  klima:'<path d="M12 2.5v19M4 7l16 10M20 7L4 17"/><path d="M9.5 4L12 6.5 14.5 4M9.5 20L12 17.5l2.5 2.5"/>',
+  garage:'<path d="M3 21V9.5L12 4l9 5.5V21"/><path d="M7 21v-8h10v8M7 16h10"/>',
+  rauch:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v2.3M12 18.2v2.3"/>',
+  knx:'<rect x="6.5" y="6.5" width="11" height="11" rx="1.5"/><path d="M9.5 2.5v4M14.5 2.5v4M9.5 17.5v4M14.5 17.5v4M2.5 9.5h4M2.5 14.5h4M17.5 9.5h4M17.5 14.5h4"/>',
+  kamera:'<path d="M3 8.5h4l2-3h6l2 3h4V19H3z"/><circle cx="12" cy="13.3" r="3.5"/>',
+  sauna:'<path d="M4 20h16M6 20V9h12v11"/><path d="M9 6c-.8-1 .8-2 0-3M12 6c-.8-1 .8-2 0-3M15 6c-.8-1 .8-2 0-3"/>',
+  werkstatt:'<path d="M14.5 6.5a4 4 0 0 0-5 5L3.5 17.5l3 3 6-6a4 4 0 0 0 5-5l-2.5 2.5-2-.5-.5-2z"/>',
+  reserve:'<circle cx="12" cy="12" r="8.5" stroke-dasharray="3.2 2.6"/><path d="M12 8.3v7.4M8.3 12h7.4"/>' };
+const LEG_SYM_LISTE=[["steckdose","Steckdose"],["licht","Licht"],["herd","Herd/Kochfeld"],["backofen","Backofen"],["spuelmaschine","Spülmaschine"],["waschmaschine","Waschmaschine"],["trockner","Trockner"],["kuehl","Kühlschrank"],["wasser","Durchlauferhitzer"],["heizung","Heizung"],["wp","Wärmepumpe"],["wallbox","Wallbox"],["pv","PV-Anlage"],["edv","EDV"],["netzwerk","Netzwerk"],["klingel","Klingel"],["rollladen","Rollladen"],["aussen","Außen/Allgemein"],["motor","Motor/Pumpe"],["aussenlicht","Außenlicht"],["boden","Bodensteckdose"],["mikrowelle","Mikrowelle"],["kaffee","Kaffeemaschine"],["tv","TV/Medien"],["lueftung","Lüftung"],["klima","Klima"],["garage","Garage/Tor"],["rauch","Rauchmelder/Alarm"],["knx","KNX/Steuerung"],["kamera","Kamera/Sicherheit"],["sauna","Sauna"],["werkstatt","Werkstatt"],["reserve","Reserve"]];
+const LEG_SYM_WORT=[[/au(ß|ss)en\s*-?\s*(licht|beleucht|lampe|leuchte)|hof\s*licht|garten\s*licht|wegbeleucht/,"aussenlicht"],[/boden\s*-?\s*(steckd|dose|tank)|bodentank/,"boden"],[/mikrowell/,"mikrowelle"],[/kaffee|espresso/,"kaffee"],[/\btv\b|fernseh|multimedia|medien/,"tv"],[/lüft|lueft|abluft|dunst|ventil/,"lueftung"],[/klima/,"klima"],[/garage|garagentor|torantrieb/,"garage"],[/rauch|alarm|einbruch|brandmeld/,"rauch"],[/\bknx\b|steuerung|\bsps\b|logo|gira|smart/,"knx"],[/kamera|video|überwach/,"kamera"],[/sauna|infrarot/,"sauna"],[/werkstatt|werkbank/,"werkstatt"],[/durchlauf|boiler|warmwasser/,"wasser"],[/wärmepumpe|\bwp\b/,"wp"],[/wallbox|ladest|ladesäule|ladepunkt/,"wallbox"],[/\bpv\b|photovolt|solar|wechselrichter/,"pv"],[/spül/,"spuelmaschine"],[/wasch/,"waschmaschine"],[/trockn/,"trockner"],[/kühl|gefrier/,"kuehl"],[/backofen|ofen/,"backofen"],[/herd|kochfeld/,"herd"],[/heiz/,"heizung"],[/edv|server|computer|\bpc\b/,"edv"],[/netzwerk|router|switch|knx|sat/,"netzwerk"],[/klingel|sprech/,"klingel"],[/roll|jalous|markise/,"rollladen"],[/pumpe|motor|garagentor|tor\b/,"motor"],[/licht|beleucht|lampe/,"licht"],[/steckd|dose|brüstung/,"steckdose"],[/außen|aussen|garten|allgemein|treppenhaus/,"aussen"]];
 function legSymFuer(e){ if(e.art==="rcd"||e.art==="res") return ""; if(e.sym==="keins") return ""; if(e.sym&&LEG_SYM[e.sym]) return e.sym;
   const b=String(e.bez||"").toLowerCase(); const f=LEG_SYM_WORT.find(([re])=>re.test(b)); return f?f[1]:""; }
 const legSymSvg=(k,px,inner)=>{ const p=LEG_SYM[k]; if(!p) return ""; const g=`<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p.replace(/class="f"/g,'fill="currentColor" stroke="none"')}</g>`;
@@ -622,27 +637,59 @@ function legEtiText(e){ if(e.art==="kl") return ""; if(e.art==="res") return LE.
     :legOffen(e)?"":String(e.bez||"").trim();
   if(legSymModus()) return "";
   const t=LE.inh==="kz"?kz:bez;
-  return t.replace(/\s*·\s*/g," ").replace(/[→–]/g,"-").replace(/\s+/g," ").trim(); }
+  /* „und“ wird auf dem Streifen zu „&“ (Max 27.11.2026) – spart Platz */
+  return t.replace(/\s*·\s*/g," ").replace(/[→–]/g,"-").replace(/\s+(und|u\.)\s+/gi," & ").replace(/\s*\+\s*/g," & ").replace(/\s+/g," ").trim(); }
 /* Streifen je Reihe: Blöcke = Geräte (Breite in TE), freie Plätze am Ende als ein leerer Block, damit der Streifen über die ganze Reihe geht */
-function legEtiStreifen(L){ legEtiCfg(L); const n=+L.teReihe||12;
-  return legReihen(L).map((r,ri)=>{ const T=[], M=[], S=[]; r.g.forEach(([e,,w])=>{ T.push(legEtiText(e)); M.push(w);
-      S.push(legSymModus()?(k=>({id:e.id,sym:k,text:LE.inh==="symbez"||!k?legEtiTextBez(e):""}))(legSym(e)):null); });
-    let frei=n-r.te; while(frei>0){ const w=Math.min(frei,9); T.push(""); M.push(w); S.push(null); frei-=w; }
-    const p={band:LE.band,block:LE.te,anzahl:T.length,mult:M,trenn:"LINE",vertikal:false,umkehren:false,drucker:"PT-E560BT"};
-    return {nr:ri+1,te:n,p,T,S,mm:n*LE.te}; }).filter(st=>st.T.length<=50); }
+/* Textsatz (27.11.2026, Max): eine Schriftgröße für den ganzen Streifen, höchstens zwei Zeilen, lange Wörter an Wortfugen getrennt
+   („Außen-/beleuchtung“, „Steckdose/Boden“) – nichts wird mehr einzeln zusammengestaucht. Gilt für Vorschau, Text-Felder und Symbol-Bilder gleich. */
+const LEG_FUGEN=["beleuchtung","steckdosen","steckdose","maschine","heizung","anlage","pumpe","verteiler","zimmer","küche","garage","garten","terrasse","keller","schrank","raum","halle","büro","flur","leuchte","lampe","erhitzer","speicher","geräte","gerät","anschluss","versorgung","platz","einfahrt","eingang","werkstatt","technik","station","kammer","haus","wand","decke","bereich","seite","fenster","licht","boden","dose","bad","tor"];
+let LEG_MESS=null;
+const legBreite=(t,fs)=>{ if(!LEG_MESS){ LEG_MESS=document.createElement("canvas").getContext("2d"); LEG_MESS.font="700 100px Arial, Helvetica, sans-serif"; } return LEG_MESS.measureText(t).width/100*fs; };
+function legTrennWort(w){ const l=w.toLowerCase(); let best=null; const nimm=p=>{ if(p<3||l.length-p<3) return; const d=Math.abs(p-l.length/2); if(!best||d<best.d) best={p,d}; };
+  const h=w.indexOf("-"); if(h>0&&h<w.length-1) return [w.slice(0,h+1),w.slice(h+1)];
+  LEG_FUGEN.forEach(f=>{ let p=l.indexOf(f,1); while(p>0){ nimm(p); nimm(p+f.length); p=l.indexOf(f,p+1); } });
+  if(!best){ const V=/[aeiouäöüy]/; for(let p=3;p<=l.length-3;p++) if(V.test(l[p-1])&&!V.test(l[p])&&!V.test(l[p+1]||"")) nimm(p+1); }
+  if(!best) for(let p=3;p<=l.length-3;p++) nimm(p);
+  return best?[w.slice(0,best.p)+"-",w.slice(best.p)]:null; }
+/* Möglichkeiten, einen Text auf 1–2 Zeilen zu setzen */
+function legSatzWege(t){ const W=[[t]], w=t.split(" ").filter(Boolean);
+  for(let i=1;i<w.length;i++) W.push([w.slice(0,i).join(" "),w.slice(i).join(" ")]);
+  w.forEach((x,i)=>{ const z=legTrennWort(x); if(z) W.push([[...w.slice(0,i),z[0]].join(" "),[z[1],...w.slice(i+1)].join(" ")]); });
+  return W; }
+/* größte Schrift (mm), mit der der Text ins Feld passt, und die Zeilen dazu */
+function legSatz(t,bMm,hMm,maxZ,fsMax){ let best={fs:0,z:[t]};
+  legSatzWege(t).filter(z=>z.length<=maxZ).forEach(z=>{ const fsB=Math.min(...z.map(x=>bMm*.92/Math.max(.01,legBreite(x,1)))), fsH=hMm/(z.length*1.12), fs=Math.min(fsB,fsH,fsMax);
+    if(fs>best.fs+.05||(Math.abs(fs-best.fs)<=.05&&z.length<best.z.length)) best={fs,z}; });
+  return best; }
+function legSetzZeilen(t,bMm,fs,maxZ){ const W=legSatzWege(t).filter(z=>z.length<=maxZ).filter(z=>z.every(x=>legBreite(x,fs)<=bMm*.92+.01)); return (W[0]||[t]); }
+function legEtiStreifen(L){ legEtiCfg(L); const n=+L.teReihe||12, B=EC_BAND[LE.band]||EC_BAND[18], sym=legSymModus();
+  const hFeld=(B.hoehe-3.4)/2.835, bFeld=w=>(LE.te*2.83428*w-2.7)/2.835;   /* druckbarer Bereich je Feld in mm (wie in der Brother-Vorlage) */
+  return legReihen(L).map((r,ri)=>{ const M=[], S=[]; r.g.forEach(([e,,w])=>{ M.push(w); const k=sym?(e.art==="res"?"reserve":legSym(e)):"";
+      const text=sym?(LE.inh==="symbez"||!k?legEtiTextBez(e):""):legEtiTextRoh(e); S.push({id:e.id,sym:k,text}); });
+    let frei=n-r.te; while(frei>0){ const w=Math.min(frei,9); M.push(w); S.push(null); frei-=w; }
+    /* einheitliche Schrift: kleinste „passende“ Größe aller Felder */
+    const nurText=s=>s&&s.text&&!s.sym, mitSym=s=>s&&s.text&&s.sym;
+    const maxZ=s=>mitSym(s)?(+LE.band>=18?2:1):2, hTxt=s=>mitSym(s)?hFeld*.5:hFeld*.92, fsMax=LE.inh==="sym"?hFeld*.3:hFeld*.5;
+    let fs=fsMax; S.forEach((s,i)=>{ if(s&&s.text) fs=Math.min(fs,legSatz(s.text,bFeld(M[i]),hTxt(s),maxZ(s),fsMax).fs); });
+    fs=Math.max(fs,1.6); S.forEach((s,i)=>{ if(s&&s.text) s.zeilen=legSetzZeilen(s.text,bFeld(M[i]),fs,maxZ(s)); });
+    const T=S.map(s=>!sym&&s&&s.text?s.zeilen.join("\n"):"");
+    const p={band:LE.band,block:LE.te,anzahl:T.length,mult:M,trenn:"LINE",vertikal:false,umkehren:false,drucker:"PT-E560BT",schrift:Math.round(fs*2.835*10)/10};
+    return {nr:ri+1,te:n,p,T,S,mm:n*LE.te,fs,klein:fs<2.3}; }).filter(st=>st.T.length<=50); }
 function legEtiTextBez(e){ const i=LE.inh; LE.inh="bez"; const t=legEtiText(e); LE.inh=i; return t; }
-/* Ein Feld als SVG (Symbol oben, Text unten bzw. nur Symbol oder nur Text) – für Vorschau und Druckbild gleich */
-function legEtiFeldSvg(s,x,w,H,fsMax){ if(!s||(!s.sym&&!s.text)) return ""; const mitT=!!s.text, gr=s.sym?Math.min(mitT?H*.5:H*.72,w*.8):0, cy=mitT?H*.06:(H-gr)/2;
-  const sym=s.sym?`<svg x="${(x+w/2-gr/2).toFixed(2)}" y="${(s.text?cy:cy).toFixed(2)}" width="${gr.toFixed(2)}" height="${gr.toFixed(2)}" viewBox="0 0 24 24"><g fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${LEG_SYM[s.sym].replace(/class="f"/g,'fill="#000"')}</g></svg>`:"";
-  const fs=Math.min(fsMax,(w*.94)/Math.max(2,s.text.length)*1.8), ty=s.sym?H*.93:H/2+fs*.36;
-  return sym+(mitT?`<text x="${(x+w/2).toFixed(2)}" y="${ty.toFixed(2)}" font-size="${fs.toFixed(2)}" font-weight="700" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" fill="#000">${esc(s.text)}</text>`:""); }
-function legEtiSymSvg(st,klein){ const p=st.p, m=p.mult, H=+p.band, W=m.reduce((a,x)=>a+x*p.block,0); let x=0, g="";
-  st.S.forEach((s,i)=>{ const w=m[i]*p.block; if(i) g+=`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="#222" stroke-width=".25"/>`; g+=legEtiFeldSvg(s,x,w,H,H*.2); x+=w; });
+function legEtiTextRoh(e){ const i=LE.inh; LE.inh=i==="kz"?"kz":"bez"; const t=legEtiText(e); LE.inh=i; return t; }
+/* Ein Feld als SVG: Symbol oben + Text unten, nur Symbol oder nur Text – Maße in mm des Streifens, fs = Schrift des Streifens */
+function legEtiFeldSvg(s,x,w,H,fs){ if(!s||(!s.sym&&!s.text)) return ""; const Z=s.zeilen||(s.text?[s.text]:[]), mitT=Z.length>0;
+  const gr=s.sym?Math.min(mitT?H*.42:H*.56,w*.62):0, tH=Z.length*fs*1.12, cy=mitT?(H-gr-tH-H*.04)/2:(H-gr)/2;
+  const sym=s.sym&&LEG_SYM[s.sym]?`<svg x="${(x+w/2-gr/2).toFixed(2)}" y="${cy.toFixed(2)}" width="${gr.toFixed(2)}" height="${gr.toFixed(2)}" viewBox="0 0 24 24"><g fill="none" stroke="#000" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">${LEG_SYM[s.sym].replace(/class="f"/g,'fill="#000"')}</g></svg>`:"";
+  const y0=s.sym?cy+gr+H*.04:(H-tH)/2;
+  return sym+Z.map((z,k)=>`<text x="${(x+w/2).toFixed(2)}" y="${(y0+fs*(k+.86)*1.12).toFixed(2)}" font-size="${fs.toFixed(2)}" font-weight="700" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" fill="#000">${esc(z)}</text>`).join(""); }
+function legEtiSymSvg(st,klein){ const p=st.p, m=p.mult, H=+p.band, W=m.reduce((a,x)=>a+x*p.block,0), B=EC_BAND[p.band]||EC_BAND[18], k=H/((B.hoehe-3.4)/2.835); let x=0, g="";
+  st.S.forEach((s,i)=>{ const w=m[i]*p.block; if(i) g+=`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="#222" stroke-width=".25"/>`; g+=legEtiFeldSvg(s,x,w,H,st.fs*k*.92); x+=w; });
   return `<svg class="ec-eti-svg" viewBox="-.5 -.5 ${W+1} ${H+1}" width="100%" style="max-width:${klein?"100%":Math.round(W*3.2)+"px"}"><rect x="0" y="0" width="${W}" height="${H}" fill="#fff" stroke="#222" stroke-width=".35"/>${g}</svg>`; }
-const legEtiVorschau=(st,klein)=>legSymModus()?legEtiSymSvg(st,klein):ecEtiSvg(st.p,st.T,klein);
+const legEtiVorschau=(st,klein)=>legEtiSymSvg(st,klein);
 /* Druckbild je Feld: SVG → Canvas (300 dpi) → Schwarz/Weiß → BMP; Größe exakt wie das Zellenfeld der Brother-Vorlage */
-function legEtiBmp(s,wPt,hPt){ return new Promise(ok=>{ const k=300/72, W=Math.max(8,Math.round(wPt*k)), H=Math.max(8,Math.round(hPt*k));
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="#fff"/>${legEtiFeldSvg(s,0,W,H,H*.25)}</svg>`;
+function legEtiBmp(s,wPt,hPt,fsMm){ return new Promise(ok=>{ const k=300/72, W=Math.max(8,Math.round(wPt*k)), H=Math.max(8,Math.round(hPt*k));
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="#fff"/>${legEtiFeldSvg(s,0,W,H,fsMm/25.4*300)}</svg>`;
   const img=new Image(); img.onload=img.onerror=()=>{ const c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,W,H); try{ x.drawImage(img,0,0); }catch(e){}
     /* 1-Bit-BMP (Palette schwarz/weiß) – klein und genau das, was der Drucker kann */
     const d=x.getImageData(0,0,W,H).data, zeile=Math.ceil(W/32)*4, off=62, gr=off+zeile*H, b=new Uint8Array(gr), v=new DataView(b.buffer);
@@ -652,7 +699,7 @@ function legEtiBmp(s,wPt,hPt){ return new Promise(ok=>{ const k=300/72, W=Math.m
     ok(b); };
   img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); }); }
 async function legEtiBilder(st){ if(!legSymModus()||!st.S) return []; const B=[];
-  for(let i=0;i<st.S.length;i++){ const s=st.S[i]; if(!s||(!s.sym&&!s.text)) continue; const M=ecLbxBildMass(st.p,i); B.push({i,datei:`Object${B.length+1}.bmp`,daten:await legEtiBmp(s,M.w,M.h)}); } return B; }
+  for(let i=0;i<st.S.length;i++){ const s=st.S[i]; if(!s||(!s.sym&&!s.text)) continue; const M=ecLbxBildMass(st.p,i); B.push({i,datei:`Object${B.length+1}.bmp`,daten:await legEtiBmp(s,M.w,M.h,st.fs)}); } return B; }
 const legEtiChip=(k,v,t)=>`<button type="button" class="chip" data-act="legEtiW" data-k="${k}" data-v="${v}" aria-pressed="${String(LE[k])===String(v)}">${t}</button>`;
 const legEtiWahl=()=>`<div class="leg-eti-opt">
     <div class="leg-eti-z"><span class="lbl">Text</span><div class="chips">${legEtiChip("inh","bez","Bezeichnung")}${legEtiChip("inh","kz","Kennzeichnung")}${+LE.band<18?`<button type="button" class="chip" disabled title="Erst ab 18 mm Band">Symbol + Text</button>`:legEtiChip("inh","symbez","Symbol + Text")}${legEtiChip("inh","sym","Nur Symbol")}</div></div>
@@ -670,9 +717,8 @@ function legEtiDlg(){ const L=legAkt(); if(!L) return; const ST=legEtiStreifen(L
     ${legEtiWahl()}
     <div class="lbl" style="margin-top:14px">Vorschau · ${ST.length} Streifen</div>
     <div class="ec-baender leg-eti-l">${ST.map(st=>`<div class="ec-bd"><div class="ec-bd-k">Reihe ${st.nr} · ${st.te} TE · ${ecEtiMm(st.p,st.mm)} × ${st.p.band} mm</div><div class="leg-eti-v">${legEtiVorschau(st)}</div></div>`).join("")}</div>
-    ${(()=>{ const z=90/((EC_BAND[LE.band]||EC_BAND[9]).schrift), lang=ST.reduce((a,st)=>a+st.T.filter((t,i)=>t.length>z*st.p.mult[i]*LE.te/17.5).length,0);
-      return lang?`<p class="ec-hinweis">${icon("warn")}<span>${lang===1?"Ein Text ist":`${lang} Texte sind`} zu lang für das Feld und ${lang===1?"wird":"werden"} sehr klein gedruckt. Kürzere Bezeichnung wählen oder „Kennzeichnung“ drucken.</span></p>`:""; })()}
-    <p class="meta" style="margin:8px 4px 0">Lange Texte verkleinert die App automatisch. Je Reihe kommt eine Datei.</p>
+    ${ST.some(st=>st.klein)?`<p class="ec-hinweis">${icon("warn")}<span>Die Schrift wird sehr klein, weil ein Text auch zweizeilig kaum ins Feld passt. Bezeichnung kürzen, breiteres Band oder „Nur Symbol“ wählen.</span></p>`:""}
+    <p class="meta" style="margin:8px 4px 0">Alle Felder einer Reihe in derselben Schriftgröße, lange Bezeichnungen zweizeilig. Je Reihe kommt eine Datei.</p>
     <details class="ec-eti-hilfe"><summary>So druckst du in der App</summary><ol><li>„Teilen“ tippen und „Pro Label Tool“ wählen – oder herunterladen und in der App unter „Öffnen“ laden.</li><li>Blöcke, Breiten und Texte sind schon eingestellt, nur noch drucken.</li><li>Streifen am Anfang der Reihe ansetzen – freie Plätze am Ende bleiben leer.</li></ol></details>`,
     `${/android/i.test(navigator.userAgent)?`<button class="btn-text" data-act="ecEtiApp">App öffnen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button><button class="btn-text" data-act="legEtiLaden">Herunterladen</button><button class="btn-text" data-act="legEtiTeilen">Teilen</button>`,{breit:true}); }
 async function legEtiAusgeben(L,teilen){ const ST=legEtiStreifen(L); if(!ST.length){ toast("Nichts zu beschriften"); return; }
