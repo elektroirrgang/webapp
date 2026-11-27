@@ -446,15 +446,21 @@ async function legPdf(L,art){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"m
   S.werte([["Kunde",L.kunde],["Verteiler",L.titel],["Anschrift",L.anschrift],["Stand",ecDatum(L.stand)],...(L.netz?[["Netzform",L.netz]]:[])]);   /* „Erstellt von“ bleibt intern in der App, gehört nicht auf den Aushang beim Kunden */
   S.abschnitt("Hinweis für den Betreiber");
   S.text("Fehlerstromschutzschalter (RCD) alle 6 Monate über die Prüftaste „T“ auslösen. Schaltet der RCD dabei nicht ab, könnte er defekt sein. In diesem Fall bitte Elektro Irrgang informieren.");
-  legPruefPlakette(d,S,legEcheckDaten(L));
-  /* Kontakt groß wie im alten Verteilerplan */
+  /* Kontakt groß wie im alten Verteilerplan – mit Prüfplakette links daneben, wenn ein nächster E-Check bekannt ist */
   const qrC=L._geb&&typeof qrMatrix==="function"&&((vtGeb(L._geb)||{verteiler:[]}).verteiler.find(x=>x.id===L._v)||{}).qr;
-  S.platz(qrC?30:19); const y=S.y+1, x2=qrC?M+68:M+CW/2;
+  const PE=legEcheckDaten(L), pl=!!(PE&&/^\d{4}-\d{2}/.test(PE.naechste||""));
+  S.platz(pl?30:qrC?30:19); const y=S.y+1;
   if(qrC){ const Mx=qrMatrix(qrC), n=Mx.length, gr=21, z=gr/n, qx=M+CW-gr, qy=y-4; d.setFillColor(0,0,0); Mx.forEach((r,yy)=>r.forEach((on,xx)=>{ if(on) d.rect(qx+xx*z,qy+yy*z,z+0.02,z+0.02,"F"); }));
     d.setFont("helvetica","bold"); d.setFontSize(9); d.setTextColor(20); d.text("Anlage "+qrZeig(qrC),qx+gr/2,qy+gr+4,{align:"center"}); }
-  d.setTextColor(20); d.setFont("helvetica","bold"); d.setFontSize(12); d.text("Elektro Irrgang",M,y); d.setTextColor(...[225,29,47]); d.text("Tel. 02291 4878",x2,y);
-  d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),M,y+5.2); d.text(pdfT("Inh. Joachim Irrgang"),M,y+10.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x2,y+5.2);
-  S.y=y+(qrC?29:18);
+  if(pl){ legPlakette(d,M+14.5,y+9,PE.naechste); const x0=M+35;
+    d.setTextColor(20); d.setFont("helvetica","bold"); d.setFontSize(12); d.text("Elektro Irrgang",x0,y); d.setTextColor(225,29,47); d.text("Tel. 02291 4878",x0+38,y);
+    d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),x0,y+5.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x0,y+10.2); d.text(pdfT("Inh. Joachim Irrgang"),x0,y+15.2);
+    d.setFontSize(8.5); d.setTextColor(93,107,123); d.text(pdfT(`Nächster E-Check: ${LEG_MONATE[+PE.naechste.slice(5,7)-1]} ${PE.naechste.slice(0,4)}${PE.zuletzt?` | zuletzt geprüft am ${ecDatum(PE.zuletzt)}`:""}`),x0,y+20.6);
+    S.y=y+29; }
+  else { const x2=qrC?M+68:M+CW/2;
+    d.setTextColor(20); d.setFont("helvetica","bold"); d.setFontSize(12); d.text("Elektro Irrgang",M,y); d.setTextColor(...[225,29,47]); d.text("Tel. 02291 4878",x2,y);
+    d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),M,y+5.2); d.text(pdfT("Inh. Joachim Irrgang"),M,y+10.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x2,y+5.2);
+    S.y=y+(qrC?29:18); }
   legPdfStromkreise(d,S,L,art);
   return S.ende(); }
 /* Prüfplakette „Nächste Prüfung“ (27.11.2026, Wunsch Chef): auf Seite 1 der Legende, Monat und Jahr digital markiert wie beim Aufkleber.
@@ -467,30 +473,24 @@ function legEcheckDaten(L){
   if(!P.length||typeof ecPlus!=="function") return null;
   return {naechste:ecPlus(P[0].datum,P[0].fristM||48),zuletzt:P[0].datum}; }
 const LEG_MONATE=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
-function legPlakette(d,cx,cy,iso){ const R=16, ri=10.8, rm=(ri+R-0.6)/2, mo=+iso.slice(5,7), jr=+iso.slice(0,4), rot=[225,29,47], rad=g=>g*Math.PI/180;
-  d.setFillColor(255,255,255); d.circle(cx,cy,R,"F"); d.setFillColor(214,218,224); d.circle(cx,cy,R-0.7,"F"); d.setFillColor(255,255,255); d.circle(cx,cy,ri,"F");
-  d.setDrawColor(...rot); d.setLineWidth(0.9); d.circle(cx,cy,R,"S");
-  d.setDrawColor(255,255,255); d.setLineWidth(0.5); d.line(cx-R+0.7,cy,cx-ri,cy); d.line(cx+ri,cy,cx+R-0.7,cy);
+/* Aufkleber-Optik: roter Rand, grauer Ring, Monate 1–12 oben und Jahre unten entlang des Rings, rote Striche dazwischen,
+   Termin rot hinterlegt, in der Mitte „Nächste Prüfung MM/JJJJ“. Ø 29 mm, steht links neben den Kontaktdaten. */
+function legPlakette(d,cx,cy,iso){ const R=14.5, ri=9.7, ra=13.8, rm=(ri+ra)/2, mo=+iso.slice(5,7), jr=+iso.slice(0,4), rot=[225,29,47], rad=g=>g*Math.PI/180;
+  d.setFillColor(...rot); d.circle(cx,cy,R,"F"); d.setFillColor(205,209,215); d.circle(cx,cy,ra,"F"); d.setFillColor(255,255,255); d.circle(cx,cy,ri,"F");
+  d.setDrawColor(255,255,255); d.setLineWidth(0.6); d.line(cx-ra,cy,cx-ri,cy); d.line(cx+ri,cy,cx+ra,cy);
+  /* Text entlang des Rings: θ = Bildschirmwinkel (y nach unten), oben lesbar von außen, unten von innen */
+  const bogen=(t,th,oben,fs,farbe)=>{ d.setFontSize(fs); const w=d.getTextWidth(t), A=oben?270-th:90-th, a=rad(A), ch=fs*0.25, r=oben?rm-ch/2:rm+ch/2;
+    const px=cx+r*Math.cos(rad(th)), py=cy+r*Math.sin(rad(th)); d.setTextColor(...farbe); d.text(t,px-(w/2)*Math.cos(a),py+(w/2)*Math.sin(a),{angle:A}); };
+  const strich=th=>{ const c=Math.cos(rad(th)), sn=Math.sin(rad(th)); d.setDrawColor(...rot); d.setLineWidth(0.35); d.line(cx+(rm-0.65)*c,cy+(rm-0.65)*sn,cx+(rm+0.65)*c,cy+(rm+0.65)*sn); };
+  const hinterlegen=(th,lang,h)=>{ const a=rad(th), t=[-Math.sin(a),Math.cos(a)], n=[Math.cos(a),Math.sin(a)], P=[];
+    [[-lang,-h],[lang,-h],[lang,h],[-lang,h]].forEach(([u,v])=>P.push([cx+rm*n[0]+u*t[0]+v*n[0],cy+rm*n[1]+u*t[1]+v*n[1]]));
+    d.setFillColor(...rot); d.lines(P.slice(1).map((q,k)=>[q[0]-P[k][0],q[1]-P[k][1]]),P[0][0],P[0][1],[1,1],"F",true); };
   d.setFont("helvetica","bold");
-  for(let m=1;m<=12;m++){ const g=rad(196+(m-1)*148/11), x=cx+rm*Math.cos(g), y=cy+rm*Math.sin(g);
-    if(m===mo){ d.setFillColor(...rot); d.circle(x,y,1.95,"F"); d.setTextColor(255,255,255); } else d.setTextColor(60,64,70);
-    d.setFontSize(6.5); d.text(String(m),x,y+0.8,{align:"center"}); }
-  [-2,-1,0,1,2].forEach((o,i)=>{ const g=rad(150-i*30), x=cx+rm*Math.cos(g), y=cy+rm*Math.sin(g);
-    if(o===0){ d.setFillColor(...rot); d.roundedRect(x-4,y-1.75,8,3.5,1.2,1.2,"F"); d.setTextColor(255,255,255); } else d.setTextColor(60,64,70);
-    d.setFontSize(o===0?6.5:5.6); d.text(String(jr+o),x,y+0.75,{align:"center"}); });
-  d.setFont("helvetica","normal"); d.setFontSize(5.2); d.setTextColor(93,107,123); d.text("NÄCHSTE",cx,cy-3.9,{align:"center"}); d.text("PRÜFUNG",cx,cy-1.5,{align:"center"});
-  d.setFont("helvetica","bold"); d.setFontSize(9.5); d.setTextColor(...rot); d.text(`${String(mo).padStart(2,"0")}/${jr}`,cx,cy+4.6,{align:"center"}); }
-function legPruefPlakette(d,S,P){ if(!P||!/^\d{4}-\d{2}/.test(P.naechste||"")) return;
-  const M=S.M, CW=S.CW, h=38; S.platz(h+4); const y0=S.y-1.5;
-  d.setFillColor(...S.SUNK); d.roundedRect(M,y0,CW,h,2,2,"F");
-  legPlakette(d,M+3+16,y0+h/2,P.naechste);
-  const tx=M+42, tw=CW-46; let y=y0+9;
-  d.setFont("helvetica","bold"); d.setFontSize(12); d.setTextColor(...S.NAVY); d.text(pdfT(`Nächster E-Check: ${LEG_MONATE[+P.naechste.slice(5,7)-1]} ${P.naechste.slice(0,4)}`),tx,y); y+=5.6;
-  if(P.zuletzt){ d.setFont("helvetica","normal"); d.setFontSize(9.5); d.setTextColor(40); d.text(pdfT(`Letzte Prüfung am ${ecDatum(P.zuletzt)} durch Elektro Irrgang`),tx,y); y+=5.2; }
-  d.setFont("helvetica","normal"); d.setFontSize(8.5); d.setTextColor(...S.GR);
-  const t=d.splitTextToSize(pdfT("Elektrische Anlagen in Wohngebäuden sollten alle 4 Jahre geprüft werden (E-Check), gewerblich genutzte nach DGUV Vorschrift 3 in den vom Betreiber festgelegten Fristen. Termin rechtzeitig vereinbaren: Tel. 02291 4878."),tw);
-  d.text(t.slice(0,4),tx,y,{lineHeightFactor:1.3});
-  S.y=y0+h+7; }
+  const mW=i=>190+i*160/11;
+  for(let m=1;m<=12;m++){ const th=mW(m-1); if(m===mo) hinterlegen(th,1.4,1.55); bogen(String(m),th,true,5.5,m===mo?[255,255,255]:[45,48,54]); if(m<12) strich(th+160/22); }
+  [-2,-1,0,1,2].forEach((o,i)=>{ const th=156-i*33; if(!o) hinterlegen(th,3.4,1.7); bogen(String(jr+o),th,false,5.6,o?[45,48,54]:[255,255,255]); if(i<4) strich(th-16.5); });
+  d.setFont("helvetica","normal"); d.setFontSize(5); d.setTextColor(93,107,123); d.text("NÄCHSTE",cx,cy-3.4,{align:"center"}); d.text("PRÜFUNG",cx,cy-1.2,{align:"center"});
+  d.setFont("helvetica","bold"); d.setFontSize(8.8); d.setTextColor(...rot); d.text(`${String(mo).padStart(2,"0")}/${jr}`,cx,cy+3.6,{align:"center"}); }
 /* Stromkreis-Tabelle – auch im Anlagenpass verwendet.
    Lesbarkeit (Max 18.11.2026: „das müssen auch ältere Leute lesen können“): Darstellungen A1 (bisher), A2 (Mittelding), A3 (größer), LEG_PDF_ART legt fest, welche gilt.
    fs = Schriftgröße (pt), zh = Zeilenhöhe (mm), kh = Kopfhöhe, kf = Kopfschrift, gf = Gruppenschrift, kzF/abF = Kennzeichnung/Absicherung fett, li = Trennlinien statt Zebra */
