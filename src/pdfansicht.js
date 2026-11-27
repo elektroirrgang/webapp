@@ -8,7 +8,7 @@ function pdfjsLaden(){ if(window.pdfjsLib) return Promise.resolve(window.pdfjsLi
   return pdfjsP; }
 async function pvOeffnen(id){
   const x=PROT.find(y=>y.id===id); if(!x) return; closeOverlays(); $("#pv")?.remove();
-  document.body.insertAdjacentHTML("beforeend",`<div class="pv${PV_MODUS==="seiten"?" m-seiten":""}" id="pv" role="dialog" aria-modal="true" aria-label="Vorschau"><div class="pv-kopf"><div class="pv-l"><button class="pv-rund" data-act="pvZu" aria-label="Schließen">${icon("close")}</button></div><div class="pv-t" data-act="pvKopfAuf"><b>${esc(x.titel)}</b><span>${esc([deDate(x.datum),x.art,x.fassung>1?`Fassung ${x.fassung}`:""].filter(Boolean).join(" · "))}</span></div><div class="pv-r"><button class="pv-rund" data-act="pvTeilen" aria-label="Teilen">${icon("share")}</button><button class="pv-rund" data-act="pvMenu" aria-label="Weitere Aktionen" aria-haspopup="menu">${icon("moreH")}</button></div></div><div class="pv-seiten" id="pvSeiten"><p class="pv-lade">PDF wird geladen …</p></div><span class="pv-zahl" id="pvZahl"></span><button class="pv-pfeil l" data-act="pvZurueck" aria-label="Vorherige Seite">${icon("chev")}</button><button class="pv-pfeil r" data-act="pvWeiter" aria-label="Nächste Seite">${icon("chev")}</button></div>`);
+  document.body.insertAdjacentHTML("beforeend",`<div class="pv${PV_MODUS==="seiten"?" m-seiten":""}" id="pv" role="dialog" aria-modal="true" aria-label="Vorschau"><div class="pv-kopf"><div class="pv-l"><button class="pv-rund" data-act="pvZu" aria-label="Schließen">${icon("close")}</button></div><div class="pv-t" data-act="pvKopfAuf"><b>${esc(x.titel)}</b><span>${esc([deDate(x.datum),x.art,x.fassung>1?`Fassung ${x.fassung}`:""].filter(Boolean).join(" · "))}</span></div><div class="pv-r"><button class="pv-rund" data-act="pvDrucken" aria-label="Drucken">${icon("druck")}</button><button class="pv-rund" data-act="pvTeilen" aria-label="Teilen">${icon("share")}</button><button class="pv-rund" data-act="pvMenu" aria-label="Weitere Aktionen" aria-haspopup="menu">${icon("moreH")}</button></div></div><div class="pv-seiten" id="pvSeiten"><p class="pv-lade">PDF wird geladen …</p></div><span class="pv-zahl" id="pvZahl"></span><button class="pv-pfeil l" data-act="pvZurueck" aria-label="Vorherige Seite">${icon("chev")}</button><button class="pv-pfeil r" data-act="pvWeiter" aria-label="Nächste Seite">${icon("chev")}</button></div>`);
   document.body.classList.add("pv-offen"); PV={id,z:1,doc:null}; const P=PV; pvGesten();
   try{ const [lib,blob]=await Promise.all([pdfjsLaden(),protBlob(id)]); if(PV!==P) return; if(!blob) throw new Error("blob");
     P.blob=blob; P.doc=await lib.getDocument({data:new Uint8Array(await blob.arrayBuffer())}).promise; if(PV!==P) return; $("#pvSeiten").innerHTML=""; await pvZeichnen(); }
@@ -64,6 +64,21 @@ function pvMenu(){ const x=PV&&PROT.find(y=>y.id===PV.id); if(!x) return;
   const it=[PV_MODUS==="seiten"?["pvModus","Durchgehend scrollen","swapV"]:["pvModus","Seitenweise blättern","swapH"],"-",["pvMail","Per Mail senden","mail"],["pvSpeichern","Auf dem Gerät speichern","pdf"]].concat(typeof PV_EXTRA==="function"?PV_EXTRA(x):[]); if(typeof bbPvExtra==="function") it.push(...bbPvExtra(x,it));
   $("#menu").innerHTML=it.map(m=>m==="-"?"<hr>":`<button class="mi ${m[3]||""}" role="menuitem" data-act="${m[0]}">${icon(m[2])}<span>${m[1]}</span></button>`).join("");
   $("#menu").hidden=false; $("#scrim").hidden=false; }
+/* Direkt drucken (27.11.2026): Seiten mit pdf.js als Bilder (200 dpi) in einen Druckbereich legen und den Druckdialog des Geräts öffnen –
+   ohne die PDF vorher zu speichern. Klappt am PC, auf dem iPhone/iPad (AirPrint) und unter Android gleich, weil nicht die PDF, sondern die Seitenbilder gedruckt werden. */
+IC.druck=IC.druck||"M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z";
+async function pvDrucken(){ const P=PV; if(!P||!P.doc){ toast("PDF lädt noch …"); return; } if(P.druckt) return; P.druckt=true; toast("Druck wird vorbereitet …");
+  try{ document.getElementById("pvDruck")?.remove(); const box=document.createElement("div"); box.id="pvDruck"; let quer=false; const urls=[];
+    for(let n=1;n<=P.doc.numPages;n++){ const s=await P.doc.getPage(n), v=s.getViewport({scale:200/72}); if(n===1) quer=v.width>v.height;
+      const c=document.createElement("canvas"); c.width=Math.round(v.width); c.height=Math.round(v.height); const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height);
+      await s.render({canvasContext:x,viewport:v}).promise; const b=await new Promise(ok=>c.toBlob(ok,"image/png")); const u=URL.createObjectURL(b); urls.push(u);
+      const seite=document.createElement("div"); seite.className="pv-dseite"; const img=new Image(); img.src=u; img.alt=""; seite.appendChild(img); box.appendChild(seite); }
+    const st=document.createElement("style"); st.id="pvDruckSeite"; st.textContent=`@page{size:A4 ${quer?"landscape":"portrait"};margin:0}`; document.getElementById("pvDruckSeite")?.remove(); document.head.appendChild(st);
+    document.body.appendChild(box); await Promise.all([...box.querySelectorAll("img")].map(i=>i.decode?i.decode().catch(()=>{}):Promise.resolve()));
+    const weg=()=>{ document.body.classList.remove("pv-druckt"); box.remove(); st.remove(); urls.forEach(u=>URL.revokeObjectURL(u)); removeEventListener("afterprint",weg); };
+    document.body.classList.add("pv-druckt"); addEventListener("afterprint",weg); setTimeout(()=>{ window.print(); setTimeout(()=>{ if(document.body.classList.contains("pv-druckt")&&!matchMedia("print").matches) weg(); },60000); },50);
+  }catch(e){ console.error(e); toast("Drucken ging nicht – bitte über „Teilen“ drucken"); }
+  finally{ P.druckt=false; } }
 async function pvAktion(a){ const x=PV&&PROT.find(y=>y.id===PV.id); if(!x) return; const blob=PV.blob||await protBlob(x.id); if(!blob){ toast("PDF nicht gefunden"); return; }
   const f=new File([blob],x.name+".pdf",{type:"application/pdf"});
   if(a==="pvSpeichern"){ saveFile(blob,x.name+".pdf"); return; }
@@ -77,5 +92,5 @@ addEventListener("resize",()=>{ if(PV){ clearTimeout(PV.rt); PV.rt=setTimeout(pv
 /* Knöpfe der Ansicht – nur die eigenen, App-eigene Menüpunkte (z. B. pvPruefung, pvLoesch) laufen weiter über die App */
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="pv"]'); if(!b) return; const a=b.dataset.act;
   const F={pvZu:()=>pvZu(),pvKopfAuf:()=>$("#pv")?.classList.remove("kompakt"),pvModus:()=>{ closeOverlays(); pvModus(PV_MODUS==="seiten"?"scroll":"seiten"); },
-    pvZurueck:()=>pvGehe(pvSeite()-1,true),pvWeiter:()=>pvGehe(pvSeite()+1,true),pvMenu:()=>pvMenu(),pvMail:()=>{ closeOverlays(); pvAktion(a); },pvTeilen:()=>{ closeOverlays(); pvAktion(a); },pvSpeichern:()=>{ closeOverlays(); pvAktion(a); }};
+    pvZurueck:()=>pvGehe(pvSeite()-1,true),pvWeiter:()=>pvGehe(pvSeite()+1,true),pvMenu:()=>pvMenu(),pvDrucken:()=>{ closeOverlays(); pvDrucken(); },pvMail:()=>{ closeOverlays(); pvAktion(a); },pvTeilen:()=>{ closeOverlays(); pvAktion(a); },pvSpeichern:()=>{ closeOverlays(); pvAktion(a); }};
   if(!F[a]) return; e.stopPropagation(); F[a](); },true);
