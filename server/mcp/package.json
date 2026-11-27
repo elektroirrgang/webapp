@@ -8,7 +8,8 @@
   "scripts": {
     "start": "node src/start.js",
     "test": "node test/test.js",
-    "schluessel": "node src/schluessel.js"
+    "schluessel": "node src/schluessel.js",
+    "demo": "node test/demo.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
