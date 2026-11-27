@@ -14,14 +14,14 @@ function pdfStil(d,o){
   const W=210,M=14,CW=W-2*M, NAVY=[34,34,34],SIG=[225,29,47],GR=[93,107,123],LINE=[211,218,227],OKC=[31,138,76],BADC=[198,40,40],SUNK=[238,241,245];
   const S={W,M,CW,y:0,NAVY,GR,SUNK,LINE,OKC,BADC};
   S.kopf=(t,u)=>{ t=t||o.titel; u=u==null?o.unter:u; d.setFillColor(255,255,255); d.rect(0,0,W,26,"F");
-    try{ d.addImage(LOGO_PDF,"PNG",M,6,57,10); }catch(e){}
+    try{ d.addImage(LOGO_PDF,"PNG",M,6,57,10); }catch(e){} d.setFont("helvetica","normal"); d.setFontSize(7); d.setTextColor(93,107,123); d.text("Inh. Joachim Irrgang",M,20.6);
     let tx=W-M; if(o.ehw){ const eh=14.8, ew=eh*525/462; try{ d.addImage(PDF_EHW,"JPEG",W-M-ew,4.6,ew,eh,"ehw"); }catch(e){} tx=W-M-ew-5; }
     d.setTextColor(...NAVY); d.setFont("helvetica","bold"); d.setFontSize(13); d.text(pdfT(t),tx,11,{align:"right"});
     d.setFont("helvetica","normal"); d.setFontSize(8); d.setTextColor(...GR); d.text(pdfT(u||"").slice(0,95),tx,17,{align:"right"});
     d.setFillColor(...SIG); d.rect(0,24,W,1.4,"F"); S.y=34;
     if(o.wasser){ d.setFont("helvetica","bold"); d.setFontSize(70); d.setTextColor(241,242,244); d.text(pdfT(o.wasser),52,200,{angle:35}); } };
   S.fuss=()=>{ d.setDrawColor(...LINE); d.line(M,284,W-M,284); d.setFont("helvetica","normal"); d.setFontSize(7); d.setTextColor(...GR);
-    d.text("Elektro Irrgang | Hahner Weg 2 | 51545 Waldbröl | Tel. 02291 4878 | info@elektro-irrgang.de",M,288); if(o.fuss) d.text(pdfT(o.fuss),M,292); };
+    d.text("Elektro Irrgang | Inh. Joachim Irrgang | Hahner Weg 2 | 51545 Waldbröl | Tel. 02291 4878 | info@elektro-irrgang.de",M,288); if(o.fuss) d.text(pdfT(o.fuss),M,292); };
   S.seite=(t,u)=>{ S.fuss(); d.addPage(); S.kopf(t,u); };
   S.platz=(h,t,u)=>{ if(S.y+h>278) S.seite(t||o.titel+" (Fortsetzung)",u); };
   S.abschnitt=t=>{ S.platz(16); d.setFillColor(...SUNK); d.rect(M,S.y-4.5,CW,7,"F"); d.setFillColor(...SIG); d.rect(M,S.y-4.5,1.2,7,"F"); d.setTextColor(...NAVY); d.setFont("helvetica","bold"); d.setFontSize(9.5); d.text(pdfT(t),M+4,S.y); S.y+=8; };

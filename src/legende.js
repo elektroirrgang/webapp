@@ -448,12 +448,12 @@ async function legPdf(L,art){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"m
   S.text("Fehlerstromschutzschalter (RCD) alle 6 Monate über die Prüftaste „T“ auslösen. Schaltet der RCD dabei nicht ab, könnte er defekt sein. In diesem Fall bitte Elektro Irrgang informieren.");
   /* Kontakt groß wie im alten Verteilerplan */
   const qrC=L._geb&&typeof qrMatrix==="function"&&((vtGeb(L._geb)||{verteiler:[]}).verteiler.find(x=>x.id===L._v)||{}).qr;
-  S.platz(qrC?30:14); const y=S.y+1, x2=qrC?M+68:M+CW/2;
+  S.platz(qrC?30:19); const y=S.y+1, x2=qrC?M+68:M+CW/2;
   if(qrC){ const Mx=qrMatrix(qrC), n=Mx.length, gr=21, z=gr/n, qx=M+CW-gr, qy=y-4; d.setFillColor(0,0,0); Mx.forEach((r,yy)=>r.forEach((on,xx)=>{ if(on) d.rect(qx+xx*z,qy+yy*z,z+0.02,z+0.02,"F"); }));
     d.setFont("helvetica","bold"); d.setFontSize(9); d.setTextColor(20); d.text("Anlage "+qrZeig(qrC),qx+gr/2,qy+gr+4,{align:"center"}); }
   d.setTextColor(20); d.setFont("helvetica","bold"); d.setFontSize(12); d.text("Elektro Irrgang",M,y); d.setTextColor(...[225,29,47]); d.text("Tel. 02291 4878",x2,y);
-  d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),M,y+5.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x2,y+5.2);
-  S.y=y+(qrC?29:13);
+  d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),M,y+5.2); d.text(pdfT("Inh. Joachim Irrgang"),M,y+10.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x2,y+5.2);
+  S.y=y+(qrC?29:18);
   legPdfStromkreise(d,S,L,art);
   return S.ende(); }
 /* Stromkreis-Tabelle – auch im Anlagenpass verwendet.

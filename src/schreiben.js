@@ -47,7 +47,7 @@ async function bsPdf(b,s){ if(!window.jspdf) throw new Error("PDF-Erstellung nic
   const {jsPDF}=window.jspdf, d=new jsPDF({unit:"mm",format:"a4"}), W=210,M=22,CW=W-2*M, SIG=[225,29,47],GR=[93,107,123];
   const A=BS_ART[s.art], beh=s.art==="behinderung", k=kundeOf(b.kundeId), o=ortVon(b), P=t=>afPt(t);
   let y=0; const neu=()=>{ d.addPage(); y=24; }, platz=h=>{ if(y+h>275) neu(); };
-  try{ d.addImage(LOGO_PDF,"PNG",M,12,57,10); }catch(e){}
+  try{ d.addImage(LOGO_PDF,"PNG",M,12,57,10); }catch(e){} d.setFont("helvetica","normal"); d.setFontSize(7); d.setTextColor(93,107,123); d.text("Inh. Joachim Irrgang",M,25.9);
   d.setFillColor(...SIG); d.rect(0,28,W,1.2,"F");
   d.setFont("helvetica","normal"); d.setFontSize(7.5); d.setTextColor(...GR); d.text(P("Elektro Irrgang | Hahner Weg 2 | 51545 Waldbröl"),M,42);
   d.setFontSize(10.5); d.setTextColor(20); d.text([P(s.an||(k&&k.name)||""),...String(s.anAdr||"").split("\n").map(P)].filter(Boolean),M,49,{lineHeightFactor:1.35});
@@ -80,7 +80,7 @@ async function bsPdf(b,s){ if(!window.jspdf) throw new Error("PDF-Erstellung nic
     neu(); d.setFont("helvetica","bold"); d.setFontSize(11); d.text(P(`Anlage – Fotos zur ${A[0]} vom ${deDate(s.datum)}`),M,y); y+=8;
     let x=M; for(const id of s.fotos){ const src=fotoCache.get(id); if(!src) continue; try{ const p=d.getImageProperties(src), h=70, w=Math.min(CW/2-3,h*p.width/p.height); if(x+w>M+CW+0.1){ x=M; y+=h+6; } platz(h+4); d.addImage(src,"JPEG",x,y,w,h); x+=w+6; }catch(e){} } }
   const N=d.getNumberOfPages(); for(let i=1;i<=N;i++){ d.setPage(i); d.setFont("helvetica","normal"); d.setFontSize(7); d.setTextColor(...GR);
-    d.text("Elektro Irrgang | Hahner Weg 2 | 51545 Waldbröl | Tel. 02291 4878 | info@elektro-irrgang.de",M,288); d.text(`Seite ${i} von ${N}`,W-M,288,{align:"right"}); }
+    d.text("Elektro Irrgang | Inh. Joachim Irrgang | Hahner Weg 2 | 51545 Waldbröl | Tel. 02291 4878 | info@elektro-irrgang.de",M,288); d.text(`Seite ${i} von ${N}`,W-M,288,{align:"right"}); }
   return d.output("blob"); }
 const bsName=(b,s)=>afPt(`${BS_ART[s.art][0]} ${deDate(s.datum)} ${(kundeOf(b.kundeId)||{}).name||""} ${b.name}`).replace(/[\\/:*?"<>|]+/g," ").replace(/\s+/g," ").trim();
 async function bsAblegenUndSenden(){ const r=bsLesen(); if(!r) return; const {b,s}=r; closeOverlays();

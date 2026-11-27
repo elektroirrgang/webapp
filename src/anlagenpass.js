@@ -36,9 +36,9 @@ async function apPdf(gid){ const A=apDaten(gid); if(!A) throw new Error("Objekt 
   S.text("Fehlerstromschutzschalter (RCD) etwa alle 6 Monate über die Prüftaste „T“ auslösen. Schaltet der RCD dabei nicht ab, bitte Elektro Irrgang informieren.");
   S.text("Elektrische Anlagen müssen regelmäßig geprüft werden: in Wohngebäuden empfohlen alle 4 Jahre (E-Check), bei gewerblicher Nutzung nach DGUV Vorschrift 3 in den vom Betreiber festgelegten Fristen. Änderungen und Erweiterungen nur durch eine Elektrofachkraft.");
   if(V.some(x=>x.v.qr)) S.text("Die QR-Aufkleber an den Verteilern führen zur Kontaktseite mit Störungshilfe. Bitte bei Anfragen die dort genannte Anlagen-Nr. angeben.");
-  S.platz(14); { const y=S.y+1, x2=M+CW/2;
+  S.platz(19); { const y=S.y+1, x2=M+CW/2;
     d.setTextColor(20); d.setFont("helvetica","bold"); d.setFontSize(12); d.text("Elektro Irrgang",M,y); d.setTextColor(225,29,47); d.text("Tel. 02291 4878",x2,y);
-    d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),M,y+5.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x2,y+5.2); S.y=y+13; }
+    d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),M,y+5.2); d.text(pdfT("Inh. Joachim Irrgang"),M,y+10.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x2,y+5.2); S.y=y+18; }
   /* je Verteiler eine eigene Seite */
   V.forEach(({v,L})=>{ S.seite(`Verteiler ${v.name||""}`.trim(),`Anlagenpass | ${o.titel}`);
     S.abschnitt("Angaben");
