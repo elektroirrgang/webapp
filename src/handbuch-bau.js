@@ -12,7 +12,10 @@ const HB_BAU_TYPEN=[["text","Text","notes"],["ueberschrift","Überschrift","hbTi
   ["hinweis","Hinweis","info"],["warnung","Warnung","warn"],["tabelle","Tabelle","hbTab"],["anruf","Anruf-Knopf","phone"],["link","Link","globe"],["schaubild","Schaubild","chart"],["offen","Noch offen","pending"]];
 const HB_SCHAUBILDER=[["aderfarben","Aderfarben nach Baujahr","Farben der Adern je nach Baujahr der Anlage, zum Umschalten"],
   ["sicherheitsregeln","Die 5 Sicherheitsregeln","Alle fünf Regeln mit Bild und kurzem Text"],
-  ["arbeitstag","So rechnet sich ein Arbeitstag","Tagesbalken Mo–Do und Freitag, Soll 7:36 h, Rechnung"]];
+  ["arbeitstag","So rechnet sich ein Arbeitstag","Tagesbalken Mo–Do und Freitag, Soll 7:36 h, Rechnung"],
+  ["ladung","Ladungssicherung","Transporter von oben: wie stark die Ladung beim Bremsen und Ausweichen drückt"],
+  ["datendose","Datendose T568B","Pin 1 bis 8 mit Aderfarben"],
+  ["organigramm","Organigramm","Wer gehört wohin – kommt automatisch aus Einstellungen › Team"]];
 let HB_BL=[], HB_BAU_PLUS=null, HB_BAU_MODUS="bau", HB_BAU_VORHER=null;
 const hbGrossGenug=()=>{ try{ return Math.min(screen.width,screen.height)>=600||matchMedia("(pointer:fine)").matches; }catch(e){ return true; } };
 /* ---- Text ↔ Bausteine ---- */
@@ -97,7 +100,7 @@ Normaler Satz (mit **fett** für Wichtiges)
 | Zelle | Zelle |
 [Name anrufen](tel:0123 456789)
 [Linktext](https://…)
-Schaubilder, nur wenn sie wirklich passen, als eigene Zeile: [[aderfarben]] (Aderfarben nach Baujahr), [[sicherheitsregeln]] (5 Sicherheitsregeln), [[arbeitstag]] (Arbeitszeit/Pausen-Rechnung).
+Schaubilder, nur wenn sie wirklich passen, als eigene Zeile: [[aderfarben]] (Aderfarben nach Baujahr), [[sicherheitsregeln]] (5 Sicherheitsregeln), [[arbeitstag]] (Arbeitszeit/Pausen-Rechnung), [[ladung]] (Ladungssicherung), [[datendose]] (Datendose T568B), [[organigramm]] (Organigramm aus dem Team).
 Erfinde keine Fakten, Zahlen, Namen oder Telefonnummern. Was im Text fehlt oder unklar ist, als eigene Zeile mit „?? “ am Anfang notieren.`;
 async function hbBauKi(){ if(typeof kiAn!=="function"||!kiAn()){ toast("KI ist noch nicht eingerichtet – Einstellungen › KI"); return; }
   const t=hbBauText(HB_BL); if(t.length<15){ toast("Erst ein paar Stichpunkte als Text-Baustein schreiben"); return; }

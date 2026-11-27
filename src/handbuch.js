@@ -44,8 +44,9 @@ function hbTabelle(T){ const K=T[0], R=T.slice(1); if(!R.length) return "";
     return `<div class="hb-gruppen">${G.map(g=>`<section class="hb-gr"><h4>${hbInl(g.t)}</h4><div class="hb-gr-t" style="--n:${n}">${K.slice(1).map(k=>`<span class="hb-gr-k">${esc(k)}</span>`).join("")}${g.z.map(z=>K.slice(1).map((_,i)=>`<span class="hb-gr-c">${hbZelle(z[i]||"")}</span>`).join("")).join("")}</div></section>`).join("")}</div>`; }
   const karten=K.length>=3?`<div class="hb-tk">${R.map(r=>`<section class="hb-tk-r"><h4>${hbInl(r[0]||"")}</h4>${K.slice(1).map((k,i)=>r[i+1]?`<div class="hb-tk-z"><span>${hbInl(k)}</span><div>${hbZelle(r[i+1])}</div></div>`:"").join("")}</section>`).join("")}</div>`:"";
   return karten+`<div class="hb-tab-w${karten?" mit-karten":""}"><table class="hb-tab"><thead><tr>${K.map(k=>`<th>${hbInl(k)}</th>`).join("")}</tr></thead><tbody>${R.map(r=>`<tr>${K.map((_,i)=>`<td>${hbZelle(r[i]||"")}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`; }
-function hbMd(t,o={}){ const Z=String(t||"").replace(/\r/g,"").split("\n"); let h="", liste="", tab=null, offen=null;
-  const zu=()=>{ if(liste){ h+=`</${liste}>`; liste=""; } if(tab){ h+=hbTabelle(tab); tab=null; }
+function hbMd(t,o={}){ const Z=String(t||"").replace(/\r/g,"").split("\n"); let h="", liste="", tab=null, offen=null, fang=null, fangL=null;
+  const zu=()=>{ if(fangL){ h+=HB_FANG[fang].f(fangL,o); fangL=null; fang=null; }
+    if(liste){ h+=`</${liste}>`; liste=""; } if(tab){ if(fang&&HB_FANG[fang].art==="tab"){ h+=HB_FANG[fang].f(tab,o); fang=null; } else h+=hbTabelle(tab); tab=null; }
     if(offen){ if(!o.druck&&hbDarf()) h+=`<div class="hb-offen">${icon("warn")}<div><b>Noch offen – nur für Chef und Büro sichtbar</b>${offen.map(x=>`<p>${hbInl(x)}</p>`).join("")}</div></div>`; offen=null; } };
   Z.forEach(z=>{ const s=z.trim(); let m;
     if(/^\?\?/.test(s)){ const x=s.replace(/^\?\?\s*/,""); if(!offen){ zu(); offen=[]; } offen.push(x); return; }
@@ -54,10 +55,12 @@ function hbMd(t,o={}){ const Z=String(t||"").replace(/\r/g,"").split("\n"); let 
     if(s==="[[aderfarben]]"){ zu(); h+=hbAderfarben(o.druck); return; }
     if(s==="[[arbeitstag]]"){ zu(); h+=hbArbeitstag(); return; }
     if(s==="[[sicherheitsregeln]]"){ zu(); h+=hbSicherheitsregeln(o.druck); return; }
+    if((m=s.match(/^\[\[([a-z]+)\]\]$/))&&typeof HB_FANG!=="undefined"){ if(HB_FANG[m[1]]){ zu(); fang=m[1]; return; } if(HB_BILD[m[1]]){ zu(); h+=HB_BILD[m[1]](o); return; } }
     if((m=s.match(/^>\s*!\s*(.+)/))){ zu(); h+=`<div class="hb-hinweis warn">${icon("warn")}<p>${hbInl(m[1])}</p></div>`; return; }
     if((m=s.match(/^>\s*(.+)/))){ zu(); h+=`<div class="hb-hinweis">${icon("info")}<p>${hbInl(m[1])}</p></div>`; return; }
     if((m=s.match(/^##\s+(.+)/))){ zu(); h+=`<h3>${hbInl(m[1])}</h3>`; return; }
     if((m=s.match(/^[-•·]\s+(.+)/))){ if(liste!=="ul"){ zu(); h+="<ul>"; liste="ul"; } h+=`<li>${hbInl(m[1])}</li>`; return; }
+    if((m=s.match(/^\d+\.\s+(.+)/))&&fang&&HB_FANG[fang].art==="ol"){ if(liste||tab) zu(); (fangL=fangL||[]).push(m[1]); return; }
     if((m=s.match(/^\d+\.\s+(.+)/))){ if(liste!=="ol"){ zu(); h+="<ol>"; liste="ol"; } h+=`<li>${hbInl(m[1])}</li>`; return; }
     zu(); h+=`<p>${hbInl(s)}</p>`; }); zu(); return h; }
 const hbOffen=a=>/(^|\n)\s*\?\?/.test(a.inhalt||"");
@@ -122,7 +125,7 @@ function hbArbeitstag(){
     <div class="hb-hinweis">${icon("info")}<p>Der ganze Tag selbst ist ±0. Es fehlt nur einer der langen Tage, die sonst den kurzen Freitag ausgleichen – deshalb steht am Ende der Woche ein kleines Minus.</p></div></div>`; }
 /* Artikel zu den Sicherheitsregeln bekommt das Schaubild auch ohne [[sicherheitsregeln]] im Text – ganz oben,
    die Erklärtexte darunter. Die nummerierte Liste „1. Freischalten … 5. …“ (samt Überschrift) entfällt dann. */
-function hbMitSchaubild(a){ let t=String(a.inhalt||"");
+function hbMitSchaubild(a,druck){ let t=String(a.inhalt||""); if(typeof hbMitBildern==="function") t=hbMitBildern(a,t,druck);
   if((a.id==="hb-arbeitszeit"||/^unsere arbeitszeiten$/i.test(a.titel||""))&&!t.includes("[[arbeitstag]]")){
     const i=t.search(/\n##\s*Pausen nach Arbeitszeitgesetz/i); return i>=0?t.slice(0,i)+"\n\n[[arbeitstag]]\n"+t.slice(i):t.trim()+"\n\n[[arbeitstag]]"; }
   if(t.includes("[[sicherheitsregeln]]")||!(a.id==="hb-5sr"||/f(ü|ue)nf sicherheitsregeln|5 sicherheitsregeln/i.test(a.titel||""))) return t;
@@ -248,7 +251,7 @@ function hbDrucken(){ const A=hbAlle().filter(a=>hbGilt(a)&&hbDruckbar(a)); if(!
   const box=document.createElement("div"); box.id="hbDruck"; box.className="hb-d";
   box.innerHTML=`<section class="hb-d-titel">${typeof LOGO_PDF!=="undefined"&&/^data:/.test(LOGO_PDF)?`<img class="hb-d-logo" src="${LOGO_PDF}" alt="Elektro Irrgang">`:`<p class="hb-d-firma">Elektro Irrgang</p>`}<h1>Betriebshandbuch</h1>${(v=>v.length===1?`<p>${esc(v[0])}</p>`:"")([...new Set(A.map(a=>a.verfasser).filter(Boolean))])}<p>Stand ${esc(ecDatumKurz(today()))}</p></section>
     <section class="hb-d-inhalt"><h1>Inhalt</h1><ol class="hb-d-inh">${K.map(([t,X],i)=>`<li><b>${i+1} ${esc(t)}</b><ol>${X.map((a,j)=>`<li>${i+1}.${j+1} ${esc(a.titel)}</li>`).join("")}</ol></li>`).join("")}</ol></section>
-    ${K.map(([t,X],i)=>`<section class="hb-d-kap"><h1>${i+1} ${esc(t)}</h1>${X.map((a,j)=>`<article class="hb-d-art"><h2>${i+1}.${j+1} ${esc(a.titel)}</h2><div class="hb-text">${hbMd(hbMitSchaubild(a),{druck:true})}</div>
+    ${K.map(([t,X],i)=>`<section class="hb-d-kap"><h1>${i+1} ${esc(t)}</h1>${X.map((a,j)=>`<article class="hb-d-art"><h2>${i+1}.${j+1} ${esc(a.titel)}</h2><div class="hb-text">${hbMd(hbMitSchaubild(a,true),{druck:true})}</div>
       ${a.checkliste.length?`<div class="hb-d-ck"><b>Checkliste</b>${a.checkliste.map(c=>`<p><span class="hb-d-box"></span>${esc(c)}</p>`).join("")}</div>`:""}
       <p class="hb-d-stand">${esc([hbStandText(a,true),a.verfasser?`von ${a.verfasser}`:""].filter(Boolean).join(" · "))}</p></article>`).join("")}</section>`).join("")}`;
   const st=document.createElement("style"); st.id="hbDruckSeite"; st.textContent="@page{size:A4 portrait;margin:16mm 16mm 18mm}";
@@ -258,6 +261,7 @@ function hbDrucken(){ const A=hbAlle().filter(a=>hbGilt(a)&&hbDruckbar(a)); if(!
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="hb"]'); if(!b||b.disabled) return; e.stopPropagation(); const a=b.dataset.act, id=b.dataset.id;
   if(a==="hbAuf"){ go({v:"hb",id}); return; }
   if(a==="hbAf"){ HB_AFK=b.dataset.k; render(); return; }
+  if(a==="hbKl"){ HB_KL=+b.dataset.i||0; render(); return; }
   if(a==="hbDruck"){ hbDrucken(); return; }
   if(a==="hbEinspielen"){ if(hbEinspielDarf()) hbEinspielen(); return; }
   if(a==="hbEinOk"){ hbEinOk(); return; }
