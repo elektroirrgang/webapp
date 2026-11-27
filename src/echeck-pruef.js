@@ -1845,7 +1845,15 @@ async function ecPdf(pr){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"mm",f
   S.abschnitt("Gesamtergebnis"); S.platz(10); d.setFont("helvetica","bold"); d.setFontSize(10); d.setTextColor(20);
   d.text(pdfT(erg==="ok"?"Keine Mängel festgestellt.":erg==="bad"?"Mängel festgestellt - Beseitigung erforderlich.":"Prüfung unvollständig - nicht alle Werte erfasst."),S.M,S.y); S.plakette(S.M+S.CW-1,S.y,erg); S.y+=9;
   S.abschnitt("Festgestellte Mängel / Maßnahmen"); S.text(pr.maengel||ecMaengelText(pr)||"Keine.");
-  if(!nz){ S.abschnitt("Nächste Prüfung"); S.text(`Empfohlen bis ${ecDatum(ecPlus(pr.datum,pr.fristM||(an?48:12)))}. Die Frist legt der Betreiber fest.`); }
+  if(!nz){ S.abschnitt("Nächste Prüfung"); const nd=ecPlus(pr.datum,pr.fristM||(an?48:12));
+    /* E-CHECK-Plakette wie auf der Legende (27.11.2026) – nur wenn bestanden, nur Gebäudetechnik, nicht bei Ladeeinrichtungen (dort klebt sie an der Wallbox, Foto im Protokoll) */
+    if(erg==="ok"&&typeof legPlakette==="function"&&/^\d{4}-\d{2}/.test(nd||"")){ S.platz(40); const y0=S.y-1, x=S.M+38;
+      legPlakette(d,S.M+16,y0+14,nd,pr.datum);
+      d.setFont("helvetica","bold"); d.setFontSize(12); d.setTextColor(...S.NAVY); d.text(pdfT(`Nächster E-Check: ${LEG_MONATE[+nd.slice(5,7)-1]} ${nd.slice(0,4)}`),x,y0+7);
+      d.setFont("helvetica","normal"); d.setFontSize(9.5); d.setTextColor(40); d.text(pdfT(`Empfohlen bis ${ecDatum(nd)}. Die Frist legt der Betreiber fest.`),x,y0+13);
+      d.setFontSize(8.5); d.setTextColor(...S.GR); d.text(d.splitTextToSize(pdfT(an?"Elektrische Anlagen in Wohngebäuden sollten alle 4 Jahre geprüft werden (E-Check), gewerblich genutzte nach DGUV Vorschrift 3 in den vom Betreiber festgelegten Fristen.":"Ortsveränderliche Geräte nach DGUV Vorschrift 3 in den vom Betreiber festgelegten Fristen prüfen lassen."),S.CW-40),x,y0+19,{lineHeightFactor:1.3});
+      S.y=y0+37; }
+    else S.text(`Empfohlen bis ${ecDatum(nd)}. Die Frist legt der Betreiber fest.`); }
   S.abschnitt("Unterschriften"); S.y+=2; S.unterschriften([["Prüfer",pr.pruefer,ecDatum(pr.datum)],["Auftraggeber",k&&k.ansprech||"",ecDatum(pr.datum)]]);
   return S.ende(pr.id.slice(-6).toUpperCase()); }
 async function ecPdfAblegen(pr){ toast("PDF wird erstellt …");
