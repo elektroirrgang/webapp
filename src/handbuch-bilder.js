@@ -162,9 +162,21 @@ function hbJaNeinLesen(t){ const re=/(^|\n)##\s*(Darf (?!nicht)[^\n]*)\n((?:\s*[
   HB_JN={ja:L(m[3]),nein:L(m[4])}; const titel=m[2].replace(/^Darf in den\s*/i,"Was darf in den ").replace(/\s*$/,"?");
   return t.replace(m[0],`${m[1]}## ${titel}\n[[janein]]\n\n`); }
 
+
+/* ---------- Leitern (Max 27.11.2026): Maßband bis zur erlaubten Höhe + Sprossenleiter erlaubt / nicht erlaubt ---------- */
+let HB_LT=null;
+function hbLeiterLesen(t){ const m=t.match(/\n\s*[-•·]\s+[^\n]*?(\d+(?:,\d+)?)\s*m\s+Höhenunterschied[^\n]*\n\s*[-•·]\s+[^\n]*Sprossenleiter[^\n]*/i); if(!m) return t;
+  HB_LT={m:m[1]}; return t.replace(m[0],"\n\n[[leiter]]\n"); }
+function hbLeiter(){ const d=HB_LT; if(!d) return ""; const h=Math.max(1,Math.round(parseFloat(d.m.replace(",","."))));
+  const L=`<svg viewBox="0 0 40 170" aria-hidden="true"><rect x="7" y="2" width="5" height="166" rx="2.5" fill="#E8A317"/><rect x="28" y="2" width="5" height="166" rx="2.5" fill="#E8A317"/>${Array.from({length:13},(_,i)=>`<rect x="10" y="${(170/14)*(i+1)-2}" width="20" height="3.2" rx="1.6" fill="#E8A317"/>`).join("")}</svg>`;
+  return `<div class="hbx hb-lt"><div class="hb-lt-m"><div class="hb-lt-s">${Array.from({length:h+1},(_,i)=>`<div class="${i?"":"max"}"><span>${h-i} m</span><i></i></div>`).join("")}</div><div class="hb-lt-b">${L}</div></div>
+    <div class="hb-lt-t"><b class="gross">${esc(d.m)} m</b><b>höchstens</b><span>Höhenunterschied, wenn die Leiter regelmäßig benutzt wird</span><small>TRBS 2121 Teil 2</small></div></div>
+    <h3>Sprossenleiter</h3><div class="hb-jn hb-lt-jn"><div class="ja"><div class="hb-lt-k"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3 5 6.99h3V14h2V6.99h3L9 3z" fill="currentColor"/></svg><span class="hb-jn-k">Erlaubt</span></div><p>Als Verkehrsweg – zum Hoch- und Runtersteigen</p></div>
+    <div class="nein"><div class="hb-lt-k"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9A7.902 7.902 0 0 1 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1A7.902 7.902 0 0 1 20 12c0 4.42-3.58 8-8 8z" fill="currentColor"/></svg><span class="hb-jn-k">Nicht erlaubt</span></div><p>Als Standplatz oder Arbeitsplatz</p></div></div>`; }
+
 /* Welche Schaubilder eine Tabelle oder Liste darunter übernehmen */
 const HB_FANG={muell:{art:"tab",f:hbMuell},kreislauf:{art:"ol",f:hbKreislauf},klemmen:{art:"tab",f:hbKlemmen},fahrzeuge:{art:"tab",f:hbFahrzeuge},baustellentag:{art:"ol",f:hbBaustellentag}};
-const HB_BILD={janein:hbJaNein,datendose:hbDatendose,krankmeldung:hbKrankmeldung,ladung:hbLadung,organigramm:hbOrganigramm};
+const HB_BILD={leiter:hbLeiter,janein:hbJaNein,datendose:hbDatendose,krankmeldung:hbKrankmeldung,ladung:hbLadung,organigramm:hbOrganigramm};
 
 /* Automatisch in die passenden Artikel – Joachims Text bleibt, wie er ist */
 function hbMitBildern(a,t,druck){ const id=a.id, ti=String(a.titel||"");
@@ -176,6 +188,7 @@ function hbMitBildern(a,t,druck){ const id=a.id, ti=String(a.titel||"");
   if((id==="hb-bs-alltag"||/^baustellenalltag$/i.test(ti))&&!hat("baustellentag")) t=t.replace(/(\n##\s*Ablauf eines Baustellentags[^\n]*\n)(\s*\n)?(\s*1\.\s)/i,"$1[[baustellentag]]\n$3");
   if((id==="hb-krank"||/arbeitsunfähigkeit|krankmeldung/i.test(ti))&&!druck&&!hat("krankmeldung")){ const k=hbKrankLesen(t);
     if(k){ HB_KM=k.d; const Z=k.rest.split("\n"); const e=Z.findIndex(z=>z.trim()); t=(e>=0?Z.slice(0,e+1).join("\n"):"")+"\n\n[[krankmeldung]]\n\n"+Z.slice(e+1).join("\n"); } }
+  if((id==="hb-psa"||/leitern/i.test(ti))&&!druck&&!hat("leiter")) t=hbLeiterLesen(t);
   if((id==="hb-muell"||/^müll/i.test(ti))&&!druck&&!hat("janein")) t=hbJaNeinLesen(t);
   if((id==="hb-ladung"||/^ladungssicherung$/i.test(ti))&&!hat("ladung")){ const i=t.search(/\n>\s*Hat jemand anders/i); t=i>=0?t.slice(0,i)+"\n\n[[ladung]]\n"+t.slice(i):t.trim()+"\n\n[[ladung]]"; }
   if((id==="hb-organigramm"||/^organigramm$/i.test(ti))&&!hat("organigramm")){ const Z=t.split("\n"); t=Z[0]+"\n\n[[organigramm]]\n"+Z.slice(1).join("\n"); }
