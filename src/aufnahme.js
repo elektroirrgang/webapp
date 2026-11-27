@@ -192,7 +192,7 @@ async function afPdf(b){
   const k=kundeOf(b.kundeId), s=ortVon(b);
   const {jsPDF}=window.jspdf, d=new jsPDF({unit:"mm",format:"a4"}), W=210,M=14,CW=W-2*M, SIG=[225,29,47],GR=[93,107,123],LINE=[211,218,227],SUNK=[238,241,245];
   let y=0;
-  const head=()=>{ try{ d.addImage(LOGO_PDF,"PNG",M,6,57,10); }catch(e){} d.setFont("helvetica","normal"); d.setFontSize(7); d.setTextColor(93,107,123); d.text("Inh. Joachim Irrgang",M,20.6);
+  const head=()=>{ try{ d.addImage(LOGO_PDF,"PNG",M,5,57,10); }catch(e){} d.setFont("helvetica","normal"); d.setFontSize(7.5); d.setTextColor(93,107,123); d.text("Inh. Joachim Irrgang",M,17);
     d.setTextColor(34,34,34); d.setFont("helvetica","bold"); d.setFontSize(13); d.text("Aufnahmeprotokoll",W-M,11,{align:"right"});
     d.setFont("helvetica","normal"); d.setFontSize(8); d.setTextColor(...GR); d.text(afPt([k&&k.name,b.name].filter(Boolean).join(" | ")).slice(0,95),W-M,17,{align:"right"});
     d.setFillColor(...SIG); d.rect(0,24,W,1.4,"F"); y=34; };

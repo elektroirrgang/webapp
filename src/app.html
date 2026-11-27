@@ -3561,7 +3561,7 @@ function buildPDF(P){
   const W=210,M=14,CW=W-2*M, NAVY=[34,34,34],SIG=[225,29,47],GR=[93,107,123],LINE=[211,218,227],OKC=[31,138,76],BADC=[198,40,40],SUNK=[238,241,245];
   let y=0,page=1;
   const head=(t,s)=>{ d.setFillColor(255,255,255); d.rect(0,0,W,26,"F");
-    try{ d.addImage(LOGO_PDF,"PNG",M,6,57,10); }catch(e){} d.setFont("helvetica","normal"); d.setFontSize(7); d.setTextColor(93,107,123); d.text("Inh. Joachim Irrgang",M,20.6);
+    try{ d.addImage(LOGO_PDF,"PNG",M,5,57,10); }catch(e){} d.setFont("helvetica","normal"); d.setFontSize(7.5); d.setTextColor(93,107,123); d.text("Inh. Joachim Irrgang",M,17);
     const eh=14.8, ew=eh*525/462; try{ d.addImage(EHW_PDF,"JPEG",W-M-ew,4.6,ew,eh,"ehw"); }catch(e){}
     const tx=W-M-ew-5;
     d.setTextColor(34,34,34); d.setFont("helvetica","bold"); d.setFontSize(13); d.text(pt(t),tx,11,{align:"right"});

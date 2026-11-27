@@ -14,7 +14,7 @@ function pdfStil(d,o){
   const W=210,M=14,CW=W-2*M, NAVY=[34,34,34],SIG=[225,29,47],GR=[93,107,123],LINE=[211,218,227],OKC=[31,138,76],BADC=[198,40,40],SUNK=[238,241,245];
   const S={W,M,CW,y:0,NAVY,GR,SUNK,LINE,OKC,BADC};
   S.kopf=(t,u)=>{ t=t||o.titel; u=u==null?o.unter:u; d.setFillColor(255,255,255); d.rect(0,0,W,26,"F");
-    try{ d.addImage(LOGO_PDF,"PNG",M,6,57,10); }catch(e){} d.setFont("helvetica","normal"); d.setFontSize(7); d.setTextColor(93,107,123); d.text("Inh. Joachim Irrgang",M,20.6);
+    try{ d.addImage(LOGO_PDF,"PNG",M,5,57,10); }catch(e){} d.setFont("helvetica","normal"); d.setFontSize(7.5); d.setTextColor(93,107,123); d.text("Inh. Joachim Irrgang",M,17);
     let tx=W-M; if(o.ehw){ const eh=14.8, ew=eh*525/462; try{ d.addImage(PDF_EHW,"JPEG",W-M-ew,4.6,ew,eh,"ehw"); }catch(e){} tx=W-M-ew-5; }
     d.setTextColor(...NAVY); d.setFont("helvetica","bold"); d.setFontSize(13); d.text(pdfT(t),tx,11,{align:"right"});
     d.setFont("helvetica","normal"); d.setFontSize(8); d.setTextColor(...GR); d.text(pdfT(u||"").slice(0,95),tx,17,{align:"right"});
