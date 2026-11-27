@@ -192,7 +192,7 @@ async function afPdf(b){
   const k=kundeOf(b.kundeId), s=ortVon(b);
   const {jsPDF}=window.jspdf, d=new jsPDF({unit:"mm",format:"a4"}), W=210,M=14,CW=W-2*M, SIG=[225,29,47],GR=[93,107,123],LINE=[211,218,227],SUNK=[238,241,245];
   let y=0;
-  const head=()=>{ try{ d.addImage(LOGO_PDF,"PNG",M,6,57,10); }catch(e){}
+  const head=()=>{ try{ d.addImage(LOGO_PDF,"PNG",M,6,57,10); }catch(e){} d.setFont("helvetica","normal"); d.setFontSize(7); d.setTextColor(93,107,123); d.text("Inh. Joachim Irrgang",M,20.6);
     d.setTextColor(34,34,34); d.setFont("helvetica","bold"); d.setFontSize(13); d.text("Aufnahmeprotokoll",W-M,11,{align:"right"});
     d.setFont("helvetica","normal"); d.setFontSize(8); d.setTextColor(...GR); d.text(afPt([k&&k.name,b.name].filter(Boolean).join(" | ")).slice(0,95),W-M,17,{align:"right"});
     d.setFillColor(...SIG); d.rect(0,24,W,1.4,"F"); y=34; };
@@ -222,7 +222,7 @@ async function afPdf(b){
   d.setDrawColor(150); d.line(M,y+24,M+80,y+24); d.setFont("helvetica","normal"); d.setFontSize(8); d.setTextColor(...GR);
   d.text(afPt(`Monteur / Mitarbeiter: ${a.sigName||v.von||""}`),M,y+28); d.text(afPt(`Datum: ${deDate(a.sigDatum||v.datum||"")}`),M+100,y+28); y+=34;
   const N=d.getNumberOfPages(); for(let i=1;i<=N;i++){ d.setPage(i); d.setDrawColor(...LINE); d.line(M,284,W-M,284); d.setFont("helvetica","normal"); d.setFontSize(7); d.setTextColor(...GR);
-    d.text("Elektro Irrgang | Hahner Weg 2 | 51545 Waldbröl | Tel. 02291 4878 | info@elektro-irrgang.de",M,288);
+    d.text("Elektro Irrgang | Inh. Joachim Irrgang | Hahner Weg 2 | 51545 Waldbröl | Tel. 02291 4878 | info@elektro-irrgang.de",M,288);
     d.text(afPt(`Aufnahme vom ${deDate(v.datum||"")}${b.auftragsnr?` | Auftrag ${b.auftragsnr}`:""}`),M,292); d.text(`Seite ${i} von ${N}`,W-M,292,{align:"right"}); }
   const blob=d.output("blob"), name=afPt(`Aufnahme ${deDate(v.datum||today())} ${k?k.name:""} ${b.name}`).replace(/[\\/:*?"<>|]+/g," ").replace(/\s+/g," ").trim();
   a.pdf=[...(a.pdf||[]),{at:Date.now(),von:who().name}]; afSpeichern(b,true);
