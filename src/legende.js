@@ -632,7 +632,7 @@ const legSymModus=()=>LE.inh==="sym"||LE.inh==="symbez";
 const legEtiMerken=()=>{ try{ localStorage.setItem("irrgang_legeti",JSON.stringify({inh:LEG_ETI.inh,band:LEG_ETI.band})); }catch(e){} };
 /* Text eines Geräts auf dem Streifen – ohne Sonderzeichen, die nicht jede Druckerschrift hat */
 function legEtiText(e){ if(e.art==="kl") return ""; if(e.art==="res") return LE.inh==="kz"?String(e.kz||"").trim():"Reserve";
-  const kz=String(e.kz||"").trim();
+  const kz=String(e.kz||"").trim().replace(/^(\d+)-(\d+)$/,"$1 - $2");   /* volta-Bereich auf dem Streifen mit Leerzeichen: „1 - 4“ (Max 27.11.2026) */
   const bez=e.art==="rcd"?(e.bez&&!/^fehlerstrom/i.test(e.bez)?e.bez:("FI "+String(e.schutz||"").replace(/\s*Typ.*$/i,"").replace(/\s*\/\s*/," ")).trim())
     :legOffen(e)?"":String(e.bez||"").trim();
   if(legSymModus()) return "";
