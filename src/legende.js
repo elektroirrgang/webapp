@@ -29,6 +29,8 @@ const legBmkArt=e=>{ if(e.art==="rcd"||e.art==="sk") return "F"; if(e.art==="kl"
   const kb=e.mat&&typeof MAT_INFO!=="undefined"&&MAT_INFO[e.mat]&&MAT_INFO[e.mat].tech&&MAT_INFO[e.mat].tech.kb; if(kb) return kb;
   const hand=String(e.kz||"").trim().match(/^-?([A-Z])\s?\d/); if(hand&&/[FQKTX]/.test(hand[1])) return hand[1];
   return /stromsto|zeit|treppen|dämmer|relais|dimm|uhr/i.test(t)?"K":/trafo|transform|netzteil/i.test(t)?"T":"F"; };
+/* Anzeige der Nummer: volta-Bereich mit Leerzeichen „1 - 4“ (gespeichert bleibt „1-4“) – Liste, Zeichnung, PDF, Streifen (Max 27.11.2026) */
+const legKzA=k=>String(k||"").trim().replace(/^(\d+)-(\d+)$/,"$1 - $2");
 function legSchemaNum(E){ const k=e=>String(e.kz||"").trim(); return E.filter(e=>legBmkArt(e)).every(e=>!k(e)||LEG_BMK.test(k(e))||LEG_NUM.test(k(e))||LEG_FI.test(k(e))); }
 /* Gestuft (Max, 03.11.2026): Automaten hinter einem RCD tragen dessen Nummer – RCD -F1, dahinter -F1.1, -F1.2 …;
    FI/LS (eigener Fehlerstromschutz) und Automaten ohne RCD zählen auf der obersten Ebene weiter (-F2, -F3 …). Überschrift und FI/LS beenden die RCD-Gruppe. */
@@ -104,7 +106,7 @@ function legZuruck(L){ const s=L&&L.standortId&&standortOf(L.standortId), k=L&&k
 const legFeld=(L,k,l,o={})=>`<div class="tf${L[k]||o.ph||o.type==="date"?" fl":""}"><input id="f_leg_${k}" data-leg="${k}" value="${esc(L[k]||"")}" placeholder="${esc(o.ph||" ")}" ${o.type?`type="${o.type}"`:""} autocomplete="off" ${L.fertig?"disabled":""}><label for="f_leg_${k}">${esc(l)}</label></div>`;
 function legZeile(e,zu){ const t=e.art==="gr";
   return `<button type="button" class="leg-z z-${e.art}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}>${t?`<span class="bz">${esc(e.bez||"Überschrift")}</span>`
-    :`<span class="kz">${esc(e.kz||"–")}</span><span class="bz">${e.art==="res"?`<i>Reserve</i>`:esc(e.bez||"–")}${e.art==="rcd"?` <span class="leg-rcd">RCD</span>`:""}</span><span class="sc">${esc(legSchutz(e))}</span>`}</button>`; }
+    :`<span class="kz">${esc(legKzA(e.kz)||"–")}</span><span class="bz">${e.art==="res"?`<i>Reserve</i>`:esc(e.bez||"–")}${e.art==="rcd"?` <span class="leg-rcd">RCD</span>`:""}</span><span class="sc">${esc(legSchutz(e))}</span>`}</button>`; }
 /* Reiter der Verteilerseite – wie die Schritte einer Prüfung in EVSE unten in der Leiste */
 function legTabs(L){ const T=L&&(L.art==="hv"||L.zs)?[["zs","Zählerschrank","zsSchrank","Zähler"],["sk","Stromkreise","zsBlitz"],["mat","Material","liste"],["ab","Abschluss","done"]]:L&&L.art==="gw"?[["gw","Schrank","zsSchrank"],["sk","Stromkreise","zsBlitz"],["ab","Abschluss","done"]]:[["uv","Verteiler","zsSchrank"],["sk","Stromkreise","zsBlitz"],["ab","Abschluss","done"]];
   if(L&&L._geb&&!T.some(x=>x[0]==="mat")) T.splice(T.length-1,0,["mat","Material","liste"]);   /* Material auch beim Unterverteiler */
@@ -171,10 +173,10 @@ const legOffen=e=>e.art==="sk"&&/^\s*\??\s*$/.test(e.bez||"");
 /* Liste: RCD als Kopf, seine Automaten eingerückt darunter; Überschriften trennen */
 function legListeView(L){ const E=legE(L), zu=L.fertig, B=[], PL=legPlaetze(L); let g=null; const pl=e=>PL[e.id]?`<small class="leg-pl">${esc(legPlatzText(PL[e.id]))}</small>`:"";
   E.forEach((e,i)=>{ if(e.art==="gr"){ B.push({gr:e}); g=null; } else if(e.art==="rcd"){ g={rcd:e,i,kids:[]}; B.push(g); } else if(g&&e.art!=="ge"&&!legIstRcbo(e)){ g.kids.push([e,i]); g.last=i; } else if(legIstRcbo(e)){ g=null; B.push({z:[e,i]}); } else B.push({z:[e,i]}); });
-  const zeile=([e],kl)=>`<button type="button" class="leg-r${kl||""}${e.art==="res"?" res":""}${legOffen(e)?" offen":""}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}><span class="kz">${esc(e.kz||"–")}</span><span class="bz">${e.art==="res"?"Leerplatz":legOffen(e)?"? – noch unbekannt":esc(e.bez)}${pl(e)}</span>${legSchutz(e)?`<span class="sc">${esc(legSchutz(e))}</span>`:""}</button>`;
+  const zeile=([e],kl)=>`<button type="button" class="leg-r${kl||""}${e.art==="res"?" res":""}${legOffen(e)?" offen":""}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}><span class="kz">${esc(legKzA(e.kz)||"–")}</span><span class="bz">${e.art==="res"?"Leerplatz":legOffen(e)?"? – noch unbekannt":esc(e.bez)}${pl(e)}</span>${legSchutz(e)?`<span class="sc">${esc(legSchutz(e))}</span>`:""}</button>`;
   return `<div class="leg-gl">${B.map(b=>b.gr?`<button type="button" class="leg-ue" data-act="legEdit" data-id="${esc(b.gr.id)}" ${zu?"disabled":""}>${esc(b.gr.bez||"Überschrift")}</button>`
     :b.z?`<div class="leg-grp solo">${zeile(b.z)}</div>`
-    :`<div class="leg-grp"><button type="button" class="leg-gk" data-act="legEdit" data-id="${esc(b.rcd.id)}" ${zu?"disabled":""}><span class="kz">${esc(b.rcd.kz||"–")}</span><span class="bz">${esc(b.rcd.bez||"Fehlerstromschutzschalter")}<span class="leg-rcd">RCD</span>${pl(b.rcd)}</span>${b.rcd.schutz?`<span class="sc">${esc(b.rcd.schutz)}</span>`:""}</button>
+    :`<div class="leg-grp"><button type="button" class="leg-gk" data-act="legEdit" data-id="${esc(b.rcd.id)}" ${zu?"disabled":""}><span class="kz">${esc(legKzA(b.rcd.kz)||"–")}</span><span class="bz">${esc(b.rcd.bez||"Fehlerstromschutzschalter")}<span class="leg-rcd">RCD</span>${pl(b.rcd)}</span>${b.rcd.schutz?`<span class="sc">${esc(b.rcd.schutz)}</span>`:""}</button>
       ${b.kids.map(k=>zeile(k," kind")).join("")}${zu?"":`<button type="button" class="leg-add" data-act="legNach" data-i="${b.last!=null?b.last:b.i}">${icon("add")}Stromkreis an ${esc(b.rcd.kz||"RCD")}</button>`}</div>`).join("")}
     ${zu?"":`<div class="leg-neu"><button type="button" data-act="legNeuRcd">${icon("add")}Neuer RCD mit Stromkreisen</button>${legReihen(L).length?`<button type="button" data-act="legRkDlg">${icon("copy")}Reihe kopieren</button>`:""}</div>`}</div>`; }
 /* Reihen bilden: Breite je Gerät in TE, „Neue Reihe ab hier“ bricht um */
@@ -239,15 +241,15 @@ function legVtView(L){ const n=+L.teReihe||12, P=LEG_P, R=legReihen(L), zu=L.fer
   /* Handy: ganze Reihe passt in die Breite (kein seitliches Wischen). Im Bild nur die Kennzeichnung, darunter die Beschriftung als Liste. */
   const mobil=matchMedia("(max-width:599px)").matches, kzF=mobil?19:10.5, kzH=mobil?30:20;
   return R.map((r,ri)=>{ const GH=LEG_H(1), KY=GH+10; let x=0, hoch=KY+(mobil?kzH+8:64); const g=r.g.map(([e,i,w])=>{ const X=x*P, Wd=w*P, sym=mobil?"":legSymFuer(e), z=mobil?[]:legWrap(e.art==="res"?"Reserve":legOffen(e)?"?":e.bez,w>1?w*8:8), fz=w>1?10.5:z.some(t=>t.length>7)?9:10.5;
-        const kz=String(e.kz||"").slice(0,w>1?16:7), eng=mobil&&kz.length*kzF*.62>Wd-8;
-        const out=`<g class="leg-dev"${zu||e.art==="kl"||e.art==="res"?"":` data-act="legProdukt"`} data-id="${esc(e.id)}"><title>${esc([e.kz,e.bez,legSchutz(e)].filter(Boolean).join(" · "))}</title>${legGeraet(e,X,w)}
+        const kz=legKzA(e.kz).slice(0,w>1?16:7), eng=mobil&&kz.length*kzF*.62>Wd-8;
+        const out=`<g class="leg-dev"${zu||e.art==="kl"||e.art==="res"?"":` data-act="legProdukt"`} data-id="${esc(e.id)}"><title>${esc([legKzA(e.kz),e.bez,legSchutz(e)].filter(Boolean).join(" · "))}</title>${legGeraet(e,X,w)}
           ${e.art==="kl"?"":`<rect x="${X+2}" y="${KY}" width="${Wd-4}" height="${kzH}" rx="${mobil?6:4}" fill="${e.art==="rcd"?"#2F6FD1":e.art==="res"?"#A9AEB6":"#737A84"}"/><text x="${X+Wd/2}" y="${KY+kzH/2+kzF*.36}" font-size="${kzF}" font-weight="800" text-anchor="middle" fill="#fff"${eng?` textLength="${Wd-8}" lengthAdjust="spacingAndGlyphs"`:""}>${esc(kz)}</text>`}
           ${sym?`<g transform="translate(${X+Wd/2-11} ${KY+28})" class="leg-sym">${legSymSvg(sym,22,true)}</g>`:""}
           ${z.map((t,k)=>`<text x="${X+Wd/2}" y="${KY+(sym?66:40)+(e.art==="kl"?20:0)+k*13}" font-size="${fz}" font-weight="600" text-anchor="middle" class="leg-st">${esc(t)}</text>`).join("")}</g>`; if(!mobil) hoch=Math.max(hoch,KY+(sym?66:40)+(z.length-1)*13+10+(e.art==="kl"?20:0)); x+=w; return out; }).join("");
       const frei=n-r.te, last=r.g[r.g.length-1][1];
       const fr=frei>0?`<g class="leg-frei" ${zu?"":`data-act="legNach" data-i="${last}"`}><rect x="${x*P+2}" y="${GH*.12}" width="${frei*P-4}" height="${GH*.76}" rx="5" class="leg-fr"/><text x="${x*P+frei*P/2}" y="${frei>1?GH/2-4:GH/2-18}" font-size="${(frei>1?12:10)*(mobil?1.6:1)}" font-weight="800" text-anchor="middle" class="leg-frt">${frei>1?`${frei} TE frei`:"frei"}</text>${zu?"":`<text x="${x*P+frei*P/2}" y="${frei>1?GH/2+16*(mobil?1.6:1):GH/2+2}" font-size="${16*(mobil?1.6:1)}" font-weight="700" text-anchor="middle" class="leg-frt">+</text>`}</g>`:"";
       /* Beschriftung unter der Reihe (nur Handy): Kennzeichnung, Bezeichnung, Schutz – antippen bearbeitet */
-      const leg=mobil?`<div class="leg-rl">${r.g.filter(([e])=>e.art!=="kl").map(([e])=>`<button type="button" class="leg-rl-z${e.art==="rcd"?" rcd":""}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}><span class="kz">${esc(e.kz||"–")}</span><span class="bz">${e.art==="res"?"Reserve":e.art==="rcd"?esc(e.bez||"Fehlerstromschutzschalter"):legOffen(e)?"? – noch unbekannt":esc(e.bez||"–")}</span><span class="sc">${esc(legSchutz(e))}</span></button>`).join("")}</div>`:"";
+      const leg=mobil?`<div class="leg-rl">${r.g.filter(([e])=>e.art!=="kl").map(([e])=>`<button type="button" class="leg-rl-z${e.art==="rcd"?" rcd":""}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}><span class="kz">${esc(legKzA(e.kz)||"–")}</span><span class="bz">${e.art==="res"?"Reserve":e.art==="rcd"?esc(e.bez||"Fehlerstromschutzschalter"):legOffen(e)?"? – noch unbekannt":esc(e.bez||"–")}</span><span class="sc">${esc(legSchutz(e))}</span></button>`).join("")}</div>`:"";
       return `<div class="leg-reihe" style="width:min(100%,${Math.round(B*1.45)+28}px)"><div class="leg-rk">Reihe ${ri+1}<span>${r.te} von ${n} TE belegt</span></div><div class="leg-rs"><svg viewBox="0 ${r.g.some(([e])=>e.art==="kl")?-20:0} ${B} ${hoch+(r.g.some(([e])=>e.art==="kl")?20:0)}" class="leg-svg" role="img" aria-label="Reihe ${ri+1}"><rect x="0" y="${GH/2-17}" width="${B}" height="34" rx="2" fill="#C9CDD2"/><rect x="0" y="${GH/2-11}" width="${B}" height="22" fill="#B5BAC0"/>${g}${fr}</svg></div>${leg}</div>`; }).join(""); }
 /* ===== Symbole für Beschriftung (eigene, schlichte Piktogramme, 24er-Raster, Linien) ===== */
 const LEG_SYM={
@@ -460,7 +462,7 @@ function legPdfStromkreise(d,S,L,art){ const T=LEG_PDF_STILE[art||LEG_PDF_ART]||
     if(T.li){ d.setDrawColor(...S.LINE); d.setLineWidth(.3); d.line(M,oben+T.zh+ex,M+CW,oben+T.zh+ex); d.setLineWidth(.2); }
     else if(zz%2){ d.setFillColor(...S.SUNK); d.rect(M,oben,CW,T.zh+ex,"F"); } zz++;
     d.setTextColor(T.farbe); d.setFont("helvetica",T.kzF||e.art==="rcd"?"bold":"normal");
-    d.text(pdfT(e.kz||""),M+2,S.y);
+    d.text(pdfT(legKzA(e.kz)),M+2,S.y);
     d.setFont("helvetica",e.art==="rcd"?"bold":"normal");
     if(e.art==="res"){ d.setDrawColor(150); d.setLineWidth(.2); d.line(M+2+sp[0],S.y+resY,M+sp[0]+sp[1]-4,S.y+resY); }
     else d.text(B,M+2+sp[0],S.y,{lineHeightFactor:1.2});
@@ -631,8 +633,8 @@ const legEtiCfg=L=>{ LE={...LEG_ETI,te:legGerTe(L),...(L&&[17.5,18].includes(+L.
 const legSymModus=()=>LE.inh==="sym"||LE.inh==="symbez";
 const legEtiMerken=()=>{ try{ localStorage.setItem("irrgang_legeti",JSON.stringify({inh:LEG_ETI.inh,band:LEG_ETI.band})); }catch(e){} };
 /* Text eines Geräts auf dem Streifen – ohne Sonderzeichen, die nicht jede Druckerschrift hat */
-function legEtiText(e){ if(e.art==="kl") return ""; if(e.art==="res") return LE.inh==="kz"?String(e.kz||"").trim():"Reserve";
-  const kz=String(e.kz||"").trim().replace(/^(\d+)-(\d+)$/,"$1 - $2");   /* volta-Bereich auf dem Streifen mit Leerzeichen: „1 - 4“ (Max 27.11.2026) */
+function legEtiText(e){ if(e.art==="kl") return ""; if(e.art==="res") return LE.inh==="kz"?legKzA(e.kz):"Reserve";
+  const kz=legKzA(e.kz);   /* volta-Bereich auf dem Streifen mit Leerzeichen: „1 - 4“ (Max 27.11.2026) */
   const bez=e.art==="rcd"?(e.bez&&!/^fehlerstrom/i.test(e.bez)?e.bez:("FI "+String(e.schutz||"").replace(/\s*Typ.*$/i,"").replace(/\s*\/\s*/," ")).trim())
     :legOffen(e)?"":String(e.bez||"").trim();
   if(legSymModus()) return "";
@@ -732,7 +734,7 @@ let LSYM_OFFEN="";
 function legSymDlg(){ const L=legAkt(); if(!L) return; legEtiCfg(L); const E=legE(L).filter(e=>e.art==="sk");
   const ic=k=>k?legSymSvg(k,26,true):`<span class="leg-sym-ic leer"></span>`;
   dialog("Symbole",`<div class="leg-sym-l">${E.map(e=>{ const k=legSym(e), auf=LSYM_OFFEN===e.id;
-    return `<button type="button" class="leg-sym-z${auf?" auf":""}" data-act="legSymZ" data-id="${esc(e.id)}"><span class="leg-sym-ic">${ic(k)}</span><span class="lt"><b>${esc([String(e.kz||"").trim(),legEtiTextBez(e)||"Stromkreis"].filter(Boolean).join(" · "))}</b><small>${esc(k?(LEG_SYM_LISTE.find(x=>x[0]===k)||[,k])[1]:"kein Symbol")}${e.sym?"":" · automatisch"}</small></span>${icon(auf?"close":"chev")}</button>
+    return `<button type="button" class="leg-sym-z${auf?" auf":""}" data-act="legSymZ" data-id="${esc(e.id)}"><span class="leg-sym-ic">${ic(k)}</span><span class="lt"><b>${esc([legKzA(e.kz),legEtiTextBez(e)||"Stromkreis"].filter(Boolean).join(" · "))}</b><small>${esc(k?(LEG_SYM_LISTE.find(x=>x[0]===k)||[,k])[1]:"kein Symbol")}${e.sym?"":" · automatisch"}</small></span>${icon(auf?"close":"chev")}</button>
       ${auf?`<div class="leg-sym-g">${LEG_SYM_LISTE.map(([s,t])=>`<button type="button" class="leg-sym-w" data-act="legSymW" data-id="${esc(e.id)}" data-v="${s}" aria-pressed="${k===s}"><span class="leg-sym-ic">${ic(s)}</span><small>${esc(t)}</small></button>`).join("")}<button type="button" class="leg-sym-w" data-act="legSymW" data-id="${esc(e.id)}" data-v="keins" aria-pressed="${e.sym==="keins"}"><span class="leg-sym-ic">${ic("")}</span><small>Keins</small></button><button type="button" class="leg-sym-w" data-act="legSymW" data-id="${esc(e.id)}" data-v="" aria-pressed="false"><span class="leg-sym-ic">${icon("refresh")}</span><small>Automatisch</small></button></div>`:""}`; }).join("")}</div>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="legSymFertig">Fertig</button>`,{breit:true}); }
 document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act="legSymDlg"],[data-act="legSymZ"],[data-act="legSymW"],[data-act="legSymFertig"]'); if(!b) return; ev.stopPropagation(); ev.preventDefault();
@@ -761,7 +763,7 @@ function legRechDlg(id){ const L=legAkt(); if(!L||!L._geb) return; const g=vtGeb
   const F=typeof formVals==="function"?formVals():{}, schutz=F.legSchutz!=null?F.legSchutz:e.schutz, pole=legDlg&&legDlg.pole?+legDlg.pole:+e.pole||1;
   const ls=typeof ecLs==="function"?ecLs(schutz):null;
   LR={id,schutz,pole,ls,qs:lrQsAus(sk.leitung)||(ls&&ls.In>=20?4:ls&&ls.In>=16?2.5:1.5),mess:lrGemessen(g,sk)};
-  const kopf=[e.kz,e.bez,schutz,pole===3?"3-polig":""].filter(Boolean).join(" · ");
+  const kopf=[legKzA(e.kz),e.bez,schutz,pole===3?"3-polig":""].filter(Boolean).join(" · ");
   dialog("Stromkreis berechnen",`<p class="ec-sub">${esc(kopf)}</p>
     ${ls?"":`<p class="ec-hinweis">${icon("warn")}<span>Für die Abschaltbedingung braucht der Stromkreis eine Absicherung wie B16 oder C20.</span></p>`}
     <div class="lr-ein">${tf("lrLaenge","Leitungslänge",sk.laenge!=null?String(sk.laenge).replace(".",","):"",{form:true,ph:"z. B. 25",im:"decimal",sfx:"m"})}${tf("lrZe","Vorimpedanz",v&&v.ze!=null?String(v.ze).replace(".",","):"0,3",{form:true,im:"decimal",sfx:"Ω"})}</div>
