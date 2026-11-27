@@ -8,7 +8,8 @@ const ZT_KEY=()=>"irr.zeit.v1."+String(ME.mail||"ich").toLowerCase();
 const ZT_STD={soll:38,rundBeginn:true,rundEnde:true,pausenAuto:true};
 /* Wochentag (0 = So) → feste Pausen in Minuten ab 0:00 – laut Betriebshandbuch „Unsere Arbeitszeiten“ */
 const ZT_PAUSEN={1:[[540,555],[720,750]],2:[[540,555],[720,750]],3:[[540,555],[720,750]],4:[[540,555],[720,750]],5:[[540,555]]};
-const ZT_ART={arbeit:"Arbeit",urlaub:"Urlaub",krank:"Krank",feiertag:"Feiertag",ausgleich:"Freizeitausgleich"};
+/* Ganztägig ohne Uhrzeit: zählen mit einem Fünftel des Wochensolls (38 h ÷ 5 = 7,6 h = 7:36 h) – so rechnet auch SCC, z. B. Berufsschule */
+const ZT_ART={arbeit:"Arbeit",schule:"Berufsschule",urlaub:"Urlaub",krank:"Krank",feiertag:"Feiertag",ausgleich:"Freizeitausgleich"};
 let ZT_TAB="woche", ZT_AB=null, ZT_E=null;
 function ztLaden(){ try{ const d=JSON.parse(localStorage.getItem(ZT_KEY())||"null"); if(d&&Array.isArray(d.e)) return {lauf:null,einst:{},...d}; }catch(x){} return {e:[],lauf:null,einst:{}}; }
 function ztSpeichern(d){ try{ localStorage.setItem(ZT_KEY(),JSON.stringify(d)); return true; }catch(x){ toast("Speichern ging nicht – Browser-Speicher gesperrt oder voll"); return false; } }
@@ -74,7 +75,7 @@ function ztView(){ const d=ztLaden(), ei=ztEinst(d), j=ztJetzt();
     ${ztZusammen(z,!!lauf&&j.datum>=ZT_AB&&j.datum<=z.T[z.T.length-1].iso)}
     ${zeilen.length?listOf(zeilen):`<p class="meta" style="margin:16px 4px">In diesem Zeitraum ist nichts eingetragen.</p>`}
     <div class="zt-aktionen"><button type="button" class="btn-tonal" data-act="ztCsv">${icon("doc")}Als Tabelle (CSV)</button><button type="button" class="btn-text" data-act="ztSichern">${icon("backup")}Sichern</button><button type="button" class="btn-text" data-act="ztLaden">${icon("upload")}Wiederherstellen</button><button type="button" class="btn-text" data-act="ztEinst">${icon("edit")}Einstellungen</button></div>
-    <p class="hint">Soll ${String(ei.soll).replace(".",",")} h pro Woche. Urlaub, Krank und Feiertag zählen mit einem Fünftel davon. Pausen laut Handbuch werden abgezogen, soweit sie in deine Zeit fallen – über 6 h mindestens 30 min. Eigene Pause im Eintrag geht vor.</p></div>`; }
+    <p class="hint">Soll ${String(ei.soll).replace(".",",")} h pro Woche. Berufsschule, Urlaub, Krank und Feiertag zählen ganztägig mit einem Fünftel davon (bei 38 h: 7:36 h). Pausen laut Handbuch werden abgezogen, soweit sie in deine Zeit fallen – über 6 h mindestens 30 min. Eigene Pause im Eintrag geht vor.</p></div>`; }
 /* Eintrag anlegen/ändern – ein Tag kann mehrere Einträge haben.
    Eigene Auswahl statt System-Picker (Max 27.11.2026): Datum als Wochenleiste, Uhrzeit als zwei Drehräder (Stunde, Minute). */
 let ZT_PF="von", ZT_DW=null;
@@ -89,6 +90,7 @@ function ztDlg(e){ const neu=!e; e=e||{id:"z"+Date.now().toString(36),datum:ztJe
   dialog(neu?"Zeit eintragen":"Eintrag ändern",`<input type="hidden" data-f="ztDat" value="${esc(e.datum)}"><input type="hidden" data-f="ztVon" value="${esc(e.von||"07:30")}"><input type="hidden" data-f="ztBis" value="${esc(e.bis||"16:30")}">
     <div class="zt-dat">${ztWoche(e.datum)}</div>
     <div class="fg1">${sf("ztArt","Art",e.art||"arbeit",Object.entries(ZT_ART),{form:true})}</div>
+    <p class="zt-ganz"${arb?" hidden":""}>${ztGanzText(e.art)}</p>
     <div class="zt-zeitwahl"${arb?"":" hidden"}>
       <div class="zt-felder"><button type="button" class="zt-feld" data-act="ztPf" data-k="von" aria-pressed="true"><span>Beginn</span><b>${esc(e.von||"07:30")}</b></button>
         <button type="button" class="zt-feld" data-act="ztPf" data-k="bis" aria-pressed="false"><span>Ende</span><b>${esc(e.bis||"16:30")}</b></button></div>
@@ -98,7 +100,8 @@ function ztDlg(e){ const neu=!e; e=e||{id:"z"+Date.now().toString(36),datum:ztJe
     <div class="fg1" style="margin-top:14px">${tf("ztNotiz","Notiz",e.notiz||"",{form:true,ph:"z. B. Baustelle, Überstunden"})}</div>`,
     `${neu?"":`<button class="btn-text danger" data-act="ztWeg">Löschen</button>`}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-filled" data-act="ztOk">${neu?"Eintragen":"Speichern"}</button>`);
   setTimeout(()=>{ if(document.activeElement&&document.activeElement.blur) document.activeElement.blur(); ztRaederAuf(); },80);
-  const art=$("#dlg").querySelector('[data-f="ztArt"]'); if(art) art.onchange=()=>{ const w=$("#dlg").querySelector(".zt-zeitwahl"); if(w){ w.hidden=art.value!=="arbeit"; if(!w.hidden) ztRaederAuf(); } }; }
+  const art=$("#dlg").querySelector('[data-f="ztArt"]'); if(art) art.onchange=()=>{ const w=$("#dlg").querySelector(".zt-zeitwahl"); if(w){ w.hidden=art.value!=="arbeit"; if(!w.hidden) ztRaederAuf(); } const g=$("#dlg").querySelector(".zt-ganz"); if(g){ g.hidden=art.value==="arbeit"; g.textContent=ztGanzText(art.value); } }; }
+function ztGanzText(art){ const soll=ztEinst(ztLaden()).soll/5*60; return art==="ausgleich"?"Ganztägig frei – zählt 0 h, die Stunden gehen vom Konto ab.":`Ganztägig – zählt mit ${ztH(soll)} (Wochensoll ÷ 5).`; }
 const ztHid=n=>$("#dlg").querySelector(`[data-f="${n}"]`);
 /* Räder auf den Wert des aktiven Feldes stellen und beim Drehen den Wert übernehmen */
 function ztRaederAuf(){ const v=ztMin((ztHid(ZT_PF==="von"?"ztVon":"ztBis")||{}).value)??0;
