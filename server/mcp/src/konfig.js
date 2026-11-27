@@ -40,5 +40,8 @@ export const KONFIG = {
   },
   /* Zugangsschlüssel für Dienste wie Nexilo: JSON-Liste [{"name":"Nexilo","hash":"<sha256>","rechte":"schreiben"}]
      Schlüssel erzeugen: npm run schluessel -- "Nexilo" schreiben */
+  /* Nur zum Testen mit Demodaten: Schlüssel in der Adresse (…/mcp/k/<Schlüssel>), weil die Claude-App keine eigenen Kopfzeilen kann.
+     Für echte Daten AUS lassen – dann Microsoft-Anmeldung. */
+  schluesselInUrl: e("SCHLUESSEL_IN_URL", "false") === "true",
   schluessel: (() => { try { return JSON.parse(e("MCP_SCHLUESSEL", "[]")); } catch { return []; } })()
 };

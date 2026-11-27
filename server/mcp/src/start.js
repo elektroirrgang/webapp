@@ -25,9 +25,12 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://x");
   try {
     if (url.pathname === "/gesund") return json(res, 200, { ok: true, version: VERSION, speicher: S.name });
-    if (url.pathname !== "/mcp") return json(res, 404, { fehler: "Nicht gefunden" });
+    let kopf = req.headers.authorization;
+    const km = /^\/mcp\/k\/(irr_[\w-]+)$/.exec(url.pathname);
+    if (km && KONFIG.schluesselInUrl) kopf = "Bearer " + km[1];
+    else if (url.pathname !== "/mcp") return json(res, 404, { fehler: "Nicht gefunden" });
     if (req.method !== "POST") return json(res, 405, { jsonrpc: "2.0", error: { code: -32000, message: "Nur POST (zustandsloser Server)" }, id: null }, { Allow: "POST" });
-    const ich = await anmelden(req.headers.authorization);
+    const ich = await anmelden(kopf);
     if (!ich) return json(res, 401, { fehler: "Nicht angemeldet" }, { "WWW-Authenticate": 'Bearer realm="irrgang-mcp"' });
     const body = await koerper(req);
     const mcp = new McpServer({ name: "irrgang", title: "Elektro Irrgang", version: VERSION },
