@@ -123,7 +123,7 @@ def baue(quelle, ziel, icon):
     html = html.replace("/*QRWB*/", (root / "vendor/qrcode-generator.min.js").read_text(encoding="utf-8") + "\n" + (root / "src/lbx-zip.js").read_text(encoding="utf-8") + "\n" + (root / "src/qr-kern.js").read_text(encoding="utf-8") + "\n" + (root / "src/qr-wb.js").read_text(encoding="utf-8"))
     html = html.replace("/*PDFANSICHT*/", (root / "src/pdfansicht.js").read_text(encoding="utf-8"))
     html = html.replace("/*ZEIT*/", (root / "src/zeit.js").read_text(encoding="utf-8"))
-    html = html.replace("/*HANDBUCH*/", (root / "src/handbuch-vorlage.js").read_text(encoding="utf-8") + "\n" + (root / "src/handbuch.js").read_text(encoding="utf-8") + "\n" + (root / "src/handbuch-bau.js").read_text(encoding="utf-8"))
+    html = html.replace("/*HANDBUCH*/", (root / "src/handbuch-vorlage.js").read_text(encoding="utf-8") + "\n" + (root / "src/handbuch.js").read_text(encoding="utf-8") + "\n" + (root / "src/handbuch-bilder.js").read_text(encoding="utf-8") + "\n" + (root / "src/handbuch-bau.js").read_text(encoding="utf-8"))
     html = html.replace("/*FRISTEN*/", (root / "src/fristen.js").read_text(encoding="utf-8") + "\n" + (root / "src/betrieb.js").read_text(encoding="utf-8"))
     html = html.replace("/*DATEIEN*/", (root / "src/dateien.js").read_text(encoding="utf-8"))
     html = html.replace("/*VORGAENGE*/", (root / "src/vorgaenge.js").read_text(encoding="utf-8"))
