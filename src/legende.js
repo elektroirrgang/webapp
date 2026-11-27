@@ -137,6 +137,10 @@ function legView(L){ const E=legE(L), tab=legTab(L);
   </div>`; }
 /* Abschluss-Karte (27.11.2026): oben klar, was noch fehlt und was „Abschließen“ tut – statt zweier Knöpfe ohne Erklärung */
 function legPdfLetzte(L){ const id=L._v||L.id; return DB.protokolle?[...DB.protokolle.values()].filter(r=>!r.deleted&&r.app==="legende"&&r.vtId===id&&!r.archiv).sort((a,b)=>(b.created||0)-(a.created||0))[0]:null; }
+/* E-CHECK-Plakette: Zeile in der Abschluss-Karte + Dialog zum Eintragen von Hand */
+function legEcZeile(L){ const P=legEcheckDaten(L), hand=!!L.echeckNaechste;
+  const t=P?`${LEG_MONATE[+P.naechste.slice(5,7)-1]} ${P.naechste.slice(0,4)} – ${hand?"von Hand eingetragen":"aus dem E-Check"+(P.zuletzt?` vom ${ecDatum(P.zuletzt)}`:"")}`:"Kein Termin – die Legende kommt ohne Plakette";
+  return `<div class="leg-ab-s${P?" ok":""}"><span class="leg-ab-p" aria-hidden="true"></span><span class="lt"><b>E-CHECK-Plakette</b><small>${esc(t)}</small></span>${L.fertig?"":`<button type="button" class="btn-text" data-act="legEcDlg">${P?"Ändern":"Eintragen"}</button>`}</div>`; }
 function legAbschlussKarte(L){ const E=legE(L), nSk=E.filter(e=>e.art==="sk").length, offen=E.filter(e=>legOffen(e)).length;
   const v=L._geb&&(vtGeb(L._geb)||{verteiler:[]}).verteiler.find(x=>x.id===L._v), qrOk=!L._geb||!!(v&&v.qr), pdf=legPdfLetzte(L);
   const schritt=(ok,t,s,act,kt,attr)=>`<div class="leg-ab-s${ok?" ok":""}"><span class="leg-ab-p" aria-hidden="true"></span><span class="lt"><b>${t}</b><small>${s}</small></span>${act&&!ok?`<button type="button" class="btn-text" data-act="${act}"${attr||""}>${kt}</button>`:""}</div>`;
@@ -148,6 +152,7 @@ function legAbschlussKarte(L){ const E=legE(L), nSk=E.filter(e=>e.art==="sk").le
       ${schritt(nSk>0&&!offen,"Stromkreise",nSk?(offen?`${offen} ${offen===1?"Eintrag ist":"Einträge sind"} noch offen`:`${nSk} Stromkreis${nSk===1?"":"e"} eingetragen`):"Noch keine Stromkreise","legTab","Ansehen",' data-v="sk"')}
       ${L._geb?schritt(qrOk,"QR-Aufkleber",qrOk?`Anlagen-Nr. ${esc(typeof qrZeig==="function"?qrZeig(v.qr):v.qr)}`:"Pflicht – steht später auf der Legende","qrScanZu","Zuordnen"):""}
       ${schritt(!!pdf,"Legende als PDF",pdf?`Zuletzt am ${esc(ecDatum(pdf.datum))} – wird beim Abschließen neu erstellt`:"Wird beim Abschließen erstellt")}
+      ${legEcZeile(L)}
     </div>
     <p class="meta">„Abschließen“ erstellt die Legende als PDF, legt sie beim Kunden in der Bibliothek ab (Pläne und Schaltpläne) und sperrt den Verteiler gegen versehentliches Ändern. Wieder öffnen geht jederzeit.</p>
     <div class="leg-ab-kn"><button type="button" class="btn-text" data-act="legPdf">${icon("pdf")}Nur PDF</button><span style="flex:1"></span><button type="button" class="btn-filled" data-act="legAbschliessen" ${nSk&&qrOk?"":"disabled"}>${icon("done")}Abschließen</button></div></section>`; }
@@ -446,16 +451,64 @@ async function legPdf(L,art){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"m
   S.werte([["Kunde",L.kunde],["Verteiler",L.titel],["Anschrift",L.anschrift],["Stand",ecDatum(L.stand)],...(L.netz?[["Netzform",L.netz]]:[])]);   /* „Erstellt von“ bleibt intern in der App, gehört nicht auf den Aushang beim Kunden */
   S.abschnitt("Hinweis für den Betreiber");
   S.text("Fehlerstromschutzschalter (RCD) alle 6 Monate über die Prüftaste „T“ auslösen. Schaltet der RCD dabei nicht ab, könnte er defekt sein. In diesem Fall bitte Elektro Irrgang informieren.");
-  /* Kontakt groß wie im alten Verteilerplan */
+  /* Kontakt groß wie im alten Verteilerplan – mit Prüfplakette links daneben, wenn ein nächster E-Check bekannt ist */
   const qrC=L._geb&&typeof qrMatrix==="function"&&((vtGeb(L._geb)||{verteiler:[]}).verteiler.find(x=>x.id===L._v)||{}).qr;
-  S.platz(qrC?30:19); const y=S.y+1, x2=qrC?M+68:M+CW/2;
+  const PE=legEcheckDaten(L), pl=!!(PE&&/^\d{4}-\d{2}/.test(PE.naechste||""));
+  S.platz(pl?33:qrC?30:19); const y=S.y+1;
   if(qrC){ const Mx=qrMatrix(qrC), n=Mx.length, gr=21, z=gr/n, qx=M+CW-gr, qy=y-4; d.setFillColor(0,0,0); Mx.forEach((r,yy)=>r.forEach((on,xx)=>{ if(on) d.rect(qx+xx*z,qy+yy*z,z+0.02,z+0.02,"F"); }));
     d.setFont("helvetica","bold"); d.setFontSize(9); d.setTextColor(20); d.text("Anlage "+qrZeig(qrC),qx+gr/2,qy+gr+4,{align:"center"}); }
-  d.setTextColor(20); d.setFont("helvetica","bold"); d.setFontSize(12); d.text("Elektro Irrgang",M,y); d.setTextColor(...[225,29,47]); d.text("Tel. 02291 4878",x2,y);
-  d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),M,y+5.2); d.text(pdfT("Inh. Joachim Irrgang"),M,y+10.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x2,y+5.2);
-  S.y=y+(qrC?29:18);
+  if(pl){ legPlakette(d,M+16,y+10,PE.naechste,PE.zuletzt); const x0=M+37;
+    d.setTextColor(20); d.setFont("helvetica","bold"); d.setFontSize(12); d.text("Elektro Irrgang",x0,y); d.setTextColor(225,29,47); d.text("Tel. 02291 4878",x0+38,y);
+    d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),x0,y+5.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x0,y+10.2); d.text(pdfT("Inh. Joachim Irrgang"),x0,y+15.2);
+    d.setFontSize(8.5); d.setTextColor(93,107,123); d.text(pdfT(`Nächster E-Check: ${LEG_MONATE[+PE.naechste.slice(5,7)-1]} ${PE.naechste.slice(0,4)}${PE.zuletzt?` | zuletzt geprüft am ${ecDatum(PE.zuletzt)}`:""}`),x0,y+20.6);
+    S.y=y+31; }
+  else { const x2=qrC?M+68:M+CW/2;
+    d.setTextColor(20); d.setFont("helvetica","bold"); d.setFontSize(12); d.text("Elektro Irrgang",M,y); d.setTextColor(...[225,29,47]); d.text("Tel. 02291 4878",x2,y);
+    d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),M,y+5.2); d.text(pdfT("Inh. Joachim Irrgang"),M,y+10.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x2,y+5.2);
+    S.y=y+(qrC?29:18); }
   legPdfStromkreise(d,S,L,art);
   return S.ende(); }
+/* Prüfplakette „Nächste Prüfung“ (27.11.2026, Wunsch Chef): auf Seite 1 der Legende, Monat und Jahr digital markiert wie beim Aufkleber.
+   Eigene Gestaltung im Irrgang-Stil (kein Nachbau des geschützten E-CHECK-Siegels). Datum: von Hand am Verteiler (L.echeckNaechste)
+   oder aus dem letzten abgeschlossenen E-Check der Anlage (Prüfdatum + Frist). Ohne Datum keine Plakette. */
+function legEcheckDaten(L){
+  if(L.echeckNaechste) return {naechste:L.echeckNaechste,zuletzt:L.echeckZuletzt||""};
+  if(typeof live!=="function"||!L.ortId) return null;
+  const P=live("echecks").filter(p=>p.ortId===L.ortId&&p.art==="anlage"&&p.status==="fertig"&&p.datum).sort((a,b)=>String(b.datum).localeCompare(String(a.datum)));
+  if(!P.length||typeof ecPlus!=="function") return null;
+  return {naechste:ecPlus(P[0].datum,P[0].fristM||48),zuletzt:P[0].datum}; }
+const LEG_MONATE=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+/* E-CHECK-Plakette (Vorlage von Max, 27.11.2026, Elektro Irrgang ist Innungsfachbetrieb): brand/echeck-plakette.jpg mit unseren Firmendaten,
+   Jahreszahlen im unteren Ring entfernt – die setzt die App passend ein. Digital: Monat und Jahr rot hinterlegt, Termin auf der Linie.
+   Maße aus der Vorlage (Pixel der 1614er-Fassung, Mitte 807): Ringmitte r=720, Monatswinkel/Jahreswinkel wie gedruckt, Linie bei y=-203. */
+const LEG_ECHECK_IMG="<!--ECHECK_PLAKETTE-->";
+const LEG_PL_MON=[199.6,210.5,222.5,233.5,245.5,256.5,268.5,280.5,291.5,306,321.4,337.6], LEG_PL_JAHR=[144.5,117,89.5,61.5,34.5];
+function legPlakette(d,cx,cy,iso,zuletzt,D=32){ const s=D/1614, rm=720*s, mo=+iso.slice(5,7), jr=+iso.slice(0,4), rot=[225,29,47], rad=g=>g*Math.PI/180;
+  try{ d.addImage(LEG_ECHECK_IMG,"JPEG",cx-D/2,cy-D/2,D,D,"echeckPlakette"); }catch(e){ return; }
+  /* Schrift entlang des Rings wie im Original: jedes Zeichen einzeln auf dem Kreis, oben von außen lesbar, unten von innen */
+  const bogen=(t,thc,oben,fs,farbe)=>{ d.setFont("helvetica","normal"); d.setFontSize(fs); const ch=fs*0.2533, r=oben?rm-ch/2:rm+ch/2;
+    const ws=[...t].map(c=>d.getTextWidth(c)), sp=0.15*fs*0.3528/10, gesamt=ws.reduce((a,b)=>a+b,0)+sp*(t.length-1); let off=-gesamt/2; d.setTextColor(...farbe);
+    [...t].forEach((c,k)=>{ const mitte=off+ws[k]/2, th=oben?thc+mitte/r*180/Math.PI:thc-mitte/r*180/Math.PI, A=oben?270-th:90-th, a=rad(A);
+      const px=cx+r*Math.cos(rad(th)), py=cy+r*Math.sin(rad(th)); d.text(c,px-(ws[k]/2)*Math.cos(a),py+(ws[k]/2)*Math.sin(a),{angle:A}); off+=ws[k]+sp; });
+    return gesamt; };
+  /* rote Markierung als gebogenes Band mit runden Ecken (Band + vier Kreise an den Ecken) */
+  const band=(thc,lang,H)=>{ const ro=rm+H, ri=rm-H, q=H*0.55, P=[], schritt=24, h=lang/rm*180/Math.PI;
+    const ring=(r1,r2,t1,t2)=>{ const pts=[]; for(let k=0;k<=schritt;k++){ const t=rad(t1+(t2-t1)*k/schritt); pts.push([cx+r2*Math.cos(t),cy+r2*Math.sin(t)]); }
+      for(let k=schritt;k>=0;k--){ const t=rad(t1+(t2-t1)*k/schritt); pts.push([cx+r1*Math.cos(t),cy+r1*Math.sin(t)]); }
+      d.lines(pts.slice(1).map((p2,k)=>[p2[0]-pts[k][0],p2[1]-pts[k][1]]),pts[0][0],pts[0][1],[1,1],"F",true); };
+    d.setFillColor(...rot);
+    const dO=q/ro*180/Math.PI, dI=q/ri*180/Math.PI;
+    ring(ri,ro,thc-h+Math.max(dO,dI),thc+h-Math.max(dO,dI));
+    ring(ri+q,ro-q,thc-h,thc+h);
+    [[ro-q,thc-h+dO],[ro-q,thc+h-dO],[ri+q,thc-h+dI],[ri+q,thc+h-dI]].forEach(([r,t])=>d.circle(cx+r*Math.cos(rad(t)),cy+r*Math.sin(rad(t)),q,"F")); };
+  /* Monat: rot hinterlegen, Zahl weiß neu darüber */
+  const tm=LEG_PL_MON[mo-1]; d.setFillColor(...rot); d.circle(cx+rm*Math.cos(rad(tm)),cy+rm*Math.sin(rad(tm)),(mo>9?66:52)*s,"F"); bogen(String(mo),tm,true,5.2,[255,255,255]);
+  /* Jahre: fünf ab dem Prüfjahr (wie beim Aufkleber), Termin rot hinterlegt */
+  const j0=Math.min(Math.max(zuletzt?+String(zuletzt).slice(0,4):jr-4,jr-4),jr);
+  LEG_PL_JAHR.forEach((th,i)=>{ const y=j0+i; if(y===jr){ d.setFontSize(6.6); const w=[...String(y)].reduce((a,c)=>a+d.getTextWidth(c),0)+3*0.15*6.6*0.3528/10; band(th,w/2+34*s,62*s); }
+    bogen(String(y),th,false,6.6,[255,255,255]); });
+  /* Termin auf die Linie „Nächster Prüftermin“ */
+  d.setFont("helvetica","bold"); d.setFontSize(8.2); d.setTextColor(48,48,48); d.text(pdfT(`${LEG_MONATE[mo-1]} ${jr}`),cx,cy-218*s,{align:"center"}); }
 /* Stromkreis-Tabelle – auch im Anlagenpass verwendet.
    Lesbarkeit (Max 18.11.2026: „das müssen auch ältere Leute lesen können“): Darstellungen A1 (bisher), A2 (Mittelding), A3 (größer), LEG_PDF_ART legt fest, welche gilt.
    fs = Schriftgröße (pt), zh = Zeilenhöhe (mm), kh = Kopfhöhe, kf = Kopfschrift, gf = Gruppenschrift, kzF/abF = Kennzeichnung/Absicherung fett, li = Trennlinien statt Zebra */
@@ -530,6 +583,13 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   /* Katalog mit Marken und Bildern statt nur Formular (Max 18.11.2026); „Ohne Produkt eintragen“ führt im Katalog zum Formular */
   case "legNach": if(typeof awGeraetStart==="function"&&!L.fertig){ awGeraetStart({nach:+b.dataset.i,tab:"ls"}); return; } legSkDlg(null,+b.dataset.i); return;
   case "legNeuRcd": if(typeof awGeraetStart==="function"&&!L.fertig){ awGeraetStart({tab:"rcd"}); return; } legSkDlg(null,legE(L).length-1,"rcd"); return;
+  case "legEcDlg": { if(!L||L.fertig) return; const auto=legEcheckDaten({...L,echeckNaechste:""}), cur=(L.echeckNaechste||(auto?auto.naechste:"")).slice(0,7);
+    dialog("Nächster E-Check",`<p class="sup" style="margin:0 0 12px">Steht als Termin auf der E-CHECK-Plakette der Legende (Monat und Jahr werden markiert).${auto?` Aus dem letzten E-Check der Anlage: ${esc(LEG_MONATE[+auto.naechste.slice(5,7)-1])} ${esc(auto.naechste.slice(0,4))}.`:""}</p>
+      <div class="fg1">${tf("legEcM","Monat und Jahr",cur,{form:true,type:"month",ph:"JJJJ-MM"})}</div>`,
+      `${L.echeckNaechste?`<button class="btn-text" data-act="legEcWeg">${auto?"E-Check-Termin nehmen":"Entfernen"}</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-filled" data-act="legEcOk">Übernehmen</button>`); return; }
+  case "legEcOk": { if(!L) return; const v=String(formVals().legEcM||"").trim(), m=v.match(/^(\d{4})-(\d{2})/);
+    if(!m||+m[2]<1||+m[2]>12){ toast("Bitte Monat und Jahr wählen"); return; } L.echeckNaechste=`${m[1]}-${m[2]}-01`; legSave(L); closeOverlays(); render(); toast("Termin für die Plakette gespeichert"); return; }
+  case "legEcWeg": { if(!L) return; L.echeckNaechste=""; legSave(L); closeOverlays(); render(); return; }
   case "legOpt": { if(!L) return; L[b.dataset.k]=+b.dataset.v; legSave(L); render(); return; }
   case "legOptS": { if(!L) return; L[b.dataset.k]=b.dataset.v; legSave(L); render(); return; }
   case "legSetz": { const f=document.getElementById(b.dataset.ziel); if(f){ f.value=b.dataset.v; f.parentElement.classList.add("fl"); } return; }
