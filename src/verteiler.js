@@ -21,11 +21,11 @@ function vtEintraege(g,vId){ const R=g.rcds.filter(r=>r.vId===vId), S=g.stromkre
   return E; }
 /* Virtuelle Legende: alles, was der Editor braucht, aus dem Gebäude */
 function vtL(gid,vId){ const g=vtGeb(gid), v=g&&g.verteiler.find(x=>x.id===vId); if(!v) return null; const o=ecOrt(g.ortId), k=o.kunde;
-  return {_geb:gid,_v:vId,id:"vt-"+vId,titel:v.name||"Verteiler",kunde:k?k.name:"",anschrift:adrText(o.standort)||adrText(k)||"",kundeId:k?k.id:"",standortId:o.standort?o.standort.id:"",ortId:g.ortId,
-    netz:v.netz||"",ersteller:v.ersteller||"",stand:v.stand||"",fertig:!!v.fertig,art:v.art,montage:v.montage,reihen:v.reihen,zs:v.zs,gerHerst:v.gerHerst,typFrei:!!v.typFrei,bst:v.bst,gw:v.gw,teReihe:v.teReihe,teMm:v.teMm,eti:v.eti,eintraege:(E=>{ if(!v.fertig) legNummern(E); return E; })(vtEintraege(g,vId)),updated:v.updated,createdBy:v.createdBy}; }
+  const L={_geb:gid,_v:vId,id:"vt-"+vId,titel:v.name||"Verteiler",kunde:k?k.name:"",anschrift:adrText(o.standort)||adrText(k)||"",kundeId:k?k.id:"",standortId:o.standort?o.standort.id:"",ortId:g.ortId,
+    netz:v.netz||"",ersteller:v.ersteller||"",stand:v.stand||"",fertig:!!v.fertig,art:v.art,montage:v.montage,reihen:v.reihen,zs:v.zs,gerHerst:v.gerHerst,typFrei:!!v.typFrei,bst:v.bst,gw:v.gw,nrAbdeckung:v.nrAbdeckung,teReihe:v.teReihe,teMm:v.teMm,eti:v.eti,eintraege:vtEintraege(g,vId),updated:v.updated,createdBy:v.createdBy}; if(!v.fertig){ if(typeof legVoltaNr==="function"&&legVoltaNr(L)) legNummernVolta(L); else legNummern(L.eintraege); } return L; }
 /* Zurückschreiben in das Gebäude (vorhandene Felder der Prüfung wie Leitung oder Messwerte bleiben erhalten) */
-function vtSchreiben(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(!v) return;
-  Object.assign(v,{name:L.titel||v.name,netz:L.netz||"",ersteller:L.ersteller||"",stand:L.stand||"",fertig:!!L.fertig,teReihe:L.teReihe,teMm:L.teMm,montage:L.montage,reihen:L.reihen,updated:Date.now()}); if(L.typFrei) v.typFrei=true; else delete v.typFrei; if(L.bst&&L.bst.bestand) v.bst=L.bst; else delete v.bst; if(L.gw) v.gw=L.gw; if(L.eti&&Object.keys(L.eti).length) v.eti=L.eti; else delete v.eti; if(L.zs) v.zs=L.zs;
+function vtSchreiben(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(!v) return; if(typeof legVoltaNr==="function"&&legVoltaNr(L)) legNummernVolta(L);
+  Object.assign(v,{name:L.titel||v.name,netz:L.netz||"",ersteller:L.ersteller||"",stand:L.stand||"",fertig:!!L.fertig,teReihe:L.teReihe,teMm:L.teMm,montage:L.montage,reihen:L.reihen,updated:Date.now()}); if(L.typFrei) v.typFrei=true; else delete v.typFrei; if(L.bst&&L.bst.bestand) v.bst=L.bst; else delete v.bst; if(L.gw) v.gw=L.gw; if(L.nrAbdeckung===false) v.nrAbdeckung=false; else delete v.nrAbdeckung; if(L.eti&&Object.keys(L.eti).length) v.eti=L.eti; else delete v.eti; if(L.zs) v.zs=L.zs;
   ["teReihe","teMm","montage","reihen"].forEach(k=>{ if(v[k]==null) delete v[k]; });
   const E=legE(L), ids=new Set(E.map(e=>e.id)), opt=(o,e)=>{ ["te","umbruch","sym","mat"].forEach(k=>{ if(e[k]) o[k]=e[k]; else delete o[k]; }); };
   g.vtTeile=(g.vtTeile||[]).filter(t=>t.vId!==L._v||ids.has(t.id));
