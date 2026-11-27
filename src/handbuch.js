@@ -1,7 +1,9 @@
 /* ===== Betriebshandbuch (Übersicht, 04.11.2026) =====
    Entscheidungen Max: Entwürfe zu jedem Kapitel (handbuch-vorlage.js), alle dürfen Änderungen vorschlagen, Chef/Büro geben frei;
    Suche, Fotos, „Gelesen“-Bestätigung (Nachweis z. B. für Unterweisungen), Checklisten zum Abhaken, Links aus den anderen Apps (#hb=<id>).
-   Daten: Datenart „handbuch“ – je Artikel ein Datensatz {id,kapitel,titel,inhalt,checkliste[],fotos[],stand,frei:{von,am},vorschlaege[],apps[]}.
+   Daten: Datenart „handbuch“ – je Artikel ein Datensatz {id,kapitel,titel,inhalt,checkliste[],fotos[],stand,frei:{von,am},verfasser?,ausgabe?,vorschlaege[],apps[]}.
+   verfasser = wer den Text geschrieben hat (eingespieltes Handbuch: Joachim Irrgang), ausgabe = Stand der Vorlage („05.2026“) –
+   gilt, solange der Artikel unverändert ist; jede neue Freigabe nimmt „ausgabe“ weg.
    Ein Entwurf aus der Vorlage existiert nur im Code, bis er bearbeitet oder freigegeben wird. stand>0 = gültig.
    Gelesen: am eigenen Profil (profile.hbGelesen = {id: stand}) – so überschreiben sich zwei Leute nicht gegenseitig. */
 const hbDarf=()=>typeof anfVerw==="function"?anfVerw():!!ME.admin;
@@ -14,6 +16,9 @@ function hbAlle(){ const R=new Map(live("handbuch").map(r=>[r.id,r])), out=[];
     .sort((a,b)=>(ord[a.kapitel]??99)-(ord[b.kapitel]??99)||(a.ord??500)-(b.ord??500)); }
 const hbArt=id=>hbAlle().find(a=>a.id===id)||null;
 const hbGilt=a=>+a.stand>0;
+const HB_VERFASSER="Joachim Irrgang";
+/* „Ausgabe 05.2026“ (eingespielt, unverändert) oder „Stand 2 vom 03.12.2026“ */
+const hbStandText=(a,lang)=>a.ausgabe?`Ausgabe ${a.ausgabe}`:lang?`Stand ${a.stand} vom ${ecDatumKurz(a.frei&&a.frei.am)}`:`Stand ${a.stand} · ${ecDatumKurz(a.frei&&a.frei.am)}`;
 function hbGelesenMap(mail){ const p=DB.profile&&DB.profile.get(String(mail||ME.mail||"").toLowerCase()); return p&&p.hbGelesen||{}; }
 const hbUngelesen=()=>{ const G=hbGelesenMap(); return hbAlle().filter(a=>hbGilt(a)&&+G[a.id]!==+a.stand); };
 /* einfacher Text → HTML: ## Überschrift, - Liste, 1. Liste, **fett**, Leerzeile = Absatz.
@@ -70,13 +75,13 @@ function hbUebersicht(){ const A=hbAlle(), G=hbGelesenMap(), q=HB_Q.trim().toLow
   const chip=(v,t,n)=>`<button type="button" class="chip" data-act="hbFilter" data-v="${v}" aria-pressed="${HB_F===v}">${t}${n!=null?` · ${n}`:""}</button>`;
   const item=a=>{ const gel=hbGilt(a)&&+G[a.id]===+a.stand, st=!hbGilt(a)?pill("open","Entwurf"):gel?"":pill("wip",G[a.id]?"geändert":"neu");
     return `<div class="li" role="button" tabindex="0" data-act="hbAuf" data-id="${esc(a.id)}"><span class="av">${icon(a.checkliste.length?"check":"book")}</span><span class="lt"><span class="h">${esc(a.titel)}</span>
-      <span class="s">${esc(hbGilt(a)?`Stand ${a.stand} · ${ecDatumKurz(a.frei&&a.frei.am)}`:"noch nicht freigegeben")}${a.vorschlaege.length?` · ${a.vorschlaege.length} Vorschlag${a.vorschlaege.length===1?"":"e"}`:""}</span><span class="st">${st}</span></span>${icon("chev")}</div>`; };
+      <span class="s">${esc(hbGilt(a)?hbStandText(a):"noch nicht freigegeben")}${a.vorschlaege.length?` · ${a.vorschlaege.length} Vorschlag${a.vorschlaege.length===1?"":"e"}`:""}</span><span class="st">${st}</span></span>${icon("chev")}</div>`; };
   const nachKap=HB_KAPITEL.map(([k,t])=>[t,L.filter(a=>a.kapitel===k)]).concat([["Weitere",L.filter(a=>!HB_KAPITEL.some(([k])=>k===a.kapitel))]]).filter(([,X])=>X.length);
   return `<div class="narrow hb">
     <div class="search">${icon("search")}<input id="hbQ" type="search" value="${esc(HB_Q)}" placeholder="Im Handbuch suchen" autocomplete="off" aria-label="Im Handbuch suchen"></div>
     <div class="chips ec-wahl hb-filter">${chip("alle","Alle")}${chip("neu","Zu lesen",ung.length)}${chip("entwurf","Entwürfe",entw.length)}${hbDarf()||vor.length?chip("vorschlag","Vorschläge",vor.length):""}${off.length?chip("offen","Offen",off.length):""}</div>
     ${nachKap.length?nachKap.map(([t,X])=>`<div class="sec-lbl">${esc(t)}</div>${listOf(X.map(item))}`).join(""):`<p class="meta" style="margin:16px 4px">${q?"Nichts gefunden.":"Hier ist gerade nichts."}</p>`}
-    <div class="hb-aktionen"><button type="button" class="btn-tonal" data-act="hbDruck">${icon("druck")}Drucken oder als PDF</button>${hbEinspielDarf()?`<button type="button" class="btn-text" data-act="hbEinspielen">${icon("upload")}Handbuch einspielen</button>`:""}</div>
+    <div class="hb-aktionen"><button type="button" class="btn-tonal" data-act="hbDruck">${icon("druck")}Drucken oder als PDF</button>${hbEinspielDarf()?`<button type="button" class="btn-text" data-act="hbEinspielen">${icon("upload")}Handbuch einspielen</button>${hbEingespielt().length?`<button type="button" class="btn-text" data-act="hbVfDlg">${icon("person")}Verfasser und Ausgabe</button>`:""}`:""}</div>
     <p class="hint">${hbDarf()?"Entwürfe sind Vorschläge – erst nach deiner Freigabe gelten sie. Änderungsvorschläge der Kollegen landen unter „Vorschläge“.":"Fehlt etwas oder stimmt etwas nicht? Im Artikel „Änderung vorschlagen“ – der Chef gibt frei."}</p></div>`; }
 const ecDatumKurz=iso=>iso?String(iso).slice(0,10).split("-").reverse().join("."):"";
 /* Checklisten: abgehakt wird auf diesem Gerät (je Artikel), „Neu beginnen“ setzt zurück */
@@ -86,7 +91,7 @@ function hbArtikel(id){ const a=hbArt(id); if(!a) return `<div class="narrow"><p
   const kap=(HB_KAPITEL.find(([k])=>k===a.kapitel)||[,""])[1];
   const leser=hbDarf()&&hbGilt(a)?(()=>{ const T=team(); const ja=T.filter(m=>+hbGelesenMap(m.mail)[a.id]===+a.stand); return `<details class="hb-leser"><summary>Gelesen von ${ja.length} von ${T.length}</summary><div>${T.map(m=>`<span class="${ja.includes(m)?"ja":"nein"}">${esc(m.name||m.mail)}</span>`).join("")}</div></details>`; })():"";
   return `<div class="narrow hb hb-art">
-    <p class="hb-meta">${esc([kap,hbGilt(a)?`Stand ${a.stand} vom ${ecDatumKurz(a.frei&&a.frei.am)}${a.frei&&a.frei.von?`, freigegeben von ${a.frei.von}`:""}`:""].filter(Boolean).join(" · "))}</p>
+    <p class="hb-meta">${esc([kap,a.verfasser?`von ${a.verfasser}`:"",hbGilt(a)?hbStandText(a,true)+(a.frei&&a.frei.von&&a.frei.von!==a.verfasser?`, freigegeben von ${a.frei.von}`:""):""].filter(Boolean).join(" · "))}</p>
     ${hbGilt(a)?"":`<div class="hb-entwurf">${icon("warn")}<span><b>Entwurf – noch nicht freigegeben.</b>${a.neu?" Vorschlag als Grundlage; bitte prüfen und an eure Praxis anpassen.":""}</span></div>`}
     <article class="hb-text">${hbMd(a.inhalt)}</article>
     ${a.fotos.length?`<div class="hb-fotos">${a.fotos.map((f,i)=>`<button type="button" data-act="hbFoto" data-id="${esc(a.id)}" data-i="${i}"><img src="${esc(f)}" alt=""></button>`).join("")}</div>`:""}
@@ -103,7 +108,7 @@ function hbArtikel(id){ const a=hbArt(id); if(!a) return `<div class="narrow"><p
 /* ---- Speichern ---- */
 function hbRec(a){ const alt=DB.handbuch.get(a.id); return {r:alt||{id:a.id,kapitel:a.kapitel,titel:a.titel,inhalt:a.inhalt,checkliste:a.checkliste||[],fotos:a.fotos||[],apps:a.apps||[],stand:0,vorschlaege:[]},neu:!alt}; }
 function hbFreigeben(id,w){ const a=hbArt(id); if(!a||!hbDarf()) return; const {r,neu}=hbRec(a); if(w) Object.assign(r,w);
-  r.stand=(+r.stand||0)+1; r.frei={von:ME.name||"",am:today()}; r.deleted=false; saveRec("handbuch",r,neu); }
+  r.stand=(+r.stand||0)+1; r.frei={von:ME.name||"",am:today()}; delete r.ausgabe; r.deleted=false; saveRec("handbuch",r,neu); }
 /* ---- Editor ---- */
 let HB_ED=null;
 function hbEditor(id){ const a=id?hbArt(id):{id:"hb-"+uid(),kapitel:HB_KAPITEL[0][0],titel:"",inhalt:"",checkliste:[],fotos:[],stand:0}; if(!a) return;
@@ -141,13 +146,28 @@ function hbEinspielen(){ const i=document.createElement("input"); i.type="file";
     const L=d.artikel.filter(x=>x&&x.id&&x.titel), alt=L.filter(x=>DB.handbuch.get(x.id)), frei=alt.filter(x=>+DB.handbuch.get(x.id).stand>0);
     HB_EIN=L; dialog("Handbuch einspielen",`<p class="sup" style="margin:0 0 12px">${L.length} Artikel aus „${esc(f.name)}“${d.stand?` (Stand ${esc(d.stand)})`:""}. Sie gelten danach sofort für alle und erscheinen bei jedem als „zu lesen“.</p>
       ${listOf(HB_KAPITEL.map(([k,t])=>{ const n=L.filter(x=>x.kapitel===k).length; return n?`<div class="li"><span class="lt"><span class="h">${esc(t)}</span><span class="s">${n} Artikel</span></span></div>`:""; }).filter(Boolean))}
+      <div class="fg1" style="margin-top:12px">${tf("hbEinVon","Verfasst von",d.verfasser||HB_VERFASSER,{form:true})}${tf("hbEinAusg","Ausgabe",d.stand||"",{form:true,ph:"z. B. 05.2026"})}</div>
       ${alt.length?`<p class="sup" style="margin:12px 0 0">${alt.length} davon ersetzen vorhandene Artikel${frei.length?`, ${frei.length} davon schon freigegeben – Fotos und Vorschläge bleiben erhalten`:" (bisher nur Entwürfe)"}.</p>`:""}`,
       `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-filled" data-act="hbEinOk">Einspielen</button>`); };
   i.click(); }
-function hbEinOk(){ if(!HB_EIN||!hbEinspielDarf()) return; const L=HB_EIN; HB_EIN=null;
+/* Verfasser/Ausgabe nachträglich setzen – OHNE neuen Stand, damit niemand alles neu lesen muss.
+   Betrifft die eingespielten Artikel (haben „ord“); Freigabe-Name nur bei unveränderten (Stand 1). */
+const hbEingespielt=()=>hbAlle().filter(a=>hbGilt(a)&&a.ord!=null&&DB.handbuch.get(a.id));
+function hbVerfDlg(){ const L=hbEingespielt(); if(!L.length){ toast("Keine eingespielten Artikel"); return; } const a0=L.find(a=>a.ausgabe)||{};
+  dialog("Verfasser und Ausgabe",`<p class="sup" style="margin:0 0 12px">Gilt für die ${L.length} eingespielten Artikel. Der Stand bleibt gleich – niemand muss deshalb neu lesen.</p>
+    <div class="fg1">${tf("hbVfVon","Verfasst von",L.find(a=>a.verfasser)?.verfasser||HB_VERFASSER,{form:true})}${tf("hbVfAusg","Ausgabe",a0.ausgabe||"05.2026",{form:true,ph:"z. B. 05.2026"})}</div>`,
+    `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-filled" data-act="hbVfOk">Übernehmen</button>`); }
+function hbVfOk(){ if(!hbEinspielDarf()) return; const fv=formVals(), von=String(fv.hbVfVon||"").trim(), ausg=String(fv.hbVfAusg||"").trim(); let n=0;
+  hbEingespielt().forEach(a=>{ const r=DB.handbuch.get(a.id); if(!r) return;
+    if(von) r.verfasser=von; else delete r.verfasser;
+    if(+r.stand===1){ if(von) r.frei={...(r.frei||{}),von}; if(ausg) r.ausgabe=ausg; else delete r.ausgabe; }
+    saveRec("handbuch",r,false); n++; });
+  closeOverlays(); render(); toast(`${n} Artikel geändert`); }
+function hbEinOk(){ if(!HB_EIN||!hbEinspielDarf()) return; const L=HB_EIN; HB_EIN=null; const fv=formVals(), von=String(fv.hbEinVon||"").trim(), ausg=String(fv.hbEinAusg||"").trim();
   L.forEach(x=>{ const alt=DB.handbuch.get(x.id), r=alt||{id:x.id,fotos:[],apps:[],vorschlaege:[],stand:0};
     Object.assign(r,{kapitel:x.kapitel||"allgemein",ord:+x.ord||500,titel:x.titel,inhalt:x.inhalt||"",checkliste:x.checkliste||[]});
-    r.stand=(+r.stand||0)+1; r.frei={von:ME.name||"",am:today()}; r.deleted=false; saveRec("handbuch",r,!alt); });
+    r.stand=(+r.stand||0)+1; r.frei={von:von||ME.name||"",am:today()}; if(von) r.verfasser=von; else delete r.verfasser; if(ausg) r.ausgabe=ausg; else delete r.ausgabe;
+    r.deleted=false; saveRec("handbuch",r,!alt); });
   closeOverlays(); HB_F="alle"; render(); toast(`${L.length} Artikel eingespielt und freigegeben`); }
 /* ---- Drucken / PDF: alle freigegebenen Artikel als A4-Dokument (Druckbereich bleibt bis zur nächsten Berührung – Android meldet „fertig“ zu früh) ---- */
 function hbDruckWeg(){ document.getElementById("hbDruck")?.remove(); document.getElementById("hbDruckSeite")?.remove(); document.body.classList.remove("hb-druckt"); }
@@ -155,11 +175,11 @@ const hbDruckbar=a=>String(a.inhalt||"").split("\n").some(z=>z.trim()&&!/^\?\?/.
 function hbDrucken(){ const A=hbAlle().filter(a=>hbGilt(a)&&hbDruckbar(a)); if(!A.length){ toast("Noch keine freigegebenen Artikel"); return; } hbDruckWeg();
   const K=HB_KAPITEL.map(([k,t])=>[t,A.filter(a=>a.kapitel===k)]).concat([["Weitere",A.filter(a=>!HB_KAPITEL.some(([k])=>k===a.kapitel))]]).filter(([,X])=>X.length);
   const box=document.createElement("div"); box.id="hbDruck"; box.className="hb-d";
-  box.innerHTML=`<section class="hb-d-titel">${typeof LOGO_PDF!=="undefined"&&/^data:/.test(LOGO_PDF)?`<img class="hb-d-logo" src="${LOGO_PDF}" alt="Elektro Irrgang">`:`<p class="hb-d-firma">Elektro Irrgang</p>`}<h1>Betriebshandbuch</h1><p>Stand ${esc(ecDatumKurz(today()))}</p></section>
+  box.innerHTML=`<section class="hb-d-titel">${typeof LOGO_PDF!=="undefined"&&/^data:/.test(LOGO_PDF)?`<img class="hb-d-logo" src="${LOGO_PDF}" alt="Elektro Irrgang">`:`<p class="hb-d-firma">Elektro Irrgang</p>`}<h1>Betriebshandbuch</h1>${(v=>v.length===1?`<p>${esc(v[0])}</p>`:"")([...new Set(A.map(a=>a.verfasser).filter(Boolean))])}<p>Stand ${esc(ecDatumKurz(today()))}</p></section>
     <section class="hb-d-inhalt"><h1>Inhalt</h1><ol class="hb-d-inh">${K.map(([t,X],i)=>`<li><b>${i+1} ${esc(t)}</b><ol>${X.map((a,j)=>`<li>${i+1}.${j+1} ${esc(a.titel)}</li>`).join("")}</ol></li>`).join("")}</ol></section>
     ${K.map(([t,X],i)=>`<section class="hb-d-kap"><h1>${i+1} ${esc(t)}</h1>${X.map((a,j)=>`<article class="hb-d-art"><h2>${i+1}.${j+1} ${esc(a.titel)}</h2><div class="hb-text">${hbMd(a.inhalt,{druck:true})}</div>
       ${a.checkliste.length?`<div class="hb-d-ck"><b>Checkliste</b>${a.checkliste.map(c=>`<p><span class="hb-d-box"></span>${esc(c)}</p>`).join("")}</div>`:""}
-      <p class="hb-d-stand">Stand ${esc(a.stand)} vom ${esc(ecDatumKurz(a.frei&&a.frei.am))}</p></article>`).join("")}</section>`).join("")}`;
+      <p class="hb-d-stand">${esc([hbStandText(a,true),a.verfasser?`von ${a.verfasser}`:""].filter(Boolean).join(" · "))}</p></article>`).join("")}</section>`).join("")}`;
   const st=document.createElement("style"); st.id="hbDruckSeite"; st.textContent="@page{size:A4 portrait;margin:16mm 16mm 18mm}";
   document.head.appendChild(st); document.body.appendChild(box); document.body.classList.add("hb-druckt");
   setTimeout(()=>{ window.print(); setTimeout(()=>addEventListener("pointerdown",hbDruckWeg,{once:true,capture:true}),1500); },60); }
@@ -170,6 +190,8 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="hbDruck"){ hbDrucken(); return; }
   if(a==="hbEinspielen"){ if(hbEinspielDarf()) hbEinspielen(); return; }
   if(a==="hbEinOk"){ hbEinOk(); return; }
+  if(a==="hbVfDlg"){ if(hbEinspielDarf()) hbVerfDlg(); return; }
+  if(a==="hbVfOk"){ hbVfOk(); return; }
   if(a==="hbFilter"){ HB_F=b.dataset.v; render(); return; }
   if(a==="hbCk"){ const c=hbCk(id); c[b.dataset.i]=!c[b.dataset.i]; try{ localStorage.setItem(hbCkKey(id),JSON.stringify(c)); }catch(x){} render(); return; }
   if(a==="hbCkNeu"){ try{ localStorage.removeItem(hbCkKey(id)); }catch(x){} render(); return; }
