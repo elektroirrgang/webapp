@@ -11534,16 +11534,28 @@ const LEG_ECHECK_IMG="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQ
 const LEG_PL_MON=[199.6,210.5,222.5,233.5,245.5,256.5,268.5,280.5,291.5,306,321.4,337.6], LEG_PL_JAHR=[144.5,117,89.5,61.5,34.5];
 function legPlakette(d,cx,cy,iso,zuletzt,D=32){ const s=D/1614, rm=720*s, mo=+iso.slice(5,7), jr=+iso.slice(0,4), rot=[225,29,47], rad=g=>g*Math.PI/180;
   try{ d.addImage(LEG_ECHECK_IMG,"JPEG",cx-D/2,cy-D/2,D,D,"echeckPlakette"); }catch(e){ return; }
-  const bogen=(t,th,oben,fs,farbe,fett)=>{ d.setFont("helvetica",fett?"bold":"normal"); d.setFontSize(fs); const w=d.getTextWidth(t), A=oben?270-th:90-th, a=rad(A), ch=fs*0.2533, r=oben?rm-ch/2:rm+ch/2;
-    const px=cx+r*Math.cos(rad(th)), py=cy+r*Math.sin(rad(th)); d.setTextColor(...farbe); d.text(t,px-(w/2)*Math.cos(a),py+(w/2)*Math.sin(a),{angle:A}); };
+  /* Schrift entlang des Rings wie im Original: jedes Zeichen einzeln auf dem Kreis, oben von außen lesbar, unten von innen */
+  const bogen=(t,thc,oben,fs,farbe)=>{ d.setFont("helvetica","normal"); d.setFontSize(fs); const ch=fs*0.2533, r=oben?rm-ch/2:rm+ch/2;
+    const ws=[...t].map(c=>d.getTextWidth(c)), sp=0.15*fs*0.3528/10, gesamt=ws.reduce((a,b)=>a+b,0)+sp*(t.length-1); let off=-gesamt/2; d.setTextColor(...farbe);
+    [...t].forEach((c,k)=>{ const mitte=off+ws[k]/2, th=oben?thc+mitte/r*180/Math.PI:thc-mitte/r*180/Math.PI, A=oben?270-th:90-th, a=rad(A);
+      const px=cx+r*Math.cos(rad(th)), py=cy+r*Math.sin(rad(th)); d.text(c,px-(ws[k]/2)*Math.cos(a),py+(ws[k]/2)*Math.sin(a),{angle:A}); off+=ws[k]+sp; });
+    return gesamt; };
+  /* rote Markierung als gebogenes Band mit runden Ecken (Band + vier Kreise an den Ecken) */
+  const band=(thc,lang,H)=>{ const ro=rm+H, ri=rm-H, q=H*0.55, P=[], schritt=24, h=lang/rm*180/Math.PI;
+    const ring=(r1,r2,t1,t2)=>{ const pts=[]; for(let k=0;k<=schritt;k++){ const t=rad(t1+(t2-t1)*k/schritt); pts.push([cx+r2*Math.cos(t),cy+r2*Math.sin(t)]); }
+      for(let k=schritt;k>=0;k--){ const t=rad(t1+(t2-t1)*k/schritt); pts.push([cx+r1*Math.cos(t),cy+r1*Math.sin(t)]); }
+      d.lines(pts.slice(1).map((p2,k)=>[p2[0]-pts[k][0],p2[1]-pts[k][1]]),pts[0][0],pts[0][1],[1,1],"F",true); };
+    d.setFillColor(...rot);
+    const dO=q/ro*180/Math.PI, dI=q/ri*180/Math.PI;
+    ring(ri,ro,thc-h+Math.max(dO,dI),thc+h-Math.max(dO,dI));
+    ring(ri+q,ro-q,thc-h,thc+h);
+    [[ro-q,thc-h+dO],[ro-q,thc+h-dO],[ri+q,thc-h+dI],[ri+q,thc+h-dI]].forEach(([r,t])=>d.circle(cx+r*Math.cos(rad(t)),cy+r*Math.sin(rad(t)),q,"F")); };
   /* Monat: rot hinterlegen, Zahl weiß neu darüber */
-  const tm=LEG_PL_MON[mo-1]; d.setFillColor(...rot); d.circle(cx+rm*Math.cos(rad(tm)),cy+rm*Math.sin(rad(tm)),(mo>9?66:52)*s,"F"); bogen(String(mo),tm,true,5.2,[255,255,255],false);
+  const tm=LEG_PL_MON[mo-1]; d.setFillColor(...rot); d.circle(cx+rm*Math.cos(rad(tm)),cy+rm*Math.sin(rad(tm)),(mo>9?66:52)*s,"F"); bogen(String(mo),tm,true,5.2,[255,255,255]);
   /* Jahre: fünf ab dem Prüfjahr (wie beim Aufkleber), Termin rot hinterlegt */
   const j0=Math.min(Math.max(zuletzt?+String(zuletzt).slice(0,4):jr-4,jr-4),jr);
-  LEG_PL_JAHR.forEach((th,i)=>{ const y=j0+i, an=y===jr;
-    if(an){ const a=rad(th), t=[-Math.sin(a),Math.cos(a)], n=[Math.cos(a),Math.sin(a)], L=152*s, H=62*s, P=[[-L,-H],[L,-H],[L,H],[-L,H]].map(([u,v])=>[cx+rm*n[0]+u*t[0]+v*n[0],cy+rm*n[1]+u*t[1]+v*n[1]]);
-      d.setFillColor(...rot); d.lines(P.slice(1).map((q,k)=>[q[0]-P[k][0],q[1]-P[k][1]]),P[0][0],P[0][1],[1,1],"F",true); }
-    bogen(String(y),th,false,6.6,[255,255,255],false); });
+  LEG_PL_JAHR.forEach((th,i)=>{ const y=j0+i; if(y===jr){ d.setFontSize(6.6); const w=[...String(y)].reduce((a,c)=>a+d.getTextWidth(c),0)+3*0.15*6.6*0.3528/10; band(th,w/2+34*s,62*s); }
+    bogen(String(y),th,false,6.6,[255,255,255]); });
   /* Termin auf die Linie „Nächster Prüftermin“ */
   d.setFont("helvetica","bold"); d.setFontSize(8.2); d.setTextColor(48,48,48); d.text(pdfT(`${LEG_MONATE[mo-1]} ${jr}`),cx,cy-218*s,{align:"center"}); }
 /* Stromkreis-Tabelle – auch im Anlagenpass verwendet.
