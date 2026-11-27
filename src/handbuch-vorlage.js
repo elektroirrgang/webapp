@@ -2,9 +2,11 @@
    Vorschläge von Claude nach gängiger Praxis (VDE/DGUV) – gelten erst, wenn Chef oder Büro sie in der App freigeben.
    Ein gespeicherter Artikel (Datenart „handbuch“, gleiche id) ersetzt den Entwurf hier.
    Textformat: Absätze, „## Zwischenüberschrift“, „- Aufzählung“, **fett**. checkliste = Punkte zum Abhaken vor Ort. */
-const HB_KAPITEL=[["firma","Unternehmen und Kunden"],["sicherheit","Arbeitssicherheit"],["baustelle","Baustelle"],["montage","Installation und Montage"],["pruefen","Prüfen und Dokumentieren"],["fahrzeug","Fahrzeug, Werkzeug, Messgeräte"],["buero","Abläufe und Büro"]];
+/* 27.11.2026: Kategorien wie im echten Betriebshandbuch (Word 05.2026). Alte Schlüssel gespeicherter Artikel übersetzt HB_KAP_ALT. */
+const HB_KAPITEL=[["allgemein","Allgemeines"],["fahrzeuge","Firmenfahrzeuge"],["baustelle","Ablauf auf der Baustelle"],["installation","Festgelegte Installationsarten"],["material","Material und Lager"],["buero","Büro, Software und Datenschutz"],["sicherheit","Arbeitssicherheit"]];
+const HB_KAP_ALT={firma:"allgemein",montage:"installation",pruefen:"baustelle",fahrzeug:"fahrzeuge"};
 const HB_VORLAGE=[
-{id:"hb-grundsaetze",kapitel:"firma",titel:"Wofür wir stehen",inhalt:`Elektro Irrgang arbeitet sauber, sicher und nachvollziehbar. Der Kunde soll nach unserem Einsatz eine Anlage haben, die funktioniert, dokumentiert ist und die er versteht.
+{id:"hb-grundsaetze",kapitel:"allgemein",titel:"Wofür wir stehen",inhalt:`Elektro Irrgang arbeitet sauber, sicher und nachvollziehbar. Der Kunde soll nach unserem Einsatz eine Anlage haben, die funktioniert, dokumentiert ist und die er versteht.
 
 ## Unsere Grundsätze
 - **Sicherheit vor Tempo.** Wer unsicher ist, fragt – lieber einmal zu viel.
@@ -12,7 +14,7 @@ const HB_VORLAGE=[
 - **Dokumentation.** Was wir verbauen und prüfen, steht in der App: Stromkreise, Prüfprotokolle, Übergaben, Fotos.
 - **Ehrlichkeit.** Fehler und Schäden sofort melden – auch die eigenen. Nur so können wir sie beheben.
 - **Ein Team.** Wissen weitergeben, Neue und Azubis mitnehmen.`},
-{id:"hb-kunde",kapitel:"firma",titel:"Auftreten beim Kunden",inhalt:`Beim Kunden sind wir Gast – und das Aushängeschild der Firma.
+{id:"hb-kunde",kapitel:"allgemein",titel:"Auftreten beim Kunden",inhalt:`Beim Kunden sind wir Gast – und das Aushängeschild der Firma.
 
 ## Ankommen
 - Pünktlich sein. Wird es später, den Kunden **vorher** anrufen oder das Büro informieren.
@@ -79,7 +81,7 @@ Erste-Hilfe-Kasten und Ersthelfer: steht im Fahrzeug bzw. an der Werkstatt aus.`
 - **Dabei:** wer mitgearbeitet hat.
 
 Tipp: Ist die KI eingeschaltet, kannst du die Übergabe einfach erzählen.`},
-{id:"hb-material",kapitel:"baustelle",titel:"Material anfordern und Lager",inhalt:`- Material in der App anfordern (Übersicht › Material bzw. in der Übergabe) – nicht per Zuruf oder Zettel.
+{id:"hb-material",kapitel:"material",titel:"Material anfordern und Lager",inhalt:`- Material in der App anfordern (Übersicht › Material bzw. in der Übergabe) – nicht per Zuruf oder Zettel.
 - Möglichst einen Tag vorher anfordern; Eiliges zusätzlich telefonisch melden.
 - Großhändler: EGU und Sonepar – Bestellung läuft über das Büro.
 - Restmaterial zurück ins Lager, angebrochene Ringe beschriften (Typ, ungefähre Restlänge).
@@ -92,7 +94,7 @@ Tipp: Ist die KI eingeschaltet, kannst du die Übergabe einfach erzählen.`},
 - Kunden einweisen (Verteiler, FI-Prüftaste, besondere Geräte).
 - Baustelle besenrein, Restmaterial und Werkzeug mitnehmen.
 - In der App: Baustelle auf „Fertig“, letzte Übergabe mit Fotos.`,checkliste:["Prüfung durchgeführt und dokumentiert","Verteiler beschriftet, Legende in der Tür","QR-Aufkleber angebracht","Alle Abdeckungen und Rahmen montiert","Kunde eingewiesen","Baustelle sauber, Material mitgenommen","Baustelle in der App abgeschlossen"]},
-{id:"hb-zonen",kapitel:"montage",titel:"Installationszonen und Montagehöhen",inhalt:`Leitungen in Wänden verlegen wir in den Installationszonen nach DIN 18015-3 – so weiß jeder später, wo nicht gebohrt werden darf.
+{id:"hb-zonen",kapitel:"installation",titel:"Installationszonen und Montagehöhen",inhalt:`Leitungen in Wänden verlegen wir in den Installationszonen nach DIN 18015-3 – so weiß jeder später, wo nicht gebohrt werden darf.
 
 ## Waagerechte Zonen
 - **Oben:** 15–45 cm unter der fertigen Decke.
@@ -109,13 +111,13 @@ Leitungen immer **senkrecht oder waagerecht** führen, nie schräg. Dosen für S
 - Steckdosen: 30 cm
 - Steckdosen über Arbeitsflächen in der Küche: 115 cm
 - Abweichungen (barrierefrei, Kundenwunsch) vorher absprechen und in der Übergabe notieren.`},
-{id:"hb-klemmen",kapitel:"montage",titel:"Anschließen und Klemmen",inhalt:`- Nur zugelassene Verbindungsklemmen verwenden (z. B. Wago 221, 2273); Querschnitt und Leiterart der Klemme beachten.
+{id:"hb-klemmen",kapitel:"installation",titel:"Anschließen und Klemmen",inhalt:`- Nur zugelassene Verbindungsklemmen verwenden (z. B. Wago 221, 2273); Querschnitt und Leiterart der Klemme beachten.
 - Fein- und feindrähtige Leiter mit **Aderendhülse**, wenn die Klemme nicht ausdrücklich ohne zugelassen ist.
 - Abisolierlänge nach Herstellerangabe, kein blankes Kupfer außerhalb der Klemme.
 - Schraubklemmen mit dem richtigen Drehmoment anziehen.
 - Schutzleiter immer zuerst anschließen und zuletzt lösen; grün-gelb nur als Schutzleiter.
 - In Dosen Leitungen ordentlich falten, Reserve lassen, nichts quetschen.`},
-{id:"hb-verteiler",kapitel:"montage",titel:"Verteiler bauen und beschriften",inhalt:`So sieht ein Verteiler von Elektro Irrgang aus – egal wer ihn gebaut hat.
+{id:"hb-verteiler",kapitel:"installation",titel:"Verteiler bauen und beschriften",inhalt:`So sieht ein Verteiler von Elektro Irrgang aus – egal wer ihn gebaut hat.
 
 ## Aufbau
 - Einspeisung und Hauptschalter bzw. Hauptleitungsabzweig oben, Fehlerstromschutzschalter am Anfang jeder Gruppe.
@@ -132,7 +134,7 @@ Leitungen immer **senkrecht oder waagerecht** führen, nie schräg. Dosen für S
 
 ## Vor dem Einschalten
 - Alle Klemmen nachziehen, Isolationsmessung, Abdeckungen montieren.`,checkliste:["Klemmen nachgezogen","Isolationswiderstand gemessen","Drehfeld geprüft","FI über Prüftaste und mit Messgerät ausgelöst","Beschriftungsstreifen angebracht","Legende in der Tür","QR-Aufkleber zugeordnet","Abdeckungen und Blindstreifen montiert"],apps:["echeck"]},
-{id:"hb-pruefung",kapitel:"pruefen",titel:"Anlagen prüfen (Erst- und Wiederholungsprüfung)",inhalt:`Jede neue oder geänderte Anlage wird vor der Übergabe geprüft (DIN VDE 0100-600), bestehende Anlagen wiederkehrend (DIN VDE 0105-100, bei Gewerbe nach DGUV Vorschrift 3).
+{id:"hb-pruefung",kapitel:"baustelle",titel:"Anlagen prüfen (Erst- und Wiederholungsprüfung)",inhalt:`Jede neue oder geänderte Anlage wird vor der Übergabe geprüft (DIN VDE 0100-600), bestehende Anlagen wiederkehrend (DIN VDE 0105-100, bei Gewerbe nach DGUV Vorschrift 3).
 
 ## Ablauf
 1. **Besichtigen:** Schutz gegen direktes Berühren, Auswahl der Betriebsmittel, Beschriftung, Brandschutz, Zugänglichkeit.
@@ -145,13 +147,13 @@ Leitungen immer **senkrecht oder waagerecht** führen, nie schräg. Dosen für S
 - Schleifenimpedanz: Zs ≤ 230 V ÷ Abschaltstrom Ia (z. B. B16: Ia = 80 A ⇒ Zs ≤ 2,875 Ω).
 
 Alles wird in der App **Gebäudetechnik** dokumentiert; das PDF geht an info@ zur Kontrolle durch den Chef.`,apps:["echeck"]},
-{id:"hb-evse",kapitel:"pruefen",titel:"Ladeeinrichtungen (Wallbox) prüfen",inhalt:`Wallboxen und Ladesäulen prüfen wir mit der App **EVSE** und dem Adapter (z. B. Fluke FEV300) am Prüfgerät.
+{id:"hb-evse",kapitel:"baustelle",titel:"Ladeeinrichtungen (Wallbox) prüfen",inhalt:`Wallboxen und Ladesäulen prüfen wir mit der App **EVSE** und dem Adapter (z. B. Fluke FEV300) am Prüfgerät.
 
 - Zuleitung und Schutzorgane nach DIN VDE 0100-722: je Ladepunkt eigener Stromkreis, FI Typ A mit Erkennung von Gleichfehlerströmen (6 mA DC, in der Wallbox oder separat) oder FI Typ B.
 - Messungen: Schutzleiter, Isolation, Schleifenimpedanz, FI-Auslösung (auch mit Gleichfehlerstrom, wenn vorgesehen), Funktionsprüfung mit dem Adapter (Zustände A–E).
 - Netzbetreiber: Jede Ladeeinrichtung muss angemeldet werden; über 12 kVA (z. B. 22 kW) braucht sie vorher eine Genehmigung.
 - Protokoll in der App abschließen, „Nächste Prüfung“ setzen – dann erscheint die Frist im Prüffristen-Radar.`,apps:["evse"]},
-{id:"hb-dguv",kapitel:"pruefen",titel:"Ortsveränderliche Geräte prüfen (DGUV V3)",inhalt:`Geräte mit Stecker prüfen wir nach DIN VDE 0701-0702 und dokumentieren sie in der App **Gebäudetechnik** (Geräteprüfung).
+{id:"hb-dguv",kapitel:"baustelle",titel:"Ortsveränderliche Geräte prüfen (DGUV V3)",inhalt:`Geräte mit Stecker prüfen wir nach DIN VDE 0701-0702 und dokumentieren sie in der App **Gebäudetechnik** (Geräteprüfung).
 
 ## Ablauf
 1. Sichtprüfung: Gehäuse, Leitung, Stecker, Knickschutz, Aufschriften.
@@ -164,14 +166,14 @@ Alles wird in der App **Gebäudetechnik** dokumentiert; das PDF geht an info@ zu
 - Isolationswiderstand: mindestens 1 MΩ (Schutzklasse I), 2 MΩ (Schutzklasse II), 0,25 MΩ (Schutzklasse III).
 
 Defekte Geräte sofort aus dem Verkehr ziehen, kennzeichnen und dem Betreiber melden.`,apps:["echeck"]},
-{id:"hb-fahrzeug",kapitel:"fahrzeug",titel:"Fahrzeug und Werkzeug",inhalt:`Das Fahrzeug ist unser Lager unterwegs – und fährt mit unserem Namen durch die Gegend.
+{id:"hb-fahrzeug",kapitel:"fahrzeuge",titel:"Fahrzeug und Werkzeug",inhalt:`Das Fahrzeug ist unser Lager unterwegs – und fährt mit unserem Namen durch die Gegend.
 
 - Wöchentlich kurz prüfen (Checkliste unten), Schäden sofort melden.
 - Ladung sichern, schwere Teile nach unten.
 - Werkzeug nach Benutzung zurück an seinen Platz; Verlust oder Defekt sofort melden.
 - Elektrowerkzeuge und Verlängerungen werden regelmäßig geprüft (Plakette beachten).
 - Fahrzeug sauber halten, keinen Müll im Fahrerhaus.`,checkliste:["Reifen, Licht, Blinker in Ordnung","Ölstand und Kühlwasser geprüft","Warndreieck, Verbandkasten, Warnweste an Bord","Ladung gesichert","Werkzeug vollständig","Prüfplaketten an Werkzeug und Leitungen gültig"]},
-{id:"hb-messgeraete",kapitel:"fahrzeug",titel:"Messgeräte und Kalibrierung",inhalt:`- Messgeräte sind in der Übersicht unter **Messgeräte** erfasst – dort steht, wann sie zur Kalibrierung müssen.
+{id:"hb-messgeraete",kapitel:"baustelle",titel:"Messgeräte und Kalibrierung",inhalt:`- Messgeräte sind in der Übersicht unter **Messgeräte** erfasst – dort steht, wann sie zur Kalibrierung müssen.
 - Vor jeder Prüfung: Gerät, Messleitungen und Adapter auf Beschädigung prüfen.
 - Spannungsprüfer vor und nach dem Messen an einer bekannten Spannung testen.
 - Defekte oder heruntergefallene Messgeräte nicht weiter benutzen, melden.
