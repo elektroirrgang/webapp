@@ -513,7 +513,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   case "legRechQs": { if(!LR) return; LR.qs=+b.dataset.v; b.parentElement.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b)); legRechZeigen(); return; }
   case "legRechOk": legRechOk(); return;
   case "legRechZur": { const id=LR&&LR.id; LR=null; if(id) legSkDlg(id); return; }
-  case "legEtiW": { if(!L) return; const k=b.dataset.k, w=k==="inh"?b.dataset.v:+b.dataset.v; L.eti={...(L.eti||{}),[k]:w}; LEG_ETI[k]=w; legEtiMerken(); legSave(L); if(b.closest("#dlg")) legEtiDlg(); else render(); return; }
+  case "legEtiW": { if(!L) return; const k=b.dataset.k, w=k==="inh"?b.dataset.v:+b.dataset.v; L.eti={...legEtiSauber(L.eti),[k]:w}; if(k!=="te"){ LEG_ETI[k]=w; legEtiMerken(); } legSave(L); if(b.closest("#dlg")) legEtiDlg(); else render(); return; }
   case "legEtiTeilen": case "legEtiLaden": if(L) legEtiAusgeben(L,a==="legEtiTeilen"); return;
   case "legFertig": { if(!L) return;
     if(b.dataset.v==="1"&&L._geb&&typeof qrPflicht==="function"){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(v&&!v.qr){ qrPflicht([{g,x:v,art:"vt"}],"der Verteiler nicht abgeschlossen werden"); return; } }
@@ -600,12 +600,17 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
 
 /* ===== Beschriftungsstreifen für den Brother P-touch: je Reihe ein Streifen, je Gerät ein Block so breit wie das Gerät =====
    Nutzt die Vorlage „Verteiler“ der Pro Label Tool-App (wie die Patchfeld-Streifen in der Netzwerkprüfung: ecLbxs, ecEtiSvg). */
-const LEG_ETI={inh:"bez",band:9,te:17.5};
-try{ const v=JSON.parse(localStorage.getItem("irrgang_legeti")||"null"); if(v) Object.assign(LEG_ETI,v); }catch(e){}
+/* 27.11.2026 (Max): Band nur 12/18/24 mm, Standard 18 mm; Text entweder Bezeichnung oder Kennzeichnung (beides zusammen sah schlecht aus);
+   Breite je TE folgt den Einbaugeräten: Schneider 18 mm, Hager/ABB 17,5 mm – von Hand je Anlage änderbar. */
+const LEG_BAENDER=[12,18,24];
+const legEtiSauber=v=>{ const o={...(v||{})}; if(o.band!=null&&!LEG_BAENDER.includes(+o.band)) delete o.band; if(o.inh&&!["bez","kz"].includes(o.inh)) delete o.inh; return o; };
+const LEG_ETI={inh:"bez",band:18};
+try{ const v=legEtiSauber(JSON.parse(localStorage.getItem("irrgang_legeti")||"null")); delete v.te; Object.assign(LEG_ETI,v); }catch(e){}
+const legGerTe=L=>/schneider/i.test(String(L&&L.gerHerst||""))?18:17.5;
 /* Einstellungen je Anlage (v.eti), sonst die zuletzt gewählten dieses Geräts; Breite je TE folgt dem Verteiler (teMm), wenn dort gesetzt */
 let LE=LEG_ETI;
-const legEtiCfg=L=>(LE={...LEG_ETI,...(L&&[17.5,18].includes(+L.teMm)?{te:+L.teMm}:{}),...(L&&L.eti||{})});
-const legEtiMerken=()=>{ try{ localStorage.setItem("irrgang_legeti",JSON.stringify(LEG_ETI)); }catch(e){} };
+const legEtiCfg=L=>(LE={...LEG_ETI,te:legGerTe(L),...(L&&[17.5,18].includes(+L.teMm)?{te:+L.teMm}:{}),...legEtiSauber(L&&L.eti)});
+const legEtiMerken=()=>{ try{ localStorage.setItem("irrgang_legeti",JSON.stringify({inh:LEG_ETI.inh,band:LEG_ETI.band})); }catch(e){} };
 /* Text eines Geräts auf dem Streifen – ohne Sonderzeichen, die nicht jede Druckerschrift hat */
 function legEtiText(e){ if(e.art==="kl") return ""; if(e.art==="res") return LE.inh==="kz"?String(e.kz||"").trim():"Reserve";
   const kz=String(e.kz||"").trim();
@@ -621,9 +626,9 @@ function legEtiStreifen(L){ legEtiCfg(L); const n=+L.teReihe||12;
     return {nr:ri+1,te:n,p,T,mm:n*LE.te}; }).filter(st=>st.T.length<=50); }
 const legEtiChip=(k,v,t)=>`<button type="button" class="chip" data-act="legEtiW" data-k="${k}" data-v="${v}" aria-pressed="${String(LE[k])===String(v)}">${t}</button>`;
 const legEtiWahl=()=>`<div class="leg-eti-opt">
-    <div class="leg-eti-z"><span class="lbl">Text</span><div class="chips">${legEtiChip("inh","bez","Bezeichnung")}${legEtiChip("inh","kz","Kennzeichnung")}${legEtiChip("inh","beide","Beides")}</div></div>
-    <div class="leg-eti-z"><span class="lbl">Band</span><div class="chips">${[9,12,18,24].map(b=>legEtiChip("band",b,b+" mm")).join("")}</div></div>
-    <div class="leg-eti-z"><span class="lbl">Breite je TE</span><div class="chips">${legEtiChip("te",17.5,"17,5 mm")}${legEtiChip("te",18,"18 mm")}</div></div></div>`;
+    <div class="leg-eti-z"><span class="lbl">Text</span><div class="chips">${legEtiChip("inh","bez","Bezeichnung")}${legEtiChip("inh","kz","Kennzeichnung")}</div></div>
+    <div class="leg-eti-z"><span class="lbl">Band</span><div class="chips">${LEG_BAENDER.map(b=>legEtiChip("band",b,b+" mm")).join("")}</div></div>
+    <div class="leg-eti-z"><span class="lbl">Breite je TE</span><div class="chips">${legEtiChip("te",17.5,"17,5 mm · Hager / ABB")}${legEtiChip("te",18,"18 mm · Schneider")}</div></div></div>`;
 function legEtiKarte(L){ if(typeof ecLbxs!=="function"||!legE(L).some(e=>e.art!=="gr")) return ""; const ST=legEtiStreifen(L); if(!ST.length) return "";
   return `<section class="card leg-eti-k"><h3>Beschriftungsstreifen</h3>
     <div class="leg-eti-v">${ecEtiSvg(ST[0].p,ST[0].T,true)}</div>
