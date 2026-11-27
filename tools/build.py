@@ -91,6 +91,13 @@ def hover_html(html):
         teile.append(html[pos:m.start(2)]); teile.append(hover_maus(m.group(2))); pos = m.end(2)
     teile.append(html[pos:]); return "".join(teile)
 
+# Logo (neu gezeichnet 11/2026): in der Oberfläche als SVG (scharf auf jedem Bildschirm), in den PDFs als PNG –
+# jsPDF kann kein SVG. Standard ist die Version mit Schatten wie im Original (Max 27.11.2026).
+LOGO_HELL = "data:image/svg+xml;base64," + b64("brand/logo-v2-hell.svg")
+LOGO_DUNKEL = "data:image/svg+xml;base64," + b64("brand/logo-v2-dunkel.svg")
+LOGO_PDF = "data:image/png;base64," + b64("brand/logo-v2-pdf.png")
+
+
 def baue(quelle, ziel, icon):
     html = (root / quelle).read_text(encoding="utf-8")
     html = html.replace("/*PDFSTIL*/", (root / "src/pdfstil.js").read_text(encoding="utf-8"))
@@ -131,8 +138,9 @@ def baue(quelle, ziel, icon):
     html = html.replace("<!--ICON_EVSE-->", "data:image/png;base64," + b64("evse/icon-180.png"))
     html = html.replace("<!--ICON_BAU-->", "data:image/png;base64," + b64("baustelle/icon-180.png"))
     html = html.replace("<!--ICON_ECHECK-->", "data:image/png;base64," + b64("echeck/icon-180.png"))
-    html = html.replace("<!--LOGO_HELL-->", "data:image/png;base64," + b64("brand/logo-hell.png"))
-    html = html.replace("<!--LOGO_DUNKEL-->", "data:image/png;base64," + b64("brand/logo-dunkel.png"))
+    html = html.replace("<!--LOGO_HELL-->", LOGO_HELL)
+    html = html.replace("<!--LOGO_DUNKEL-->", LOGO_DUNKEL)
+    html = html.replace("<!--LOGO_PDF-->", LOGO_PDF)
     for w in (400, 600, 700, 800):
         html = html.replace(f"<!--F{w}-->", b64(f"vendor/fonts/manrope-latin-{w}-normal.woff2"))
     html = hover_html(html)
@@ -166,8 +174,8 @@ for app in ("evse", "uebersicht", "baustelle", "echeck"):
 # Öffentliche Info-Seite hinter den QR-Aufklebern (/q/) – ohne Daten, nur Kontakt; angemeldete Mitarbeiter gehen weiter in die App
 def baue_qr():
     html = (root / "src/qr-seite.html").read_text(encoding="utf-8")
-    html = html.replace("<!--LOGO_HELL-->", "data:image/png;base64," + b64("brand/logo-hell.png"))
-    html = html.replace("<!--LOGO_DUNKEL-->", "data:image/png;base64," + b64("brand/logo-dunkel.png"))
+    html = html.replace("<!--LOGO_HELL-->", LOGO_HELL)
+    html = html.replace("<!--LOGO_DUNKEL-->", LOGO_DUNKEL)
     html = html.replace("<!--ICON_FAV-->", "data:image/png;base64," + b64("echeck/icon-rund-64.png"))
     for w in (400, 700, 800):
         html = html.replace(f"<!--F{w}-->", b64(f"vendor/fonts/manrope-latin-{w}-normal.woff2"))
@@ -177,8 +185,8 @@ def baue_qr():
     print(f"q/index.html: {len(html)} Zeichen")
     # Impressum und Datenschutz für die öffentlichen Seiten (QR-Seite, Anmeldeseiten) – /recht/
     r = (root / "src/recht.html").read_text(encoding="utf-8")
-    r = r.replace("<!--LOGO_HELL-->", "data:image/png;base64," + b64("brand/logo-hell.png"))
-    r = r.replace("<!--LOGO_DUNKEL-->", "data:image/png;base64," + b64("brand/logo-dunkel.png"))
+    r = r.replace("<!--LOGO_HELL-->", LOGO_HELL)
+    r = r.replace("<!--LOGO_DUNKEL-->", LOGO_DUNKEL)
     r = r.replace("<!--ICON_FAV-->", "data:image/png;base64," + b64("echeck/icon-rund-64.png"))
     for w in (400, 700, 800):
         r = r.replace(f"<!--F{w}-->", b64(f"vendor/fonts/manrope-latin-{w}-normal.woff2"))

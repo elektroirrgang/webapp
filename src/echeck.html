@@ -1875,7 +1875,7 @@ const testGesperrt=()=>!SYNC_ON&&TEST_LOGIN.an&&(!META.angemeldet||gesperrt(META
 async function sha256(t){ const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join(""); }
 const WIDE=matchMedia("(min-width:744px)"); const DESK=matchMedia("(min-width:1024px) and (hover:hover) and (pointer:fine)"); DESK.addEventListener?.("change",()=>{ if(typeof render==="function"&&typeof nav!=="undefined"&&nav) render(); });
 let railOpen=window.innerWidth>=1100; try{const r=localStorage.getItem("evse_rail"); if(r) railOpen=r==="1";}catch(e){} document.body.classList.toggle("rail-open",railOpen);
-const LOGO_PDF="<!--LOGO_HELL-->";
+const LOGO_PDF="<!--LOGO_PDF-->";
 const FIRMA={name:"Elektro Irrgang",inhaber:"Joachim Irrgang",strasse:"Hahner Weg 2",ort:"51545 Waldbröl",tel:"+49 2291 4878",telHref:"+4922914878",fax:"+49 2291 800718",mail:"info@elektro-irrgang.de",
   ust:"DE169864585",register:"Registergericht: Waldbröl",hwk:"Handwerkskammer zu Köln, Heumarkt 12, 50667 Köln",beruf:"Elektromeister (verliehen in Deutschland)"};
 function rechtsSeite(html){ return `<div class="narrow lesen"><section class="card doc">${html}</section></div>`; }
