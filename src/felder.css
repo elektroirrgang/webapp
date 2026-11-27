@@ -2558,3 +2558,18 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
   .hb-d-stand{font-size:8pt;color:#777;margin:4pt 0 0}
   .hb-d .hb-gr,.hb-d .hb-af-zeit,.hb-d .hb5-r,.hb-d .hb-tab-w,.hb-d .hb-hinweis{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+/* Meine Arbeitszeit (zeit.js) – nur auf diesem Gerät */
+.zt-privat{display:flex;gap:10px;align-items:flex-start;margin:4px 0 12px;padding:10px 14px;border-radius:16px;background:var(--sc);font-size:13.5px;line-height:1.4}.zt-privat p{margin:0}.zt-privat .ic{flex:none;width:20px;height:20px;color:var(--primary)}
+.zt-stempel{padding:16px;border-radius:24px;background:var(--sc);margin-bottom:14px;text-align:center}
+.zt-knopf{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:64px;border:0;border-radius:32px;background:var(--ok,#2e7d32);color:var(--surface,#fff);font:inherit;font-size:19px;font-weight:800;cursor:pointer}
+.zt-knopf .ic{width:26px;height:26px;color:inherit}.zt-knopf.stopp{background:var(--err,#b3261e);color:var(--surface,#fff)}
+.zt-lauf{display:flex;flex-direction:column;align-items:center;gap:2px;margin:0 0 12px}.zt-lauf span{font-size:13px;color:var(--on-sv)}.zt-lauf b{font-size:34px;font-weight:800;line-height:1.1}.zt-lauf small{font-size:13px;color:var(--on-sv)}
+.zt-heute{margin:12px 0 0;font-size:14px;color:var(--on-sv)}.zt-heute b{color:var(--on-surface)}
+.zt-nav{display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px}.zt-nav b{font-size:16px}
+.zt-sum{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.zt-k{display:flex;flex-direction:column;padding:10px 12px;border-radius:16px;background:var(--sc)}.zt-k span{font-size:12.5px;color:var(--on-sv)}.zt-k b{font-size:20px;font-weight:800;margin-top:2px}.zt-k small{font-size:11.5px;color:var(--on-sv)}
+.zt-k.minus b{color:var(--err,#b3261e)}.zt-k.plus b{color:var(--ok,#2e7d32)}
+.zt-mini{margin:-4px 4px 10px;font-size:12px;color:var(--on-sv)}
+.zt-std{display:flex;flex-direction:column;align-items:flex-end;margin-left:8px;white-space:nowrap}.zt-std b{font-size:15px}.zt-std small{font-size:12px;color:var(--on-sv)}
+.zt-aktionen{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}.zt-aktionen button{display:inline-flex;align-items:center;gap:6px}.zt-aktionen .ic{width:18px;height:18px}
+@media (min-width:700px){.zt-sum{grid-template-columns:repeat(3,1fr)}}

@@ -1652,6 +1652,7 @@ function faellig(){
 
 /*FRISTEN*/
 /*HANDBUCH*/
+/*ZEIT*/
 /*DATEIEN*/
 const vonText=r=>r&&r.createdBy&&r.createdBy.name?r.createdBy.name:"";
 
@@ -1680,7 +1681,7 @@ const TOPDEST_ALLE=[["start","Start","home"],["auftraege","Aufträge","board"],[
 const HANDY_WEG=["uebersicht","geraete","kalender"], istHandy=()=>!WIDE.matches;
 /* Betriebshandbuch nur am PC in der Leiste (Platz genug); auf Handy/iPad über die Startseite */
 const topdest=()=>{ const L=TOPDEST_ALLE.filter(d=>(d[0]!=="uebersicht"||ME.admin)&&!(istHandy()&&HANDY_WEG.includes(d[0]))&&(d[0]!=="hb"||DESK.matches)); return typeof leisteOrdnen==="function"?leisteOrdnen(L):L; };
-const MEHR_SUB={karteEinst:"Karte beim Kunden",ki:"KI",aufbewahrung:"Aufbewahrung",team:"Mitarbeiter",ma:"Mitarbeiter",backup:"Backup",impressum:"Impressum",about:"Über",entwicklung:"Entwicklung"};
+const MEHR_SUB={zeit:"Meine Arbeitszeit",karteEinst:"Karte beim Kunden",ki:"KI",aufbewahrung:"Aufbewahrung",team:"Mitarbeiter",ma:"Mitarbeiter",backup:"Backup",impressum:"Impressum",about:"Über",entwicklung:"Entwicklung"};
 const VIEW_KIND={kunde:"kunden",standort:"standorte"};
 const KIND_NAME={kunden:"Kunde",standorte:"Standort"};
 
@@ -1924,6 +1925,7 @@ function render(){ profilAnwenden(); setTimeout(()=>{ if(typeof kalPaneKlasse===
   else if(nav.v==="team"){ title="Mitarbeiter"; body=teamView(); fab=["teamNeu","Mitarbeiter","add"]; }
   else if(nav.v==="backup"){ title="Backup"; body=backupView(); }
   else if(nav.v==="entwicklung"){ title="Entwicklung der Apps"; body=entwicklungView(); }
+  else if(nav.v==="zeit"){ title="Meine Arbeitszeit"; body=ztView(); fab=["ztNeu","Zeit","add"]; }
   else if(nav.v==="karteEinst"){ title="Karte beim Kunden"; sub="Entwickler"; body=karteEinstView(); }
   else if(nav.v==="impressum"){ title="Impressum"; body=impressumView(); }
   else if(nav.v==="about"){ title="Über"; body=aboutView(); }
@@ -2640,7 +2642,7 @@ function teamSpeichern(liste){ const r=DB.einstellungen.get("team")||{id:"team"}
 
 function mehrView(){
   const row=(act,ic,t,sub)=>`<div class="li" role="button" tabindex="0" data-act="${act}"><span class="av">${icon(ic)}</span><span class="lt"><span class="h">${t}</span>${sub?`<span class="s">${sub}</span>`:""}</span>${icon("chev")}</div>`;
-  return kontoSeite({konto:[SYNC_ON?row("konto","person","Konto",esc(ME.name)):"",!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}${ME.admin?" · Admin":""}`)):""],
+  return kontoSeite({konto:[SYNC_ON?row("konto","person","Konto",esc(ME.name)):"",row("nav:zeit","pending","Meine Arbeitszeit",esc(ztZeile())),!SYNC_ON&&TEST_LOGIN.an&&META.angemeldet?row("testLogout","logout","Abmelden",esc(`Angemeldet: ${META.angemeldet.mail}${ME.admin?" · Admin":""}`)):""],
     darstellung:[row("theme","theme","Darstellung",TH_LABEL[theme]),darstellungZeilen()],
     apps:`<div class="app-weiter"><div class="sec-lbl">Apps</div>${listOf(APPS.filter(a=>!a.geplant).map(a=>`<a class="li" href="${a.href}" style="text-decoration:none;color:inherit"><img class="app-mini" src="${a.ic}" alt=""><span class="lt"><span class="h">${a.name}</span><span class="s">${a.text}</span></span>${icon("chev")}</a>`))}</div>`,
     geraet:[geraetZeilen(true)],
