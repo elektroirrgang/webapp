@@ -2597,3 +2597,19 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
 .zt-schnell{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
 .zt-schnell .chip{border:0;border-radius:16px;background:var(--feld-dlg,var(--sc-high));color:var(--on-surface);font-weight:600}
 .zt-ganz{margin:14px 0 0;padding:12px 14px;border-radius:16px;background:var(--feld-dlg,var(--sc-high));font-size:14.5px;font-weight:600}
+/* Handbuch: So rechnet sich ein Arbeitstag */
+.hb-at{margin:8px 0 16px}.hb-at>p{margin:0 0 12px}
+.hb-at-tag{padding:12px 14px 14px;margin-bottom:10px;border-radius:20px;background:var(--sc)}
+.hb-at-kopf{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}.hb-at-kopf b{font-size:16px}.hb-at-kopf span{font-size:18px;font-weight:800;color:var(--primary)}
+.hb-at-balken{display:flex;height:34px;border-radius:10px;overflow:hidden;gap:2px}
+.hb-at-balken .ar{display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--primary) 22%,var(--sc-high));font-size:13px;font-weight:700;min-width:0}
+.hb-at-balken .pa{background:repeating-linear-gradient(-45deg,var(--sc-highest) 0 4px,var(--sc-high) 4px 8px)}
+.hb-at-skala{position:relative;height:18px;margin:4px 0 8px;font-size:11.5px;color:var(--on-sv)}
+.hb-at-skala span{position:absolute;transform:translateX(-50%);white-space:nowrap}.hb-at-skala span:first-child{transform:none}.hb-at-skala span:last-child{transform:translateX(-100%)}
+.hb-at-rech{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:14px;font-variant-numeric:tabular-nums}.hb-at-rech b{padding-top:4px;border-top:1px solid color-mix(in srgb,var(--on-surface) 12%,transparent)}
+.hb-at-sum{display:flex;flex-direction:column;gap:2px;padding:10px 14px;margin-bottom:8px;border-radius:16px;background:var(--sc)}.hb-at-sum span{font-size:13px;color:var(--on-sv)}.hb-at-sum b{font-size:16px}
+.hb-d .hb-at-tag,.hb-d .hb-at-sum{break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.hb-at-tab{display:grid;grid-template-columns:1.4fr repeat(3,auto);gap:6px 14px;align-items:baseline;padding:12px 14px;margin-bottom:6px;border-radius:16px;background:var(--sc);font-size:14px;font-variant-numeric:tabular-nums}
+.hb-at-tab>span:nth-child(-n+4){font-size:12px;color:var(--on-sv)}.hb-at-tab>span:not(:nth-child(-n+4)){text-align:right}.hb-at-tab .plus{color:var(--ok,#2e7d32);font-weight:700}.hb-at-tab .minus{color:var(--err,#b3261e);font-weight:700}
+.hb-at-klein{margin:0 4px 10px;font-size:13px;color:var(--on-sv)}
+.hb-d .hb-at-tab{break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}

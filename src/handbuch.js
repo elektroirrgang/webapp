@@ -48,6 +48,7 @@ function hbMd(t,o={}){ const Z=String(t||"").replace(/\r/g,"").split("\n"); let 
     if(s.startsWith("|")){ const c=s.replace(/^\||\|$/g,"").split("|").map(x=>x.trim()); if(/^[-:\s|]+$/.test(s)) return; if(!tab){ zu(); tab=[]; } tab.push(c); return; }
     if(!s){ zu(); return; }
     if(s==="[[aderfarben]]"){ zu(); h+=hbAderfarben(o.druck); return; }
+    if(s==="[[arbeitstag]]"){ zu(); h+=hbArbeitstag(); return; }
     if(s==="[[sicherheitsregeln]]"){ zu(); h+=hbSicherheitsregeln(o.druck); return; }
     if((m=s.match(/^>\s*(.+)/))){ zu(); h+=`<div class="hb-hinweis">${icon("info")}<p>${hbInl(m[1])}</p></div>`; return; }
     if((m=s.match(/^##\s+(.+)/))){ zu(); h+=`<h3>${hbInl(m[1])}</h3>`; return; }
@@ -85,9 +86,40 @@ function hbSicherheitsregeln(druck){
     ${HB5.map((r,i)=>`<div class="hb5-r hb5-c${i+1}"><div class="hb5-bild"><img src="${HB5_BILD(i+1)}" alt="" loading="lazy"><span class="hb5-n">${i+1}</span></div>
       <h4 class="hb5-t">${esc(r.t)}</h4><p class="hb5-k">${esc(r.k)}</p>${r.h?`<p class="hb5-h">${icon("info")}<span>${esc(r.h)}</span></p>`:""}</div>`).join("")}
     <div class="hb5-fuss">${icon("bulb")}<p><b>Grundprinzip:</b> Nur wenn alle fünf Regeln in der richtigen Reihenfolge beachtet werden, ist sicheres Arbeiten gewährleistet. <b>Keine Regel auslassen. Keine Reihenfolge ändern.</b></p></div></div>`; }
+/* „So rechnet sich ein Arbeitstag“ – Tagesbalken und Rechnung (Max 27.11.2026). [[arbeitstag]] oder automatisch im Artikel
+   „Unsere Arbeitszeiten“ vor „Pausen nach Arbeitszeitgesetz“. Zeiten laut Handbuch; Frühstückspause zeitlich flexibel. */
+const HB_AT=[
+  {t:"Montag bis Donnerstag",von:"07:30",bis:"16:30",b:[["a",90],["p",15,"Frühstück"],["a",165],["p",30,"Mittag"],["a",240]],skala:["07:30","09:00","12:00","16:30"]},
+  {t:"Freitag",von:"07:30",bis:"13:00",b:[["a",90],["p",15,"Frühstück"],["a",225]],skala:["07:30","09:00","13:00"]}];
+const hbAtH=m=>`${Math.floor(m/60)}:${String(m%60).padStart(2,"0")} h`;
+const hbAtMin=t=>+t.slice(0,2)*60+ +t.slice(3,5);
+function hbArbeitstag(){
+  const tag=d=>{ const da=hbAtMin(d.bis)-hbAtMin(d.von), pa=d.b.filter(x=>x[0]==="p").reduce((s,x)=>s+x[1],0), ar=da-pa;
+    return `<div class="hb-at-tag"><div class="hb-at-kopf"><b>${esc(d.t)}</b><span>${hbAtH(ar)}</span></div>
+      <div class="hb-at-balken">${d.b.map(([k,m,n])=>`<div class="${k==="a"?"ar":"pa"}" style="flex:${m}">${k==="a"?hbAtH(m).replace(" h",""):""}</div>`).join("")}</div>
+      <div class="hb-at-skala">${d.skala.map(t=>`<span style="left:${(hbAtMin(t)-hbAtMin(d.von))/da*100}%">${t}</span>`).join("")}</div>
+      <div class="hb-at-rech"><span>Anwesend ${d.von} – ${d.bis} Uhr</span><span>${hbAtH(da)}</span>
+        <span>− Pausen ${d.b.filter(x=>x[0]==="p").map(x=>`${x[1]} min`).join(" + ")}</span><span>${hbAtH(pa)}</span>
+        <b>= Arbeitszeit</b><b>${hbAtH(ar)}</b></div></div>`; };
+  return `<div class="hb-at"><h3>So rechnet sich ein Arbeitstag</h3>
+    <p>Pausen sind keine Arbeitszeit. Wann die Frühstückspause gemacht wird, ist flexibel – abgezogen werden immer 15 Minuten.</p>
+    ${HB_AT.map(tag).join("")}
+    <div class="hb-at-sum"><span>Woche</span><b>4 × 8:15 h + 5:15 h = 38:15 h</b></div>
+    <h3>Soll in SCC: jeden Tag 7:36 h</h3>
+    <p>SCC rechnet jeden Tag von Montag bis Freitag mit dem Durchschnitt: 38 h ÷ 5 Tage = 7,6 h = <b>7:36 h</b>. Daraus ergibt sich pro Tag ein Plus oder Minus:</p>
+    <div class="hb-at-tab"><span></span><span>gearbeitet</span><span>Soll</span><span>Differenz</span>
+      <b>Mo–Do</b><span>8:15 h</span><span>7:36 h</span><span class="plus">+0:39 h</span>
+      <b>Freitag</b><span>5:15 h</span><span>7:36 h</span><span class="minus">−2:21 h</span>
+      <b>Ganzer Tag ohne Uhrzeit</b><span>7:36 h</span><span>7:36 h</span><span>±0</span></div>
+    <p class="hb-at-klein">Ganze Tage ohne Uhrzeit: Berufsschule, Urlaub, Krankheit, Feiertag – sie werden mit dem Durchschnitt von 7:36 h angerechnet.</p>
+    <div class="hb-at-sum"><span>Normale Woche</span><b>4 × 0:39 h − 2:21 h = +0:15 h</b></div>
+    <div class="hb-at-sum"><span>Woche mit einem ganzen Tag ohne Uhrzeit (z. B. Berufsschule)</span><b>3 × 0:39 h − 2:21 h = −0:24 h</b></div>
+    <div class="hb-hinweis">${icon("info")}<p>Der ganze Tag selbst ist ±0. Es fehlt nur einer der langen Tage, die sonst den kurzen Freitag ausgleichen – deshalb steht am Ende der Woche ein kleines Minus.</p></div></div>`; }
 /* Artikel zu den Sicherheitsregeln bekommt das Schaubild auch ohne [[sicherheitsregeln]] im Text – ganz oben,
    die Erklärtexte darunter. Die nummerierte Liste „1. Freischalten … 5. …“ (samt Überschrift) entfällt dann. */
 function hbMitSchaubild(a){ let t=String(a.inhalt||"");
+  if((a.id==="hb-arbeitszeit"||/^unsere arbeitszeiten$/i.test(a.titel||""))&&!t.includes("[[arbeitstag]]")){
+    const i=t.search(/\n##\s*Pausen nach Arbeitszeitgesetz/i); return i>=0?t.slice(0,i)+"\n\n[[arbeitstag]]\n"+t.slice(i):t.trim()+"\n\n[[arbeitstag]]"; }
   if(t.includes("[[sicherheitsregeln]]")||!(a.id==="hb-5sr"||/f(ü|ue)nf sicherheitsregeln|5 sicherheitsregeln/i.test(a.titel||""))) return t;
   t=t.replace(/(^|\n)(##[^\n]*\n)?\s*1\.\s*Freischalten[^\n]*(\n\s*[2-5]\.[^\n]*){4}/i,"\n");
   return "[[sicherheitsregeln]]\n\n"+t.trim(); }
