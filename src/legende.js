@@ -449,14 +449,14 @@ async function legPdf(L,art){ const lib=await pdfLib(), d=new lib.jsPDF({unit:"m
   /* Kontakt groß wie im alten Verteilerplan – mit Prüfplakette links daneben, wenn ein nächster E-Check bekannt ist */
   const qrC=L._geb&&typeof qrMatrix==="function"&&((vtGeb(L._geb)||{verteiler:[]}).verteiler.find(x=>x.id===L._v)||{}).qr;
   const PE=legEcheckDaten(L), pl=!!(PE&&/^\d{4}-\d{2}/.test(PE.naechste||""));
-  S.platz(pl?30:qrC?30:19); const y=S.y+1;
+  S.platz(pl?33:qrC?30:19); const y=S.y+1;
   if(qrC){ const Mx=qrMatrix(qrC), n=Mx.length, gr=21, z=gr/n, qx=M+CW-gr, qy=y-4; d.setFillColor(0,0,0); Mx.forEach((r,yy)=>r.forEach((on,xx)=>{ if(on) d.rect(qx+xx*z,qy+yy*z,z+0.02,z+0.02,"F"); }));
     d.setFont("helvetica","bold"); d.setFontSize(9); d.setTextColor(20); d.text("Anlage "+qrZeig(qrC),qx+gr/2,qy+gr+4,{align:"center"}); }
-  if(pl){ legPlakette(d,M+14.5,y+9,PE.naechste); const x0=M+35;
+  if(pl){ legPlakette(d,M+16,y+10,PE.naechste,PE.zuletzt); const x0=M+37;
     d.setTextColor(20); d.setFont("helvetica","bold"); d.setFontSize(12); d.text("Elektro Irrgang",x0,y); d.setTextColor(225,29,47); d.text("Tel. 02291 4878",x0+38,y);
     d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),x0,y+5.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x0,y+10.2); d.text(pdfT("Inh. Joachim Irrgang"),x0,y+15.2);
     d.setFontSize(8.5); d.setTextColor(93,107,123); d.text(pdfT(`Nächster E-Check: ${LEG_MONATE[+PE.naechste.slice(5,7)-1]} ${PE.naechste.slice(0,4)}${PE.zuletzt?` | zuletzt geprüft am ${ecDatum(PE.zuletzt)}`:""}`),x0,y+20.6);
-    S.y=y+29; }
+    S.y=y+31; }
   else { const x2=qrC?M+68:M+CW/2;
     d.setTextColor(20); d.setFont("helvetica","bold"); d.setFontSize(12); d.text("Elektro Irrgang",M,y); d.setTextColor(...[225,29,47]); d.text("Tel. 02291 4878",x2,y);
     d.setFont("helvetica","normal"); d.setFontSize(10); d.setTextColor(40); d.text(pdfT("Hahner Weg 2 | 51545 Waldbröl"),M,y+5.2); d.text(pdfT("Inh. Joachim Irrgang"),M,y+10.2); d.text(pdfT("info@elektro-irrgang.de | www.elektro-irrgang.de"),x2,y+5.2);
@@ -473,24 +473,25 @@ function legEcheckDaten(L){
   if(!P.length||typeof ecPlus!=="function") return null;
   return {naechste:ecPlus(P[0].datum,P[0].fristM||48),zuletzt:P[0].datum}; }
 const LEG_MONATE=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
-/* Aufkleber-Optik: roter Rand, grauer Ring, Monate 1–12 oben und Jahre unten entlang des Rings, rote Striche dazwischen,
-   Termin rot hinterlegt, in der Mitte „Nächste Prüfung MM/JJJJ“. Ø 29 mm, steht links neben den Kontaktdaten. */
-function legPlakette(d,cx,cy,iso){ const R=14.5, ri=9.7, ra=13.8, rm=(ri+ra)/2, mo=+iso.slice(5,7), jr=+iso.slice(0,4), rot=[225,29,47], rad=g=>g*Math.PI/180;
-  d.setFillColor(...rot); d.circle(cx,cy,R,"F"); d.setFillColor(205,209,215); d.circle(cx,cy,ra,"F"); d.setFillColor(255,255,255); d.circle(cx,cy,ri,"F");
-  d.setDrawColor(255,255,255); d.setLineWidth(0.6); d.line(cx-ra,cy,cx-ri,cy); d.line(cx+ri,cy,cx+ra,cy);
-  /* Text entlang des Rings: θ = Bildschirmwinkel (y nach unten), oben lesbar von außen, unten von innen */
-  const bogen=(t,th,oben,fs,farbe)=>{ d.setFontSize(fs); const w=d.getTextWidth(t), A=oben?270-th:90-th, a=rad(A), ch=fs*0.25, r=oben?rm-ch/2:rm+ch/2;
+/* E-CHECK-Plakette (Vorlage von Max, 27.11.2026, Elektro Irrgang ist Innungsfachbetrieb): brand/echeck-plakette.jpg mit unseren Firmendaten,
+   Jahreszahlen im unteren Ring entfernt – die setzt die App passend ein. Digital: Monat und Jahr rot hinterlegt, Termin auf der Linie.
+   Maße aus der Vorlage (Pixel der 1614er-Fassung, Mitte 807): Ringmitte r=720, Monatswinkel/Jahreswinkel wie gedruckt, Linie bei y=-203. */
+const LEG_ECHECK_IMG="<!--ECHECK_PLAKETTE-->";
+const LEG_PL_MON=[199.6,210.5,222.5,233.5,245.5,256.5,268.5,280.5,291.5,306,321.4,337.6], LEG_PL_JAHR=[144.5,117,89.5,61.5,34.5];
+function legPlakette(d,cx,cy,iso,zuletzt,D=32){ const s=D/1614, rm=720*s, mo=+iso.slice(5,7), jr=+iso.slice(0,4), rot=[225,29,47], rad=g=>g*Math.PI/180;
+  try{ d.addImage(LEG_ECHECK_IMG,"JPEG",cx-D/2,cy-D/2,D,D,"echeckPlakette"); }catch(e){ return; }
+  const bogen=(t,th,oben,fs,farbe,fett)=>{ d.setFont("helvetica",fett?"bold":"normal"); d.setFontSize(fs); const w=d.getTextWidth(t), A=oben?270-th:90-th, a=rad(A), ch=fs*0.2533, r=oben?rm-ch/2:rm+ch/2;
     const px=cx+r*Math.cos(rad(th)), py=cy+r*Math.sin(rad(th)); d.setTextColor(...farbe); d.text(t,px-(w/2)*Math.cos(a),py+(w/2)*Math.sin(a),{angle:A}); };
-  const strich=th=>{ const c=Math.cos(rad(th)), sn=Math.sin(rad(th)); d.setDrawColor(...rot); d.setLineWidth(0.35); d.line(cx+(rm-0.65)*c,cy+(rm-0.65)*sn,cx+(rm+0.65)*c,cy+(rm+0.65)*sn); };
-  const hinterlegen=(th,lang,h)=>{ const a=rad(th), t=[-Math.sin(a),Math.cos(a)], n=[Math.cos(a),Math.sin(a)], P=[];
-    [[-lang,-h],[lang,-h],[lang,h],[-lang,h]].forEach(([u,v])=>P.push([cx+rm*n[0]+u*t[0]+v*n[0],cy+rm*n[1]+u*t[1]+v*n[1]]));
-    d.setFillColor(...rot); d.lines(P.slice(1).map((q,k)=>[q[0]-P[k][0],q[1]-P[k][1]]),P[0][0],P[0][1],[1,1],"F",true); };
-  d.setFont("helvetica","bold");
-  const mW=i=>190+i*160/11;
-  for(let m=1;m<=12;m++){ const th=mW(m-1); if(m===mo) hinterlegen(th,1.4,1.55); bogen(String(m),th,true,5.5,m===mo?[255,255,255]:[45,48,54]); if(m<12) strich(th+160/22); }
-  [-2,-1,0,1,2].forEach((o,i)=>{ const th=156-i*33; if(!o) hinterlegen(th,3.4,1.7); bogen(String(jr+o),th,false,5.6,o?[45,48,54]:[255,255,255]); if(i<4) strich(th-16.5); });
-  d.setFont("helvetica","normal"); d.setFontSize(5); d.setTextColor(93,107,123); d.text("NÄCHSTE",cx,cy-3.4,{align:"center"}); d.text("PRÜFUNG",cx,cy-1.2,{align:"center"});
-  d.setFont("helvetica","bold"); d.setFontSize(8.8); d.setTextColor(...rot); d.text(`${String(mo).padStart(2,"0")}/${jr}`,cx,cy+3.6,{align:"center"}); }
+  /* Monat: rot hinterlegen, Zahl weiß neu darüber */
+  const tm=LEG_PL_MON[mo-1]; d.setFillColor(...rot); d.circle(cx+rm*Math.cos(rad(tm)),cy+rm*Math.sin(rad(tm)),(mo>9?66:52)*s,"F"); bogen(String(mo),tm,true,5.2,[255,255,255],false);
+  /* Jahre: fünf ab dem Prüfjahr (wie beim Aufkleber), Termin rot hinterlegt */
+  const j0=Math.min(Math.max(zuletzt?+String(zuletzt).slice(0,4):jr-4,jr-4),jr);
+  LEG_PL_JAHR.forEach((th,i)=>{ const y=j0+i, an=y===jr;
+    if(an){ const a=rad(th), t=[-Math.sin(a),Math.cos(a)], n=[Math.cos(a),Math.sin(a)], L=152*s, H=62*s, P=[[-L,-H],[L,-H],[L,H],[-L,H]].map(([u,v])=>[cx+rm*n[0]+u*t[0]+v*n[0],cy+rm*n[1]+u*t[1]+v*n[1]]);
+      d.setFillColor(...rot); d.lines(P.slice(1).map((q,k)=>[q[0]-P[k][0],q[1]-P[k][1]]),P[0][0],P[0][1],[1,1],"F",true); }
+    bogen(String(y),th,false,6.6,[255,255,255],false); });
+  /* Termin auf die Linie „Nächster Prüftermin“ */
+  d.setFont("helvetica","bold"); d.setFontSize(8.2); d.setTextColor(48,48,48); d.text(pdfT(`${LEG_MONATE[mo-1]} ${jr}`),cx,cy-218*s,{align:"center"}); }
 /* Stromkreis-Tabelle – auch im Anlagenpass verwendet.
    Lesbarkeit (Max 18.11.2026: „das müssen auch ältere Leute lesen können“): Darstellungen A1 (bisher), A2 (Mittelding), A3 (größer), LEG_PDF_ART legt fest, welche gilt.
    fs = Schriftgröße (pt), zh = Zeilenhöhe (mm), kh = Kopfhöhe, kf = Kopfschrift, gf = Gruppenschrift, kzF/abF = Kennzeichnung/Absicherung fett, li = Trennlinien statt Zebra */
