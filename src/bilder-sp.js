@@ -25,6 +25,22 @@ async function bspListe(erzwingen){
   finally{ BSP.laeuft=false; fertig(); }
   return BSP.liste; }
 setTimeout(()=>bspListe(),800);
+/* Absicherung (Max 28.11.2026): Lädt ein Bild nicht – etwa nach Strg+F5 (dann läuft die Seite ohne Service Worker) oder weil im Browser
+   noch ein alter Service Worker hängt –, holt die Seite es selbst über die Download-Liste aus dem SharePoint und setzt es als Blob ein.
+   Der Typ kommt aus der Dateiendung (SVG wird sonst nicht angezeigt); das Bild landet zusätzlich im Bilder-Cache des Geräts. */
+const BSP_TYP={svg:"image/svg+xml",png:"image/png",jpg:"image/jpeg",jpeg:"image/jpeg",webp:"image/webp",gif:"image/gif",avif:"image/avif"};
+const BSP_BLOB=new Map();
+function bspBlob(pfad){ if(BSP_BLOB.has(pfad)) return BSP_BLOB.get(pfad);
+  const p=(async()=>{ const c="caches" in window?await caches.open("irrgang-bilder").catch(()=>null):null; let r=c?await c.match(pfad).catch(()=>null):null;
+    if(!r||!r.ok){ const L=BSP.liste||await bspListe(); const u=L&&L[pfad]; if(!u) return null; r=await fetch(u); if(!r.ok) return null; }
+    const t=BSP_TYP[(pfad.split(".").pop()||"").toLowerCase()]; let b=await r.blob(); if(t&&b.type!==t) b=b.slice(0,b.size,t);
+    if(c) c.put(pfad,new Response(b,{headers:{"Content-Type":t||b.type}})).catch(()=>{});
+    return URL.createObjectURL(b); })().catch(()=>null);
+  BSP_BLOB.set(pfad,p); p.then(x=>{ if(!x) BSP_BLOB.delete(pfad); }); return p; }
+document.addEventListener("error",async ev=>{ const el=ev.target; if(!el||(el.tagName!=="IMG"&&el.tagName!=="image")) return;
+  const a=el.tagName==="IMG"?"src":"href", v=el.getAttribute(a)||""; if(!/\/bilder\//.test(v)||/^(blob|data):/.test(v)) return;
+  let pfad; try{ pfad=decodeURIComponent(new URL(v,location.href).pathname); }catch(e){ return; }
+  const b=await bspBlob(pfad); if(!b||el.getAttribute(a)!==v) return; el.setAttribute(a,b); const w=el.closest&&el.closest(".weg"); if(w) w.classList.remove("weg"); },true);
 /* Einmal geladene Bilder bleiben im Gerätespeicher („irrgang-bilder“, auch über Updates hinweg). Im WLAN holt die App alle
    noch fehlenden Bilder leise vorab, damit sie beim ersten Anzeigen nicht erst nachladen. Speicher als „dauerhaft“ anfragen,
    damit der Browser ihn nicht bei Platzmangel leert. */
