@@ -113,14 +113,14 @@ function legTabs(L){ const T=L&&(L.art==="hv"||L.zs)?[["zs","Zählerschrank","zs
   return L&&L._geb&&typeof vuView==="function"?[["info","Übersicht","info"],...T]:T; }
 /* Ohne gewählten Reiter: fertig aufgenommene Verteiler öffnen mit der Übersicht, neue/leere mit dem Aufbau */
 const legTab=L=>{ const T=legTabs(L); if(T.some(x=>x[0]===nav.tab)) return nav.tab; const s=T[0][0]==="info"&&!legE(L).length&&!L.fertig?1:0; return T[s][0]; };
-function legFab(L){ if(!L||L.fertig) return null; const t=legTab(L); return t==="sk"||t==="uv"?["awStart","Gerät","add"]:null; }
+function legFab(L){ if(!L||L.fertig||legWsAktiv(L)) return null; const t=legTab(L); return t==="sk"||t==="uv"?["awStart","Gerät","add"]:null; }
 function legView(L){ const E=legE(L), tab=legTab(L);
   if(tab==="info") return vuView(L);
   if(tab==="zs") return `<div class="narrow ec-spalte leg">${typeof zsKarte==="function"?zsKarte(L,true):""}</div>`;
   if(tab==="gw") return `<div class="narrow ec-spalte leg">${gwKarte(L)}</div>`;
   if(tab==="uv") return `<div class="narrow ec-spalte leg">${legUvKarte(L)}${typeof hbLink==="function"?`<div class="leg-hb">${hbLink("hb-verteiler","So bauen und beschriften wir Verteiler")}</div>`:""}</div>`; /* Handbuch gehört zum Aufbauen, nicht in die Übersicht */
   if(tab==="mat") return typeof vmView==="function"?vmView(L):`<div class="narrow ec-spalte leg">${typeof zsMaterialKarte==="function"?zsMaterialKarte(L):""}</div>`;
-  if(tab==="sk") return `<div class="narrow ec-spalte leg">${legSkKarte(L,E)}</div>`;
+  if(tab==="sk"){ if(legWsAktiv(L)) return legWsView(L); legWsAus(); return `<div class="narrow ec-spalte leg">${legSkKarte(L,E)}</div>`; }
   return `<div class="narrow ec-spalte leg">
     ${legAbschlussKarte(L)}
     <section class="card"><h3>${L._geb?"Angaben":"Anlage"}</h3>${(()=>{ const o=kundeOf(L.kundeId)?ecOrt(L.ortId||"k:"+L.kundeId):null;
@@ -195,7 +195,7 @@ const legOffen=e=>e.art==="sk"&&/^\s*\??\s*$/.test(e.bez||"");
 /* Liste: RCD als Kopf, seine Automaten eingerückt darunter; Überschriften trennen */
 function legListeView(L){ const E=legE(L), zu=L.fertig, B=[], PL=legPlaetze(L); let g=null; const pl=e=>PL[e.id]?`<small class="leg-pl">${esc(legPlatzText(PL[e.id]))}</small>`:"";
   E.forEach((e,i)=>{ if(e.art==="gr"){ B.push({gr:e}); g=null; } else if(e.art==="rcd"){ g={rcd:e,i,kids:[]}; B.push(g); } else if(g&&e.art!=="ge"&&!legIstRcbo(e)){ g.kids.push([e,i]); g.last=i; } else if(legIstRcbo(e)){ g=null; B.push({z:[e,i]}); } else B.push({z:[e,i]}); });
-  const zeile=([e],kl)=>`<button type="button" class="leg-r${kl||""}${e.art==="res"?" res":""}${legOffen(e)?" offen":""}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}><span class="kz">${esc(legKzA(e.kz)||"–")}</span><span class="bz">${e.art==="res"?"Leerplatz":legOffen(e)?"? – noch unbekannt":esc(e.bez)}${pl(e)}</span>${legSchutz(e)?`<span class="sc">${esc(legSchutz(e))}</span>`:""}</button>`;
+  const zeile=([e],kl)=>`<button type="button" class="leg-r${kl||""}${e.art==="res"?" res":""}${legOffen(e)?" offen":""}${legWsAktiv(L)&&LEG_WS.id===e.id?" an":""}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}><span class="kz">${esc(legKzA(e.kz)||"–")}</span><span class="bz">${e.art==="res"?"Leerplatz":legOffen(e)?"? – noch unbekannt":esc(e.bez)}${pl(e)}</span>${legSchutz(e)?`<span class="sc">${esc(legSchutz(e))}</span>`:""}</button>`;
   return `<div class="leg-gl">${B.map(b=>b.gr?`<button type="button" class="leg-ue" data-act="legEdit" data-id="${esc(b.gr.id)}" ${zu?"disabled":""}>${esc(b.gr.bez||"Überschrift")}</button>`
     :b.z?`<div class="leg-grp solo">${zeile(b.z)}</div>`
     :`<div class="leg-grp"><button type="button" class="leg-gk" data-act="legEdit" data-id="${esc(b.rcd.id)}" ${zu?"disabled":""}><span class="kz">${esc(legKzA(b.rcd.kz)||"–")}</span><span class="bz">${esc(b.rcd.bez||"Fehlerstromschutzschalter")}<span class="leg-rcd">RCD</span>${pl(b.rcd)}</span>${b.rcd.schutz?`<span class="sc">${esc(b.rcd.schutz)}</span>`:""}</button>
@@ -266,8 +266,10 @@ function legVtView(L){ const n=+L.teReihe||12, P=LEG_P, R=legReihen(L), zu=L.fer
   const mobil=matchMedia("(max-width:599px)").matches, kzF=mobil?19:10.5, kzH=mobil?30:20;
   return R.map((r,ri)=>{ const GH=LEG_H(1), ext=gkExtents(r,L,GH), KY=Math.max(GH,ext.bottom)+10; let x=0, hoch=KY+(mobil?kzH+8:64); const g=r.g.map(([e,i,w])=>{ const X=x*P, Wd=w*P, sym=mobil?"":legSymFuer(e), z=mobil?[]:legWrap(e.art==="res"?"Reserve":legOffen(e)?"?":e.bez,w>1?w*8:8), fz=w>1?10.5:z.some(t=>t.length>7)?9:10.5;
         const kz=legKzA(e.kz).slice(0,w>1?16:7), eng=mobil&&kz.length*kzF*.62>Wd-8;
-        const out=`<g class="leg-dev"${zu||e.art==="kl"||e.art==="res"?"":` data-act="legProdukt"`} data-id="${esc(e.id)}"><title>${esc([legKzA(e.kz),e.bez,legSchutz(e)].filter(Boolean).join(" · "))}</title>${legGeraet(e,X,w)}
-          ${e.art==="kl"?"":`<rect x="${X+2}" y="${KY}" width="${Wd-4}" height="${kzH}" rx="${mobil?6:4}" fill="${e.art==="rcd"?"#2F6FD1":e.art==="res"?"#A9AEB6":"#737A84"}"/><text x="${X+Wd/2}" y="${KY+kzH/2+kzF*.36}" font-size="${kzF}" font-weight="800" text-anchor="middle" fill="#fff"${eng?` textLength="${Wd-8}" lengthAdjust="spacingAndGlyphs"`:""}>${esc(kz)}</text>`}
+        const ws=legWsAktiv(L), an=ws&&LEG_WS.id===e.id;
+        const out=`<g class="leg-dev${an?" an":""}"${ws?` data-act="legWsSel"`:zu||e.art==="kl"||e.art==="res"?"":` data-act="legProdukt"`} data-id="${esc(e.id)}"><title>${esc([legKzA(e.kz),e.bez,legSchutz(e)].filter(Boolean).join(" · "))}</title>${legGeraet(e,X,w)}
+          ${an?`<rect x="${X}" y="${Math.min(0,ext.top)}" width="${Wd}" height="${KY-6-Math.min(0,ext.top)}" rx="4" class="leg-anr"/>`:""}
+          ${e.art==="kl"?"":`<rect x="${X+2}" y="${KY}" width="${Wd-4}" height="${kzH}" rx="${mobil?6:4}" fill="${e.art==="rcd"?"#2F6FD1":e.art==="res"?"#A9AEB6":"#737A84"}"${an?` style="fill:var(--primary)"`:""}/><text x="${X+Wd/2}" y="${KY+kzH/2+kzF*.36}" font-size="${kzF}" font-weight="800" text-anchor="middle" fill="#fff"${eng?` textLength="${Wd-8}" lengthAdjust="spacingAndGlyphs"`:""}>${esc(kz)}</text>`}
           ${sym?`<g transform="translate(${X+Wd/2-11} ${KY+28})" class="leg-sym">${legSymSvg(sym,22,true)}</g>`:""}
           ${z.map((t,k)=>`<text x="${X+Wd/2}" y="${KY+(sym?66:40)+(e.art==="kl"?20:0)+k*13}" font-size="${fz}" font-weight="600" text-anchor="middle" class="leg-st">${esc(t)}</text>`).join("")}</g>`; if(!mobil) hoch=Math.max(hoch,KY+(sym?66:40)+(z.length-1)*13+10+(e.art==="kl"?20:0)); x+=w; return out; }).join("");
       const frei=n-r.te, last=r.g[r.g.length-1][1];
@@ -881,3 +883,89 @@ function legRechOk(){ const L=legAkt(); if(!L||!LR) return; const g=vtGeb(L._geb
   if(v&&ze!=null) v.ze=ze;
   ecGebSpeichern(g); const id=LR.id; LR=null; toast("Gespeichert"); legSkDlg(id); }
 document.addEventListener("input",e=>{ if(LR&&e.target&&(e.target.id==="f_lrLaenge"||e.target.id==="f_lrZe")) legRechZeigen(); });
+
+/* ===== Arbeitsfläche am PC (Max 28.11.2026, Variante B) =====
+   Laptop und Monitor mit Maus: Stromkreise als Arbeitsfläche – links der Verteiler (bzw. die Liste), rechts eine feste Leiste mit
+   „Ausgewählt“ (Gerät direkt bearbeiten), „Einsetzen“ (Geräteauswahl wie im Bestücken-Fenster, setzt hinter dem ausgewählten Gerät ein)
+   und „Übersicht“ (Stückliste, RCD-Gruppen, Offenes). Oben die Zahlen auf einen Blick. Handy und iPad bleiben wie bisher. */
+const LEG_WS={tab:"sel",id:null,weg:null};
+const LEG_WS_MQ=typeof matchMedia==="function"?matchMedia("(min-width:1100px) and (hover:hover) and (pointer:fine)"):null;
+function legWsAktiv(L){ return !!(LEG_WS_MQ&&LEG_WS_MQ.matches&&L&&(nav.v==="legende"||nav.v==="vt")&&legTab(L)==="sk"); }
+function legWsAus(){ if(typeof AW!=="undefined"&&AW&&AW.panel) AW=null; }
+if(LEG_WS_MQ&&LEG_WS_MQ.addEventListener) LEG_WS_MQ.addEventListener("change",()=>{ legWsAus(); if(typeof render==="function") render(); });
+function legWsZahlen(L){ const E=legE(L).filter(e=>e.art!=="gr"), te=E.reduce((s,e)=>s+legTE(e),0), n=+L.teReihe||12, ges=(+L.reihen||0)*n;
+  return {te:Math.round(te*10)/10,ges,sk:legSkZahl(L),rcd:E.filter(e=>e.art==="rcd").length,offen:E.filter(legOffen).length}; }
+/* Bild eines Eintrags für die Leiste: Katalog, angepasster Aufdruck, Herstellerfoto oder bisheriges Bild */
+function legWsBild(e){ if(e.katalog&&e.katalog.data) return e.katalog.data; const ka=typeof gkFuerEintrag==="function"&&gkFuerEintrag(e); if(ka) return gkBildURL(ka);
+  const m=e.mat&&typeof awGeraete==="function"&&awGeraete().find(x=>matHnr(x.herstellerNr)===e.mat); if(m&&matBild(m)) return bildLokal(matBild(m));
+  if(e.art==="kl") return `../bilder/vt/pollmann-${gkKlFarbe(e)==="pe"?"pe":gkKlFarbe(e)==="a"?"a":"n"}14s.png`; return "../bilder/vt/"+legBildFuer(e)[0]; }
+function legWsName(e){ if(e.art==="rcd") return "RCD "+(e.schutz||""); if(e.art==="sk") return (legIstRcbo(e)?"FI/LS ":"LS ")+legSchutz(e); if(e.art==="res") return "Reserve"; if(e.art==="kl") return e.bez||"Klemme"; return e.bez||"Gerät"; }
+function legWsArtikel(e){ if(e.katalog) return [e.katalog.manufacturer,e.katalog.model].filter(Boolean).join(" ");
+  const m=e.mat&&typeof awGeraete==="function"&&awGeraete().find(x=>matHnr(x.herstellerNr)===e.mat); return m?`${m.hersteller==="Schneider Electric"?"Schneider":m.hersteller} ${m.herstellerNr}`:e.mat||""; }
+function legWsRcd(L,e){ const E=legE(L), i=E.indexOf(e); if(e.art!=="sk"||legIstRcbo(e)) return null; for(let j=i-1;j>=0;j--){ if(E[j].art==="gr") return null; if(E[j].art==="rcd") return E[j]; if(legIstRcbo(E[j])) return null; } return null; }
+function legWsView(L){ const Z=legWsZahlen(L), E=legE(L), zu=L.fertig; if(LEG_WS.id&&!E.some(e=>e.id===LEG_WS.id)) LEG_WS.id=null;
+  const chip=(b,t,kl)=>`<span class="leg-wz${kl?" "+kl:""}"><b>${b}</b>${t}</span>`;
+  return `<div class="leg-ws">
+    <section class="card leg-ws-l"><div class="card-kopf leg-kopf leg-ws-kopf"><h3>Stromkreise</h3>
+      <div class="leg-wzs">${chip(gkZahl(Z.te),Z.ges?` / ${Z.ges} TE`:" TE")}${chip(Z.sk," Stromkreise")}${chip(Z.rcd," RCD")}${Z.offen?chip(Z.offen," ohne „Wofür“","warn"):""}</div>
+      <span style="flex:1"></span>${E.length?seg("legAnsicht",legAnsicht(),[["liste","Liste"],["verteiler","Verteiler"]],"leg-seg"):""}${zu?"":`<button type="button" class="btn-filled leg-ws-neu" data-act="legWsTab" data-v="ein">${icon("add")}<span>Gerät</span></button>`}</div>
+      ${E.length?(legAnsicht()==="verteiler"?legVtView(L):legListeView(L)):`<p class="meta">Noch keine Geräte. Rechts unter „Einsetzen“ Geräte auswählen – die Kennzeichnung zählt mit.</p>`}</section>
+    <aside class="card leg-ws-r">${seg("legWsTab",LEG_WS.tab,[["sel","Ausgewählt"],...(zu?[]:[["ein","Einsetzen"]]),["ueb","Übersicht"]],"leg-ws-tabs")}
+      <div class="leg-ws-in">${LEG_WS.tab==="ein"&&!zu?legWsEin(L):LEG_WS.tab==="ueb"?legWsUeb(L):legWsSel(L)}</div></aside></div>`; }
+function legWsSel(L){ const E=legE(L), e=E.find(x=>x.id===LEG_WS.id), zu=L.fertig;
+  if(!e) return `<div class="leg-ws-leer">${icon("pin")}<b>Gerät anklicken</b><span>In der Zeichnung oder Liste ein Gerät anklicken – hier lässt es sich dann direkt bearbeiten. Ein Klick auf eine freie Stelle setzt dort ein.</span></div>`;
+  const PL=legPlaetze(L)[e.id], r=legWsRcd(L,e), art=legWsArtikel(e), i=E.indexOf(e);
+  const fld=(k,l,v,o={})=>`<label class="leg-wf${o.kl?" "+o.kl:""}"><small>${l}</small><input data-legws="${k}" value="${esc(v||"")}" placeholder="${esc(o.ph||"")}" ${zu||o.ro?"readonly":""} autocomplete="off"></label>`;
+  const W=e.art==="sk"?["Steckdosen","Licht","Herd","Waschmaschine","Spülmaschine","Trockner","Heizung","Wallbox"]:[], R=e.art==="sk"&&typeof awRaeume==="function"?awRaeume(L).slice(0,10):[];
+  return `<div class="leg-ws-g"><span class="leg-ws-b"><img src="${esc(legWsBild(e))}" alt="" onerror="this.style.visibility='hidden'"></span><span><b>${esc([legKzA(e.kz),legWsName(e)].filter(Boolean).join(" · "))}</b><small>${esc([art,PL?legPlatzText(PL):"",r?"an "+legKzA(r.kz):""].filter(Boolean).join(" · "))}</small></span></div>
+    ${e.art==="kl"?"":fld("bez",e.art==="gr"?"Überschrift":"Wofür",legOffen(e)?"":e.bez,{ph:e.art==="rcd"?"Fehlerstromschutzschalter":"z. B. Küche Steckdosen",kl:"breit"})}
+    ${W.length&&!zu?(()=>{ const T=String(e.bez||"").split(/\s+/), wa=T.find(x=>LEG_WAS.includes(x))||"", ra=T.find(x=>LEG_RAUM.includes(x))||"", sel=(k,l,cur,opts)=>`<label class="leg-wf leg-wsel"><small>${l}</small><select data-legwsw="${k}"><option value="">wählen</option>${opts.map(o=>`<option${o===cur?" selected":""}>${esc(o)}</option>`).join("")}</select></label>`;
+      return `<div class="leg-ws-2">${sel("was","Verbraucher",wa,[...W,...LEG_WAS.filter(x=>!W.includes(x))])}${sel("raum","Raum",ra,R.length?R:LEG_RAUM)}</div>`; })():""}
+    <div class="leg-ws-2">${e.art==="gr"||e.art==="kl"?"":fld("kz","Kennzeichnung",e.kz)}${e.art==="sk"||e.art==="rcd"?fld("schutz","Absicherung",e.schutz,{ro:!!e.katalog}):""}</div>
+    ${zu?"":`<div class="leg-ws-ak"><button type="button" data-act="legWsZug" data-d="-1" ${i>0?"":"disabled"} title="Einen Platz nach vorn">${icon("back")}<span>Nach vorn</span></button><button type="button" data-act="legWsZug" data-d="1" ${i<E.length-1?"":"disabled"} title="Einen Platz nach hinten"><span>Nach hinten</span>${icon("chev")}</button></div>
+    <div class="leg-ws-ak"><button type="button" data-act="legWsDupl">${icon("copy")}<span>Duplizieren</span></button>${e.art==="sk"||e.art==="rcd"||e.art==="ge"?`<button type="button" data-act="${e.katalog?"gkErsetzen":"legProdukt"}" data-id="${esc(e.id)}">${icon("sync")}<span>Produkt</span></button>`:""}<button type="button" data-act="legEdit" data-id="${esc(e.id)}">${icon("edit")}<span>Alle Felder</span></button></div>
+    <button type="button" class="leg-ws-weg${LEG_WS.weg===e.id?" sicher":""}" data-act="legWsWeg">${icon("del")}<span>${LEG_WS.weg===e.id?"Wirklich entfernen?":"Entfernen"}</span></button>`}`; }
+function legWsEin(L){ if(typeof awPanelStart!=="function") return ""; if(!AW||!AW.panel) awPanelStart(L);
+  const E=legE(L), nach=awEinfuegen()?E[awPos(L)]:null;
+  return `<div class="aw-such"><span class="aw-lupe">${icon("search")}</span><input id="awSuch" type="search" placeholder="${AW.tab==="kat"?"Hersteller, Gerät, Artikelnummer …":"B16, RCD, Typ A …"}" value="${esc(AW.such)}" autocomplete="off"></div>
+    <div class="aw-pos leg-ws-pos"><span>${nach?`Setzt ein hinter <b>${esc(legKzA(nach.kz)||legWsName(nach))}</b>`:"Setzt am Ende ein"}</span>${nach?`<button type="button" class="btn-text" data-act="legWsEnde">Ans Ende</button>`:""}</div>
+    <div class="aw-tabs" role="group">${AW_TABS.map(([k,t])=>`<button type="button" data-act="awTab" data-v="${k}" aria-pressed="${AW.tab===k}">${t}</button>`).join("")}</div>
+    <div id="awFilter">${awFilterHtml()}</div><div id="awGrid">${awGrid()}</div><div id="awWahl" class="aw-wahlb" hidden></div>
+    ${AW.zuletzt?`<p class="meta leg-ws-zul">${esc(AW.zuletzt)}</p>`:""}`; }
+function legWsUeb(L){ const E=legE(L).filter(e=>e.art!=="gr"), G=new Map();
+  E.forEach(e=>{ const k=e.katalog?"k:"+e.katalog.assetId:e.mat?"m:"+e.mat:e.art==="kl"?"kl:"+(e.bez||""):e.art+":"+(e.schutz||e.bez||""); const g=G.get(k)||{n:0,te:0,e}; g.n++; g.te+=legTE(e); G.set(k,g); });
+  const zeilen=[...G.values()].sort((a,b)=>b.n-a.n).map(g=>`<tr><td>${g.n}×</td><td>${esc(legWsName(g.e))}${legWsArtikel(g.e)?` <small>${esc(legWsArtikel(g.e))}</small>`:""}</td><td>${gkZahl(g.te)} TE</td></tr>`).join("");
+  const A=legE(L), grp=[]; let cur=null, ohne=0; A.forEach(e=>{ if(e.art==="rcd"){ cur={e,n:0}; grp.push(cur); } else if(e.art==="gr"||legIstRcbo(e)) cur=null; else if(e.art==="sk"){ if(cur) cur.n++; else ohne++; } });
+  const offen=A.filter(legOffen), R=legReihen(L), n=+L.teReihe||12;
+  return `<div class="lbl leg-ws-lbl">Im Verteiler</div><table class="leg-ws-t">${zeilen||`<tr><td colspan="3">Noch leer</td></tr>`}</table>
+    <div class="lbl leg-ws-lbl">RCD-Gruppen</div><div class="leg-ws-chips stat">${grp.map(g=>`<button type="button" data-act="legWsSel" data-id="${esc(g.e.id)}">${esc(legKzA(g.e.kz)||"RCD")}: <b>${g.n}</b> ${g.n===1?"Automat":"Automaten"}</button>`).join("")}${ohne?`<span>ohne RCD: <b>${ohne}</b></span>`:""}${!grp.length&&!ohne?`<span>keine</span>`:""}</div>
+    <div class="lbl leg-ws-lbl">Platz</div><div class="leg-ws-chips stat">${R.map((r,i)=>`<span>Reihe ${i+1}: <b>${gkZahl(Math.max(0,n-r.te))}</b> TE frei</span>`).join("")}</div>
+    ${offen.length?`<div class="lbl leg-ws-lbl">Offen</div><div class="leg-ws-chips stat">${offen.map(e=>`<button type="button" data-act="legWsSel" data-id="${esc(e.id)}">${esc(legKzA(e.kz)||"?")} ohne „Wofür“</button>`).join("")}</div>`:""}`; }
+/* Klicks im Arbeitsmodus – vor den anderen Handlern, damit Klick auswählt statt ein Fenster zu öffnen */
+document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act="legWsSel"],[data-act="legWsTab"],[data-act="legWsWort"],[data-act="legWsZug"],[data-act="legWsDupl"],[data-act="legWsWeg"],[data-act="legWsEnde"],[data-act="legEdit"],[data-act="legNach"],[data-act="legNeuRcd"]');
+  if(!b||b.disabled) return; const L=legAkt(); if(!legWsAktiv(L)) return; const a=b.dataset.act;
+  if(a==="legEdit"&&b.closest(".leg-ws-r")) return;   /* „Alle Felder“ öffnet das bisherige Fenster */
+  ev.stopImmediatePropagation(); ev.preventDefault(); const E=legE(L), e=E.find(x=>x.id===LEG_WS.id);
+  if(a==="legWsSel"||a==="legEdit"){ LEG_WS.id=b.dataset.id; LEG_WS.weg=null; if(LEG_WS.tab==="ein"&&typeof AW!=="undefined"&&AW&&AW.panel){ AW.nach=E.findIndex(x=>x.id===LEG_WS.id); } else LEG_WS.tab="sel"; render(); return; }
+  if(a==="legNach"){ LEG_WS.tab="ein"; legWsAus(); awPanelStart(L,+b.dataset.i); render(); return; }
+  if(a==="legNeuRcd"){ LEG_WS.tab="ein"; legWsAus(); awPanelStart(L,null,"rcd"); render(); return; }
+  if(a==="legWsTab"){ LEG_WS.tab=b.dataset.v; if(LEG_WS.tab==="ein"){ legWsAus(); awPanelStart(L,LEG_WS.id?E.findIndex(x=>x.id===LEG_WS.id):null); } render(); return; }
+  if(a==="legWsEnde"){ if(AW&&AW.panel) AW.nach=null; render(); return; }
+  if(!e||L.fertig) return;
+  if(a==="legWsWort"){ legWsWort(L,e,b.dataset.v); return; }
+  if(false){ const w=b.dataset.v, alt=legOffen(e)?"":String(e.bez||""); const T=alt.split(/\s+/).filter(Boolean); const istW=x=>LEG_WAS.includes(x), istR=x=>LEG_RAUM.includes(x);
+    const was=istR(w)?(T.find(istW)||""):w, raum=istR(w)?w:(T.find(istR)||""), rest=T.filter(x=>!istW(x)&&!istR(x)).join(" ");
+    e.bez=[was,raum,rest].filter(Boolean).join(" ")||"?"; legSpeichern(L); render(); return; }
+  if(a==="legWsZug"){ const i=E.indexOf(e), j=i+(+b.dataset.d); if(j<0||j>=E.length) return; [E[i],E[j]]=[E[j],E[i]]; legSpeichern(L); render(); return; }
+  if(a==="legWsDupl"){ const i=E.indexOf(e); legKopien(L,i,1); const neu=legE(L)[i+1]; legSpeichern(L); if(neu) LEG_WS.id=neu.id; render(); return; }
+  if(a==="legWsWeg"){ if(LEG_WS.weg!==e.id){ LEG_WS.weg=e.id; render(); return; } const i=E.indexOf(e); L.eintraege=E.filter(x=>x.id!==e.id); legSpeichern(L); const n=legE(L)[Math.min(i,legE(L).length-1)]; LEG_WS.id=n?n.id:null; LEG_WS.weg=null; render(); toast("Entfernt"); return; }
+},true);
+/* Felder in der Leiste: speichern beim Verlassen bzw. Enter */
+document.addEventListener("change",ev=>{ const t=ev.target; if(!t.dataset||!t.dataset.legws) return; const L=legAkt(); if(!L||L.fertig) return; const e=legE(L).find(x=>x.id===LEG_WS.id); if(!e) return;
+  const k=t.dataset.legws, v=t.value.trim(); if(k==="schutz"&&e.katalog) return; if(k==="bez"&&!v&&e.art==="sk") e.bez="?"; else e[k]=v; legSpeichern(L); render(); });
+document.addEventListener("keydown",ev=>{ const t=ev.target; if(ev.key==="Enter"&&t.dataset&&t.dataset.legws){ ev.preventDefault(); t.blur(); } });
+function legWsWort(L,e,w){ const alt=legOffen(e)?"":String(e.bez||""), T=alt.split(/\s+/).filter(Boolean), istW=x=>LEG_WAS.includes(x), istR=x=>LEG_RAUM.includes(x);
+  const was=istR(w)?(T.find(istW)||""):w, raum=istR(w)?w:(T.find(istR)||""), rest=T.filter(x=>!istW(x)&&!istR(x)).join(" ");
+  e.bez=[was,raum,rest].filter(Boolean).join(" ")||"?"; legSpeichern(L); render(); }
+document.addEventListener("change",ev=>{ const t=ev.target; if(!t.dataset||!t.dataset.legwsw) return; const L=legAkt(); if(!L||L.fertig) return; const e=legE(L).find(x=>x.id===LEG_WS.id); if(!e) return;
+  const v=t.value; if(v){ legWsWort(L,e,v); return; } const T=String(e.bez||"").split(/\s+/).filter(x=>t.dataset.legwsw==="was"?!LEG_WAS.includes(x):!LEG_RAUM.includes(x)); e.bez=T.join(" ")||"?"; legSpeichern(L); render(); });

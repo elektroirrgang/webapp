@@ -200,7 +200,11 @@ function awGeraetStart(opt){ const L=legAkt(); if(!L||L.fertig) return; const E=
   AW={typ:"geraet",nach:opt.nach!=null?opt.nach:null,tab:opt.tab||(E.some(e=>e.art==="rcd")?"ls":"reihe"),serie:(typeof META!=="undefined"&&META.lsSerie)||"",such:"",letzt:null,zuletzt:"",m:null,was:"",raum:"",bez:"",bezHand:false,mehr:false,
     herst:(typeof META!=="undefined"&&META.awHerst)||"",gruppe:"",lim:60,sel:null,anz:1,busy:false};
   awKatalog(); }
-function awKatalog(){ const L=legAkt(); if(!L){ awZu(); return; } AW.m=null;
+/* Einsetzen in der Arbeitsfläche am PC (legende.js): derselbe Zustand, aber in der rechten Leiste statt im Fenster */
+function awPanelStart(L,nach,tab){ const E=legE(L);
+  AW={typ:"geraet",panel:true,nach:nach!=null&&nach>=0?nach:null,tab:tab||(E.some(e=>e.art==="rcd")?"ls":"reihe"),serie:(typeof META!=="undefined"&&META.lsSerie)||"",such:"",letzt:null,zuletzt:"",m:null,was:"",raum:"",bez:"",bezHand:false,mehr:false,
+    herst:(typeof META!=="undefined"&&META.awHerst)||"",gruppe:"",lim:60,sel:null,anz:1,busy:false}; }
+function awKatalog(){ if(AW&&AW.panel){ render(); setTimeout(awWahlZeigen,0); return; } const L=legAkt(); if(!L){ awZu(); return; } AW.m=null;
   $("#dlg").classList.add("aw");
   awRahmen({titel:L.titel||"Verteiler",unter:awBelegText(L),inhalt:`<div class="aw-such"><span class="aw-lupe">${icon("search")}</span><input id="awSuch" type="search" placeholder="${AW.tab==="kat"?"Hersteller, Gerät, Artikelnummer …":"B16, RCD, Typ A …"}" value="${esc(AW.such)}" autocomplete="off"></div>
       ${awEinfuegen()?`<div class="aw-pos"><span>Wird eingesetzt nach <b>${esc((legE(L)[awPos(L)]||{}).kz||"")}</b></span><button type="button" class="btn-text" data-act="awFrei">Ohne Produkt eintragen</button></div>`:""}
@@ -320,7 +324,7 @@ function awGrid(){ if(AW.tab==="kat") return awKatGrid(); const q=AW.such.trim()
   A.sort((a,b)=>(b.hnr===AW.letzt)-(a.hnr===AW.letzt)||(gh?(b.m.hersteller===gh)-(a.m.hersteller===gh):0)||(z[b.hnr]||0)-(z[a.hnr]||0)||(b.m.hersteller===herst)-(a.m.hersteller===herst)||(a.t.pole||0)-(b.t.pole||0)||String(a.t.char).localeCompare(String(b.t.char))||a.t.in-b.t.in||a.m.hersteller.localeCompare(b.m.hersteller));
   if(!A.length) return `<p class="aw-leer">${AW.herst?`In unserer Materialliste steht hier nichts von ${esc(awHerstKurz(AW.herst))}. Im Tab „Katalog“ stehen alle Geräte des Herstellers.`:"Nichts gefunden. Unter „Sonstiges“ lässt sich ein Gerät frei eintragen."}</p>`;
   return `<div class="aw-grid">${A.map(({m,t,hnr})=>`<button type="button" class="aw-g${awIstSel("mat",hnr)?" an":""}" data-act="awSel" data-k="mat" data-v="${esc(hnr)}">${awMatBild(m,t)}<b>${esc(awName(t))}</b><small>${esc(awUnter(m))}</small>${hnr===AW.letzt&&!awIstSel("mat",hnr)?`<span class="aw-nochmal">Nochmal</span>`:""}${awAnzBadge(L,hnr)}${awSelBadge("mat",hnr)}</button>`).join("")}</div>`; }
-function awEinsetzen(e){ const L=legAkt(); if(!L) return; const E=legE(L);
+function awEinsetzen(e){ const L=legAkt(); if(!L) return; const E=legE(L); if(AW&&AW.panel&&typeof LEG_WS!=="undefined") LEG_WS.id=e.id;
   if(awEinfuegen()&&AW.nach<E.length-1){ E.splice(AW.nach+1,0,e); AW.nach++; } else { E.push(e); if(awEinfuegen()) AW.nach=E.length-1; }
   legSpeichern(L); render(); }
 function awGeraetWahl(hnr,anz){ const L=legAkt(), m=awGeraete().find(x=>matHnr(x.herstellerNr)===hnr); if(!L||!m) return; const t=matTech(m), n=Math.max(1,anz|0||1); let erst="", letzt="";
@@ -330,7 +334,7 @@ function awGeraetWahl(hnr,anz){ const L=legAkt(), m=awGeraete().find(x=>matHnr(x
   if(t.art==="rcd"){ for(let i=0;i<n;i++){ const k=awKz(L,"rcd"); awEinsetzen({id:uid(),art:"rcd",kz:k.kz,bez:"Fehlerstromschutzschalter",schutz:awSchutz(t),pole:1,te:t.te,mat:hnr,...(k.umbruch?{umbruch:true}:{})}); erst=erst||k.kz; letzt=k.kz; }
     AW.letzt=hnr; AW.zuletzt=`${erst}${letzt!==erst?" bis "+letzt:""} RCD eingesetzt – jetzt die Automaten dazu`; AW.tab="ls"; AW.such=""; awKatalog(); return; }
   AW.m=hnr; AW.was=""; AW.raum=""; AW.bez=""; AW.bezHand=false; AW.mehr=false;
-  if(n===1){ if(awFragen()) awWofuer(); else awOk(true,true); return; }
+  if(n===1){ if(awFragen()&&!AW.panel) awWofuer(); else awOk(true,true); return; }   /* Arbeitsfläche: „Wofür“ gleich rechts unter „Ausgewählt“ */
   for(let i=0;i<n;i++){ const k=awKz(L,"sk"); awEinsetzen({id:uid(),art:"sk",kz:k.kz,bez:"?",schutz:awSchutz(t),pole:+t.pole===3?3:1,te:t.te,mat:hnr}); erst=erst||k.kz; letzt=k.kz; }
   AW.letzt=hnr; AW.tab=t.art; AW.such=""; AW.zuletzt=`${n}× ${awName(t)} eingesetzt: ${erst} bis ${letzt} – „Wofür“ später in der Legende`; awKatalog(); }
 /* „Wofür gleich fragen“: aus = erst bestücken, Wofür später in der Legende eintragen (je Gerät gemerkt) */
