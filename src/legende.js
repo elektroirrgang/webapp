@@ -919,7 +919,9 @@ function legWsArtikel(e){ if(e.katalog) return [e.katalog.manufacturer,e.katalog
   if(e.gk&&typeof GK_MAP!=="undefined"&&GK_MAP.get(e.gk)){ const a=GK_MAP.get(e.gk); return `${a.manufacturer==="Schneider Electric"?"Schneider":a.manufacturer} ${a.model}`; }
   const m=e.mat&&typeof awGeraete==="function"&&awGeraete().find(x=>matHnr(x.herstellerNr)===e.mat); return m?`${m.hersteller==="Schneider Electric"?"Schneider":m.hersteller} ${m.herstellerNr}`:e.mat||""; }
 function legWsRcd(L,e){ const E=legE(L), i=E.indexOf(e); if(e.art!=="sk"||legIstRcbo(e)) return null; for(let j=i-1;j>=0;j--){ if(E[j].art==="gr") return null; if(E[j].art==="rcd") return E[j]; if(legIstRcbo(E[j])) return null; } return null; }
-function legWsView(L){ const Z=legWsZahlen(L), E=legE(L), zu=L.fertig; if(LEG_WS.id&&!E.some(e=>e.id===LEG_WS.id)) LEG_WS.id=null;
+function legWsView(L){ const Z=legWsZahlen(L), E=legE(L), zu=L.fertig;
+  /* alte Platznummern mit Nachkommastellen (Geräte mit 5,14 TE) einmal neu zählen */
+  if(!zu&&E.some(e=>/\d\.\d{3,}/.test(e.kz||""))){ legNummernAlle(L); legSave(L); } if(LEG_WS.id&&!E.some(e=>e.id===LEG_WS.id)) LEG_WS.id=null;
   const chip=(b,t,kl)=>`<span class="leg-wz${kl?" "+kl:""}"><b>${b}</b>${t}</span>`;
   return `<div class="leg-ws">
     <section class="card leg-ws-l"><div class="card-kopf leg-kopf leg-ws-kopf"><h3>Stromkreise</h3>

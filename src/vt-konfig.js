@@ -125,7 +125,8 @@ function kfLsHtml(L){ const s=kfLs(L), mat=kfLsMat(s), a=kfAsset(mat), A=KF_AMP[
   const z=(act,v,t,an)=>`<button type="button" data-act="${act}" data-v="${esc(v)}" aria-pressed="${!!an}">${esc(t)}</button>`;
   return `<div class="kf-konf"><button type="button" class="kf-prev" data-act="kfLsBild" title="Bild groß ansehen">${kfImg(a)}</button><div>
       <div class="kf-zt">Serie</div><div class="kf-z">${KF_SER[s.h].map(([v,t])=>z("kfLsSer",v,t,s.ser===v)).join("")}</div>
-      <div class="kf-zt">Charakteristik · Pole</div><div class="kf-z">${["B","C"].map(c=>z("kfLsCh",c,c,s.ch===c)).join("")}<span class="kf-sp"></span>${[1,3].map(p=>z("kfLsPol",p,p+"-polig",s.pol===p)).join("")}</div>
+      <div class="kf-zwei"><div><div class="kf-zt">Charakteristik</div><div class="kf-z">${["B","C"].map(c=>z("kfLsCh",c,c,s.ch===c)).join("")}</div></div>
+        <div><div class="kf-zt">Pole</div><div class="kf-z">${[1,3].map(p=>z("kfLsPol",p,p+"-polig",s.pol===p)).join("")}</div></div></div>
       <div class="kf-zt">Nennstrom</div><div class="kf-z kf-amp">${A.map(n=>z("kfLsAmp",n,String(n),+s.amp===n)).join("")}</div>
       <div class="kf-zt kf-art">${esc(mat)}${a?` · ${gkZahl(a.dimension.width)} mm`:" · ohne Katalogbild"}</div></div></div>
     ${kfAnzHtml(`${LEG_WS.anz} × LS ${s.ch}${s.amp}${s.pol===3?" 3-polig":""} einsetzen`)}`; }
