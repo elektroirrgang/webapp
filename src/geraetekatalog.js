@@ -53,7 +53,7 @@ document.addEventListener("input",ev=>{const t=ev.target;if(t.id==="gk-q"&&GK){G
  if(t.dataset.gkT&&GK_BLOCK&&t.type!=="checkbox"){const s=GK_BLOCK,a=s.p.terminals.find(a=>a.id===t.dataset.gkT);if(!a)return;s.editBefore=s.editBefore||gkClone(s.p);if(t.dataset.gkField==="label")a.label.text=t.value;else a[t.dataset.gkField]=t.value;gkBlockPreview();}});
 document.addEventListener("change",ev=>{const t=ev.target;if(GK&&["gk-manufacturer","gk-category"].includes(t.id)){GK[t.id.slice(3)]=t.value;GK.limit=48;gkGrid();}
  if(t.dataset.gkT&&GK_BLOCK)gkBlockChange(p=>{const a=p.terminals.find(a=>a.id===t.dataset.gkT),k=t.dataset.gkField;if(k==="label")a.label.text=t.value;else if(k==="locked")a.label.locked=t.checked;else a[k]=t.value;});});
-document.addEventListener("click",ev=>{const b=ev.target.closest?.('[data-act^="gk"],[data-act="legProdukt"]');if(!b||b.disabled)return;const act=b.dataset.act,id=b.dataset.id;
+document.addEventListener("click",ev=>{const b=ev.target.closest?.('[data-act^="gk"],[data-act="legProdukt"]');if(!b||b.disabled)return;const act=b.dataset.act,id=b.dataset.id;if(act==="gkHoch")return; /* Hochladen hat einen eigenen Handler (weiter unten) */
  if(act==="legProdukt"){const e=legAkt()&&legE(legAkt()).find(e=>e.id===id);if(!e?.katalog)return;ev.stopImmediatePropagation();gkDetail(id);return;}
  ev.stopImmediatePropagation();ev.preventDefault();try{switch(act){
  case "gkOpen":gkOpen();break;case "gkMehr":GK.limit+=48;gkGrid();break;case "gkWahl":gkWahl(b.dataset.v);break;
