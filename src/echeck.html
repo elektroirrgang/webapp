@@ -1305,8 +1305,8 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .aw-bz{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;font-size:13.5px;color:var(--on-sv);margin-bottom:10px}.aw-bz b{color:var(--on-surface)}.aw-bz>b:first-child{font-size:15px}
 .aw-schiene{display:flex;gap:2px;height:40px;padding:3px;border-radius:10px;background:var(--sc-highest)}
 .aw-bl{min-width:0;display:grid;place-items:center;border-radius:6px;background:var(--surface);font-size:11.5px;font-weight:800;color:var(--on-surface);overflow:hidden;white-space:nowrap;letter-spacing:-.2px}
-.aw-bl.rcd{background:var(--on-surface);color:var(--surface)}
-.aw-bl.res{color:var(--on-sv);font-weight:600}
+.aw-bl.b-rcd{background:var(--on-surface);color:var(--surface)}
+.aw-bl.b-res{color:var(--on-sv);font-weight:600}
 .aw-bl.kl-n{background:#2F74D0;color:#fff}.aw-bl.kl-pe{background:#2E9B45;color:#fff}.aw-bl.kl-a{background:#9B9EA4;color:#fff}
 .aw-bl.frei{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--on-sv) 14%,transparent) 0 6px,transparent 6px 12px)}
 .aw-bl.hier{box-shadow:0 0 0 2px var(--primary)}
@@ -1332,6 +1332,30 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .zs-feld{display:flex;align-items:center;gap:8px;background:var(--sc);border-radius:18px;padding:6px 4px 6px 12px}
 .zs-fnr{font-weight:800;width:20px;color:var(--on-sv)}
 .aw-fragen{flex:none;height:36px;padding:0 14px;border:0;border-radius:18px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-weight:600;font-size:13px;cursor:pointer}.aw-fragen[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
+/* Bestücken (Max 28.11.2026): Herstellerfilter, Katalog-Tab, Auswahl mit Anzahl. Handy: alles in einer Spalte, Chips wischen; iPad: breiteres Fenster; PC: viele Spalten */
+.aw-tabs{overflow-x:auto;scrollbar-width:none}.aw-tabs::-webkit-scrollbar,.aw-serie::-webkit-scrollbar{display:none}
+@media (max-width:599px){.aw-tabs button{flex:none;padding:0 14px}}
+.aw-herst{align-items:center}
+.aw-mehrh{flex:none;position:relative;display:block}.aw-mehrh select{appearance:none;-webkit-appearance:none;height:36px;padding:0 30px 0 14px;border:0;border-radius:18px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-weight:600;font-size:14px;cursor:pointer}
+.aw-mehrh::after{content:"";position:absolute;right:13px;top:15px;border:5px solid transparent;border-top-color:currentColor;pointer-events:none}
+.aw-mehrh.an select{background:var(--pc);color:var(--on-pc)}
+.aw-zahl{margin:0 4px 8px;font-size:13px;color:var(--on-sv)}
+.aw-weiter{display:block;margin:14px auto 4px;height:44px;border-radius:22px;padding:0 22px}
+.aw-g .mat-foto.aw-kat{background:#fff}.aw-g .mat-foto.aw-kat img{width:100%;height:100%;object-fit:contain}
+.aw-g.an{background:var(--pc);color:var(--on-pc)}.aw-g.an small{color:inherit;opacity:.8}
+.aw-selz{position:absolute;top:14px;right:14px;min-width:32px;height:28px;display:grid;place-items:center;padding:0 8px;border-radius:14px;background:var(--primary);color:var(--on-primary);font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+.aw-g.an .aw-anz{display:none}
+.aw-wahlb{display:flex;align-items:center;gap:12px;margin:0 12px;padding:8px 8px 8px 8px;border-radius:24px;background:var(--pc);color:var(--on-pc)}
+.aw-wahlb[hidden]{display:none}
+.aw-wb-bild{flex:none;width:52px;height:52px}.aw-wb-bild .aw-gb{display:grid;place-items:center;width:52px;height:52px;border-radius:14px;padding:3px;box-sizing:border-box;background:#fff;margin:0}.aw-wb-bild img{width:100%;height:100%;object-fit:contain}.aw-wb-bild .aw-g-icb{background:var(--sc-high)}.aw-wb-bild .aw-svg{width:34px;height:34px}
+.aw-wb-t{flex:1;min-width:0;display:flex;flex-direction:column}.aw-wb-t b{font-size:15px;font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.aw-wb-t small{font-size:12.5px;line-height:1.35;opacity:.85}
+.aw-step{flex:none;display:flex;align-items:center;gap:2px;background:var(--surface);color:var(--on-surface);border-radius:24px;padding:3px}
+.aw-step button{width:42px;height:42px;border:0;border-radius:21px;background:transparent;color:inherit;font:700 22px/1 Manrope,system-ui,sans-serif;cursor:pointer}.aw-step button:disabled{opacity:.35;cursor:default}
+.aw-step b{min-width:28px;text-align:center;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.aw-wb-ak{flex:none;display:flex;align-items:center;gap:4px}.aw-wb-ak .btn-filled{height:48px;border-radius:24px;padding:0 22px;box-shadow:none}.aw-wb-ak .btn-text{color:inherit}
+@media (max-width:699px){.aw-wahlb:not([hidden])+.aw-fuss .aw-fuss-info{display:none}.aw-tabs button{padding:0 12px}.aw-wahlb{flex-wrap:wrap;gap:8px 10px;margin:0 8px;padding:10px}.aw-wb-t{flex-basis:calc(100% - 64px)}.aw-step{order:3}.aw-wb-ak{order:4;flex:1;justify-content:flex-end}}
+@media (min-width:700px) and (max-width:1023px),(min-width:700px) and (hover:none){.dlg.aw{width:min(980px,calc(100% - 40px))}.aw-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}}
+@media (min-width:1024px) and (hover:hover) and (pointer:fine){.aw-wahlb{margin:0 24px}}
 .aw-serie{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 12px}.aw-serie button{flex:none;height:36px;padding:0 14px;border:0;border-radius:18px;background:var(--sc-high);color:var(--on-surface);font:inherit;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}.aw-serie button[aria-pressed="true"]{background:var(--pc);color:var(--on-pc)}
 /* Ableiter-Bilder: fester Rahmen, Bild darf nie herausragen (Max 18.11.2026) */
 .aw-pos{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;padding:4px 4px 4px 16px;border-radius:16px;background:var(--sc-high);font-size:14px}.aw-pos .btn-text{flex:none}
