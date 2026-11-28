@@ -53,7 +53,7 @@ document.addEventListener("input",ev=>{const t=ev.target;if(t.id==="gk-q"&&GK){G
  if(t.dataset.gkT&&GK_BLOCK&&t.type!=="checkbox"){const s=GK_BLOCK,a=s.p.terminals.find(a=>a.id===t.dataset.gkT);if(!a)return;s.editBefore=s.editBefore||gkClone(s.p);if(t.dataset.gkField==="label")a.label.text=t.value;else a[t.dataset.gkField]=t.value;gkBlockPreview();}});
 document.addEventListener("change",ev=>{const t=ev.target;if(GK&&["gk-manufacturer","gk-category"].includes(t.id)){GK[t.id.slice(3)]=t.value;GK.limit=48;gkGrid();}
  if(t.dataset.gkT&&GK_BLOCK)gkBlockChange(p=>{const a=p.terminals.find(a=>a.id===t.dataset.gkT),k=t.dataset.gkField;if(k==="label")a.label.text=t.value;else if(k==="locked")a.label.locked=t.checked;else a[k]=t.value;});});
-document.addEventListener("click",ev=>{const b=ev.target.closest?.('[data-act^="gk"],[data-act="legProdukt"]');if(!b||b.disabled)return;const act=b.dataset.act,id=b.dataset.id;if(act==="gkHoch")return; /* Hochladen hat einen eigenen Handler (weiter unten) */
+document.addEventListener("click",ev=>{const b=ev.target.closest?.('[data-act^="gk"],[data-act="legProdukt"]');if(!b||b.disabled)return;const act=b.dataset.act,id=b.dataset.id;if(act==="gkHoch"||act==="gkHochStop"||act==="gkHochNeu")return; /* Hochladen hat einen eigenen Handler (weiter unten) */
  if(act==="legProdukt"){const e=legAkt()&&legE(legAkt()).find(e=>e.id===id);if(!e?.katalog)return;ev.stopImmediatePropagation();gkDetail(id);return;}
  ev.stopImmediatePropagation();ev.preventDefault();try{switch(act){
  case "gkOpen":gkOpen();break;case "gkMehr":GK.limit+=48;gkGrid();break;case "gkWahl":gkWahl(b.dataset.v);break;
@@ -72,35 +72,64 @@ document.addEventListener("click",ev=>{const b=ev.target.closest?.('[data-act^="
 },true);
 
 /* ===== Katalogbilder in den SharePoint laden (Entwickler, 28.11.2026) =====
-   Die Bilder liegen nicht öffentlich auf dem Server. Der Entwickler wählt einmal den Ordner „Katalog“ vom Laptop; jede SVG-/PNG-Datei wird
-   über ihre SHA-256-Prüfsumme einem Eintrag des Index zugeordnet und als „katalog~assets~<id>.<endung>“ nach „_App/Bilder“ geladen.
-   Schon vorhandene Bilder werden übersprungen. Danach liefert der Service Worker sie wie alle Produktbilder aus (nur nach der Anmeldung). */
-const GK_HOCH={laeuft:false,gesamt:0,fertig:0,neu:0,da:0,fremd:0,fehler:0};
+   Die Bilder liegen nicht öffentlich auf dem Server. Eigene Seite im Labor („Gerätekatalog-Bilder“): Stand je Hersteller, Ordner „Katalog“
+   vom Laptop wählen, Fortschritt live. Jede SVG-/PNG-Datei wird über ihre SHA-256-Prüfsumme einem Index-Eintrag zugeordnet und als
+   „katalog~assets~<id>.<endung>“ nach „_App/Bilder“ geladen; Vorhandenes wird übersprungen. Danach liefert der Service Worker sie wie alle
+   Produktbilder aus (nur nach der Anmeldung). */
+const GK_HOCH={laeuft:false,gesamt:0,fertig:0,neu:0,da:0,fremd:0,fehler:0,start:0,aktuell:"",ende:0,fehlerListe:[]};
 const gkSpName=a=>bspName("/bilder/katalog/"+a.file);
-function gkImSp(){ const L=(typeof BSP!=="undefined"&&BSP.liste)||{}; return GK_INDEX.filter(a=>L[bspPfad(gkSpName(a))]).length; }
+const gkSpDa=a=>{ const L=(typeof BSP!=="undefined"&&BSP.liste)||{}; return !!L[bspPfad(gkSpName(a))]; };
+function gkImSp(){ return GK_INDEX.filter(gkSpDa).length; }
+const gkTsd=n=>Number(n||0).toLocaleString("de-DE");
 function gkUploadZeile(){ if(!GK_INDEX.length) return ""; const n=gkImSp(), U=GK_HOCH;
-  return `<div class="li" role="button" tabindex="0" data-act="gkHoch"><span class="av">${icon("upload")}</span><span class="lt"><span class="h">Gerätekatalog-Bilder hochladen</span><span class="s">${esc(U.laeuft?`Läuft … ${U.fertig} von ${U.gesamt} Dateien geprüft · ${U.neu} hochgeladen`:`${n.toLocaleString("de-DE")} von ${GK_INDEX.length.toLocaleString("de-DE")} im SharePoint – Ordner „Katalog“ vom Laptop wählen`)}</span></span>${icon("chev")}</div>`; }
+  return `<div class="li" role="button" tabindex="0" data-act="nav:gkbilder"><span class="av">${icon("upload")}</span><span class="lt"><span class="h">Gerätekatalog-Bilder</span><span class="s">${esc(U.laeuft?`Wird hochgeladen … ${gkTsd(U.fertig)} von ${gkTsd(U.gesamt)} geprüft`:`${gkTsd(n)} von ${gkTsd(GK_INDEX.length)} im SharePoint`)}</span></span>${icon("chev")}</div>`; }
+/* Zahlen für die Seite */
+function gkStand(){ const H=new Map(); let da=0; for(const a of GK_INDEX){ const d=gkSpDa(a); if(d) da++; const h=H.get(a.manufacturer)||{n:0,da:0}; h.n++; if(d) h.da++; H.set(a.manufacturer,h); }
+  return {da,n:GK_INDEX.length,H:[...H.entries()].sort((x,y)=>(x[1].n-x[1].da?0:1)-(y[1].n-y[1].da?0:1)||y[1].n-x[1].n)}; }
+const gkDauer=ms=>{ const s=Math.max(0,Math.round(ms/1000)); return s<60?`${s} s`:`${Math.floor(s/60)} min ${s%60} s`; };
+function gkFortHtml(){ const U=GK_HOCH, p=U.gesamt?U.fertig/U.gesamt:0, rest=U.fertig>10?(Date.now()-U.start)/U.fertig*(U.gesamt-U.fertig):0;
+  return `<div class="gk-bar"><i style="width:${(p*100).toFixed(1)}%"></i></div>
+    <div class="gk-zahl"><span><b>${gkTsd(U.fertig)}</b>von ${gkTsd(U.gesamt)} geprüft</span><span><b>${gkTsd(U.neu)}</b>hochgeladen</span><span><b>${gkTsd(U.da)}</b>schon da</span>${U.fremd?`<span><b>${gkTsd(U.fremd)}</b>nicht im Katalog</span>`:""}${U.fehler?`<span class="warn"><b>${gkTsd(U.fehler)}</b>Fehler</span>`:""}</div>
+    <p class="meta" style="margin:8px 4px 0">${U.laeuft?esc(`${U.aktuell?U.aktuell+" · ":""}noch etwa ${gkDauer(rest)} – Fenster bitte offen lassen`):U.ende?esc(`Fertig nach ${gkDauer(U.ende-U.start)}`):""}</p>`; }
+function gkSpView(){ if(typeof istEntwickler!=="function"||!istEntwickler()) return `<div class="narrow"><div class="empty">${icon("lock")}<h2>Nur für Entwickler</h2></div></div>`;
+  const S=gkStand(), U=GK_HOCH, ok=typeof SYNC_ON!=="undefined"&&SYNC_ON&&ME.signedIn, liste=typeof BSP!=="undefined"&&BSP.liste;
+  if(ok&&!liste) setTimeout(()=>bspListe(true).then(()=>{ if(nav.v==="gkbilder") render(); }),0);
+  const p=S.n?S.da/S.n:0;
+  return `<div class="narrow gk-sp">
+    <section class="gk-kopf"><div class="gk-gross"><b>${gkTsd(S.da)}</b><span>von ${gkTsd(S.n)} Bildern im SharePoint</span></div>
+      <div class="gk-bar gross"><i style="width:${(p*100).toFixed(1)}%"></i></div>
+      <p class="meta" style="margin:10px 2px 0">${!ok?"Erst mit dem Firmenkonto anmelden – die Bilder gehen in den SharePoint der Firma.":!liste?"Stand wird geladen …":S.da===S.n?"Alle Katalogbilder sind im SharePoint. Neue Bilder einfach erneut hochladen – Vorhandenes wird übersprungen.":"Ordner „Katalog“ vom Laptop wählen. Die App erkennt jedes Bild an seiner Prüfsumme und lädt nur, was noch fehlt."}</p>
+      <div class="gk-knopf">${U.laeuft?`<button type="button" class="btn-tonal" data-act="gkHochStop">Anhalten</button>`:`<button type="button" class="btn-filled" data-act="gkHoch" ${ok?"":"disabled"}>${icon("upload")}<span>Ordner „Katalog“ wählen</span></button>`}<button type="button" class="btn-text" data-act="gkHochNeu" ${ok?"":"disabled"}>Stand neu laden</button></div></section>
+    ${U.gesamt?`<div class="sec-lbl">${U.laeuft?"Läuft gerade":"Letzter Durchgang"}</div><section class="gk-kopf" id="gkFort">${gkFortHtml()}</section>`:""}
+    ${U.fehlerListe.length?`<div class="sec-lbl">Nicht hochgeladen</div><div class="list">${U.fehlerListe.slice(0,30).map(t=>`<div class="li"><span class="lt"><span class="h">${esc(t[0])}</span><span class="s">${esc(t[1])}</span></span></div>`).join("")}</div>`:""}
+    <div class="sec-lbl">Je Hersteller</div>
+    <div class="gk-her">${S.H.map(([h,x])=>`<div class="gk-hz${x.da===x.n?" voll":""}"><span class="gk-hn">${esc(h)}</span><span class="gk-hb"><i style="width:${(x.da/x.n*100).toFixed(1)}%"></i></span><span class="gk-hw">${gkTsd(x.da)} / ${gkTsd(x.n)}</span></div>`).join("")}</div>
+    <p class="hint">Herkunft und Erlaubnis: 2.046 Grafiken von Electromarker (Nutzung per E-Mail bestätigt), die übrigen eigene Zeichnungen nach Hersteller-Maßen bzw. Hersteller-CAD.</p></div>`; }
+let gkFortT=0;
+function gkFortZeigen(){ if(nav.v!=="gkbilder") return; const n=Date.now(); if(n-gkFortT<250) return; gkFortT=n; const el=document.getElementById("gkFort"); if(el) el.innerHTML=gkFortHtml(); else render(); }
 async function gkHochladen(files){ const U=GK_HOCH; if(U.laeuft) return;
   if(typeof SYNC_ON==="undefined"||!SYNC_ON||!ME.signedIn){ toast("Erst mit dem Firmenkonto anmelden"); return; }
   const F=[...files].filter(f=>/\.(svg|png)$/i.test(f.name)); if(!F.length){ toast("Im gewählten Ordner sind keine SVG- oder PNG-Dateien"); return; }
-  Object.assign(U,{laeuft:true,gesamt:F.length,fertig:0,neu:0,da:0,fremd:0,fehler:0}); toast(`${F.length.toLocaleString("de-DE")} Dateien werden geprüft …`);
+  Object.assign(U,{laeuft:true,stop:false,gesamt:F.length,fertig:0,neu:0,da:0,fremd:0,fehler:0,start:Date.now(),ende:0,aktuell:"",fehlerListe:[]}); render();
   const nachHash=new Map(); GK_INDEX.forEach(a=>{ if(!nachHash.has(a.sha256)) nachHash.set(a.sha256,[]); nachHash.get(a.sha256).push(a); });
   try{ await bspListe(true); const L=BSP.liste||{}; await syncRoot(); const fid=await folderId(BSP_ORDNER,BSP_BIB);
-    const arbeit=async()=>{ while(F.length){ const f=F.shift();
+    const arbeit=async()=>{ while(F.length&&!U.stop){ const f=F.shift(), rel=f.webkitRelativePath||f.name; U.aktuell=rel.split("/").slice(1,3).map(t=>t.replace(/_-_/g," – ").replace(/_/g," ")).join(" › ");
       try{ const buf=await f.arrayBuffer(), h=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",buf)),n=>n.toString(16).padStart(2,"0")).join(""), A=nachHash.get(h);
         if(!A){ U.fremd++; continue; }
         for(const a of A){ const name=gkSpName(a); if(L[bspPfad(name)]){ U.da++; continue; }
           const r=await g(`/drives/${fid}:/${encodeURIComponent(name)}:/content`,{method:"PUT",headers:{"Content-Type":/\.svg$/i.test(a.file)?"image/svg+xml":"image/png"},body:new Blob([buf])});
-          if(r.ok){ U.neu++; L[bspPfad(name)]=1; } else U.fehler++; } }
-      catch(e){ U.fehler++; }
-      finally{ U.fertig++; if(U.fertig%40===0&&typeof nav!=="undefined"&&nav.v==="labor") render(); } } };
+          if(r.ok){ U.neu++; L[bspPfad(name)]=1; } else { U.fehler++; U.fehlerListe.push([rel,`SharePoint meldet ${r.status}`]); } } }
+      catch(e){ U.fehler++; U.fehlerListe.push([rel,e.message||String(e)]); }
+      finally{ U.fertig++; gkFortZeigen(); } } };
     await Promise.all([arbeit(),arbeit(),arbeit(),arbeit()]);
-  }catch(e){ toast("Hochladen abgebrochen: "+(e.message||e)); }
-  U.laeuft=false; await bspListe(true);
-  toast(`${U.neu.toLocaleString("de-DE")} hochgeladen · ${U.da.toLocaleString("de-DE")} waren schon da${U.fremd?` · ${U.fremd} gehören nicht zum Katalog`:""}${U.fehler?` · ${U.fehler} Fehler`:""}`);
-  if(typeof nav!=="undefined"&&nav.v==="labor") render(); }
-document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="gkHoch"]'); if(!b) return; e.preventDefault(); e.stopPropagation();
-  if(typeof istEntwickler!=="function"||!istEntwickler()) return;
-  if(GK_HOCH.laeuft){ toast(`Läuft noch … ${GK_HOCH.fertig} von ${GK_HOCH.gesamt}`); return; }
+  }catch(e){ U.fehlerListe.push(["Abbruch",e.message||String(e)]); toast("Hochladen abgebrochen: "+(e.message||e)); }
+  U.laeuft=false; U.ende=Date.now(); U.aktuell=""; await bspListe(true);
+  toast(U.stop?"Angehalten – beim nächsten Mal geht es mit dem Rest weiter":`${gkTsd(U.neu)} hochgeladen · ${gkTsd(U.da)} waren schon da${U.fehler?` · ${U.fehler} Fehler`:""}`);
+  if(nav.v==="gkbilder"||nav.v==="labor") render(); }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="gkHoch"],[data-act="gkHochStop"],[data-act="gkHochNeu"]'); if(!b||b.disabled) return; e.preventDefault(); e.stopPropagation();
+  if(typeof istEntwickler!=="function"||!istEntwickler()) return; const a=b.dataset.act;
+  if(a==="gkHochStop"){ GK_HOCH.stop=true; toast("Wird angehalten …"); return; }
+  if(a==="gkHochNeu"){ bspListe(true).then(()=>{ render(); toast("Stand aktualisiert"); }); return; }
+  if(GK_HOCH.laeuft) return;
   const i=document.createElement("input"); i.type="file"; i.multiple=true; i.webkitdirectory=true; i.hidden=true; document.body.appendChild(i);
   i.onchange=()=>{ const fs=i.files; i.remove(); if(fs&&fs.length) gkHochladen(fs); }; i.click(); },true);

@@ -1,2 +1,24 @@
 .gk-filter{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:12px 0}.gk-field{display:flex;flex:1;min-width:130px;flex-direction:column;gap:6px;font-size:13px}.gk-field input,.gk-field select{font:inherit;color:var(--on-surface,inherit);background:var(--sc-highest,#eee);border:0;border-radius:12px;padding:12px;min-width:0;width:100%;box-sizing:border-box}.gk-preview{text-align:center;background:white;border-radius:20px;padding:20px}.gk-preview img{max-width:100%;height:240px;object-fit:contain}.gk-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.gk-terminal{display:flex;gap:8px;align-items:end;flex-wrap:wrap;padding:12px;background:var(--sc-high,#f2f2f2);border-radius:16px;margin-bottom:8px}.gk-terminal>b{align-self:center}.gk-terminal .gk-field{min-width:100px}.gk-block-preview{overflow:auto;background:white;border-radius:16px;padding:16px;color:#222;min-height:160px}.gk-block-preview>svg{height:220px;width:auto;max-width:none}#gk-grid .aw-gb img{width:100%;height:100%;object-fit:contain}#gk-grid .aw-gb{aspect-ratio:4/3;background:white}
 .gk-field select{max-width:100%}#gk-grid .aw-gb{display:block;position:relative;width:100%;flex:none;overflow:hidden}#gk-grid .aw-gb img{position:absolute;inset:0}
+/* Seite „Gerätekatalog-Bilder“ im Labor */
+.gk-sp .gk-kopf{padding:18px 18px 16px;border-radius:24px;background:var(--sc-low)}
+.gk-gross{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.gk-gross b{font-size:40px;font-weight:800;line-height:1}
+.gk-gross span{font-size:15px;font-weight:600;color:var(--on-sv)}
+.gk-bar{height:8px;margin-top:12px;border-radius:4px;background:var(--sc-high);overflow:hidden}
+.gk-bar.gross{height:12px;border-radius:6px}
+.gk-bar i{display:block;height:100%;border-radius:inherit;background:var(--primary);transition:width .3s}
+.gk-knopf{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.gk-knopf .btn-filled .ic{width:20px;height:20px}
+.gk-zahl{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.gk-zahl span{display:inline-flex;align-items:baseline;gap:6px;padding:8px 12px;border-radius:14px;background:var(--surface);font-size:13px;color:var(--on-sv)}
+.gk-zahl b{font-size:18px;color:var(--on-surface)}
+.gk-zahl .warn b{color:var(--err)}
+.gk-her{display:flex;flex-direction:column;gap:2px;padding:6px;border-radius:24px;background:var(--sc-low)}
+.gk-hz{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,2fr) 90px;align-items:center;gap:12px;padding:8px 10px;border-radius:14px;font-size:14px}
+.gk-hn{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gk-hb{height:6px;border-radius:3px;background:var(--sc-high);overflow:hidden}
+.gk-hb i{display:block;height:100%;background:var(--primary)}
+.gk-hz.voll .gk-hb i{background:var(--ok)}
+.gk-hw{text-align:right;font-variant-numeric:tabular-nums;color:var(--on-sv);font-size:13px}
+@media (max-width:520px){.gk-hz{grid-template-columns:minmax(0,1fr) 80px}.gk-hb{grid-column:1/-1;order:3}}
