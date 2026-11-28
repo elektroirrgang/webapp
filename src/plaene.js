@@ -89,6 +89,11 @@ async function pnMalen(p,s,cv){ const o=await pnDok(p); cv.width=Math.max(1,Math
   else x.drawImage(o.img,0,0,cv.width,cv.height); return cv; }
 /* Größe der Seite in Planpunkten (beim Anlegen) */
 async function pnGroesse(p){ const o=await pnDok(p); if(o.art==="pdf"){ const v=(await o.pdf.getPage(p.seite||1)).getViewport({scale:1}); return [v.width,v.height,o.pdf.numPages]; } return [o.img.naturalWidth,o.img.naturalHeight,1]; }
+/* Maßstab aus dem Plantext lesen („M 1:50“, „Maßstab 1:100“) – PDF-Punkte sind echte Papiermaße (1 pt = 0,3528 mm) */
+const PN_M_OK=[10,20,25,40,50,75,100,125,200,250,500,1000];
+async function pnMassAusPdf(p){ try{ const o=await pnDok(p); if(o.art!=="pdf") return null; const pg=await o.pdf.getPage(p.seite||1), t=(await pg.getTextContent()).items.map(x=>x.str).join(" ");
+    let m=t.match(/(?:\bM\.?|Ma(?:ß|ss)stab)\s*1\s*:\s*(\d{1,4})\b/i); if(!m||!PN_M_OK.includes(+m[1])) m=[...t.matchAll(/\b1\s*:\s*(\d{2,4})\b/g)].find(x=>PN_M_OK.includes(+x[1]));
+    if(!m) return null; const f=+m[1]; return {a:[0,0],b:[100,0],m:+(100*f*.0254/72).toFixed(6),auto:"1:"+f}; }catch(e){ return null; } }
 /* Vorschaubild für die Liste */
 const PN_VS=new Map();
 async function pnVorschau(p){ const k=p.dateiId+":"+(p.seite||1); if(PN_VS.has(k)) return PN_VS.get(k);
@@ -117,6 +122,11 @@ function pnRaumErkennen(p,quelle,pt){
   const s=cv.width/p.W, w=cv.width, h=cv.height, n=w*h, dat=cx0.getImageData(0,0,w,h).data;
   const ink=new Uint8Array(n); for(let i=0;i<n;i++){ const r=dat[i*4],g=dat[i*4+1],b=dat[i*4+2]; ink[i]=(r*.3+g*.59+b*.11)<190?1:0; }
   const mpp=pnMpp(p), pxm=mpp?s/mpp:0; /* Pixel je Meter */
+  /* Trennlinien (breite Öffnungen) wie eine Wand eintragen */
+  const dicke=Math.max(2,Math.round(pxm?.12*pxm:3));
+  for(const [a,b] of (p.trenn||[])){ const L=Math.hypot(b[0]-a[0],b[1]-a[1])*s, st=Math.max(1,Math.ceil(L));
+    for(let k=0;k<=st;k++){ const x=Math.round((a[0]+(b[0]-a[0])*k/st)*s), y=Math.round((a[1]+(b[1]-a[1])*k/st)*s);
+      for(let dy=-dicke;dy<=dicke;dy++) for(let dx=-dicke;dx<=dicke;dx++){ const xx=x+dx, yy=y+dy; if(xx>=0&&yy>=0&&xx<w&&yy<h&&dx*dx+dy*dy<=dicke*dicke) ink[yy*w+xx]=1; } } }
   if(pxm){ const rc=Math.max(1,Math.round(.04*pxm)), ro=Math.floor(.03*pxm);
     if(ro>=1){ const A=pnAbstand(ink,w,h), zu=new Uint8Array(n); for(let i=0;i<n;i++) zu[i]=A[i]<=3*rc?1:0;           /* Schraffur zu Fläche */
       const B=pnAbstand(zu.map(v=>1-v),w,h), gz=new Uint8Array(n); for(let i=0;i<n;i++) gz[i]=B[i]>3*rc?1:0;
@@ -189,6 +199,7 @@ async function pnNeuAnlegen(f,F){ const o=PN_NEU||{}, el=o.eltern&&pnVon(o.elter
   const p={id:uid(),ortId,titel:F.pnT||String(f.name||"Plan").replace(/\.[^.]+$/,""),art:el?"raum":(o.art||"grundriss"),dateiId:d.id,seite:1,raeume:[]};
   if(el) p.eltern={planId:el.id,raumId:o.eltern.raumId};
   try{ const [W,H,n]=await pnGroesse(p); p.W=+W.toFixed(1); p.H=+H.toFixed(1); p.seiten=n; }catch(e){ toast(e.message||"Datei nicht lesbar"); return; }
+  const ma=await pnMassAusPdf(p); if(ma) p.mass=ma;
   saveRec("plaene",p,true); closeOverlays(); pnOeffnen(p.id,el?{v:"plan",id:el.id}:null);
   if(p.seiten>1) setTimeout(()=>toast(`Das PDF hat ${p.seiten} Seiten – Seite 1 ist geöffnet, wechseln über ⋮`),400); }
 
@@ -204,11 +215,12 @@ function planView(p){ const ans=pnAnsicht(p), off=pnOffen(p.id), darf=pnDarf(p);
   const zeichnen=PN.pts&&PN.pts.length;
   return `<div class="pn-seite">
     <div class="pn-kopf">${seg("pnAns",ans,[["fach","Fachplan"],["bau","Baustelle"]],"pn-ans")}<span style="flex:1"></span>
-      ${!p.mass&&darf?`<button type="button" class="btn-tonal pn-knopf" data-act="pnMassStart">${icon("pnMass")}Maßstab festlegen</button>`:p.mass?`<span class="pn-mst">${icon("pnMass")}Maßstab gesetzt</span>`:""}
+      ${!p.mass&&darf?`<button type="button" class="btn-tonal pn-knopf" data-act="pnMassStart">${icon("pnMass")}Maßstab festlegen</button>`:p.mass?`<button type="button" class="pn-mst" data-act="${darf?"pnMassStart":"pnNix"}">${icon("pnMass")}${p.mass.auto?`Maßstab ${p.mass.auto} aus dem Plan`:"Maßstab gemessen"}</button>`:""}
       <button type="button" class="icon-btn" data-act="pnMenue" aria-label="Weitere Optionen">${icon("more")}</button></div>
     <div class="pn-werk">${werk.map(([k,t,i])=>`<button type="button" class="pn-w${PN.werk===k?" an":""}" data-act="pnWerk" data-v="${k}">${icon(i)}<span>${t}</span></button>`).join("")}</div>
     ${symLeiste}${gwLeiste}
-    ${PN.mass?`<p class="pn-hw an">${PN.mass.length<2?"Ersten Punkt einer bekannten Strecke antippen (z. B. eine bemaßte Wand).":"Zweiten Punkt antippen."}</p>`:hinweis?`<p class="pn-hw">${esc(hinweis)}</p>`:""}
+    ${PN.werk==="raum"&&darf&&!PN.mass?`<div class="pn-trenn"><button type="button" class="pn-w${PN.trenn?" an":""}" data-act="pnTrenn">${icon("pnLeitung")}<span>Trennlinie</span></button>${(p.trenn||[]).length?`<button type="button" class="btn-text" data-act="pnTrennWeg">Trennlinien löschen (${p.trenn.length})</button>`:""}</div>`:""}
+    ${PN.trenn?`<p class="pn-hw an">${PN.trenn.length?"Zweiten Punkt auf der anderen Seite der Öffnung antippen.":"Breite Öffnung abtrennen: ersten Punkt an einer Wandkante antippen."}</p>`:PN.mass?`<p class="pn-hw an">${PN.mass.length<2?"Ersten Punkt einer bekannten Strecke antippen (z. B. eine bemaßte Wand).":"Zweiten Punkt antippen."}</p>`:hinweis?`<p class="pn-hw">${esc(hinweis)}</p>`:""}
     <div class="pn-buehne${ans==="bau"?" bau":""}" id="pnWrap"><div class="pn-laden">${PN.fehler?esc(PN.fehler):"Plan wird geladen …"}</div></div>
     <div class="pn-unten">
       <div class="pn-zoom"><button type="button" class="icon-btn" data-act="pnZoom" data-v="1.4" aria-label="Vergrößern">${icon("pnPlus")}</button><button type="button" class="icon-btn" data-act="pnZoom" data-v="0.7" aria-label="Verkleinern">${icon("pnMinus")}</button><button type="button" class="icon-btn" data-act="pnFit" aria-label="Ganzen Plan zeigen">${icon("pnFit")}</button></div>
@@ -236,7 +248,8 @@ async function pnMount(){ if(nav.v!=="plan") return; const w=document.getElement
   try{ const box=w.getBoundingClientRect(), s=Math.min(Math.sqrt(12e6/(p.W*p.H)),Math.max(2,2*(box.width||800)/p.W*devicePixelRatio)), cv=el.querySelector("canvas");
     await pnMalen(p,s,cv); cv.style.width=p.W+"px"; cv.style.height=p.H+"px"; PN.cv=cv; PN.cvId=p.id; PN.s=s;
     const fl=el.querySelector(".pn-flaeche"); fl.style.width=p.W+"px"; fl.style.height=p.H+"px";
-    if(!PN.z) pnEinpassen(); pnSvg(); pnTransform(); }
+    if(!PN.z) pnEinpassen(); pnSvg(); pnTransform();
+    if(!p.mass&&!p.massGeprueft&&pnDarf(p)){ const ma=await pnMassAusPdf(p); p.massGeprueft=true; if(ma){ p.mass=ma; saveRec("plaene",p); render(); toast(`Maßstab ${ma.auto} aus dem Plan übernommen`); } } }
   catch(e){ PN.fehler=e.message||"Plan konnte nicht geladen werden"; const l=w.querySelector(".pn-laden"); if(l) l.textContent=PN.fehler; else w.innerHTML=`<div class="pn-laden">${esc(PN.fehler)}</div>`; }
   finally{ PN.laedt=false; } }
 function pnEinpassen(){ const p=pnVon(PN.id), w=document.getElementById("pnWrap"); if(!p||!w) return; const b=w.getBoundingClientRect();
@@ -262,7 +275,9 @@ function pnSvg(){ const p=pnVon(PN.id), svg=PN.el&&PN.el.querySelector(".pn-svg"
     return ""; }).join("");
   const offen=PN.pts&&PN.pts.length?`<polyline points="${PN.pts.map(q=>q.join(",")).join(" ")}" fill="${PN.werk==="raum"?"rgba(215,38,46,.12)":"none"}" stroke="${PN.werk==="raum"?"#D7262E":(PN_GW[PN.gw]||PN_GW.sonst)[1]}" stroke-width="${sw*2.2}" stroke-linejoin="round"/>${PN.pts.map(q=>`<circle cx="${q[0]}" cy="${q[1]}" r="${sw*3}" fill="#fff" stroke="#D7262E" stroke-width="${sw}"/>`).join("")}`:"";
   const mass=PN.mass&&PN.mass.length?PN.mass.map(q=>`<circle cx="${q[0]}" cy="${q[1]}" r="${sw*4}" fill="#D7262E"/>`).join(""):"";
-  svg.innerHTML=`<g class="pn-rr">${raeume}</g><g>${ein}</g><g>${offen}${mass}</g>`; }
+  const tl=(PN.werk==="raum"||!bau)?(p.trenn||[]).map(([a,b])=>`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#D7262E" stroke-width="${sw*2}" stroke-dasharray="${sw*4} ${sw*3}" stroke-linecap="round"/>`).join("")
+    +(PN.trenn&&PN.trenn.length?PN.trenn.map(q=>`<circle cx="${q[0]}" cy="${q[1]}" r="${sw*4}" fill="#D7262E"/>`).join(""):""):"";
+  svg.innerHTML=`<g class="pn-rr">${raeume}${tl}</g><g>${ein}</g><g>${offen}${mass}</g>`; }
 
 /* ---- Gesten: ein Finger/Maus = Werkzeug, zwei Finger = verschieben und zoomen, Mausrad = zoomen ---- */
 function pnGesten(el){ const P=new Map(); let start=null, pinch=null, strich=null;
@@ -287,6 +302,8 @@ function pnGesten(el){ const P=new Map(); let start=null, pinch=null, strich=nul
 /* Antippen je Werkzeug */
 async function pnTipp(pt,ev){ const p=pnVon(PN.id); if(!p) return;
   if(PN.mass){ PN.mass.push(pt); pnSvg(); if(PN.mass.length===2) pnMassDlg(); return; }
+  if(PN.trenn){ PN.trenn.push([+pt[0].toFixed(1),+pt[1].toFixed(1)]); if(PN.trenn.length<2){ pnSvg(); render(); return; }
+    p.trenn=[...(p.trenn||[]),PN.trenn]; PN.trenn=null; saveRec("plaene",p); render(); toast("Trennlinie gesetzt – jetzt den Raum antippen"); return; }
   if(PN.werk==="hand"){ const h=document.elementFromPoint(ev.clientX,ev.clientY), t=h&&h.closest&&h.closest("[data-e]"); if(t){ PN.sel=t.dataset.e; pnSvg(); pnEDlg(t.dataset.e); return; }
     const r=pnRaumVon(p,pt); PN.sel=null; if(r){ PN.raumSel=r.id; pnSvg(); pnRaumDlg(r.id); } else { PN.raumSel=null; pnSvg(); } return; }
   if(PN.werk==="sym"){ const [,,,hStd]=pnSymDef(PN.sym); pnEintrag({typ:"sym",sym:PN.sym,x:+pt[0].toFixed(1),y:+pt[1].toFixed(1),h:PN.h===undefined?hStd:PN.h}); return; }
@@ -295,6 +312,8 @@ async function pnTipp(pt,ev){ const p=pnVon(PN.id); if(!p) return;
   if(PN.werk==="raum"){
     if(PN.pts&&PN.pts.length){ const a=PN.pts[0], nah=Math.hypot(pt[0]-a[0],pt[1]-a[1])*PN.z<18; if(nah&&PN.pts.length>2){ pnRaumNeu(PN.pts); return; } PN.pts.push([+pt[0].toFixed(1),+pt[1].toFixed(1)]); pnSvg(); if(PN.pts.length===1) render(); return; }
     const da=pnRaumVon(p,pt); if(da){ PN.raumSel=da.id; pnSvg(); pnRaumDlg(da.id); return; }
+    if(!p.mass){ PN.ohneMassPt=pt; dialog("Maßstab fehlt",`<p class="sup" style="margin:0">Ohne Maßstab weiß die App nicht, wie breit eine Tür ist – Räume laufen dann durch Türen ineinander. Einmal eine bemaßte Wand antippen reicht.</p>`,
+      `<span style="flex:1"></span><button class="btn-text" data-act="pnEckenStart">Ecken antippen</button><button class="btn-text" data-act="pnMassStart">Maßstab festlegen</button>`); return; }
     let poly=null; try{ poly=PN.cv&&pnRaumErkennen(p,PN.cv,pt); }catch(e){ poly=null; }
     if(poly){ PN.pts=null; pnRaumNeu(poly); }
     else { PN.pts=[[+pt[0].toFixed(1),+pt[1].toFixed(1)]]; render(); toast("Raum nicht eindeutig erkannt – Ecken nacheinander antippen, zum Schluss den ersten Punkt"); } } }
@@ -349,7 +368,7 @@ document.addEventListener("click",async e=>{ const b=e.target.closest&&e.target.
     case "pnAuf": pnOeffnen(id); return;
     case "pnAufZ": closeOverlays(); pnOeffnen(id,{v:"plan",id:PN.id}); return;
     case "pnAns": PN.ans=b.dataset.v; PN.sel=null; render(); return;
-    case "pnWerk": PN.werk=b.dataset.v; PN.pts=null; PN.sel=null; PN.mass=null; render(); return;
+    case "pnWerk": PN.werk=b.dataset.v; PN.pts=null; PN.sel=null; PN.mass=null; PN.trenn=null; render(); return;
     case "pnSymW": PN.sym=b.dataset.v; PN.h=pnSymDef(PN.sym)[3]; render(); return;
     case "pnHoehe": PN.h=b.dataset.v===""?null:b.dataset.v==="decke"?"decke":+b.dataset.v; render(); return;
     case "pnGw": PN.gw=b.dataset.v; render(); return;
@@ -360,9 +379,13 @@ document.addEventListener("click",async e=>{ const b=e.target.closest&&e.target.
     case "pnUndo": { let x=null; while(PN_UNDO.length&&!x){ const r=DB.planeintraege.get(PN_UNDO.pop()); if(r&&!r.deleted&&pnDarfE(r)) x=r; } if(!x){ toast("Nichts zum Rückgängigmachen"); return; } x.deleted=true; saveRec("planeintraege",x); pnSvg(); render(); toast("Rückgängig gemacht"); return; }
     case "pnMenue": pnMenue(); return;
     case "pnMassStart": closeOverlays(); PN.mass=[]; PN.werk="hand"; render(); return;
+    case "pnNix": return;
+    case "pnTrenn": PN.trenn=PN.trenn?null:[]; PN.pts=null; render(); return;
+    case "pnTrennWeg": if(!p||!pnDarf(p)) return; p.trenn=[]; saveRec("plaene",p); render(); toast("Trennlinien gelöscht"); return;
+    case "pnEckenStart": closeOverlays(); if(PN.ohneMassPt){ PN.pts=[PN.ohneMassPt.map(v=>+v.toFixed(1))]; PN.ohneMassPt=null; } render(); return;
     case "pnMassAbbr": PN.mass=null; closeOverlays(); render(); return;
     case "pnMassOk": { const m=parseFloat(String(formVals().pnMm||"").replace(",",".")); if(!(m>0)){ toast("Bitte die Länge in Metern eingeben"); return; } if(!p||!pnDarf(p)) return;
-      p.mass={a:PN.mass[0].map(v=>+v.toFixed(1)),b:PN.mass[1].map(v=>+v.toFixed(1)),m}; saveRec("plaene",p); PN.mass=null; closeOverlays(); render(); toast("Maßstab gespeichert – Flächen und Längen werden berechnet"); return; }
+      p.mass={a:PN.mass[0].map(v=>+v.toFixed(1)),b:PN.mass[1].map(v=>+v.toFixed(1)),m}; saveRec("plaene",p); PN.mass=null; PN.werk="raum"; closeOverlays(); render(); toast("Maßstab gespeichert – jetzt Räume antippen"); return; }
     case "pnRaumAbbr": PN.neuPoly=null; closeOverlays(); pnSvg(); return;
     case "pnRaumOk": { const n=String(formVals().pnRn||"").trim(); if(!n){ toast("Bitte einen Namen eingeben"); return; } if(!p||!PN.neuPoly) return;
       p.raeume=[...(p.raeume||[]),{id:uid(),name:n,poly:PN.neuPoly}]; PN.neuPoly=null; saveRec("plaene",p); closeOverlays(); PN.werk="raum"; render(); toast(`${n} angelegt`); return; }
