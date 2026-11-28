@@ -1972,6 +1972,7 @@ function pfadVerlassen(){}
 function pfadTeile(){
   if(nav.v==="standort"){ const s=standortOf(nav.id); return kette(s&&s.kundeId); }
   if(nav.v==="kunde") return kette();
+  if(nav.v==="gkbilder") return [["Einstellungen",{v:"mehr"}],["Labor",{v:"labor"}]];
   if(MEHR_SUB[nav.v]) return [["Einstellungen",{v:"mehr"}]];
   if(nav.v==="netzkatalog") return [["Netzwerk",{v:"netzwerk"}]];
   if(nav.v==="netzkatmodell") return nav.von==="netzwerk"?[["Netzwerk",{v:"netzwerk"}]]:[["Katalog",{v:"netzkatalog"}]];
@@ -2352,6 +2353,7 @@ function zurueck(){
   if(nav.zur){ go(nav.zur); return; }   /* nach einem Scan: zurück dorthin, wo gescannt wurde */
   if(nav.v==="standort"){ const s=standortOf(nav.id); go(s?{v:"kunde",id:s.kundeId}:{v:"kunden"}); return; }
   if(nav.v==="kunde"){ go({v:"kunden"}); return; }
+  if(nav.v==="gkbilder"){ go({v:"labor"}); return; }
   if(MEHR_SUB[nav.v]){ go({v:"mehr"}); return; }
   if(nav.v==="netzkatmodell"){ go({v:nav.von==="netzwerk"?"netzwerk":"netzkatalog"}); return; }
   if(nav.v==="netzkatalog"){ go({v:"netzwerk"}); return; }
