@@ -2756,3 +2756,34 @@ details.ec-klapp[open]>summary{margin-bottom:12px}
 .hb-lt-jn>div{gap:10px}.hb-lt-k{display:flex;align-items:center;gap:8px}.hb-lt-k svg{width:22px;height:22px;flex:none}
 .hb-text .hb-lt-jn p{margin:0;font-size:15px;font-weight:600;line-height:1.35}
 .hb-jn .hb-lt-k span.hb-jn-k{background:none;padding:0;border-radius:0;font-size:12.5px;margin:0}
+/* ===== Labor (Entwickler, 28.11.2026) ===== */
+.lab-zust{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:4px 0 4px}
+@media (max-width:700px){.lab-zust{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.lab-k{display:flex;flex-direction:column;gap:3px;min-width:0;padding:12px 14px;border-radius:20px;background:var(--sc-low)}
+.lab-k-t{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--on-sv)}
+.lab-k b{font-size:15px;font-weight:700;line-height:1.25;color:var(--on-surface);overflow-wrap:anywhere}
+.lab-k small{font-size:12px;line-height:1.3;color:var(--on-sv);overflow-wrap:anywhere}
+.lab-p{display:inline-block;flex:none;width:8px;height:8px;border-radius:50%;background:var(--outline)}
+.lab-p.ok{background:var(--ok)}.lab-p.wip{background:var(--wip)}.lab-p.err{background:var(--err)}
+.lab-chips{margin:16px 0 0}
+.lab-hw{margin:8px 4px 0;font-size:13px;line-height:1.45;color:var(--on-sv)}
+.lab-verlauf{margin-top:8px;padding:12px 14px;border-radius:20px;background:var(--sc-low)}
+.lab-vk{font-size:12px;font-weight:600;color:var(--on-sv);margin-bottom:4px}
+.lab-vz{display:flex;align-items:flex-start;gap:10px;padding:6px 0}
+.lab-vz .lab-p{margin-top:6px}
+.lab-vz span{display:flex;flex-direction:column;min-width:0}
+.lab-vz b{font-size:14px;font-weight:600}
+.lab-vz small{font-size:12px;color:var(--on-sv);overflow-wrap:anywhere}
+.lab-fl{display:flex;flex-direction:column;gap:8px}
+.lab-fz{padding:10px 12px;border-radius:16px;background:var(--sc-low);min-width:0}
+.lab-fk{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.lab-fk small,.lab-fo{font-size:12px;color:var(--on-sv)}
+.lab-fm{margin:4px 0 2px;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+.lab-fs{margin:6px 0 0;padding:8px 10px;border-radius:10px;background:var(--sc);font:11px/1.4 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--on-sv)}
+.lab-tab{display:flex;flex-direction:column;gap:2px}
+.lab-tr{display:grid;grid-template-columns:minmax(0,1fr) repeat(4,58px);gap:6px;padding:7px 10px;border-radius:10px;font-size:14px}
+.lab-tr:nth-child(even){background:var(--sc-low)}
+.lab-tr.kopf{font-size:12px;font-weight:600;color:var(--on-sv);background:none}
+.lab-tr span{overflow-wrap:anywhere}.lab-tr span+span{text-align:right}
+.lab-tr span.warn{color:var(--err);font-weight:700}
+.lab-ta{width:100%;height:260px;border:0;border-radius:12px;padding:10px;background:var(--sc-low);color:var(--on-surface);font:12px/1.4 ui-monospace,Consolas,monospace}

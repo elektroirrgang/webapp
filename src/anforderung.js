@@ -317,6 +317,7 @@ const mlUhr=t=>new Date(t).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-
 function mlTestLesen(){ try{ return JSON.parse(mlLs(ML_TEST)||"null"); }catch(e){ return null; } }
 async function mlTestZeigen(h,txt){ const m={id:"test",von:null,h,s:txt,t:Date.now()}; let sys=false; if(mlPushAn()) sys=await mlSystem([m]);
   if(!sys) mlBanner([m],!(document.visibilityState==="visible"&&document.hasFocus()));
+  if(typeof labTestMerk==="function") labTestMerk(h,sys?`Systemmeldung (${mlWeg})`:mlPushAn()?"nur Banner – Systemmeldung fehlgeschlagen":"Banner in der App (Schalter aus)",mlPushAn()&&!sys?mlFehler||"unbekannt":"");
   if(mlPushAn()&&!sys) toast("Systemmeldung fehlgeschlagen: "+(mlFehler||"unbekannt")); }
 const mlLaeuftSeit=Date.now();
 function mlTestPruefen(){ const T=mlTestLesen(); if(!T||Date.now()<T.f) return; mlLs(ML_TEST,"");
@@ -338,6 +339,7 @@ document.addEventListener("click",async e=>{ const b=e.target.closest&&e.target.
     ["Schalter in „Mehr“",mlLs(ML_PUSH)==="1"?"an":"aus"],["Service Worker",sw?"aktiv":"fehlt"],["Läuft als",app?"installierte App":"Browser-Tab"]];
   let ok=false; if(mlKannSys()&&Notification.permission==="granted") ok=await mlSystem([{id:"test",von:null,h:"Prüfung",s:"Wenn du das siehst, klappen Benachrichtigungen auf diesem Gerät.",t:Date.now()}]);
   z.push(["Testmeldung",mlKannSys()&&Notification.permission==="granted"?(ok?`abgeschickt (${mlWeg})`:`Fehler: ${mlFehler}`):"nicht möglich ohne Erlaubnis"]);
+  if(typeof labTestMerk==="function") labTestMerk("Prüfung (sofort)",ok?`Systemmeldung (${mlWeg})`:"keine Systemmeldung",mlKannSys()&&Notification.permission==="granted"&&!ok?mlFehler:mlKannSys()&&Notification.permission==="granted"?"":"keine Erlaubnis");
   const tipp=win?`<p><b>Kam trotz „abgeschickt“ nichts an?</b> Dann hält Windows sie zurück:</p><ul><li>Windows-Einstellungen › System › Benachrichtigungen: oben „Benachrichtigungen“ an, darunter <b>Google Chrome</b>${app?" und <b>"+esc(document.title.split(" · ")[0])+"</b>":""} an</li><li>„Nicht stören“ bzw. „Fokus“ aus</li><li>In Chrome: Einstellungen › Datenschutz › Website-Einstellungen › Benachrichtigungen – diese Seite muss erlaubt sein</li></ul>`
     :mac?`<p><b>Kam trotz „abgeschickt“ nichts an?</b> Systemeinstellungen › Mitteilungen › Google Chrome (bzw. die App) erlauben, „Nicht stören“/Fokus aus.</p>`:`<p>Kam trotz „abgeschickt“ nichts an, blockiert das Betriebssystem die Meldungen (Einstellungen › Mitteilungen).</p>`;
   dialog("Benachrichtigungen prüfen",`<div class="list">${z.map(([k,v])=>`<div class="li"><span class="lt"><span class="h">${esc(v)}</span><span class="s">${esc(k)}</span></span></div>`).join("")}</div><div style="margin-top:12px">${tipp}</div>`,`<button class="btn-text" data-act="cancel">Schließen</button>`); },true);
