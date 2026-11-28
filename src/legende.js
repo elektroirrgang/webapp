@@ -239,6 +239,7 @@ function legHagerBild(e,w){ const m=String(e.mat||"").toUpperCase().replace(/[\s
 function legGeraetBild(e,x,w,y0,P,bild){ if(e.katalog) return gkBild(e,x,y0,P);
   { const ka=typeof gkFuerEintrag==="function"&&gkFuerEintrag(e); if(ka) return gkBildAsset(ka,x,w,y0,P); }   /* Katalogbild, wenn es genau zum Artikel passt (Max 28.11.2026) */
   const H=P*400/92, B=bild||"../bilder/vt/";
+  if(e.art==="res"){ const hF=H*.52; return `<rect x="${x+4}" y="${(y0+H/2-hF/2).toFixed(1)}" width="${w*P-8}" height="${hF.toFixed(1)}" rx="3" fill="none" stroke="#A9AEB6" stroke-width="1.5" stroke-dasharray="5 4"/>`; }   /* Leerplatz: kein Gerätebild, keine Blindabdeckung */
   if(e.art==="kl"){ const fb=e.farbe||(/pe/i.test(e.bez||"")?"pe":/^\s*a\b|abzweig/i.test(e.bez||"")?"a":"n"), h=P*717/140; /* farbe geht beim Speichern verloren – Bezeichnung entscheidet; unverzerrt, höher als ein Automat */
     return `<image href="${B}pollmann-${fb==="pe"?"pe":fb==="a"?"a":"n"}14s.png" x="${x}" y="${(y0+H/2-h/2).toFixed(1)}" width="${w*P}" height="${h.toFixed(1)}"/>`; }
   /* Aufdruck: Nennstrom bzw. RCD-Daten */
@@ -941,7 +942,8 @@ function legWsArtikelNeu(e){ if(!e.mat||typeof awGeraete!=="function") return; c
   const neu=G.find(m=>{ const t=matTech(m); if(!t||m.hersteller!==alt.hersteller) return false;
     if(e.art==="rcd") return t.art==="rcd"&&+t.in===+S.amp&&+t.idn===+S.idn&&String(t.typ||"A").toUpperCase()===S.typ;
     return t.art==="ls"&&String(t.char).toUpperCase()===S.char&&+t.in===+S.amp&&+t.pole===pol&&(!se||(matSerie(m)||[])[0]===se); });
-  if(neu){ e.mat=matHnr(neu.herstellerNr); delete e.serie; } else { const sm=String(e.mat).match(/^(M[BC][SN])/); if(sm&&alt.hersteller==="Hager"&&e.art==="sk") e.serie={h:"Hager",m:sm[1]}; delete e.mat; } }
+  if(neu){ e.mat=matHnr(neu.herstellerNr); delete e.serie; }
+  else { const n=String(e.mat), sm=n.match(/^(M[BC][SN])/); if(e.art==="sk"){ if(sm&&alt.hersteller==="Hager") e.serie={h:"Hager",m:sm[1]}; else if(/^R9F/.test(n)) e.serie={h:"Schneider Electric",m:"Resi9"}; else if(/^A9F/.test(n)) e.serie={h:"Schneider Electric",m:"iC60N"}; } delete e.mat; } }
 const LEG_WS_OPT={char:["B","C","D","K","Z"],amp:[2,4,6,10,13,16,20,25,32,40,50,63],ramp:[25,40,63,80,100,125],idn:[10,30,100,300],typ:["A","AC","F","B"]};
 function legWsPick(b){ const L=legAkt(); if(!L||L.fertig) return; const e=legE(L).find(x=>x.id===LEG_WS.id); if(!e) return; const k=b.dataset.k, S=legWsSchutz(e);
   let O=[], cur="";

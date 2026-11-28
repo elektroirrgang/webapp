@@ -1,7 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const root=path.resolve(__dirname,'..'),read=f=>fs.readFileSync(path.join(root,f),'utf8');
 const index=JSON.parse(read('src/katalog/index.json')).assets,profiles=JSON.parse(read('src/katalog/profiles.json'));
-assert.equal(index.length,2184);assert.equal(new Set(index.map(a=>a.id)).size,2184);
+assert.equal(index.length,2205);assert.equal(new Set(index.map(a=>a.id)).size,2205);
 const bilderDa=fs.existsSync(path.join(root,'src/katalog/assets'));for(const a of index){if(bilderDa)assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(root,'src/katalog',a.file))).digest('hex'),a.sha256);assert(a.dimension.width>0&&a.dimension.height>0);assert(/^[0-9a-f]{64}$/.test(a.sha256));}
 let counter=0;
 const box={IC:{},console,Map,Set,URL,TextEncoder,Uint8Array,Blob,crypto:crypto.webcrypto,
@@ -30,6 +30,12 @@ assert.equal(run('testRound.eintraege[0].katalog.data'),run('testEntry.katalog.d
 // A copied block must not share mutable terminal/bridge objects with its original.
 run('testCopy={eintraege:[{...testEntry,klemmenProjekt:{terminals:[{id:"T1",label:{text:"A"}}],bridges:[]}}]};legKopien(testCopy,0,1);testCopy.eintraege[1].klemmenProjekt.terminals[0].label.text="B"');
 assert.equal(run('testCopy.eintraege[0].klemmenProjekt.terminals[0].label.text'),'A');
+// Nachtrag Resi9/Hager: eigene Bilder genau zugeordnet, fehlende Resi9-Werte über das B16-Grundbild mit neuem Aufdruck.
+assert.equal(run('gkMatAsset("R9F23116").file'),'assets/asset_'+index.find(a=>a.article==='R9F23116').id.slice(6)+'.svg');
+assert.equal(run('gkMatAsset("EGN200").dimension.width'),35.8);
+assert.equal(run('JSON.stringify(gkMatAsset("R9F24340")._anp.ersetzen)'),JSON.stringify([["R9F23316","R9F24340"],["B16","C40"]]));
+// Leerplatz: kein Gerätebild, keine Blindabdeckung.
+assert(!run('legGeraetBild({id:"r",art:"res",pole:1},0,1,0,50)').includes('<image'));
 const engine=require('../src/katalog/klemmen-engine.js');
 const terminals=Array.from({length:12},(_,i)=>({id:'T'+i,profile:'wago_2004_1201',manufacturer:'WAGO',netId:'N'+Math.floor(i/2),rcdGroup:'R1',label:{text:String(i+1)}}));
 const project={schemaVersion:1,units:'mm',terminals,bridges:Array.from({length:5},(_,i)=>({id:'B'+i,article:'2004-402',contacts:[{terminalId:'T'+i*2,slotId:'A'},{terminalId:'T'+(i*2+1),slotId:'A'}]}))};
