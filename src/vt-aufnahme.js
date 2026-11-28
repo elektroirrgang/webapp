@@ -197,17 +197,69 @@ function awKz(L,art){ const E=legE(L), p=awPos(L);
   return {kz:`F ${awBelegung(L).r}.${E.filter(e=>e.art!=="gr").length+1}`,umbruch:false}; }
 const awRcdVor=L=>{ const E=legE(L); for(let i=awPos(L);i>=0;i--){ if(E[i].art==="gr") return null; if(E[i].art==="rcd") return E[i]; } return null; };
 function awGeraetStart(opt){ const L=legAkt(); if(!L||L.fertig) return; const E=legE(L); opt=opt||{};
-  AW={typ:"geraet",nach:opt.nach!=null?opt.nach:null,tab:opt.tab||(E.some(e=>e.art==="rcd")?"ls":"reihe"),serie:(typeof META!=="undefined"&&META.lsSerie)||"",such:"",letzt:null,zuletzt:"",m:null,was:"",raum:"",bez:"",bezHand:false,mehr:false};
+  AW={typ:"geraet",nach:opt.nach!=null?opt.nach:null,tab:opt.tab||(E.some(e=>e.art==="rcd")?"ls":"reihe"),serie:(typeof META!=="undefined"&&META.lsSerie)||"",such:"",letzt:null,zuletzt:"",m:null,was:"",raum:"",bez:"",bezHand:false,mehr:false,
+    herst:(typeof META!=="undefined"&&META.awHerst)||"",gruppe:"",lim:60,sel:null,anz:1,busy:false};
   awKatalog(); }
 function awKatalog(){ const L=legAkt(); if(!L){ awZu(); return; } AW.m=null;
   $("#dlg").classList.add("aw");
-  awRahmen({titel:L.titel||"Verteiler",unter:awBelegText(L),inhalt:`<div class="aw-such"><span class="aw-lupe">${icon("search")}</span><input id="awSuch" type="search" placeholder="B16, RCD, Typ A …" value="${esc(AW.such)}" autocomplete="off"></div>
+  awRahmen({titel:L.titel||"Verteiler",unter:awBelegText(L),inhalt:`<div class="aw-such"><span class="aw-lupe">${icon("search")}</span><input id="awSuch" type="search" placeholder="${AW.tab==="kat"?"Hersteller, Gerät, Artikelnummer …":"B16, RCD, Typ A …"}" value="${esc(AW.such)}" autocomplete="off"></div>
       ${awEinfuegen()?`<div class="aw-pos"><span>Wird eingesetzt nach <b>${esc((legE(L)[awPos(L)]||{}).kz||"")}</b></span><button type="button" class="btn-text" data-act="awFrei">Ohne Produkt eintragen</button></div>`:""}
       ${awBelegtLeiste(L)}
-      <div class="aw-tabs" role="group">${[["reihe","Reihen"],["ls","Automaten"],["rcd","RCD"],["rcbo","FI/LS"],["sonst","Sonstiges"]].filter(([k])=>!(awEinfuegen()&&k==="reihe")).map(([k,t])=>`<button type="button" data-act="awTab" data-v="${k}" aria-pressed="${AW.tab===k}">${t}</button>`).join("")}</div>
-      <div id="awSerie">${awSerieChips()}</div><div id="awGrid">${awGrid()}</div>`,
-    fuss:`<button type="button" class="btn-tonal" data-act="gkOpen">Gerätekatalog</button><button type="button" class="aw-fragen" data-act="awFragen" aria-pressed="${awFragen()}">Wofür gleich fragen</button><span class="aw-fuss-info">${esc(AW.zuletzt||(legE(L).length?`${legE(L).filter(e=>e.art!=="gr").length} Geräte im Verteiler`:""))}</span><button type="button" class="btn-tonal" data-act="awZu">${legE(L).length?"Fertig":"Später bestücken"}</button>`});
-  const z=$("#dlg .aw-zur"); if(z) z.hidden=true; }
+      <div class="aw-tabs" role="group">${AW_TABS.filter(([k])=>!(awEinfuegen()&&k==="reihe")).map(([k,t])=>`<button type="button" data-act="awTab" data-v="${k}" aria-pressed="${AW.tab===k}">${t}</button>`).join("")}</div>
+      <div id="awFilter">${awFilterHtml()}</div><div id="awGrid">${awGrid()}</div>`,
+    fuss:`<button type="button" class="aw-fragen" data-act="awFragen" aria-pressed="${awFragen()}" title="Gilt beim Einsetzen eines einzelnen Automaten">Wofür gleich fragen</button><span class="aw-fuss-info">${esc(AW.zuletzt||(legE(L).length?`${legE(L).filter(e=>e.art!=="gr").length} Geräte im Verteiler`:""))}</span><button type="button" class="btn-tonal" data-act="awZu">${legE(L).length?"Fertig":"Später bestücken"}</button>`});
+  const z=$("#dlg .aw-zur"); if(z) z.hidden=true;
+  const fu=$("#dlg .aw-fuss"); if(fu){ const w=document.createElement("div"); w.id="awWahl"; w.className="aw-wahlb"; fu.before(w); awWahlZeigen(); } }
+/* ===== Bestücken mit Herstellerfilter, Katalog-Tab und Mehrfachauswahl (Max 28.11.2026) =====
+   Ein Fenster für alles: Artikel aus unserer Materialliste (Reihen, Automaten, RCD, FI/LS, Sonstiges) und alle Geräte aus dem Gerätekatalog.
+   Antippen wählt ein Gerät aus, jedes weitere Antippen derselben Kachel zählt hoch. Unten steht die Auswahl mit Anzahl (− / +) und „Einsetzen“.
+   Wofür-Frage nur bei genau einem Automaten; mehrere bekommen „?“ und werden später in der Legende benannt. */
+const AW_TABS=[["reihe","Reihen"],["ls","Automaten"],["rcd","RCD"],["rcbo","FI/LS"],["sonst","Sonstiges"],["kat","Katalog"]];
+const awHerstKurz=h=>h==="Schneider Electric"?"Schneider":h;
+const awKatDa=()=>typeof GK_INDEX!=="undefined"&&GK_INDEX.length>0;
+function awFilterHtml(){ const kat=AW.tab==="kat", chip=(act,v,t,an)=>`<button type="button" data-act="${act}" data-v="${esc(v)}" aria-pressed="${!!an}">${esc(t)}</button>`;
+  let H=["Hager","Schneider Electric"], mehr=[];
+  if(kat&&awKatDa()){ H=GK_HERST.slice(0,8); mehr=GK_HERST.slice(8); if(AW.herst&&!H.includes(AW.herst)&&!mehr.includes(AW.herst)) AW.herst=""; }
+  else if(AW.herst&&!H.includes(AW.herst)) H=[...H,AW.herst];
+  let o=`<div class="aw-serie aw-herst" role="group" aria-label="Hersteller">${chip("awHerst","","Alle Hersteller",!AW.herst)}${H.map(h=>chip("awHerst",h,awHerstKurz(h),AW.herst===h)).join("")}`
+    +(mehr.length?`<label class="aw-mehrh${mehr.includes(AW.herst)?" an":""}"><select id="awHerstMehr" aria-label="Weitere Hersteller"><option value="">Weitere …</option>${mehr.map(h=>`<option value="${esc(h)}"${AW.herst===h?" selected":""}>${esc(h)}</option>`).join("")}</select></label>`:"")+`</div>`;
+  if(kat&&awKatDa()) o+=`<div class="aw-serie" role="group" aria-label="Gerätegruppe">${chip("awGruppe","","Alle Gruppen",!AW.gruppe)}${GK_GRUPPEN.map(g=>chip("awGruppe",g,g,AW.gruppe===g)).join("")}</div>`;
+  return o+awSerieChips(); }
+function awFilterNeu(){ const f=document.getElementById("awFilter"); if(f) f.innerHTML=awFilterHtml(); const g=document.getElementById("awGrid"); if(g) g.innerHTML=awGrid(); awWahlZeigen(); }
+/* Kachelbild eines Artikels: Katalogbild nur bei genauer Übereinstimmung, sonst das bisherige Bild */
+function awMatBild(m,t){ const a=typeof gkMatAsset==="function"&&gkMatAsset(matHnr(m.herstellerNr));
+  return a?`<span class="mat-foto aw-gb aw-kat"><img src="${esc(gkURL(a))}" alt="" loading="lazy" onerror="this.parentNode.classList.add('weg')"></span>`:(matFoto(m,"aw-gb")||awOhneFoto(t,m)); }
+const awIstSel=(k,v)=>!!AW.sel&&AW.sel.k===k&&AW.sel.v===v;
+const awSelBadge=(k,v)=>awIstSel(k,v)?`<span class="aw-selz">${AW.anz}×</span>`:"";
+const AW_SONST_ANZ={res:["Reserve","Platzhalter · 1 TE",1],kln:["N-Klemme Pollmann N 14-S","1 TE, hochkant",1],klpe:["PE-Klemme Pollmann PE 14-S","1 TE, hochkant",1],kla:["Abzweigklemme Pollmann A 14-S","1 TE, hochkant",1]};
+function awKatGrid(){ if(!awKatDa()) return `<p class="aw-leer">Der Gerätekatalog ist in dieser App nicht verfügbar.</p>`;
+  const L=legAkt(), A=gkAwListe(AW.such,AW.herst,AW.gruppe), S=A.slice(0,AW.lim);
+  const fehlt=typeof BSP!=="undefined"&&BSP.liste&&typeof gkImSp==="function"&&!gkImSp();
+  if(!A.length) return `<p class="aw-leer">Nichts gefunden${AW.herst?` von ${esc(awHerstKurz(AW.herst))}`:""}. Filter oder Suche ändern.</p>`;
+  return `${fehlt?`<p class="meta gk-fehlt">Die Gerätebilder liegen noch nicht im SharePoint. Der Entwickler lädt sie einmal hoch: Einstellungen › Labor › „Gerätekatalog-Bilder“.</p>`:""}<p class="aw-zahl">${A.length.toLocaleString("de-DE")} Geräte${A.length>S.length?` · ${S.length} angezeigt`:""}</p>
+    <div class="aw-grid">${S.map(a=>{ const tl=String(a.category||"").split(" - ")[1]||"", p=a.params||{}, kurz=[p.curve&&p.amperage?p.curve+p.amperage:p.amperage?p.amperage+" A":"",p.residualCurrent?p.residualCurrent+" mA":"",p.poles||""].filter(Boolean).join(" · ");
+      return `<button type="button" class="aw-g${awIstSel("kat",a.id)?" an":""}" data-act="awSel" data-k="kat" data-v="${a.id}"><span class="mat-foto aw-gb aw-kat"><img src="${esc(gkURL(a))}" alt="" loading="lazy" onerror="this.parentNode.classList.add('weg')"></span><b>${esc(awHerstKurz(a.manufacturer))} ${esc(a.model)}</b><small>${esc([gkDe(tl),kurz].filter(Boolean).join(" · "))}</small><small>${esc(gkTeText(a.dimension.width,L))} · ${esc(gkZahl(a.dimension.width))} mm</small>${awSelBadge("kat",a.id)}</button>`; }).join("")}</div>
+    ${A.length>S.length?`<button type="button" class="btn-tonal aw-weiter" data-act="awKatMehr">Weitere ${Math.min(60,A.length-S.length)} anzeigen</button>`:""}`; }
+/* Auswahl-Leiste über dem Fuß */
+function awSelInfo(){ const sel=AW&&AW.sel; if(!sel) return null; const L=legAkt();
+  if(sel.k==="mat"){ const m=awGeraete().find(x=>matHnr(x.herstellerNr)===sel.v); if(!m) return null; const t=matTech(m); return {bild:awMatBild(m,t),t:awName(t),s:awUnter(m),te:+t.te||1}; }
+  if(sel.k==="kat"){ const a=typeof GK_MAP!=="undefined"&&GK_MAP.get(sel.v); if(!a) return null; return {bild:`<span class="mat-foto aw-gb aw-kat"><img src="${esc(gkURL(a))}" alt=""></span>`,t:`${awHerstKurz(a.manufacturer)} ${a.model}`,s:gkTeText(a.dimension.width,L),te:a.dimension.width/gkPitch(L)}; }
+  const x=AW_SONST_ANZ[sel.v]; return x?{bild:`<span class="aw-gb aw-g-icb">${awSvg(sel.v)}</span>`,t:x[0],s:x[1],te:x[2]}:null; }
+function awWahlZeigen(){ const w=document.getElementById("awWahl"); if(!w) return; const i=awSelInfo(); if(!i){ w.hidden=true; w.innerHTML=""; return; }
+  const n=AW.anz, te=Math.round(i.te*n*10)/10, b=L=>awBelegung(L).frei, L=legAkt(), frei=L?b(L):0;
+  w.hidden=false;
+  w.innerHTML=`<div class="aw-wb-bild">${i.bild}</div><div class="aw-wb-t"><b>${esc(i.t)}</b><small>${esc(i.s)}${n>1?` · zusammen ${String(te).replace(".",",")} TE`:""}${L&&te>frei+1e-6&&frei>0?` · Reihe hat noch ${frei} TE, Rest geht in die nächste`:""}</small></div>
+    <div class="aw-step" role="group" aria-label="Anzahl"><button type="button" data-act="awAnz" data-d="-1" aria-label="Eins weniger"${n<=1?" disabled":""}>−</button><b aria-live="polite">${n}</b><button type="button" data-act="awAnz" data-d="1" aria-label="Eins mehr"${n>=24?" disabled":""}>+</button></div>
+    <div class="aw-wb-ak"><button type="button" class="btn-text" data-act="awSelWeg">Abbrechen</button><button type="button" class="btn-filled" data-act="awRein"${AW.busy?" disabled":""}>${n>1?`${n}× einsetzen`:"Einsetzen"}</button></div>`; }
+function awSel(k,v){ if(awIstSel(k,v)) AW.anz=Math.min(24,AW.anz+1); else { AW.sel={k,v}; AW.anz=1; }
+  const g=document.getElementById("awGrid"); if(g) g.innerHTML=awGrid(); awWahlZeigen(); }
+async function awRein(){ const sel=AW&&AW.sel, L=legAkt(); if(!sel||!L||AW.busy) return; const n=Math.max(1,Math.min(24,AW.anz|0));
+  if(sel.k==="kat"){ AW.busy=true; awWahlZeigen();
+    try{ await gkAwEinsetzen(sel.v,n); const a=GK_MAP.get(sel.v); if(!AW) return; AW.zuletzt=`${n}× ${awHerstKurz(a.manufacturer)} ${a.model} eingesetzt`; AW.sel=null; AW.anz=1; }
+    catch(err){ toast(err.message); }
+    finally{ if(AW){ AW.busy=false; awKatalog(); } } return; }
+  if(sel.k==="sonst"){ AW.sel=null; AW.anz=1; for(let i=0;i<n;i++) awSonst(sel.v,true); AW.zuletzt=`${n}× ${AW_SONST_ANZ[sel.v][0]} eingesetzt`; awKatalog(); return; }
+  AW.sel=null; AW.anz=1; awGeraetWahl(sel.v,n); }
 /* Belegt-Leiste (Max 27.11.2026): beim Bestücken immer sehen, was schon auf der Hutschiene sitzt – die aktuelle Reihe als
    Mini-Schiene (Breite nach TE, freie Plätze gestrichelt), dazu Zahlen: Reihe, TE belegt, Automaten am RCD, Geräte gesamt */
 function awKurz(e){ if(e.art==="rcd") return "RCD"; if(e.art==="res") return "Res"; if(e.art==="kl") return {n:"N",pe:"PE",a:"A"}[e.farbe]||"Kl";
@@ -216,7 +268,7 @@ function awBelegtLeiste(L){ const E=legE(L); if(!E.filter(e=>e.art!=="gr").lengt
   const n=+L.teReihe||12, R=legReihen(L), p=awPos(L); let ri=R.findIndex(r=>r.g.some(([,i])=>i===p)); if(ri<0) ri=R.length-1; const r=R[ri];
   const rcd=awRcdVor(L); let anRcd=0; if(rcd){ for(let i=E.indexOf(rcd)+1;i<E.length;i++){ const e=E[i]; if(e.art==="rcd"||e.art==="gr") break; if(e.art==="sk") anRcd++; } }
   const ges=E.filter(e=>e.art==="sk").length, frei=n-r.te;
-  const bl=r.g.map(([e,i,w])=>`<span class="aw-bl ${e.art}${e.art==="kl"?" kl-"+(e.farbe||""):""}${i===p&&awEinfuegen()?" hier":""}" style="flex:${w} 0 0">${esc(awKurz(e))}</span>`).join("")+(frei>0?`<span class="aw-bl frei" style="flex:${frei} 0 0" aria-label="${frei} TE frei"></span>`:"");
+  const bl=r.g.map(([e,i,w])=>`<span class="aw-bl b-${e.art}${e.art==="kl"?" kl-"+(e.farbe||""):""}${i===p&&awEinfuegen()?" hier":""}" style="flex:${w} 0 0">${esc(awKurz(e))}</span>`).join("")+(frei>0?`<span class="aw-bl frei" style="flex:${frei} 0 0" aria-label="${frei} TE frei"></span>`:"");
   return `<div class="aw-belegt"><div class="aw-bz"><b>Reihe ${ri+1}</b><span>${r.te} von ${n} TE belegt</span>${rcd?`<span>an ${esc(rcd.kz||"RCD")}: <b>${anRcd}</b> ${anRcd===1?"Automat":"Automaten"}</span>`:""}<span>gesamt <b>${ges}</b> ${ges===1?"Automat":"Automaten"}</span></div><div class="aw-schiene">${bl}</div></div>`; }
 /* Wie oft steckt dieses Produkt schon im Verteiler? */
 function awAnzahl(L,hnr){ return L?legE(L).filter(e=>e.mat===hnr).length:0; }
@@ -247,31 +299,40 @@ function awReihe(k){ const L=legAkt(), V=AW_REIHEN.find(x=>x[0]===k); if(!L||!V)
   legSpeichern(L); render(); AW.zuletzt=`Reihe eingesetzt: ${erst}${letzt&&letzt!==erst?" bis "+letzt:""}`; AW.tab="reihe"; awKatalog(); }
 /* Serie der Automaten: Hager QuickConnect / Schraube, Schneider iC60 / Resi9 – wird je Gerät gemerkt */
 function awSerieChips(){ if((AW.tab!=="ls"&&AW.tab!=="reihe")||AW.such.trim()) return ""; if(AW.serie==null) AW.serie=(META.lsSerie||"");
-  return `<div class="aw-serie" role="group">${[["","Alle"],...MAT_SERIEN.map(x=>[x[0],x[1]])].map(([k,t])=>`<button type="button" data-act="awSerie" data-v="${k}" aria-pressed="${AW.serie===k}">${t}</button>`).join("")}</div>`; }
-function awGrid(){ const q=AW.such.trim().toLowerCase(), z=awNutzung(), L=legAkt(), E=L?legE(L):[];
+  const SE=MAT_SERIEN.filter(x=>!AW.herst||(AW.herst==="Hager"?/^h/.test(x[0]):AW.herst==="Schneider Electric"?!/^h/.test(x[0]):false)); if(AW.herst&&!SE.length) return ""; if(AW.serie&&!SE.some(x=>x[0]===AW.serie)) AW.serie="";
+  return `<div class="aw-serie" role="group" aria-label="Serie">${[["","Alle Serien"],...SE.map(x=>[x[0],x[1]])].map(([k,t])=>`<button type="button" data-act="awSerie" data-v="${k}" aria-pressed="${AW.serie===k}">${t}</button>`).join("")}</div>`; }
+function awGrid(){ if(AW.tab==="kat") return awKatGrid(); const q=AW.such.trim().toLowerCase(), z=awNutzung(), L=legAkt(), E=L?legE(L):[];
   const herst=(()=>{ for(let i=E.length-1;i>=0;i--){ const m=E[i].mat&&awGeraete().find(x=>matHnr(x.herstellerNr)===E[i].mat); if(m) return m.hersteller; } return ""; })();
   if(!q&&AW.tab==="reihe"){ const {ls,rcd}=awReiheGeraete(L);
     return `<p class="aw-hinweis">Setzt die ganze Reihe ein – Kennzeichnung läuft automatisch weiter, „Wofür“ trägst du später in der Legende ein. Automaten: ${esc(ls?`${(matSerie(ls)||[,""])[1]} ${ls.herstellerNr}`:"–")}${rcd?` · RCD ${esc(rcd.herstellerNr)}`:""}</p>
       <div class="aw-grid">${nav.v==="vt"?`<button type="button" class="aw-g aw-liste-k" data-act="vtImpHier"><span class="mat-foto aw-gb"><svg viewBox="0 0 48 48" style="width:56%;height:56%" aria-hidden="true"><path fill="currentColor" d="M8 12h22v4H8zm0 10h22v4H8zm0 10h14v4H8zm28-2v-6h4v6h6v4h-6v6h-4v-6h-6v-4z"/></svg></span><b>Liste einfügen</b><small>Papierliste, Excel oder Datei – alle Geräte auf einmal</small></button>`:""}${AW_REIHEN.map(([k,t,u,teile])=>`<button type="button" class="aw-g" data-act="awReihe" data-v="${k}"><span class="mat-foto aw-gb">${awReiheSvg(teile)}</span><b>${t}</b><small>${u}</small></button>`).join("")}</div>`; }
-  if(!q&&AW.tab==="sonst") return `<div class="aw-grid">${[["res","Reserve","Platzhalter, 1 TE"],["gr","Überschrift","z. B. Erdgeschoss, Wohnung OG"],["kln","N-Klemme Pollmann N 14-S","blau · 14 Steck + 1 Schraub · 1 TE, hochkant"],["klpe","PE-Klemme Pollmann PE 14-S","grün · 14 Steck + 1 Schraub · 1 TE, hochkant"],["kla","Abzweigklemme Pollmann A 14-S","grau · z. B. für eine Phase · 1 TE, hochkant"],["frei","Anderes Gerät","frei eintragen – ohne Materialliste"]].map(([k,t,s])=>`<button type="button" class="aw-g aw-g-ic" data-act="awSonst" data-v="${k}"><span class="aw-gb">${awSvg(k)}</span><b>${t}</b><small>${s}</small></button>`).join("")}</div>`
-    +`<div class="aw-lbl aw-ge-lbl">Schütze, Schalter, Uhren</div><div class="aw-grid">${awGeraete().filter(m=>matTech(m).art==="ge").map(m=>{ const t=matTech(m), hnr=matHnr(m.herstellerNr); return `<button type="button" class="aw-g" data-act="awGeraet" data-v="${esc(hnr)}">${matFoto(m,"aw-gb")||awOhneFoto(t,m)}<b>${esc(t.name)}</b><small>${esc(`${t.te} TE · ${m.hersteller} ${m.herstellerNr}`)}</small>${hnr===AW.letzt?`<span class="aw-nochmal">Nochmal</span>`:""}${awAnzBadge(L,hnr)}</button>`; }).join("")}</div>`;
+  if(!q&&AW.tab==="sonst"){ const klB=k=>{ const a=typeof gkFuerEintrag==="function"&&gkFuerEintrag({art:"kl",farbe:{kln:"n",klpe:"pe",kla:"a"}[k]}); return a?`<span class="mat-foto aw-gb aw-kat"><img src="${esc(gkURL(a))}" alt="" loading="lazy"></span>`:`<span class="aw-gb">${awSvg(k)}</span>`; };
+    const GE=awGeraete().filter(m=>matTech(m).art==="ge"&&(!AW.herst||m.hersteller===AW.herst));
+    return `<div class="aw-grid">${[["res","Reserve","Platzhalter, 1 TE"],["gr","Überschrift","z. B. Erdgeschoss, Wohnung OG"],["kln","N-Klemme Pollmann N 14-S","blau · 14 Steck + 1 Schraub · 1 TE, hochkant"],["klpe","PE-Klemme Pollmann PE 14-S","grün · 14 Steck + 1 Schraub · 1 TE, hochkant"],["kla","Abzweigklemme Pollmann A 14-S","grau · z. B. für eine Phase · 1 TE, hochkant"],["frei","Anderes Gerät","frei eintragen – ohne Materialliste"]].map(([k,t,s])=>AW_SONST_ANZ[k]
+        ?`<button type="button" class="aw-g aw-g-ic${awIstSel("sonst",k)?" an":""}" data-act="awSel" data-k="sonst" data-v="${k}">${/^kl/.test(k)?klB(k):`<span class="aw-gb">${awSvg(k)}</span>`}<b>${t}</b><small>${s}</small>${awSelBadge("sonst",k)}</button>`
+        :`<button type="button" class="aw-g aw-g-ic" data-act="awSonst" data-v="${k}"><span class="aw-gb">${awSvg(k)}</span><b>${t}</b><small>${s}</small></button>`).join("")}${awKatDa()?`<button type="button" class="aw-g aw-g-ic" data-act="awBlock"><span class="aw-gb">${awSvg("frei")}</span><b>Klemmblock planen</b><small>WAGO 2004 mit Brücken</small></button>`:""}</div>`
+    +(GE.length?`<div class="aw-lbl aw-ge-lbl">Schütze, Schalter, Uhren</div><div class="aw-grid">${GE.map(m=>{ const t=matTech(m), hnr=matHnr(m.herstellerNr); return `<button type="button" class="aw-g${awIstSel("mat",hnr)?" an":""}" data-act="awSel" data-k="mat" data-v="${esc(hnr)}">${awMatBild(m,t)}<b>${esc(t.name)}</b><small>${esc(`${t.te} TE · ${awHerstKurz(m.hersteller)} ${m.herstellerNr}`)}</small>${hnr===AW.letzt&&!awIstSel("mat",hnr)?`<span class="aw-nochmal">Nochmal</span>`:""}${awAnzBadge(L,hnr)}${awSelBadge("mat",hnr)}</button>`; }).join("")}</div>`:""); }
   let A=awGeraete().map(m=>({m,t:matTech(m),hnr:matHnr(m.herstellerNr)}));
   if(q){ const qq=q.replace(/\s+/g,""); A=A.filter(x=>{ const kurz=x.t.char?`${x.t.char}${x.t.in}`.toLowerCase():""; return kurz===qq||[awName(x.t),awUnter(x.m),x.m.name,kurz].join(" ").toLowerCase().replace(/\s+/g," ").includes(q); }); }
   else A=A.filter(x=>x.t.art===AW.tab&&(AW.tab!=="ls"||!AW.serie||(matSerie(x.m)||[])[0]===AW.serie));
+  if(AW.herst) A=A.filter(x=>x.m.hersteller===AW.herst);
   const gh=L&&L.gerHerst||"";
   A.sort((a,b)=>(b.hnr===AW.letzt)-(a.hnr===AW.letzt)||(gh?(b.m.hersteller===gh)-(a.m.hersteller===gh):0)||(z[b.hnr]||0)-(z[a.hnr]||0)||(b.m.hersteller===herst)-(a.m.hersteller===herst)||(a.t.pole||0)-(b.t.pole||0)||String(a.t.char).localeCompare(String(b.t.char))||a.t.in-b.t.in||a.m.hersteller.localeCompare(b.m.hersteller));
-  if(!A.length) return `<p class="aw-leer">Nichts gefunden. Unter „Sonstiges“ lässt sich ein Gerät frei eintragen.</p>`;
-  return `<div class="aw-grid">${A.map(({m,t,hnr})=>`<button type="button" class="aw-g" data-act="awGeraet" data-v="${esc(hnr)}">${matFoto(m,"aw-gb")||awOhneFoto(t,m)}<b>${esc(awName(t))}</b><small>${esc(awUnter(m))}</small>${hnr===AW.letzt?`<span class="aw-nochmal">Nochmal</span>`:""}${awAnzBadge(L,hnr)}</button>`).join("")}</div>`; }
+  if(!A.length) return `<p class="aw-leer">${AW.herst?`In unserer Materialliste steht hier nichts von ${esc(awHerstKurz(AW.herst))}. Im Tab „Katalog“ stehen alle Geräte des Herstellers.`:"Nichts gefunden. Unter „Sonstiges“ lässt sich ein Gerät frei eintragen."}</p>`;
+  return `<div class="aw-grid">${A.map(({m,t,hnr})=>`<button type="button" class="aw-g${awIstSel("mat",hnr)?" an":""}" data-act="awSel" data-k="mat" data-v="${esc(hnr)}">${awMatBild(m,t)}<b>${esc(awName(t))}</b><small>${esc(awUnter(m))}</small>${hnr===AW.letzt&&!awIstSel("mat",hnr)?`<span class="aw-nochmal">Nochmal</span>`:""}${awAnzBadge(L,hnr)}${awSelBadge("mat",hnr)}</button>`).join("")}</div>`; }
 function awEinsetzen(e){ const L=legAkt(); if(!L) return; const E=legE(L);
   if(awEinfuegen()&&AW.nach<E.length-1){ E.splice(AW.nach+1,0,e); AW.nach++; } else { E.push(e); if(awEinfuegen()) AW.nach=E.length-1; }
   legSpeichern(L); render(); }
-function awGeraetWahl(hnr){ const L=legAkt(), m=awGeraete().find(x=>matHnr(x.herstellerNr)===hnr); if(!L||!m) return; const t=matTech(m);
-  if(t.art==="ge"){ const E=legE(L), n=E.filter(e=>e.art==="ge"&&new RegExp("^"+t.kb+"\\s*\\d").test(e.kz||"")).length, kz=`${t.kb}${n+1}`;
-    awEinsetzen({id:uid(),art:"ge",kz,bez:t.name,schutz:"",pole:1,te:t.te,mat:hnr}); AW.letzt=hnr; AW.zuletzt=`${kz} ${t.name} eingesetzt`; awKatalog(); return; }
-  if(t.art==="rcd"){ const k=awKz(L,"rcd"); awEinsetzen({id:uid(),art:"rcd",kz:k.kz,bez:"Fehlerstromschutzschalter",schutz:awSchutz(t),pole:1,te:t.te,mat:hnr,...(k.umbruch?{umbruch:true}:{})});
-    AW.letzt=hnr; AW.zuletzt=`${k.kz} RCD eingesetzt – jetzt die Automaten dazu`; AW.tab="ls"; AW.such=""; awKatalog(); return; }
+function awGeraetWahl(hnr,anz){ const L=legAkt(), m=awGeraete().find(x=>matHnr(x.herstellerNr)===hnr); if(!L||!m) return; const t=matTech(m), n=Math.max(1,anz|0||1); let erst="", letzt="";
+  if(t.art==="ge"){ for(let i=0;i<n;i++){ const E=legE(L), z=E.filter(e=>e.art==="ge"&&new RegExp("^"+t.kb+"\\s*\\d").test(e.kz||"")).length, kz=`${t.kb}${z+1}`;
+      awEinsetzen({id:uid(),art:"ge",kz,bez:t.name,schutz:"",pole:1,te:t.te,mat:hnr}); erst=erst||kz; letzt=kz; }
+    AW.letzt=hnr; AW.zuletzt=`${erst}${letzt!==erst?" bis "+letzt:""} ${t.name} eingesetzt`; awKatalog(); return; }
+  if(t.art==="rcd"){ for(let i=0;i<n;i++){ const k=awKz(L,"rcd"); awEinsetzen({id:uid(),art:"rcd",kz:k.kz,bez:"Fehlerstromschutzschalter",schutz:awSchutz(t),pole:1,te:t.te,mat:hnr,...(k.umbruch?{umbruch:true}:{})}); erst=erst||k.kz; letzt=k.kz; }
+    AW.letzt=hnr; AW.zuletzt=`${erst}${letzt!==erst?" bis "+letzt:""} RCD eingesetzt – jetzt die Automaten dazu`; AW.tab="ls"; AW.such=""; awKatalog(); return; }
   AW.m=hnr; AW.was=""; AW.raum=""; AW.bez=""; AW.bezHand=false; AW.mehr=false;
-  if(awFragen()) awWofuer(); else awOk(true,true); }
+  if(n===1){ if(awFragen()) awWofuer(); else awOk(true,true); return; }
+  for(let i=0;i<n;i++){ const k=awKz(L,"sk"); awEinsetzen({id:uid(),art:"sk",kz:k.kz,bez:"?",schutz:awSchutz(t),pole:+t.pole===3?3:1,te:t.te,mat:hnr}); erst=erst||k.kz; letzt=k.kz; }
+  AW.letzt=hnr; AW.tab=t.art; AW.such=""; AW.zuletzt=`${n}× ${awName(t)} eingesetzt: ${erst} bis ${letzt} – „Wofür“ später in der Legende`; awKatalog(); }
 /* „Wofür gleich fragen“: aus = erst bestücken, Wofür später in der Legende eintragen (je Gerät gemerkt) */
 const awFragen=()=>typeof META!=="undefined"&&!!META.awFragen;
 function awRaeume(L){ const s=new Set(), add=b=>String(b||"").split(/\s+/).forEach(w=>{ if(LEG_RAUM.includes(w)) s.add(w); });
@@ -294,9 +355,9 @@ function awOk(weiter,unbekannt){ const L=legAkt(), m=awGeraete().find(x=>matHnr(
   awEinsetzen({id:uid(),art:"sk",kz:k.kz,bez,schutz:awSchutz(t),pole:+t.pole===3?3:1,te:t.te,mat:AW.m});
   AW.letzt=AW.m; AW.tab=t.art; AW.such="";
   if(weiter){ AW.zuletzt=`${k.kz} ${bez==="?"?"(noch unbekannt)":bez} eingesetzt`; awKatalog(); } else awZu(); }
-function awSonst(k){ const L=legAkt(); if(!L) return;
-  if(k==="res"){ const z=awKz(L,"sk"); awEinsetzen({id:uid(),art:"res",kz:z.kz,bez:"",schutz:"",pole:1,te:1}); AW.zuletzt=`${z.kz} Reserve eingesetzt`; awKatalog(); return; }
-  if(k==="kln"||k==="klpe"||k==="kla"){ const fb={kln:"n",klpe:"pe",kla:"a"}[k]; awEinsetzen({id:uid(),art:"kl",farbe:fb,kz:"",bez:{n:"N 14-S",pe:"PE 14-S",a:"A 14-S"}[fb],schutz:"",pole:1,te:1}); AW.zuletzt=`${{n:"N-Klemme",pe:"PE-Klemme",a:"Abzweigklemme"}[fb]} eingesetzt`; awKatalog(); return; }
+function awSonst(k,still){ const L=legAkt(); if(!L) return;
+  if(k==="res"){ const z=awKz(L,"sk"); awEinsetzen({id:uid(),art:"res",kz:z.kz,bez:"",schutz:"",pole:1,te:1}); if(still) return; AW.zuletzt=`${z.kz} Reserve eingesetzt`; awKatalog(); return; }
+  if(k==="kln"||k==="klpe"||k==="kla"){ const fb={kln:"n",klpe:"pe",kla:"a"}[k]; awEinsetzen({id:uid(),art:"kl",farbe:fb,kz:"",bez:{n:"N 14-S",pe:"PE 14-S",a:"A 14-S"}[fb],schutz:"",pole:1,te:1}); if(still) return; AW.zuletzt=`${{n:"N-Klemme",pe:"PE-Klemme",a:"Abzweigklemme"}[fb]} eingesetzt`; awKatalog(); return; }
   AW=null; $("#dlg").classList.remove("aw"); legSkDlg(null,null);
   if(k==="gr"&&legDlg){ legDlg.art="gr"; document.querySelectorAll('#dlg [data-act="legArt"]').forEach(c=>c.setAttribute("aria-pressed",c.dataset.v==="gr")); legArtZeigen(); } }
 
@@ -327,20 +388,29 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
       if(AW.sub){ AW.sub=null; awNeuZeigen(); return; } const S=awNeuSchritte(); if(AW.i<S.length-1){ AW.i++; awNeuZeigen(); } else awNeuAnlegen(); return; }
   case "awSubZu": AW.sub=null; zsAbgleich(AW.d.zs); awNeuZeigen(); return;
   case "awNameOk": { const f=document.getElementById("f_awName"), v=f&&f.value.trim(); if(!v&&!AW.d.name){ toast("Bitte einen Namen antippen oder eintragen"); return; } awNeuWahl(v||AW.d.name); return; }
-  case "awTab": AW.tab=b.dataset.v; AW.such=""; { const s=document.getElementById("awSuch"); if(s) s.value=""; } $("#awGrid").innerHTML=awGrid(); { const sc=document.getElementById("awSerie"); if(sc) sc.innerHTML=awSerieChips(); } document.querySelectorAll('#dlg [data-act="awTab"]').forEach(x=>x.setAttribute("aria-pressed",x===b)); return;
+  case "awTab": AW.tab=b.dataset.v; AW.such=""; AW.lim=60; { const s=document.getElementById("awSuch"); if(s){ s.value=""; s.placeholder=AW.tab==="kat"?"Hersteller, Gerät, Artikelnummer …":"B16, RCD, Typ A …"; } } awFilterNeu(); document.querySelectorAll('#dlg [data-act="awTab"]').forEach(x=>x.setAttribute("aria-pressed",x===b)); { const ih=$("#dlg .aw-inhalt"), gr=document.getElementById("awGrid"); if(ih&&gr&&ih.scrollTop>gr.offsetTop) ih.scrollTop=0; } return;
+  case "awHerst": AW.herst=b.dataset.v; AW.lim=60; META.awHerst=AW.herst; if(typeof metaSave==="function") metaSave(); awFilterNeu(); return;
+  case "awGruppe": AW.gruppe=b.dataset.v; AW.lim=60; awFilterNeu(); return;
+  case "awKatMehr": AW.lim+=60; { const g=document.getElementById("awGrid"); if(g) g.innerHTML=awGrid(); } return;
+  case "awSel": awSel(b.dataset.k,b.dataset.v); return;
+  case "awSelWeg": AW.sel=null; AW.anz=1; { const g=document.getElementById("awGrid"); if(g) g.innerHTML=awGrid(); } awWahlZeigen(); return;
+  case "awAnz": AW.anz=Math.max(1,Math.min(24,AW.anz+(+b.dataset.d))); awWahlZeigen(); { const z=document.querySelector("#awGrid .aw-g.an .aw-selz"); if(z) z.textContent=AW.anz+"×"; } return;
+  case "awRein": awRein(); return;
+  case "awBlock": AW=null; $("#dlg").classList.remove("aw"); gkBlockNeu(); return;
   case "awGeraet": awGeraetWahl(b.dataset.v); return;
   case "awSonst": awSonst(b.dataset.v); return;
   case "awReihe": awReihe(b.dataset.v); return;
   case "awFragen": META.awFragen=!META.awFragen; if(typeof metaSave==="function") metaSave(); b.setAttribute("aria-pressed",!!META.awFragen); return;
-  case "awSerie": AW.serie=b.dataset.v; META.lsSerie=AW.serie; if(typeof metaSave==="function") metaSave(); const sc=document.getElementById("awSerie"); if(sc) sc.innerHTML=awSerieChips(); const g=document.getElementById("awGrid"); if(g) g.innerHTML=awGrid(); return;
+  case "awSerie": AW.serie=b.dataset.v; META.lsSerie=AW.serie; if(typeof metaSave==="function") metaSave(); awFilterNeu(); return;
   case "awWas": AW.was=AW.was===b.dataset.v?"":b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===AW.was)); awBezSetzen(); return;
   case "awRaum": AW.raum=AW.raum===b.dataset.v?"":b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===AW.raum)); awBezSetzen(); return;
   case "awMehr": { const f=document.getElementById("f_awBez"); if(f) AW.bez=f.value; AW.mehr=true; awWofuer(); return; }
   case "awUnbek": awOk(true,true); return;
   case "awOk": awOk(b.dataset.weiter==="1"); return;
   } },true);
+document.addEventListener("change",e=>{ if(AW&&e.target.id==="awHerstMehr"){ AW.herst=e.target.value; AW.lim=60; META.awHerst=AW.herst; if(typeof metaSave==="function") metaSave(); awFilterNeu(); } });
 document.addEventListener("input",e=>{ if(!AW) return;
-  if(e.target.id==="awSuch"){ AW.such=e.target.value; const g=document.getElementById("awGrid"); if(g) g.innerHTML=awGrid(); { const sc=document.getElementById("awSerie"); if(sc) sc.innerHTML=awSerieChips(); } document.querySelectorAll('#dlg [data-act="awTab"]').forEach(x=>x.setAttribute("aria-pressed",!AW.such.trim()&&x.dataset.v===AW.tab)); }
+  if(e.target.id==="awSuch"){ AW.such=e.target.value; AW.lim=60; const g=document.getElementById("awGrid"); if(g) g.innerHTML=awGrid(); { const sc=document.getElementById("awFilter"); if(sc) sc.innerHTML=awFilterHtml(); } document.querySelectorAll('#dlg [data-act="awTab"]').forEach(x=>x.setAttribute("aria-pressed",(AW.tab==="kat"||!AW.such.trim())&&x.dataset.v===AW.tab)); }
   if(e.target.id==="f_awBez"){ AW.bez=e.target.value; AW.bezHand=!!e.target.value.trim(); } });
 
 /* ---------- Verteiler-Ansicht: Gerät antippen = nur das Produkt wählen (Bezeichnung usw. bleibt Sache der Liste) ----------
@@ -354,7 +424,7 @@ function awProdukt(id){ const L=legAkt(); if(!L||L.fertig) return; const e=legE(
   const passt=x=>art==="ge"||!sc?true:art==="rcd"?sc.includes(`${x.t.in}A`)&&sc.includes(`${x.t.idn}MA`):sc.startsWith(`${x.t.char||""}${x.t.in}`.toUpperCase());
   const si=x=>{ const s=matSerie(x.m); return s?MAT_SERIEN.indexOf(s):9; }, sort=(a,b)=>(z[b.hnr]||0)-(z[a.hnr]||0)||si(a)-si(b)||Math.abs((+a.t.in||16)-16)-Math.abs((+b.t.in||16)-16)||(+a.t.in||0)-(+b.t.in||0)||String(a.m.herstellerNr).localeCompare(String(b.m.herstellerNr));
   const P=A.filter(passt).sort(sort), R=A.filter(x=>!passt(x)).sort(sort);
-  const kachel=x=>`<button type="button" class="aw-g${x.hnr===e.mat?" gewaehlt":""}" data-act="awProduktOk" data-v="${esc(x.hnr)}">${matFoto(x.m,"aw-gb")||awOhneFoto(x.t,x.m)}<b>${esc(awName(x.t))}</b><small>${esc(awUnter(x.m))}</small>${x.hnr===e.mat?`<span class="aw-nochmal">Gewählt</span>`:""}</button>`;
+  const kachel=x=>`<button type="button" class="aw-g${x.hnr===e.mat?" gewaehlt":""}" data-act="awProduktOk" data-v="${esc(x.hnr)}">${awMatBild(x.m,x.t)}<b>${esc(awName(x.t))}</b><small>${esc(awUnter(x.m))}</small>${x.hnr===e.mat?`<span class="aw-nochmal">Gewählt</span>`:""}</button>`;
   awRahmen({titel:[e.kz,e.bez&&e.bez!=="?"?e.bez:""].filter(Boolean).join(" · ")||"Gerät",unter:"Produkt wählen",
     inhalt:`${P.length?`<div class="aw-lbl">${sc?`Passend zu ${esc(legSchutz(e))}`:art==="ls"?`Automaten ${pole}-polig`:art==="rcd"?"RCD":art==="rcbo"?"FI/LS":"Geräte"}</div><div class="aw-grid">${P.map(kachel).join("")}</div>`:`<p class="aw-hinweis">Kein Artikel passt genau zu „${esc(legSchutz(e))}“ – unten alle derselben Art.</p>`}
       ${R.length?`<div class="aw-lbl">Weitere</div><div class="aw-grid">${R.map(kachel).join("")}</div>`:""}`,

@@ -26,7 +26,7 @@ function gkTechnik(a){const p=a.params||{},rcd=a.type==="QD",sk=["QF","QFD"].inc
  return {art,pole,schutz:rcd?[[p.amperage&&p.amperage+" A",p.residualCurrent&&p.residualCurrent+" mA"].filter(Boolean).join(" / "),p.RCDtype&&"Typ "+p.RCDtype].filter(Boolean).join(" "):sk?`${p.curve||""}${p.amperage||""}${a.type==="QFD"?" FI/LS":""}`:""};}
 function gkPitch(L){return [17.5,18].includes(+L?.teMm)?+L.teMm:legGerTe(L||{});}
 function gkTE(e,L){return e.katalog.widthMm/gkPitch(L||legAkt()||{});}
-function gkExtents(row,L,H){const scale=LEG_P/gkPitch(L),a=row.g.filter(([e])=>e.katalog).map(([e])=>e.katalog);return {top:Math.min(0,...a.map(a=>H/2-a.frontCenterMm*scale)),bottom:Math.max(H,...a.map(a=>H/2+(a.heightMm-a.frontCenterMm)*scale))};}
+function gkExtents(row,L,H){const scale=LEG_P/gkPitch(L),a=row.g.map(([e])=>{ if(e.katalog) return e.katalog; const k=gkFuerEintrag(e); return k?{frontCenterMm:Number.isFinite(k.dimension.faceCenterFromTop)?k.dimension.faceCenterFromTop:k.dimension.height/2,heightMm:k.dimension.height}:null; }).filter(Boolean);return {top:Math.min(0,...a.map(a=>H/2-a.frontCenterMm*scale)),bottom:Math.max(H,...a.map(a=>H/2+(a.heightMm-a.frontCenterMm)*scale))};}
 function gkEintrag(a,payload,L){const tech=gkTechnik(a);return {id:uid(),...tech,kz:tech.art==="ge"?"":awKz(L,tech.art).kz,bez:[a.manufacturer,a.model].join(" "),te:payload.widthMm/gkPitch(L),katalog:payload};}
 async function gkWahl(id){if(!GK||GK.busy)return;const state=GK,a=GK_MAP.get(id),L=legAkt();if(!a||!L||L.fertig)return;state.busy=true;gkGrid();
  try{const data=await gkData(a);if(GK!==state||!document.getElementById("gk-grid")||legAkt()?.id!==L.id)return;const payload=gkPayload(a,data);if(payload.widthMm> (+L.teReihe||12)*gkPitch(L)+.01)throw Error("Dieses Gerät ist breiter als die eingestellte Reihe. Bitte zuerst die Verteilerbreite ändern.");
@@ -37,6 +37,45 @@ async function gkWahl(id){if(!GK||GK.busy)return;const state=GK,a=GK_MAP.get(id)
    Der 45-mm-Frontbezug liegt in derselben Höhe wie der bisherige Editor. */
 function gkBild(e,x,y0,P){const a=e.katalog,L=legAkt(),scale=P/gkPitch(L),mid=y0+P*400/92/2;
  return `<image href="${esc(a.data)}" x="${x}" y="${mid-a.frontCenterMm*scale}" width="${a.widthMm*scale}" height="${a.heightMm*scale}" preserveAspectRatio="xMidYMid meet"/>`; }
+/* ===== Katalogbilder für Artikel aus der Materialliste (Max 28.11.2026) =====
+   Ein Artikel bekommt ein Katalogbild NUR, wenn Modell und Aufdruck genau stimmen – keine ähnlichen Fremdmodelle.
+   1. Katalogeintrag, dessen Artikel oder Modell genau die Artikelnummer ist (CDA440D, HIM402, ST303 … und alles, was nachgereicht wird)
+   2. Serienbild, dessen Aufdruck genau dieser Artikel ist (das MBS-Bild zeigt „MBS116A B16“ → nur MBS116, nicht MBS110)
+   Alles andere zeigt weiter das bisherige Bild. */
+const gkNorm=s=>String(s||"").toUpperCase().replace(/[\s.\-\/]/g,"");
+const GK_MAT_SERIE={MBS116:["Hager","MBS",17.5],MBS316:["Hager","MBS",52.5],MCS116:["Hager","MCS",17.5],MCS316:["Hager","MCS",52.5],
+  MBN116:["Hager","MBN",17.5],MBN316:["Hager","MBN",52.5],MCN116:["Hager","MCN",17.5],MCN316:["Hager","MCN",52.5],
+  A9F04116:["Schneider Electric","iC60N",18],A9F04316:["Schneider Electric","iC60N",54],
+  SBN116:["Hager","SBN",17.5],ESC425:["Hager","ESC",35],ESC440:["Hager","ESC",52.5],EPN510:["Hager","EPN",17.5]};
+const GK_KL={n:"N 14-S · Schraube unten",pe:"PE 14-S · Schraube unten",a:"A 14-S · Schraube unten"};
+let GK_NR=null;
+function gkNrIndex(){ if(GK_NR) return GK_NR; GK_NR=new Map();
+  GK_INDEX.forEach(a=>{ if(a.isExampleAssembly) return; [a.article,a.model].forEach(v=>{ const k=gkNorm(v); if(k.length>=5&&/\d/.test(k)&&!GK_NR.has(k)) GK_NR.set(k,a); }); }); return GK_NR; }
+const GK_MAT_C=new Map();
+function gkMatAsset(hnr){ const k=gkNorm(hnr); if(!k) return null; if(GK_MAT_C.has(k)) return GK_MAT_C.get(k);
+  const s=GK_MAT_SERIE[k], a=s?GK_INDEX.find(a=>a.manufacturer===s[0]&&a.model===s[1]&&Math.abs(a.dimension.width-s[2])<.3)||null:gkNrIndex().get(k)||null;
+  GK_MAT_C.set(k,a); return a; }
+const gkKlFarbe=e=>e.farbe||(/pe/i.test(e.bez||"")?"pe":/^\s*a\b|abzweig/i.test(e.bez||"")?"a":"n");
+function gkFuerEintrag(e){ if(!e||e.katalog) return null;
+  if(e.art==="kl") return GK_INDEX.find(a=>a.manufacturer==="Pollmann"&&a.model===GK_KL[gkKlFarbe(e)])||null;
+  return e.mat?gkMatAsset(e.mat):null; }
+/* Katalogbild eines zugeordneten Artikels zeichnen: Maßstab wie die Reihe, mittig im Platz (Breite aus der Legende bleibt) */
+function gkBildAsset(a,x,w,y0,P){ const L=legAkt(),scale=P/gkPitch(L),mid=y0+P*400/92/2,d=a.dimension,fc=Number.isFinite(d.faceCenterFromTop)?d.faceCenterFromTop:d.height/2,bw=d.width*scale;
+  return `<image href="${esc(gkURL(a))}" x="${(x+(w*P-bw)/2).toFixed(1)}" y="${(mid-fc*scale).toFixed(1)}" width="${bw.toFixed(1)}" height="${(d.height*scale).toFixed(1)}" preserveAspectRatio="xMidYMid meet"/>`; }
+const gkTeText=(mm,L)=>{ const t=mm/gkPitch(L||legAkt()||{}); return (Math.abs(t-Math.round(t))<.05?String(Math.round(t)):t.toFixed(1).replace(".",","))+" TE"; };
+/* Katalog im Bestücken-Fenster: Gruppen aus dem Teil vor „ - “ der Kategorie */
+const GK_DE=[["Ueberspannung","Überspannung"],["Schuetze","Schütze"],["Stromstoss","Stromstoß"],["Geraete","Geräte"],["Zubehoer","Zubehör"],["Gebaeude","Gebäude"],["Binaereingaenge","Binäreingänge"],["zaehler","zähler"],["stuecke","stücke"]];
+const gkDe=t=>GK_DE.reduce((s,[a,b])=>s.split(a).join(b),String(t||""));   /* Kategorienamen im Index ohne Umlaute → richtig anzeigen */
+const gkGruppe=a=>gkDe(String(a.category||"").split(" - ")[0]);
+const GK_GRUPPEN=(()=>{ const z=new Map(); GK_INDEX.forEach(a=>{ if(!a.isExampleAssembly) z.set(gkGruppe(a),(z.get(gkGruppe(a))||0)+1); }); return [...z.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]); })();
+const GK_HERST=(()=>{ const z=new Map(); GK_INDEX.forEach(a=>{ if(!a.isExampleAssembly) z.set(a.manufacturer,(z.get(a.manufacturer)||0)+1); }); const vorn=["Hager","Schneider Electric"];
+  return [...vorn.filter(h=>z.has(h)),...[...z.entries()].filter(([h])=>!vorn.includes(h)).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"de")).map(x=>x[0])]; })();
+function gkAwListe(q,herst,gruppe){ return gkFilter(GK_INDEX.filter(a=>!a.isExampleAssembly&&(!gruppe||gkGruppe(a)===gruppe)),q,herst,""); }
+/* Katalog-Gerät n-mal einsetzen (Bestücken-Fenster): Bild einmal holen, Kennzeichnung läuft weiter */
+async function gkAwEinsetzen(id,n){ const a=GK_MAP.get(id),L=legAkt(); if(!a||!L||L.fertig) return 0;
+  const data=await gkData(a); if(legAkt()?.id!==L.id) return 0; const payload=gkPayload(a,data);
+  if(payload.widthMm>(+L.teReihe||12)*gkPitch(L)+.01) throw Error("Dieses Gerät ist breiter als die eingestellte Reihe. Bitte zuerst die Verteilerbreite ändern.");
+  for(let i=0;i<n;i++) awEinsetzen(gkEintrag(a,gkClone(payload),L)); return n; }
 function gkDetail(id){const L=legAkt(),e=L&&legE(L).find(x=>x.id===id);if(!e||!e.katalog)return;
  const a=e.katalog;dialog(a.manufacturer+" "+a.model,`<div class="gk-preview"><img src="${esc(a.data)}" alt="Gerätefront"></div><p>${esc(a.article||"Keine bestätigte Artikelnummer")} · ${gkZahl(a.widthMm)} × ${gkZahl(a.heightMm)} mm</p>`,
  `<button class="btn-text" data-act="gkBeschriftung" data-id="${e.id}">Beschriftung</button>${e.klemmenProjekt?`<button class="btn-text" data-act="gkBlockEdit" data-id="${e.id}">Klemmen und Brücken</button>`:`<button class="btn-text" data-act="gkErsetzen" data-id="${e.id}">Ersetzen</button>`}<span style="flex:1"></span><button class="btn-tonal" data-act="awZu">Schließen</button>`,{breit:true});}

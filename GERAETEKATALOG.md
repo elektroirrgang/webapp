@@ -1,5 +1,11 @@
 # Geräte im Verteiler
 
+## Bestücken (ab 1.11.4)
+
+Ein Fenster für alles: Tabs **Reihen, Automaten, RCD, FI/LS, Sonstiges** (Artikel aus der Firmen-Materialliste) und **Katalog** (alle Katalog-Geräte). Oben filtert die Herstellerzeile (im Katalog-Tab zusätzlich die Gerätegruppe). Eine Kachel antippen wählt sie aus, jedes weitere Antippen zählt hoch; unten stehen Anzahl (− / +) und „Einsetzen“. Mehrere Automaten bekommen die Bezeichnung „?“, die Wofür-Frage kommt nur bei genau einem.
+
+Artikel aus der Materialliste zeigen das Katalogbild nur, wenn Modell und Aufdruck genau stimmen (`gkMatAsset` in `src/geraetekatalog.js`): Katalogeintrag mit der Artikelnummer als `article` oder `model`, sonst die Liste `GK_MAT_SERIE` (Serienbilder, deren Aufdruck genau ein Artikel ist, z. B. MBS-Bild = MBS116). Alles andere behält das bisherige Bild. Nachgereichte Varianten mit der vollen Artikelnummer als Modell oder Artikel werden automatisch zugeordnet – in Auswahl, Verteilerzeichnung und Materialübersicht.
+
 Im Bestückungsdialog **Gerät → Gerätekatalog** öffnen. 2.184 Varianten lassen sich nach Hersteller, Kategorie und Text filtern. Die Liste lädt zunächst 48 Vorschauen; „Weitere anzeigen“ ergänzt die nächsten. Eine Kachel setzt das Gerät ein. In der Verteilerzeichnung öffnet Antippen die Produktansicht; dort sind Beschriftung und Austausch erreichbar.
 
 ## Maße und Speicherung

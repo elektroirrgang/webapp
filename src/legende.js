@@ -236,7 +236,9 @@ function legHagerBild(e,w){ const m=String(e.mat||"").toUpperCase().replace(/[\s
   else if(/^AD/.test(m)) k=w>=4?"adx-4p":"ada-1pn";
   const c=LEG_HAGER[k]; return c&&c[0]===w?{f:"hager/"+k+".webp",c,k}:null; }   /* Höhe eines Geräts im Verhältnis zur Breite */
 /* Gerät zeichnen: x = linke Kante, w = Breite in TE, oben bei y0 (Mitte = Hutschiene) */
-function legGeraetBild(e,x,w,y0,P,bild){ if(e.katalog) return gkBild(e,x,y0,P); const H=P*400/92, B=bild||"../bilder/vt/";
+function legGeraetBild(e,x,w,y0,P,bild){ if(e.katalog) return gkBild(e,x,y0,P);
+  { const ka=typeof gkFuerEintrag==="function"&&gkFuerEintrag(e); if(ka) return gkBildAsset(ka,x,w,y0,P); }   /* Katalogbild, wenn es genau zum Artikel passt (Max 28.11.2026) */
+  const H=P*400/92, B=bild||"../bilder/vt/";
   if(e.art==="kl"){ const fb=e.farbe||(/pe/i.test(e.bez||"")?"pe":/^\s*a\b|abzweig/i.test(e.bez||"")?"a":"n"), h=P*717/140; /* farbe geht beim Speichern verloren – Bezeichnung entscheidet; unverzerrt, höher als ein Automat */
     return `<image href="${B}pollmann-${fb==="pe"?"pe":fb==="a"?"a":"n"}14s.png" x="${x}" y="${(y0+H/2-h/2).toFixed(1)}" width="${w*P}" height="${h.toFixed(1)}"/>`; }
   /* Aufdruck: Nennstrom bzw. RCD-Daten */
