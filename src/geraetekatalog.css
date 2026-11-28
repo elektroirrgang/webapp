@@ -22,3 +22,11 @@
 .gk-hz.voll .gk-hb i{background:var(--ok)}
 .gk-hw{text-align:right;font-variant-numeric:tabular-nums;color:var(--on-sv);font-size:13px}
 @media (max-width:520px){.gk-hz{grid-template-columns:minmax(0,1fr) 80px}.gk-hb{grid-column:1/-1;order:3}}
+
+/* Gerätekatalog-Bilder: Ablagefläche zum Hineinziehen, fehlende Bilder */
+.gk-drop{margin-top:14px;padding:22px 16px 16px;border-radius:20px;background:var(--sc-high);display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;transition:background .15s}
+.gk-drop>.ic{width:32px;height:32px;fill:var(--primary);margin-bottom:4px}.gk-drop>b{font-size:16px}.gk-drop>span{color:var(--on-sv);font-size:13px}
+.gk-drop.ueber{background:color-mix(in srgb,var(--primary) 22%,var(--sc-high))}.gk-drop.aus{opacity:.6}
+.gk-drop .gk-knopf{margin-top:12px;justify-content:center;flex-wrap:wrap}
+.gk-zeit{color:var(--on-sv);font-size:12px;white-space:nowrap}
+.gk-fehlt-l .li{min-height:52px}

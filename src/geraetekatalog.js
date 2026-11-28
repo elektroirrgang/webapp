@@ -245,6 +245,7 @@ document.addEventListener("click",ev=>{const b=ev.target.closest?.('[data-act^="
    vom Laptop wählen, Fortschritt live. Jede SVG-/PNG-Datei wird über ihre SHA-256-Prüfsumme einem Index-Eintrag zugeordnet und als
    „katalog~assets~<id>.<endung>“ nach „_App/Bilder“ geladen; Vorhandenes wird übersprungen. Danach liefert der Service Worker sie wie alle
    Produktbilder aus (nur nach der Anmeldung). */
+let GK_SP_T=0, GK_SP_TICK=0;
 const GK_HOCH={laeuft:false,gesamt:0,fertig:0,neu:0,da:0,fremd:0,fehler:0,start:0,aktuell:"",ende:0,fehlerListe:[]};
 const gkSpName=a=>bspName("/bilder/katalog/"+a.file);
 const gkSpDa=a=>{ const L=(typeof BSP!=="undefined"&&BSP.liste)||{}; return !!L[bspPfad(gkSpName(a))]; };
@@ -262,14 +263,19 @@ function gkFortHtml(){ const U=GK_HOCH, p=U.gesamt?U.fertig/U.gesamt:0, rest=U.f
     <p class="meta" style="margin:8px 4px 0">${U.laeuft?esc(`${U.aktuell?U.aktuell+" · ":""}noch etwa ${gkDauer(rest)} – Fenster bitte offen lassen`):U.ende?esc(`Fertig nach ${gkDauer(U.ende-U.start)}`):""}</p>`; }
 function gkSpView(){ if(typeof istEntwickler!=="function"||!istEntwickler()) return `<div class="narrow"><div class="empty">${icon("lock")}<h2>Nur für Entwickler</h2></div></div>`;
   const S=gkStand(), U=GK_HOCH, ok=typeof SYNC_ON!=="undefined"&&SYNC_ON&&ME.signedIn, liste=typeof BSP!=="undefined"&&BSP.liste;
-  if(ok&&!liste) setTimeout(()=>bspListe(true).then(()=>{ if(nav.v==="gkbilder") render(); }),0);
+  /* Stand immer frisch aus dem SharePoint: beim Öffnen und alle 30 s, solange die Seite offen ist (Max 28.11.2026) */
+  if(ok&&!U.laeuft&&Date.now()-GK_SP_T>30e3){ GK_SP_T=Date.now(); setTimeout(()=>bspListe(true).then(()=>{ if(nav.v==="gkbilder") render(); }),0); }
+  clearTimeout(GK_SP_TICK); if(ok) GK_SP_TICK=setTimeout(()=>{ if(nav.v==="gkbilder"&&!GK_HOCH.laeuft&&!document.hidden) render(); },31e3);
+  const fehlt=liste?GK_INDEX.filter(a=>!gkSpDa(a)):[];
   if(ok&&!GK_BS.daten&&!GK_BS.ladeVersuch){ GK_BS.ladeVersuch=1; setTimeout(()=>gkBsLaden().then(d=>{ if(d&&nav.v==="gkbilder") render(); }),0); }
   const p=S.n?S.da/S.n:0;
   return `<div class="narrow gk-sp">
     <section class="gk-kopf"><div class="gk-gross"><b>${gkTsd(S.da)}</b><span>von ${gkTsd(S.n)} Bildern im SharePoint</span></div>
       <div class="gk-bar gross"><i style="width:${(p*100).toFixed(1)}%"></i></div>
-      <p class="meta" style="margin:10px 2px 0">${!ok?"Erst mit dem Firmenkonto anmelden – die Bilder gehen in den SharePoint der Firma.":!liste?"Stand wird geladen …":S.da===S.n?"Alle Katalogbilder sind im SharePoint. Neue Bilder einfach erneut hochladen – Vorhandenes wird übersprungen.":"Ordner „Katalog“ vom Laptop wählen. Die App erkennt jedes Bild an seiner Prüfsumme und lädt nur, was noch fehlt."}</p>
-      <div class="gk-knopf">${U.laeuft?`<button type="button" class="btn-tonal" data-act="gkHochStop">Anhalten</button>`:`<button type="button" class="btn-filled" data-act="gkHoch" ${ok?"":"disabled"}>${icon("upload")}<span>Ordner „Katalog“ wählen</span></button>`}<button type="button" class="btn-text" data-act="gkHochNeu" ${ok?"":"disabled"}>Stand neu laden</button></div></section>
+      <p class="meta" style="margin:10px 2px 0">${!ok?"Erst mit dem Firmenkonto anmelden – die Bilder gehen in den SharePoint der Firma.":!liste?"Stand wird geladen …":S.da===S.n?"Alle Katalogbilder sind im SharePoint.":"Bilder oder ganze Ordner hierher ziehen oder auswählen. Die App erkennt jedes Bild an seiner Prüfsumme und lädt nur, was noch fehlt."}${liste?` <span class="gk-zeit">Stand ${new Date(BSP.t||Date.now()).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</span>`:""}</p>
+      ${U.laeuft?`<div class="gk-knopf"><button type="button" class="btn-tonal" data-act="gkHochStop">Anhalten</button></div>`:`<div class="gk-drop${ok?"":" aus"}" data-gkdrop="1">${icon("upload")}<b>Bilder oder Ordner hierher ziehen</b><span>SVG und PNG · einzelne Dateien oder der ganze Ordner</span>
+        <div class="gk-knopf"><button type="button" class="btn-filled" data-act="gkHoch" data-v="dateien" ${ok?"":"disabled"}>Dateien wählen</button><button type="button" class="btn-tonal" data-act="gkHoch" data-v="ordner" ${ok?"":"disabled"}>Ordner wählen</button><button type="button" class="btn-text" data-act="gkHochNeu" ${ok?"":"disabled"}>Stand neu laden</button></div></div>`}</section>
+    ${fehlt.length?`<div class="sec-lbl">Fehlt noch im SharePoint · ${gkTsd(fehlt.length)}</div><div class="list gk-fehlt-l">${fehlt.slice(0,60).map(a=>`<div class="li"><span class="lt"><span class="h">${esc(`${a.manufacturer==="Schneider Electric"?"Schneider":a.manufacturer} ${a.model}`)}</span><span class="s">${esc([a.article,a.category].filter(Boolean).join(" · "))}</span></span></div>`).join("")}${fehlt.length>60?`<p class="meta" style="margin:8px 4px">… und ${gkTsd(fehlt.length-60)} weitere</p>`:""}</div>`:""}
     ${U.gesamt?`<div class="sec-lbl">${U.laeuft?"Läuft gerade":"Letzter Durchgang"}</div><section class="gk-kopf" id="gkFort">${gkFortHtml()}</section>`:""}
     ${U.fehlerListe.length?`<div class="sec-lbl">Nicht hochgeladen</div><div class="list">${U.fehlerListe.slice(0,30).map(t=>`<div class="li"><span class="lt"><span class="h">${esc(t[0])}</span><span class="s">${esc(t[1])}</span></span></div>`).join("")}</div>`:""}
     <div class="sec-lbl">Beschriftungen der SVGs</div><section class="gk-kopf" id="gkBs">${gkBsHtml()}</section>
@@ -280,7 +286,7 @@ let gkFortT=0;
 function gkFortZeigen(){ if(nav.v!=="gkbilder") return; const n=Date.now(); if(n-gkFortT<250) return; gkFortT=n; const bs=document.getElementById("gkBs"); if(bs&&GK_BS.laeuft){ bs.innerHTML=gkBsHtml(); if(!GK_HOCH.laeuft) return; } const el=document.getElementById("gkFort"); if(el) el.innerHTML=gkFortHtml(); else render(); }
 async function gkHochladen(files){ const U=GK_HOCH; if(U.laeuft) return;
   if(typeof SYNC_ON==="undefined"||!SYNC_ON||!ME.signedIn){ toast("Erst mit dem Firmenkonto anmelden"); return; }
-  const F=[...files].filter(f=>/\.(svg|png)$/i.test(f.name)); if(!F.length){ toast("Im gewählten Ordner sind keine SVG- oder PNG-Dateien"); return; }
+  const F=[...files].filter(f=>/\.(svg|png)$/i.test(f.name)); if(!F.length){ toast("Keine SVG- oder PNG-Dateien dabei"); return; }
   Object.assign(U,{laeuft:true,stop:false,gesamt:F.length,fertig:0,neu:0,da:0,fremd:0,fehler:0,start:Date.now(),ende:0,aktuell:"",fehlerListe:[]}); render();
   const nachHash=new Map(); GK_INDEX.forEach(a=>{ if(!nachHash.has(a.sha256)) nachHash.set(a.sha256,[]); nachHash.get(a.sha256).push(a); });
   try{ await bspListe(true); const L=BSP.liste||{}, inArbeit=new Set(); await syncRoot(); const fid=await folderId(BSP_ORDNER,BSP_BIB);
@@ -303,5 +309,14 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="gkHochStop"){ GK_HOCH.stop=true; toast("Wird angehalten …"); return; }
   if(a==="gkHochNeu"){ bspListe(true).then(()=>{ render(); toast("Stand aktualisiert"); }); return; }
   if(GK_HOCH.laeuft) return;
-  const i=document.createElement("input"); i.type="file"; i.multiple=true; i.webkitdirectory=true; i.hidden=true; document.body.appendChild(i);
+  const i=document.createElement("input"); i.type="file"; i.multiple=true; if(b.dataset.v==="ordner") i.webkitdirectory=true; else i.accept=".svg,.png,image/svg+xml,image/png"; i.hidden=true; document.body.appendChild(i);
   i.onchange=()=>{ const fs=i.files; i.remove(); if(fs&&fs.length) gkHochladen(fs); }; i.click(); },true);
+
+/* Hineinziehen: einzelne Dateien und ganze Ordner (auch verschachtelt) */
+async function gkDropDateien(dt){ const out=[], lies=e=>new Promise(r=>{ if(e.isFile) e.file(f=>{ out.push(f); r(); },()=>r()); else if(e.isDirectory){ const rd=e.createReader(), alle=[]; const nx=()=>rd.readEntries(async L=>{ if(!L.length){ for(const x of alle) await lies(x); r(); } else { alle.push(...L); nx(); } },()=>r()); nx(); } else r(); });
+  const E=[...(dt.items||[])].map(it=>it.webkitGetAsEntry&&it.webkitGetAsEntry()).filter(Boolean);
+  if(E.length){ for(const e of E) await lies(e); return out; } return [...(dt.files||[])]; }
+document.addEventListener("dragover",e=>{ const z=e.target.closest&&e.target.closest("[data-gkdrop]"); if(!z||z.classList.contains("aus")) return; e.preventDefault(); z.classList.add("ueber"); });
+document.addEventListener("dragleave",e=>{ const z=e.target.closest&&e.target.closest("[data-gkdrop]"); if(z&&!z.contains(e.relatedTarget)) z.classList.remove("ueber"); });
+document.addEventListener("drop",async e=>{ const z=e.target.closest&&e.target.closest("[data-gkdrop]"); if(!z) return; e.preventDefault(); z.classList.remove("ueber"); if(z.classList.contains("aus")||GK_HOCH.laeuft) return;
+  const F=await gkDropDateien(e.dataTransfer); if(F.length) gkHochladen(F); });
