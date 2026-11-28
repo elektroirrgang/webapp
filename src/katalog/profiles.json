@@ -1,0 +1,37 @@
+{
+  "wago_2004_1201": {
+    "manufacturer": "WAGO",
+    "article": "2004-1201",
+    "assetId": "asset_c28d9e66c2280334",
+    "widthMm": 6.2,
+    "heightMm": 52.3,
+    "faceCenterFromTopMm": 26.15,
+    "marker": {
+      "xMm": 0.7,
+      "yMm": 31.5,
+      "widthMm": 4.8,
+      "heightMm": 5.5
+    },
+    "slots": {
+      "A": {
+        "xMm": 3.1,
+        "yMm": 19.9,
+        "pitchMm": 6.2,
+        "allowedBridgeArticles": [
+          "2004-402"
+        ]
+      },
+      "B": {
+        "xMm": 3.1,
+        "yMm": 25.7,
+        "pitchMm": 6.2,
+        "allowedBridgeArticles": [
+          "2004-402"
+        ]
+      }
+    },
+    "profileStatus": "visual-demo-not-complete-manufacturer-approval",
+    "source": "https://www.wago.com/de/reihenklemmen/bruecker/p/2004-402",
+    "geometryBasis": "Schacht- und Markerpositionen aus vorhandener Vektorfront abgeleitet; kein Hersteller-Montageprofil"
+  }
+}

@@ -76,7 +76,7 @@ function labKategorien(){ const G=labGeraetText(), angemeldet=!!(ME&&ME.mail);
   return [
     ["ml","Benachrichtigungen",(angemeldet?labF(typeof mlGeraetZeile==="function"&&mlGeraetZeile)+labF(typeof mlDiagZeile==="function"&&mlDiagZeile)+labF(typeof mlTestZeile==="function"&&mlTestZeile)+labF(typeof simZeile==="function"&&simZeile):""),iosHinweis+labTestVerlauf()],
     ["daten","Daten",labF(typeof demoZeile==="function"&&demoZeile)+labF(typeof taZeile==="function"&&taZeile)+labF(typeof kdImportZeile==="function"&&kdImportZeile)+labF(typeof etsZeile==="function"&&etsZeile)
-      +labZ("syncNeu","sync","Alles neu abgleichen","Lädt alle Einträge neu von SharePoint – hilft, wenn auf diesem Gerät etwas fehlt"),""],
+      +labF(typeof gkUploadZeile==="function"&&gkUploadZeile)+labZ("syncNeu","sync","Alles neu abgleichen","Lädt alle Einträge neu von SharePoint – hilft, wenn auf diesem Gerät etwas fehlt"),""],
     ["ansicht","Ansicht und Vorführen",labF(typeof ansichtZeile==="function"&&ansichtZeile,false)+labF(typeof tourZeile==="function"&&tourZeile),""],
     ["alle-ma","Für alle Mitarbeiter",labF(typeof fnZeile==="function"&&fnZeile)+(typeof MEHR_SUB!=="undefined"&&MEHR_SUB.karteEinst?labZ("nav:karteEinst","ort","Karte beim Kunden","Farben, Umkreis und Anzahl der Anhaltspunkte"):"")+labF(typeof bspZeile==="function"&&typeof MEHR_SUB!=="undefined"&&MEHR_SUB.karteEinst&&bspZeile)+(angemeldet?labF(typeof wuEntwZeile==="function"&&wuEntwZeile):""),""],
     ["diag","Diagnose",labZ("labFehler","labFehler","Fehlerprotokoll",(n=>n?`${n} ${n===1?"Eintrag":"Einträge"} auf diesem Gerät – antippen zeigt Meldung, Stelle und App`:"Keine Fehler aufgezeichnet")(labListe(LAB_FEHLER).length))

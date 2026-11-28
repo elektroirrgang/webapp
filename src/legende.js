@@ -188,7 +188,7 @@ function legSkKarte(L,E){ return `<section class="card"><div class="card-kopf le
 const legAnsicht=()=>META.legAnsicht==="verteiler"?"verteiler":"liste";
 const legBauart=L=>[{hv:"Zählerschrank / HV",uv:"Unterverteiler",gw:"Gewerbe / Standverteiler"}[L.art],L.zs&&typeof zsHerstText==="function"?zsHerstText(L.zs.hersteller):"",{ap:"Aufputz",up:"Unterputz",hw:"Hohlwand"}[L.montage],L.zs&&+L.zs.hoehe?L.zs.hoehe+" mm":"",L.reihen&&`${L.reihen}-reihig · ${L.reihen*(+L.teReihe||12)} TE`].filter(Boolean).join(" · ");
 /* Breite in TE. Dreipolige LS sind mindestens 3 TE breit – auch wenn aus der Aufnahme noch die Breite eines 1-poligen Artikels (1 TE) gespeichert ist */
-const legTE=e=>e.art==="kl"?1:e.art==="sk"&&+e.pole===3?Math.max(3,+e.te||3):+e.te||(e.art==="rcd"?4:1);
+const legTE=e=>e.katalog?gkTE(e):e.art==="kl"?1:e.art==="sk"&&+e.pole===3?Math.max(3,+e.te||3):+e.te||(e.art==="rcd"?4:1);
 /* FI/LS (RCBO) hat seinen eigenen Fehlerstromschutz: gehört NIE unter den RCD davor und beendet dessen Gruppe */
 const legIstRcbo=e=>!!e&&e.art==="sk"&&/FI\s*\/\s*LS|LS\s*\/\s*FI|RCBO/i.test(e.schutz||"");
 const legOffen=e=>e.art==="sk"&&/^\s*\??\s*$/.test(e.bez||"");
@@ -203,7 +203,7 @@ function legListeView(L){ const E=legE(L), zu=L.fertig, B=[], PL=legPlaetze(L); 
     ${zu?"":`<div class="leg-neu"><button type="button" data-act="legNeuRcd">${icon("add")}Neuer RCD mit Stromkreisen</button>${legReihen(L).length?`<button type="button" data-act="legRkDlg">${icon("copy")}Reihe kopieren</button>`:""}</div>`}</div>`; }
 /* Reihen bilden: Breite je Gerät in TE, „Neue Reihe ab hier“ bricht um */
 function legReihen(L){ const n=+L.teReihe||12, R=[]; let r=null;
-  legE(L).forEach((e,i)=>{ if(e.art==="gr") return; const w=Math.min(legTE(e),n); if(!r||e.umbruch||r.te+w>n){ r={te:0,g:[]}; R.push(r); } r.g.push([e,i,w]); r.te+=w; });
+  legE(L).forEach((e,i)=>{ if(e.art==="gr") return; const w=Math.min(legTE(e),n); if(!r||e.umbruch||r.te+w>n+1e-8){ r={te:0,g:[]}; R.push(r); } r.g.push([e,i,w]); r.te+=w; });
   return R; }
 /* Gezeichneter Verteiler: Geräte schlicht und herstellerneutral, feste Größe (50 px je TE), darunter Beschriftung wie im Streifen */
 const LEG_P=50;
@@ -236,7 +236,7 @@ function legHagerBild(e,w){ const m=String(e.mat||"").toUpperCase().replace(/[\s
   else if(/^AD/.test(m)) k=w>=4?"adx-4p":"ada-1pn";
   const c=LEG_HAGER[k]; return c&&c[0]===w?{f:"hager/"+k+".webp",c,k}:null; }   /* Höhe eines Geräts im Verhältnis zur Breite */
 /* Gerät zeichnen: x = linke Kante, w = Breite in TE, oben bei y0 (Mitte = Hutschiene) */
-function legGeraetBild(e,x,w,y0,P,bild){ const H=P*400/92, B=bild||"../bilder/vt/";
+function legGeraetBild(e,x,w,y0,P,bild){ if(e.katalog) return gkBild(e,x,y0,P); const H=P*400/92, B=bild||"../bilder/vt/";
   if(e.art==="kl"){ const fb=e.farbe||(/pe/i.test(e.bez||"")?"pe":/^\s*a\b|abzweig/i.test(e.bez||"")?"a":"n"), h=P*717/140; /* farbe geht beim Speichern verloren – Bezeichnung entscheidet; unverzerrt, höher als ein Automat */
     return `<image href="${B}pollmann-${fb==="pe"?"pe":fb==="a"?"a":"n"}14s.png" x="${x}" y="${(y0+H/2-h/2).toFixed(1)}" width="${w*P}" height="${h.toFixed(1)}"/>`; }
   /* Aufdruck: Nennstrom bzw. RCD-Daten */
@@ -262,17 +262,17 @@ const legWrap=(t,max)=>{ const w=[]; String(t||"").split(/\s+/).filter(Boolean).
 function legVtView(L){ const n=+L.teReihe||12, P=LEG_P, R=legReihen(L), zu=L.fertig, B=n*P;
   /* Handy: ganze Reihe passt in die Breite (kein seitliches Wischen). Im Bild nur die Kennzeichnung, darunter die Beschriftung als Liste. */
   const mobil=matchMedia("(max-width:599px)").matches, kzF=mobil?19:10.5, kzH=mobil?30:20;
-  return R.map((r,ri)=>{ const GH=LEG_H(1), KY=GH+10; let x=0, hoch=KY+(mobil?kzH+8:64); const g=r.g.map(([e,i,w])=>{ const X=x*P, Wd=w*P, sym=mobil?"":legSymFuer(e), z=mobil?[]:legWrap(e.art==="res"?"Reserve":legOffen(e)?"?":e.bez,w>1?w*8:8), fz=w>1?10.5:z.some(t=>t.length>7)?9:10.5;
+  return R.map((r,ri)=>{ const GH=LEG_H(1), ext=gkExtents(r,L,GH), KY=Math.max(GH,ext.bottom)+10; let x=0, hoch=KY+(mobil?kzH+8:64); const g=r.g.map(([e,i,w])=>{ const X=x*P, Wd=w*P, sym=mobil?"":legSymFuer(e), z=mobil?[]:legWrap(e.art==="res"?"Reserve":legOffen(e)?"?":e.bez,w>1?w*8:8), fz=w>1?10.5:z.some(t=>t.length>7)?9:10.5;
         const kz=legKzA(e.kz).slice(0,w>1?16:7), eng=mobil&&kz.length*kzF*.62>Wd-8;
         const out=`<g class="leg-dev"${zu||e.art==="kl"||e.art==="res"?"":` data-act="legProdukt"`} data-id="${esc(e.id)}"><title>${esc([legKzA(e.kz),e.bez,legSchutz(e)].filter(Boolean).join(" · "))}</title>${legGeraet(e,X,w)}
           ${e.art==="kl"?"":`<rect x="${X+2}" y="${KY}" width="${Wd-4}" height="${kzH}" rx="${mobil?6:4}" fill="${e.art==="rcd"?"#2F6FD1":e.art==="res"?"#A9AEB6":"#737A84"}"/><text x="${X+Wd/2}" y="${KY+kzH/2+kzF*.36}" font-size="${kzF}" font-weight="800" text-anchor="middle" fill="#fff"${eng?` textLength="${Wd-8}" lengthAdjust="spacingAndGlyphs"`:""}>${esc(kz)}</text>`}
           ${sym?`<g transform="translate(${X+Wd/2-11} ${KY+28})" class="leg-sym">${legSymSvg(sym,22,true)}</g>`:""}
           ${z.map((t,k)=>`<text x="${X+Wd/2}" y="${KY+(sym?66:40)+(e.art==="kl"?20:0)+k*13}" font-size="${fz}" font-weight="600" text-anchor="middle" class="leg-st">${esc(t)}</text>`).join("")}</g>`; if(!mobil) hoch=Math.max(hoch,KY+(sym?66:40)+(z.length-1)*13+10+(e.art==="kl"?20:0)); x+=w; return out; }).join("");
       const frei=n-r.te, last=r.g[r.g.length-1][1];
-      const fr=frei>0?`<g class="leg-frei" ${zu?"":`data-act="legNach" data-i="${last}"`}><rect x="${x*P+2}" y="${GH*.12}" width="${frei*P-4}" height="${GH*.76}" rx="5" class="leg-fr"/><text x="${x*P+frei*P/2}" y="${frei>1?GH/2-4:GH/2-18}" font-size="${(frei>1?12:10)*(mobil?1.6:1)}" font-weight="800" text-anchor="middle" class="leg-frt">${frei>1?`${frei} TE frei`:"frei"}</text>${zu?"":`<text x="${x*P+frei*P/2}" y="${frei>1?GH/2+16*(mobil?1.6:1):GH/2+2}" font-size="${16*(mobil?1.6:1)}" font-weight="700" text-anchor="middle" class="leg-frt">+</text>`}</g>`:"";
+      const fr=frei>0?`<g class="leg-frei" ${zu?"":`data-act="legNach" data-i="${last}"`}><rect x="${x*P+2}" y="${GH*.12}" width="${frei*P-4}" height="${GH*.76}" rx="5" class="leg-fr"/><text x="${x*P+frei*P/2}" y="${frei>1?GH/2-4:GH/2-18}" font-size="${(frei>1?12:10)*(mobil?1.6:1)}" font-weight="800" text-anchor="middle" class="leg-frt">${frei>1?`${gkZahl(frei)} TE frei`:"frei"}</text>${zu?"":`<text x="${x*P+frei*P/2}" y="${frei>1?GH/2+16*(mobil?1.6:1):GH/2+2}" font-size="${16*(mobil?1.6:1)}" font-weight="700" text-anchor="middle" class="leg-frt">+</text>`}</g>`:"";
       /* Beschriftung unter der Reihe (nur Handy): Kennzeichnung, Bezeichnung, Schutz – antippen bearbeitet */
       const leg=mobil?`<div class="leg-rl">${r.g.filter(([e])=>e.art!=="kl").map(([e])=>`<button type="button" class="leg-rl-z${e.art==="rcd"?" rcd":""}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}><span class="kz">${esc(legKzA(e.kz)||"–")}</span><span class="bz">${e.art==="res"?"Reserve":e.art==="rcd"?esc(e.bez||"Fehlerstromschutzschalter"):legOffen(e)?"? – noch unbekannt":esc(e.bez||"–")}</span><span class="sc">${esc(legSchutz(e))}</span></button>`).join("")}</div>`:"";
-      return `<div class="leg-reihe" style="width:min(100%,${Math.round(B*1.45)+28}px)"><div class="leg-rk">Reihe ${ri+1}<span>${r.te} von ${n} TE belegt</span></div><div class="leg-rs"><svg viewBox="0 ${r.g.some(([e])=>e.art==="kl")?-20:0} ${B} ${hoch+(r.g.some(([e])=>e.art==="kl")?20:0)}" class="leg-svg" role="img" aria-label="Reihe ${ri+1}"><rect x="0" y="${GH/2-17}" width="${B}" height="34" rx="2" fill="#C9CDD2"/><rect x="0" y="${GH/2-11}" width="${B}" height="22" fill="#B5BAC0"/>${g}${fr}</svg></div>${leg}</div>`; }).join(""); }
+      return `<div class="leg-reihe" style="width:min(100%,${Math.round(B*1.45)+28}px)"><div class="leg-rk">Reihe ${ri+1}<span>${gkZahl(r.te)} von ${n} TE belegt</span></div><div class="leg-rs"><svg viewBox="0 ${Math.min(ext.top,r.g.some(([e])=>e.art==="kl")?-20:0)} ${B} ${hoch-Math.min(ext.top,r.g.some(([e])=>e.art==="kl")?-20:0)}" class="leg-svg" role="img" aria-label="Reihe ${ri+1}"><rect x="0" y="${GH/2-17}" width="${B}" height="34" rx="2" fill="#C9CDD2"/><rect x="0" y="${GH/2-11}" width="${B}" height="22" fill="#B5BAC0"/>${g}${fr}</svg></div>${leg}</div>`; }).join(""); }
 /* ===== Symbole für Beschriftung (eigene, schlichte Piktogramme, 24er-Raster, Linien) ===== */
 const LEG_SYM={
   steckdose:'<circle cx="12" cy="12" r="9"/><circle cx="8.6" cy="12" r="1.3" class="f"/><circle cx="15.4" cy="12" r="1.3" class="f"/>',
@@ -374,7 +374,7 @@ function legSkOk(weiter){ const L=legAkt(); if(!L||!legDlg) return; const F=form
   if(a==="gr"&&!F.legBez){ toast("Bitte eine Überschrift eintragen"); return; }
   if(a!=="gr"&&!F.legKz&&!legSchemaNum(E)){ toast("Bitte eine Kennzeichnung eintragen"); return; }
   const r={id:legDlg.id||uid(),art:a,kz:a==="gr"?"":F.legKz,bez:a==="res"?"":a==="rcd"&&!F.legBez?"Fehlerstromschutzschalter":F.legBez,schutz:a==="gr"?"":F.legSchutz,pole:a==="sk"?+legDlg.pole:1,...(legDlg.te&&!(a==="sk"&&+legDlg.pole===3&&+legDlg.te<3)?{te:+legDlg.te}:{}),...(legDlg.umbruch?{umbruch:true}:{}),...(legDlg.sym?{sym:legDlg.sym}:{})};
-  { const alt=E.find(x=>x.id===r.id); if(alt&&alt.mat&&alt.schutz===r.schutz&&alt.art===r.art&&(+alt.pole||1)===(+r.pole||1)) r.mat=alt.mat; }   /* Artikel aus der Materialliste bleibt, solange die Absicherung gleich ist */
+  { const alt=E.find(x=>x.id===r.id); if(alt?.katalog&&(alt.art!==r.art||alt.schutz!==r.schutz||(+alt.pole||1)!==(+r.pole||1))){toast("Technische Daten bitte über Ersetzen im Gerätekatalog ändern.");return;} if(alt?.katalog&&a!=="gr"){r.katalog=gkClone(alt.katalog);if(alt.klemmenProjekt)r.klemmenProjekt=gkClone(alt.klemmenProjekt);r.te=gkTE(r,L);} if(alt&&alt.mat&&alt.schutz===r.schutz&&alt.art===r.art&&(+alt.pole||1)===(+r.pole||1)) r.mat=alt.mat; }   /* Artikel aus der Materialliste bleibt, solange die Absicherung gleich ist */
   let i=E.findIndex(x=>x.id===r.id); if(i>=0) E[i]=r; else { E.splice(legDlg.pos,0,r); i=legDlg.pos; }
   if(weiter==="dupl") return i;
   legSpeichern(L); render();
@@ -383,7 +383,7 @@ function legSkOk(weiter){ const L=legAkt(); if(!L||!legDlg) return; const F=form
 /* Ende der Gruppe eines RCD: seine Automaten (nicht FI/LS, keine Geräte) folgen direkt – eine Kopie des RCD gehört HINTER sie, sonst würde sie ihm die Automaten wegnehmen */
 function legGruppenEnde(E,i){ let j=i; while(j+1<E.length&&!["rcd","gr","ge"].includes(E[j+1].art)&&!legIstRcbo(E[j+1])) j++; return j; }
 function legKopien(L,i,n){ const E=legE(L), num=legSchemaNum(E), neu=[]; const q=E[i]; if(q.art==="rcd") i=legGruppenEnde(E,i);
-  for(let k=1;k<=n;k++){ const c={id:uid(),art:q.art,kz:num?"":q.art==="rcd"?legRcdKz(E,i+k-1,false):legNaechsteKz(E,i+k-1),bez:q.art==="rcd"?"Fehlerstromschutzschalter":"",schutz:q.schutz||"",pole:q.pole||1,...(q.te?{te:q.te}:{}),...(q.mat?{mat:q.mat}:{})}; E.splice(i+k,0,c); neu.push(c.id); }
+  for(let k=1;k<=n;k++){ const c={id:uid(),art:q.art,kz:num?"":q.art==="rcd"?legRcdKz(E,i+k-1,false):legNaechsteKz(E,i+k-1),bez:q.art==="rcd"?"Fehlerstromschutzschalter":"",schutz:q.schutz||"",pole:q.pole||1,...(q.te?{te:q.te}:{}),...(q.mat?{mat:q.mat}:{})}; if(q.katalog)c.katalog=gkClone(q.katalog);if(q.klemmenProjekt)c.klemmenProjekt=gkClone(q.klemmenProjekt);E.splice(i+k,0,c); neu.push(c.id); }
   return neu; }
 function legDuplizieren(n){ const L=legAkt(); if(!L||!legDlg) return; const i=legSkOk("dupl"); if(i==null) return; legKopien(L,i,n);
   legSpeichern(L); closeOverlays(); render(); toast(n===1?"Kopie eingefügt":`${n} Kopien eingefügt`); }
@@ -409,7 +409,7 @@ function legReiheKopieren(L,q,ziel,n,mitBez){ const E=legE(L), R=legReihen(L), s
   let pos=ziel==="ende"||!R[+ziel]?E.length:R[+ziel].g[R[+ziel].g.length-1][1]+1;
   const nachher=E[pos]; let zahl=0;
   for(let k=0;k<n;k++) src.forEach((e,j)=>{ const c={id:uid(),art:e.art,bez:e.art==="sk"&&!mitBez?"?":e.bez||"",schutz:e.schutz||"",pole:e.pole||1};
-    ["te","mat","sym","farbe"].forEach(f=>{ if(e[f]!=null&&e[f]!=="") c[f]=e[f]; });
+    ["te","mat","sym","farbe","katalog","klemmenProjekt"].forEach(f=>{ if(e[f]!=null&&e[f]!=="") c[f]=typeof e[f]==="object"?gkClone(e[f]):e[f]; });
     if(j===0) c.umbruch=true;
     c.kz=num||e.art==="kl"||e.art==="ge"?"":e.art==="rcd"?legRcdKz(E,pos-1,j===0):legNaechsteKz(E,pos-1);
     E.splice(pos,0,c); pos++; zahl++; });

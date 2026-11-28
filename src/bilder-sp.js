@@ -32,7 +32,7 @@ let BSP_VORAB=false;
 async function bspVorab(){ if(BSP_VORAB||!BSP.liste||bspMobilfunk()||!("caches" in window)) return; BSP_VORAB=true;
   try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{});
     const c=await caches.open("irrgang-bilder"), P=[];
-    for(const pfad of Object.keys(BSP.liste)) if(!(await c.match(pfad))) P.push(pfad);
+    for(const pfad of Object.keys(BSP.liste)) if(!/^\/bilder\/katalog\//.test(pfad)&&!(await c.match(pfad))) P.push(pfad);   /* Katalogbilder nur bei Bedarf */
     const lauf=async()=>{ while(P.length){ const p=P.shift(); try{ await fetch(p); }catch(e){} await new Promise(r=>setTimeout(r,60)); } };
     await Promise.all([lauf(),lauf(),lauf()]);
   }catch(e){ BSP_VORAB=false; } }

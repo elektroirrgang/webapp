@@ -206,7 +206,7 @@ function awKatalog(){ const L=legAkt(); if(!L){ awZu(); return; } AW.m=null;
       ${awBelegtLeiste(L)}
       <div class="aw-tabs" role="group">${[["reihe","Reihen"],["ls","Automaten"],["rcd","RCD"],["rcbo","FI/LS"],["sonst","Sonstiges"]].filter(([k])=>!(awEinfuegen()&&k==="reihe")).map(([k,t])=>`<button type="button" data-act="awTab" data-v="${k}" aria-pressed="${AW.tab===k}">${t}</button>`).join("")}</div>
       <div id="awSerie">${awSerieChips()}</div><div id="awGrid">${awGrid()}</div>`,
-    fuss:`<button type="button" class="aw-fragen" data-act="awFragen" aria-pressed="${awFragen()}">Wofür gleich fragen</button><span class="aw-fuss-info">${esc(AW.zuletzt||(legE(L).length?`${legE(L).filter(e=>e.art!=="gr").length} Geräte im Verteiler`:""))}</span><button type="button" class="btn-tonal" data-act="awZu">${legE(L).length?"Fertig":"Später bestücken"}</button>`});
+    fuss:`<button type="button" class="btn-tonal" data-act="gkOpen">Gerätekatalog</button><button type="button" class="aw-fragen" data-act="awFragen" aria-pressed="${awFragen()}">Wofür gleich fragen</button><span class="aw-fuss-info">${esc(AW.zuletzt||(legE(L).length?`${legE(L).filter(e=>e.art!=="gr").length} Geräte im Verteiler`:""))}</span><button type="button" class="btn-tonal" data-act="awZu">${legE(L).length?"Fertig":"Später bestücken"}</button>`});
   const z=$("#dlg .aw-zur"); if(z) z.hidden=true; }
 /* Belegt-Leiste (Max 27.11.2026): beim Bestücken immer sehen, was schon auf der Hutschiene sitzt – die aktuelle Reihe als
    Mini-Schiene (Breite nach TE, freie Plätze gestrichelt), dazu Zahlen: Reihe, TE belegt, Automaten am RCD, Geräte gesamt */
