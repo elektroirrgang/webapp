@@ -30,17 +30,26 @@ setTimeout(()=>bspListe(),800);
    Der Typ kommt aus der Dateiendung (SVG wird sonst nicht angezeigt); das Bild landet zusätzlich im Bilder-Cache des Geräts. */
 const BSP_TYP={svg:"image/svg+xml",png:"image/png",jpg:"image/jpeg",jpeg:"image/jpeg",webp:"image/webp",gif:"image/gif",avif:"image/avif"};
 const BSP_BLOB=new Map();
-function bspBlob(pfad){ if(BSP_BLOB.has(pfad)) return BSP_BLOB.get(pfad);
-  const p=(async()=>{ const c="caches" in window?await caches.open("irrgang-bilder").catch(()=>null):null; let r=c?await c.match(pfad).catch(()=>null):null;
-    if(!r||!r.ok){ const L=BSP.liste||await bspListe(); const u=L&&L[pfad]; if(!u) return null; r=await fetch(u); if(!r.ok) return null; }
-    const t=BSP_TYP[(pfad.split(".").pop()||"").toLowerCase()]; let b=await r.blob(); if(t&&b.type!==t) b=b.slice(0,b.size,t);
+/* Ist das wirklich ein Bild? SVG muss mit <svg/<?xml anfangen, Rasterbilder brauchen Inhalt – sonst gilt die Kopie als kaputt */
+async function bspEcht(b,t){ if(!b||!b.size) return false; if(t!=="image/svg+xml") return true; const k=(await b.slice(0,400).text()).replace(/^\uFEFF/,"").trimStart(); return /^<(\?xml|svg|!--)/i.test(k); }
+function bspBlob(pfad,frisch){ const key=pfad+(frisch?"#f":""); if(BSP_BLOB.has(key)) return BSP_BLOB.get(key);
+  const p=(async()=>{ const t=BSP_TYP[(pfad.split(".").pop()||"").toLowerCase()];
+    const c="caches" in window?await caches.open("irrgang-bilder").catch(()=>null):null;
+    if(c&&!frisch){ const r=await c.match(pfad).catch(()=>null); if(r&&r.ok){ let b=await r.blob(); if(await bspEcht(b,t)){ if(t&&b.type!==t) b=b.slice(0,b.size,t); return URL.createObjectURL(b); } } }
+    if(c) await c.delete(pfad).catch(()=>{});   /* kaputte oder alte Kopie weg – auch der Service Worker holt sie dann neu */
+    const L=frisch?await bspListe(true):(BSP.liste||await bspListe()); const u=L&&L[pfad]; if(!u) return null;
+    const r=await fetch(u,{cache:"no-store"}); if(!r.ok) return null; let b=await r.blob(); if(!(await bspEcht(b,t))) return null;
+    if(t&&b.type!==t) b=b.slice(0,b.size,t);
     if(c) c.put(pfad,new Response(b,{headers:{"Content-Type":t||b.type}})).catch(()=>{});
     return URL.createObjectURL(b); })().catch(()=>null);
-  BSP_BLOB.set(pfad,p); p.then(x=>{ if(!x) BSP_BLOB.delete(pfad); }); return p; }
+  BSP_BLOB.set(key,p); p.then(x=>{ if(!x) BSP_BLOB.delete(key); }); return p; }
+/* Erster Fehler: Kopie aus dem Gerätespeicher prüfen, sonst frisch holen. Schlägt auch das als Bild fehl: Kopie löschen und ganz frisch holen. */
 document.addEventListener("error",async ev=>{ const el=ev.target; if(!el||(el.tagName!=="IMG"&&el.tagName!=="image")) return;
-  const a=el.tagName==="IMG"?"src":"href", v=el.getAttribute(a)||""; if(!/\/bilder\//.test(v)||/^(blob|data):/.test(v)) return;
-  let pfad; try{ pfad=decodeURIComponent(new URL(v,location.href).pathname); }catch(e){ return; }
-  const b=await bspBlob(pfad); if(!b||el.getAttribute(a)!==v) return; el.setAttribute(a,b); const w=el.closest&&el.closest(".weg"); if(w) w.classList.remove("weg"); },true);
+  const a=el.tagName==="IMG"?"src":"href", v=el.getAttribute(a)||"";
+  let pfad=el.dataset.bspPfad||"";
+  if(!pfad){ if(!/\/bilder\//.test(v)||/^(blob|data):/.test(v)) return; try{ pfad=decodeURIComponent(new URL(v,location.href).pathname); }catch(e){ return; } }
+  const n=+(el.dataset.bspVers||0); if(n>=2) return; el.dataset.bspVers=String(n+1); el.dataset.bspPfad=pfad;
+  const b=await bspBlob(pfad,n>=1); if(!b||el.getAttribute(a)!==v) return; el.setAttribute(a,b); const w=el.closest&&el.closest(".weg"); if(w) w.classList.remove("weg"); },true);
 /* Einmal geladene Bilder bleiben im Gerätespeicher („irrgang-bilder“, auch über Updates hinweg). Im WLAN holt die App alle
    noch fehlenden Bilder leise vorab, damit sie beim ersten Anzeigen nicht erst nachladen. Speicher als „dauerhaft“ anfragen,
    damit der Browser ihn nicht bei Platzmangel leert. */
