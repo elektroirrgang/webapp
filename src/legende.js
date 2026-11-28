@@ -941,7 +941,7 @@ function legWsArtikelNeu(e){ if(!e.mat||typeof awGeraete!=="function") return; c
   const neu=G.find(m=>{ const t=matTech(m); if(!t||m.hersteller!==alt.hersteller) return false;
     if(e.art==="rcd") return t.art==="rcd"&&+t.in===+S.amp&&+t.idn===+S.idn&&String(t.typ||"A").toUpperCase()===S.typ;
     return t.art==="ls"&&String(t.char).toUpperCase()===S.char&&+t.in===+S.amp&&+t.pole===pol&&(!se||(matSerie(m)||[])[0]===se); });
-  if(neu) e.mat=matHnr(neu.herstellerNr); else delete e.mat; }
+  if(neu){ e.mat=matHnr(neu.herstellerNr); delete e.serie; } else { const sm=String(e.mat).match(/^(M[BC][SN])/); if(sm&&alt.hersteller==="Hager"&&e.art==="sk") e.serie={h:"Hager",m:sm[1]}; delete e.mat; } }
 const LEG_WS_OPT={char:["B","C","D","K","Z"],amp:[2,4,6,10,13,16,20,25,32,40,50,63],ramp:[25,40,63,80,100,125],idn:[10,30,100,300],typ:["A","AC","F","B"]};
 function legWsPick(b){ const L=legAkt(); if(!L||L.fertig) return; const e=legE(L).find(x=>x.id===LEG_WS.id); if(!e) return; const k=b.dataset.k, S=legWsSchutz(e);
   let O=[], cur="";
@@ -975,7 +975,7 @@ function legMorph(a,b){
   for(const at of [...a.attributes]) if(!b.hasAttribute(at.name)&&!(at.name==="class"&&a.classList.contains("hat-ind"))&&at.name!=="style") a.removeAttribute(at.name);
   for(const at of [...b.attributes]){ if(at.name==="class"&&a.classList&&a.classList.contains("hat-ind")){ const v=at.value+" hat-ind"; if(a.getAttribute("class")!==v) a.setAttribute("class",v); continue; }
     if(a.getAttribute(at.name)===at.value) continue;
-    if((at.name==="href"||at.name==="src")&&a.dataset&&a.dataset.gkanp&&/^blob:/.test(a.getAttribute(at.name)||"")&&at.value.startsWith("data:image/svg+xml")) continue;   /* fertiger Aufdruck bleibt */
+    if((at.name==="href"||at.name==="src")&&a.dataset&&a.dataset.gkanp&&/^blob:|\/bilder\/katalog\/anp\//.test(a.getAttribute(at.name)||"")&&at.value.startsWith("data:image/svg+xml")) continue;   /* fertiger Aufdruck bleibt */
     a.setAttribute(at.name,at.value); }
   if((a.nodeName==="INPUT"||a.nodeName==="TEXTAREA")&&a!==document.activeElement&&a.value!==b.value) a.value=b.value;
   const fremd=n=>n.nodeType===1&&n.classList&&n.classList.contains("seg-ind");   /* von segInd eingefügt – stehen lassen */
