@@ -42,3 +42,12 @@ Das Profil ist eine visuelle Planungsvorlage mit aus der Zeichnung abgeleiteten 
 Für die getrennte lokale UI-Vorschau: erst bauen, dann `node tools/preview-katalog.cjs` und `python3 -m http.server 8766 --bind 127.0.0.1` ausführen. Danach `http://127.0.0.1:8766/tools/katalog-vorschau.html` öffnen. Die Vorschau nutzt ausschließlich eigene Beispieldaten und ändert weder die Microsoft-Anmeldung noch Produktionsdaten. Die erzeugte Vorschau-Datei wird nicht eingecheckt.
 
 Die vollständige lokale App kann sich ohne passende lokale Redirect-URI nicht bei Microsoft anmelden. Die Anmeldekonfiguration wird für diesen Katalog nicht verändert. Vor dem Livegang bleibt die abschließende Prüfung im angemeldeten Programm einschließlich der bestehenden Schrank-/PDF-Ansichten erforderlich.
+
+## Nachtrag Resi9/Hager (ab 1.11.14)
+
+21 Geräte ergänzt (12 × Schneider Resi9 R9F2…, Hager EPS410B, EMN001, EZM100, EVN004, EHN010, EGN100, EGN103, EGN200, ADS916D).
+Herkunft: Vektor-Frontillustrationen, mit ChatGPT im Auftrag von M. Pevec erstellt, nach Herstellerabbildungen; keine Hersteller-CAD-Dateien.
+Maße aus Herstellerunterlagen (Millimeter, nicht pauschal je TE). EMN001: Höhe 90 mm vorläufig, gegen Maßzeichnung prüfen.
+Die Bilddateien liegen nur im SharePoint (Seite Gerätekatalog-Bilder hochladen), im Repo stehen nur Index-Einträge.
+Resi9-Werte ohne eigenes Bild: Grundbild R9F23116 (1P) bzw. R9F23316 (3P), Aufdruck wird umgeschrieben.
+Leerplatz (art "res") = unbestückter Platz ohne Gerätebild. Ein Reserve-LS ist ein normaler LS mit Wofür „Reserve“.

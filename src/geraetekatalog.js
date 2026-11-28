@@ -56,9 +56,7 @@ const GK_MAT_C=new Map();
    a = [Hersteller, Modell, Breite mm] · setzen/weg = Umschalter der Vorlage (CSS-Variablen am <svg>) · ersetzen = Text im Aufdruck.
    Die Datei im SharePoint bleibt unverändert. Nur Fälle, bei denen nach der Anpassung Modell UND Aufdruck stimmen. */
 const GK_MAT_ANP={};
-{ const pad=i=>String(i).padStart(2,"0"), ic=(nr,p,ch,i)=>{ GK_MAT_ANP[nr]={a:["Schneider Electric","iC60N",p===3?54:18],ersetzen:[["C 16A",`${ch} ${i}A`],["C16",`${ch}${i}`]]}; };
-  [6,10,13,16,20,25,32].forEach(i=>ic(`A9F031${pad(i)}`,1,"B",i)); [16,20,25,32].forEach(i=>ic(`A9F033${i}`,3,"B",i));   /* iC60N-Vorlage zeigt C16 → B-Kennlinie und Nennstrom setzen */
-  GK_MAT_ANP.CDS440D={a:["Hager","CDS",70],setzen:["A_40"],weg:["A_25"],ersetzen:[["25 A/IΔn","40 A/IΔn"],["440J","440D"]]};
+{   GK_MAT_ANP.CDS440D={a:["Hager","CDS",70],setzen:["A_40"],weg:["A_25"],ersetzen:[["25 A/IΔn","40 A/IΔn"],["440J","440D"]]};
   GK_MAT_ANP.CDS463D={a:["Hager","CDS",70],setzen:["A_63"],weg:["A_25"],ersetzen:[["25 A/IΔn","63 A/IΔn"],["463J","463D"]]};
   GK_MAT_ANP.SBN240={a:["Hager","SBN",35],setzen:["amp40","m2_2P_40"],weg:["amp16","m2_2P_16"],ersetzen:[["16A","40A"]]};
   GK_MAT_ANP.SBN440={a:["Hager","SBN",70],setzen:["amp40","m4_4P_40"],weg:["amp32","m4_4P_32"],ersetzen:[["32A","40A"]]}; }
@@ -73,6 +71,15 @@ const GK_VORLAGE={}; ["MBS","MBN","MCS","MCN"].forEach(ser=>[1,3].forEach(p=>{ G
   zeilen:[[13,299,28,`{SER}${p}{IN2}A`],[13,325,28,"{CHAR}{IN}"]] }; }));
 const gkVorlageKey=a=>`${a.manufacturer}|${a.model}|${a.dimension.width}`;
 const gkVorlageAsset=(h,m,w)=>{ const k=`${h}|${m}|${w}`; return GK_VORLAGE[k]?GK_INDEX.find(a=>gkVorlageKey(a)===k)||null:null; };
+/* Serien mit Text-Aufdruck in der SVG (Schneider): Bild je Polzahl, Kennlinie/Nennstrom/Artikelnummer als Text ersetzen */
+function gkSerieFuer(h,ser,pol,ch,inn){ ch=String(ch||"").toUpperCase(); if(!ch||!inn) return null; const pad=String(inn).padStart(2,"0");
+  if(h==="Hager") return gkVorlageFuer(h,ser,pol,ch,inn);
+  if(h==="Schneider Electric"&&ser==="Resi9"){   /* Grundbild B16 aus dem Nachtrag (1P bzw. 3P), Aufdruck wird umgeschrieben */
+    const a=GK_INDEX.find(x=>x.manufacturer===h&&x.article===`R9F23${pol}16`); if(!a) return null;
+    return {...a,_anp:{ersetzen:[[`R9F23${pol}16`,`R9F2${ch==="B"?3:4}${pol}${pad}`],["B16",`${ch}${inn}`]]}}; }
+  if(h==="Schneider Electric"&&ser==="iC60N"){ const a=GK_INDEX.find(x=>x.manufacturer===h&&x.model==="iC60N"&&x.dimension.width===18*pol&&/\.svg$/i.test(x.file)); if(!a) return null;
+    return {...a,_anp:{ersetzen:[["C 16A",`${ch} ${inn}A`],["C16",`${ch}${inn}`]]}}; }
+  return null; }
 /* Vorlage für einen Hager-Automaten nach Serie, Polzahl, Charakteristik und Nennstrom */
 function gkVorlageFuer(h,ser,pol,ch,inn){ const a=gkVorlageAsset(h,ser,+pol*17.5); if(!a||!ch||!inn) return null;
   return {...a,_anp:{vorlage:gkVorlageKey(a),ersetzen:[["{SER}",ser],["{IN2}",String(inn).padStart(2,"0")],["{IN}",String(inn)],["{CHAR}",String(ch).toUpperCase()]]}}; }
@@ -82,12 +89,14 @@ function gkMatAsset(hnr){ const k=gkNorm(hnr); if(!k) return null; if(GK_MAT_C.h
   else if(gkNrIndex().get(k)) a=gkNrIndex().get(k);
   else if(anp){ const b=GK_INDEX.find(x=>x.manufacturer===anp.a[0]&&x.model===anp.a[1]&&Math.abs(x.dimension.width-anp.a[2])<.3&&/\.svg$/i.test(x.file)); if(b) a={...b,_anp:anp}; }
   else { const m=k.match(/^(M[BC][SN])([1-4])(\d\d)$/); if(m) a=gkVorlageFuer("Hager",m[1],+m[2],m[1][1],+m[3]); }   /* Hager-Automat ohne eigenes Bild → Vorlage */
+  if(!a){ const r=k.match(/^R9F2([34])([1-4])(\d\d)$/), c=k.match(/^A9F0([34])([1-4])(\d\d)$/);   /* Schneider Resi9 bzw. iC60N: Kennlinie 3 = B, 4 = C */
+    if(r) a=gkSerieFuer("Schneider Electric","Resi9",+r[2],r[1]==="3"?"B":"C",+r[3]); else if(c) a=gkSerieFuer("Schneider Electric","iC60N",+c[2],c[1]==="3"?"B":"C",+c[3]); }
   GK_MAT_C.set(k,a); return a; }
 const gkKlFarbe=e=>e.farbe||(/pe/i.test(e.bez||"")?"pe":/^\s*a\b|abzweig/i.test(e.bez||"")?"a":"n");
 function gkFuerEintrag(e){ if(!e||e.katalog) return null;
   if(e.art==="kl") return GK_INDEX.find(a=>a.manufacturer==="Pollmann"&&a.model===GK_KL[gkKlFarbe(e)])||null;
   if(e.mat) return gkMatAsset(e.mat);
-  if(e.serie&&e.art==="sk"){ const m=String(e.schutz||"").match(/^\s*([A-Z])\s*(\d+)/i); if(m) return gkVorlageFuer(e.serie.h,e.serie.m,+e.pole===3?3:1,m[1],+m[2]); }
+  if(e.serie&&e.art==="sk"){ const m=String(e.schutz||"").match(/^\s*([A-Z])\s*(\d+)/i); if(m) return gkSerieFuer(e.serie.h,e.serie.m,+e.pole===3?3:1,m[1],+m[2]); }
   return null; }
 /* Katalogbild eines zugeordneten Artikels zeichnen: Maßstab wie die Reihe, mittig im Platz (Breite aus der Legende bleibt) */
 function gkBildAsset(a,x,w,y0,P){ const L=legAkt(),scale=P/gkPitch(L),mid=y0+P*400/92/2,d=a.dimension,fc=Number.isFinite(d.faceCenterFromTop)?d.faceCenterFromTop:d.height/2,bw=d.width*scale;
