@@ -83,7 +83,7 @@ function vmGruppen(L){ const K=vmKatalog(), G=new Map();
       const titel=m?m.name:e.art==="kl"?`Reihenklemme ${kl==="pe"?"PE":kl==="a"?"Abzweig":"N"}`:e.art==="ge"?(e.schutz||e.bez||"Gerät"):`${rb?"FI/LS-Schalter":vmArtName[e.art]||"Gerät"} ${legSchutz(e)}`.trim();
       const unter=m?[m.hersteller&&m.herstellerNr&&`${m.hersteller} ${m.herstellerNr}`,matNr(m)&&`Sonepar\u00a0${matNr(m)}`,t&&t.te&&`${t.te}\u00a0TE`].filter(Boolean).join(" · ")
         :e.art==="kl"?"Pollmann 14-S":"Artikel noch nicht gewählt";
-      const f=legBildFuer(e)[0], ka=typeof gkFuerEintrag==="function"&&gkFuerEintrag(e), bild=ka?gkURL(ka):m&&matBild(m)?bildLokal(matBild(m)):e.art==="kl"?`../bilder/vt/pollmann-${kl==="pe"?"pe":kl==="a"?"a":"n"}14s.png`:`../bilder/vt/${f}`;
+      const f=legBildFuer(e)[0], ka=typeof gkFuerEintrag==="function"&&gkFuerEintrag(e), bild=ka?gkBildURL(ka):m&&matBild(m)?bildLokal(matBild(m)):e.art==="kl"?`../bilder/vt/pollmann-${kl==="pe"?"pe":kl==="a"?"a":"n"}14s.png`:`../bilder/vt/${f}`;
       x={titel,unter,bild,n:0,ord:{rcd:0,sk:rb?2:1,ge:3,kl:4}[e.art]??5,offen:!m&&e.art!=="kl",nr:m?matNr(m):"",hnr:m?hnr:""}; G.set(key,x); }
     x.n++; });
   /* Unterverteiler-Gehäuse (26.11.2026): neues Hager-volta-Modell als erste Position – im Bestand nicht (der Verteiler bleibt) */

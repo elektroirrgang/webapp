@@ -228,7 +228,7 @@ function awFilterHtml(){ const kat=AW.tab==="kat", chip=(act,v,t,an)=>`<button t
 function awFilterNeu(){ const f=document.getElementById("awFilter"); if(f) f.innerHTML=awFilterHtml(); const g=document.getElementById("awGrid"); if(g) g.innerHTML=awGrid(); awWahlZeigen(); }
 /* Kachelbild eines Artikels: Katalogbild nur bei genauer Übereinstimmung, sonst das bisherige Bild */
 function awMatBild(m,t){ const a=typeof gkMatAsset==="function"&&gkMatAsset(matHnr(m.herstellerNr));
-  return a?`<span class="mat-foto aw-gb aw-kat"><img src="${esc(gkURL(a))}" alt="" loading="lazy" onerror="this.parentNode.classList.add('weg')"></span>`:(matFoto(m,"aw-gb")||awOhneFoto(t,m)); }
+  return a?`<span class="mat-foto aw-gb aw-kat"><img src="${esc(gkBildURL(a))}"${gkAnpAttr(a)} alt="" loading="lazy" onerror="this.parentNode.classList.add('weg')"></span>`:(matFoto(m,"aw-gb")||awOhneFoto(t,m)); }
 const awIstSel=(k,v)=>!!AW.sel&&AW.sel.k===k&&AW.sel.v===v;
 const awSelBadge=(k,v)=>awIstSel(k,v)?`<span class="aw-selz">${AW.anz}×</span>`:"";
 const AW_SONST_ANZ={res:["Reserve","Platzhalter · 1 TE",1],kln:["N-Klemme Pollmann N 14-S","1 TE, hochkant",1],klpe:["PE-Klemme Pollmann PE 14-S","1 TE, hochkant",1],kla:["Abzweigklemme Pollmann A 14-S","1 TE, hochkant",1]};
