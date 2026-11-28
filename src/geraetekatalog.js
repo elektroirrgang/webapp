@@ -112,11 +112,11 @@ async function gkHochladen(files){ const U=GK_HOCH; if(U.laeuft) return;
   const F=[...files].filter(f=>/\.(svg|png)$/i.test(f.name)); if(!F.length){ toast("Im gewählten Ordner sind keine SVG- oder PNG-Dateien"); return; }
   Object.assign(U,{laeuft:true,stop:false,gesamt:F.length,fertig:0,neu:0,da:0,fremd:0,fehler:0,start:Date.now(),ende:0,aktuell:"",fehlerListe:[]}); render();
   const nachHash=new Map(); GK_INDEX.forEach(a=>{ if(!nachHash.has(a.sha256)) nachHash.set(a.sha256,[]); nachHash.get(a.sha256).push(a); });
-  try{ await bspListe(true); const L=BSP.liste||{}; await syncRoot(); const fid=await folderId(BSP_ORDNER,BSP_BIB);
+  try{ await bspListe(true); const L=BSP.liste||{}, inArbeit=new Set(); await syncRoot(); const fid=await folderId(BSP_ORDNER,BSP_BIB);
     const arbeit=async()=>{ while(F.length&&!U.stop){ const f=F.shift(), rel=f.webkitRelativePath||f.name; U.aktuell=rel.split("/").slice(1,3).map(t=>t.replace(/_-_/g," – ").replace(/_/g," ")).join(" › ");
       try{ const buf=await f.arrayBuffer(), h=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",buf)),n=>n.toString(16).padStart(2,"0")).join(""), A=nachHash.get(h);
         if(!A){ U.fremd++; continue; }
-        for(const a of A){ const name=gkSpName(a); if(L[bspPfad(name)]){ U.da++; continue; }
+        for(const a of A){ const name=gkSpName(a); if(L[bspPfad(name)]||inArbeit.has(name)){ U.da++; continue; } inArbeit.add(name);   /* gleiche Datei zweimal im Ordner: nur einmal hochladen */
           const r=await g(`/drives/${fid}:/${encodeURIComponent(name)}:/content`,{method:"PUT",headers:{"Content-Type":/\.svg$/i.test(a.file)?"image/svg+xml":"image/png"},body:new Blob([buf])});
           if(r.ok){ U.neu++; L[bspPfad(name)]=1; } else { U.fehler++; U.fehlerListe.push([rel,`SharePoint meldet ${r.status}`]); } } }
       catch(e){ U.fehler++; U.fehlerListe.push([rel,e.message||String(e)]); }
