@@ -96,17 +96,36 @@ async function pnVorschau(p){ const k=p.dateiId+":"+(p.seite||1); if(PN_VS.has(k
 async function pnVorschauenFuellen(){ for(const el of document.querySelectorAll("img[data-plvs]")){ const p=pnVon(el.dataset.plvs); if(!p||!p.W) continue; const u=await pnVorschau(p); if(u&&el.isConnected){ el.src=u; el.closest(".pn-k")?.classList.add("da"); } } }
 
 /* ---- Raum erkennen ---- */
+/* Chamfer-Abstand (3-4) jedes Pixels zum nächsten Pixel mit m[i]=1 */
+function pnAbstand(m,w,h){ const n=w*h, D=new Float32Array(n); for(let i=0;i<n;i++) D[i]=m[i]?0:1e9;
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const i=y*w+x; if(!D[i]) continue; let v=D[i];
+    if(x>0) v=Math.min(v,D[i-1]+3); if(y>0){ v=Math.min(v,D[i-w]+3); if(x>0) v=Math.min(v,D[i-w-1]+4); if(x<w-1) v=Math.min(v,D[i-w+1]+4); } D[i]=v; }
+  for(let y=h-1;y>=0;y--) for(let x=w-1;x>=0;x--){ const i=y*w+x; if(!D[i]) continue; let v=D[i];
+    if(x<w-1) v=Math.min(v,D[i+1]+3); if(y<h-1){ v=Math.min(v,D[i+w]+3); if(x<w-1) v=Math.min(v,D[i+w+1]+4); if(x>0) v=Math.min(v,D[i+w-1]+4); } D[i]=v; }
+  return D; }
+/* Kleine, freistehende Teile (Raumbeschriftung, Stützen, Symbole) entfernen: Zusammenhangsflächen, deren Umriss in beiden Richtungen kleiner als max Pixel ist */
+function pnKleinWeg(m,w,h,max){ const n=w*h, gesehen=new Uint8Array(n), q=new Int32Array(n);
+  for(let i0=0;i0<n;i0++){ if(!m[i0]||gesehen[i0]) continue; let qa=0,qe=0,x0=1e9,x1=-1,y0=1e9,y1=-1; gesehen[i0]=1; q[qe++]=i0;
+    while(qa<qe){ const i=q[qa++], x=i%w, y=(i/w)|0; if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y;
+      const nb=[x>0?i-1:-1,x<w-1?i+1:-1,i>=w?i-w:-1,i<n-w?i+w:-1]; for(const j of nb) if(j>=0&&m[j]&&!gesehen[j]){ gesehen[j]=1; q[qe++]=j; } }
+    if(x1-x0<max&&y1-y0<max) for(let k=0;k<qe;k++) m[q[k]]=0; }
+  return m; }
+/* Erst mit gefilterten Linien (Schraffuren geschlossen, dünne Möbel-/Türlinien entfernt – nur mit Maßstab), sonst mit allen Linien */
 function pnRaumErkennen(p,quelle,pt){
   const k=Math.min(1,1800/Math.max(quelle.width,quelle.height)), cv=document.createElement("canvas"); cv.width=Math.round(quelle.width*k); cv.height=Math.round(quelle.height*k);
   const cx0=cv.getContext("2d",{willReadFrequently:true}); cx0.drawImage(quelle,0,0,cv.width,cv.height);
   const s=cv.width/p.W, w=cv.width, h=cv.height, n=w*h, dat=cx0.getImageData(0,0,w,h).data;
   const ink=new Uint8Array(n); for(let i=0;i<n;i++){ const r=dat[i*4],g=dat[i*4+1],b=dat[i*4+2]; ink[i]=(r*.3+g*.59+b*.11)<190?1:0; }
-  /* Abstand zur nächsten Linie (Chamfer 3-4) */
-  const INF=1e9, D=new Float32Array(n); for(let i=0;i<n;i++) D[i]=ink[i]?0:INF;
-  for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const i=y*w+x; if(!D[i]) continue; let v=D[i];
-    if(x>0) v=Math.min(v,D[i-1]+3); if(y>0){ v=Math.min(v,D[i-w]+3); if(x>0) v=Math.min(v,D[i-w-1]+4); if(x<w-1) v=Math.min(v,D[i-w+1]+4); } D[i]=v; }
-  for(let y=h-1;y>=0;y--) for(let x=w-1;x>=0;x--){ const i=y*w+x; if(!D[i]) continue; let v=D[i];
-    if(x<w-1) v=Math.min(v,D[i+1]+3); if(y<h-1){ v=Math.min(v,D[i+w]+3); if(x<w-1) v=Math.min(v,D[i+w+1]+4); if(x>0) v=Math.min(v,D[i+w-1]+4); } D[i]=v; }
+  const mpp=pnMpp(p), pxm=mpp?s/mpp:0; /* Pixel je Meter */
+  if(pxm){ const rc=Math.max(1,Math.round(.04*pxm)), ro=Math.floor(.03*pxm);
+    if(ro>=1){ const A=pnAbstand(ink,w,h), zu=new Uint8Array(n); for(let i=0;i<n;i++) zu[i]=A[i]<=3*rc?1:0;           /* Schraffur zu Fläche */
+      const B=pnAbstand(zu.map(v=>1-v),w,h), gz=new Uint8Array(n); for(let i=0;i<n;i++) gz[i]=B[i]>3*rc?1:0;
+      const C=pnAbstand(gz.map(v=>1-v),w,h), kern=new Uint8Array(n); for(let i=0;i<n;i++) kern[i]=C[i]>3*ro?1:0;   /* dünne Linien weg */
+      const E=pnAbstand(kern,w,h), dick=new Uint8Array(n); for(let i=0;i<n;i++) dick[i]=E[i]<=3*ro?1:0;
+      pnKleinWeg(dick,w,h,Math.round(1.6*pxm));
+      const r=pnRaumAus(p,dick,w,h,s,pt); if(r) return r; } }
+  return pnRaumAus(p,pnKleinWeg(ink,w,h,Math.round(Math.max(w,h)*.01)),w,h,s,pt); }
+function pnRaumAus(p,ink,w,h,s,pt){ const n=w*h, D=pnAbstand(ink,w,h);
   const mpp=pnMpp(p), R=Math.max(3,Math.min(90,mpp?(.56/mpp)*s:Math.max(w,h)*.014))*3; /* in Chamfer-Einheiten */
   let sx=Math.round(pt[0]*s), sy=Math.round(pt[1]*s); if(sx<0||sy<0||sx>=w||sy>=h) return null;
   /* Startpunkt auf einem Raumtext? In der Nähe den freiesten Punkt suchen */
