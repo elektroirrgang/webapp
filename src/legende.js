@@ -911,7 +911,7 @@ function legWsView(L){ const Z=legWsZahlen(L), E=legE(L), zu=L.fertig; if(LEG_WS
     <section class="card leg-ws-l"><div class="card-kopf leg-kopf leg-ws-kopf"><h3>Stromkreise</h3>
       <span style="flex:1"></span>${E.length?seg("legAnsicht",legAnsicht(),[["liste","Liste"],["verteiler","Verteiler"]],"leg-seg"):""}${zu?"":`<button type="button" class="btn-filled leg-ws-neu" data-act="legWsTab" data-v="ein">${icon("add")}<span>Gerät</span></button>`}</div>
       ${E.length?(legAnsicht()==="verteiler"?legVtView(L):legListeView(L)):`<p class="meta">Noch keine Geräte. Rechts unter „Einsetzen“ Geräte auswählen – die Kennzeichnung zählt mit.</p>`}</section>
-    <aside class="card leg-ws-r">${seg("legWsTab",LEG_WS.tab,[["sel","Ausgewählt"],...(zu?[]:[["ein","Einsetzen"]]),["ueb","Übersicht"]],"leg-ws-tabs")}
+    <aside class="card leg-ws-r"><div class="card-kopf leg-kopf leg-ws-rk"><h3>Konfigurieren</h3></div>${seg("legWsTab",LEG_WS.tab,[["sel","Ausgewählt"],...(zu?[]:[["ein","Einsetzen"]]),["ueb","Übersicht"]],"leg-ws-tabs")}
       <div class="leg-ws-in">${LEG_WS.tab==="ein"&&!zu?legWsEin(L):LEG_WS.tab==="ueb"?legWsUeb(L):legWsSel(L)}</div></aside></div>`; }
 function legWsSel(L){ const E=legE(L), e=E.find(x=>x.id===LEG_WS.id), zu=L.fertig;
   if(!e) return `<div class="leg-ws-leer">${icon("pin")}<b>Gerät anklicken</b><span>In der Zeichnung oder Liste ein Gerät anklicken – hier lässt es sich dann direkt bearbeiten. Ein Klick auf eine freie Stelle setzt dort ein.</span></div>`;
@@ -920,7 +920,7 @@ function legWsSel(L){ const E=legE(L), e=E.find(x=>x.id===LEG_WS.id), zu=L.ferti
   const pk=(k,l,v,o={})=>`<button type="button" class="leg-wf leg-wp${v?"":" leer"}" data-act="legWsPick" data-k="${k}" ${zu||o.ro?"disabled":""}><small>${l}</small><b>${esc(v||o.leer||"wählen")}</b></button>`;
   const T=String(e.bez||"").split(/\s+/), wa=T.find(x=>LEG_WAS.includes(x))||"", ra=T.find(x=>LEG_RAUM.includes(x))||"", S=legWsSchutz(e), ro=!!e.katalog;
   const symName=e.sym==="keins"?"kein Symbol":e.sym?((LEG_SYM_LISTE.find(x=>x[0]===e.sym)||[])[1]||e.sym):"automatisch";
-  return `<div class="leg-ws-g"><span class="leg-ws-b"><img src="${esc(legWsBild(e))}" alt="" onerror="this.style.visibility='hidden'"></span><span><b>${esc([legKzA(e.kz),legWsName(e)].filter(Boolean).join(" · "))}</b><small>${esc([art,PL?legPlatzText(PL):"",r?"an "+legKzA(r.kz):""].filter(Boolean).join(" · "))}</small></span></div>
+  return `<div class="leg-ws-g"><button type="button" class="leg-ws-b" data-act="legWsBild" title="Bild groß ansehen"><img src="${esc(legWsBild(e))}" alt="" onerror="this.style.visibility='hidden'"><span class="lz">${icon("lupe")}</span></button><span><b>${esc([legKzA(e.kz),legWsName(e)].filter(Boolean).join(" · "))}</b><small>${esc([art,PL?legPlatzText(PL):"",r?"an "+legKzA(r.kz):""].filter(Boolean).join(" · "))}</small></span></div>
     ${e.art==="kl"?"":fld("bez",e.art==="gr"?"Überschrift":"Wofür",legOffen(e)?"":e.bez,{ph:rcd?"Fehlerstromschutzschalter":"z. B. Küche Steckdosen",kl:"breit"})}
     ${sk?`<div class="leg-ws-2">${pk("was","Verbraucher",wa)}${pk("raum","Raum",ra)}</div>`:""}
     ${sk?`<div class="leg-ws-3">${pk("char","Charakteristik",S.char,{ro})}${pk("amp","Nennstrom",S.amp?S.amp+" A":"",{ro})}${pk("pole","Pole",(+e.pole===3?"3":"1")+"-polig",{ro})}</div>`:""}
@@ -1003,10 +1003,11 @@ function legWsUeb(L){ const E=legE(L).filter(e=>e.art!=="gr"), G=new Map();
     <div class="lbl leg-ws-lbl">Platz</div><div class="leg-ws-chips stat">${R.map((r,i)=>`<span>Reihe ${i+1}: <b>${gkZahl(Math.max(0,n-r.te))}</b> TE frei</span>`).join("")}</div>
     ${offen.length?`<div class="lbl leg-ws-lbl">Offen</div><div class="leg-ws-chips stat">${offen.map(e=>`<button type="button" data-act="legWsSel" data-id="${esc(e.id)}">${esc(legKzA(e.kz)||"?")} ohne „Wofür“</button>`).join("")}</div>`:""}`; }
 /* Klicks im Arbeitsmodus – vor den anderen Handlern, damit Klick auswählt statt ein Fenster zu öffnen */
-document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act="legWsSel"],[data-act="legWsTab"],[data-act="legWsWort"],[data-act="legWsZug"],[data-act="legWsDupl"],[data-act="legWsWeg"],[data-act="legWsEnde"],[data-act="legEdit"],[data-act="legNach"],[data-act="legNeuRcd"]');
+document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act="legWsSel"],[data-act="legWsBild"],[data-act="legWsTab"],[data-act="legWsWort"],[data-act="legWsZug"],[data-act="legWsDupl"],[data-act="legWsWeg"],[data-act="legWsEnde"],[data-act="legEdit"],[data-act="legNach"],[data-act="legNeuRcd"]');
   if(!b||b.disabled) return; const L=legAkt(); if(!legWsAktiv(L)) return; const a=b.dataset.act;
   if(a==="legEdit"&&b.closest(".leg-ws-r")) return;   /* „Alle Felder“ öffnet das bisherige Fenster */
   ev.stopImmediatePropagation(); ev.preventDefault(); const E=legE(L), e=E.find(x=>x.id===LEG_WS.id);
+  if(a==="legWsBild"){ if(e){ const im=b.querySelector("img"); legBildGross(im&&im.currentSrc||legWsBild(e),[legKzA(e.kz),legWsName(e)].filter(Boolean).join(" · "),legWsArtikel(e)); } return; }
   if(a==="legWsSel"||a==="legEdit"){ LEG_WS.id=b.dataset.id; LEG_WS.weg=null; if(LEG_WS.tab==="ein"&&typeof AW!=="undefined"&&AW&&AW.panel){ AW.nach=E.findIndex(x=>x.id===LEG_WS.id); } else LEG_WS.tab="sel"; render(); return; }
   if(a==="legNach"){ LEG_WS.tab="ein"; legWsAus(); awPanelStart(L,+b.dataset.i); render(); return; }
   if(a==="legNeuRcd"){ LEG_WS.tab="ein"; legWsAus(); awPanelStart(L,null,"rcd"); render(); return; }
@@ -1030,3 +1031,33 @@ function legWsWort(L,e,w){ const alt=legOffen(e)?"":String(e.bez||""), T=alt.spl
   e.bez=[was,raum,rest].filter(Boolean).join(" ")||"?"; legSpeichern(L); render(); }
 document.addEventListener("change",ev=>{ const t=ev.target; if(!t.dataset||!t.dataset.legwsw) return; const L=legAkt(); if(!L||L.fertig) return; const e=legE(L).find(x=>x.id===LEG_WS.id); if(!e) return;
   const v=t.value; if(v){ legWsWort(L,e,v); return; } const T=String(e.bez||"").split(/\s+/).filter(x=>t.dataset.legwsw==="was"?!LEG_WAS.includes(x):!LEG_RAUM.includes(x)); e.bez=T.join(" ")||"?"; legSpeichern(L); render(); });
+
+/* Große Bildansicht (Max 28.11.2026): einpassen, Mausrad/Pinch zoomt um den Zeiger, ziehen verschiebt, Doppelklick wechselt einpassen ↔ 300 %.
+   Größe wird über width/height gesetzt statt transform – SVGs bleiben so in jeder Stufe scharf. */
+function legBildGross(src,titel,unter){ document.querySelector(".bv")?.remove();
+  const d=document.createElement("div"); d.className="bv"; d.setAttribute("role","dialog"); d.setAttribute("aria-modal","true");
+  d.innerHTML=`<div class="bv-kopf"><span class="bv-ti"><b>${esc(titel||"Gerät")}</b>${unter?`<small>${esc(unter)}</small>`:""}</span><button type="button" data-z="-" title="Verkleinern">${icon("remove")}</button><span class="bv-pz"></span><button type="button" data-z="+" title="Vergrößern">${icon("add")}</button><button type="button" data-z="0" title="Einpassen">${icon("einpassen")}</button><button type="button" data-z="x" title="Schließen">${icon("close")}</button></div><div class="bv-fl"><img alt="" draggable="false"><span class="bv-hint">Mausrad oder Doppelklick zum Zoomen · ziehen zum Verschieben</span></div>`;
+  document.body.appendChild(d); const fl=d.querySelector(".bv-fl"), im=fl.querySelector("img"), pz=d.querySelector(".bv-pz");
+  let w0=0,h0=0,fit=1,s=1,x=0,y=0; const P=new Map(); let pinch=null, zug=null;
+  const zeigen=()=>{ im.style.width=(w0*s)+"px"; im.style.height=(h0*s)+"px"; im.style.left=x+"px"; im.style.top=y+"px"; pz.textContent=Math.round(s/fit*100)+" %"; };
+  const begrenzen=()=>{ const W=fl.clientWidth,H=fl.clientHeight,iw=w0*s,ih=h0*s; x=iw<=W?(W-iw)/2:Math.min(0,Math.max(W-iw,x)); y=ih<=H?(H-ih)/2:Math.min(0,Math.max(H-ih,y)); };
+  const einpassen=()=>{ const W=fl.clientWidth,H=fl.clientHeight; fit=Math.min((W-48)/w0,(H-48)/h0); s=fit; begrenzen(); zeigen(); };
+  const zoom=(f,cx,cy)=>{ const r=fl.getBoundingClientRect(); if(cx==null){ cx=r.left+r.width/2; cy=r.top+r.height/2; } const ns=Math.max(fit,Math.min(fit*12,s*f)), px=cx-r.left, py=cy-r.top;
+    x=px-(px-x)*ns/s; y=py-(py-y)*ns/s; s=ns; begrenzen(); zeigen(); };
+  const zu=()=>{ d.remove(); document.removeEventListener("keydown",taste,true); window.removeEventListener("resize",einpassen); };
+  const taste=ev=>{ if(ev.key==="Escape"){ ev.preventDefault(); ev.stopPropagation(); zu(); } else if(ev.key==="+"||ev.key==="=") zoom(1.4); else if(ev.key==="-") zoom(1/1.4); else if(ev.key==="0") einpassen(); };
+  document.addEventListener("keydown",taste,true); window.addEventListener("resize",einpassen);
+  im.onload=()=>{ w0=im.naturalWidth||300; h0=im.naturalHeight||600; if(w0<200){ const k=600/h0; w0*=k; h0*=k; } einpassen(); };
+  im.src=src;
+  d.querySelector(".bv-kopf").addEventListener("click",ev=>{ const b=ev.target.closest("button"); if(!b) return; const z=b.dataset.z; if(z==="x") zu(); else if(z==="0") einpassen(); else zoom(z==="+"?1.4:1/1.4); });
+  d.addEventListener("click",ev=>{ if(ev.target===d) zu(); });
+  fl.addEventListener("wheel",ev=>{ ev.preventDefault(); fl.querySelector(".bv-hint")?.remove(); zoom(Math.exp(-ev.deltaY*.0015),ev.clientX,ev.clientY); },{passive:false});
+  fl.addEventListener("dblclick",ev=>{ if(s>fit*1.05) einpassen(); else zoom(3,ev.clientX,ev.clientY); });
+  fl.addEventListener("pointerdown",ev=>{ fl.setPointerCapture(ev.pointerId); P.set(ev.pointerId,[ev.clientX,ev.clientY]); fl.querySelector(".bv-hint")?.remove();
+    if(P.size===2){ const [a,b]=[...P.values()]; pinch={dist:Math.hypot(a[0]-b[0],a[1]-b[1]),s}; zug=null; } else { zug=[ev.clientX,ev.clientY,x,y]; fl.classList.add("zieht"); } });
+  fl.addEventListener("pointermove",ev=>{ if(!P.has(ev.pointerId)) return; P.set(ev.pointerId,[ev.clientX,ev.clientY]);
+    if(pinch&&P.size===2){ const [a,b]=[...P.values()], dd=Math.hypot(a[0]-b[0],a[1]-b[1]); zoom(pinch.s*dd/pinch.dist/s,(a[0]+b[0])/2,(a[1]+b[1])/2); }
+    else if(zug){ x=zug[2]+ev.clientX-zug[0]; y=zug[3]+ev.clientY-zug[1]; begrenzen(); zeigen(); } });
+  const los=ev=>{ P.delete(ev.pointerId); if(P.size<2) pinch=null; if(!P.size){ zug=null; fl.classList.remove("zieht"); } };
+  fl.addEventListener("pointerup",los); fl.addEventListener("pointercancel",los);
+  d.querySelector('[data-z="x"]').focus(); }
