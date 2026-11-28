@@ -1,7 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const root=path.resolve(__dirname,'..'),read=f=>fs.readFileSync(path.join(root,f),'utf8');
 const index=JSON.parse(read('src/katalog/index.json')).assets,profiles=JSON.parse(read('src/katalog/profiles.json'));
-assert.equal(index.length,2205);assert.equal(new Set(index.map(a=>a.id)).size,2205);
+assert.equal(index.length,2206);assert.equal(new Set(index.map(a=>a.id)).size,2206);
 const bilderDa=fs.existsSync(path.join(root,'src/katalog/assets'));for(const a of index){if(bilderDa)assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(root,'src/katalog',a.file))).digest('hex'),a.sha256);assert(a.dimension.width>0&&a.dimension.height>0);assert(/^[0-9a-f]{64}$/.test(a.sha256));}
 let counter=0;
 const box={IC:{},console,Map,Set,URL,TextEncoder,Uint8Array,Blob,crypto:crypto.webcrypto,

@@ -209,7 +209,7 @@ function legListeView(L){ const E=legE(L), zu=L.fertig, B=[], PL=legPlaetze(L); 
    (Hager 17,5 mm, Schneider 18 mm, iEM3150 90 mm). Die Öffnung der Abdeckung ist für 18-mm-Module ausgelegt – Hager univers Z seit 2005:
    216 mm Nutzbreite für 12 TE (Zählerplatzliste West 2024, S. 271). Eine Reihe ist voll, wenn die Millimeter nicht mehr passen.
    Die Kennzeichnung (Platznummern) zählt weiter in TE. */
-const LEG_MM_TE=18, LEG_UEBER=32;   /* Nutzbreite je TE; Schiene ragt links und rechts über die Öffnung hinaus (volta VZ551N: 280 mm für 12 TE) */
+const LEG_MM_TE=18, LEG_UEBER=32, LEG_HS_ID="asset_dbd1994461c0e19d";   /* Nutzbreite je TE; Schiene ragt links und rechts über die Öffnung hinaus (volta VZ551N: 280 mm für 12 TE) */
 const legNutz=L=>(+L.teReihe||12)*LEG_MM_TE;
 function legMm(e,L){ if(e.art==="gr") return 0; if(e.katalog&&+e.katalog.widthMm>0) return +e.katalog.widthMm;
   const t=legTE(e), a=typeof gkFuerEintrag==="function"&&gkFuerEintrag(e), w=a&&a.dimension&&+a.dimension.width;
@@ -304,7 +304,10 @@ function legVtView(L){ const n=+L.teReihe||12, P=LEG_P, R=legReihen(L), zu=L.fer
       const SH=35*K, sy=GH/2-SH/2, mm=v=>(v*K).toFixed(1), xL=-O, xR=B+O, KO="#6A6A6A", FL="#EEF0F1";
       const schraube=cx=>`<circle cx="${cx.toFixed(1)}" cy="${GH/2}" r="${mm(3.2)}" fill="#F7F8F9" stroke="${KO}" stroke-width="1"/><path d="M${(cx-1.8*K).toFixed(1)} ${GH/2}H${(cx+1.8*K).toFixed(1)}M${cx.toFixed(1)} ${(GH/2-1.8*K).toFixed(1)}V${(GH/2+1.8*K).toFixed(1)}" stroke="${KO}" stroke-width="1.2"/>`;
       const kerbe=sx=>`<path d="M${(sx-1.6*K).toFixed(1)} ${sy}L${sx} ${(sy+1.8*K).toFixed(1)}L${(sx+1.6*K).toFixed(1)} ${sy}" fill="${FL}" stroke="${KO}" stroke-width="1"/><path d="M${(sx-1.6*K).toFixed(1)} ${sy+SH}L${sx} ${(sy+SH-1.8*K).toFixed(1)}L${(sx+1.6*K).toFixed(1)} ${sy+SH}" fill="${FL}" stroke="${KO}" stroke-width="1"/>`;
-      const schiene=`<rect x="${xL}" y="${sy}" width="${BG}" height="${SH}" fill="${FL}" stroke="${KO}" stroke-width="1.2"/>
+      /* Hutschienen-Zeichnung von Max (Rev. 6, 280 × 35 mm, Löcher durchsichtig) liegt im SharePoint wie die Gerätebilder – solange sie dort
+         nachweislich fehlt, zeichnen wir die schlichte Schiene selbst */
+      const HS=typeof GK_MAP!=="undefined"&&GK_MAP.get(LEG_HS_ID), hsFehlt=!HS||(typeof BSP!=="undefined"&&BSP.liste&&!BSP.liste["/bilder/katalog/"+HS.file]);
+      const schiene=!hsFehlt?`<image href="${esc(gkURL(HS))}" x="${xL}" y="${sy}" width="${BG}" height="${SH}" preserveAspectRatio="none"/>${kerbe(0)}${kerbe(B)}`:`<rect x="${xL}" y="${sy}" width="${BG}" height="${SH}" fill="${FL}" stroke="${KO}" stroke-width="1.2"/>
         ${[2.2,3.4,31.6,32.8].map(v=>`<line x1="${xL}" y1="${(sy+v*K).toFixed(1)}" x2="${xR}" y2="${(sy+v*K).toFixed(1)}" stroke="${KO}" stroke-width=".8" opacity=".75"/>`).join("")}
         ${schraube(xL+7*K)}${schraube(xR-7*K)}<circle cx="${(B/2).toFixed(1)}" cy="${(sy+10*K).toFixed(1)}" r="${mm(1.6)}" fill="#FFF" stroke="${KO}" stroke-width="1"/>
         ${kerbe(0)}${kerbe(B)}`;
