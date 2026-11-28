@@ -204,8 +204,20 @@ function legListeView(L){ const E=legE(L), zu=L.fertig, B=[], PL=legPlaetze(L); 
       ${b.kids.map(k=>zeile(k," kind")).join("")}${zu?"":`<button type="button" class="leg-add" data-act="legNach" data-i="${b.last!=null?b.last:b.i}">${icon("add")}Stromkreis an ${esc(b.rcd.kz||"RCD")}</button>`}</div>`).join("")}
     ${zu?"":`<div class="leg-neu"><button type="button" data-act="legNeuRcd">${icon("add")}Neuer RCD mit Stromkreisen</button>${legReihen(L).length?`<button type="button" data-act="legRkDlg">${icon("copy")}Reihe kopieren</button>`:""}</div>`}</div>`; }
 /* Reihen bilden: Breite je Gerät in TE, „Neue Reihe ab hier“ bricht um */
-function legReihen(L){ const n=+L.teReihe||12, R=[]; let r=null;
-  legE(L).forEach((e,i)=>{ if(e.art==="gr") return; const w=Math.min(legTE(e),n); if(!r||e.umbruch||r.te+w>n+1e-8){ r={te:0,g:[]}; R.push(r); } r.g.push([e,i,w]); r.te+=w; });
+/* ===== Schienenformat (Max 28.11.2026) =====
+   Auf der Hutschiene gibt es keine festen Plätze: Geräte stecken ab dem linken Rastpunkt direkt aneinander, jedes mit seiner echten Breite
+   (Hager 17,5 mm, Schneider 18 mm, iEM3150 90 mm). Die Öffnung der Abdeckung ist für 18-mm-Module ausgelegt – Hager univers Z seit 2005:
+   216 mm Nutzbreite für 12 TE (Zählerplatzliste West 2024, S. 271). Eine Reihe ist voll, wenn die Millimeter nicht mehr passen.
+   Die Kennzeichnung (Platznummern) zählt weiter in TE. */
+const LEG_MM_TE=18, LEG_UEBER=32;   /* Nutzbreite je TE; Schiene ragt links und rechts über die Öffnung hinaus (volta VZ551N: 280 mm für 12 TE) */
+const legNutz=L=>(+L.teReihe||12)*LEG_MM_TE;
+function legMm(e,L){ if(e.art==="gr") return 0; if(e.katalog&&+e.katalog.widthMm>0) return +e.katalog.widthMm;
+  const t=legTE(e), a=typeof gkFuerEintrag==="function"&&gkFuerEintrag(e), w=a&&a.dimension&&+a.dimension.width;
+  if(w&&t>=1&&w/t>=16.5&&w/t<=19) return w;   /* Breite aus dem Katalog, wenn sie zur TE-Zahl passt */
+  if(w&&t<1) return w;
+  return t*(typeof gkPitch==="function"?gkPitch(L):17.5); }
+function legReihen(L){ const n=+L.teReihe||12, nutz=legNutz(L), R=[]; let r=null;
+  legE(L).forEach((e,i)=>{ if(e.art==="gr") return; const w=Math.min(legTE(e),n), mm=Math.min(legMm(e,L),nutz); if(!r||e.umbruch||r.mm+mm>nutz+.5){ r={te:0,mm:0,g:[]}; R.push(r); } r.g.push([e,i,w,mm]); r.te+=w; r.mm+=mm; });
   return R; }
 /* Gezeichneter Verteiler: Geräte schlicht und herstellerneutral, feste Größe (50 px je TE), darunter Beschriftung wie im Streifen */
 const LEG_P=50;
@@ -266,30 +278,33 @@ const legWrap=(t,max)=>{ const w=[]; String(t||"").split(/\s+/).filter(Boolean).
     while(x.length>max){ w.push(x.slice(0,max-1)+"-"); x=x.slice(max-1); } w.push(x); });
   const Z=[]; let z=""; w.forEach(x=>{ if((z+" "+x).trim().length>max&&z){ Z.push(z); z=x; } else z=z.endsWith("-")?z+x:(z+" "+x).trim(); }); if(z) Z.push(z);
   return Z.length>3?[...Z.slice(0,2),Z[2].slice(0,max-1)+"…"]:Z; };
-function legVtView(L){ const n=+L.teReihe||12, P=LEG_P, R=legReihen(L), zu=L.fertig, B=n*P;
+function legVtView(L){ const n=+L.teReihe||12, P=LEG_P, R=legReihen(L), zu=L.fertig, K=P/LEG_MM_TE, NZ=legNutz(L), O=LEG_UEBER*K, B=NZ*K, BG=B+2*O;
   /* Handy: ganze Reihe passt in die Breite (kein seitliches Wischen). Im Bild nur die Kennzeichnung, darunter die Beschriftung als Liste. */
   const mobil=matchMedia("(max-width:599px)").matches, kzF=mobil?19:10.5, kzH=mobil?30:20;
-  return R.map((r,ri)=>{ const GH=LEG_H(1), ext=gkExtents(r,L,GH), KY=Math.max(GH,ext.bottom)+10, TR=[]; let x=0, hoch=KY+(mobil?kzH+8:64); const g=r.g.map(([e,i,w])=>{ const X=x*P, Wd=w*P, sym=mobil?"":legSymFuer(e), z=mobil?[]:legWrap(e.art==="res"?"Reserve":legOffen(e)?"?":e.bez,w>1?w*8:8), fz=w>1?10.5:z.some(t=>t.length>7)?9:10.5;
+  return R.map((r,ri)=>{ const GH=LEG_H(1), ext=gkExtents(r,L,GH), KY=Math.max(GH,ext.bottom)+10, TR=[]; let x=0, hoch=KY+(mobil?kzH+8:64); const g=r.g.map(([e,i,w,mm])=>{ const X=x, Wd=mm*K, sym=mobil?"":legSymFuer(e), z=mobil?[]:legWrap(e.art==="res"?"Reserve":legOffen(e)?"?":e.bez,w>1?w*8:8), fz=w>1?10.5:z.some(t=>t.length>7)?9:10.5;
         const kz=legKzA(e.kz).slice(0,w>1?16:7), eng=mobil&&kz.length*kzF*.62>Wd-8;
         const ws=legWsAktiv(L), an=ws&&kfIstAn(e.id);
-        const out=`<g class="leg-dev${an?" an":""}"${ws?` data-act="legWsSel"`:zu||e.art==="kl"||e.art==="res"?"":` data-act="legProdukt"`} data-id="${esc(e.id)}"><title>${esc([legKzA(e.kz),e.bez,legSchutz(e)].filter(Boolean).join(" · "))}</title>${legGeraet(e,X,w)}
+        const out=`<g class="leg-dev${an?" an":""}"${ws?` data-act="legWsSel"`:zu||e.art==="kl"||e.art==="res"?"":` data-act="legProdukt"`} data-id="${esc(e.id)}"><title>${esc([legKzA(e.kz),e.bez,legSchutz(e)].filter(Boolean).join(" · "))}</title>${legGeraet(e,X,mm/LEG_MM_TE)}
           ${an?`<rect x="${X}" y="${Math.min(0,ext.top)}" width="${Wd}" height="${KY-6-Math.min(0,ext.top)}" rx="4" class="leg-anr"/>`:""}
           ${e.art==="kl"?"":`<rect x="${X+2}" y="${KY}" width="${Wd-4}" height="${kzH}" rx="${mobil?6:4}" fill="${e.art==="rcd"?"#2F6FD1":e.art==="res"?"#A9AEB6":"#737A84"}"${an?` style="fill:var(--primary)"`:""}/><text x="${X+Wd/2}" y="${KY+kzH/2+kzF*.36}" font-size="${kzF}" font-weight="800" text-anchor="middle" fill="#fff"${eng?` textLength="${Wd-8}" lengthAdjust="spacingAndGlyphs"`:""}>${esc(kz)}</text>`}
           ${sym?`<g transform="translate(${X+Wd/2-11} ${KY+28})" class="leg-sym">${legSymSvg(sym,22,true)}</g>`:""}
-          ${z.map((t,k)=>`<text x="${X+Wd/2}" y="${KY+(sym?66:40)+(e.art==="kl"?20:0)+k*13}" font-size="${fz}" font-weight="600" text-anchor="middle" class="leg-st">${esc(t)}</text>`).join("")}</g>`; if(!mobil) hoch=Math.max(hoch,KY+(sym?66:40)+(z.length-1)*13+10+(e.art==="kl"?20:0)); x+=w;
+          ${z.map((t,k)=>`<text x="${X+Wd/2}" y="${KY+(sym?66:40)+(e.art==="kl"?20:0)+k*13}" font-size="${fz}" font-weight="600" text-anchor="middle" class="leg-st">${esc(t)}</text>`).join("")}</g>`; if(!mobil) hoch=Math.max(hoch,KY+(sym?66:40)+(z.length-1)*13+10+(e.art==="kl"?20:0)); x+=Wd;
         /* Arbeitsfläche: Trennstelle hinter dem Gerät (Klick setzt die Marke) und die rote Marke selbst */
-        const kf=ws&&!zu&&!mobil, trenn=kf?`${ri===0&&r.g[0][1]===i?`<g class="kf-hz" data-act="kfMarke" data-i="${i-1}"><rect x="${X-7}" y="0" width="14" height="${GH}" fill="transparent"/><rect class="kf-hzl" x="${X-2}" y="${GH*.06}" width="4" height="${GH*.88}" rx="2"/></g>`:""}<g class="kf-hz" data-act="kfMarke" data-i="${i}"><rect x="${x*P-7}" y="0" width="14" height="${GH}" fill="transparent"/><rect class="kf-hzl" x="${x*P-2}" y="${GH*.06}" width="4" height="${GH*.88}" rx="2"/></g>`:"";
+        const kf=ws&&!zu&&!mobil, trenn=kf?`${ri===0&&r.g[0][1]===i?`<g class="kf-hz" data-act="kfMarke" data-i="${i-1}"><rect x="${X-7}" y="0" width="14" height="${GH}" fill="transparent"/><rect class="kf-hzl" x="${X-2}" y="${GH*.06}" width="4" height="${GH*.88}" rx="2"/></g>`:""}<g class="kf-hz" data-act="kfMarke" data-i="${i}"><rect x="${x-7}" y="0" width="14" height="${GH}" fill="transparent"/><rect class="kf-hzl" x="${x-2}" y="${GH*.06}" width="4" height="${GH*.88}" rx="2"/></g>`:"";
         if(trenn) TR.push(trenn); return out; }).join("");
       const kfM=legWsAktiv(L)&&!zu&&!mobil&&LEG_WS.tab!=="sel"&&!(LEG_WS.marke&&LEG_WS.marke.neu)?(()=>{ const ziel=LEG_WS.marke?LEG_WS.marke.nach:legE(L).length-1; let xx=0, mx=null;
-          if(ziel===r.g[0][1]-1&&ri===0) mx=0; r.g.forEach(([e,i,w])=>{ xx+=w; if(i===ziel) mx=xx; }); if(mx==null) return "";
-          return `<g class="kf-mk"><rect x="${mx*P-2.5}" y="${GH*.02}" width="5" height="${GH*.96}" rx="2.5"/><rect x="${mx*P-46}" y="${GH*.02-2}" width="92" height="22" rx="11"/><text x="${mx*P}" y="${GH*.02+13}" text-anchor="middle" font-size="11.5" font-weight="800">Hier einsetzen</text></g>`; })():"";
-      const frei=n-r.te, last=r.g[r.g.length-1][1];
-      const fr=frei>0?`<g class="leg-frei" ${zu?"":`data-act="${legWsAktiv(L)?"kfMarke":"legNach"}" data-i="${last}"`}><rect x="${x*P+2}" y="${GH*.12}" width="${frei*P-4}" height="${GH*.76}" rx="5" class="leg-fr"/><text x="${x*P+frei*P/2}" y="${frei>1?GH/2-4:GH/2-18}" font-size="${(frei>1?12:10)*(mobil?1.6:1)}" font-weight="800" text-anchor="middle" class="leg-frt">${frei>1?`${gkZahl(frei)} TE frei`:"frei"}</text>${zu?"":`<text x="${x*P+frei*P/2}" y="${frei>1?GH/2+16*(mobil?1.6:1):GH/2+2}" font-size="${16*(mobil?1.6:1)}" font-weight="700" text-anchor="middle" class="leg-frt">+</text>`}</g>`:"";
+          if(ziel===r.g[0][1]-1&&ri===0) mx=0; r.g.forEach(([e,i,w,mm])=>{ xx+=mm*K; if(i===ziel) mx=xx; }); if(mx==null) return "";
+          return `<g class="kf-mk"><rect x="${mx-2.5}" y="${GH*.02}" width="5" height="${GH*.96}" rx="2.5"/><rect x="${mx-46}" y="${GH*.02-2}" width="92" height="22" rx="11"/><text x="${mx}" y="${GH*.02+13}" text-anchor="middle" font-size="11.5" font-weight="800">Hier einsetzen</text></g>`; })():"";
+      const freiMm=Math.max(0,NZ-r.mm), frei=Math.floor((freiMm+.6)/17.5), last=r.g[r.g.length-1][1], fw=B-x;
+      const fr=frei>0?`<g class="leg-frei" ${zu?"":`data-act="${legWsAktiv(L)?"kfMarke":"legNach"}" data-i="${last}"`}><rect x="${x+2}" y="${GH*.12}" width="${fw-4}" height="${GH*.76}" rx="5" class="leg-fr"/><text x="${x+fw/2}" y="${frei>1?GH/2-4:GH/2-18}" font-size="${(frei>1?12:10)*(mobil?1.6:1)}" font-weight="800" text-anchor="middle" class="leg-frt">${frei>1?`${frei} TE frei`:"frei"}</text>${zu?"":`<text x="${x+fw/2}" y="${frei>1?GH/2+16*(mobil?1.6:1):GH/2+2}" font-size="${16*(mobil?1.6:1)}" font-weight="700" text-anchor="middle" class="leg-frt">+</text>`}</g>`:"";
+      /* Hutschiene länger als die Öffnung, Rastpunkte an beiden Enden der Öffnung (dort beginnt die Abdeckung) */
+      const schiene=`<rect x="${-O}" y="${GH/2-17}" width="${BG}" height="34" rx="2" fill="#C9CDD2"/><rect x="${-O}" y="${GH/2-11}" width="${BG}" height="22" fill="#B5BAC0"/>${[...Array(Math.round((NZ+2*LEG_UEBER)/12.5))].map((_,k)=>`<rect x="${(-O+6+k*12.5*K).toFixed(1)}" y="${GH/2-4}" width="${(5*K).toFixed(1)}" height="8" rx="1.5" fill="#A3A9B0"/>`).join("")}
+        ${[0,B].map(sx=>`<line x1="${sx}" y1="${GH*.04}" x2="${sx}" y2="${GH*.96}" class="leg-oeff"/><rect x="${sx-3}" y="${GH/2-20}" width="6" height="40" rx="2" fill="#6E747B"/>`).join("")}`;
       /* Beschriftung unter der Reihe (nur Handy): Kennzeichnung, Bezeichnung, Schutz – antippen bearbeitet */
       const leg=mobil?`<div class="leg-rl">${r.g.filter(([e])=>e.art!=="kl").map(([e])=>`<button type="button" class="leg-rl-z${e.art==="rcd"?" rcd":""}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}><span class="kz">${esc(legKzA(e.kz)||"–")}</span><span class="bz">${e.art==="res"?"Reserve":e.art==="rcd"?esc(e.bez||"Fehlerstromschutzschalter"):legOffen(e)?"? – noch unbekannt":esc(e.bez||"–")}</span><span class="sc">${esc(legSchutz(e))}</span></button>`).join("")}</div>`:"";
       const wsk=legWsAktiv(L)&&!mobil, M=LEG_WS.marke, pend=wsk&&!zu&&M&&M.neu&&LEG_WS.tab!=="sel"&&(M.nach===last||M.nach<r.g[0][1]&&ri===0&&M.nach===r.g[0][1]-1);
       const pendHtml=`<div class="kf-pend"><span class="kf-pm">Hier einsetzen</span>Neue Reihe – rechts ein Gerät oder eine Vorlage wählen</div>`;
-      const reihe=`<div class="leg-reihe" style="width:min(100%,${Math.round(B*1.45)+28}px)"><div class="leg-rk">Reihe ${ri+1}<span>${gkZahl(r.te)} von ${n} TE belegt</span>${wsk?`<button type="button" class="kf-rm" data-act="kfReihe" data-r="${ri}" title="Reihe …">${icon("more")}</button>`:""}</div><div class="leg-rs"><svg viewBox="0 ${Math.min(ext.top,r.g.some(([e])=>e.art==="kl")?-20:0)} ${B} ${hoch-Math.min(ext.top,r.g.some(([e])=>e.art==="kl")?-20:0)}" class="leg-svg" role="img" aria-label="Reihe ${ri+1}"><rect x="0" y="${GH/2-17}" width="${B}" height="34" rx="2" fill="#C9CDD2"/><rect x="0" y="${GH/2-11}" width="${B}" height="22" fill="#B5BAC0"/>${g}${fr}${TR.join("")}${typeof kfM==="string"?kfM:""}</svg></div>${leg}</div>`;
+      const reihe=`<div class="leg-reihe" style="width:min(100%,${Math.round(BG*1.45)+28}px)"><div class="leg-rk">Reihe ${ri+1}<span>${gkZahl(r.te)} von ${n} TE · ${gkZahl(Math.round(r.mm*10)/10)} von ${NZ} mm</span>${wsk?`<button type="button" class="kf-rm" data-act="kfReihe" data-r="${ri}" title="Reihe …">${icon("more")}</button>`:""}</div><div class="leg-rs"><svg viewBox="${-O} ${Math.min(ext.top,r.g.some(([e])=>e.art==="kl")?-20:0)} ${BG} ${hoch-Math.min(ext.top,r.g.some(([e])=>e.art==="kl")?-20:0)}" class="leg-svg" role="img" aria-label="Reihe ${ri+1}">${schiene}${g}${fr}${TR.join("")}${typeof kfM==="string"?kfM:""}</svg></div>${leg}</div>`;
       return pend&&M.nach<r.g[0][1]?pendHtml+reihe:pend?reihe+pendHtml:reihe; }).join(""); }
 /* ===== Symbole für Beschriftung (eigene, schlichte Piktogramme, 24er-Raster, Linien) ===== */
 const LEG_SYM={

@@ -26,7 +26,7 @@ function gkTechnik(a){const p=a.params||{},rcd=a.type==="QD",sk=["QF","QFD"].inc
  return {art,pole,schutz:rcd?[[p.amperage&&p.amperage+" A",p.residualCurrent&&p.residualCurrent+" mA"].filter(Boolean).join(" / "),p.RCDtype&&"Typ "+p.RCDtype].filter(Boolean).join(" "):sk?`${p.curve||""}${p.amperage||""}${a.type==="QFD"?" FI/LS":""}`:""};}
 function gkPitch(L){return [17.5,18].includes(+L?.teMm)?+L.teMm:legGerTe(L||{});}
 function gkTE(e,L){const t=e.katalog.widthMm/gkPitch(L||legAkt()||{});return e.katalog.widthMm>=13?Math.max(1,Math.round(t)):t;}
-function gkExtents(row,L,H){const scale=LEG_P/gkPitch(L),a=row.g.map(([e])=>{ if(e.katalog) return e.katalog; const k=gkFuerEintrag(e); return k?{frontCenterMm:Number.isFinite(k.dimension.faceCenterFromTop)?k.dimension.faceCenterFromTop:k.dimension.height/2,heightMm:k.dimension.height}:null; }).filter(Boolean);return {top:Math.min(0,...a.map(a=>H/2-a.frontCenterMm*scale)),bottom:Math.max(H,...a.map(a=>H/2+(a.heightMm-a.frontCenterMm)*scale))};}
+function gkExtents(row,L,H){const scale=LEG_P/18,a=row.g.map(([e])=>{ if(e.katalog) return e.katalog; const k=gkFuerEintrag(e); return k?{frontCenterMm:Number.isFinite(k.dimension.faceCenterFromTop)?k.dimension.faceCenterFromTop:k.dimension.height/2,heightMm:k.dimension.height}:null; }).filter(Boolean);return {top:Math.min(0,...a.map(a=>H/2-a.frontCenterMm*scale)),bottom:Math.max(H,...a.map(a=>H/2+(a.heightMm-a.frontCenterMm)*scale))};}
 function gkEintrag(a,payload,L){const tech=gkTechnik(a);return {id:uid(),...tech,kz:tech.art==="ge"?"":awKz(L,tech.art).kz,bez:[a.manufacturer,a.model].join(" "),te:payload.widthMm/gkPitch(L),katalog:payload};}
 async function gkWahl(id){if(!GK||GK.busy)return;const state=GK,a=GK_MAP.get(id),L=legAkt();if(!a||!L||L.fertig)return;state.busy=true;gkGrid();
  try{const data=await gkData(a);if(GK!==state||!document.getElementById("gk-grid")||legAkt()?.id!==L.id)return;const payload=gkPayload(a,data);if(payload.widthMm> (+L.teReihe||12)*gkPitch(L)+.01)throw Error("Dieses Gerät ist breiter als die eingestellte Reihe. Bitte zuerst die Verteilerbreite ändern.");
@@ -37,7 +37,7 @@ async function gkWahl(id){if(!GK||GK.busy)return;const state=GK,a=GK_MAP.get(id)
    Der 45-mm-Frontbezug liegt in derselben Höhe wie der bisherige Editor. */
 /* Bild nie breiter als sein Platz: ist die Zeichnung etwas breiter als die belegten TE (iEM3150: 92,5 mm auf 5 TE), wird sie gleichmäßig
    verkleinert – Frontmitte bleibt auf der Hutschiene, nichts ragt in den Nachbarplatz (Max 28.11.2026) */
-function gkBild(e,x,y0,P){const a=e.katalog,L=legAkt(),scale=P/gkPitch(L),mid=y0+P*400/92/2,slot=legTE(e)*P,k=Math.min(1,slot/(a.widthMm*scale)),s2=scale*k,bw=a.widthMm*s2;
+function gkBild(e,x,y0,P){const a=e.katalog,s2=P/18,mid=y0+P*400/92/2,bw=a.widthMm*s2,slot=bw;
  return `<image href="${esc(a.data)}" x="${(x+(slot-bw)/2).toFixed(1)}" y="${(mid-a.frontCenterMm*s2).toFixed(1)}" width="${bw.toFixed(1)}" height="${(a.heightMm*s2).toFixed(1)}" preserveAspectRatio="xMidYMid meet"/>`; }
 /* ===== Katalogbilder für Artikel aus der Materialliste (Max 28.11.2026) =====
    Ein Artikel bekommt ein Katalogbild NUR, wenn Modell und Aufdruck genau stimmen – keine ähnlichen Fremdmodelle.
@@ -102,7 +102,7 @@ function gkFuerEintrag(e){ if(!e||e.katalog) return null;
   if(e.serie&&e.art==="sk"){ const m=String(e.schutz||"").match(/^\s*([A-Z])\s*(\d+)/i); if(m) return gkSerieFuer(e.serie.h,e.serie.m,+e.pole===3?3:1,m[1],+m[2]); }
   return null; }
 /* Katalogbild eines zugeordneten Artikels zeichnen: Maßstab wie die Reihe, mittig im Platz (Breite aus der Legende bleibt) */
-function gkBildAsset(a,x,w,y0,P){ const L=legAkt(),s0=P/gkPitch(L),mid=y0+P*400/92/2,d=a.dimension,fc=Number.isFinite(d.faceCenterFromTop)?d.faceCenterFromTop:d.height/2,scale=s0*Math.min(1,w*P/(d.width*s0)),bw=d.width*scale;
+function gkBildAsset(a,x,w,y0,P){ const s0=P/18,mid=y0+P*400/92/2,d=a.dimension,fc=Number.isFinite(d.faceCenterFromTop)?d.faceCenterFromTop:d.height/2,scale=s0*Math.min(1,w*P/(d.width*s0)),bw=d.width*scale;
   return `<image href="${esc(gkBildURL(a))}"${gkAnpAttr(a)} x="${(x+(w*P-bw)/2).toFixed(1)}" y="${(mid-fc*scale).toFixed(1)}" width="${bw.toFixed(1)}" height="${(d.height*scale).toFixed(1)}" preserveAspectRatio="xMidYMid meet"/>`; }
 const gkTeText=(mm,L)=>{ let t=mm/gkPitch(L||legAkt()||{}); if(mm>=13) t=Math.max(1,Math.round(t)); return (Math.abs(t-Math.round(t))<.05?String(Math.round(t)):t.toFixed(1).replace(".",","))+" TE"; };
 /* Katalog im Bestücken-Fenster: Gruppen aus dem Teil vor „ - “ der Kategorie */
