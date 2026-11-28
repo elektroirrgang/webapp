@@ -7,7 +7,7 @@ const GK_MAP=new Map(GK_INDEX.map(a=>[a.id,a]));
 let GK=null, GK_BLOCK=null;
 const gkClone=v=>JSON.parse(JSON.stringify(v));
 const gkZahl=n=>Number(n.toFixed(2)).toLocaleString("de-DE");
-const gkURL=a=>new URL(GK_ROOT+a.file,location.href).href;
+const gkURL=a=>{ const u=new URL(GK_ROOT+a.file,location.href).href; return typeof bspSrc==="function"?bspSrc(u):u; };
 const gkSuch=v=>String(v||"").toLocaleLowerCase("de").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 function gkFilter(items,q,manufacturer,category){ const words=gkSuch(q).split(/\s+/).filter(Boolean);return items.filter(a=>(!manufacturer||a.manufacturer===manufacturer)&&(!category||a.category===category)&&words.every(w=>gkSuch([a.manufacturer,a.model,a.article,a.series,a.category,...Object.values(a.params)].join(" ")).includes(w))); }
 function gkOpen(target){ if(!legAkt()||legAkt().fertig)return; GK={target:target||null,q:"",manufacturer:"",category:"",limit:48,busy:false}; gkDialog(); }
@@ -140,12 +140,16 @@ function gkSvgAnpassen(text,anp){ anp=anp||{}; const d=new DOMParser().parseFrom
   return new XMLSerializer().serializeToString(d); }
 /* SVG-Text eines Katalogbilds holen (über den Service Worker, sonst direkt aus dem SharePoint) */
 async function gkSvgText(a){ try{ const r=await fetch(gkURL(a)); if(r.ok){ const t=await r.text(); if(/^\s*(<\?xml|<svg|<!--)/i.test(t)) return t; } }catch(e){}
-  const b=typeof bspBlob==="function"?await bspBlob(bspPfad(gkSpName(a)),true):null; if(!b) throw Error("Bild nicht erreichbar"); return await (await fetch(b)).text(); }
+  const b=typeof bspBlob==="function"?(await bspBlob(bspPfad(gkSpName(a)),false)||await bspBlob(bspPfad(gkSpName(a)),true)):null; if(!b) throw Error("Bild nicht erreichbar"); return await (await fetch(b)).text(); }
 /* Angepasste Bilder: einmal je Sitzung erzeugen, als Blob-Adresse merken; bis dahin ein leerer Platzhalter (kein falscher Aufdruck) */
 const GK_ANP_URL=new Map(), GK_ANP_P=new Map(), GK_LEER="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%2F%3E";
 const gkAnpAttr=a=>a&&a._anp?` data-gkanp="${esc(gkAnpKey(a,a._anp))}"`:"";
 function gkAufdruck(a,anp){ const key=gkAnpKey(a,anp); if(GK_ANP_P.has(key)) return GK_ANP_P.get(key);
-  const p=(anp.vorlage?gkVorlageText(a,anp.vorlage):gkSvgText(a)).then(async t=>{ const sv=gkSvgAnpassen(t,anp), pf=gkAnpPfad(key);
+  const pf0=gkAnpPfad(key);
+  const p=(async()=>{ try{ const c=await caches.open("irrgang-bilder"), r=await c.match(pf0); if(r&&r.ok){ const t=await r.text(); if(/^\s*<svg/i.test(t)) return {fertig:t}; } }catch(e){} return anp.vorlage?gkVorlageText(a,anp.vorlage):gkSvgText(a); })().then(async t=>{ const fertig=t&&t.fertig, sv=fertig?t.fertig:gkSvgAnpassen(t,anp), pf=pf0;
+      if(fertig){ GK_ANP_OK.add(pf); const u=navigator.serviceWorker&&navigator.serviceWorker.controller?pf:URL.createObjectURL(new Blob([sv],{type:"image/svg+xml"})); GK_ANP_URL.set(key,u);
+        document.querySelectorAll("[data-gkanp]").forEach(el=>{ if(el.getAttribute("data-gkanp")===key) el.setAttribute(el.tagName==="IMG"?"src":"href",u); });
+        if(document.querySelector(`img[src="${GK_LEER}"]`)&&typeof render==="function"&&!document.querySelector("#dlg:not([hidden])")) setTimeout(render,0); return u; }
       let u=null; try{ const c=await caches.open("irrgang-bilder"); await c.put(pf,new Response(sv,{headers:{"Content-Type":"image/svg+xml"}})); GK_ANP_OK.add(pf); if(navigator.serviceWorker&&navigator.serviceWorker.controller) u=pf; }catch(e){}
       if(!u) u=URL.createObjectURL(new Blob([sv],{type:"image/svg+xml"})); GK_ANP_URL.set(key,u);
       document.querySelectorAll("[data-gkanp]").forEach(el=>{ if(el.getAttribute("data-gkanp")!==key) return; el.setAttribute(el.tagName==="IMG"?"src":"href",u); const w=el.closest&&el.closest(".weg"); if(w) w.classList.remove("weg"); });
@@ -166,7 +170,7 @@ function gkBildURL(a){ if(!a) return ""; if(!a._anp) return gkURL(a); const key=
 /* Vorlage als SVG-Text: PNG einbetten, Aufdruck abdecken, Platzhalter-Text darüber */
 async function gkVorlageText(a,vk){ const V=GK_VORLAGE[vk]; if(!V) throw Error("Keine Vorlage");
   let b=null; try{ const r=await fetch(gkURL(a)); if(r.ok) b=await r.blob(); }catch(e){}
-  if(!b||!b.size){ const u=typeof bspBlob==="function"?await bspBlob(bspPfad(gkSpName(a)),true):null; if(!u) throw Error("Bild nicht erreichbar"); b=await (await fetch(u)).blob(); }
+  if(!b||!b.size||!/^image\//.test(b.type)&&b.type!==""){ b=null; const u=typeof bspBlob==="function"?(await bspBlob(bspPfad(gkSpName(a)),false)||await bspBlob(bspPfad(gkSpName(a)),true)):null; if(!u) throw Error("Bild nicht erreichbar"); b=await (await fetch(u)).blob(); }
   const data=await new Promise((ok,nein)=>{ const fr=new FileReader(); fr.onload=()=>ok(fr.result); fr.onerror=nein; fr.readAsDataURL(b.type==="image/png"?b:b.slice(0,b.size,"image/png")); });
   const bm=await createImageBitmap(b), W=bm.width, H=bm.height; bm.close&&bm.close(); const [dx,dy,dw,dh]=V.deck;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${a.dimension.width}mm" height="${a.dimension.height}mm" viewBox="0 0 ${W} ${H}"><image href="${data}" width="${W}" height="${H}"/><rect x="${dx}" y="${dy}" width="${dw}" height="${dh}" fill="${V.farbe}"/>`
