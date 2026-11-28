@@ -1909,7 +1909,7 @@ function render(){ profilAnwenden(); try{ stSnapSetzen(); }catch(e){}
     else if(nav.v==="abschluss"){ body=abschlussView(); fab=["pdf","PDF erstellen","pdf"]; }
     if(!canEdit(cur)) body=`<div class="robanner">${icon("lock")}<span>Nur lesen – erstellt von ${esc(vonText(cur)||"jemand anderem")}. Bearbeiten darf nur der Ersteller oder ein Admin.</span></div>`+body;
   }
-  if(SY.state==="anmelden"&&!login) body=`<div class="robanner warn">${icon("sync")}<span>Anmeldung abgelaufen – Änderungen werden nur auf dem Gerät gespeichert.</span><button class="btn-text" data-act="relogin">Anmelden</button></div>`+body;
+  if(SY.state==="anmelden"&&!login) body=`<div class="robanner warn">${icon("sync")}<span>Du bist abgemeldet. Änderungen bleiben vorerst nur auf diesem Gerät.</span><button class="btn-text" data-act="relogin">Anmelden</button></div>`+body;
   app.innerHTML=(WIDE.matches&&!login?seitenKopf(title,sub,fab):"")+body; backSetzen(); navIndSetzen(); segInd(); kopfEinhaengen();
   $("#topTitle").innerHTML=title?`<span>${esc(title)}</span>${sub?`<small>${esc(String(sub).split(/\s*›\s*/).pop())}</small>`:""}`:"";
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
@@ -2112,7 +2112,7 @@ function faelligView(){
     return `<div class="li" role="button" tabindex="0" data-act="nav" data-v="${l?"ladepark":s?"standort":"kunde"}" data-id="${esc(l?l.id:s?s.id:p.kundeId)}"><span class="av">${icon(l?"ev":"ort")}</span>
       <span class="lt"><span class="h">${esc((l||s||kd||{}).name||pfadText(p))}</span><span class="s">${esc([(kundeOf(p.kundeId)||{}).name,l&&s&&s.name].filter(Boolean).join(" › "))}</span><span class="s">Fällig ${esc(deDate(p.a.naechste))} · letzte Prüfung ${esc(deDate(p.p.datum))}</span><span class="st">${pill(kl,txt)}</span></span>${icon("chev")}</div>`; };
   return `<div class="narrow">${searchBar("Kunde, Ort, Ladepark")}<div id="res">${faelligInhalt()}</div>
-    <p class="hint">Antippen öffnet den Ort – dort mit „Neue Prüfung“ die Wiederholungsprüfung anlegen.</p></div>`; }
+    <p class="hint">Standort antippen, dann „Neue Prüfung“ wählen.</p></div>`; }
 function faelligInhalt(){ const t=today(), bald=new Date(Date.now()+90*864e5).toISOString().slice(0,10), q=query.trim();
   const L=faelligListe().filter(p=>!q||suPasst(q,pfadText(p),(kundeOf(p.kundeId)||{}).name,p.p.auftragsnr,deDate(p.a.naechste)));
   if(!L.length) return `<p class="meta">Nichts gefunden für „${esc(q)}“.</p>`;
@@ -2467,7 +2467,7 @@ function katalogView(){
   fotoFetch(live("katalog").map(r=>r.bild).filter(Boolean));
   return `<div class="narrow">${searchBar("Hersteller, Modell")}<div id="res">${katalogListe()}</div>
     <div class="kat-teilen"><button class="btn-tonal" data-act="katExport">${icon("backup")}Katalog als Datei sichern</button><button class="btn-tonal" data-act="katImport">${icon("upload")}Katalog-Datei laden</button></div>
-    <p class="hint">Nur Modelle, Steckbriefe und Hinweise mit Fotos – keine Kunden oder Prüfungen. Immer erst laden, dann sichern – und im Share-Ordner die vorhandene Datei „EVSE-Katalog“ ersetzen. Beim Laden wird ergänzt, nichts geht verloren.</p></div>`;
+    <p class="hint">Der Katalog gleicht sich automatisch auf allen Geräten ab. Die Datei ist nur eine zusätzliche Sicherung: Modelle, Steckbriefe und Hinweise mit Fotos, keine Kunden oder Prüfungen. Beim Laden wird ergänzt, nichts geht verloren.</p></div>`;
 }
 async function katExport(){
   const L=live("katalog"), fotos={}; L.flatMap(katFotoIds).forEach(i=>{ const d=fotoCache.get(i); if(d) fotos[i]=d; });
@@ -2903,7 +2903,7 @@ function locLoeschenFragen(kind,id){
   const r=DB[kind].get(id); if(!r) return; const {S,L,P}=unterbau(kind,id);
   const fremd=P.filter(p=>!canEdit(p)).length+S.filter(x=>!canEdit(x)).length+L.filter(x=>!canEdit(x)).length;
   if(!canEdit(r)||fremd){ toast("Enthält Einträge anderer Mitarbeiter – löschen darf nur ein Admin"); return; }
-  const teile=[S.length&&`${S.length} Standort${S.length>1?"en":""}`,L.length&&`${L.length} Ladepark${L.length>1?"s":""}`,P.length&&`${P.length} Prüfung${P.length>1?"en":""}`].filter(Boolean);
+  const teile=[S.length&&`${S.length} Standort${S.length>1?"e":""}`,L.length&&`${L.length} Ladepark${L.length>1?"s":""}`,P.length&&`${P.length} Prüfung${P.length>1?"en":""}`].filter(Boolean);
   delZiel={kind,id};
   confirmDlg(`${KIND_NAME[kind]} löschen?`,`„${r.name}“${teile.length?" mit "+teile.join(", ").replace(/, ([^,]*)$/," und $1"):""} wird gelöscht.${SYNC_ON?" Bereits abgelegte PDFs in der Share bleiben erhalten.":""}`,"Löschen","delLoc");
 }

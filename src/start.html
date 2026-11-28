@@ -1667,15 +1667,16 @@ const APPS=[
   {name:"Gebäudetechnik",text:"Installation, Verteiler, Geräte und Netzwerk",href:"../echeck/",ic:"<!--ICON_ECHECK-->"}];
 const ENTWICKLUNG=[
   {t:"Microsoft-365-Anbindung",st:"ok",s:"Läuft",d:"Anmeldung mit dem Firmenkonto. Alle Apps gleichen über SharePoint ab – jeder sieht die Einträge der Kollegen, auf allen Geräten."},
-  {t:"EVSE",st:"ok",s:"Im Testbetrieb",d:"Prüfablauf, PDF-Protokoll, Wallbox-Katalog, Wiederholungsprüfung, Plausibilitätsprüfung. PDFs landen im Kundenordner."},
-  {t:"Baustelle",st:"ok",s:"Im Testbetrieb",d:"Seit 15.10.2026. Tagesstände, offene Punkte, Notizen, Material, Fotos und Berichte als PDF."},
-  {t:"Übersicht (Startseite)",st:"ok",s:"Im Testbetrieb",d:"Seit 15.10.2026. Alle Apps an einem Ort, Statistik, Kunden mit Ablage, Messgeräte, Mitarbeiter und Rechte."},
-  {t:"Aufträge-Tafel",st:"wip",s:"Im Test",d:"Seit 16.10.2026. Anruf → Anfrage → Auftrag → Termin → Ausgeführt. Anfrage stellt jeder, den Auftrag erteilt das Büro (mit SCC-Auftragsnummer)."},
-  {t:"Gebäudetechnik",st:"wip",s:"Im Aufbau",d:"Installation, Geräte und Netzwerk mit Netzwerkschränken, Belegung, Patchkabel-Farben und Netzwerk-Katalog; PDF-Protokolle. Offen: Messwerte direkt aus dem Messgerät übernehmen."},
-  {t:"Kundenordner und Bibliothek",st:"wip",s:"Neu seit 26.10.2026",d:"Jeder Kunde hat einen Ordner in SharePoint (Angebote, Pläne, Prüfprotokolle, Berichte, Fotos, Datenblätter, Schriftverkehr). Die Bibliothek zeigt ihn in allen Apps, auch was das Büro direkt ablegt. Ältere Dateien ziehen automatisch um."},
-  {t:"Konto und Einstellungen",st:"wip",s:"Neu seit 26.10.2026",d:"Einheitlich in allen Apps: Abgleich mit Anzeige am Profilbild, Konto, Start-Seite, Textgröße, Speicher, Backup für Chef und Entwickler."},
-  {t:"Anbindung an SCC-CONTROL",st:"open",s:"In Klärung",d:"Ziel: Kunden und Aufträge aus SCC übernehmen, statt sie doppelt zu pflegen. Wird mit dem Chef und einem IT-Dienstleister besprochen."}];
-const ENTW_STAND="26.10.2026";
+  {t:"Übersicht (Startseite)",st:"wip",s:"Im Test",d:"Alle Apps an einem Ort: Startseite mit Kacheln, Statistik, Kunden mit Ablage, Messgeräte, Mitarbeiter und Rechte."},
+  {t:"EVSE",st:"wip",s:"Im Test",d:"Prüfablauf, PDF-Protokoll, Wallbox-Katalog, Wiederholungsprüfung und Plausibilitätsprüfung. Die PDFs landen im Kundenordner."},
+  {t:"Baustelle",st:"wip",s:"Im Test",d:"Tagesstände, offene Punkte, Notizen, Material, Fotos und Berichte als PDF."},
+  {t:"Kundenordner und Bibliothek",st:"wip",s:"Im Test",d:"Jeder Kunde hat einen Ordner in SharePoint (Angebote, Pläne, Prüfprotokolle, Berichte, Fotos, Datenblätter, Schriftverkehr). Die Bibliothek zeigt ihn in allen Apps, auch was das Büro direkt ablegt."},
+  {t:"Konto und Einstellungen",st:"wip",s:"Im Test",d:"In allen Apps gleich: Abgleich mit Anzeige am Profilbild, Konto, Startseite, Textgröße, Speicher und Backup."},
+  {t:"Aufträge",st:"wip",s:"Im Test",d:"Vom Anruf bis zur Erledigung: Anfrage, Auftrag, Termin, erledigt. Die Anfrage stellt jeder, den Auftrag erteilt das Büro (mit SCC-Auftragsnummer)."},
+  {t:"Gebäudetechnik",st:"wip",s:"Im Test",d:"Installation, Verteiler, Geräte, Netzwerk und KNX mit PDF-Protokollen. Offen: Messwerte direkt aus dem Messgerät übernehmen."},
+  {t:"Betriebshandbuch",st:"wip",s:"Im Test",d:"Wie wir arbeiten – in Kapiteln, mit Schaubildern. Artikel gelten erst nach Freigabe durch den Chef, Kollegen können Änderungen vorschlagen."},
+  {t:"Anbindung an SCC-CONTROL",st:"open",s:"In Planung",d:"Ziel: Kunden und Aufträge aus SCC übernehmen, statt sie doppelt zu pflegen. Wird mit dem Chef und einem IT-Dienstleister besprochen."}];
+const ENTW_STAND="28.11.2026";
 const TOPDEST_ALLE=[["start","Start","home"],["auftraege","Aufträge","board"],["kalender","Kalender","kal"],["uebersicht","Statistik","chart"],["kunden","Kunden","firma"],["geraete","Messgeräte","geraet"],["bibliothek","Bibliothek","folder"],["hb","Handbuch","book"]];
 /* Handy (schmaler als iPad): nur vier Tabs – Statistik und Messgeräte sind dort Karten auf der Startseite */
 const HANDY_WEG=["uebersicht","geraete","kalender"], istHandy=()=>!WIDE.matches;
@@ -1932,7 +1933,7 @@ function render(){ profilAnwenden(); setTimeout(()=>{ if(typeof kalPaneKlasse===
   else if(VIEW_KIND[nav.v]){ const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id); if(!r||r.deleted){ nav={v:"kunden"}; return render(); }
     title=r.name; sub=kind==="kunden"?"Kunde":(kundeOf(r.kundeId)||{}).name||""; body=kind==="kunden"?kundeView(r):standortView(r);
     fab=null; }
-  if(SY.state==="anmelden"&&!login) body=`<div class="robanner warn">${icon("sync")}<span>Anmeldung abgelaufen – Änderungen werden nur auf dem Gerät gespeichert.</span><button class="btn-text" data-act="relogin">Anmelden</button></div>`+body;
+  if(SY.state==="anmelden"&&!login) body=`<div class="robanner warn">${icon("sync")}<span>Du bist abgemeldet. Änderungen bleiben vorerst nur auf diesem Gerät.</span><button class="btn-text" data-act="relogin">Anmelden</button></div>`+body;
   app.innerHTML=(WIDE.matches&&!login?seitenKopf(title,sub,fab):"")+body; backSetzen(); navIndSetzen(); segInd(); kopfEinhaengen();
   $("#topTitle").innerHTML=title?`<span>${esc(title)}</span>${sub?`<small>${esc(String(sub).split(/\s*›\s*/).pop())}</small>`:""}`:"";
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
@@ -1968,7 +1969,7 @@ function skRechts(){
    Jeder legt fest, welche Kacheln er sieht, in welcher Reihenfolge und wie breit (halb/ganz).
    Gespeichert im eigenen Profil („profile“) ⇒ gleich auf iPad und PC. Halbe Kacheln werden automatisch
    auf zwei Spalten verteilt, sodass keine Löcher entstehen. */
-const DB_W={handbuch:"Betriebshandbuch",termine:"Termine",material:"Material",auftraege:"Aufträge",pruefungen:"Prüfungen & Fristen",baustellen:"Baustellen",zahlen:"Kennzahlen",geraete:"Messgeräte",apps:"Apps",schnell:"Schnell anlegen",wetter:"Wetter",heute:"Heute",pinn:"Pinnwand",werwo:"Wer ist wo"};
+const DB_W={handbuch:"Betriebshandbuch",termine:"Termine",material:"Material",auftraege:"Aufträge",pruefungen:"Prüfungen & Fristen",baustellen:"Baustellen",zahlen:"Kennzahlen",geraete:"Messgeräte",apps:"Apps",schnell:"Schnell anlegen",wetter:"Wetter",heute:"Heute",pinn:"Pinnwand",werwo:"Team heute"};
 /* Neu hinzugekommene Kacheln erscheinen bei bestehenden Startseiten nicht von selbst (iPad/PC bleiben, wie eingestellt) */
 const DB_NEU_AUS=["geraete","schnell","wetter","heute","pinn","werwo"];
 /* Auf dem Handy sind das die Wege zu Statistik und Messgeräten (dort keine Tabs) – daher immer sichtbar */
@@ -2094,7 +2095,7 @@ function heuteKachel(){ if(typeof kalAlle!=="function") return {ic:"kal",m:()=>"
   const jetzt=new Date(), naechst=zeit.find(e=>e.von>jetzt), lauf=zeit.find(e=>e.von<=jetzt&&e.bis>jetzt), titel=e=>e.privat&&!e.eigen?"Privat":e.t;
   const W=META.wetter&&META.wetter.stdTag===today()?META.wetter.std||[]:[], regen=W.filter(x=>x.mm>=0.2&&x.st>=HZ_A&&x.st<HZ_B);
   const aussen=zeit.filter(e=>e.bis<=um(HZ_A)||e.von>=um(HZ_B)).length, gleich=(()=>{ const B=[]; let n=0; zeit.filter(e=>e.bis>um(HZ_A)&&e.von<um(HZ_B)).forEach(e=>{ let i=B.findIndex(b=>b<=e.von); if(i<0){ i=B.length; B.push(0); } B[i]=e.bis; if(i>=2) n++; }); return n; })();
-  return {ic:"zeit",v:"kalender",sub:(lauf?`jetzt: ${titel(lauf)}`:naechst?`als Nächstes ${kalZeit(naechst.von)} · ${titel(naechst)}`:zeit.length?"Für heute nichts mehr im Kalender":"Heute keine Termine im Kalender")+(aussen?` · +${aussen} vor 7 oder nach 17 Uhr`:"")+(gleich?` · +${gleich} gleichzeitig`:""),
+  return {ic:"zeit",v:"kalender",sub:(lauf?`jetzt: ${titel(lauf)}`:naechst?`als Nächstes ${kalZeit(naechst.von)} · ${titel(naechst)}`:zeit.length?"Heute keine weiteren Termine":"Kein Termin im Kalender")+(aussen?` · +${aussen} vor 7 oder nach 17 Uhr`:"")+(gleich?` · +${gleich} gleichzeitig`:""),
     m:g=>{ const im=zeit.filter(e=>e.bis>um(HZ_A)&&e.von<um(HZ_B)), bahn=[]; im.forEach(e=>{ let i=bahn.findIndex(b=>b<=e.von); if(i<0){ i=bahn.length; bahn.push(0); } bahn[i]=e.bis; e._b=i; });
       const max=g==="l"?5:2, n=Math.max(1,Math.min(bahn.length,max)), raus=im.filter(e=>e._b>=max).length;
       const st=[]; for(let x=HZ_A;x<HZ_B;x++) st.push(W.find(w=>w.st===x)||null);
@@ -2105,7 +2106,7 @@ function heuteKachel(){ if(typeof kalAlle!=="function") return {ic:"kal",m:()=>"
       return `<div class="hz hz-${g}" style="--n:${n}">
         ${ganz.length?`<div class="hz-ganz">${ganz.slice(0,3).map(e=>`<button type="button" class="kal-mev ${kalFarbe(e)}" style="${kalCV(e)}" data-act="kalAuf" data-id="${esc(e.id)}">${esc(titel(e))}</button>`).join("")}${ganz.length>3?`<small>+${ganz.length-3}</small>`:""}</div>`:""}
         ${W.length&&g==="l"?`<div class="hz-wetter">${st.map(w=>`<span title="${w?w.st+" Uhr":""}">${w?wIc(w.ic)+`<small>${w.t!=null?w.t+"°":""}</small>`:""}</span>`).join("")}</div>`:""}
-        <div class="hz-spur">${regen.map(w=>`<i class="hz-regen" style="left:${(w.st-HZ_A)/(HZ_B-HZ_A)*100}%;width:${100/(HZ_B-HZ_A)}%" title="${w.st} Uhr: ${wvZahl(w.mm)} mm Regen"></i>`).join("")}${evs||`<span class="hz-frei">${zeit.length?"Zwischen 7 und 17 Uhr frei":"Keine Termine heute"}</span>`}${jp}</div>
+        <div class="hz-spur">${regen.map(w=>`<i class="hz-regen" style="left:${(w.st-HZ_A)/(HZ_B-HZ_A)*100}%;width:${100/(HZ_B-HZ_A)}%" title="${w.st} Uhr: ${wvZahl(w.mm)} mm Regen"></i>`).join("")}${evs||`<span class="hz-frei">${zeit.length?"Zwischen 7 und 17 Uhr frei":"Den ganzen Tag frei"}</span>`}${jp}</div>
         <div class="hz-uhr">${Array.from({length:HZ_B-HZ_A+1},(_,i)=>`<span class="${i===0?"a":i===HZ_B-HZ_A?"e":""}" style="left:${i/(HZ_B-HZ_A)*100}%">${HZ_A+i}</span>`).join("")}${W.length&&g!=="l"?st.map((w,i)=>w?`<i style="left:${(i+.5)/(HZ_B-HZ_A)*100}%" title="${w.st} Uhr${w.t!=null?" · "+w.t+" °C":""}${w.mm>=0.1?" · "+wvZahl(w.mm)+" mm":""}">${wIc(w.ic)}</i>`:"").join(""):""}</div>
         ${raus&&g==="l"?`<small class="hz-raus">+${raus} weitere gleichzeitig – im Kalender</small>`:""}${morgen}</div>`; }}; }
 /* Jetzt-Linie läuft mit, ohne die Seite neu zu zeichnen */
@@ -2131,7 +2132,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
   if(a==="pinAuf"){ const r=DB.einstellungen.get(b.dataset.id); if(r) pinDlg(r); return; }
   if(a==="pinFarbe"){ PIN_E.farbe=b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); return; }
   if(a==="pinOk"){ const F=formVals(), t=String(F.pinT||"").trim(); if(!t){ toast("Bitte einen Text eintragen"); document.getElementById("f_pinT")?.focus(); return; }
-    const alt=PIN_E.id&&DB.einstellungen.get(PIN_E.id), r=alt||{id:"pin-"+uid(),typ:"pin"}; Object.assign(r,{t:t.slice(0,400),farbe:PIN_E.farbe,bis:F.pinBis||"",deleted:false}); saveRec("einstellungen",r,!alt); closeOverlays(); render(); toast(alt?"Notiz gespeichert":"Notiz angeheftet – sehen jetzt alle"); return; }
+    const alt=PIN_E.id&&DB.einstellungen.get(PIN_E.id), r=alt||{id:"pin-"+uid(),typ:"pin"}; Object.assign(r,{t:t.slice(0,400),farbe:PIN_E.farbe,bis:F.pinBis||"",deleted:false}); saveRec("einstellungen",r,!alt); closeOverlays(); render(); toast(alt?"Notiz gespeichert":"Notiz angeheftet – für alle sichtbar"); return; }
   if(a==="pinWeg"){ const r=PIN_E.id&&DB.einstellungen.get(PIN_E.id); if(r&&canEdit(r)){ r.deleted=true; saveRec("einstellungen",r,false); } closeOverlays(); render(); toast("Notiz abgenommen"); return; } },true);
 
 /* ===== Status und Abwesenheit (05.11.2026) =====
@@ -2140,7 +2141,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
    Den Grund sehen nur Chef/Büro und die Person selbst; alle anderen sehen „nicht verfügbar“.
    Tagesstatus: selbst gesetzt (gilt nur heute), sonst automatisch aus der Einteilung (Auftragstermine, Kalender, Meldungen).
    Berufsschule: feste Schultage je Azubi (Mitarbeiter → Schultage). */
-const ST_ART={buero:"Im Büro",baustelle:"Auf Baustelle",unterwegs:"Unterwegs",weg:"Nicht erreichbar"};
+const ST_ART={buero:"Im Büro",baustelle:"Auf Baustelle",unterwegs:"Unterwegs",weg:"Gerade nicht erreichbar"};
 const ABW_ART={urlaub:"Urlaub",schulung:"Schulung",abwesend:"Abwesend"};
 const stMk=m=>String(m||"").toLowerCase();
 const stIch=mail=>!!ME.mail&&stMk(mail)===stMk(ME.mail);
@@ -2152,12 +2153,12 @@ function schuleAm(m,d=new Date()){ const az=(m.stufe==="azubi")&&(!m.azubiBis||m
 function stManuell(mail){ const r=DB.einstellungen.get("status-"+stMk(mail)); return r&&!r.deleted&&r.tag===today()&&ST_ART[r.s]?r:null; }
 /* Status einer Person heute: k = abw | buero | baustelle | unterwegs | weg | auto | leer */
 function personStatus(m,x){ const a=abwAm(m.mail);
-  if(a){ const bis=(a.bis||a.von)>today()?`bis ${stTag(a.bis)}`:"heute"; return {k:"abw",t:stGrund(m.mail)?ABW_ART[a.art]||"Abwesend":"Nicht verfügbar",s:bis,abw:a}; }
-  if(schuleAm(m)) return {k:"abw",t:stGrund(m.mail)?"Berufsschule":"Nicht verfügbar",s:"heute"};
+  if(a){ const bis=(a.bis||a.von)>today()?`bis ${stTag(a.bis)}`:"heute"; return {k:"abw",t:stGrund(m.mail)?ABW_ART[a.art]||"Abwesend":"Abwesend",s:bis,abw:a}; }
+  if(schuleAm(m)) return {k:"abw",t:stGrund(m.mail)?"Berufsschule":"Abwesend",s:"heute"};
   const r=stManuell(m.mail); if(r) return {k:r.s,t:ST_ART[r.s],s:r.wo||"",selbst:true};
-  if(x&&x.plan.length){ const p=x.plan[0]; return {k:"auto",t:p.t,s:(p.z?p.z+" · ":"")+"laut Einteilung"+(x.plan.length>1?` (+${x.plan.length-1})`:"")}; }
-  if(x&&x.ist) return {k:"auto",t:x.ist.t,s:`gemeldet ${new Date(x.ist.at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}`};
-  return {k:"leer",t:"Kein Status",s:""}; }
+  if(x&&x.plan.length){ const p=x.plan[0]; return {k:"auto",t:p.t,s:(p.z?p.z+" · ":"")+"eingeplant"+(x.plan.length>1?` (+${x.plan.length-1})`:"")}; }
+  if(x&&x.ist) return {k:"auto",t:x.ist.t,s:`zuletzt gemeldet ${new Date(x.ist.at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}`};
+  return {k:"leer",t:"Keine Angabe",s:""}; }
 const stAv=(m,st)=>`<span class="st-av st-${st.k}">${persAv(m.mail,m.name)}</span>`;
 const stName=m=>m.ruf||m.name||persVoll(m.mail,"");
 function werwoDaten(){ const t=today(), h=kalTag(new Date()), ab=+h, R=new Map();
@@ -2185,13 +2186,13 @@ let ST_E=null;
 function stDlg(){ const r=stManuell(ME.mail), m=team().find(x=>stIch(x.mail))||{mail:ME.mail,name:ME.name}, a=abwAm(ME.mail);
   ST_E={s:r?r.s:"auto"}; const B=live("baustellen").filter(b=>(b.status||"aktiv")==="aktiv").map(b=>[b.name,b.name]);
   const kommt=abwListe().filter(x=>stIch(x.mail)&&(x.bis||x.von)>=today()).sort((x,y)=>x.von<y.von?-1:1);
-  dialog("Mein Status heute",`${a?`<p class="st-hinweis">Du bist eingetragen als <b>${esc(ABW_ART[a.art]||"abwesend")}</b> ${(a.bis||a.von)>today()?"bis "+esc(stTag(a.bis)):"heute"}. Andere sehen „nicht verfügbar“.</p>`:""}
-    <div class="st-wahl">${[["auto","Automatisch","aus Einteilung und Meldungen"],["buero","Im Büro",""],["baustelle","Auf Baustelle",""],["unterwegs","Unterwegs","z. B. Großhandel, Kunde"],["weg","Nicht erreichbar","z. B. Termin, Pause"]].map(([k,t,u])=>`<button type="button" class="st-opt st-${k}" data-act="stWahl" data-v="${k}" aria-pressed="${ST_E.s===k}"><i></i><span><b>${t}</b>${u?`<small>${u}</small>`:""}</span></button>`).join("")}</div>
+  dialog("Mein Status heute",`${a?`<p class="st-hinweis">Du bist eingetragen als <b>${esc(ABW_ART[a.art]||"abwesend")}</b> ${(a.bis||a.von)>today()?"bis "+esc(stTag(a.bis)):"heute"}. Andere sehen nur „abwesend“.</p>`:""}
+    <div class="st-wahl">${[["auto","Automatisch","aus Einteilung und Meldungen"],["buero","Im Büro",""],["baustelle","Auf Baustelle",""],["unterwegs","Unterwegs","z. B. Großhandel, Kunde"],["weg","Gerade nicht erreichbar","z. B. Termin, Pause"]].map(([k,t,u])=>`<button type="button" class="st-opt st-${k}" data-act="stWahl" data-v="${k}" aria-pressed="${ST_E.s===k}"><i></i><span><b>${t}</b>${u?`<small>${u}</small>`:""}</span></button>`).join("")}</div>
     <div id="stWo" ${ST_E.s==="baustelle"?"":"hidden"} style="margin-top:12px">${tf("stWo","Welche Baustelle (optional)",r&&r.wo||"",{form:true,list:"stWoL",ph:"z. B. Merten Bauteil B"})}${datalist("stWoL",B.map(x=>x[0]))}</div>
-    <p class="sup" style="margin:10px 4px 0">Gilt nur für heute – morgen ist wieder „Automatisch“.</p>
-    <div class="sec-lbl" style="margin-top:18px">Nicht da?</div>
+    <p class="sup" style="margin:10px 4px 0">Gilt bis heute Abend, ab morgen wieder automatisch.</p>
+    <div class="sec-lbl" style="margin-top:18px">Abwesenheit</div>
     ${kommt.length?`<div class="st-abw-l">${kommt.map(x=>`<button type="button" class="st-abwz" data-act="abwAuf" data-id="${esc(x.id)}"><b>${esc(ABW_ART[x.art]||"Abwesend")}</b><small>${esc(stTag(x.von))}${x.bis&&x.bis!==x.von?" – "+esc(stTag(x.bis)):""}</small></button>`).join("")}</div>`:""}
-    <button type="button" class="btn-tonal st-abmelden" data-act="abwNeu">${icon("add")}Abwesenheit eintragen (krank, Urlaub …)</button>`,
+    <button type="button" class="btn-tonal st-abmelden" data-act="abwNeu">${icon("add")}Abwesenheit eintragen</button>`,
     `<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="stOk">Speichern</button>`,{mittel:true}); }
 /* Dialog: Abwesenheit (selbst oder – Chef/Büro – für andere) */
 let ABW_E=null;
@@ -2201,8 +2202,8 @@ function abwDlg(r){ const neu=!r, verw=anfVerw(); if(r&&!(stIch(r.mail)||verw)) 
   dialog(neu?"Abwesenheit eintragen":"Abwesenheit",`<div class="fg1">${verw?sf("abwWer","Wer",stMk(wer),T.map(m=>[stMk(m.mail),m.name+(stIch(m.mail)?" (du)":"")]),{form:true}):""}
     <div class="lbl" style="margin:${verw?12:0}px 4px 6px">Grund</div><div class="chips abw-art">${(r?[["urlaub","Urlaub"],["schulung","Schulung"],["abwesend","Krank / Sonstiges"]]:[["krank","Krank"],["urlaub","Urlaub"],["schulung","Schulung"],["abwesend","Sonstiges"]]).map(([k,t])=>`<button type="button" class="chip" data-act="abwArt" data-v="${k}" aria-pressed="${ABW_E.art===k}">${t}</button>`).join("")}</div>
     <div class="row2" style="margin-top:12px">${tf("abwVon","Von",r?r.von:today(),{form:true,type:"date"})}${tf("abwBis","Bis einschließlich",r?(r.bis||r.von):today(),{form:true,type:"date"})}</div>
-    <p class="sup abw-krank" style="margin:8px 4px 0" ${ABW_E.art==="krank"?"":"hidden"}>Gespeichert wird nur „abwesend bis …“ – nicht, dass du krank bist. Chef und Büro sehen den Eintrag in den Benachrichtigungen. Ob das als Krankmeldung reicht oder du zusätzlich anrufst, legt der Chef fest.</p>
-    <p class="sup" style="margin:8px 4px 0">Den Grund sehen nur Chef, Büro und du – alle anderen sehen „nicht verfügbar“.</p></div>`,
+    <p class="sup abw-krank" style="margin:8px 4px 0" ${ABW_E.art==="krank"?"":"hidden"}>Gespeichert wird nur, dass du abwesend bist – nicht, dass du krank bist. Chef und Büro sehen den Eintrag in den Benachrichtigungen. Das ersetzt keine Krankmeldung: Melde dich wie im Betriebshandbuch beschrieben.</p>
+    <p class="sup" style="margin:8px 4px 0">Den Grund sehen nur Chef, Büro und du – alle anderen sehen nur „abwesend“.</p></div>`,
     `${!neu?`<button class="btn-text danger" data-act="abwWeg">Löschen</button>`:""}<span style="flex:1"></span><button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="abwOk">${neu?"Eintragen":"Speichern"}</button>`,{mittel:true}); }
 function teamHeuteDlg(){ dialog("Team heute",`<div class="ww ww-alle">${werwoDaten().map(stZeile).join("")}</div>`,`<button class="btn-text" data-act="abwNeu">Abwesenheit eintragen</button><span style="flex:1"></span><button class="btn-text" data-act="cancel">Schließen</button>`,{mittel:true}); }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="st"],[data-act^="abw"],[data-act="teamHeute"]'); if(!b) return; const a=b.dataset.act;
@@ -2219,7 +2220,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closes
     if(!stIch(mail)&&!anfVerw()) return;
     const alt=ABW_E.id&&DB.einstellungen.get(ABW_E.id), r=alt||{id:"abw-"+uid(),typ:"abw"};
     Object.assign(r,{mail,art:ABW_E.art==="krank"?"abwesend":ABW_E.art,von,bis,deleted:false}); saveRec("einstellungen",r,!alt); closeOverlays(); render();
-    toast(stIch(mail)?"Eingetragen – andere sehen „nicht verfügbar“":"Abwesenheit eingetragen"); return; }
+    toast(stIch(mail)?"Eingetragen – andere sehen nur „abwesend“":"Abwesenheit eingetragen"); return; }
   if(a==="abwWeg"){ const r=ABW_E.id&&DB.einstellungen.get(ABW_E.id); if(r&&(stIch(r.mail)||anfVerw())){ r.deleted=true; saveRec("einstellungen",r,false); } closeOverlays(); render(); toast("Abwesenheit gelöscht"); return; } },true);
 
 /* Dashboard für Chef und Büro: vier Boxen. Jede zeigt nur, was zu tun ist – Details über „Alle“. */
@@ -2242,7 +2243,7 @@ function dashboard(kacheln){
   const W={
     handbuch:{ic:"book",v:"hb",sub:HU.length?`${HU.length} neu oder geändert`:"Wie wir arbeiten",
       s:()=>gross(HU.length,"neu oder geändert"),
-      m:g=>HU.length?HU.slice(0,anz(g)).map(a=>zeile(a.titel,(HB_KAPITEL.find(([k])=>k===a.kapitel)||[,""])[1])).join(""):leer("Nichts geändert in den letzten 14 Tagen.",true)},
+      m:g=>HU.length?HU.slice(0,anz(g)).map(a=>zeile(a.titel,(HB_KAPITEL.find(([k])=>k===a.kapitel)||[,""])[1])).join(""):leer("Keine Änderungen in den letzten 14 Tagen",true)},
     termine:typeof kalKachel==="function"?kalKachel(anz,zeile,leer,gross):{ic:"home",m:()=>""},
     material:{ic:"lager",v:"materialanf",sub:A.length?`${an} angefordert · ${A.length-an} bestellt`:"Nichts offen",plus:["afNeu","Material anfordern"],
       s:()=>gross(an,"angefordert"),
@@ -2252,13 +2253,13 @@ function dashboard(kacheln){
       m:g=>V.length?V.slice(0,anz(g)).map(v=>zeile(vgKunde(v)+(v.rahmen?" · Rahmenauftrag":""),v.rahmen&&typeof mlOffen==="function"?`${mlOffen(v.id).length} Meldung${mlOffen(v.id).length===1?"":"en"} offen`:vgKurz(v.anliegen||"",60))).join(""):leer("Keine offenen Vorgänge.",true)},
     pruefungen:{ic:"doc",v:"fristen",sub:(ueber.length?`${ueber.length} überfällig`:fb.length?`${fb.length} fällig in 3 Monaten`:"Keine Fristen offen")+(BZ.ueber?` · Betrieb ${BZ.ueber} überfällig`:""),warn:ueber.length>0||BZ.ueber>0||G.some(x=>x.k.s==="ab"),
       s:()=>gross(ueber.length,"überfällig",ueber.length>0),
-      m:g=>`<div class="wg-kpis">${kpi(neu.length,"neue Protokolle")}${kpi(ueber.length,"überfällig",ueber.length?"warn":"")}${kpi(fb.length,"fällig in 3 Mon.")}</div>`
+      m:g=>`<div class="wg-kpis">${kpi(neu.length,"neue Protokolle")}${kpi(ueber.length,"überfällig",ueber.length?"warn":"")}${kpi(fb.length,"in 3 Monaten fällig")}</div>`
         +(g==="l"||g==="b"?([...G.slice(0,g==="l"?3:2).map(({g:x,k})=>zeile(gerName(x),k.t)),...ueber.slice(0,3).map(x=>zeile((kundeOf(x.kundeId)||{}).name||"Kunde",`${(FR_ART[x.art]||["Prüfung"])[0]} · ${x.faellig?"fällig seit "+deDate(x.faellig):"noch nie geprüft"}`))].slice(0,g==="l"?5:2).join("")||leer("Keine Fristen in Gefahr.")):"")},
     baustellen:{ic:"baustelle",v:"uebersicht",sub:`${aktiv.length} aktiv`,
       s:()=>gross(aktiv.length,"aktiv"),
       m:g=>E.length?E.slice(0,anz(g)).map(e=>{ const b=DB.baustellen.get(e.baustelleId); return zeile(b?b.name:"Baustelle",[(e.createdBy||{}).name,wann(e.created)].filter(Boolean).join(" · ")); }).join(""):leer("Noch keine Übergaben.")},
     zahlen:{ic:"chart",v:"uebersicht",
-      m:g=>`<div class="wg-kpis ${g==="l"?"zwei":"vier"}${g==="b"?" breit":""}">${kpi(aktiv.length,"aktive Baustellen")}${kpi(inArbeit,"Prüfungen in Arbeit")}${kpi(ueber.length+fb.length,"fällig in 3 Mon.",ueber.length?"warn":"")}${kpi(echt("kunden").length,"Kunden")}</div>`},
+      m:g=>`<div class="wg-kpis ${g==="l"?"zwei":"vier"}${g==="b"?" breit":""}">${kpi(aktiv.length,"aktive Baustellen")}${kpi(inArbeit,"Prüfungen in Arbeit")}${kpi(ueber.length+fb.length,"in 3 Monaten fällig",ueber.length?"warn":"")}${kpi(echt("kunden").length,"Kunden")}</div>`},
     geraete:(()=>{ const alle=live("geraete").filter(g=>!g.aus), P=alle.map(g=>({g,k:gerKal(g)})).filter(x=>x.k&&x.k.s!=="ok"), rot=P.some(x=>x.k.s==="ab"||x.k.s==="leer");
       return {ic:"geraet",v:"geraete",sub:`${alle.length} ${alle.length===1?"Gerät":"Geräte"}${P.length?` · ${P.length} ${P.length===1?"braucht":"brauchen"} Kalibrierung`:""}`,warn:rot,
         s:()=>gross(P.length,"Kalibrierung offen",rot),
@@ -2314,11 +2315,11 @@ function stAuftraege(){ const V=echt("vorgaenge"), offen=V.filter(v=>!vgZu(v)), 
   const D=[0,1,2,3].map(i=>{ const a=VG_S[i][0], b=VG_S[i+1][0], L=V.map(v=>v.s&&v.s[a]&&v.s[b]&&v.s[b].at>=seit?v.s[b].at-v.s[a].at:null).filter(x=>x!=null&&x>=0); return {t:`${VG_T[i]} → ${VG_T[i+1]}`,n:L.length,ms:L.length?L.reduce((x,y)=>x+y,0)/L.length:0}; });
   const ges=V.filter(v=>erl(v)>=seit&&v.s.anruf).map(v=>erl(v)-v.s.anruf.at), dmax=Math.max(1,...D.map(d=>d.ms));
   return `<section class="st-ab">${stKopf("vgTafel","Aufträge",`<button class="btn-text" data-act="nav" data-v="auftraege">Zur Tabelle${icon("chev")}</button>`)}
-    <div class="st-kacheln">${stK(offen.length,"offen",{act:"vgK",v:"offen"})}${stK(offen.filter(v=>vgStufe(v)===1).length,"warten aufs Büro",{act:"vgK",v:"buero"})}${stK(offen.filter(v=>vgAlter(v)).length,"hängen",{act:"vgK",v:"haengt",warn:offen.some(v=>vgAlter(v))})}${stK(V.filter(v=>stMon(erl(v))===monat).length,`erledigt im ${t0.toLocaleDateString("de-DE",{month:"long"})}`)}</div>
+    <div class="st-kacheln">${stK(offen.length,"offen",{act:"vgK",v:"offen"})}${stK(offen.filter(v=>vgStufe(v)===1).length,"beim Büro",{act:"vgK",v:"buero"})}${stK(offen.filter(v=>vgAlter(v)).length,"stocken",{act:"vgK",v:"haengt",warn:offen.some(v=>vgAlter(v))})}${stK(V.filter(v=>stMon(erl(v))===monat).length,`erledigt im ${t0.toLocaleDateString("de-DE",{month:"long"})}`)}</div>
     <div class="st-zwei"><div class="st-fl"><div class="st-t">Aufträge der letzten 12 Monate</div>${stSaeulen(M,[{n:"Eingegangen",kl:"ein",w:ein},{n:"Erledigt",kl:"erl",w:fertig}],i=>`${ein[i]} eingegangen · ${fertig[i]} erledigt`)}</div>
-      <div class="st-fl"><div class="st-t">Wie lange dauert ein Schritt? <small>Durchschnitt, letzte 90 Tage</small></div>
+      <div class="st-fl"><div class="st-t">Dauer je Schritt <small>Durchschnitt, letzte 90 Tage</small></div>
         ${D.some(d=>d.n)?`<div class="st-dl">${D.map(d=>`<div class="st-dz"><span class="st-dl-l">${esc(d.t)}</span><span class="st-dl-b"><i style="width:${d.n?Math.max(2,Math.round(d.ms/dmax*100)):0}%"></i></span><b>${d.n?stDauer(d.ms):"–"}</b></div>`).join("")}</div>
-        <p class="st-fuss">${ges.length?`Vom Anruf bis erledigt im Schnitt <b>${stDauer(ges.reduce((x,y)=>x+y,0)/ges.length)}</b> (${ges.length} Auftr${ges.length===1?"ag":"äge"})`:"Noch kein Auftrag in den letzten 90 Tagen erledigt."}</p>`
+        <p class="st-fuss">${ges.length?`Vom Anruf bis zur Erledigung im Schnitt <b>${stDauer(ges.reduce((x,y)=>x+y,0)/ges.length)}</b> (${ges.length} Auftr${ges.length===1?"ag":"äge"})`:"Noch kein Auftrag in den letzten 90 Tagen erledigt."}</p>`
         :`<p class="meta">Noch zu wenig Daten – sobald Aufträge weitergegeben werden, steht hier, wo sie am längsten liegen.</p>`}</div></div></section>`; }
 function uebersichtView(){
   const bs=echt("baustellen"), es=echt("eintraege"), ps=echt("pruefungen"), t=today(), jahr=t.slice(0,4);
@@ -2333,7 +2334,7 @@ function uebersichtView(){
   const fZeile=(p,kl,txt)=>`<div class="li ruhig"><span class="av">${icon("ev")}</span><span class="lt"><span class="h">${esc(pPfad(p))}</span><span class="s">Fällig ${esc(deDate(p.a.naechste))} · zuletzt ${esc(deDate(p.p.datum))}</span><span class="st">${pill(kl,txt)}</span></span></div>`;
   return `<div class="narrow st">${stAuftraege()}
     <section class="st-ab">${stKopf("baustelle","Baustellen")}
-      <div class="st-kacheln">${stK(n("aktiv"),"aktiv")}${stK(n("pausiert"),"pausiert")}${stK(n("fertig"),"abgeschlossen")}${stK(es.filter(e=>(e.created||0)>=woche).length,"Übergaben in 7 Tagen")}</div>
+      <div class="st-kacheln">${stK(n("aktiv"),"aktiv")}${stK(n("pausiert"),"pausiert")}${stK(n("fertig"),"abgeschlossen")}${stK(es.filter(e=>(e.created||0)>=woche).length,"Übergaben (letzte 7 Tage)")}</div>
       ${mat.length?`<div class="sec-lbl">Material offen</div>${listOf(mat.map(b=>{ const e=eintraegeVon(b.id)[0]; return `<div class="li ruhig"><span class="av">${icon("baustelle")}</span><span class="lt"><span class="h">${esc(b.name)}</span><span class="b-stand">${esc(e.material)}</span></span></div>`; }))}`:""}
       ${aktiv.length?`<div class="sec-lbl">Aktive Baustellen</div>${listOf(aktiv.slice(0,8).map(bZeile))}${aktiv.length>8?`<p class="hint">und ${aktiv.length-8} weitere</p>`:""}`:`<p class="meta">Keine aktiven Baustellen.</p>`}
       ${still.length?`<p class="hint">${still.length} aktive Baustelle${still.length>1?"n":""} seit über einer Woche ohne neuen Eintrag – vielleicht auf „Pausiert“ setzen.</p>`:""}</section>
@@ -2344,7 +2345,7 @@ function uebersichtView(){
       ${fBald.length?`<div class="sec-lbl">Fällig in den nächsten 3 Monaten</div>${listOf(fBald.map(p=>fZeile(p,"wip","bald fällig")))}`:""}
       ${!fUeber.length&&!fBald.length?`<p class="meta">In den nächsten 3 Monaten ist keine Wiederholungsprüfung fällig.</p>`:""}</section>
     <section class="st-ab">${stKopf("firma","Kunden")}
-      <div class="st-kacheln">${stK(echt("kunden").length,"Kunden")}${stK(echt("standorte").length,"Standorte")}${stK(echt("ladeparks").length,"Ladeparks")}${stK(echt("dateien").length,"abgelegte Dateien")}</div></section>
+      <div class="st-kacheln">${stK(echt("kunden").length,"Kunden")}${stK(echt("standorte").length,"Standorte")}${stK(echt("ladeparks").length,"Ladeparks")}${stK(echt("dateien").length,"Dateien")}</div></section>
     <p class="hint">${SYNC_ON?`Stand: ${esc(syncText())}.`:"Die Zahlen stammen von diesem Gerät. Firmenweite Zahlen gibt es, sobald die Microsoft-Anbindung läuft."}</p></div>`;
 }
 
@@ -2352,7 +2353,7 @@ function locItem(kind,r){
   const nb=live("baustellen").filter(b=>kind==="kunden"?b.kundeId===r.id:b.standortId===r.id).length;
   const np=echt("pruefungen").filter(p=>kind==="kunden"?p.kundeId===r.id:p.standortId===r.id).length;
   const nd=kind==="kunden"?live("dateien").filter(d=>(d.bezugKind==="kunden"&&d.bezugId===r.id)||(d.bezugKind==="standorte"&&(standortOf(d.bezugId)||{}).kundeId===r.id)).length:dateienVon("standorte",r.id).length;
-  const sub=kind==="kunden"?[r.kdnr&&`Kd.-Nr. ${r.kdnr}`,r.ort,`${standorteVon(r.id).length} Standort${standorteVon(r.id).length===1?"":"e"}`].filter(Boolean).join(" · "):(adrText(r)||"");
+  const sub=kind==="kunden"?[r.kdnr&&`Kd.-Nr. ${r.kdnr}`,r.ort,standorteVon(r.id).length&&`${standorteVon(r.id).length} Standort${standorteVon(r.id).length===1?"":"e"}`].filter(Boolean).join(" · "):(adrText(r)||"");
   const pills=[nb&&pill("open",`${nb} Baustelle${nb>1?"n":""}`),np&&pill("open",`${np} Prüfung${np>1?"en":""}`),nd&&pill("open",`${nd} Datei${nd>1?"en":""}`)].filter(Boolean).join("");
   return `<div class="li" role="button" tabindex="0" data-act="nav" data-v="${kind==="kunden"?"kunde":"standort"}" data-id="${esc(r.id)}"><span class="av">${icon(kind==="kunden"?kdIc(r):"ort")}</span>
     <span class="lt"><span class="h">${esc(r.name)}</span>${sub?`<span class="s">${esc(sub)}</span>`:""}${pills?`<span class="st">${pills}</span>`:""}</span>${icon("chev")}</div>`;
@@ -2578,7 +2579,7 @@ function teamView(){ entwNachtragen();
     <section class="card tipp"><b>${icon("person")}Neuer Mitarbeiter</b>
       <p>1. Microsoft-Konto anlegen und Lizenz zuweisen (Microsoft 365 Admin Center).<br>2. Hier mit derselben Adresse eintragen – dann erscheint er in allen Apps.</p>
       <a class="btn-text" href="https://admin.microsoft.com/#/users" target="_blank" rel="noopener">${icon("globe")}Microsoft 365 Admin Center</a>
-      <p class="sup">Scheidet jemand aus: hier auf „Ausgeschieden“ setzen und im Admin Center die Anmeldung sperren. Seine Einträge bleiben erhalten. Kommt er wieder, einfach zurück auf „Aktiv“.</p></section>
+      <p class="sup">Scheidet jemand aus: hier auf „Ausgeschieden“ setzen und im Admin Center die Anmeldung sperren. Die Einträge der Person bleiben erhalten. Kommt sie zurück, einfach wieder auf „Aktiv“ setzen.</p></section>
     <div class="sec-lbl">Fertige Protokolle gehen an</div>
     ${listOf([`<div class="li" role="button" tabindex="0" data-act="mailAnEdit"><span class="av">${icon("mail")}</span><span class="lt"><span class="h">${esc(mailAn())}</span><span class="s">Gilt für alle Geräte und Apps</span></span>${icon("edit")}</div>`])}</div>`;
 }
@@ -2606,17 +2607,17 @@ function maView(m){
       <span class="ma-pillen">${maPillen(m)}</span>${st&&st.auto?`<small class="pf-rtext">Ausbildung am ${esc(bisTxt)} beendet – wird automatisch als Geselle geführt</small>`:""}</section>`:""}
     <div class="sec-lbl">Name</div>
     <div class="fg1"><div class="row2">${tf("vorname","Vorname",fv("vorname",p.vorname||""),{form:true,ph:t.vor||"z. B. Max"})}${tf("nachname","Nachname",fv("nachname",p.nachname||""),{form:true,ph:t.nach||"z. B. Mustermann"})}</div>
-      ${tf("ruf","Rufname (So möchte ich begrüßt werden)",fv("ruf",p.ruf||""),{form:true,ph:p.vorname||t.vor||"z. B. Max"})}</div>
-    <p class="sup" style="margin:8px 4px 0">Steht in der Begrüßung, unten in der Seitenleiste und in der Blase beim Drüberfahren (Rufname, sonst Vorname). Jeder kann seinen Namen auch selbst unter „Konto“ ändern.</p>
+      ${tf("ruf","Rufname",fv("ruf",p.ruf||""),{form:true,ph:p.vorname||t.vor||"z. B. Max"})}</div>
+    <p class="sup" style="margin:8px 4px 0">So wird die Person in der App angesprochen: in der Begrüßung, unten in der Seitenleiste und in der Blase beim Drüberfahren (ohne Rufname der Vorname). Jeder kann seinen Rufnamen auch selbst unter „Konto“ ändern.</p>
     <div class="sec-lbl">In der Firma</div>
     <div class="fg1">${tf("name","Kürzel (abgekürzt)",fv("name",m?m.name:(MA_VORSCHLAG&&MA_VORSCHLAG.kurz)||""),{form:true,ph:"z. B. M. Mustermann"})}${tf("mail","E-Mail",fv("mail",m?m.mail:(MA_VORSCHLAG&&MA_VORSCHLAG.mail)||""),{form:true,type:"email",ph:"m.mustermann@elektro-irrgang.de"})}${tf("rolle","Zusatz (optional)",fv("rolle",m?maRolleRest(m):""),{form:true,ph:"z. B. Firmenmail, Kundendienst"})}</div>
-    <div class="lbl" style="margin:16px 4px 8px">Stufe</div>
+    <div class="lbl" style="margin:16px 4px 8px">Position</div>
     <div class="chips ma-stufen">${MA_STUFEN.map(([v,t])=>`<button type="button" class="chip" data-act="teamStufe" data-v="${v}" aria-pressed="${teamForm.stufe===v}">${t}</button>`).join("")}</div>
     <div id="maAzubi" ${teamForm.stufe==="azubi"?"":"hidden"}><div class="row2" style="margin-top:12px">${tf("azubiVon","Ausbildung seit",fv("azubiVon",m&&m.azubiVon||""),{form:true,type:"date"})}${tf("azubiBis","Ausbildung bis",fv("azubiBis",m&&m.azubiBis||""),{form:true,type:"date"})}</div>
       <div style="margin-top:12px">${tf("lj","Lehrjahr jetzt (nur wenn abweichend, z. B. nach Betriebswechsel)",fv("lj",m&&m.lj?String(maLehrjahr(m)):""),{form:true,type:"number",ph:m&&m.azubiVon?`gerechnet: ${maLehrjahr(Object.assign({},m,{lj:0}))}`:"1 bis 4"})}</div>
       <div class="lbl" style="margin:16px 4px 8px">Schultage (Berufsschule)</div><div class="chips ma-schule">${[[1,"Mo"],[2,"Di"],[3,"Mi"],[4,"Do"],[5,"Fr"]].map(([d,t])=>`<button type="button" class="chip" data-act="teamSchule" data-v="${d}" aria-pressed="${(teamForm.schule||[]).includes(d)}">${t}</button>`).join("")}</div>
-      <p class="sup" style="margin:8px 4px 0">An diesen Tagen steht er bei „Wer ist wo“ als nicht verfügbar (Chef und Büro sehen „Berufsschule“). Blockunterricht als Abwesenheit „Schulung“ eintragen.</p>
-      <p class="sup" style="margin:8px 4px 0">Das Lehrjahr rechnet sich aus „seit“ und zählt jedes Jahr am Ausbildungsbeginn weiter. Weicht es ab, hier eintragen – ab dann zählt es von diesem Stand aus weiter. Ab dem Tag nach „bis“ wird er automatisch als Geselle geführt; Rechte und Prüfer ändert das nicht.</p></div>
+      <p class="sup" style="margin:8px 4px 0">An diesen Tagen erscheint die Person unter „Team heute“ als abwesend (Chef und Büro sehen „Berufsschule“). Blockunterricht als Abwesenheit „Schulung“ eintragen.</p>
+      <p class="sup" style="margin:8px 4px 0">Das Lehrjahr rechnet sich aus „seit“ und zählt jedes Jahr am Ausbildungsbeginn weiter. Weicht es ab, hier eintragen – ab dann zählt es von diesem Stand aus weiter. Ab dem Tag nach „bis“ wird die Person automatisch als Geselle geführt; Rechte und Prüfer ändert das nicht.</p></div>
     <div class="lbl" style="margin:16px 4px 8px">Status</div>${seg("teamStatus",teamForm.status,STATUS_MA)}
     <div class="lbl" style="margin:16px 4px 8px">Rechte</div>${seg("teamAdmin",teamForm.entw?"2":teamForm.admin?"1":"0",[["0","Mitarbeiter"],["1","Admin"],["2","Entwickler"]])}
     <p class="sup" style="margin:8px 4px 0">Admins sehen die Statistik, verwalten Mitarbeiter und dürfen alle Einträge bearbeiten. Entwickler dürfen dasselbe und sehen zusätzlich die Testwerkzeuge.${ich?" Dich selbst kannst du nicht herabstufen oder austragen.":""}</p>
@@ -2824,7 +2825,7 @@ document.addEventListener("click",async ev=>{
       if(JSON.stringify([r.vorname,r.nachname,r.ruf])!==vorher||!DB.profile.has(mail)) saveRec("profile",r,!DB.profile.has(mail));
       if(mail===ME.mail){ ME._pf=false; profilAnwenden(); } }
     const warSeite=nav.v==="ma"; teamForm=null; if(warSeite) maEntwurfWeg(); closeOverlays(); if(warSeite) go({v:"team"}); else render(); toast(i>=0?"Gespeichert – gilt in allen Apps":"Hinzugefügt – erscheint in allen Apps"); return; }
-  case "teamDelAsk": confirmDlg("Mitarbeiter entfernen?","Er verschwindet aus allen Apps. Seine bisherigen Einträge bleiben. Wenn er nur pausiert, besser „Ausgeschieden“ wählen.","Entfernen","teamDel"); return;
+  case "teamDelAsk": confirmDlg("Mitarbeiter entfernen?","Die Person verschwindet aus allen Apps, ihre bisherigen Einträge bleiben. Wenn sie nur pausiert, besser „Ausgeschieden“ wählen.","Entfernen","teamDel"); return;
   case "teamDel": { const T=teamForm; closeOverlays(); if(!T) return; const L=teamAlle().filter(m=>m.mail!==T.alt); if(!L.some(m=>m.admin&&m.status!=="weg")){ toast("Mindestens ein aktiver Admin muss bleiben"); return; } teamSpeichern(L); teamForm=null; if(nav.v==="ma"){ maEntwurfWeg(); go({v:"team"}); } else render(); toast("Entfernt"); return; }
   case "mailAnEdit": dialog("Protokolle senden an",`<div class="fg1">${tf("mail","E-Mail",mailAn(),{form:true,type:"email"})}</div><p class="sup" style="margin:12px 0 0">Standard: ${MAIL_BUERO}</p>`,`<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="mailAnSave">Speichern</button>`); return;
   case "mailAnSave": { const v=(formVals().mail||"").trim().toLowerCase(); if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){ toast("Bitte eine gültige E-Mail eingeben"); return; }

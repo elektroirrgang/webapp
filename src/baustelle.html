@@ -2194,7 +2194,7 @@ function render(){ profilAnwenden();
   else if(VIEW_KIND[nav.v]){ const kind=VIEW_KIND[nav.v], r=DB[kind].get(nav.id); if(!r||r.deleted){ nav={v:"kunden"}; return render(); }
     title=r.name; sub=kind==="kunden"?"Kunde":(kundeOf(r.kundeId)||{}).name||""; body=kind==="kunden"?kundeView(r):standortView(r);
     fab=null; }
-  if(SY.state==="anmelden"&&!login) body=`<div class="robanner warn">${icon("sync")}<span>Anmeldung abgelaufen – Änderungen werden nur auf dem Gerät gespeichert.</span><button class="btn-text" data-act="relogin">Anmelden</button></div>`+body;
+  if(SY.state==="anmelden"&&!login) body=`<div class="robanner warn">${icon("sync")}<span>Du bist abgemeldet. Änderungen bleiben vorerst nur auf diesem Gerät.</span><button class="btn-text" data-act="relogin">Anmelden</button></div>`+body;
   const edAn=(nav.v==="eintrag")||(nav.v==="notiz"&&istMeine(nEntw)); document.body.classList.toggle("n-modus",nav.v==="notiz");
   if(edAn&&WIDE.matches&&!login) fab=null; /* iPad/PC: „Fertig“ steht oben im Kopf – kein zweiter unten */
   app.innerHTML=(WIDE.matches&&!login?(edAn?edKopf(title,sub):seitenKopf(title,sub,fab)):"")+body; backSetzen(); navIndSetzen(); segInd(); kopfEinhaengen(); if(nav.v==="notiz") requestAnimationFrame(nGrow);

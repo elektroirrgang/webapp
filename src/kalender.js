@@ -280,8 +280,8 @@ function kalMonat(B,E){ const jetzt=new Date(), mon=B.monat.getMonth();
 /* --- Kachel auf der Startseite --- */
 function kalKachel(anz,zeile,leer,gross){ const h=kalTag(new Date()), demo=typeof demoAn==="function"&&demoAn(); if(!demo&&KAL.ebenen.outlook&&!KAL.verbinden) setTimeout(()=>kalLadenStart(),0);
   const E=kalAlle(h,kalPlus(h,7)).filter(e=>e.bis>new Date()).sort((a,b)=>a.von-b.von||(b.ganz-a.ganz)), heute=E.filter(e=>e.von<kalPlus(h,1));
-  const wann=e=>kalGleich(e.von,h)||(e.ganz&&e.von<=h)?(e.ganz?"heute":`heute ${kalZeit(e.von)}`):kalGleich(e.von,kalPlus(h,1))?(e.ganz?"morgen":`morgen ${kalZeit(e.von)}`):e.von.toLocaleDateString("de-DE",{weekday:"short",day:"numeric",month:"numeric"})+(e.ganz?"":` ${kalZeit(e.von)}`);
-  return {ic:"kal",v:"kalender",sub:heute.length?`${heute.length} heute`:E.length?`nächster ${wann(E[0])}`:"Keine Termine diese Woche",plus:["kalNeu","Termin anlegen"],
+  const wann=e=>kalGleich(e.von,h)||(e.ganz&&e.von<=h)?(e.ganz?"heute":`heute ${kalZeit(e.von)}`):kalGleich(e.von,kalPlus(h,1))?(e.ganz?"morgen":`morgen ${kalZeit(e.von)}`):e.von.toLocaleDateString("de-DE",{weekday:"short",day:"numeric",month:"numeric"})+(e.ganz?"":`, ${kalZeit(e.von)}`);
+  return {ic:"kal",v:"kalender",sub:heute.length?`${heute.length} heute`:E.length?`Nächster Termin: ${wann(E[0])}`:"Keine Termine diese Woche",plus:["kalNeu","Termin anlegen"],
     s:()=>gross(heute.length,"heute"),
     m:g=>{ const liste=n=>E.slice(0,n).map(e=>zeile(e.privat&&!e.eigen?"Privat":e.t,[wann(e),e.ort].filter(Boolean).join(" · "))).join(""), hinweis=!demo&&KAL.verbinden?"Outlook noch nicht verbunden – im Kalender auf „Verbinden“.":"Keine Termine in den nächsten 7 Tagen.";
       /* Groß und Breit: Woche oben, darunter die nächsten Termine. Mittel: Liste – ohne Termine statt Leere die Woche */

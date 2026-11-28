@@ -202,7 +202,7 @@ function ecListeInhalt(art){ const n="ec_"+art, q=query.trim().toLowerCase(), H=
   const auf=L.filter(p=>p.status!=="fertig"), fertig=L.filter(p=>p.status==="fertig");
   if(mitLeg&&!L.length&&!q&&!fAktiv(n)) return ecInstVt()?`<div class="empty">${icon("vtKasten")}<h2>Noch keine Verteiler</h2><p>Verteiler legst du beim Kunden an – oder hier mit „+ Verteiler“ ohne Kunde.</p></div>`:`<div class="empty">${icon("home")}<h2>Noch keine Installationsprüfung</h2><p>Hausinstallationen und Anlagen (DIN VDE 0100-600 / 0105-100): Räume, Verteiler, Stromkreise und Steckdosen anlegen, besichtigen, messen – das Protokoll landet in der Bibliothek.</p></div>`;
   if(!L.length) return `${fInfo(n,0,ein,mehr)}<p class="meta">${mitLeg?"Nichts gefunden.":"Keine Prüfung gefunden."}</p>`;
-  const hint=`<p class="hint">Wischen: nach links löschen, nach rechts archivieren · Rechtsklick oder lange drücken: anpinnen</p>`;
+  const hint=`<p class="hint">Nach links wischen: löschen · nach rechts: archivieren · ${matchMedia("(pointer:fine)").matches?"Rechtsklick":"gedrückt halten"}: anpinnen</p>`;
   if(!q&&!fAktiv(n)&&L.length>EC_KURZ&&!ecListeAlle[n]){ const P=ecPins(), pin=P.map(id=>L.find(p=>p.id===id)).filter(Boolean).slice(0,EC_KURZ);
     const rest=L.filter(p=>!pin.includes(p)).sort((a,b)=>(b.updated||0)-(a.updated||0)||String(b.datum||"").localeCompare(String(a.datum||""))).slice(0,EC_KURZ-pin.length);
     const alle=`<button class="btn-text" data-act="ecListeAlle" data-n="${n}">Alle ${L.length}</button>`;
