@@ -1501,6 +1501,41 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 /* Auswahl in der Liste als eigene, abgerundete Fläche (Max 28.11.2026) */
 .leg-ws .leg-r.an,.leg-ws .leg-gk.an{border-radius:16px;margin:4px 6px;width:calc(100% - 12px);padding-left:8px;padding-right:8px;background:color-mix(in srgb,var(--primary) 22%,var(--sc))!important;box-shadow:none}
 .leg-ws .leg-r.kind.an{padding-left:24px}
+/* Konfigurieren ohne Tabs (Max 28.11.2026): Einsetzen an der roten Marke, Leitungsschutz-Auswahl, Vorlagen, Sondergerät, Mehrfachauswahl */
+.leg-ws-rk{display:flex;align-items:center;gap:8px}.leg-ws-rk h3{flex:1}
+.kf-ib{width:40px;height:40px;border:0;border-radius:20px;background:var(--sc-high);color:var(--on-surface);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none}.kf-ib .ic{width:20px;height:20px;fill:currentColor}.kf-ib:hover{background:var(--sc-highest)}
+.kf-pos{display:flex;align-items:center;gap:10px;background:var(--sc-high);border-radius:16px;padding:8px 8px 8px 14px;margin:0 0 10px;min-height:44px;font-size:14px}.kf-pos b{flex:1;min-width:0;font-weight:700}.kf-pos small{color:var(--on-sv);font-size:12.5px;padding-right:6px;white-space:nowrap}.kf-pos .btn-text{flex:none;height:32px;padding:0 10px}
+.kf-dot{width:10px;height:10px;border-radius:5px;background:#FF5449;flex:none}
+.kf-such{margin:0 0 10px}
+.kf-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.kf-chips button{height:34px;padding:0 14px;border:0;border-radius:17px;background:var(--sc-high);color:var(--on-sv);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}.kf-chips button[aria-pressed="true"]{background:var(--sec-c,#5C3F3D);color:var(--on-sec-c,#FFDAD8)}
+.kf-chips.kf-h{margin-bottom:12px}
+.kf-konf{display:grid;grid-template-columns:84px minmax(0,1fr);gap:14px;background:var(--sc);border-radius:20px;padding:14px;margin:0 0 10px}
+.kf-prev{background:#fff;border:0;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:6px;min-height:150px;cursor:zoom-in;overflow:hidden}.kf-prev img{max-width:100%;max-height:170px;display:block}
+.kf-zt{font-size:12px;color:var(--on-sv);margin:0 2px 6px;font-weight:700}.kf-z{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.kf-z button{height:34px;min-width:44px;padding:0 10px;border:0;border-radius:10px;background:var(--sc-high);color:var(--on-sv);font:inherit;font-size:14px;font-weight:800;cursor:pointer}.kf-z button[aria-pressed="true"]{background:var(--sec-c,#5C3F3D);color:var(--on-sec-c,#FFDAD8)}
+.kf-sp{width:8px}.kf-art{margin:0 2px;font-weight:600}
+.kf-anz{display:flex;align-items:center;gap:10px;margin:0 0 12px}.kf-st{display:flex;align-items:center;background:var(--sc-high);border-radius:22px;height:44px;flex:none}.kf-st button{width:44px;height:44px;border:0;background:none;color:var(--on-surface);display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:22px}.kf-st button:hover{background:var(--sc-highest)}.kf-st .ic{width:20px;height:20px;fill:currentColor}.kf-st b{min-width:28px;text-align:center;font-size:16px}
+.kf-go{flex:1;height:44px;border-radius:22px;justify-content:center;font-size:15px}.kf-anz .btn-tonal{height:44px;border-radius:22px}.kf-anz-t{color:var(--on-sv);font-size:13px}
+.kf-liste{display:flex;flex-direction:column;gap:6px;margin:0 0 6px}
+.kf-li{display:flex;align-items:center;gap:12px;padding:6px 6px 6px 8px;border-radius:14px;background:var(--sc)}.kf-li:hover{background:var(--sc-high)}
+.kf-th{width:34px;height:52px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none}.kf-th img{max-width:30px;max-height:48px;display:block}
+.kf-lt{flex:1;min-width:0;display:flex;flex-direction:column}.kf-lt b{font-size:14px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kf-lt small{font-size:12px;color:var(--on-sv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kf-li em{font-style:normal;font-size:12px;color:var(--on-sv);font-weight:700;white-space:nowrap}
+.kf-plus{width:38px;height:38px;border:0;border-radius:19px;background:var(--sc-high);color:var(--primary);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none}.kf-plus:hover{background:var(--primary);color:var(--on-primary)}.kf-plus .ic{width:22px;height:22px;fill:currentColor}
+.kf-ohne{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#9aa0a6}.kf-ohne .ic{width:20px;height:20px;fill:currentColor}.kf-leer{background:repeating-linear-gradient(135deg,#eef0f2 0 4px,#fff 4px 8px)}
+.kf-hint{margin:4px 4px 10px;font-size:13px}
+.kf-vl{display:flex;align-items:center;gap:12px;background:var(--sc);border-radius:16px;padding:8px 8px 8px 10px;margin:0 0 8px}.kf-mini{width:84px;height:52px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}.kf-mini svg{width:92%!important}
+.kf-vb{height:38px;border-radius:19px;padding:0 16px;flex:none}.kf-weg{width:36px;height:36px;background:none;color:var(--on-sv)}.kf-weg:hover{color:var(--err,#ffb4ab)}
+.kf-sonder{grid-template-columns:64px minmax(0,1fr)}.kf-sb{background:#E9ECEE;color:#3b4247;font-size:11px;font-weight:800;text-align:center;line-height:1.25;padding:8px 4px;cursor:default;min-height:140px;word-break:break-word}
+.kf-mb{cursor:default}
+.leg-ws-ak kbd,.leg-ws-weg kbd{font-family:inherit;font-size:11px;font-weight:700;opacity:.7;background:color-mix(in srgb,currentColor 14%,transparent);padding:2px 6px;border-radius:6px;margin-left:4px}
+/* Zeichnung: Trennstellen, Marke, Reihenmenü, neue Reihe */
+.kf-hz{cursor:pointer}.kf-hzl{fill:#FF5449;opacity:0;transition:opacity .12s}.kf-hz:hover .kf-hzl{opacity:.55}
+.kf-mk{pointer-events:none}.kf-mk rect{fill:#FF5449}.kf-mk text{fill:#fff}
+.leg-rk{display:flex;align-items:center;gap:8px}.leg-rk>span{margin-left:auto}
+.kf-rm{width:32px;height:32px;border:0;border-radius:16px;background:var(--sc-high);color:var(--on-surface);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none}.kf-rm:hover{background:var(--sc-highest)}.kf-rm .ic{width:18px;height:18px;fill:currentColor}
+.kf-pend{position:relative;display:flex;align-items:center;justify-content:center;gap:12px;min-height:120px;border-radius:18px;background:color-mix(in srgb,#FF5449 10%,var(--sc));color:var(--on-sv);font-weight:700;font-size:14px;margin:0 0 10px;padding:16px}
+.kf-pm{background:#FF5449;color:#fff;font-size:12px;font-weight:800;padding:4px 10px;border-radius:12px}
+.kf-neureihe{width:100%;height:48px;border:0;border-radius:16px;background:var(--sc);color:var(--primary);font:inherit;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;margin-top:4px}.kf-neureihe:hover{background:var(--sc-high)}.kf-neureihe .ic{width:20px;height:20px;fill:currentColor}
 /* Kopf der rechten Spalte auf Höhe von „Stromkreise“ */
 .leg-ws-r{padding:20px 16px 0}.leg-ws-rk{min-height:48px;margin:-8px 0 10px 8px}
 /* Gerätebild anklickbar → große Ansicht */
