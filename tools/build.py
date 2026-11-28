@@ -13,7 +13,7 @@ version = f"{V} · {datetime.date.today().strftime('%d.%m.%Y')}"
 _liste = root / "bilder" / "liste.json"
 # Bilder, die schon im SharePoint liegen (Stand der Liste bilder/alle.json), behalten ihre Zuordnung auch ohne Datei auf dem Server
 _alle_json = root / "bilder" / "alle.json"
-_IM_SP = set(json.loads(_alle_json.read_text(encoding="utf-8"))) if _alle_json.exists() else set()
+_IM_SP = {n for n in json.loads(_alle_json.read_text(encoding="utf-8")) if not n.startswith("katalog/")} if _alle_json.exists() else set()
 BILDER = {u: n for u, n in (json.loads(_liste.read_text(encoding="utf-8")).items() if _liste.exists() else []) if (root / "bilder" / n).exists() or n in _IM_SP}
 
 
@@ -169,7 +169,7 @@ def baue(quelle, ziel, icon):
 
 
 # Liste aller Bilddateien auf dem Server – für den einmaligen Umzug in den SharePoint (bilder-sp.js)
-_alle = sorted(str(p.relative_to(root / "bilder")) for p in (root / "bilder").rglob("*") if p.is_file() and p.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".svg"))
+_alle = sorted(str(p.relative_to(root / "bilder")) for p in (root / "bilder").rglob("*") if p.is_file() and p.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".svg") and not str(p.relative_to(root / "bilder")).startswith("katalog/"))   # Katalogbilder gehören nie auf den Server
 # Nur ergänzen, nie verkleinern (Max 18.11.2026): Bilder, die schon im SharePoint liegen, bleiben in der Liste, auch wenn die Datei
 # hier gelöscht ist. Dateien, die gerade auf dem Server liegen, stehen vorn – bilder-sp.js prüft am ersten Eintrag, ob es etwas hochzuladen gibt.
 if _alle: (root / "bilder" / "alle.json").write_text(json.dumps(_alle + [n for n in sorted(_IM_SP) if n not in set(_alle)], ensure_ascii=False), encoding="utf-8")
