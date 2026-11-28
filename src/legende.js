@@ -198,7 +198,7 @@ function legListeView(L){ const E=legE(L), zu=L.fertig, B=[], PL=legPlaetze(L); 
   const zeile=([e],kl)=>`<button type="button" class="leg-r${kl||""}${e.art==="res"?" res":""}${legOffen(e)?" offen":""}${legWsAktiv(L)&&LEG_WS.id===e.id?" an":""}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}><span class="kz">${esc(legKzA(e.kz)||"–")}</span><span class="bz">${e.art==="res"?"Leerplatz":legOffen(e)?"? – noch unbekannt":esc(e.bez)}${pl(e)}</span>${legSchutz(e)?`<span class="sc">${esc(legSchutz(e))}</span>`:""}</button>`;
   return `<div class="leg-gl">${B.map(b=>b.gr?`<button type="button" class="leg-ue" data-act="legEdit" data-id="${esc(b.gr.id)}" ${zu?"disabled":""}>${esc(b.gr.bez||"Überschrift")}</button>`
     :b.z?`<div class="leg-grp solo">${zeile(b.z)}</div>`
-    :`<div class="leg-grp"><button type="button" class="leg-gk" data-act="legEdit" data-id="${esc(b.rcd.id)}" ${zu?"disabled":""}><span class="kz">${esc(legKzA(b.rcd.kz)||"–")}</span><span class="bz">${esc(b.rcd.bez||"Fehlerstromschutzschalter")}<span class="leg-rcd">RCD</span>${pl(b.rcd)}</span>${b.rcd.schutz?`<span class="sc">${esc(b.rcd.schutz)}</span>`:""}</button>
+    :`<div class="leg-grp"><button type="button" class="leg-gk${legWsAktiv(L)&&LEG_WS.id===b.rcd.id?" an":""}" data-act="legEdit" data-id="${esc(b.rcd.id)}" ${zu?"disabled":""}><span class="kz">${esc(legKzA(b.rcd.kz)||"–")}</span><span class="bz">${esc(b.rcd.bez||"Fehlerstromschutzschalter")}<span class="leg-rcd">RCD</span>${pl(b.rcd)}</span>${b.rcd.schutz?`<span class="sc">${esc(b.rcd.schutz)}</span>`:""}</button>
       ${b.kids.map(k=>zeile(k," kind")).join("")}${zu?"":`<button type="button" class="leg-add" data-act="legNach" data-i="${b.last!=null?b.last:b.i}">${icon("add")}Stromkreis an ${esc(b.rcd.kz||"RCD")}</button>`}</div>`).join("")}
     ${zu?"":`<div class="leg-neu"><button type="button" data-act="legNeuRcd">${icon("add")}Neuer RCD mit Stromkreisen</button>${legReihen(L).length?`<button type="button" data-act="legRkDlg">${icon("copy")}Reihe kopieren</button>`:""}</div>`}</div>`; }
 /* Reihen bilden: Breite je Gerät in TE, „Neue Reihe ab hier“ bricht um */
@@ -571,6 +571,7 @@ async function legPdfMachen(){ const L=legAkt(); if(!L) return; if(!legE(L).leng
 
 /* ---- Klicks und Eingaben ---- */
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act^="leg"]'); if(!b||b.disabled) return; e.stopPropagation(); const a=b.dataset.act, L=legAkt();
+  if((a==="legEdit"||a==="legNach"||a==="legNeuRcd")&&legWsAktiv(L)&&!b.closest(".leg-ws-r")) return;   /* Arbeitsfläche am PC: Klick wählt aus (eigener Handler weiter unten), kein Fenster */
   switch(a){
   case "legNeu": awNeuStart(b.dataset.kind,b.dataset.id); return;
   case "legZu": legZuDlg(); return;
@@ -907,7 +908,6 @@ function legWsView(L){ const Z=legWsZahlen(L), E=legE(L), zu=L.fertig; if(LEG_WS
   const chip=(b,t,kl)=>`<span class="leg-wz${kl?" "+kl:""}"><b>${b}</b>${t}</span>`;
   return `<div class="leg-ws">
     <section class="card leg-ws-l"><div class="card-kopf leg-kopf leg-ws-kopf"><h3>Stromkreise</h3>
-      <div class="leg-wzs">${chip(gkZahl(Z.te),Z.ges?` / ${Z.ges} TE`:" TE")}${chip(Z.sk," Stromkreise")}${chip(Z.rcd," RCD")}${Z.offen?chip(Z.offen," ohne „Wofür“","warn"):""}</div>
       <span style="flex:1"></span>${E.length?seg("legAnsicht",legAnsicht(),[["liste","Liste"],["verteiler","Verteiler"]],"leg-seg"):""}${zu?"":`<button type="button" class="btn-filled leg-ws-neu" data-act="legWsTab" data-v="ein">${icon("add")}<span>Gerät</span></button>`}</div>
       ${E.length?(legAnsicht()==="verteiler"?legVtView(L):legListeView(L)):`<p class="meta">Noch keine Geräte. Rechts unter „Einsetzen“ Geräte auswählen – die Kennzeichnung zählt mit.</p>`}</section>
     <aside class="card leg-ws-r">${seg("legWsTab",LEG_WS.tab,[["sel","Ausgewählt"],...(zu?[]:[["ein","Einsetzen"]]),["ueb","Übersicht"]],"leg-ws-tabs")}
@@ -927,7 +927,6 @@ function legWsSel(L){ const E=legE(L), e=E.find(x=>x.id===LEG_WS.id), zu=L.ferti
     ${ro&&(sk||rcd)?`<p class="meta" style="margin:-2px 4px 8px">Absicherung kommt aus dem Katalogbild – über „Produkt“ tauschen.</p>`:""}
     <div class="leg-ws-2">${e.art==="gr"||e.art==="kl"?"":fld("kz","Kennzeichnung",e.kz)}${e.art==="gr"?"":pk("te","Breite",e.katalog?gkTeText(e.katalog.widthMm,L):e.te?e.te+" TE":"automatisch",{ro})}</div>
     ${e.art==="gr"||e.art==="kl"||rcd?"":pk("sym","Symbol",symName)}
-    ${e.art==="gr"||zu?"":`<button type="button" class="leg-ws-sw" data-act="legWsUmbruch" aria-pressed="${!!e.umbruch}"><span>Neue Reihe ab hier</span><span class="schalter${e.umbruch?" an":""}"><i></i></span></button>`}
     ${zu?"":`<div class="leg-ws-ak"><button type="button" data-act="legWsZug" data-d="-1" ${i>0?"":"disabled"}>${icon("back")}<span>Nach vorn</span></button><button type="button" data-act="legWsZug" data-d="1" ${i<E.length-1?"":"disabled"}><span>Nach hinten</span>${icon("chev")}</button></div>
     <div class="leg-ws-ak"><button type="button" data-act="legWsDupl">${icon("copy")}<span>Duplizieren</span></button>${sk||rcd||e.art==="ge"?`<button type="button" data-act="${e.katalog?"gkErsetzen":"legProdukt"}" data-id="${esc(e.id)}">${icon("sync")}<span>Produkt</span></button>`:""}</div>
     <button type="button" class="leg-ws-weg${LEG_WS.weg===e.id?" sicher":""}" data-act="legWsWeg">${icon("del")}<span>${LEG_WS.weg===e.id?"Wirklich entfernen?":"Entfernen"}</span></button>`}`; }
