@@ -51,3 +51,11 @@ Maße aus Herstellerunterlagen (Millimeter, nicht pauschal je TE). EMN001: Höhe
 Die Bilddateien liegen nur im SharePoint (Seite Gerätekatalog-Bilder hochladen), im Repo stehen nur Index-Einträge.
 Resi9-Werte ohne eigenes Bild: Grundbild R9F23116 (1P) bzw. R9F23316 (3P), Aufdruck wird umgeschrieben.
 Leerplatz (art "res") = unbestückter Platz ohne Gerätebild. Ein Reserve-LS ist ein normaler LS mit Wofür „Reserve“.
+
+## Konfigurieren am PC (ab 1.12.0)
+
+Rechte Box ohne Tabs (src/vt-konfig.js): ohne Auswahl „Einsetzen“, mit Auswahl „Bearbeiten“ bzw. „n ausgewählt“, Übersicht über den Knopf oben.
+Eingesetzt wird an der roten Marke (Klick zwischen zwei Geräte oder auf freien Platz). „+ Reihe hinzufügen“ und das Reihenmenü ⋮ legen eine neue, leere Reihe an.
+Leitungsschutz wird ausgewählt (Hersteller, Serie, B/C, Nennstrom, Pole, Anzahl); die Artikelnummer entsteht daraus (MBS116, R9F24120 …), das Bild kommt aus dem Katalog.
+Strg/Umschalt + Klick wählt mehrere, Strg+D dupliziert, Strg+C/V kopiert an die Marke, Entf entfernt (zweimal), Esc hebt die Auswahl auf.
+Eigene Vorlagen (META.kfVorlagen) und „Zuletzt benutzt“ liegen nur auf dem jeweiligen Gerät. Sondergeräte: art "ge" mit sonder:true, gezeichnet als neutrales Gerät.
