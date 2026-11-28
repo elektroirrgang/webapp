@@ -18,7 +18,7 @@ function vtEintraege(g,vId){ const R=g.rcds.filter(r=>r.vId===vId), S=g.stromkre
   const E=[...mit];
   ohne.forEach(e=>{ let i=-1; if(e.art==="sk"&&e._rcdId){ for(let k=E.length-1;k>=0;k--){ if(E[k].id===e._rcdId||E[k]._rcdId===e._rcdId){ i=k; break; } } }
     if(i<0) E.push(e); else E.splice(i+1,0,e); });
-  return E; }
+  E.forEach(e=>{const o=[...R,...S,...T].find(o=>o.id===e.id);if(o?.katalog)e.katalog=o.katalog;if(o?.klemmenProjekt)e.klemmenProjekt=o.klemmenProjekt;});return E; }
 /* Virtuelle Legende: alles, was der Editor braucht, aus dem Gebäude */
 function vtL(gid,vId){ const g=vtGeb(gid), v=g&&g.verteiler.find(x=>x.id===vId); if(!v) return null; const o=ecOrt(g.ortId), k=o.kunde;
   const L={_geb:gid,_v:vId,id:"vt-"+vId,titel:v.name||"Verteiler",kunde:k?k.name:"",anschrift:adrText(o.standort)||adrText(k)||"",kundeId:k?k.id:"",standortId:o.standort?o.standort.id:"",ortId:g.ortId,
@@ -27,7 +27,7 @@ function vtL(gid,vId){ const g=vtGeb(gid), v=g&&g.verteiler.find(x=>x.id===vId);
 function vtSchreiben(L){ const g=vtGeb(L._geb), v=g&&g.verteiler.find(x=>x.id===L._v); if(!v) return; if(typeof legVoltaNr==="function"&&legVoltaNr(L)) legNummernVolta(L);
   Object.assign(v,{name:L.titel||v.name,netz:L.netz||"",ersteller:L.ersteller||"",stand:L.stand||"",fertig:!!L.fertig,teReihe:L.teReihe,teMm:L.teMm,montage:L.montage,reihen:L.reihen,updated:Date.now()}); if(L.typFrei) v.typFrei=true; else delete v.typFrei; if(L.echeckNaechste) v.echeckNaechste=L.echeckNaechste; else delete v.echeckNaechste; if(L.bst&&L.bst.bestand) v.bst=L.bst; else delete v.bst; if(L.gw) v.gw=L.gw; if(L.nrAbdeckung===false) v.nrAbdeckung=false; else delete v.nrAbdeckung; if(L.eti&&Object.keys(L.eti).length) v.eti=L.eti; else delete v.eti; if(L.zs) v.zs=L.zs;
   ["teReihe","teMm","montage","reihen"].forEach(k=>{ if(v[k]==null) delete v[k]; });
-  const E=legE(L), ids=new Set(E.map(e=>e.id)), opt=(o,e)=>{ ["te","umbruch","sym","mat"].forEach(k=>{ if(e[k]) o[k]=e[k]; else delete o[k]; }); };
+  const E=legE(L), ids=new Set(E.map(e=>e.id)), opt=(o,e)=>{ ["te","umbruch","sym","mat","katalog","klemmenProjekt"].forEach(k=>{ if(e[k]) o[k]=e[k]; else delete o[k]; }); };
   g.vtTeile=(g.vtTeile||[]).filter(t=>t.vId!==L._v||ids.has(t.id));
   const wegSk=g.stromkreise.filter(s=>s.vId===L._v&&!ids.has(s.id)).map(s=>s.id);
   g.stellen.forEach(st=>{ if(wegSk.includes(st.skId)) st.skId=""; });

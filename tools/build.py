@@ -98,6 +98,19 @@ LOGO_DUNKEL = "data:image/svg+xml;base64," + b64("brand/logo-v2-dunkel.svg")
 LOGO_PDF = "data:image/png;base64," + b64("brand/logo-v2-pdf.png")
 
 
+# Katalogbilder werden separat und unveränderlich nach Inhaltsstand veröffentlicht.
+_kat_src = root / "src/katalog"
+_kat_index = (_kat_src / "index.json").read_text(encoding="utf-8")
+_kat_hash = hashlib.sha256(_kat_index.encode("utf-8")).hexdigest()[:16]
+# Die Katalogbilder (u. a. Electromarker-Grafiken, Nutzung per E-Mail erlaubt) liegen NICHT öffentlich auf dem Server, sondern wie die
+# Produktbilder im SharePoint unter „_App/Bilder“ (Name „katalog~assets~<id>.<endung>“), lesbar nur nach der Anmeldung.
+# Hochgeladen werden sie einmal vom Entwickler: Gebäudetechnik › Einstellungen › Labor › „Gerätekatalog-Bilder hochladen“.
+_kat_js = (root / "src/geraetekatalog.js").read_text(encoding="utf-8")
+_kat_js = _kat_js.replace("/*KATALOG_INDEX*/[]", json.dumps(json.loads(_kat_index)["assets"], ensure_ascii=False).replace("<", "\\u003c"))
+_kat_js = _kat_js.replace("/*KATALOG_PROFILE*/{}", (_kat_src / "profiles.json").read_text(encoding="utf-8"))
+_kat_js = _kat_js.replace('/*KATALOG_ROOT*/""', json.dumps("../bilder/katalog/"))
+_kat_js = (_kat_src / "klemmen-engine.js").read_text(encoding="utf-8") + "\n" + _kat_js
+
 def baue(quelle, ziel, icon):
     html = (root / quelle).read_text(encoding="utf-8")
     html = html.replace("/*PDFSTIL*/", (root / "src/pdfstil.js").read_text(encoding="utf-8"))
@@ -107,7 +120,7 @@ def baue(quelle, ziel, icon):
     html = html.replace("<!--VERSION-->", version)
     html = html.replace("/*BIBLIOTHEK*/", (root / "src/bibliothek.js").read_text(encoding="utf-8") + "\n" + (root / "src/ablage.js").read_text(encoding="utf-8"))
     html = html.replace("/*DEMO*/", (root / "src/demo.js").read_text(encoding="utf-8") + "\n" + (root / "src/tour.js").read_text(encoding="utf-8"))
-    html = html.replace("/*FELDER*/", (root / "src/felder.css").read_text(encoding="utf-8"))
+    html = html.replace("/*FELDER*/", (root / "src/felder.css").read_text(encoding="utf-8") + "\n" + (root / "src/geraetekatalog.css").read_text(encoding="utf-8"))
     html = html.replace("/*KOPF*/", (root / "src/kopf.js").read_text(encoding="utf-8").replace("/*BILDER*/{}", json.dumps(BILDER, ensure_ascii=False)))
     html = html.replace("/*PROFIL*/", (root / "src/profil.js").read_text(encoding="utf-8") + "\n" + (root / "src/wuensche.js").read_text(encoding="utf-8"))
     html = html.replace("/*ANFORDERUNG*/", (root / "src/anforderung.js").read_text(encoding="utf-8") + "\n" + (root / "src/labor.js").read_text(encoding="utf-8"))
@@ -116,7 +129,7 @@ def baue(quelle, ziel, icon):
     html = html.replace("/*FILTER*/", (root / "src/filter.js").read_text(encoding="utf-8"))
     html = html.replace("/*KUNDE*/", (root / "src/kunde.js").read_text(encoding="utf-8") + "\n" + (root / "src/funktionen.js").read_text(encoding="utf-8") + "\n" + (root / "src/parken.js").read_text(encoding="utf-8") + "\n" + (root / "src/standort.js").read_text(encoding="utf-8") + "\n" + (root / "src/kdimport.js").read_text(encoding="utf-8") + "\n" + (root / "src/ki.js").read_text(encoding="utf-8") + "\n" + (root / "src/handbuch-link.js").read_text(encoding="utf-8") + "\n" + (root / "src/suche.js").read_text(encoding="utf-8") + "\n" + (root / "src/foto-markieren.js").read_text(encoding="utf-8") + "\n" + (root / "src/plausi.js").read_text(encoding="utf-8") + "\n" + (root / "src/rechner.js").read_text(encoding="utf-8") + "\n" + (root / "src/scanner.js").read_text(encoding="utf-8") + "\n" + (root / "src/bilder-sp.js").read_text(encoding="utf-8"))
     html = html.replace("/*ECHECKPRUEF*/", (root / "src/lbx-zip.js").read_text(encoding="utf-8") + "\n" + (root / "src/echeck-pruef.js").read_text(encoding="utf-8") + "\n" + (root / "src/wisch.js").read_text(encoding="utf-8") + "\n" + (root / "src/netzplan.js").read_text(encoding="utf-8") + "\n" + (root / "src/netzmessen.js").read_text(encoding="utf-8"))
-    html = html.replace("/*LEGENDE*/", (root / "src/legende.js").read_text(encoding="utf-8"))
+    html = html.replace("/*LEGENDE*/", (root / "src/legende.js").read_text(encoding="utf-8") + "\n" + _kat_js)
     html = html.replace("<!--ECHECK_PLAKETTE-->", "data:image/jpeg;base64," + b64("brand/echeck-plakette.jpg"))
     html = html.replace("/*VERTEILER*/", (root / "src/verteiler.js").read_text(encoding="utf-8") + "\n" + (root / "src/material-daten.js").read_text(encoding="utf-8") + "\n" + (root / "src/vt-aufnahme.js").read_text(encoding="utf-8") + "\n" + (root / "src/zaehlerschrank.js").read_text(encoding="utf-8") + "\n" + (root / "src/zs-zeichnung.js").read_text(encoding="utf-8") + "\n" + (root / "src/vt-uebersicht.js").read_text(encoding="utf-8") + "\n" + (root / "src/anlagenpass.js").read_text(encoding="utf-8"))
     html = html.replace("/*QR*/", (root / "vendor/qrcode-generator.min.js").read_text(encoding="utf-8") + "\n" + (root / "src/qr-kern.js").read_text(encoding="utf-8") + "\n" + (root / "src/qr.js").read_text(encoding="utf-8") + "\n" + (root / "src/knx.js").read_text(encoding="utf-8") + "\n" + (root / "src/raumarten.js").read_text(encoding="utf-8") + "\n" + (root / "src/gebaeude-verw.js").read_text(encoding="utf-8") + "\n" + (root / "src/knx-projekt.js").read_text(encoding="utf-8") + "\n" + (root / "src/ets-import.js").read_text(encoding="utf-8") + "\n" + (root / "src/plaene.js").read_text(encoding="utf-8"))
