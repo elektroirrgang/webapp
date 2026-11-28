@@ -42,7 +42,8 @@ function kfRcdVor(E,i){ for(let j=i;j>=0;j--){ const e=E[j]; if(!e||e.art==="gr"
 function kfPosText(L){ const E=legE(L), M=LEG_WS.marke, PL=legPlaetze(L), R=legReihen(L);
   if(M&&M.neu){ const e=E[M.nach]; const r=e&&PL[e.id]?PL[e.id].r:0; return r?`neue Reihe nach Reihe ${r}`:R.length?"neue Reihe vor Reihe 1":"erste Reihe"; }
   const i=kfZiel(L)-1, e=E[i]; if(!e) return E.length?"ganz vorn · Reihe 1":"erste Reihe";
-  const r=kfRcdVor(E,i), pl=PL[e.id]; return [`${M?"nach":"am Ende, nach"} ${legKzA(e.kz)||legWsName(e)}`,pl?`Reihe ${pl.r}`:"",r?`an RCD ${legKzA(r.kz)||""}`.trim():""].filter(Boolean).join(" · "); }
+  const r=kfRcdVor(E,i), pl=PL[e.id]; if(!M) return `am Ende${pl?` · Reihe ${pl.r}`:""}`;
+  return [`nach ${legKzA(e.kz)||legWsName(e)}`,pl?`Reihe ${pl.r}`:"",r?`an RCD ${legKzA(r.kz)||""}`.trim():""].filter(Boolean).join(" · "); }
 
 /* ---- Einsetzen an der Marke: Kennzeichnung läuft weiter wie im Bestücken, neue Reihe beginnt mit Umbruch ---- */
 function kfKz(L,art,pos){ if(typeof awKz!=="function") return ""; const alt=AW; AW={nach:pos}; try{ return awKz(L,art==="rcd"?"rcd":"sk").kz; } finally{ AW=alt; } }
@@ -69,9 +70,10 @@ function kfMatTeil(m){ const t=matTech(m), hnr=matHnr(m.herstellerNr);
   if(t.art==="ge") return {art:"ge",bez:t.name,schutz:"",pole:1,te:t.te,mat:hnr,kb:t.kb||"K"};
   if(t.art==="rcd") return {art:"rcd",bez:"Fehlerstromschutzschalter",schutz:awSchutz(t),pole:1,te:t.te,mat:hnr};
   return {art:"sk",bez:"?",schutz:awSchutz(t),pole:+t.pole===3?3:1,te:t.te,mat:hnr}; }
-async function kfKatTeil(a,L){ const T=gkTechnik(a), te=Math.round(a.dimension.width/kfPitch(L)*100)/100;
+async function kfKatTeil(a,L){ const T=gkTechnik(a), te=a.dimension.width>=13?Math.max(1,Math.round(a.dimension.width/kfPitch(L))):Math.round(a.dimension.width/kfPitch(L)*100)/100;
   if(a.article&&kfAsset(a.article)) return {art:T.art,bez:T.art==="ge"?a.model:T.art==="rcd"?"Fehlerstromschutzschalter":"?",schutz:T.schutz,pole:T.pole,te,mat:a.article};
-  const data=await gkData(a), p=gkPayload(a,data), e=gkEintrag(a,p,L); delete e.id; delete e.kz; return e; }
+  /* ohne eigene Artikelnummer: Verweis auf das Katalogbild (kein eingebettetes Bild im Datensatz, geht auch offline) */
+  return {art:T.art,bez:T.art==="ge"?a.model:T.art==="rcd"?"Fehlerstromschutzschalter":"?",schutz:T.schutz,pole:T.pole,te,gk:a.id}; }
 const kfMatName=m=>{ const t=matTech(m); return t.art==="ge"?t.name:awName(t); };
 function kfZeile(q,bild,t,s,te,extra){ return `<div class="kf-li"><span class="kf-th">${bild}</span><span class="kf-lt"><b>${esc(t)}</b><small>${esc(s||"")}</small></span>${te?`<em>${esc(te)}</em>`:""}${extra||""}<button type="button" class="kf-plus" data-act="kfAdd" data-q="${esc(q)}" title="${LEG_WS.anz>1?LEG_WS.anz+" × einsetzen":"Einsetzen"}">${icon("add")}</button></div>`; }
 const kfMatZeile=m=>{ const t=matTech(m), hnr=matHnr(m.herstellerNr); return kfZeile("m:"+hnr,kfImg(kfAsset(hnr)),kfMatName(m),`${awHerstKurz(m.hersteller)} ${m.herstellerNr}`,`${gkZahl(+t.te||1)} TE`); };
@@ -96,8 +98,13 @@ function kfVorlageDlg(teile,vorschlag){ if(!teile.length) return; LEG_WS._vorl=t
   dialog("Als Vorlage speichern",`<label class="field"><span>Name</span><input id="f_kfVName" value="${esc(vorschlag||"")}" placeholder="z. B. Bad Standard" autocomplete="off"></label><p class="meta" style="margin:10px 4px 0">${teile.length} ${teile.length===1?"Gerät":"Geräte"} · liegt auf diesem Gerät unter „Einsetzen › Vorlagen“.</p>`,
     `<button class="btn-text" data-act="cancel">Abbrechen</button><button class="btn-text" data-act="kfVorlOk">Speichern</button>`); }
 
+/* ---- Höhe der Arbeitsfläche: bis zum unteren Fensterrand, beide Spalten scrollen für sich ---- */
+function kfHoehe(){ const w=document.querySelector(".leg-ws"); if(!w) return; const top=w.getBoundingClientRect().top+window.scrollY, h=Math.max(480,Math.floor(window.innerHeight-top-16));
+  if(w.style.getPropertyValue("--ws-h")!==h+"px") w.style.setProperty("--ws-h",h+"px"); }
+window.addEventListener("resize",kfHoehe);
+if(typeof ResizeObserver==="function") new ResizeObserver(()=>kfHoehe()).observe(document.body);
 /* ---- Panel ---- */
-function kfPanel(L){ const E=legE(L), zu=L.fertig; LEG_WS.ids=(LEG_WS.ids||[]).filter(id=>E.some(e=>e.id===id)); if(LEG_WS.id&&!E.some(e=>e.id===LEG_WS.id)) LEG_WS.id=null;
+function kfPanel(L){ setTimeout(kfHoehe,0); const E=legE(L), zu=L.fertig; LEG_WS.ids=(LEG_WS.ids||[]).filter(id=>E.some(e=>e.id===id)); if(LEG_WS.id&&!E.some(e=>e.id===LEG_WS.id)) LEG_WS.id=null;
   if(LEG_WS.marke&&LEG_WS.marke.nach>=E.length) LEG_WS.marke=null;
   const A=kfAuswahl(L); let m=LEG_WS.tab; if(m==="sel"&&!A.length) m="ein"; if(m!=="ueb"&&m!=="sel") m="ein"; if(zu&&m==="ein") m=A.length?"sel":"ueb";
   const titel=m==="ein"?"Einsetzen":m==="ueb"?"Übersicht":A.length>1?`${A.length} ausgewählt`:"Bearbeiten";
@@ -107,7 +114,7 @@ function kfPanel(L){ const E=legE(L), zu=L.fertig; LEG_WS.ids=(LEG_WS.ids||[]).f
 function kfEin(L){ const k=LEG_WS.kat, q=LEG_WS.such.trim(), lsH=kfLs(L).h;
   const chip=(act,v,t,an)=>`<button type="button" data-act="${act}" data-v="${esc(v)}" aria-pressed="${!!an}">${esc(t)}</button>`;
   const ohneHerst=k==="vorl"||k==="kl"||k==="sonder";
-  return `<div class="kf-pos"><span class="kf-dot"></span><b>${esc(kfPosText(L))}</b>${LEG_WS.marke?`<button type="button" class="btn-text" data-act="kfEnde">Ans Ende</button>`:`<small>Klick in die Zeichnung</small>`}</div>
+  return `<div class="kf-pos"><span class="kf-dot"></span><b>${esc(kfPosText(L))}</b>${LEG_WS.marke?`<button type="button" class="btn-text" data-act="kfEnde">Ans Ende</button>`:""}</div>
     <div class="aw-such kf-such"><span class="aw-lupe">${icon("search")}</span><input id="kfSuch" type="search" data-kf="such" placeholder="Suchen: B16, RCD, EGN, Artikelnummer …" value="${esc(LEG_WS.such)}" autocomplete="off"></div>
     ${q?"":`<div class="kf-chips">${KF_KAT.map(([v,t])=>chip("kfKat",v,t,k===v)).join("")}</div>`}
     ${q||!ohneHerst?`<div class="kf-chips kf-h">${k==="ls"&&!q?KF_HERST.filter(([v])=>v).map(([v,t])=>chip("kfLsH",v,t,lsH===v)).join(""):KF_HERST.map(([v,t])=>chip("kfHerst",v,t,LEG_WS.herst===v)).join("")}</div>`:""}
