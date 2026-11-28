@@ -45,10 +45,14 @@ function kfPosText(L){ const E=legE(L), M=LEG_WS.marke, PL=legPlaetze(L), R=legR
   const r=kfRcdVor(E,i), pl=PL[e.id]; if(!M) return `am Ende${pl?` · Reihe ${pl.r}`:""}`;
   return [`nach ${legKzA(e.kz)||legWsName(e)}`,pl?`Reihe ${pl.r}`:"",r?`an RCD ${legKzA(r.kz)||""}`.trim():""].filter(Boolean).join(" · "); }
 
+/* ---- Reihen-Grenze: ein Verteiler mit 4 Reihen bekommt keine 5. (Max 28.11.2026) ---- */
+const kfMaxR=L=>+L.reihen>0&&!L.typFrei?+L.reihen:0;
+const kfReiheVoll=L=>{ const m=kfMaxR(L); return !!m&&legReihen(L).length>=m; };
+const kfVollText=L=>`Der Verteiler hat ${kfMaxR(L)} Reihen – das passt nicht mehr hinein`;
 /* ---- Einsetzen an der Marke: Kennzeichnung läuft weiter wie im Bestücken, neue Reihe beginnt mit Umbruch ---- */
 function kfKz(L,art,pos){ if(typeof awKz!=="function") return ""; const alt=AW; AW={nach:pos}; try{ return awKz(L,art==="rcd"?"rcd":"sk").kz; } finally{ AW=alt; } }
 function kfRein(L,teile,text){ if(!L||L.fertig||!teile.length) return; const E=legE(L), M=LEG_WS.marke, neu=!!(M&&M.neu); let i=kfZiel(L);
-  const folgend=E[i], start=i, num=legSchemaNum(E);
+  const folgend=E[i], start=i, num=legSchemaNum(E), vorher=E.slice(), folgendUm=folgend&&folgend.umbruch, kzAlt=E.map(e=>e.kz), maxR=kfMaxR(L);
   teile.forEach((t,k)=>{ const e={...gkClone(t),id:uid()}; delete e.umbruch; const kb=e.kb; delete e.kb;
     if(e.art==="rcd") e.kz=num?"":kfKz(L,"rcd",i-1);
     else if(e.art==="sk"||e.art==="res") e.kz=num?"":kfKz(L,"sk",i-1);
@@ -56,6 +60,7 @@ function kfRein(L,teile,text){ if(!L||L.fertig||!teile.length) return; const E=l
     else if(e.kz==null) e.kz="";
     if(k===0&&neu&&i>0) e.umbruch=true; E.splice(i,0,e); i++; });
   if(neu&&folgend&&E[i]===folgend) folgend.umbruch=true;
+  if(maxR&&legReihen(L).length>maxR){ L.eintraege=vorher; vorher.forEach((e,k)=>e.kz=kzAlt[k]); if(folgend){ if(folgendUm) folgend.umbruch=true; else delete folgend.umbruch; } toast(kfVollText(L)); render(); return; }
   LEG_WS.marke={nach:i-1,neu:false}; LEG_WS.anz=1; legSpeichern(L);
   const a=legE(L)[start], z=legE(L)[i-1]; toast(`${text||(teile.length+" eingesetzt")}${a&&a.kz?` · ${legKzA(a.kz)}${z!==a&&z.kz?" bis "+legKzA(z.kz):""}`:""}`);
   render(); }
@@ -191,12 +196,12 @@ function kfMPick(b){ const L=legAkt(); if(!L||L.fertig) return; const sk=kfAuswa
   const r=b.getBoundingClientRect(); kontextMenu(r.left,r.bottom,O.map(([v,t])=>({t,svg:'<span class="km-leer"></span>',fn:()=>wahl(v)})));
   const m=document.getElementById("menu"); if(m){ m.classList.toggle("km-lang",O.length>8); m.style.minWidth=Math.round(r.width)+"px"; const h=m.offsetHeight; if(r.bottom+4+h>innerHeight-8) m.style.top=Math.max(8,r.top-h-4)+"px"; } }
 function kfReiheMenu(b){ const L=legAkt(); if(!L) return; const R=legReihen(L), ri=+b.dataset.r, r=R[ri]; if(!r) return; const E=legE(L), I=r.g.map(([,i])=>i), von=I[0], bis=I[I.length-1], ids=r.g.map(([e])=>e.id);
-  const neuBei=(nach)=>{ LEG_WS.marke={nach,neu:true}; kfLeeren(); LEG_WS.kat=LEG_WS.kat==="sonder"?"ls":LEG_WS.kat; render(); };
+  const voll=kfReiheVoll(L), neuBei=(nach)=>{ if(voll){ toast(kfVollText(L)); return; } LEG_WS.marke={nach,neu:true}; kfLeeren(); LEG_WS.kat=LEG_WS.kat==="sonder"?"ls":LEG_WS.kat; render(); };
   const zu=L.fertig, rc=b.getBoundingClientRect();
   kontextMenu(rc.right-240,rc.bottom+4,[
-    !zu&&{t:"Reihe darüber einfügen",ic:"add",fn:()=>neuBei(von-1)},
-    !zu&&{t:"Reihe darunter einfügen",ic:"add",fn:()=>neuBei(bis)},
-    !zu&&{t:"Reihe duplizieren",ic:"copy",fn:()=>{ LEG_WS.marke={nach:bis,neu:true}; kfRein(L,kfVorlageTeile(r.g.map(([e])=>e)).map((t,k)=>{ const q=r.g[k]&&r.g[k][0]; if(q&&q.art!=="sk") t.bez=q.bez; return t; }),`Reihe ${ri+1} dupliziert`); }},
+    !zu&&{t:voll?"Reihe darüber einfügen – alle Reihen belegt":"Reihe darüber einfügen",ic:"add",fn:()=>neuBei(von-1)},
+    !zu&&{t:voll?"Reihe darunter einfügen – alle Reihen belegt":"Reihe darunter einfügen",ic:"add",fn:()=>neuBei(bis)},
+    !zu&&{t:voll?"Reihe duplizieren – alle Reihen belegt":"Reihe duplizieren",ic:"copy",fn:()=>{ if(voll){ toast(kfVollText(L)); return; } LEG_WS.marke={nach:bis,neu:true}; kfRein(L,kfVorlageTeile(r.g.map(([e])=>e)).map((t,k)=>{ const q=r.g[k]&&r.g[k][0]; if(q&&q.art!=="sk") t.bez=q.bez; return t; }),`Reihe ${ri+1} dupliziert`); }},
     {t:"Reihe auswählen",ic:"check",fn:()=>{ LEG_WS.ids=ids; LEG_WS.id=ids[0]; LEG_WS.tab="sel"; LEG_WS.weg=null; render(); }},
     {t:"Als Vorlage speichern",ic:"pin",fn:()=>kfVorlageDlg(kfVorlageTeile(r.g.map(([e])=>e)),`Reihe ${ri+1}`)},
     !zu&&"-",
@@ -238,7 +243,7 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
     case "kfLsBild": { const im=b.querySelector("img"); if(im) legBildGross(im.currentSrc||im.src,`LS ${kfLs(L).ch}${kfLs(L).amp}`,kfLsMat(kfLs(L))); return; }
     case "kfAdd": kfAdd(L,b.dataset.q); return;
     case "kfMarke": LEG_WS.marke={nach:+b.dataset.i,neu:false}; kfLeeren(); render(); return;
-    case "kfNeuReihe": LEG_WS.marke={nach:legE(L).length-1,neu:true}; kfLeeren(); render(); return;
+    case "kfNeuReihe": if(kfReiheVoll(L)){ toast(kfVollText(L)); return; } LEG_WS.marke={nach:legE(L).length-1,neu:true}; kfLeeren(); render(); return;
     case "kfReihe": kfReiheMenu(b); return;
     case "kfDupl": kfDupl(L); return;
     case "kfWeg": kfWeg(L); return;

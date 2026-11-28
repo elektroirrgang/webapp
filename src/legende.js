@@ -941,8 +941,8 @@ function legWsView(L){ const Z=legWsZahlen(L), E=legE(L), zu=L.fertig;
   return `<div class="leg-ws">
     <section class="card leg-ws-l"><div class="card-kopf leg-kopf leg-ws-kopf"><h3>Stromkreise</h3>
       <span style="flex:1"></span>${E.length?seg("legAnsicht",legAnsicht(),[["liste","Liste"],["verteiler","Verteiler"]],"leg-seg"):""}</div>
-      ${E.length?(legAnsicht()==="verteiler"?legVtView(L):legListeView(L)):`<p class="meta">Noch keine Geräte. Rechts unter „Einsetzen“ auswählen – die Kennzeichnung zählt mit.</p>`}
-      ${zu||!E.length?"":`${LEG_WS.marke&&LEG_WS.marke.neu&&LEG_WS.marke.nach>=E.length-1&&LEG_WS.tab!=="sel"&&legAnsicht()!=="verteiler"?`<div class="kf-pend"><span class="kf-pm">Hier einsetzen</span>Neue Reihe – rechts ein Gerät oder eine Vorlage wählen</div>`:""}<button type="button" class="kf-neureihe" data-act="kfNeuReihe">${icon("add")}<span>Reihe hinzufügen</span></button>`}</section>
+      <div class="leg-ws-lin">${E.length?(legAnsicht()==="verteiler"?legVtView(L):legListeView(L)):`<p class="meta">Noch keine Geräte. Rechts unter „Einsetzen“ auswählen – die Kennzeichnung zählt mit.</p>`}
+      ${zu||!E.length?"":`${LEG_WS.marke&&LEG_WS.marke.neu&&LEG_WS.marke.nach>=E.length-1&&LEG_WS.tab!=="sel"&&legAnsicht()!=="verteiler"?`<div class="kf-pend"><span class="kf-pm">Hier einsetzen</span>Neue Reihe – rechts ein Gerät oder eine Vorlage wählen</div>`:""}${kfReiheVoll(L)?`<p class="kf-voll">${icon("info")}<span>Alle ${kfMaxR(L)} Reihen dieses Verteilers sind angelegt – eine weitere Reihe passt nicht.</span></p>`:`<button type="button" class="kf-neureihe" data-act="kfNeuReihe">${icon("add")}<span>Reihe hinzufügen</span>${kfMaxR(L)?`<small>${legReihen(L).length} von ${kfMaxR(L)}</small>`:""}</button>`}`}</div></section>
     ${kfPanel(L)}</div>`; }
 function legWsSel(L){ const E=legE(L), e=E.find(x=>x.id===LEG_WS.id), zu=L.fertig;
   if(!e) return `<div class="leg-ws-leer">${icon("pin")}<b>Gerät anklicken</b><span>In der Zeichnung oder Liste ein Gerät anklicken – hier lässt es sich dann direkt bearbeiten. Ein Klick auf eine freie Stelle setzt dort ein.</span></div>`;
@@ -1041,7 +1041,7 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
   if(a==="legWsBild"){ if(e){ const im=b.querySelector("img"); legBildGross(im&&im.currentSrc||legWsBild(e),[legKzA(e.kz),legWsName(e)].filter(Boolean).join(" · "),legWsArtikel(e)); } return; }
   if(a==="legWsSel"||a==="legEdit"){ kfKlick(L,b.dataset.id,ev); return; }
   if(a==="legNach"){ kfLeeren(); LEG_WS.marke={nach:+b.dataset.i,neu:false}; render(); return; }
-  if(a==="legNeuRcd"){ kfLeeren(); LEG_WS.marke={nach:E.length-1,neu:true}; LEG_WS.kat="rcd"; LEG_WS.such=""; render(); return; }
+  if(a==="legNeuRcd"){ if(kfReiheVoll(L)){ toast(kfVollText(L)); return; } kfLeeren(); LEG_WS.marke={nach:E.length-1,neu:true}; LEG_WS.kat="rcd"; LEG_WS.such=""; render(); return; }
   if(a==="legWsTab"){ if(b.dataset.v==="ein") kfLeeren(); else LEG_WS.tab=b.dataset.v; render(); return; }
   if(a==="legWsEnde"){ LEG_WS.marke=null; render(); return; }
   if(!e||L.fertig) return;
