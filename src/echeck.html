@@ -1474,7 +1474,12 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .leg-ws-in{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:14px 4px 16px}
 .leg-ws-leer{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:40px 16px;color:var(--on-sv)}.leg-ws-leer .ic{width:40px;height:40px;fill:var(--on-sv);opacity:.6}.leg-ws-leer b{color:var(--on-surface);font-size:17px}
 .leg-ws-g{display:flex;gap:14px;align-items:center;margin-bottom:14px}.leg-ws-g>span:last-child{display:flex;flex-direction:column;min-width:0}.leg-ws-g b{font-size:18px;line-height:1.3}.leg-ws-g small{color:var(--on-sv);font-size:13px;line-height:1.4}
-.leg-ws-b{flex:none;width:64px;height:96px;border-radius:14px;background:#fff;display:grid;place-items:center;padding:4px;box-sizing:border-box}.leg-ws-b img{max-width:100%;max-height:100%;object-fit:contain}
+.leg-ws-b{flex:none;width:64px;height:96px;border-radius:14px;background:#fff;display:flex;padding:4px;box-sizing:border-box;overflow:hidden}.leg-ws-b img{width:100%;height:100%;object-fit:contain;display:block}
+.leg-wp{border:0;text-align:left;font:inherit;color:var(--on-surface);position:relative;cursor:pointer;width:100%}.leg-wp b{font-size:16px;font-weight:600;padding:2px 22px 2px 0;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.leg-wp.leer b{color:var(--on-sv);font-weight:500}
+.leg-wp::after{content:"";position:absolute;right:14px;top:50%;border:5px solid transparent;border-top-color:var(--on-sv)}.leg-wp:hover{background:var(--sc-highest)}.leg-wp[disabled]{cursor:default}.leg-wp[disabled]::after{display:none}
+.leg-ws-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.leg-ws-sw{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;background:var(--sc-high);border-radius:14px;padding:12px 14px;margin:0 0 8px;color:var(--on-surface);font:inherit;font-size:15px;font-weight:600;cursor:pointer}
+.menu.km-lang{max-height:min(62vh,460px);overflow-y:auto}.menu .km-leer{width:24px;height:24px;flex:none;display:inline-block}
 .leg-wf{display:flex;flex-direction:column;background:var(--sc-high);border-radius:14px;padding:8px 14px;margin-bottom:8px;cursor:text}.leg-wf small{font-size:12px;color:var(--on-sv)}
 .leg-wf input{border:0;background:transparent;color:var(--on-surface);font:inherit;font-size:16px;font-weight:600;padding:2px 0;outline:0;min-width:0}.leg-wf:focus-within{background:var(--pc)}.leg-wf:focus-within small{color:var(--on-pc)}
 .leg-ws-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.leg-wf input{width:100%;box-sizing:border-box}
@@ -2255,7 +2260,10 @@ function render(){ profilAnwenden(); if(nav.v==="start") nav={v:"anlagen"};
     title=r.name; sub=kind==="kunden"?"Kunde":(kundeOf(r.kundeId)||{}).name||""; body=kind==="kunden"?kundeView(r):standortView(r);
     fab=null; }
   if(SY.state==="anmelden"&&!login) body=`<div class="robanner warn">${icon("sync")}<span>Du bist abgemeldet. Änderungen bleiben vorerst nur auf diesem Gerät.</span><button class="btn-text" data-act="relogin">Anmelden</button></div>`+body;
-  app.innerHTML=(WIDE.matches&&!login?seitenKopf(title,sub,fab):"")+body; backSetzen(); navIndSetzen(); segInd(); kopfEinhaengen(); if(nav.v==="plan"&&typeof pnMount==="function") pnMount();
+  { const html=(WIDE.matches&&!login?seitenKopf(title,sub,fab):"")+body, nk=JSON.stringify(nav);
+    /* Arbeitsfläche Stromkreise: nur Geändertes austauschen – Bilder bleiben stehen, nichts flackert (Max 28.11.2026) */
+    let gm=false; if(typeof legMorph==="function"&&app.dataset.nk===nk&&app.querySelector(".leg-ws")&&html.includes('class="leg-ws"')){ const t=document.createElement("div"); t.innerHTML=html; const neu=t.querySelector(".leg-ws"); if(neu){ legMorph(app.querySelector(".leg-ws"),neu); gm=true; } }
+    if(!gm) app.innerHTML=html; app.dataset.nk=nk; render.gemorpht=gm; } backSetzen(); navIndSetzen(); segInd(); if(!render.gemorpht) kopfEinhaengen(); if(nav.v==="plan"&&typeof pnMount==="function") pnMount();
   $("#topTitle").innerHTML=title?`<span>${esc(title)}</span>${sub?`<small>${esc(String(sub).split(/\s*›\s*/).pop())}</small>`:""}`:"";
   const f=$("#fab"); f.hidden=!fab; document.body.classList.toggle("has-fab",!!fab);
   if(fab){ f.dataset.act=fab[0]; f.setAttribute("aria-label",fab[1]); f.innerHTML=`${icon(fab[2])}<span>${fab[1]}</span>`; }

@@ -914,17 +914,77 @@ function legWsView(L){ const Z=legWsZahlen(L), E=legE(L), zu=L.fertig; if(LEG_WS
       <div class="leg-ws-in">${LEG_WS.tab==="ein"&&!zu?legWsEin(L):LEG_WS.tab==="ueb"?legWsUeb(L):legWsSel(L)}</div></aside></div>`; }
 function legWsSel(L){ const E=legE(L), e=E.find(x=>x.id===LEG_WS.id), zu=L.fertig;
   if(!e) return `<div class="leg-ws-leer">${icon("pin")}<b>Gerät anklicken</b><span>In der Zeichnung oder Liste ein Gerät anklicken – hier lässt es sich dann direkt bearbeiten. Ein Klick auf eine freie Stelle setzt dort ein.</span></div>`;
-  const PL=legPlaetze(L)[e.id], r=legWsRcd(L,e), art=legWsArtikel(e), i=E.indexOf(e);
+  const PL=legPlaetze(L)[e.id], r=legWsRcd(L,e), art=legWsArtikel(e), i=E.indexOf(e), sk=e.art==="sk", rcd=e.art==="rcd";
   const fld=(k,l,v,o={})=>`<label class="leg-wf${o.kl?" "+o.kl:""}"><small>${l}</small><input data-legws="${k}" value="${esc(v||"")}" placeholder="${esc(o.ph||"")}" ${zu||o.ro?"readonly":""} autocomplete="off"></label>`;
-  const W=e.art==="sk"?["Steckdosen","Licht","Herd","Waschmaschine","Spülmaschine","Trockner","Heizung","Wallbox"]:[], R=e.art==="sk"&&typeof awRaeume==="function"?awRaeume(L).slice(0,10):[];
+  const pk=(k,l,v,o={})=>`<button type="button" class="leg-wf leg-wp${v?"":" leer"}" data-act="legWsPick" data-k="${k}" ${zu||o.ro?"disabled":""}><small>${l}</small><b>${esc(v||o.leer||"wählen")}</b></button>`;
+  const T=String(e.bez||"").split(/\s+/), wa=T.find(x=>LEG_WAS.includes(x))||"", ra=T.find(x=>LEG_RAUM.includes(x))||"", S=legWsSchutz(e), ro=!!e.katalog;
+  const symName=e.sym==="keins"?"kein Symbol":e.sym?((LEG_SYM_LISTE.find(x=>x[0]===e.sym)||[])[1]||e.sym):"automatisch";
   return `<div class="leg-ws-g"><span class="leg-ws-b"><img src="${esc(legWsBild(e))}" alt="" onerror="this.style.visibility='hidden'"></span><span><b>${esc([legKzA(e.kz),legWsName(e)].filter(Boolean).join(" · "))}</b><small>${esc([art,PL?legPlatzText(PL):"",r?"an "+legKzA(r.kz):""].filter(Boolean).join(" · "))}</small></span></div>
-    ${e.art==="kl"?"":fld("bez",e.art==="gr"?"Überschrift":"Wofür",legOffen(e)?"":e.bez,{ph:e.art==="rcd"?"Fehlerstromschutzschalter":"z. B. Küche Steckdosen",kl:"breit"})}
-    ${W.length&&!zu?(()=>{ const T=String(e.bez||"").split(/\s+/), wa=T.find(x=>LEG_WAS.includes(x))||"", ra=T.find(x=>LEG_RAUM.includes(x))||"", sel=(k,l,cur,opts)=>`<label class="leg-wf leg-wsel"><small>${l}</small><select data-legwsw="${k}"><option value="">wählen</option>${opts.map(o=>`<option${o===cur?" selected":""}>${esc(o)}</option>`).join("")}</select></label>`;
-      return `<div class="leg-ws-2">${sel("was","Verbraucher",wa,[...W,...LEG_WAS.filter(x=>!W.includes(x))])}${sel("raum","Raum",ra,R.length?R:LEG_RAUM)}</div>`; })():""}
-    <div class="leg-ws-2">${e.art==="gr"||e.art==="kl"?"":fld("kz","Kennzeichnung",e.kz)}${e.art==="sk"||e.art==="rcd"?fld("schutz","Absicherung",e.schutz,{ro:!!e.katalog}):""}</div>
-    ${zu?"":`<div class="leg-ws-ak"><button type="button" data-act="legWsZug" data-d="-1" ${i>0?"":"disabled"} title="Einen Platz nach vorn">${icon("back")}<span>Nach vorn</span></button><button type="button" data-act="legWsZug" data-d="1" ${i<E.length-1?"":"disabled"} title="Einen Platz nach hinten"><span>Nach hinten</span>${icon("chev")}</button></div>
-    <div class="leg-ws-ak"><button type="button" data-act="legWsDupl">${icon("copy")}<span>Duplizieren</span></button>${e.art==="sk"||e.art==="rcd"||e.art==="ge"?`<button type="button" data-act="${e.katalog?"gkErsetzen":"legProdukt"}" data-id="${esc(e.id)}">${icon("sync")}<span>Produkt</span></button>`:""}<button type="button" data-act="legEdit" data-id="${esc(e.id)}">${icon("edit")}<span>Alle Felder</span></button></div>
+    ${e.art==="kl"?"":fld("bez",e.art==="gr"?"Überschrift":"Wofür",legOffen(e)?"":e.bez,{ph:rcd?"Fehlerstromschutzschalter":"z. B. Küche Steckdosen",kl:"breit"})}
+    ${sk?`<div class="leg-ws-2">${pk("was","Verbraucher",wa)}${pk("raum","Raum",ra)}</div>`:""}
+    ${sk?`<div class="leg-ws-3">${pk("char","Charakteristik",S.char,{ro})}${pk("amp","Nennstrom",S.amp?S.amp+" A":"",{ro})}${pk("pole","Pole",(+e.pole===3?"3":"1")+"-polig",{ro})}</div>`:""}
+    ${rcd?`<div class="leg-ws-3">${pk("ramp","Nennstrom",S.amp?S.amp+" A":"",{ro})}${pk("idn","Fehlerstrom",S.idn?S.idn+" mA":"",{ro})}${pk("typ","Typ",S.typ?"Typ "+S.typ:"",{ro})}</div>`:""}
+    ${ro&&(sk||rcd)?`<p class="meta" style="margin:-2px 4px 8px">Absicherung kommt aus dem Katalogbild – über „Produkt“ tauschen.</p>`:""}
+    <div class="leg-ws-2">${e.art==="gr"||e.art==="kl"?"":fld("kz","Kennzeichnung",e.kz)}${e.art==="gr"?"":pk("te","Breite",e.katalog?gkTeText(e.katalog.widthMm,L):e.te?e.te+" TE":"automatisch",{ro})}</div>
+    ${e.art==="gr"||e.art==="kl"||rcd?"":pk("sym","Symbol",symName)}
+    ${e.art==="gr"||zu?"":`<button type="button" class="leg-ws-sw" data-act="legWsUmbruch" aria-pressed="${!!e.umbruch}"><span>Neue Reihe ab hier</span><span class="schalter${e.umbruch?" an":""}"><i></i></span></button>`}
+    ${zu?"":`<div class="leg-ws-ak"><button type="button" data-act="legWsZug" data-d="-1" ${i>0?"":"disabled"}>${icon("back")}<span>Nach vorn</span></button><button type="button" data-act="legWsZug" data-d="1" ${i<E.length-1?"":"disabled"}><span>Nach hinten</span>${icon("chev")}</button></div>
+    <div class="leg-ws-ak"><button type="button" data-act="legWsDupl">${icon("copy")}<span>Duplizieren</span></button>${sk||rcd||e.art==="ge"?`<button type="button" data-act="${e.katalog?"gkErsetzen":"legProdukt"}" data-id="${esc(e.id)}">${icon("sync")}<span>Produkt</span></button>`:""}</div>
     <button type="button" class="leg-ws-weg${LEG_WS.weg===e.id?" sicher":""}" data-act="legWsWeg">${icon("del")}<span>${LEG_WS.weg===e.id?"Wirklich entfernen?":"Entfernen"}</span></button>`}`; }
+/* Absicherung zerlegen/zusammensetzen: LS „B16“ (+ Rest wie „ FI/LS 30 mA Typ A“), RCD „40 A / 30 mA Typ A“ */
+function legWsSchutz(e){ const s=String(e.schutz||"");
+  if(e.art==="rcd"){ const m=s.match(/(\d+)\s*A\s*\/\s*(\d+)\s*mA(?:\s*Typ\s*([A-Z\-]+))?/i)||[]; return {amp:m[1]||"",idn:m[2]||"",typ:(m[3]||"").toUpperCase()}; }
+  const m=s.match(/^\s*([A-Z])\s*(\d+)(.*)$/i); return m?{char:m[1].toUpperCase(),amp:m[2],rest:m[3]||""}:{char:"",amp:"",rest:s}; }
+function legWsSchutzSetzen(e,S){ e.schutz=e.art==="rcd"?`${S.amp||40} A / ${S.idn||30} mA Typ ${S.typ||"A"}`:`${S.char||"B"}${S.amp||16}${S.rest||""}`; }
+/* Nach Änderung der Absicherung passenden Artikel derselben Serie suchen – sonst Artikel offen lassen */
+function legWsArtikelNeu(e){ if(!e.mat||typeof awGeraete!=="function") return; const G=awGeraete(), alt=G.find(x=>matHnr(x.herstellerNr)===e.mat); if(!alt){ delete e.mat; return; }
+  const se=typeof matSerie==="function"?(matSerie(alt)||[])[0]:"", S=legWsSchutz(e), pol=+e.pole===3?3:1;
+  const neu=G.find(m=>{ const t=matTech(m); if(!t||m.hersteller!==alt.hersteller) return false;
+    if(e.art==="rcd") return t.art==="rcd"&&+t.in===+S.amp&&+t.idn===+S.idn&&String(t.typ||"A").toUpperCase()===S.typ;
+    return t.art==="ls"&&String(t.char).toUpperCase()===S.char&&+t.in===+S.amp&&+t.pole===pol&&(!se||(matSerie(m)||[])[0]===se); });
+  if(neu) e.mat=matHnr(neu.herstellerNr); else delete e.mat; }
+const LEG_WS_OPT={char:["B","C","D","K","Z"],amp:[2,4,6,10,13,16,20,25,32,40,50,63],ramp:[25,40,63,80,100,125],idn:[10,30,100,300],typ:["A","AC","F","B"]};
+function legWsPick(b){ const L=legAkt(); if(!L||L.fertig) return; const e=legE(L).find(x=>x.id===LEG_WS.id); if(!e) return; const k=b.dataset.k, S=legWsSchutz(e);
+  let O=[], cur="";
+  if(k==="was"){ O=[["","– keiner –"],...LEG_WAS.map(x=>[x,x])]; cur=String(e.bez||"").split(/\s+/).find(x=>LEG_WAS.includes(x))||""; }
+  else if(k==="raum"){ const R=typeof awRaeume==="function"?awRaeume(L):LEG_RAUM; O=[["","– keiner –"],...R.map(x=>[x,x])]; cur=String(e.bez||"").split(/\s+/).find(x=>LEG_RAUM.includes(x))||""; }
+  else if(k==="char"){ O=LEG_WS_OPT.char.map(x=>[x,x+"-Charakteristik"]); cur=S.char; }
+  else if(k==="amp"){ O=LEG_WS_OPT.amp.map(x=>[String(x),x+" A"]); cur=S.amp; }
+  else if(k==="ramp"){ O=LEG_WS_OPT.ramp.map(x=>[String(x),x+" A"]); cur=S.amp; }
+  else if(k==="idn"){ O=LEG_WS_OPT.idn.map(x=>[String(x),x+" mA"]); cur=S.idn; }
+  else if(k==="typ"){ O=LEG_WS_OPT.typ.map(x=>[x,"Typ "+x]); cur=S.typ; }
+  else if(k==="pole"){ O=[["1","1-polig"],["3","3-polig"]]; cur=+e.pole===3?"3":"1"; }
+  else if(k==="te"){ O=[["","automatisch"],["1","1 TE"],["2","2 TE"],["3","3 TE"],["4","4 TE"]]; cur=e.te?String(e.te):""; }
+  else if(k==="sym"){ O=[["","automatisch"],...LEG_SYM_LISTE,["keins","kein Symbol"]]; cur=e.sym||""; }
+  const wahl=v=>{ if(k==="was"||k==="raum"){ if(v) legWsWort(L,e,v); else { e.bez=String(e.bez||"").split(/\s+/).filter(x=>k==="was"?!LEG_WAS.includes(x):!LEG_RAUM.includes(x)).join(" ")||"?"; legSpeichern(L); render(); } return; }
+    if(k==="char"||k==="amp"||k==="ramp"||k==="idn"||k==="typ"){ const N={...S,[k==="ramp"?"amp":k]:v}; legWsSchutzSetzen(e,N); legWsArtikelNeu(e); }
+    else if(k==="pole"){ e.pole=+v; if(+v===3&&+e.te<3) delete e.te; legWsArtikelNeu(e); }
+    else if(k==="te"){ if(v) e.te=+v; else delete e.te; }
+    else if(k==="sym"){ if(v) e.sym=v; else delete e.sym; }
+    legSpeichern(L); render(); };
+  const r=b.getBoundingClientRect();
+  kontextMenu(r.left,r.bottom,O.map(([v,t])=>({t,svg:String(v)===String(cur)?icon("check"):'<span class="km-leer"></span>',an:String(v)===String(cur),fn:()=>wahl(v)})));
+  const m=document.getElementById("menu"); if(m){ m.classList.toggle("km-lang",O.length>8); m.style.minWidth=Math.round(r.width)+"px"; const h=m.offsetHeight; if(r.bottom+4+h>innerHeight-8) m.style.top=Math.max(8,r.top-h-4)+"px"; } }
+document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest('[data-act="legWsPick"],[data-act="legWsUmbruch"]'); if(!b||b.disabled) return; ev.stopPropagation(); ev.preventDefault();
+  if(b.dataset.act==="legWsPick"){ legWsPick(b); return; }
+  const L=legAkt(); if(!L||L.fertig) return; const e=legE(L).find(x=>x.id===LEG_WS.id); if(!e) return; if(e.umbruch) delete e.umbruch; else e.umbruch=true; legSpeichern(L); render(); },true);
+/* Morphen statt neu schreiben: gleiche Knoten bleiben, Bilder werden nicht neu geladen (gegen Flackern, Max 28.11.2026) */
+function legMorph(a,b){
+  if(a.nodeType!==b.nodeType||a.nodeName!==b.nodeName){ a.replaceWith(b); return; }
+  if(a.nodeType===3||a.nodeType===8){ if(a.nodeValue!==b.nodeValue) a.nodeValue=b.nodeValue; return; }
+  if(a.nodeType!==1) return;
+  for(const at of [...a.attributes]) if(!b.hasAttribute(at.name)&&!(at.name==="class"&&a.classList.contains("hat-ind"))&&at.name!=="style") a.removeAttribute(at.name);
+  for(const at of [...b.attributes]){ if(at.name==="class"&&a.classList&&a.classList.contains("hat-ind")){ const v=at.value+" hat-ind"; if(a.getAttribute("class")!==v) a.setAttribute("class",v); continue; }
+    if(a.getAttribute(at.name)===at.value) continue;
+    if((at.name==="href"||at.name==="src")&&a.dataset&&a.dataset.gkanp&&/^blob:/.test(a.getAttribute(at.name)||"")&&at.value.startsWith("data:image/svg+xml")) continue;   /* fertiger Aufdruck bleibt */
+    a.setAttribute(at.name,at.value); }
+  if((a.nodeName==="INPUT"||a.nodeName==="TEXTAREA")&&a!==document.activeElement&&a.value!==b.value) a.value=b.value;
+  const fremd=n=>n.nodeType===1&&n.classList&&n.classList.contains("seg-ind");   /* von segInd eingefügt – stehen lassen */
+  const A=[...a.childNodes].filter(n=>!fremd(n)), B=[...b.childNodes];
+  for(let i=0;i<B.length;i++){ if(i<A.length) legMorph(A[i],B[i]); else a.appendChild(B[i]); }
+  for(let i=B.length;i<A.length;i++) A[i].remove(); }
+function legMorphHtml(el,html){ const t=document.createElement(el.nodeName==="svg"?"div":el.nodeName); t.innerHTML=html; const A=[...el.childNodes], B=[...t.childNodes];
+  for(let i=0;i<B.length;i++){ if(i<A.length) legMorph(A[i],B[i]); else el.appendChild(B[i]); } for(let i=B.length;i<A.length;i++) A[i].remove(); }
 function legWsEin(L){ if(typeof awPanelStart!=="function") return ""; if(!AW||!AW.panel) awPanelStart(L);
   const E=legE(L), nach=awEinfuegen()?E[awPos(L)]:null;
   return `<div class="aw-such"><span class="aw-lupe">${icon("search")}</span><input id="awSuch" type="search" placeholder="${AW.tab==="kat"?"Hersteller, Gerät, Artikelnummer …":"B16, RCD, Typ A …"}" value="${esc(AW.such)}" autocomplete="off"></div>
