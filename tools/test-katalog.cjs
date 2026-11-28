@@ -19,7 +19,7 @@ assert(Math.abs(run('legTE(testEntry)')-6.2/18)<1e-10);
 run('testL=legAkt();testL.eintraege=Array.from({length:35},(_,i)=>({...testEntry,id:String(i)}))');
 assert.equal(run('legReihen(testL).length'),2);assert.equal(run('legReihen(testL)[0].g.length'),34);
 // Drawing preserves millimetres and uses the embedded asset, without distorting it to old photo proportions.
-const image=run('legGeraetBild(testEntry,0,legTE(testEntry),0,50)');assert(image.includes('width="17.22222222222222"'));assert(image.includes('data:image/svg+xml'));
+const image=run('legGeraetBild(testEntry,0,legTE(testEntry),0,50)');assert(image.includes('width="17.2"'));assert(image.includes('data:image/svg+xml'));
 assert.equal(run('gkFilter(GK_INDEX,"Schneider DALI", "", "").length')>=3,true);
 assert.equal(run('gkFilter(GK_INDEX,"", "Merten", "").every(a=>a.manufacturer==="Merten")'),true);
 assert.equal(run('gkTechnik(GK_INDEX.find(a=>a.type==="QFD")).schutz.includes("FI/LS")'),true);

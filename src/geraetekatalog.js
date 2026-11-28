@@ -35,8 +35,10 @@ async function gkWahl(id){if(!GK||GK.busy)return;const state=GK,a=GK_MAP.get(id)
  }catch(err){toast(err.message);state.busy=false;gkGrid();}}
 /* Exakt derselbe Maßstab wie die Reihe: Breite wird niemals auf eine volle TE gerundet.
    Der 45-mm-Frontbezug liegt in derselben Höhe wie der bisherige Editor. */
-function gkBild(e,x,y0,P){const a=e.katalog,L=legAkt(),scale=P/gkPitch(L),mid=y0+P*400/92/2;
- return `<image href="${esc(a.data)}" x="${x}" y="${mid-a.frontCenterMm*scale}" width="${a.widthMm*scale}" height="${a.heightMm*scale}" preserveAspectRatio="xMidYMid meet"/>`; }
+/* Bild nie breiter als sein Platz: ist die Zeichnung etwas breiter als die belegten TE (iEM3150: 92,5 mm auf 5 TE), wird sie gleichmäßig
+   verkleinert – Frontmitte bleibt auf der Hutschiene, nichts ragt in den Nachbarplatz (Max 28.11.2026) */
+function gkBild(e,x,y0,P){const a=e.katalog,L=legAkt(),scale=P/gkPitch(L),mid=y0+P*400/92/2,slot=legTE(e)*P,k=Math.min(1,slot/(a.widthMm*scale)),s2=scale*k,bw=a.widthMm*s2;
+ return `<image href="${esc(a.data)}" x="${(x+(slot-bw)/2).toFixed(1)}" y="${(mid-a.frontCenterMm*s2).toFixed(1)}" width="${bw.toFixed(1)}" height="${(a.heightMm*s2).toFixed(1)}" preserveAspectRatio="xMidYMid meet"/>`; }
 /* ===== Katalogbilder für Artikel aus der Materialliste (Max 28.11.2026) =====
    Ein Artikel bekommt ein Katalogbild NUR, wenn Modell und Aufdruck genau stimmen – keine ähnlichen Fremdmodelle.
    1. Katalogeintrag, dessen Artikel oder Modell genau die Artikelnummer ist (CDA440D, HIM402, ST303 … und alles, was nachgereicht wird)
@@ -100,7 +102,7 @@ function gkFuerEintrag(e){ if(!e||e.katalog) return null;
   if(e.serie&&e.art==="sk"){ const m=String(e.schutz||"").match(/^\s*([A-Z])\s*(\d+)/i); if(m) return gkSerieFuer(e.serie.h,e.serie.m,+e.pole===3?3:1,m[1],+m[2]); }
   return null; }
 /* Katalogbild eines zugeordneten Artikels zeichnen: Maßstab wie die Reihe, mittig im Platz (Breite aus der Legende bleibt) */
-function gkBildAsset(a,x,w,y0,P){ const L=legAkt(),scale=P/gkPitch(L),mid=y0+P*400/92/2,d=a.dimension,fc=Number.isFinite(d.faceCenterFromTop)?d.faceCenterFromTop:d.height/2,bw=d.width*scale;
+function gkBildAsset(a,x,w,y0,P){ const L=legAkt(),s0=P/gkPitch(L),mid=y0+P*400/92/2,d=a.dimension,fc=Number.isFinite(d.faceCenterFromTop)?d.faceCenterFromTop:d.height/2,scale=s0*Math.min(1,w*P/(d.width*s0)),bw=d.width*scale;
   return `<image href="${esc(gkBildURL(a))}"${gkAnpAttr(a)} x="${(x+(w*P-bw)/2).toFixed(1)}" y="${(mid-fc*scale).toFixed(1)}" width="${bw.toFixed(1)}" height="${(d.height*scale).toFixed(1)}" preserveAspectRatio="xMidYMid meet"/>`; }
 const gkTeText=(mm,L)=>{ let t=mm/gkPitch(L||legAkt()||{}); if(mm>=13) t=Math.max(1,Math.round(t)); return (Math.abs(t-Math.round(t))<.05?String(Math.round(t)):t.toFixed(1).replace(".",","))+" TE"; };
 /* Katalog im Bestücken-Fenster: Gruppen aus dem Teil vor „ - “ der Kategorie */
