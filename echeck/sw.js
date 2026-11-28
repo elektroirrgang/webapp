@@ -1,4 +1,4 @@
-const CACHE = "echeck-v1.11.4-97cbe367";
+const CACHE = "echeck-v1.11.5-d8981629";
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll([new Request("./", {cache: "reload"}), new Request("./index.html", {cache: "reload"})]))); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith("echeck-v") && k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
 /* Produktbilder (/bilder/…) liegen im SharePoint der Firma, nicht öffentlich. Die App schickt nach der Anmeldung die Liste
@@ -8,12 +8,21 @@ const BILD_CACHE = "irrgang-bilder", BILD_LISTE = "/__bilder-liste";
 self.addEventListener("message", e => { const d = e.data || {}; if (!d.bilderListe) return; BILD_URL = d.bilderListe;
   caches.open(BILD_CACHE).then(c => c.put(BILD_LISTE, new Response(JSON.stringify(d.bilderListe), {headers: {"Content-Type": "application/json"}}))); });
 function bildListe(c) { return BILD_URL ? Promise.resolve(BILD_URL) : c.match(BILD_LISTE).then(m => m ? m.json() : {}).then(j => (BILD_URL = j || {})).catch(() => ({})); }
+/* SharePoint liefert Dateien als „application/octet-stream“. PNG/JPG zeigt der Browser trotzdem, SVG nicht – die Gerätekatalog-Bilder
+   sind meist SVG. Deshalb den Typ nach der Dateiendung setzen, auch für Bilder, die schon mit falschem Typ im Cache liegen (Max 28.11.2026). */
+const BILD_TYP = {svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif", avif: "image/avif"};
+function mitTyp(r, pfad) { const t = BILD_TYP[(pfad.split(".").pop() || "").toLowerCase()];
+  if (!t || !r || !r.ok || (r.headers.get("Content-Type") || "").toLowerCase().startsWith(t)) return Promise.resolve(r);
+  return r.blob().then(b => new Response(b.slice(0, b.size, t), {status: 200, headers: {"Content-Type": t}})); }
 function bildHolen(req, pfad) {
-  return caches.open(BILD_CACHE).then(c => c.match(pfad).then(m => m || bildListe(c).then(L => {
-    const netz = () => fetch(req).then(r => { if (r.ok) c.put(pfad, r.clone()); return r; });
-    if (!L[pfad]) return netz();
-    return fetch(L[pfad]).then(r => { if (!r.ok) return netz(); const typ = r.headers.get("Content-Type") || ""; c.put(pfad, r.clone()); return r; }).catch(netz);
-  })));
+  return caches.open(BILD_CACHE).then(c => {
+    const merk = r => mitTyp(r, pfad).then(x => { if (x && x.ok) c.put(pfad, x.clone()); return x; });
+    return c.match(pfad).then(m => m ? mitTyp(m, pfad).then(x => { if (x !== m) c.put(pfad, x.clone()); return x; }) : bildListe(c).then(L => {
+      const netz = () => fetch(req).then(r => r.ok ? merk(r) : r);
+      if (!L[pfad]) return netz();
+      return fetch(L[pfad]).then(r => r.ok ? merk(r) : netz()).catch(netz);
+    }));
+  });
 }
 self.addEventListener("fetch", e => {
   { const u = new URL(e.request.url); if (e.request.method === "GET" && u.origin === location.origin && u.pathname.startsWith("/bilder/") && !u.pathname.endsWith(".json")) { e.respondWith(bildHolen(e.request, decodeURIComponent(u.pathname))); return; } }
