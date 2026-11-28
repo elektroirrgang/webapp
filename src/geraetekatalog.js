@@ -120,13 +120,17 @@ async function gkSvgText(a){ try{ const r=await fetch(gkURL(a)); if(r.ok){ const
 const GK_ANP_URL=new Map(), GK_ANP_P=new Map(), GK_LEER="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%2F%3E";
 const gkAnpAttr=a=>a&&a._anp?` data-gkanp="${esc(gkAnpKey(a,a._anp))}"`:"";
 function gkAufdruck(a,anp){ const key=gkAnpKey(a,anp); if(GK_ANP_P.has(key)) return GK_ANP_P.get(key);
-  const p=gkSvgText(a).then(t=>{ const u=URL.createObjectURL(new Blob([gkSvgAnpassen(t,anp)],{type:"image/svg+xml"})); GK_ANP_URL.set(key,u);
+  const p=gkSvgText(a).then(t=>{ const sv=gkSvgAnpassen(t,anp); try{ localStorage.setItem(gkAnpLs(key),sv); }catch(e){} const u=URL.createObjectURL(new Blob([sv],{type:"image/svg+xml"})); GK_ANP_URL.set(key,u);
       document.querySelectorAll("[data-gkanp]").forEach(el=>{ if(el.getAttribute("data-gkanp")!==key) return; el.setAttribute(el.tagName==="IMG"?"src":"href",u); const w=el.closest&&el.closest(".weg"); if(w) w.classList.remove("weg"); });
       if(document.querySelector(`img[src="${GK_LEER}"]`)&&typeof render==="function"&&!document.querySelector("#dlg:not([hidden])")) setTimeout(render,0);
       return u; })
     .catch(e=>{ GK_ANP_P.delete(key); console.warn("Aufdruck",a.id,e); return null; });
   GK_ANP_P.set(key,p); return p; }
-function gkBildURL(a){ if(!a) return ""; if(!a._anp) return gkURL(a); const key=gkAnpKey(a,a._anp); const u=GK_ANP_URL.get(key); if(u) return u; gkAufdruck(a,a._anp); return GK_LEER; }
+/* Fertige Aufdrucke liegen zusätzlich im Gerätespeicher – beim nächsten Öffnen sofort da, ohne Warten auf den SharePoint */
+const gkAnpLs=key=>{ let h=5381; for(let i=0;i<key.length;i++) h=((h<<5)+h+key.charCodeAt(i))|0; return "irrgang_gkanp_"+(h>>>0).toString(36); };
+function gkBildURL(a){ if(!a) return ""; if(!a._anp) return gkURL(a); const key=gkAnpKey(a,a._anp); let u=GK_ANP_URL.get(key); if(u) return u;
+  try{ const sv=localStorage.getItem(gkAnpLs(key)); if(sv){ u=URL.createObjectURL(new Blob([sv],{type:"image/svg+xml"})); GK_ANP_URL.set(key,u); GK_ANP_P.set(key,Promise.resolve(u)); return u; } }catch(e){}
+  gkAufdruck(a,a._anp); return GK_LEER; }
 /* Analyse laden (aus dem Bilder-Cache, sonst aus dem SharePoint) */
 async function gkBsLaden(neu){ if(GK_BS.daten&&!neu) return GK_BS.daten;
   try{ const c="caches" in window?await caches.open("irrgang-bilder").catch(()=>null):null; let r=!neu&&c?await c.match(GK_BS_PFAD).catch(()=>null):null;
