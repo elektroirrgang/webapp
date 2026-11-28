@@ -1561,7 +1561,7 @@ body.rk-zieht,body.rk-zieht *{cursor:grabbing!important}
 .bv-fl img{position:absolute;left:0;top:0;user-select:none;-webkit-user-drag:none;max-width:none;filter:drop-shadow(0 6px 18px rgba(0,0,0,.18))}
 .bv-hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);background:rgba(32,33,36,.72);color:#fff;font-size:13px;padding:6px 12px;border-radius:14px;pointer-events:none;white-space:nowrap}   /* wie in der Zeichnung: leicht durchscheinend, nicht vollrot */
 .leg-dev,.leg-frei[data-act]{cursor:pointer}.leg-dev:hover>rect:nth-of-type(1){fill:#E9ECF1}.leg-frei[data-act]:hover .leg-fr{fill:color-mix(in srgb,var(--ok) 28%,var(--feld))}
-.leg-fr{fill:color-mix(in srgb,var(--ok) 18%,var(--feld))}.leg-frt{fill:var(--ok)}
+.leg-fr{fill:color-mix(in srgb,var(--ok) 18%,var(--feld));fill-opacity:.55}.leg-frei[data-act]:hover .leg-fr{fill-opacity:.7}   /* Schiene scheint durch */.leg-frt{fill:var(--ok)}
 .leg-st{fill:var(--on-surface)}.leg-sym{color:var(--on-surface)}
 .leg-symw .chip{gap:6px}.leg-symw .leg-symi{flex:none}
 @media (max-width:599px){.leg-reihe{padding:12px 12px 8px}.leg-fuss .btn-filled{flex:1 1 100%;justify-content:center}.leg-gk .leg-rcd{display:none}}
