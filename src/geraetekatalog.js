@@ -52,8 +52,22 @@ let GK_NR=null;
 function gkNrIndex(){ if(GK_NR) return GK_NR; GK_NR=new Map();
   GK_INDEX.forEach(a=>{ if(a.isExampleAssembly) return; [a.article,a.model].forEach(v=>{ const k=gkNorm(v); if(k.length>=5&&/\d/.test(k)&&!GK_NR.has(k)) GK_NR.set(k,a); }); }); return GK_NR; }
 const GK_MAT_C=new Map();
+/* Artikel, deren Katalog-SVG eine passende Vorlage ist: Aufdruck wird beim Anzeigen gesetzt (Max 28.11.2026).
+   a = [Hersteller, Modell, Breite mm] · setzen/weg = Umschalter der Vorlage (CSS-Variablen am <svg>) · ersetzen = Text im Aufdruck.
+   Die Datei im SharePoint bleibt unverändert. Nur Fälle, bei denen nach der Anpassung Modell UND Aufdruck stimmen. */
+const GK_MAT_ANP={};
+{ const pad=i=>String(i).padStart(2,"0"), ic=(nr,p,ch,i)=>{ GK_MAT_ANP[nr]={a:["Schneider Electric","iC60N",p===3?54:18],ersetzen:[["C 16A",`${ch} ${i}A`],["C16",`${ch}${i}`]]}; };
+  [6,10,13,16,20,25,32].forEach(i=>ic(`A9F031${pad(i)}`,1,"B",i)); [16,20,25,32].forEach(i=>ic(`A9F033${i}`,3,"B",i));   /* iC60N-Vorlage zeigt C16 → B-Kennlinie und Nennstrom setzen */
+  GK_MAT_ANP.CDS440D={a:["Hager","CDS",70],setzen:["A_40"],weg:["A_25"],ersetzen:[["25 A/IΔn","40 A/IΔn"],["440J","440D"]]};
+  GK_MAT_ANP.CDS463D={a:["Hager","CDS",70],setzen:["A_63"],weg:["A_25"],ersetzen:[["25 A/IΔn","63 A/IΔn"],["463J","463D"]]};
+  GK_MAT_ANP.SBN240={a:["Hager","SBN",35],setzen:["amp40","m2_2P_40"],weg:["amp16","m2_2P_16"],ersetzen:[["16A","40A"]]};
+  GK_MAT_ANP.SBN440={a:["Hager","SBN",70],setzen:["amp40","m4_4P_40"],weg:["amp32","m4_4P_32"],ersetzen:[["32A","40A"]]}; }
+const gkAnpKey=(a,anp)=>a.id+"|"+JSON.stringify([anp.setzen||[],anp.weg||[],anp.ersetzen||[]]);
 function gkMatAsset(hnr){ const k=gkNorm(hnr); if(!k) return null; if(GK_MAT_C.has(k)) return GK_MAT_C.get(k);
-  const s=GK_MAT_SERIE[k], a=s?GK_INDEX.find(a=>a.manufacturer===s[0]&&a.model===s[1]&&Math.abs(a.dimension.width-s[2])<.3)||null:gkNrIndex().get(k)||null;
+  let a=null; const s=GK_MAT_SERIE[k], anp=GK_MAT_ANP[k];
+  if(s) a=GK_INDEX.find(a=>a.manufacturer===s[0]&&a.model===s[1]&&Math.abs(a.dimension.width-s[2])<.3)||null;
+  else if(gkNrIndex().get(k)) a=gkNrIndex().get(k);
+  else if(anp){ const b=GK_INDEX.find(x=>x.manufacturer===anp.a[0]&&x.model===anp.a[1]&&Math.abs(x.dimension.width-anp.a[2])<.3&&/\.svg$/i.test(x.file)); if(b) a={...b,_anp:anp}; }
   GK_MAT_C.set(k,a); return a; }
 const gkKlFarbe=e=>e.farbe||(/pe/i.test(e.bez||"")?"pe":/^\s*a\b|abzweig/i.test(e.bez||"")?"a":"n");
 function gkFuerEintrag(e){ if(!e||e.katalog) return null;
@@ -61,7 +75,7 @@ function gkFuerEintrag(e){ if(!e||e.katalog) return null;
   return e.mat?gkMatAsset(e.mat):null; }
 /* Katalogbild eines zugeordneten Artikels zeichnen: Maßstab wie die Reihe, mittig im Platz (Breite aus der Legende bleibt) */
 function gkBildAsset(a,x,w,y0,P){ const L=legAkt(),scale=P/gkPitch(L),mid=y0+P*400/92/2,d=a.dimension,fc=Number.isFinite(d.faceCenterFromTop)?d.faceCenterFromTop:d.height/2,bw=d.width*scale;
-  return `<image href="${esc(gkURL(a))}" x="${(x+(w*P-bw)/2).toFixed(1)}" y="${(mid-fc*scale).toFixed(1)}" width="${bw.toFixed(1)}" height="${(d.height*scale).toFixed(1)}" preserveAspectRatio="xMidYMid meet"/>`; }
+  return `<image href="${esc(gkBildURL(a))}"${gkAnpAttr(a)} x="${(x+(w*P-bw)/2).toFixed(1)}" y="${(mid-fc*scale).toFixed(1)}" width="${bw.toFixed(1)}" height="${(d.height*scale).toFixed(1)}" preserveAspectRatio="xMidYMid meet"/>`; }
 const gkTeText=(mm,L)=>{ const t=mm/gkPitch(L||legAkt()||{}); return (Math.abs(t-Math.round(t))<.05?String(Math.round(t)):t.toFixed(1).replace(".",","))+" TE"; };
 /* Katalog im Bestücken-Fenster: Gruppen aus dem Teil vor „ - “ der Kategorie */
 const GK_DE=[["Ueberspannung","Überspannung"],["Schuetze","Schütze"],["Stromstoss","Stromstoß"],["Geraete","Geräte"],["Zubehoer","Zubehör"],["Gebaeude","Gebäude"],["Binaereingaenge","Binäreingänge"],["zaehler","zähler"],["stuecke","stücke"]];
@@ -76,6 +90,71 @@ async function gkAwEinsetzen(id,n){ const a=GK_MAP.get(id),L=legAkt(); if(!a||!L
   const data=await gkData(a); if(legAkt()?.id!==L.id) return 0; const payload=gkPayload(a,data);
   if(payload.widthMm>(+L.teReihe||12)*gkPitch(L)+.01) throw Error("Dieses Gerät ist breiter als die eingestellte Reihe. Bitte zuerst die Verteilerbreite ändern.");
   for(let i=0;i<n;i++) awEinsetzen(gkEintrag(a,gkClone(payload),L)); return n; }
+/* ===== Beschriftungen der Katalog-SVGs (Max 28.11.2026) =====
+   Fast alle Aufdrucke in den SVGs sind Text, oft mit eingebauten Umschaltern (CSS-Variablen am <svg>, z. B. CDS: --A_25 … --A_125,
+   SBN: --amp16 … --amp125, auch verschachtelt). Die Analyse liest jede SVG einmal: gesetzte Umschalter, sichtbare Texte und welche
+   Umschalter welchen Aufdruck-Teil zeigen. Ergebnis liegt privat im SharePoint neben den Bildern („katalog~beschriftung.json“),
+   nicht im öffentlichen Projekt. gkSvgAnpassen setzt Umschalter und Text – Grundlage für die spätere Beschriftungs-Oberfläche. */
+const GK_BS_NAME="katalog~beschriftung.json", GK_BS_PFAD="/bilder/katalog/beschriftung.json";
+const GK_BS={daten:null,laeuft:false,fertig:0,gesamt:0,fehler:0,stop:false};
+const gkDispVars=st=>{ const m=String(st||"").match(/display\s*:\s*(var\([^;]*)/); return m?(m[1].match(/--[\w-]+/g)||[]).map(x=>x.slice(2)):null; };
+function gkSvgAnalyse(text){ const d=new DOMParser().parseFromString(text,"image/svg+xml"), r=d.documentElement; if(!r||r.nodeName!=="svg"||d.querySelector("parsererror")) return null;
+  const an={}; String(r.getAttribute("style")||"").replace(/--([\w-]+)\s*:\s*([^;]+)/g,(m,k,v)=>{ an[k]=v.trim(); return m; });
+  const sichtbar=el=>{ for(let n=el;n&&n.nodeType===1&&n!==r;n=n.parentNode){ const st=n.getAttribute("style")||""; if(/display\s*:\s*none/.test(st)) return false; const V=gkDispVars(st); if(V&&!V.some(v=>an[v]==="block")) return false; } return true; };
+  const eigen=n=>[...n.childNodes].filter(c=>c.nodeType===3).map(c=>c.textContent).join("").trim();
+  const t=[], sw={};
+  d.querySelectorAll("text").forEach(tx=>{ if(!sichtbar(tx)) return; const z=[]; const lauf=n=>n.childNodes.forEach(c=>{ if(c.nodeType===3) z.push(c.textContent); else if(c.nodeType===1&&sichtbar(c)) lauf(c); }); lauf(tx);
+    const s=z.join("").replace(/\s+/g," ").trim(); if(s) t.push(s.slice(0,200));
+    tx.querySelectorAll("tspan").forEach(sp=>{ const V=gkDispVars(sp.getAttribute("style")); if(V&&V.length===1){ const e=eigen(sp); if(e) sw[V[0]]=e; } }); });
+  return {an:Object.keys(an).filter(k=>an[k]==="block"),t:t.slice(0,40),sw}; }
+/* Umschalter setzen/entfernen und Text im Aufdruck ersetzen – gibt neuen SVG-Text zurück */
+function gkSvgAnpassen(text,anp){ anp=anp||{}; const d=new DOMParser().parseFromString(text,"image/svg+xml"), r=d.documentElement; if(!r||d.querySelector("parsererror")) return text;
+  let st=String(r.getAttribute("style")||""); (anp.weg||[]).forEach(v=>{ st=st.replace(new RegExp("\\s*--"+v.replace(/[-]/g,"\\-")+"\\s*:[^;]*;?","g"),""); });
+  (anp.setzen||[]).forEach(v=>{ if(!new RegExp("--"+v+"\\s*:").test(st)) st=(st.trim()&&!/;\s*$/.test(st)?st+";":st)+" --"+v+":block;"; }); r.setAttribute("style",st.trim());
+  if((anp.ersetzen||[]).length){ const w=d.createTreeWalker(r,4); let n; while((n=w.nextNode())){ if(!n.parentNode||!n.parentNode.closest||!n.parentNode.closest("text")) continue; let x=n.textContent; anp.ersetzen.forEach(([a,b])=>{ x=x.split(a).join(b); }); if(x!==n.textContent) n.textContent=x; } }
+  return new XMLSerializer().serializeToString(d); }
+/* SVG-Text eines Katalogbilds holen (über den Service Worker, sonst direkt aus dem SharePoint) */
+async function gkSvgText(a){ try{ const r=await fetch(gkURL(a)); if(r.ok){ const t=await r.text(); if(/^\s*(<\?xml|<svg|<!--)/i.test(t)) return t; } }catch(e){}
+  const b=typeof bspBlob==="function"?await bspBlob(bspPfad(gkSpName(a)),true):null; if(!b) throw Error("Bild nicht erreichbar"); return await (await fetch(b)).text(); }
+/* Angepasste Bilder: einmal je Sitzung erzeugen, als Blob-Adresse merken; bis dahin ein leerer Platzhalter (kein falscher Aufdruck) */
+const GK_ANP_URL=new Map(), GK_ANP_P=new Map(), GK_LEER="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%2F%3E";
+const gkAnpAttr=a=>a&&a._anp?` data-gkanp="${esc(gkAnpKey(a,a._anp))}"`:"";
+function gkAufdruck(a,anp){ const key=gkAnpKey(a,anp); if(GK_ANP_P.has(key)) return GK_ANP_P.get(key);
+  const p=gkSvgText(a).then(t=>{ const u=URL.createObjectURL(new Blob([gkSvgAnpassen(t,anp)],{type:"image/svg+xml"})); GK_ANP_URL.set(key,u);
+      document.querySelectorAll("[data-gkanp]").forEach(el=>{ if(el.getAttribute("data-gkanp")!==key) return; el.setAttribute(el.tagName==="IMG"?"src":"href",u); const w=el.closest&&el.closest(".weg"); if(w) w.classList.remove("weg"); });
+      if(document.querySelector(`img[src="${GK_LEER}"]`)&&typeof render==="function"&&!document.querySelector("#dlg:not([hidden])")) setTimeout(render,0);
+      return u; })
+    .catch(e=>{ GK_ANP_P.delete(key); console.warn("Aufdruck",a.id,e); return null; });
+  GK_ANP_P.set(key,p); return p; }
+function gkBildURL(a){ if(!a) return ""; if(!a._anp) return gkURL(a); const key=gkAnpKey(a,a._anp); const u=GK_ANP_URL.get(key); if(u) return u; gkAufdruck(a,a._anp); return GK_LEER; }
+/* Analyse laden (aus dem Bilder-Cache, sonst aus dem SharePoint) */
+async function gkBsLaden(neu){ if(GK_BS.daten&&!neu) return GK_BS.daten;
+  try{ const c="caches" in window?await caches.open("irrgang-bilder").catch(()=>null):null; let r=!neu&&c?await c.match(GK_BS_PFAD).catch(()=>null):null;
+    if(!r){ const L=await bspListe(!!neu); const u=L&&L[GK_BS_PFAD]; if(!u) return null; r=await fetch(u,{cache:"no-store"}); if(!r.ok) return null; if(c) c.put(GK_BS_PFAD,r.clone()).catch(()=>{}); }
+    GK_BS.daten=await r.json(); }catch(e){ console.warn("Beschriftungen",e); }
+  return GK_BS.daten; }
+const gkBeschriftung=id=>GK_BS.daten&&GK_BS.daten.assets?GK_BS.daten.assets[id]||null:null;
+/* Alle SVGs einlesen und das Ergebnis in den SharePoint schreiben (Entwickler, Labor) */
+async function gkBsErstellen(){ if(GK_BS.laeuft) return; if(typeof SYNC_ON==="undefined"||!SYNC_ON||!ME.signedIn){ toast("Erst mit dem Firmenkonto anmelden"); return; }
+  const A=GK_INDEX.filter(a=>/\.svg$/i.test(a.file)), out={};
+  Object.assign(GK_BS,{laeuft:true,stop:false,fertig:0,gesamt:A.length,fehler:0}); if(typeof gkFortZeigen==="function") gkFortZeigen();
+  const Q=A.slice(); const lauf=async()=>{ while(Q.length&&!GK_BS.stop){ const a=Q.shift(); try{ const x=gkSvgAnalyse(await gkSvgText(a)); if(x) out[a.id]=x; else GK_BS.fehler++; }catch(e){ GK_BS.fehler++; } GK_BS.fertig++; if(GK_BS.fertig%25===0&&typeof gkFortZeigen==="function") gkFortZeigen(); } };
+  try{ await bspListe(); await Promise.all(Array.from({length:6},lauf));
+    if(!GK_BS.stop){ const daten={version:1,erstellt:new Date().toISOString(),index:GK_INDEX.length,svg:A.length,assets:out};
+      await syncRoot(); const fid=await folderId(BSP_ORDNER,BSP_BIB);
+      const r=await g(`/drives/${fid}:/${encodeURIComponent(GK_BS_NAME)}:/content`,{method:"PUT",headers:{"Content-Type":"application/json"},body:new Blob([JSON.stringify(daten)],{type:"application/json"})});
+      if(!r.ok) throw Error("SharePoint meldet "+r.status);
+      GK_BS.daten=daten; try{ const c=await caches.open("irrgang-bilder"); await c.put(GK_BS_PFAD,new Response(JSON.stringify(daten),{headers:{"Content-Type":"application/json"}})); }catch(e){}
+      await bspListe(true); toast(`Beschriftungen von ${gkTsd(Object.keys(out).length)} SVGs gespeichert${GK_BS.fehler?` · ${GK_BS.fehler} nicht lesbar`:""}`); } }
+  catch(e){ toast("Beschriftungen: "+(e.message||e)); }
+  finally{ GK_BS.laeuft=false; if(nav.v==="gkbilder") render(); } }
+function gkBsHtml(){ const D=GK_BS.daten, S=GK_BS, n=D?Object.keys(D.assets||{}).length:0;
+  if(S.laeuft) return `<div class="gk-bar gross"><i style="width:${(S.gesamt?S.fertig/S.gesamt*100:0).toFixed(1)}%"></i></div><p class="meta" style="margin:10px 2px 0">${gkTsd(S.fertig)} von ${gkTsd(S.gesamt)} SVGs gelesen${S.fehler?` · ${S.fehler} nicht lesbar`:""}</p><div class="gk-knopf"><button type="button" class="btn-tonal" data-act="gkBsStop">Anhalten</button></div>`;
+  let z=""; if(D){ const E=Object.values(D.assets||{}); const mitT=E.filter(e=>e.t.length).length, mitS=E.filter(e=>Object.keys(e.sw).length).length; z=`<p class="meta" style="margin:0 2px">${gkTsd(n)} SVGs ausgewertet · ${gkTsd(mitT)} mit Aufdruck · ${gkTsd(mitS)} mit Umschaltern für den Aufdruck · Stand ${esc(new Date(D.erstellt).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"}))}</p>`; }
+  return `${z||`<p class="meta" style="margin:0 2px">Noch nicht ausgewertet.</p>`}<div class="gk-knopf"><button type="button" class="btn-tonal" data-act="gkBsNeu">${D?"Neu einlesen":"Jetzt einlesen"}</button></div>`; }
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="gkBsNeu"],[data-act="gkBsStop"]'); if(!b||b.disabled) return; e.preventDefault(); e.stopPropagation();
+  if(typeof istEntwickler!=="function"||!istEntwickler()) return; if(b.dataset.act==="gkBsStop"){ GK_BS.stop=true; return; } gkBsErstellen(); render(); },true);
+if(typeof setTimeout==="function") setTimeout(()=>{ if(typeof SYNC_ON!=="undefined"&&SYNC_ON&&typeof ME!=="undefined"&&ME.signedIn) gkBsLaden(); },6000);
 function gkDetail(id){const L=legAkt(),e=L&&legE(L).find(x=>x.id===id);if(!e||!e.katalog)return;
  const a=e.katalog;dialog(a.manufacturer+" "+a.model,`<div class="gk-preview"><img src="${esc(a.data)}" alt="Gerätefront"></div><p>${esc(a.article||"Keine bestätigte Artikelnummer")} · ${gkZahl(a.widthMm)} × ${gkZahl(a.heightMm)} mm</p>`,
  `<button class="btn-text" data-act="gkBeschriftung" data-id="${e.id}">Beschriftung</button>${e.klemmenProjekt?`<button class="btn-text" data-act="gkBlockEdit" data-id="${e.id}">Klemmen und Brücken</button>`:`<button class="btn-text" data-act="gkErsetzen" data-id="${e.id}">Ersetzen</button>`}<span style="flex:1"></span><button class="btn-tonal" data-act="awZu">Schließen</button>`,{breit:true});}
@@ -133,6 +212,7 @@ function gkFortHtml(){ const U=GK_HOCH, p=U.gesamt?U.fertig/U.gesamt:0, rest=U.f
 function gkSpView(){ if(typeof istEntwickler!=="function"||!istEntwickler()) return `<div class="narrow"><div class="empty">${icon("lock")}<h2>Nur für Entwickler</h2></div></div>`;
   const S=gkStand(), U=GK_HOCH, ok=typeof SYNC_ON!=="undefined"&&SYNC_ON&&ME.signedIn, liste=typeof BSP!=="undefined"&&BSP.liste;
   if(ok&&!liste) setTimeout(()=>bspListe(true).then(()=>{ if(nav.v==="gkbilder") render(); }),0);
+  if(ok&&!GK_BS.daten&&!GK_BS.ladeVersuch){ GK_BS.ladeVersuch=1; setTimeout(()=>gkBsLaden().then(d=>{ if(d&&nav.v==="gkbilder") render(); }),0); }
   const p=S.n?S.da/S.n:0;
   return `<div class="narrow gk-sp">
     <section class="gk-kopf"><div class="gk-gross"><b>${gkTsd(S.da)}</b><span>von ${gkTsd(S.n)} Bildern im SharePoint</span></div>
@@ -141,11 +221,12 @@ function gkSpView(){ if(typeof istEntwickler!=="function"||!istEntwickler()) ret
       <div class="gk-knopf">${U.laeuft?`<button type="button" class="btn-tonal" data-act="gkHochStop">Anhalten</button>`:`<button type="button" class="btn-filled" data-act="gkHoch" ${ok?"":"disabled"}>${icon("upload")}<span>Ordner „Katalog“ wählen</span></button>`}<button type="button" class="btn-text" data-act="gkHochNeu" ${ok?"":"disabled"}>Stand neu laden</button></div></section>
     ${U.gesamt?`<div class="sec-lbl">${U.laeuft?"Läuft gerade":"Letzter Durchgang"}</div><section class="gk-kopf" id="gkFort">${gkFortHtml()}</section>`:""}
     ${U.fehlerListe.length?`<div class="sec-lbl">Nicht hochgeladen</div><div class="list">${U.fehlerListe.slice(0,30).map(t=>`<div class="li"><span class="lt"><span class="h">${esc(t[0])}</span><span class="s">${esc(t[1])}</span></span></div>`).join("")}</div>`:""}
+    <div class="sec-lbl">Beschriftungen der SVGs</div><section class="gk-kopf" id="gkBs">${gkBsHtml()}</section>
     <div class="sec-lbl">Je Hersteller</div>
     <div class="gk-her">${S.H.map(([h,x])=>`<div class="gk-hz${x.da===x.n?" voll":""}"><span class="gk-hn">${esc(h)}</span><span class="gk-hb"><i style="width:${(x.da/x.n*100).toFixed(1)}%"></i></span><span class="gk-hw">${gkTsd(x.da)} / ${gkTsd(x.n)}</span></div>`).join("")}</div>
     <p class="hint">Herkunft und Erlaubnis: 2.046 Grafiken von Electromarker (Nutzung per E-Mail bestätigt), die übrigen eigene Zeichnungen nach Hersteller-Maßen bzw. Hersteller-CAD.</p></div>`; }
 let gkFortT=0;
-function gkFortZeigen(){ if(nav.v!=="gkbilder") return; const n=Date.now(); if(n-gkFortT<250) return; gkFortT=n; const el=document.getElementById("gkFort"); if(el) el.innerHTML=gkFortHtml(); else render(); }
+function gkFortZeigen(){ if(nav.v!=="gkbilder") return; const n=Date.now(); if(n-gkFortT<250) return; gkFortT=n; const bs=document.getElementById("gkBs"); if(bs&&GK_BS.laeuft){ bs.innerHTML=gkBsHtml(); if(!GK_HOCH.laeuft) return; } const el=document.getElementById("gkFort"); if(el) el.innerHTML=gkFortHtml(); else render(); }
 async function gkHochladen(files){ const U=GK_HOCH; if(U.laeuft) return;
   if(typeof SYNC_ON==="undefined"||!SYNC_ON||!ME.signedIn){ toast("Erst mit dem Firmenkonto anmelden"); return; }
   const F=[...files].filter(f=>/\.(svg|png)$/i.test(f.name)); if(!F.length){ toast("Im gewählten Ordner sind keine SVG- oder PNG-Dateien"); return; }
@@ -163,6 +244,7 @@ async function gkHochladen(files){ const U=GK_HOCH; if(U.laeuft) return;
     await Promise.all([arbeit(),arbeit(),arbeit(),arbeit()]);
   }catch(e){ U.fehlerListe.push(["Abbruch",e.message||String(e)]); toast("Hochladen abgebrochen: "+(e.message||e)); }
   U.laeuft=false; U.ende=Date.now(); U.aktuell=""; await bspListe(true);
+  if(U.neu&&!U.stop) setTimeout(()=>gkBsErstellen(),500);   /* neue Bilder → Beschriftungen gleich neu einlesen */
   toast(U.stop?"Angehalten – beim nächsten Mal geht es mit dem Rest weiter":`${gkTsd(U.neu)} hochgeladen · ${gkTsd(U.da)} waren schon da${U.fehler?` · ${U.fehler} Fehler`:""}`);
   if(nav.v==="gkbilder"||nav.v==="labor") render(); }
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest('[data-act="gkHoch"],[data-act="gkHochStop"],[data-act="gkHochNeu"]'); if(!b||b.disabled) return; e.preventDefault(); e.stopPropagation();
