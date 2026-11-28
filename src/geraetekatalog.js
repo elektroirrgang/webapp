@@ -62,17 +62,33 @@ const GK_MAT_ANP={};
   GK_MAT_ANP.CDS463D={a:["Hager","CDS",70],setzen:["A_63"],weg:["A_25"],ersetzen:[["25 A/IΔn","63 A/IΔn"],["463J","463D"]]};
   GK_MAT_ANP.SBN240={a:["Hager","SBN",35],setzen:["amp40","m2_2P_40"],weg:["amp16","m2_2P_16"],ersetzen:[["16A","40A"]]};
   GK_MAT_ANP.SBN440={a:["Hager","SBN",70],setzen:["amp40","m4_4P_40"],weg:["amp32","m4_4P_32"],ersetzen:[["32A","40A"]]}; }
-const gkAnpKey=(a,anp)=>a.id+"|"+JSON.stringify([anp.setzen||[],anp.weg||[],anp.ersetzen||[]]);
+const gkAnpKey=(a,anp)=>a.id+"|"+JSON.stringify([anp.vorlage||"",anp.setzen||[],anp.weg||[],anp.ersetzen||[]]);
+/* ===== Vorlagen aus PNG-Bildern (Max 28.11.2026) =====
+   Hager MBS/MBN/MCS/MCN gibt es nur als PNG mit fest gemaltem Aufdruck („MBS116A B16“) – die Original-SVGs hatten fehlende Bauteile.
+   Die App baut daraus selbst eine Vorlage: PNG als Grundbild, Aufdruck mit einer Fläche in Gehäusefarbe abgedeckt, darüber echter Text.
+   Platzhalter: {SER} Serie, {IN} Nennstrom, {IN2} Nennstrom zweistellig, {CHAR} Charakteristik, {IDN} Fehlerstrom.
+   Maße in Bildpixeln; die Bilder selbst bleiben im SharePoint, hier stehen nur Positionen. */
+const GK_VORLAGE={}; ["MBS","MBN","MCS","MCN"].forEach(ser=>[1,3].forEach(p=>{ GK_VORLAGE[`Hager|${ser}|${p*17.5}`]={
+  deck:[11,273,141,59], farbe:p===1&&/N$/.test(ser)?"#F1F1F1":"#EEEEEE", schrift:"#6F8090",
+  zeilen:[[13,299,28,`{SER}${p}{IN2}A`],[13,325,28,"{CHAR}{IN}"]] }; }));
+const gkVorlageKey=a=>`${a.manufacturer}|${a.model}|${a.dimension.width}`;
+const gkVorlageAsset=(h,m,w)=>{ const k=`${h}|${m}|${w}`; return GK_VORLAGE[k]?GK_INDEX.find(a=>gkVorlageKey(a)===k)||null:null; };
+/* Vorlage für einen Hager-Automaten nach Serie, Polzahl, Charakteristik und Nennstrom */
+function gkVorlageFuer(h,ser,pol,ch,inn){ const a=gkVorlageAsset(h,ser,+pol*17.5); if(!a||!ch||!inn) return null;
+  return {...a,_anp:{vorlage:gkVorlageKey(a),ersetzen:[["{SER}",ser],["{IN2}",String(inn).padStart(2,"0")],["{IN}",String(inn)],["{CHAR}",String(ch).toUpperCase()]]}}; }
 function gkMatAsset(hnr){ const k=gkNorm(hnr); if(!k) return null; if(GK_MAT_C.has(k)) return GK_MAT_C.get(k);
   let a=null; const s=GK_MAT_SERIE[k], anp=GK_MAT_ANP[k];
   if(s) a=GK_INDEX.find(a=>a.manufacturer===s[0]&&a.model===s[1]&&Math.abs(a.dimension.width-s[2])<.3)||null;
   else if(gkNrIndex().get(k)) a=gkNrIndex().get(k);
   else if(anp){ const b=GK_INDEX.find(x=>x.manufacturer===anp.a[0]&&x.model===anp.a[1]&&Math.abs(x.dimension.width-anp.a[2])<.3&&/\.svg$/i.test(x.file)); if(b) a={...b,_anp:anp}; }
+  else { const m=k.match(/^(M[BC][SN])([1-4])(\d\d)$/); if(m) a=gkVorlageFuer("Hager",m[1],+m[2],m[1][1],+m[3]); }   /* Hager-Automat ohne eigenes Bild → Vorlage */
   GK_MAT_C.set(k,a); return a; }
 const gkKlFarbe=e=>e.farbe||(/pe/i.test(e.bez||"")?"pe":/^\s*a\b|abzweig/i.test(e.bez||"")?"a":"n");
 function gkFuerEintrag(e){ if(!e||e.katalog) return null;
   if(e.art==="kl") return GK_INDEX.find(a=>a.manufacturer==="Pollmann"&&a.model===GK_KL[gkKlFarbe(e)])||null;
-  return e.mat?gkMatAsset(e.mat):null; }
+  if(e.mat) return gkMatAsset(e.mat);
+  if(e.serie&&e.art==="sk"){ const m=String(e.schutz||"").match(/^\s*([A-Z])\s*(\d+)/i); if(m) return gkVorlageFuer(e.serie.h,e.serie.m,+e.pole===3?3:1,m[1],+m[2]); }
+  return null; }
 /* Katalogbild eines zugeordneten Artikels zeichnen: Maßstab wie die Reihe, mittig im Platz (Breite aus der Legende bleibt) */
 function gkBildAsset(a,x,w,y0,P){ const L=legAkt(),scale=P/gkPitch(L),mid=y0+P*400/92/2,d=a.dimension,fc=Number.isFinite(d.faceCenterFromTop)?d.faceCenterFromTop:d.height/2,bw=d.width*scale;
   return `<image href="${esc(gkBildURL(a))}"${gkAnpAttr(a)} x="${(x+(w*P-bw)/2).toFixed(1)}" y="${(mid-fc*scale).toFixed(1)}" width="${bw.toFixed(1)}" height="${(d.height*scale).toFixed(1)}" preserveAspectRatio="xMidYMid meet"/>`; }
@@ -120,17 +136,32 @@ async function gkSvgText(a){ try{ const r=await fetch(gkURL(a)); if(r.ok){ const
 const GK_ANP_URL=new Map(), GK_ANP_P=new Map(), GK_LEER="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%2F%3E";
 const gkAnpAttr=a=>a&&a._anp?` data-gkanp="${esc(gkAnpKey(a,a._anp))}"`:"";
 function gkAufdruck(a,anp){ const key=gkAnpKey(a,anp); if(GK_ANP_P.has(key)) return GK_ANP_P.get(key);
-  const p=gkSvgText(a).then(t=>{ const sv=gkSvgAnpassen(t,anp); try{ localStorage.setItem(gkAnpLs(key),sv); }catch(e){} const u=URL.createObjectURL(new Blob([sv],{type:"image/svg+xml"})); GK_ANP_URL.set(key,u);
+  const p=(anp.vorlage?gkVorlageText(a,anp.vorlage):gkSvgText(a)).then(async t=>{ const sv=gkSvgAnpassen(t,anp), pf=gkAnpPfad(key);
+      let u=null; try{ const c=await caches.open("irrgang-bilder"); await c.put(pf,new Response(sv,{headers:{"Content-Type":"image/svg+xml"}})); GK_ANP_OK.add(pf); if(navigator.serviceWorker&&navigator.serviceWorker.controller) u=pf; }catch(e){}
+      if(!u) u=URL.createObjectURL(new Blob([sv],{type:"image/svg+xml"})); GK_ANP_URL.set(key,u);
       document.querySelectorAll("[data-gkanp]").forEach(el=>{ if(el.getAttribute("data-gkanp")!==key) return; el.setAttribute(el.tagName==="IMG"?"src":"href",u); const w=el.closest&&el.closest(".weg"); if(w) w.classList.remove("weg"); });
       if(document.querySelector(`img[src="${GK_LEER}"]`)&&typeof render==="function"&&!document.querySelector("#dlg:not([hidden])")) setTimeout(render,0);
       return u; })
     .catch(e=>{ GK_ANP_P.delete(key); console.warn("Aufdruck",a.id,e); return null; });
   GK_ANP_P.set(key,p); return p; }
-/* Fertige Aufdrucke liegen zusätzlich im Gerätespeicher – beim nächsten Öffnen sofort da, ohne Warten auf den SharePoint */
-const gkAnpLs=key=>{ let h=5381; for(let i=0;i<key.length;i++) h=((h<<5)+h+key.charCodeAt(i))|0; return "irrgang_gkanp_"+(h>>>0).toString(36); };
+/* Fertige Aufdrucke liegen im Bild-Speicher des Geräts („irrgang-bilder“) unter /bilder/katalog/anp/… – der Service Worker liefert sie
+   wie jedes Bild aus: beim nächsten Öffnen sofort da, feste Adresse, kein Flackern. */
+const gkAnpPfad=key=>{ let h=5381; for(let i=0;i<key.length;i++) h=((h<<5)+h+key.charCodeAt(i))|0; return "/bilder/katalog/anp/"+(h>>>0).toString(36)+".svg"; };
+const GK_ANP_OK=new Set();
+const gkAnpBereit=(async()=>{ try{ if(typeof caches==="undefined") return; const c=await caches.open("irrgang-bilder"); (await c.keys()).forEach(r=>{ const p=new URL(r.url).pathname; if(p.startsWith("/bilder/katalog/anp/")) GK_ANP_OK.add(p); });
+  try{ Object.keys(localStorage).filter(k=>k.startsWith("irrgang_gkanp_")).forEach(k=>localStorage.removeItem(k)); }catch(e){}   /* alter Zwischenspeicher (1.11.10) */
+  if(GK_ANP_OK.size&&document.querySelector("[data-gkanp]")&&typeof render==="function") render(); }catch(e){} })();
 function gkBildURL(a){ if(!a) return ""; if(!a._anp) return gkURL(a); const key=gkAnpKey(a,a._anp); let u=GK_ANP_URL.get(key); if(u) return u;
-  try{ const sv=localStorage.getItem(gkAnpLs(key)); if(sv){ u=URL.createObjectURL(new Blob([sv],{type:"image/svg+xml"})); GK_ANP_URL.set(key,u); GK_ANP_P.set(key,Promise.resolve(u)); return u; } }catch(e){}
+  const pf=gkAnpPfad(key); if(GK_ANP_OK.has(pf)&&navigator.serviceWorker&&navigator.serviceWorker.controller){ GK_ANP_URL.set(key,pf); return pf; }
   gkAufdruck(a,a._anp); return GK_LEER; }
+/* Vorlage als SVG-Text: PNG einbetten, Aufdruck abdecken, Platzhalter-Text darüber */
+async function gkVorlageText(a,vk){ const V=GK_VORLAGE[vk]; if(!V) throw Error("Keine Vorlage");
+  let b=null; try{ const r=await fetch(gkURL(a)); if(r.ok) b=await r.blob(); }catch(e){}
+  if(!b||!b.size){ const u=typeof bspBlob==="function"?await bspBlob(bspPfad(gkSpName(a)),true):null; if(!u) throw Error("Bild nicht erreichbar"); b=await (await fetch(u)).blob(); }
+  const data=await new Promise((ok,nein)=>{ const fr=new FileReader(); fr.onload=()=>ok(fr.result); fr.onerror=nein; fr.readAsDataURL(b.type==="image/png"?b:b.slice(0,b.size,"image/png")); });
+  const bm=await createImageBitmap(b), W=bm.width, H=bm.height; bm.close&&bm.close(); const [dx,dy,dw,dh]=V.deck;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${a.dimension.width}mm" height="${a.dimension.height}mm" viewBox="0 0 ${W} ${H}"><image href="${data}" width="${W}" height="${H}"/><rect x="${dx}" y="${dy}" width="${dw}" height="${dh}" fill="${V.farbe}"/>`
+    +V.zeilen.map(([x,y,fs,t])=>`<text x="${x}" y="${y}" font-family="Arial, Helvetica, sans-serif" font-size="${fs}" fill="${V.schrift}">${t}</text>`).join("")+`</svg>`; }
 /* Analyse laden (aus dem Bilder-Cache, sonst aus dem SharePoint) */
 async function gkBsLaden(neu){ if(GK_BS.daten&&!neu) return GK_BS.daten;
   try{ const c="caches" in window?await caches.open("irrgang-bilder").catch(()=>null):null; let r=!neu&&c?await c.match(GK_BS_PFAD).catch(()=>null):null;
