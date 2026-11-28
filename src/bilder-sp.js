@@ -20,10 +20,14 @@ async function bspListe(erzwingen){
   BSP.laeuft=true; let fertig; BSP.p=new Promise(r=>fertig=r);
   try{ await syncRoot(); const fid=await folderId(BSP_ORDNER,BSP_BIB), L=await listAll(fid), m={};
     L.forEach(it=>{ if(it.file&&it["@microsoft.graph.downloadUrl"]) m[bspPfad(it.name)]=it["@microsoft.graph.downloadUrl"]; });
-    BSP.liste=m; BSP.t=Date.now(); BSP.anzahl=Object.keys(m).length; await bspAnSw(m); setTimeout(bspNachladen,400); setTimeout(()=>bspAuto(),1500); setTimeout(()=>bspVorab(),4000);
+    BSP.liste=m; BSP.t=Date.now(); BSP.anzahl=Object.keys(m).length; try{ sessionStorage.setItem(BSP_SS,JSON.stringify({t:BSP.t,m})); }catch(e){} await bspAnSw(m); setTimeout(bspNachladen,400); setTimeout(()=>bspAuto(),1500); setTimeout(()=>bspVorab(),4000);
   }catch(e){ console.warn("Bilderliste",e); }
   finally{ BSP.laeuft=false; fertig(); }
   return BSP.liste; }
+/* Liste übersteht Neuladen/Strg+F5 im selben Tab (Adressen gelten rund 1 h, genutzt höchstens 40 min) – Bilder kommen dann sofort,
+   ohne erst auf Anmeldung und Ordnerliste zu warten (Max 28.11.2026) */
+const BSP_SS="irrgang_bilderliste";
+try{ const o=JSON.parse(sessionStorage.getItem(BSP_SS)||"null"); if(o&&o.m&&Date.now()-o.t<40*60e3){ BSP.liste=o.m; BSP.t=o.t; BSP.anzahl=Object.keys(o.m).length; bspAnSw(o.m); } }catch(e){}
 setTimeout(()=>bspListe(),800);
 /* Absicherung (Max 28.11.2026): Lädt ein Bild nicht – etwa nach Strg+F5 (dann läuft die Seite ohne Service Worker) oder weil im Browser
    noch ein alter Service Worker hängt –, holt die Seite es selbst über die Download-Liste aus dem SharePoint und setzt es als Blob ein.
@@ -42,7 +46,15 @@ function bspBlob(pfad,frisch){ const key=pfad+(frisch?"#f":""); if(BSP_BLOB.has(
     if(t&&b.type!==t) b=b.slice(0,b.size,t);
     if(c) c.put(pfad,new Response(b,{headers:{"Content-Type":t||b.type}})).catch(()=>{});
     return URL.createObjectURL(b); })().catch(()=>null);
-  BSP_BLOB.set(key,p); p.then(x=>{ if(!x) BSP_BLOB.delete(key); }); return p; }
+  BSP_BLOB.set(key,p); p.then(x=>{ if(!x){ BSP_BLOB.delete(key); return; } BSP_FERTIG.set(pfad,x); if(bspOhneSw()) bspTauschen(pfad,x); }); return p; }
+const BSP_FERTIG=new Map();
+const bspOhneSw=()=>!("serviceWorker" in navigator&&navigator.serviceWorker.controller);
+/* Alle Bilder auf der Seite, die auf diesen Pfad zeigen, auf die fertige Blob-Adresse umstellen */
+function bspTauschen(pfad,u){ document.querySelectorAll('img[src*="/bilder/"],image[href*="/bilder/"]').forEach(el=>{ const a=el.tagName==="IMG"?"src":"href", v=el.getAttribute(a)||"";
+  let q=""; try{ q=decodeURIComponent(new URL(v,location.href).pathname); }catch(e){ return; } if(q!==pfad) return; el.dataset.bspPfad=pfad; el.setAttribute(a,u); const w=el.closest&&el.closest(".weg"); if(w) w.classList.remove("weg"); }); }
+/* Bildadresse für die Seite: mit Service Worker der feste Pfad, ohne (nach Strg+F5) gleich die Kopie aus dem Gerätespeicher */
+function bspSrc(rel){ if(!bspOhneSw()) return rel; let pfad=""; try{ pfad=decodeURIComponent(new URL(rel,location.href).pathname); }catch(e){ return rel; }
+  const u=BSP_FERTIG.get(pfad); if(u) return u; bspBlob(pfad,false); return rel; }
 /* Erster Fehler: Kopie aus dem Gerätespeicher prüfen, sonst frisch holen. Schlägt auch das als Bild fehl: Kopie löschen und ganz frisch holen. */
 document.addEventListener("error",async ev=>{ const el=ev.target; if(!el||(el.tagName!=="IMG"&&el.tagName!=="image")) return;
   const a=el.tagName==="IMG"?"src":"href", v=el.getAttribute(a)||"";
