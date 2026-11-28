@@ -297,14 +297,17 @@ function legVtView(L){ const n=+L.teReihe||12, P=LEG_P, R=legReihen(L), zu=L.fer
           return `<g class="kf-mk"><rect x="${mx-2.5}" y="${GH*.02}" width="5" height="${GH*.96}" rx="2.5"/><rect x="${mx-46}" y="${GH*.02-2}" width="92" height="22" rx="11"/><text x="${mx}" y="${GH*.02+13}" text-anchor="middle" font-size="11.5" font-weight="800">Hier einsetzen</text></g>`; })():"";
       const freiMm=Math.max(0,NZ-r.mm), frei=Math.floor((freiMm+.6)/17.5), last=r.g[r.g.length-1][1], fw=B-x;
       const fr=frei>0?`<g class="leg-frei" ${zu?"":`data-act="${legWsAktiv(L)?"kfMarke":"legNach"}" data-i="${last}"`}><rect x="${x+2}" y="${GH*.12}" width="${fw-4}" height="${GH*.76}" rx="5" class="leg-fr"/><text x="${x+fw/2}" y="${frei>1?GH/2-4:GH/2-18}" font-size="${(frei>1?12:10)*(mobil?1.6:1)}" font-weight="800" text-anchor="middle" class="leg-frt">${frei>1?`${frei} TE frei`:"frei"}</text>${zu?"":`<text x="${x+fw/2}" y="${frei>1?GH/2+16*(mobil?1.6:1):GH/2+2}" font-size="${16*(mobil?1.6:1)}" font-weight="700" text-anchor="middle" class="leg-frt">+</text>`}</g>`:"";
-      /* Hutschiene TS 35 wie im Verteiler (Max 28.11.2026): verzinktes Blech, 35 mm hoch, oben und unten gebördelte Kante, Enden auf Haltern
-         verschraubt. Hinter den Geräten verdeckt, sichtbar nur daneben. Leichte Einkerbungen an der Kante markieren Anfang und Ende der Öffnung. */
-      const SH=35*K, sy=GH/2-SH/2, kh=2.6*K, schr=x0=>`<circle cx="${x0}" cy="${GH/2}" r="${2.4*K}" fill="#C9CDD1" stroke="#8E949A" stroke-width="1"/><line x1="${x0-1.5*K}" y1="${GH/2}" x2="${x0+1.5*K}" y2="${GH/2}" stroke="#7D838A" stroke-width="1.2"/>`;
-      const schiene=`<defs><linearGradient id="hs${ri}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B7BCC1"/><stop offset=".1" stop-color="#E3E6E8"/><stop offset=".5" stop-color="#D3D7DA"/><stop offset=".9" stop-color="#E1E4E6"/><stop offset="1" stop-color="#A9AEB4"/></linearGradient></defs>
-        <rect x="${-O}" y="${sy}" width="${BG}" height="${SH}" rx="1.5" fill="url(#hs${ri})"/>
-        <rect x="${-O}" y="${sy+kh}" width="${BG}" height="1" fill="#9EA4AA" opacity=".7"/><rect x="${-O}" y="${sy+SH-kh-1}" width="${BG}" height="1" fill="#9EA4AA" opacity=".7"/>
-        ${[0,B].map(sx=>`<path d="M${sx-2.2*K} ${sy}L${sx} ${sy+2.2*K}L${sx+2.2*K} ${sy}Z" fill="#8E949A" opacity=".75"/><path d="M${sx-2.2*K} ${sy+SH}L${sx} ${sy+SH-2.2*K}L${sx+2.2*K} ${sy+SH}Z" fill="#8E949A" opacity=".75"/>`).join("")}
-        ${schr(-O+6*K)}${schr(B+O-6*K)}`;
+      /* Hutschiene in Originalmaßen Hager volta VZ551N (Max 28.11.2026): 280 mm lang, 35 mm hoch, Stahl verzinkt, 12 Module.
+         Gezeichnet im Strichstil der Feldbilder (helle Fläche, dunkelgraue Kontur, doppelte Linie an der gebördelten Kante),
+         Enden auf den Haltern verschraubt, Mittelloch, leichte Kerben an der Kante dort, wo die Öffnung der Abdeckung beginnt und endet.
+         Länge = Nutzbreite (12 × 18 mm = 216 mm) + 2 × 32 mm. */
+      const SH=35*K, sy=GH/2-SH/2, mm=v=>(v*K).toFixed(1), xL=-O, xR=B+O, KO="#6A6A6A", FL="#EEF0F1";
+      const schraube=cx=>`<circle cx="${cx.toFixed(1)}" cy="${GH/2}" r="${mm(3.2)}" fill="#F7F8F9" stroke="${KO}" stroke-width="1"/><path d="M${(cx-1.8*K).toFixed(1)} ${GH/2}H${(cx+1.8*K).toFixed(1)}M${cx.toFixed(1)} ${(GH/2-1.8*K).toFixed(1)}V${(GH/2+1.8*K).toFixed(1)}" stroke="${KO}" stroke-width="1.2"/>`;
+      const kerbe=sx=>`<path d="M${(sx-1.6*K).toFixed(1)} ${sy}L${sx} ${(sy+1.8*K).toFixed(1)}L${(sx+1.6*K).toFixed(1)} ${sy}" fill="${FL}" stroke="${KO}" stroke-width="1"/><path d="M${(sx-1.6*K).toFixed(1)} ${sy+SH}L${sx} ${(sy+SH-1.8*K).toFixed(1)}L${(sx+1.6*K).toFixed(1)} ${sy+SH}" fill="${FL}" stroke="${KO}" stroke-width="1"/>`;
+      const schiene=`<rect x="${xL}" y="${sy}" width="${BG}" height="${SH}" fill="${FL}" stroke="${KO}" stroke-width="1.2"/>
+        ${[2.2,3.4,31.6,32.8].map(v=>`<line x1="${xL}" y1="${(sy+v*K).toFixed(1)}" x2="${xR}" y2="${(sy+v*K).toFixed(1)}" stroke="${KO}" stroke-width=".8" opacity=".75"/>`).join("")}
+        ${schraube(xL+7*K)}${schraube(xR-7*K)}<circle cx="${(B/2).toFixed(1)}" cy="${(sy+10*K).toFixed(1)}" r="${mm(1.6)}" fill="#FFF" stroke="${KO}" stroke-width="1"/>
+        ${kerbe(0)}${kerbe(B)}`;
       /* Beschriftung unter der Reihe (nur Handy): Kennzeichnung, Bezeichnung, Schutz – antippen bearbeitet */
       const leg=mobil?`<div class="leg-rl">${r.g.filter(([e])=>e.art!=="kl").map(([e])=>`<button type="button" class="leg-rl-z${e.art==="rcd"?" rcd":""}" data-act="legEdit" data-id="${esc(e.id)}" ${zu?"disabled":""}><span class="kz">${esc(legKzA(e.kz)||"–")}</span><span class="bz">${e.art==="res"?"Reserve":e.art==="rcd"?esc(e.bez||"Fehlerstromschutzschalter"):legOffen(e)?"? – noch unbekannt":esc(e.bez||"–")}</span><span class="sc">${esc(legSchutz(e))}</span></button>`).join("")}</div>`:"";
       const wsk=legWsAktiv(L)&&!mobil, M=LEG_WS.marke, pend=wsk&&!zu&&M&&M.neu&&LEG_WS.tab!=="sel"&&(M.nach===last||M.nach<r.g[0][1]&&ri===0&&M.nach===r.g[0][1]-1);
