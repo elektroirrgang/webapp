@@ -92,7 +92,7 @@ function qrOhne(art){ const L=[]; for(const g0 of live("gebaeude")){ if(typeof o
     else g.verteiler.forEach(x=>{ if(!x.qr) L.push({g,x,art:"vt"}); }); } return L; }
 function qrOhneZeile(art){ if(art!=="anlage"&&art!=="netz") return ""; const n=qrOhne(art).length; if(!n) return "";
   const t=art==="netz"?`${n} Netzwerkschr${n>1?"änke":"ank"}`:`${n} Verteiler`;
-  return `<div class="qr-ohne">${listOf([`<div class="li" role="button" tabindex="0" data-act="qrOhneDlg" data-art="${art}"><span class="av">${icon("warn")}</span><span class="lt"><span class="h">${t} ohne QR-Aufkleber</span><span class="s">Antippen und nachholen</span></span>${icon("chev")}</div>`])}</div>`; }
+  return `<div class="qr-ohne">${listOf([`<div class="li" role="button" tabindex="0" data-act="qrOhneDlg" data-art="${art}"><span class="av">${icon("warn")}</span><span class="lt"><span class="h">${t} noch ohne QR-Code</span><span class="s">Jetzt nachholen</span></span>${icon("chev")}</div>`])}</div>`; }
 function qrOhneDlg(art){ const L=qrOhne(art).sort((a,b)=>(b.g.updated||0)-(a.g.updated||0));
   dialog(art==="netz"?"Netzwerkschränke ohne QR-Aufkleber":"Verteiler ohne QR-Aufkleber",listOf(L.map(t=>{ const o=ecOrt(t.g.ortId);
     return `<div class="li" role="button" tabindex="0" data-act="qrOhneAuf" data-g="${esc(t.g.id)}" data-id="${esc(t.x.id)}" data-art="${t.art}"><span class="av">${icon(t.art==="schrank"?"ecNetz":"qr")}</span><span class="lt"><span class="h">${esc(t.x.name||qrArtName(t))}</span><span class="s">${esc(o.titel||"")}</span></span>${icon("chev")}</div>`; })),

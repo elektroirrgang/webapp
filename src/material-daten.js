@@ -67,7 +67,7 @@ const matTech=m=>m&&(m.tech||(matInfo(m)||{}).tech)||null;
 function matTechText(t){ if(!t) return ""; const p=t.pole?`${t.pole}-polig`:"", te=t.te?`${t.te} TE`:"";
   if(t.art==="rcd") return [`RCD ${t.in} A / ${t.idn} mA Typ ${t.typ||"A"}`,p,te].filter(Boolean).join(" · ");
   if(t.art==="rcbo") return [`FI/LS ${t.char||""}${t.in} · ${t.idn} mA Typ ${t.typ||"A"}`,p,te].filter(Boolean).join(" · ");
-  return [`${t.char||""} ${t.in} A`.trim(),p,te].filter(Boolean).join(" · "); }
+  return [t.in?`${t.char||""} ${t.in} A`.trim():"",p,te].filter(Boolean).join(" · "); }
 const matFoto=(m,cls)=>{ const u=matBild(m); return u?`<span class="mat-foto${cls?" "+cls:""}"><img src="${esc(typeof bildLokal==="function"?bildLokal(u):u)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('weg')"></span>`:""; };
 /* Firmen-Materialliste (MAT_FIRMA, unten) ist fest eingebaut und wird NICHT als Datensätze gespeichert – sonst müsste jedes
    Gerät ~400 Dateien hochladen. Gespeichert wird nur, was jemand ändert oder löscht (gleiche ID überschreibt das Firmen-Teil). */

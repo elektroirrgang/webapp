@@ -467,7 +467,7 @@ const vgSchrittAt=v=>{ const i=vgStufe(v); return i<0?vgAt(v):((v.s[VG_S[i][0]]|
 /* Kalenderwoche Mo–So */
 function vgWocheGrenzen(){ const d=new Date(); d.setHours(12,0,0,0); const mo=new Date(d-((d.getDay()+6)%7)*864e5), so=new Date(+mo+6*864e5), f=x=>x.toISOString().slice(0,10); return [f(mo),f(so)]; }
 const vgWoche=v=>{ const d=v.s&&v.s.termin&&v.s.termin.datum; if(!d||vgZu(v)) return false; const [a,b]=vgWocheGrenzen(); return d>=a&&d<=b; };
-const VG_K=[["offen","Offen"],["buero","Beim Büro"],["haengt","Hängen"],["woche","Diese Woche geplant"]];
+const VG_K=[["offen","Offen"],["buero","Beim Büro"],["haengt","Stocken"],["woche","Diese Woche geplant"]];
 const vgKAkt=()=>META.vgK||"offen";
 function vgKListe(k){ const L=vgAlle();
   return k==="buero"?L.filter(v=>!vgZu(v)&&vgStufe(v)===1):k==="haengt"?L.filter(v=>!vgZu(v)&&vgAlter(v)):k==="woche"?L.filter(vgWoche)
@@ -483,8 +483,8 @@ function vgTZelle(v,i){ const k=VG_S[i][0], s=v.s&&v.s[k], st=vgStufe(v), id=esc
       l1=bu&&!vgZu(v)?`<button class="vt-ed" data-act="vgTerminEd" data-id="${id}" title="Termin ändern">${d}</button>`:d; l2=[s.zeit?esc(s.zeit):"",s.mit?mitHtml(s):""].filter(Boolean).join(" · ")||wer(s); }
     return `<div class="vt-z ok s${i}"><span class="vt-1">${l1}</span><span class="vt-2">${l2}</span></div>`; }
   if(v.abgelehnt&&i===st+1) return `<div class="vt-z bad"><span class="vt-1">Abgelehnt</span><span class="vt-2">${esc(vgVorn(v.abgelehnt.wer&&v.abgelehnt.wer.name)||"")}${v.abgelehnt.grund?` · ${esc(v.abgelehnt.grund)}`:""}</span></div>`;
-  if(i===st+1&&!vgZu(v)) return vgDarfNach(v,i)?`<button class="vt-z next" data-act="vgWeiter" data-id="${id}" title="${esc(VG_NEXT_T[st])}">${icon("add")}<span>${esc(["Ans Büro","Erteilen","Termin","Erledigt"][st])}</span></button>`
-    :`<div class="vt-z warte"><span class="vt-1">${st===1?"Wartet aufs Büro":"Macht das Büro"}</span></div>`;
+  if(i===st+1&&!vgZu(v)) return vgDarfNach(v,i)?`<button class="vt-z next" data-act="vgWeiter" data-id="${id}" title="${esc(VG_NEXT_T[st])}">${icon("add")}<span>${esc(["Ans Büro","Beauftragen","Termin","Erledigt"][st])}</span></button>`
+    :`<div class="vt-z warte"><span class="vt-1">${st===1?"Wartet aufs Büro":st===2?"Plant das Büro":"Beim Büro"}</span></div>`;
   return `<div class="vt-z leer"></div>`; }
 function vgTZeile(v){ const a=vgAlter(v), ZL=vgZustL(v), z=ZL[0], m=VG_MARK.has(v.id), id=esc(v.id), tel=v.tel;
   return `<div class="vr${v.dringend?" dr":""}${VG_SEL===v.id?" an":""}${m?" mark":""}${v.abgelehnt?" abgl":""}" data-act="vgSel" data-id="${id}" role="button" tabindex="0">
@@ -492,7 +492,7 @@ function vgTZeile(v){ const a=vgAlter(v), ZL=vgZustL(v), z=ZL[0], m=VG_MARK.has(
     <div class="vr-k"><span class="vr-n"><b>${esc(vgKunde(v))}</b>${v.dringend?`<span class="vk-dr">dringend</span>`:""}</span>${v.anliegen?`<span class="vr-a">${esc(v.anliegen)}</span>`:""}${tel?`<span class="vr-t">${icon("phone")}${esc(tel)}</span>`:""}</div>
     ${VG_T.map((t,i)=>vgTZelle(v,i)).join("")}
     <div class="vr-z">${vgDarfZust(v)?`<button class="vr-zb${z?"":" leer"}" data-act="vgZustPick" data-id="${id}" title="Zuständig ändern">`:`<span class="vr-zb${z?"":" leer"}">`}${z?`<span class="vk-p${vgIstIch(z)?" ich":""}">${esc(initials(z.name||"?"))}</span><span class="vr-zn" title="${esc(vgZustNamen(v).join(", "))}">${esc(ZL.length>1?`${z.name||""} +${ZL.length-1}`:(z.name||""))}</span>`:`<span class="vr-zn">${vgDarfZust(v)?"Zuweisen":"–"}</span>`}${vgDarfZust(v)?"</button>":"</span>"}</div>
-    <div class="vr-s">${a?`<span class="vr-alt ${a.kl}">${esc(a.txt.replace(/^seit /,""))}</span>`:`<span class="vr-ok">${esc(vgSeitKurz(vgSchrittAt(v)))}</span>`}</div></div>`; }
+    <div class="vr-s">${a?`<span class="vr-alt ${a.kl}">${esc(a.txt.replace(/^seit /,"").replace(/Tagen$/,"Tage"))}</span>`:`<span class="vr-ok">${esc(vgSeitKurz(vgSchrittAt(v)))}</span>`}</div></div>`; }
 function vgSeitKurz(t){ const h=(Date.now()-t)/36e5; return h<1?"gerade":h<24?`${Math.floor(h)} Std.`:`${Math.floor(h/24)} Tag${Math.floor(h/24)>1?"e":""}`; }
 function vgTabelle(L){ const so=fW("vg","sort"), sk=(k,t,cls)=>`<button class="vr-h${so===k?" an":""}${cls?" "+cls:""}" data-act="vgSort" data-v="${k}" title="Sortieren">${t}${so===k?icon("vgSort"):""}</button>`;
   const ids=L.map(v=>v.id), alle=ids.length&&ids.every(i=>VG_MARK.has(i)), teil=!alle&&ids.some(i=>VG_MARK.has(i));
